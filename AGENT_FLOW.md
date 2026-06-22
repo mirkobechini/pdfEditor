@@ -37,10 +37,23 @@ This document outlines the development flow for the PDF Editor project, includin
 
 ### 1. Plan — Create a GitHub Issue
 
-For every task, the AI agent creates a GitHub issue with:
-- **Title**: concise description of the task
-- **Body**: detailed description, acceptance criteria, technical notes
-- **Labels**: `phase-1a`, `backend`, `frontend`, `tauri`, `mobile`, etc.
+For every **feature** (not phase), the AI agent creates a GitHub issue with:
+- **Title**: concise feature description
+- **Body**: detailed description, acceptance criteria, technical notes, security checklist
+- **Labels**: `backend`, `frontend`, `tauri`, `mobile`, plus a phase label (`phase-1a`, `phase-1b`, etc.)
+
+Each feature from the BRIEF gets its own issue. Examples:
+
+| Feature | Issue | Phase label |
+|---------|-------|-------------|
+| API upload/download PDF | #2 | `phase-1a` |
+| API merge/split PDF | #3 | `phase-1a` |
+| API text editing | #4 | `phase-1a` |
+| ... | ... | ... |
+| PDF viewer component | #? | `phase-1b` |
+| Sidebar component | #? | `phase-1b` |
+| Tauri shell setup | #? | `phase-1c` |
+| Sidecar FastAPI | #? | `phase-1c` |
 
 The agent uses the `mcp_gitkraken_cli_issues_create` tool to create issues. The issue number determines the branch name.
 
@@ -123,15 +136,39 @@ backend/
 - **Repository** = query SQLAlchemy. Testabile con mock
 - **Model** = definizione tabella. Nessuna logica di business
 
-### 5. GitHub Actions (CI)
+### 5. GitHub Actions (CI + Superlinter)
 
-Every push to `dev` or any `feature/*` branch triggers automated tests:
+Every push to `dev` or any `feature/*` branch triggers:
+1. **Superlinter** — linting automated di tutti i linguaggi
+2. **Test** — pytest (backend) + vitest (frontend) + Playwright (E2E)
 
 ```yaml
 # .github/workflows/ci.yml
 name: CI
 on: [push, pull_request]
 jobs:
+  # Superlinter — linting code quality
+  lint:
+    name: Superlinter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Super-linter
+        uses: super-linter/super-linter@v7
+        env:
+          VALIDATE_ALL_CODEBASE: true
+          DEFAULT_BRANCH: dev
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_PYTHON_FLAKE8: true
+          VALIDATE_PYTHON_PYLINT: true
+          VALIDATE_JAVASCRIPT_ES: true
+          VALIDATE_TYPESCRIPT_ES: true
+          VALIDATE_HTML: true
+          VALIDATE_CSS: true
+          VALIDATE_YAML: true
+          VALIDATE_MARKDOWN: true
+
+  # Backend tests
   backend:
     runs-on: ubuntu-latest
     steps:
@@ -139,8 +176,9 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install -r requirements.txt
-      - run: pytest --cov
+      - run: pytest --cov --cov-report=term-missing
 
+  # Frontend tests
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -148,10 +186,21 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: npm ci
-      - run: npm run test
+      - run: npm run test -- --coverage
 ```
 
-This CI file is created at the start of Phase 1a as the first commit.
+### 6. Best practices (enforced by Superlinter + conventions)
+
+| Rule | Description |
+|------|-------------|
+| **Code style Python** | PEP8 via flake8 + pylint. Docstring obbligatoria su ogni funzione pubblica |
+| **Code style JS/TS** | ESLint + Prettier. Arrow functions preferite, nomi camelCase |
+| **Type hints Python** | Obbligatori su tutte le funzioni. MyPy in CI |
+| **TypeScript** | Strict mode. Nessun `any` senza commento |
+| **Security** | Seguire la checklist in BRIEF.md (magic bytes, UUID storage, timeout, Pydantic validation) |
+| **File naming** | Python: snake_case. React: PascalCase per componenti, camelCase per utility |
+| **Error handling** | Ogni endpoint deve gestire errori 400/404/500 con messaggi descrittivi |
+| **No secrets in code** | Usare variabili d'ambiente. Mai hardcode API key o password |
 
 ### 6. Testing strategy
 

@@ -129,17 +129,18 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 
 ## Feature roadmap (ordine di implementazione)
 
+_Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
+
 ### Fase 1a — Backend API (FastAPI) — per desktop offline
 
-- [ ] Setup FastAPI + SQLite (offline) + supporto PostgreSQL (futuro sync)
-- [ ] API upload/download file PDF (file system locale)
-- [ ] API merge/split PDF (PyMuPDF)
-- [ ] API riordino e rimozione pagine (PyMuPDF)
-- [ ] API **modifica testo** nei PDF (PyMuPDF)
-- [ ] API **modifica metadati** PDF
-- [ ] API conversione PDF ↔ DOCX/XLSX/PNG/JPG
-- [ ] Autenticazione JWT (email/password)
-- [ ] SSO con Google
+- [ ] #2 — API upload/download file PDF (file system locale)
+- [ ] #3 — API merge/split PDF (PyMuPDF)
+- [ ] #4 — API riordino e rimozione pagine (PyMuPDF)
+- [ ] #5 — API **modifica testo** nei PDF (PyMuPDF)
+- [ ] #6 — API **modifica metadati** PDF
+- [ ] #7 — API conversione PDF ↔ DOCX/XLSX/PNG/JPG
+- [ ] #8 — Autenticazione JWT (email/password)
+- [ ] #9 — SSO con Google
 
 ### Fase 1b — Desktop UI (Next.js + TailwindCSS) — prima versione
 
