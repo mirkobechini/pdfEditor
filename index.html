@@ -100,7 +100,70 @@
     </div>
 
     <script>
-        console.log('PdfEditor — Pronto');
+        // ============================================================
+        // PDF EDITOR — PROTOTIPO CLIENT-SIDE
+        // ============================================================
+
+        (function() {
+            'use strict';
+
+            // ---- Costanti ----
+            const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
+
+            // ---- Stato ----
+            let pdfFiles = [];       // { id, name, size, date, data }
+            let activePdfId = null;
+            let fileIdCounter = 0;
+
+            // ---- Utility ----
+            function formatSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            }
+
+            function sanitizeName(name) {
+                return name.replace(/\.pdf$/i, '');
+            }
+
+            // ---- Upload file ----
+            const fileInput = document.getElementById('fileInput');
+            fileInput.addEventListener('change', function(e) {
+                const files = e.target.files;
+                if (!files.length) return;
+
+                for (const file of files) {
+                    if (file.type !== 'application/pdf') {
+                        alert('Solo file PDF sono supportati.');
+                        continue;
+                    }
+                    if (file.size > MAX_FILE_SIZE) {
+                        alert('Il file "' + file.name + '" supera il limite di 50 MB.');
+                        continue;
+                    }
+
+                    const reader = new FileReader();
+                    const fileId = ++fileIdCounter;
+                    reader.onload = function(ev) {
+                        pdfFiles.push({
+                            id: fileId,
+                            name: file.name,
+                            size: file.size,
+                            date: Date.now(),
+                            data: ev.target.result,
+                        });
+                        renderFileList();
+                        if (!activePdfId || pdfFiles.length === 1) {
+                            loadPdfFromFile(fileId);
+                        }
+                    };
+                    reader.readAsArrayBuffer(file);
+                }
+                fileInput.value = '';
+            });
+
+            console.log('PdfEditor — JS upload pronto');
+        })();
     </script>
 
 </body>
