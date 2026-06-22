@@ -225,7 +225,58 @@
                         loadPdfFromFile(parseInt(this.dataset.id));
                     });
                 });
+
+                // Delega eventi rename
+                pdfList.querySelectorAll('.rename-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const id = parseInt(this.dataset.id);
+                        const file = pdfFiles.find(f => f.id === id);
+                        if (file) {
+                            renameInput.value = sanitizeName(file.name);
+                            renameModal.classList.remove('hidden');
+                            renameModal.classList.add('flex');
+                            renameInput.focus();
+                            renameInput.select();
+                        }
+                    });
+                });
             }
+
+            // ---- Rinomina ----
+            const renameModal = document.getElementById('renameModal');
+            const renameInput = document.getElementById('renameInput');
+            document.getElementById('closeRenameModal').addEventListener('click', function() {
+                renameModal.classList.add('hidden');
+                renameModal.classList.remove('flex');
+            });
+            renameModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    renameModal.classList.add('hidden');
+                    renameModal.classList.remove('flex');
+                }
+            });
+            renameInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') document.getElementById('renameConfirm').click();
+                if (e.key === 'Escape') document.getElementById('closeRenameModal').click();
+            });
+            document.getElementById('renameConfirm').addEventListener('click', function() {
+                const newName = renameInput.value.trim();
+                if (!newName) {
+                    alert('Il nome non può essere vuoto.');
+                    return;
+                }
+                const file = pdfFiles.find(f => f.id === activePdfId);
+                if (file) {
+                    file.name = newName.endsWith('.pdf') ? newName : newName + '.pdf';
+                    renderFileList();
+                    if (activePdfId === file.id) {
+                        document.getElementById('fileStatus').textContent = file.name;
+                    }
+                }
+                renameModal.classList.add('hidden');
+                renameModal.classList.remove('flex');
+            });
 
             console.log('PdfEditor — JS upload pronto');
         })();
