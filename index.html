@@ -391,6 +391,123 @@
             document.getElementById('sidebarClose').addEventListener('click', function() { toggleSidebar(false); });
             document.getElementById('sidebarOverlay').addEventListener('click', function() { toggleSidebar(false); });
 
+            // ---- PDF.js ----
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.js';
+
+            let pdfDoc = null;
+            let currentPage = 1;
+            let currentScale = 1.0;
+
+            const canvas = document.getElementById('pdfCanvas');
+            const ctx = canvas.getContext('2d');
+            const viewerContainer = document.getElementById('viewerContainer');
+            const welcomePlaceholder = viewerContainer.querySelector('div:first-child');
+
+            // ---- Render pagina ----
+            function renderPage() {
+                if (!pdfDoc) return;
+                const pageNum = Math.min(Math.max(1, currentPage), pdfDoc.numPages);
+                currentPage = pageNum;
+                document.getElementById('pageInput').value = pageNum;
+
+                pdfDoc.getPage(pageNum).then(function(page) {
+                    const viewport = page.getViewport({ scale: currentScale });
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+
+                    canvas.classList.remove('hidden');
+                    if (welcomePlaceholder) welcomePlaceholder.classList.add('hidden');
+
+                    return page.render({
+                        canvasContext: ctx,
+                        viewport: viewport,
+                    }).promise;
+                }).then(function() {
+                    const ws = document.getElementById('workspace');
+                    ws.scrollTop = 0;
+                    ws.scrollLeft = 0;
+                }).catch(function(err) {
+                    console.error('Errore rendering pagina:', err);
+                });
+            }
+
+            // ---- Carica PDF con PDF.js ----
+            function loadPdfInViewer(arrayBuffer) {
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) });
+                loadingTask.promise.then(function(doc) {
+                    pdfDoc = doc;
+                    currentPage = 1;
+                    currentScale = 1.0;
+                    document.getElementById('pageInput').value = 1;
+                    document.getElementById('pageCount').textContent = '/ ' + doc.numPages;
+                    document.getElementById('pageInput').max = doc.numPages;
+                    updateButtons();
+                    renderPage();
+                }).catch(function(err) {
+                    console.error('Errore caricamento PDF:', err);
+                    alert('Impossibile leggere il file PDF. Potrebbe essere danneggiato.');
+                });
+            }
+
+            // ---- Stato pulsanti ----
+            function updateButtons() {
+                const disabled = !pdfDoc;
+                document.getElementById('firstPage').disabled = disabled;
+                document.getElementById('prevPage').disabled = disabled;
+                document.getElementById('nextPage').disabled = disabled;
+                document.getElementById('lastPage').disabled = disabled;
+                document.getElementById('pageInput').disabled = disabled;
+                document.getElementById('annotateBtn').disabled = disabled;
+                document.getElementById('editBtn').disabled = disabled;
+                document.getElementById('convertBtn').disabled = disabled;
+                document.getElementById('downloadBtn').disabled = disabled;
+            }
+
+            // ---- Navigazione bottoni ----
+            document.getElementById('firstPage').addEventListener('click', function() {
+                if (!pdfDoc) return;
+                currentPage = 1;
+                renderPage();
+            });
+            document.getElementById('prevPage').addEventListener('click', function() {
+                if (!pdfDoc || currentPage <= 1) return;
+                currentPage--;
+                renderPage();
+            });
+            document.getElementById('nextPage').addEventListener('click', function() {
+                if (!pdfDoc || currentPage >= pdfDoc.numPages) return;
+                currentPage++;
+                renderPage();
+            });
+            document.getElementById('lastPage').addEventListener('click', function() {
+                if (!pdfDoc) return;
+                currentPage = pdfDoc.numPages;
+                renderPage();
+            });
+            document.getElementById('pageInput').addEventListener('change', function() {
+                if (!pdfDoc) return;
+                const p = parseInt(this.value);
+                if (p >= 1 && p <= pdfDoc.numPages) {
+                    currentPage = p;
+                    renderPage();
+                } else {
+                    this.value = currentPage;
+                }
+            });
+
+            // ---- Navigazione tastiera ----
+            document.addEventListener('keydown', function(e) {
+                if (!pdfDoc) return;
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                    e.preventDefault();
+                    if (currentPage > 1) { currentPage--; renderPage(); }
+                } else if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+                    e.preventDefault();
+                    if (currentPage < pdfDoc.numPages) { currentPage++; renderPage(); }
+                }
+            });
+
             console.log('PdfEditor — Sidebar completa');
         })();
     </script>
