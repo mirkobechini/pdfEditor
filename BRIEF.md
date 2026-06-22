@@ -7,7 +7,12 @@ Applicazione web per la modifica e gestione di file PDF, con funzionalità di vi
 ## Stack scelto
 - Frontend: Inertia.js, TailwindCSS
 - Backend: Laravel, PHP, MySQL
-- Librerie: DomPDF, TCPDF, FPDI
+- Librerie: DomPDF, TCPDF, FPDI, PHPWord, PhpSpreadsheet
+- Viewer PDF: PDF.js (Mozilla) — open source
+
+## Roadmap
+1. **Prototipo (Fase 0)** — Singola pagina HTML statica con mockup funzionale (PDF.js per viewer, upload lato client, interfaccia completa). Serve a validare UX e funzionalità prima di scrivere backend.
+2. **Versione completa** — Laravel + Inertia.js con backend reale per upload, conversione ed export.
 
 
 ## Componenti principali
@@ -22,8 +27,46 @@ Applicazione web per la modifica e gestione di file PDF, con funzionalità di vi
 - Unione e divisione di file PDF
 - Modifica del contenuto dei PDF (aggiunta/rimozione di pagine, modifica del testo, modifica ordine delle pagine) (volendo drag and drop)
 
+## Todo list (funzionalità da implementare)
+
+### Fase 1 — UI principale
+- [ ] Barra laterale con elenco PDF caricati (carica, elimina, rinomina)
+- [ ] Barra strumenti superiore (annotazione, modifica, conversione)
+- [ ] Area di lavoro centrale per visualizzare il PDF selezionato
+- [ ] Rendere l'interfaccia responsive (mobile-first)
+
+### Fase 2 — Caricamento e gestione PDF
+- [ ] Importazione file PDF (upload)
+- [ ] Elenco PDF con nome, dimensione, data
+- [ ] Eliminazione file PDF
+- [ ] Rinominare file PDF
+
+### Fase 3 — Visualizzazione PDF
+- [ ] Visualizzare il PDF selezionato nell'area di lavoro centrale
+- [ ] Navigazione pagine (precedente/successiva/salto a pagina)
+- [ ] Zoom avanti/indietro
+
+### Fase 4 — Conversione
+- [ ] Convertire PDF in Word (DOCX)
+- [ ] Convertire PDF in Excel (XLSX)
+- [ ] Convertire PDF in immagini (PNG/JPG)
+- [ ] Convertire da Word/Excel/immagini in PDF
+
+### Fase 5 — Esportazione
+- [ ] Scaricare PDF convertito in altro formato
+- [ ] Export in vari formati
+
+### Bonus (post-MVP)
+- [ ] Unione di più file PDF
+- [ ] Divisione di un PDF in più file
+- [ ] Aggiunta/rimozione pagine
+- [ ] Riordino pagine con drag & drop
+- [ ] Modifica testo esistente nel PDF
+
+
 
 ## Vincoli
+- I file uplodabili devono essere massimo 50MB
 - Deve essere responsive e funzionare su dispositivi mobili
 - NO autenticazione e gestione utenti
 - Deve supportare l'importazione e l'esportazione di file PDF
