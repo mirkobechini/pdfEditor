@@ -886,6 +886,92 @@
                 mergeConfirm.disabled = false;
             });
 
+            // ---- SPLIT PDF ----
+            const splitModal = document.getElementById('splitModal');
+            document.getElementById('splitBtn').addEventListener('click', function() {
+                if (!pdfDoc || !activePdfId) return;
+                document.getElementById('splitPageCount').textContent = pdfDoc.numPages;
+                document.getElementById('splitRangeInput').value = '';
+                document.getElementById('splitStatus').classList.add('hidden');
+                document.getElementById('splitConfirm').disabled = false;
+                splitModal.classList.remove('hidden');
+                splitModal.classList.add('flex');
+            });
+            document.getElementById('closeSplitModal').addEventListener('click', function() {
+                splitModal.classList.add('hidden');
+                splitModal.classList.remove('flex');
+            });
+            splitModal.addEventListener('click', function(e) {
+                if (e.target === this) { splitModal.classList.add('hidden'); splitModal.classList.remove('flex'); }
+            });
+
+            document.getElementById('splitConfirm').addEventListener('click', async function() {
+                if (!pdfDoc || !activePdfId) return;
+                const btn = this;
+                btn.disabled = true;
+                document.getElementById('splitStatus').classList.remove('hidden');
+
+                try {
+                    const file = pdfFiles.find(f => f.id === activePdfId);
+                    const srcDoc = await PDFLib.PDFDocument.load(file.data);
+                    const totalPages = srcDoc.getPageCount();
+                    const mode = document.querySelector('input[name="splitMode"]:checked').value;
+                    
+                    if (mode === 'every') {
+                        // Ogni pagina in un file separato
+                        for (let i = 0; i < totalPages; i++) {
+                            const newDoc = await PDFLib.PDFDocument.create();
+                            const [page] = await newDoc.copyPages(srcDoc, [i]);
+                            newDoc.addPage(page);
+                            const bytes = await newDoc.save();
+                            downloadPdf(bytes, sanitizeName(file.name) + '_pagina_' + (i + 1) + '.pdf');
+                        }
+                    } else {
+                        // Intervallo di pagine
+                        const input = document.getElementById('splitRangeInput').value.trim();
+                        if (!input) { alert('Inserisci un intervallo valido (es. 1-3, 5, 7-9).'); btn.disabled = false; document.getElementById('splitStatus').classList.add('hidden'); return; }
+                        
+                        const pagesToExtract = parsePageRanges(input, totalPages);
+                        if (!pagesToExtract.length) { alert('Nessuna pagina valida nell\'intervallo specificato.'); btn.disabled = false; document.getElementById('splitStatus').classList.add('hidden'); return; }
+                        
+                        const newDoc = await PDFLib.PDFDocument.create();
+                        const copied = await newDoc.copyPages(srcDoc, pagesToExtract.map(p => p - 1));
+                        copied.forEach(function(p) { newDoc.addPage(p); });
+                        const bytes = await newDoc.save();
+                        downloadPdf(bytes, sanitizeName(file.name) + '_estratto.pdf');
+                    }
+
+                    document.getElementById('splitStatus').classList.add('hidden');
+                    splitModal.classList.add('hidden');
+                    splitModal.classList.remove('flex');
+                } catch (err) {
+                    console.error(err);
+                    alert('Errore durante la divisione: ' + err.message);
+                    document.getElementById('splitStatus').classList.add('hidden');
+                }
+                btn.disabled = false;
+            });
+
+            // ---- Utility: parse page ranges (es. "1, 3, 5-7") ----
+            function parsePageRanges(str, max) {
+                const parts = str.split(',').map(function(s) { return s.trim(); });
+                const pages = [];
+                for (const part of parts) {
+                    const m = part.match(/^(\d+)-(\d+)$/);
+                    if (m) {
+                        const start = parseInt(m[1]);
+                        const end = parseInt(m[2]);
+                        for (let i = start; i <= end; i++) {
+                            if (i >= 1 && i <= max && pages.indexOf(i) === -1) pages.push(i);
+                        }
+                    } else {
+                        const n = parseInt(part);
+                        if (n >= 1 && n <= max && pages.indexOf(n) === -1) pages.push(n);
+                    }
+                }
+                return pages.sort(function(a, b) { return a - b; });
+            }
+
             console.log('PdfEditor — Prototipo completo');
         })();
     </script>
