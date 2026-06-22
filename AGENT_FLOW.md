@@ -28,6 +28,8 @@ This document outlines the development flow for the PDF Editor project, includin
 - Don't commit directly to the `main` branch.
 - Don't merge to the `main` branch without approval from the user.
 - Don't push without a reason (CI, sync, or user request).
+- Don't create a branch without an associated GitHub issue.
+- Don't go to the next phase without all tests passing and user approval of the previous phase.
 
 ---
 
