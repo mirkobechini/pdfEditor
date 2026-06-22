@@ -6,13 +6,14 @@ This document outlines the development flow for the PDF Editor project, includin
 
 ## Branch Structure
 
-| Branch | Convention | Description |
-| ------ | ---------- | ----------- |
-| `main` | — | Stable codebase. Only the user merges here from `dev`. |
-| `dev` | — | Permanent development branch. All feature branches merge here. |
-| `feature/` | `<issue-number>-<short-description>` | One branch per task / issue. |
-| `hotfix/` | `<issue-number>-<short-description>` | Urgent bug fixes (same flow as feature). |
-| `chore/` | `<issue-number>-<short-description>` | Non-feature tasks (refactoring, documentation, etc.). |
+| Branch     | Convention                           | Description                                                    |
+| ---------- | ------------------------------------ | -------------------------------------------------------------- |
+| `main`     | —                                    | Stable codebase. Only the user merges here from `dev`.         |
+| `dev`      | —                                    | Permanent development branch. All phase branches merge here.   |
+| `phase/`   | `<phase-name>`                       | One branch per **phase** (e.g. `phase/1a-fastapi-backend`). Contains all issues of that phase. |
+| `feature/` | `<issue-number>-<short-description>` | Legacy — used only for single-issue branches (prototype Phase 0). |
+| `hotfix/`  | `<issue-number>-<short-description>` | Urgent bug fixes (same flow as feature).                       |
+| `chore/`   | `<issue-number>-<short-description>` | Non-feature tasks (refactoring, documentation, etc.).          |
 
 ---
 
@@ -38,35 +39,63 @@ This document outlines the development flow for the PDF Editor project, includin
 ### 1. Plan — Create a GitHub Issue
 
 For every **feature** (not phase), the AI agent creates a GitHub issue with:
+
 - **Title**: concise feature description
 - **Body**: detailed description, acceptance criteria, technical notes, security checklist
 - **Labels**: `backend`, `frontend`, `tauri`, `mobile`, plus a phase label (`phase-1a`, `phase-1b`, etc.)
 
 Each feature from the BRIEF gets its own issue. Examples:
 
-| Feature | Issue | Phase label |
-|---------|-------|-------------|
-| API upload/download PDF | #2 | `phase-1a` |
-| API merge/split PDF | #3 | `phase-1a` |
-| API text editing | #4 | `phase-1a` |
-| ... | ... | ... |
-| PDF viewer component | #? | `phase-1b` |
-| Sidebar component | #? | `phase-1b` |
-| Tauri shell setup | #? | `phase-1c` |
-| Sidecar FastAPI | #? | `phase-1c` |
+| Feature                 | Issue | Phase label |
+| ----------------------- | ----- | ----------- |
+| API upload/download PDF | #2    | `phase-1a`  |
+| API merge/split PDF     | #3    | `phase-1a`  |
+| API text editing        | #4    | `phase-1a`  |
+| ...                     | ...   | ...         |
+| PDF viewer component    | #?    | `phase-1b`  |
+| Sidebar component       | #?    | `phase-1b`  |
+| Tauri shell setup       | #?    | `phase-1c`  |
+| Sidecar FastAPI         | #?    | `phase-1c`  |
 
 The agent uses the `mcp_gitkraken_cli_issues_create` tool to create issues. The issue number determines the branch name.
 
-### 2. Branching
+### 2. Branching — one branch per phase
+
+Each **phase** gets its own branch. All feature issues of that phase are implemented inside the same branch.
 
 ```bash
 git checkout dev
-git checkout -b feature/<issue-number>-<short-description>
+git checkout -b phase/<phase-name>
 ```
 
-Example: issue #2 "FastAPI backend setup" → branch `feature/2-fastapi-backend`
+Examples:
 
-### 3. Implementation
+| Branch | Issues | What it contains |
+|--------|--------|------------------|
+| `phase/1a-fastapi-backend` | #2, #3, #4, #5, #6, #7, #8, #9 | All backend API endpoints |
+| `phase/1b-nextjs-frontend` | #10, #11, ... | All React components |
+| `phase/1c-tauri-desktop` | ... | Tauri wrappering |
+
+### 3. Per-feature workflow inside a phase branch
+
+For each issue inside the phase branch:
+
+```bash
+# Already inside the phase branch
+git checkout phase/1a-fastapi-backend
+
+# Implement the feature + tests
+# Commit with auto-close reference:
+git commit -m "feat(api): add POST /upload endpoint\n\ncloses #2"
+
+# When all issues in the phase are done, merge into dev
+git checkout dev
+git merge phase/1a-fastapi-backend
+```
+
+> Multiple `closes #N` in different commits within the same branch will auto-close each issue individually when the branch is merged into `dev`.
+
+### 4. Implementation
 
 - **One commit per atomic function.** Each commit = one API endpoint, one React component, one test file.
 - Commit messages MUST reference the issue for auto-close on merge:
@@ -130,6 +159,7 @@ backend/
 ```
 
 **Rules:**
+
 - **Router** = solo mapping URL → funzione. Massimo 5 righe per handler
 - **Schema (Pydantic)** = validazione input/output. Ogni endpoint ha il suo schema
 - **Service** = logica di business. Testabile isolatamente
@@ -139,6 +169,7 @@ backend/
 ### 5. GitHub Actions (CI + Superlinter)
 
 Every push to `dev` or any `feature/*` branch triggers:
+
 1. **Superlinter** — linting automated di tutti i linguaggi
 2. **Test** — pytest (backend) + vitest (frontend) + Playwright (E2E)
 
@@ -174,7 +205,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
+        with: { python-version: "3.12" }
       - run: pip install -r requirements.txt
       - run: pytest --cov --cov-report=term-missing
 
@@ -184,31 +215,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
+        with: { node-version: "20" }
       - run: npm ci
       - run: npm run test -- --coverage
 ```
 
 ### 6. Best practices (enforced by Superlinter + conventions)
 
-| Rule | Description |
-|------|-------------|
-| **Code style Python** | PEP8 via flake8 + pylint. Docstring obbligatoria su ogni funzione pubblica |
-| **Code style JS/TS** | ESLint + Prettier. Arrow functions preferite, nomi camelCase |
-| **Type hints Python** | Obbligatori su tutte le funzioni. MyPy in CI |
-| **TypeScript** | Strict mode. Nessun `any` senza commento |
-| **Security** | Seguire la checklist in BRIEF.md (magic bytes, UUID storage, timeout, Pydantic validation) |
-| **File naming** | Python: snake_case. React: PascalCase per componenti, camelCase per utility |
-| **Error handling** | Ogni endpoint deve gestire errori 400/404/500 con messaggi descrittivi |
-| **No secrets in code** | Usare variabili d'ambiente. Mai hardcode API key o password |
+| Rule                   | Description                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| **Code style Python**  | PEP8 via flake8 + pylint. Docstring obbligatoria su ogni funzione pubblica                 |
+| **Code style JS/TS**   | ESLint + Prettier. Arrow functions preferite, nomi camelCase                               |
+| **Type hints Python**  | Obbligatori su tutte le funzioni. MyPy in CI                                               |
+| **TypeScript**         | Strict mode. Nessun `any` senza commento                                                   |
+| **Security**           | Seguire la checklist in BRIEF.md (magic bytes, UUID storage, timeout, Pydantic validation) |
+| **File naming**        | Python: snake_case. React: PascalCase per componenti, camelCase per utility                |
+| **Error handling**     | Ogni endpoint deve gestire errori 400/404/500 con messaggi descrittivi                     |
+| **No secrets in code** | Usare variabili d'ambiente. Mai hardcode API key o password                                |
 
 ### 6. Testing strategy
 
-| Layer | Tool | Scope |
-|-------|------|-------|
-| Backend (Python) | **pytest** + `httpx.AsyncClient` | API endpoint testing |
-| Frontend (React) | **vitest** | Business logic, hooks |
-| Integration | **Playwright** | E2E user flows |
+| Layer            | Tool                             | Scope                 |
+| ---------------- | -------------------------------- | --------------------- |
+| Backend (Python) | **pytest** + `httpx.AsyncClient` | API endpoint testing  |
+| Frontend (React) | **vitest**                       | Business logic, hooks |
+| Integration      | **Playwright**                   | E2E user flows        |
 
 - **Every atomic function MUST have a corresponding test** before being considered complete
 - Before advancing from one phase to the next: **ALL tests must pass on CI**
