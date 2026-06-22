@@ -61,46 +61,39 @@ git checkout -b feature/<issue-number>-<short-description>
 
 ### 4. Commit granularity — Prototype (Phase 0)
 
-Build one **vertical section** at a time and finish it completely before moving to the next.
-Each commit = **one atomic functionality** (one JS feature or one DOM section).
+✅ **Completato.** Table maintained for reference.
 
-Order: **head → header → sidebar → toolbar → viewer → modals → final touches**
+| #    | Section                                                             | Commit message    |
+| ---- | ------------------------------------------------------------------- | ----------------- |
+| 1-20 | Head → Header → Sidebar → Toolbar → Viewer → Modals → Final touches | 20 atomic commits |
 
-| #                  | Section             | Commit message                                                     | What to add                                                                                                                                                                 |
-| ------------------ | ------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **HEAD + BODY**    |
-| 1                  | `head`              | `feat(html): add head with CDN assets, styles, and body shell`     | `<head>` (meta, CDN: TailwindCSS, PDF.js, Font Awesome), `<style>` (full-height, custom-scroll, sidebar-transition), `<body>` opening + `<div id="app">` + `</body></html>` |
-| **HEADER**         |
-| 2                  | `header`            | `feat(header): add top bar with logo and app title`                | `<header>` with hamburger button (`#menuToggle`), PDF icon, "PdfEditor" title, `#fileStatus` span                                                                           |
-| **SIDEBAR — HTML** |
-| 3                  | `sidebar-shell`     | `feat(sidebar): add sidebar shell with mobile header and overlay`  | `<aside id="sidebar">`: mobile header ("File PDF" + `#sidebarClose`), empty placeholder, plus `#sidebarOverlay` div                                                         |
-| 4                  | `sidebar-upload`    | `feat(sidebar): add upload area with drag-and-drop HTML`           | Upload `<label>` inside sidebar: dashed border, cloud icon, "Carica PDF", "massimo 50 MB", hidden `#fileInput`                                                              |
-| 5                  | `sidebar-list`      | `feat(sidebar): add file list container with empty state`          | `<div id="pdfList">` with scroll, empty state paragraph ("Nessun PDF caricato")                                                                                             |
-| **SIDEBAR — JS**   |
-| 6                  | `js-upload`         | `feat(js): add file upload with ArrayBuffer reader and validation` | `fileInput` change listener, `FileReader` → ArrayBuffer, type/size validation (50MB), push to `pdfFiles[]`, auto-load first file                                            |
-| 7                  | `js-list-render`    | `feat(js): add file list render with click-to-select`              | `renderFileList()`: sort by date, per-file items with name/size, active highlight, click to `loadPdfFromFile()`                                                             |
-| 8                  | `js-rename`         | `feat(js): add file rename with modal dialog`                      | Rename modal HTML, `renameModal` open/close, `#renameInput` + confirm, `sanitizeName()`, file.name update                                                                   |
-| 9                  | `js-delete`         | `feat(js): add file delete with confirmation dialog`               | `deleteFile()`: confirm prompt, splice from array, clean viewer if active, `renderFileList()`                                                                               |
-| 10                 | `js-download`       | `feat(js): add file download via Blob URL`                         | `#downloadBtn` listener: `Blob` from ArrayBuffer, `URL.createObjectURL`, trigger download, revoke                                                                           |
-| 11                 | `js-sidebar-toggle` | `feat(js): add sidebar toggle for mobile (hamburger + overlay)`    | `toggleSidebar()`, `#menuToggle` click, `#sidebarClose` click, `#sidebarOverlay` click                                                                                      |
-| **TOOLBAR — HTML** |
-| 12                 | `toolbar-nav`       | `feat(toolbar): add page navigation controls HTML`                 | `#firstPage`, `#prevPage`, `#pageInput`, `#pageCount`, `#nextPage`, `#lastPage` buttons with title attributes                                                               |
-| 13                 | `toolbar-actions`   | `feat(toolbar): add zoom controls and action buttons HTML`         | `#zoomOut`, `#zoomLevel`, `#zoomIn`, `#fitWidth`, `#annotateBtn`, `#editBtn`, `#convertBtn`, `#downloadBtn`                                                                 |
-| **TOOLBAR — JS**   |
-| 14                 | `js-navigation`     | `feat(js): add page navigation (buttons + keyboard)`               | Click listeners for first/prev/next/last, `pageInput` change, keyboard arrows left/right and pgup/pgdn                                                                      |
-| 15                 | `js-zoom`           | `feat(js): add zoom in/out and fit-width logic`                    | `SCALE_STEP/MIN_SCALE/MAX_SCALE`, zoom +/- click, fit-width calculation, zoom level display update                                                                          |
-| **VIEWER — HTML**  |
-| 16                 | `viewer-canvas`     | `feat(viewer): add PDF.js canvas element`                          | `<canvas id="pdfCanvas">` inside viewer container, hidden by default                                                                                                        |
-| **VIEWER — JS**    |
-| 17                 | `js-pdfjs-init`     | `feat(js): initialize PDF.js and render page on load`              | `pdfjsLib.GlobalWorkerOptions.workerSrc`, `loadPdf()` → `getDocument`, `renderPage()` with `page.render()`, `updateButtons()` state toggle                                  |
-| **MODALS — HTML**  |
-| 18                 | `modal-convert`     | `feat(modal): add conversion modal with format options HTML`       | Conversion modal: 4 format cards (DOCX/XLSX/PNG/JPG), close button, status line, overlay                                                                                    |
-| **MODALS — JS**    |
-| 19                 | `js-convert-modal`  | `feat(js): add conversion modal open/close and format selection`   | `#convertBtn` open, `#closeConvertModal` close, click-outside close, format selection with simulated conversion (placeholder alert)                                         |
-| **FINAL TOUCHES**  |
-| 20                 | `style-responsive`  | `style(ui): add mobile responsive refinements and tooltips`        | Tooltip CSS (`.tooltip-btn`), drag-and-drop events on upload label, any remaining responsive polish                                                                         |
+### 5. Commit granularity — Phase 1 onward
 
-> ⚠️ The AI agent MUST follow the table above in order, section by section. Each row = one commit. Do NOT skip or merge any row.
+For subsequent phases, the AI agent MUST follow these guidelines:
+
+- **One commit per atomic API endpoint** (FastAPI) — e.g., one commit for `POST /upload`, one for `POST /merge`, one for `POST /split`
+- **One commit per component** (Next.js/React) — e.g., one commit for Sidebar component, one for Toolbar component
+- **One commit per integration step** (Tauri/React Native) — e.g., one commit for Tauri setup, one for sidecar config
+- After each commit, stop, briefly describe what was done, and wait before proceeding
+
+> ⚠️ **Rule for the AI agent:** This rule applies to ALL phases, not just the prototype. One atomic functionality = one commit. Always.
+
+### 6. Testing strategy
+
+- **Every atomic function MUST have a corresponding test** before being considered complete
+- Backend (Python/FastAPI): use **pytest** with `httpx.AsyncClient` for async endpoint testing
+- Frontend (React/Next.js): use **vitest** for business logic/hooks, **Playwright** for E2E
+- Before advancing from one phase to the next: **ALL tests must be re-run and pass**
+- If any test fails, the phase is NOT complete — fix the issue first
+
+### 7. Development order (enforced)
+
+1. **FastAPI backend first** — all endpoints with tests (pytest)
+2. **Next.js frontend** — components + pages with tests (vitest)
+3. **Tauri wrapper** — desktop app, manual testing by user
+4. Only after user approval → Web deploy → Cloud sync → Mobile app
+
+> The AI agent MUST NOT start a phase until the previous phase has been approved by the user.
 
 ---
 
