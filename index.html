@@ -8,8 +8,8 @@
     <!-- TailwindCSS via CDN -->
     <script src="https://cdn.tailwindcss.com">
     </script>
-    <!-- PDF.js (Mozilla) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.js">
+    <!-- PDF.js (Mozilla) v3 — stable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js">
     </script>
     <!-- Font Awesome 6 (icone) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
@@ -448,7 +448,7 @@
             document.getElementById('sidebarOverlay').addEventListener('click', function() { toggleSidebar(false); });
 
             // ---- PDF.js ----
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.js';
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
             let pdfDoc = null;
             let currentPage = 1;
