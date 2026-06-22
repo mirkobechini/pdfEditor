@@ -162,6 +162,7 @@
                             <p class="text-lg">Carica un PDF per iniziare</p>
                             <p class="text-sm mt-1">Usa il menu laterale per caricare un file</p>
                         </div>
+                        <canvas id="pdfCanvas" class="hidden shadow-xl bg-white"></canvas>
                     </div>
                 </div>
             </main>
@@ -372,7 +373,7 @@
                 activePdfId = id;
                 renderFileList();
                 document.getElementById('fileStatus').textContent = file.name;
-                // PDF.js loading will be added in a later commit
+                loadPdfInViewer(file.data);
             }
 
             // ---- Sidebar toggle (mobile) ----
