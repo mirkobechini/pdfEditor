@@ -2,124 +2,132 @@
 
 ## Obiettivo
 
-Applicazione web per la modifica e gestione di file PDF, con funzionalità di visualizzazione, annotazione e conversione.
+Applicazione **cross-platform** per la modifica e gestione di file PDF, con funzionalità di visualizzazione, annotazione, conversione, modifica testo e manipolazione avanzata. Desktop (Tauri), Web (Next.js), Mobile (React Native).
 
 ## Stack scelto
 
-- Frontend: Inertia.js, TailwindCSS
-- Backend: Laravel, PHP, MySQL
-- Librerie: DomPDF, TCPDF, FPDI, PHPWord, PhpSpreadsheet
-- Viewer PDF: PDF.js (Mozilla) — open source
-<<<<<<< HEAD
+| Livello | Tecnologia | Ruolo |
+|---------|-----------|-------|
+| **Frontend** | React + TailwindCSS | UI condivisa tra web, desktop e mobile |
+| **Web app** | Next.js | Versione browser, PWA installabile |
+| **Desktop** | Tauri (Rust) | App nativa leggera (~5MB), stessa web UI |
+| **Mobile** | React Native | App nativa iOS/Android, logica React condivisa |
+| **Backend** | FastAPI (Python) | Auth, elaborazione PDF, cloud sync |
+| **PDF modifica testo** | PyMuPDF (fitz) | Modifica testo, estrazione, manipolazione |
+| **PDF viewer** | PDF.js (Mozilla) | Render lato client |
+| **Database offline** | SQLite | Stessa struttura del cloud, sync bidirezionale |
+| **Database cloud** | PostgreSQL | Produzione, sincronizzato con SQLite locale |
 
 ## Roadmap
-1. **Prototipo (Fase 0)** — Singola pagina HTML statica con mockup funzionale (PDF.js per viewer, upload lato client, interfaccia completa). Serve a validare UX e funzionalità prima di scrivere backend.
-2. **Versione completa** — Laravel + Inertia.js con backend reale per upload, conversione ed export.
-=======
->>>>>>> feature/1-prototype-ui
 
-## Roadmap
+1. **Prototipo (Fase 0)** — Singola pagina HTML statica ✅ Completato
+2. **Backend API (Fase 1)** — FastAPI + PyMuPDF per elaborazione PDF, auth, upload/download
+3. **Frontend React (Fase 2)** — Next.js + TailwindCSS, UI completa, PWA
+4. **Desktop app (Fase 3)** — Tauri wrapper, funzionamento offline con SQLite
+5. **Cloud sync (Fase 4)** — Sincronizzazione bidirezionale tra SQLite locale e PostgreSQL cloud
+6. **Mobile app (Fase 5)** — React Native, stesse API, SSO Google
 
-1. **Prototipo (Fase 0)** — Singola pagina HTML statica con mockup funzionale (PDF.js per viewer, upload lato client, interfaccia completa). Serve a validare UX e funzionalità prima di scrivere backend.
-2. **Versione completa** — Laravel + Inertia.js con backend reale per upload, conversione ed export.
+## Architettura
 
-## Componenti principali
+```
+┌──────────────────────────────────────────────────────┐
+│                  CLIENT                               │
+│  ┌──────────────┐  ┌──────────┐  ┌───────────────┐  │
+│  │  NEXT.JS     │  │  TAURI   │  │ REACT NATIVE  │  │
+│  │  Web / PWA   │  │ Desktop  │  │ Mobile        │  │
+│  │  React+Tailw │  │ ~5MB     │  │ iOS/Android   │  │
+│  └──────┬───────┘  └────┬─────┘  └───────┬───────┘  │
+│         └───────┬───────┴────────┬────────┘         │
+│                 │          REST/JSON (+ JWT)         │
+└─────────────────┼───────────────────────────────────┘
+                  │
+┌─────────────────┼───────────────────────────────────┐
+│           BACKEND (FASTAPI)                          │
+│  ┌──────────────┴────────────────────────────────┐  │
+│  │           FASTAPI (Python)                     │  │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────────┐  │  │
+│  │  │ Auth     │ │ PDF proc │ │ Cloud sync   │  │  │
+│  │  │ JWT+OAuth│ │ PyMuPDF  │ │ PostgreSQL/S3│  │  │
+│  │  └──────────┘ └──────────┘ └──────────────┘  │  │
+│  └───────────────────────────────────────────────┘  │
+│                                                      │
+│  OFFLINE: SQLite + file system locale                │
+│  CLOUD:   PostgreSQL + S3 (stessa struttura)         │
+└──────────────────────────────────────────────────────┘
+```
 
-- Visualizzazione dei file PDF
-- Barra laterale con elenco dei PDF caricati e opzioni di gestione (elimina, rinomina, ecc.)
-- barra degli strumenti in alto con opzioni per annotare, modificare e convertire i PDF
-- Area di lavoro centrale per visualizzare il PDF selezionato
-- Conversione dei PDF in altri formati (Word, Excel, immagini) e viceversa
+## Feature roadmap (ordine di implementazione)
 
-# Bonus
+### Fase 1 — Backend API (FastAPI)
+- [ ] Setup FastAPI + SQLite + PostgreSQL
+- [ ] API upload/download file PDF
+- [ ] API merge/split PDF (PyMuPDF)
+- [ ] API riordino e rimozione pagine (PyMuPDF)
+- [ ] API **modifica testo** nei PDF (PyMuPDF)
+- [ ] API **modifica metadati** PDF
+- [ ] API conversione PDF ↔ DOCX/XLSX/PNG/JPG
+- [ ] Autenticazione JWT (email/password)
+- [ ] SSO con Google
+- [ ] Cloud sync (SQLite ↔ PostgreSQL)
 
-- Unione e divisione di file PDF
-- Modifica del contenuto dei PDF (aggiunta/rimozione di pagine, modifica del testo, modifica ordine delle pagine) (volendo drag and drop)
+### Fase 2 — UI principale (Next.js + TailwindCSS)
+- [ ] Setup Next.js + React + TailwindCSS
+- [ ] Porting prototipo da HTML statico a componenti React
+- [ ] Sidebar con elenco PDF (upload, elimina, rinomina)
+- [ ] Toolbar navigazione + zoom + azioni
+- [ ] Viewer PDF.js integrato
+- [ ] Dark mode toggle nell'header
+- [ ] Design responsive completo
 
-## Todo list (funzionalità da implementare)
+### Fase 3 — Desktop app (Tauri)
+- [ ] Setup Tauri + Next.js build integrata
+- [ ] Avvio FastAPI locale come sidecar
+- [ ] SQLite locale per dati offline
+- [ ] Salvataggio file su file system
+- [ ] Installer per Windows/macOS/Linux
 
-### Fase 1 — UI principale
-<<<<<<< HEAD
-=======
+### Fase 4 — Mobile app (React Native)
+- [ ] Setup React Native
+- [ ] Riutilizzo componenti React condivisi
+- [ ] Viewer PDF.js per mobile
+- [ ] SSO Google login
+- [ ] Store deployment (Google Play / Apple)
 
->>>>>>> feature/1-prototype-ui
-- [ ] Barra laterale con elenco PDF caricati (carica, elimina, rinomina)
-- [ ] Barra strumenti superiore (annotazione, modifica, conversione)
-- [ ] Area di lavoro centrale per visualizzare il PDF selezionato
-- [ ] Rendere l'interfaccia responsive (mobile-first)
+### Fase 5 — Cloud sync
+- [ ] Sync bidirezionale SQLite → PostgreSQL
+- [ ] Upload file su S3 (o equivalente)
+- [ ] Risoluzione conflitti
+- [ ] Modalità offline/online
 
-### Fase 2 — Caricamento e gestione PDF
+## Librerie chiave
 
-- [ ] Importazione file PDF (upload)
-- [ ] Elenco PDF con nome, dimensione, data
-- [ ] Eliminazione file PDF
-- [ ] Rinominare file PDF
-
-### Fase 3 — Visualizzazione PDF
-<<<<<<< HEAD
-=======
-
->>>>>>> feature/1-prototype-ui
-- [ ] Visualizzare il PDF selezionato nell'area di lavoro centrale
-- [ ] Navigazione pagine (precedente/successiva/salto a pagina)
-- [ ] Zoom avanti/indietro
-
-### Fase 4 — Conversione
-<<<<<<< HEAD
-=======
-
->>>>>>> feature/1-prototype-ui
-- [ ] Convertire PDF in Word (DOCX)
-- [ ] Convertire PDF in Excel (XLSX)
-- [ ] Convertire PDF in immagini (PNG/JPG)
-- [ ] Convertire da Word/Excel/immagini in PDF
-
-### Fase 5 — Esportazione
-<<<<<<< HEAD
-=======
-
->>>>>>> feature/1-prototype-ui
-- [ ] Scaricare PDF convertito in altro formato
-- [ ] Export in vari formati
-
-### Bonus (post-MVP)
-<<<<<<< HEAD
-=======
-
->>>>>>> feature/1-prototype-ui
-- [ ] Unione di più file PDF
-- [ ] Divisione di un PDF in più file
-- [ ] Aggiunta/rimozione pagine
-- [ ] Riordino pagine con drag & drop
-- [ ] Modifica testo esistente nel PDF
-<<<<<<< HEAD
-
-
+| Libreria | Scopo | Licenza |
+|----------|-------|---------|
+| **PDF.js** (Mozilla) | Viewer lato client | Apache 2.0 |
+| **PyMuPDF** (fitz) | Modifica testo, estrazione, manipolazione | AGPL / Commerciale |
+| **pdf-lib** | Merge/split/riordino (anche lato client) | MIT |
+| **python-docx** | PDF ↔ DOCX | MIT |
+| **openpyxl** | PDF ↔ XLSX | MIT |
+| **Pillow** | PDF ↔ immagini | Historical |
+| **Authlib** | SSO Google/Apple/Samsung | BSD |
+| **SQLAlchemy** | ORM Python | MIT |
 
 ## Vincoli
-=======
 
-## Vincoli
-
->>>>>>> feature/1-prototype-ui
 - I file uplodabili devono essere massimo 50MB
+- Desktop app leggera (< 50MB installer)
+- Funzionamento offline (desktop + mobile)
 - Deve essere responsive e funzionare su dispositivi mobili
-- NO autenticazione e gestione utenti
-- Deve supportare l'importazione e l'esportazione di file PDF
-- Deve essere compatibile con i principali browser web (Chrome, Firefox, Safari, Edge)
-- Non utilizzare servizi a pagamento per l'intero progetto, ma solo librerie open source o gratuite.
+- Supporto SSO: Google (primario), Apple/Samsung/Samsung (futuro)
+- Compatibile con Chrome, Firefox, Safari, Edge
+- Solo librerie open source o gratuite
+- Cloud save **opzionale** (offline-first)
 
 ## Output atteso
 
-- Solo una pagina HTML con la visualizzazione dei file PDF e le funzionalità principali implementate poi attendere un messaggio di conferma da parte dell'utente per una review.
-- Nel prototipo non implementare i componenti bonus, ma solo quelli principali.
-- Possibilità di visualizzare e modificare i file PDF
-- Possibilità di convertire i file PDF in altri formati
-- Compatibilità con i principali browser web
-- Non deve utilizzare librerie o servizi a pagamento per la gestione dei PDF, ma solo librerie open source o gratuite.
-
-### Sequenza commit prototipo (Fase 0)
-
-La sequenza esatta dei commit è definita in [`AGENT_FLOW.md`](AGENT_FLOW.md) — sezione **Commit granularity — Prototype (Phase 0)**.
-
-L'ordine di implementazione è **per sezione verticale**: sidebar intera (HTML + JS), poi toolbar, poi viewer, poi modali. Ogni commit = una funzionalità atomica (es. upload, rename, delete sono 3 commit separati, non uno solo).
+- Prototipo Fase 0 ✅ completato
+- Backend FastAPI con API REST per tutte le operazioni PDF
+- Frontend Next.js + TailwindCSS per browser (PWA)
+- App desktop Tauri (Windows, macOS, Linux)
+- App mobile React Native (iOS, Android)
+- Cloud sync opzionale con PostgresSQL + S3
