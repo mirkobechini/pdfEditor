@@ -162,6 +162,53 @@
                 fileInput.value = '';
             });
 
+            // ---- Render lista PDF ----
+            const pdfList = document.getElementById('pdfList');
+
+            function renderFileList() {
+                if (!pdfFiles.length) {
+                    pdfList.innerHTML = `
+                        <p class="text-sm text-slate-400 text-center py-8">
+                            <i class="fa-regular fa-file-lines text-3xl block mb-2"></i>
+                            Nessun PDF caricato
+                        </p>
+                    `;
+                    return;
+                }
+                let html = '<ul class="space-y-1">';
+                const sorted = [...pdfFiles].sort((a, b) => b.date - a.date);
+                for (const f of sorted) {
+                    const active = f.id === activePdfId;
+                    html += `
+                        <li class="flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-slate-100 transition ${active ? 'bg-blue-50 ring-1 ring-blue-200' : ''}"
+                            data-id="${f.id}">
+                            <i class="fa-solid fa-file-pdf text-red-400 shrink-0"></i>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-slate-700 truncate">${f.name}</p>
+                                <p class="text-xs text-slate-400">${formatSize(f.size)}</p>
+                            </div>
+                            <div class="flex gap-0.5 shrink-0">
+                                <button class="rename-btn p-1.5 rounded hover:bg-blue-100 text-slate-500 hover:text-blue-600" data-id="${f.id}" title="Rinomina">
+                                    <i class="fa-solid fa-pencil text-xs"></i>
+                                </button>
+                                <button class="delete-btn p-1.5 rounded hover:bg-red-100 text-slate-500 hover:text-red-600" data-id="${f.id}" title="Elimina">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            </div>
+                        </li>
+                    `;
+                }
+                html += '</ul>';
+                pdfList.innerHTML = html;
+
+                pdfList.querySelectorAll('li[data-id]').forEach(li => {
+                    li.addEventListener('click', function(e) {
+                        if (e.target.closest('.rename-btn') || e.target.closest('.delete-btn')) return;
+                        loadPdfFromFile(parseInt(this.dataset.id));
+                    });
+                });
+            }
+
             console.log('PdfEditor — JS upload pronto');
         })();
     </script>
