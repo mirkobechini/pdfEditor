@@ -120,6 +120,38 @@
                             <i class="fa-solid fa-angles-right text-xs"></i>
                         </button>
                     </div>
+
+                    <div class="w-px h-6 bg-slate-200 mx-1"></div>
+
+                    <!-- Zoom -->
+                    <div class="flex items-center gap-1 mr-2">
+                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600" id="zoomOut" title="Zoom -">
+                            <i class="fa-solid fa-minus text-xs"></i>
+                        </button>
+                        <span class="text-sm text-slate-600 w-12 text-center" id="zoomLevel">100%</span>
+                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600" id="zoomIn" title="Zoom +">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
+                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 ml-1" id="fitWidth" title="Adatta alla larghezza">
+                            <i class="fa-solid fa-expand text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div class="w-px h-6 bg-slate-200 mx-1"></div>
+
+                    <!-- Strumenti -->
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="annotateBtn" disabled title="Annota PDF">
+                        <i class="fa-solid fa-highlighter text-sm"></i>
+                    </button>
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="editBtn" disabled title="Modifica PDF">
+                        <i class="fa-solid fa-pen text-sm"></i>
+                    </button>
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="convertBtn" disabled title="Converti PDF">
+                        <i class="fa-solid fa-file-export text-sm"></i>
+                    </button>
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="downloadBtn" disabled title="Scarica">
+                        <i class="fa-solid fa-download text-sm"></i>
+                    </button>
                 </div>
 
                 <!-- VIEWER AREA -->
