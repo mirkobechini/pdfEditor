@@ -296,7 +296,33 @@
                 renderFileList();
             });
 
-            console.log('PdfEditor — JS upload pronto');
+            // ---- Carica PDF da file salvato ----
+            function loadPdfFromFile(id) {
+                const file = pdfFiles.find(f => f.id === id);
+                if (!file) return;
+                activePdfId = id;
+                renderFileList();
+                document.getElementById('fileStatus').textContent = file.name;
+                // PDF.js loading will be added in a later commit
+            }
+
+            // ---- Sidebar toggle (mobile) ----
+            function toggleSidebar(open) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (open) {
+                    sidebar.classList.remove('max-lg:-translate-x-full');
+                    overlay.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('max-lg:-translate-x-full');
+                    overlay.classList.add('hidden');
+                }
+            }
+            document.getElementById('menuToggle').addEventListener('click', function() { toggleSidebar(true); });
+            document.getElementById('sidebarClose').addEventListener('click', function() { toggleSidebar(false); });
+            document.getElementById('sidebarOverlay').addEventListener('click', function() { toggleSidebar(false); });
+
+            console.log('PdfEditor — Sidebar completa');
         })();
     </script>
 
