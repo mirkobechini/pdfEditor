@@ -187,6 +187,42 @@
         </div>
     </div>
 
+    <!-- MODAL CONVERSIONE -->
+    <div id="convertModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+                <h3 class="font-semibold text-slate-700">Converti PDF</h3>
+                <button id="closeConvertModal" class="p-1 hover:bg-slate-100 rounded text-slate-500">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-3">
+                <p class="text-sm text-slate-600">Scegli il formato di destinazione:</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition" data-format="docx">
+                        <i class="fa-regular fa-file-word text-3xl text-blue-600"></i>
+                        <span class="text-sm font-medium">Word (DOCX)</span>
+                    </button>
+                    <button class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition" data-format="xlsx">
+                        <i class="fa-regular fa-file-excel text-3xl text-green-600"></i>
+                        <span class="text-sm font-medium">Excel (XLSX)</span>
+                    </button>
+                    <button class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition" data-format="png">
+                        <i class="fa-regular fa-file-image text-3xl text-purple-600"></i>
+                        <span class="text-sm font-medium">Immagini (PNG)</span>
+                    </button>
+                    <button class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-yellow-400 hover:bg-yellow-50 transition" data-format="jpg">
+                        <i class="fa-regular fa-file-image text-3xl text-yellow-600"></i>
+                        <span class="text-sm font-medium">Immagini (JPG)</span>
+                    </button>
+                </div>
+                <p id="convertStatus" class="text-sm text-slate-500 text-center hidden">
+                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Conversione in corso...
+                </p>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================================
         // PDF EDITOR — PROTOTIPO CLIENT-SIDE
