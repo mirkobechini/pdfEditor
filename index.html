@@ -43,6 +43,25 @@
         .sidebar-transition {
             transition: transform 0.3s ease-in-out;
         }
+        /* Tooltip */
+        [title] {
+            position: relative;
+        }
+        [title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 50;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
