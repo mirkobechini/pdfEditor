@@ -6,14 +6,14 @@ This document outlines the development flow for the PDF Editor project, includin
 
 ## Branch Structure
 
-| Branch     | Convention                           | Description                                                    |
-| ---------- | ------------------------------------ | -------------------------------------------------------------- |
-| `main`     | —                                    | Stable codebase. Only the user merges here from `dev`.         |
-| `dev`      | —                                    | Permanent development branch. All phase branches merge here.   |
+| Branch     | Convention                           | Description                                                                                    |
+| ---------- | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `main`     | —                                    | Stable codebase. Only the user merges here from `dev`.                                         |
+| `dev`      | —                                    | Permanent development branch. All phase branches merge here.                                   |
 | `phase/`   | `<phase-name>`                       | One branch per **phase** (e.g. `phase/1a-fastapi-backend`). Contains all issues of that phase. |
-| `feature/` | `<issue-number>-<short-description>` | Legacy — used only for single-issue branches (prototype Phase 0). |
-| `hotfix/`  | `<issue-number>-<short-description>` | Urgent bug fixes (same flow as feature).                       |
-| `chore/`   | `<issue-number>-<short-description>` | Non-feature tasks (refactoring, documentation, etc.).          |
+| `feature/` | `<issue-number>-<short-description>` | Legacy — used only for single-issue branches (prototype Phase 0).                              |
+| `hotfix/`  | `<issue-number>-<short-description>` | Urgent bug fixes (same flow as feature).                                                       |
+| `chore/`   | `<issue-number>-<short-description>` | Non-feature tasks (refactoring, documentation, etc.).                                          |
 
 ---
 
@@ -70,11 +70,11 @@ git checkout -b phase/<phase-name>
 
 Examples:
 
-| Branch | Issues | What it contains |
-|--------|--------|------------------|
+| Branch                     | Issues                         | What it contains          |
+| -------------------------- | ------------------------------ | ------------------------- |
 | `phase/1a-fastapi-backend` | #2, #3, #4, #5, #6, #7, #8, #9 | All backend API endpoints |
-| `phase/1b-nextjs-frontend` | #10, #11, ... | All React components |
-| `phase/1c-tauri-desktop` | ... | Tauri wrappering |
+| `phase/1b-nextjs-frontend` | #10, #11, ...                  | All React components      |
+| `phase/1c-tauri-desktop`   | ...                            | Tauri wrappering          |
 
 ### 3. Per-feature workflow inside a phase branch
 
