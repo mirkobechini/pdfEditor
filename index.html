@@ -48,6 +48,21 @@
 <body class="bg-slate-100 text-slate-800">
 
     <div id="app">
+        <!-- TOP BAR -->
+        <header class="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0 shadow-sm">
+            <div class="flex items-center gap-3">
+                <button id="menuToggle" class="lg:hidden p-1.5 rounded hover:bg-slate-100 text-slate-600" title="Menu">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-file-pdf text-red-500 text-xl"></i>
+                    <h1 class="text-lg font-semibold text-slate-700 hidden sm:block">PdfEditor</h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-500">
+                <span id="fileStatus" class="hidden sm:inline">Nessun file caricato</span>
+            </div>
+        </header>
     </div>
 
     <script>
