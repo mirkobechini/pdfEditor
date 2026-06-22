@@ -509,6 +509,35 @@
                 }
             });
 
+            // ---- Zoom ----
+            const SCALE_STEP = 0.25;
+            const MIN_SCALE = 0.5;
+            const MAX_SCALE = 3.0;
+            const zoomLevel = document.getElementById('zoomLevel');
+
+            document.getElementById('zoomIn').addEventListener('click', function() {
+                currentScale = Math.min(MAX_SCALE, currentScale + SCALE_STEP);
+                zoomLevel.textContent = Math.round(currentScale * 100) + '%';
+                if (pdfDoc) renderPage();
+            });
+            document.getElementById('zoomOut').addEventListener('click', function() {
+                currentScale = Math.max(MIN_SCALE, currentScale - SCALE_STEP);
+                zoomLevel.textContent = Math.round(currentScale * 100) + '%';
+                if (pdfDoc) renderPage();
+            });
+            document.getElementById('fitWidth').addEventListener('click', function() {
+                if (!pdfDoc) return;
+                const ws = document.getElementById('workspace');
+                const containerWidth = ws.clientWidth - 32;
+                pdfDoc.getPage(currentPage).then(function(page) {
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    currentScale = containerWidth / viewport.width;
+                    currentScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, currentScale));
+                    zoomLevel.textContent = Math.round(currentScale * 100) + '%';
+                    renderPage();
+                });
+            });
+
             console.log('PdfEditor — Sidebar completa');
         })();
     </script>
