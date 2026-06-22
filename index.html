@@ -13,6 +13,9 @@
     </script>
     <!-- Font Awesome 6 (icone) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <!-- pdf-lib per manipolazione PDF lato client -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js">
+    </script>
 
     <style>
         /* Full-height layout */
@@ -170,6 +173,22 @@
                     </button>
                     <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="downloadBtn" disabled title="Scarica">
                         <i class="fa-solid fa-download text-sm"></i>
+                    </button>
+
+                    <div class="w-px h-6 bg-slate-200 mx-1"></div>
+
+                    <!-- Bonus: manipolazione pagine -->
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="mergeBtn" disabled title="Unisci PDF">
+                        <i class="fa-solid fa-object-group text-sm"></i>
+                    </button>
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="splitBtn" disabled title="Dividi PDF">
+                        <i class="fa-solid fa-object-ungroup text-sm"></i>
+                    </button>
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="reorderBtn" disabled title="Riordina pagine">
+                        <i class="fa-solid fa-arrows-alt text-sm"></i>
+                    </button>
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="addRemoveBtn" disabled title="Aggiungi/Rimuovi pagine">
+                        <i class="fa-solid fa-layer-group text-sm"></i>
                     </button>
                 </div>
 
@@ -517,6 +536,10 @@
                 document.getElementById('editBtn').disabled = disabled;
                 document.getElementById('convertBtn').disabled = disabled;
                 document.getElementById('downloadBtn').disabled = disabled;
+                document.getElementById('mergeBtn').disabled = disabled;
+                document.getElementById('splitBtn').disabled = disabled;
+                document.getElementById('reorderBtn').disabled = disabled;
+                document.getElementById('addRemoveBtn').disabled = disabled;
             }
 
             // ---- Navigazione bottoni ----
