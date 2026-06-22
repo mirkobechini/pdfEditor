@@ -972,6 +972,91 @@
                 return pages.sort(function(a, b) { return a - b; });
             }
 
+            // ---- RIORDINO PAGINE ----
+            const reorderModal = document.getElementById('reorderModal');
+            let reorderPages = [];
+
+            document.getElementById('reorderBtn').addEventListener('click', function() {
+                if (!pdfDoc || !activePdfId) return;
+                reorderPages = [];
+                for (let i = 1; i <= pdfDoc.numPages; i++) reorderPages.push(i);
+                renderReorderList();
+                document.getElementById('reorderStatus').classList.add('hidden');
+                document.getElementById('reorderConfirm').disabled = false;
+                reorderModal.classList.remove('hidden');
+                reorderModal.classList.add('flex');
+            });
+            document.getElementById('closeReorderModal').addEventListener('click', function() {
+                reorderModal.classList.add('hidden');
+                reorderModal.classList.remove('flex');
+            });
+            reorderModal.addEventListener('click', function(e) {
+                if (e.target === this) { reorderModal.classList.add('hidden'); reorderModal.classList.remove('flex'); }
+            });
+
+            function renderReorderList() {
+                const list = document.getElementById('reorderPageList');
+                let html = '';
+                reorderPages.forEach(function(p, i) {
+                    html += '<li class="flex items-center justify-between bg-slate-50 rounded px-3 py-2 border border-slate-100" data-index="' + i + '">' +
+                        '<span class="text-sm font-medium">Pagina ' + p + '</span>' +
+                        '<div class="flex gap-1">' +
+                            (i > 0 ? '<button class="move-up p-1 rounded hover:bg-blue-100 text-blue-600 text-xs" title="Sposta su"><i class="fa-solid fa-chevron-up"></i></button>' : '') +
+                            (i < reorderPages.length - 1 ? '<button class="move-down p-1 rounded hover:bg-blue-100 text-blue-600 text-xs" title="Sposta giù"><i class="fa-solid fa-chevron-down"></i></button>' : '') +
+                        '</div>' +
+                    '</li>';
+                });
+                list.innerHTML = html;
+
+                list.querySelectorAll('.move-up').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        const idx = parseInt(this.closest('li').dataset.index);
+                        if (idx > 0) {
+                            const tmp = reorderPages[idx];
+                            reorderPages[idx] = reorderPages[idx - 1];
+                            reorderPages[idx - 1] = tmp;
+                            renderReorderList();
+                        }
+                    });
+                });
+                list.querySelectorAll('.move-down').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        const idx = parseInt(this.closest('li').dataset.index);
+                        if (idx < reorderPages.length - 1) {
+                            const tmp = reorderPages[idx];
+                            reorderPages[idx] = reorderPages[idx + 1];
+                            reorderPages[idx + 1] = tmp;
+                            renderReorderList();
+                        }
+                    });
+                });
+            }
+
+            document.getElementById('reorderConfirm').addEventListener('click', async function() {
+                if (!pdfDoc || !activePdfId) return;
+                const btn = this;
+                btn.disabled = true;
+                document.getElementById('reorderStatus').classList.remove('hidden');
+                try {
+                    const file = pdfFiles.find(f => f.id === activePdfId);
+                    const srcDoc = await PDFLib.PDFDocument.load(file.data);
+                    const newDoc = await PDFLib.PDFDocument.create();
+                    const pageIndices = reorderPages.map(function(p) { return p - 1; });
+                    const copied = await newDoc.copyPages(srcDoc, pageIndices);
+                    copied.forEach(function(p) { newDoc.addPage(p); });
+                    const bytes = await newDoc.save();
+                    downloadPdf(bytes, sanitizeName(file.name) + '_riordinato.pdf');
+                    document.getElementById('reorderStatus').classList.add('hidden');
+                    reorderModal.classList.add('hidden');
+                    reorderModal.classList.remove('flex');
+                } catch (err) {
+                    console.error(err);
+                    alert('Errore durante il riordino: ' + err.message);
+                    document.getElementById('reorderStatus').classList.add('hidden');
+                }
+                btn.disabled = false;
+            });
+
             console.log('PdfEditor — Prototipo completo');
         })();
     </script>
