@@ -278,6 +278,24 @@
                 renameModal.classList.remove('flex');
             });
 
+            // ---- Elimina file ----
+            pdfList.addEventListener('click', function(e) {
+                const btn = e.target.closest('.delete-btn');
+                if (!btn) return;
+                e.stopPropagation();
+                const id = parseInt(btn.dataset.id);
+                if (!confirm('Eliminare questo file PDF?')) return;
+                const idx = pdfFiles.findIndex(f => f.id === id);
+                if (idx === -1) return;
+                pdfFiles.splice(idx, 1);
+                if (activePdfId === id) {
+                    activePdfId = null;
+                    const fileStatus = document.getElementById('fileStatus');
+                    fileStatus.textContent = 'Nessun file caricato';
+                }
+                renderFileList();
+            });
+
             console.log('PdfEditor — JS upload pronto');
         })();
     </script>
