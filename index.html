@@ -96,6 +96,43 @@
 
             <!-- Overlay mobile -->
             <div id="sidebarOverlay" class="fixed inset-0 bg-black/30 z-30 hidden lg:hidden"></div>
+
+            <!-- WORKSPACE -->
+            <main class="flex-1 flex flex-col overflow-hidden">
+                <!-- TOOLBAR -->
+                <div class="bg-white border-b border-slate-200 px-3 py-1.5 flex items-center gap-1 shrink-0 overflow-x-auto custom-scroll">
+                    <!-- Navigazione pagine -->
+                    <div class="flex items-center gap-1 mr-2">
+                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed" id="firstPage" title="Prima pagina">
+                            <i class="fa-solid fa-angles-left text-xs"></i>
+                        </button>
+                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed" id="prevPage" title="Pagina precedente">
+                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                        </button>
+                        <span class="text-sm text-slate-600 mx-1 whitespace-nowrap">
+                            <input type="number" id="pageInput" value="1" min="1" class="w-10 text-center border border-slate-300 rounded text-sm py-0.5" />
+                            <span id="pageCount">/ 0</span>
+                        </span>
+                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed" id="nextPage" title="Pagina successiva">
+                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                        </button>
+                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed" id="lastPage" title="Ultima pagina">
+                            <i class="fa-solid fa-angles-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- VIEWER AREA -->
+                <div class="flex-1 bg-slate-200 overflow-auto custom-scroll relative" id="workspace">
+                    <div class="min-h-full flex items-center justify-center p-4" id="viewerContainer">
+                        <div class="text-center text-slate-400">
+                            <i class="fa-regular fa-file-pdf text-6xl block mb-4"></i>
+                            <p class="text-lg">Carica un PDF per iniziare</p>
+                            <p class="text-sm mt-1">Usa il menu laterale per caricare un file</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
