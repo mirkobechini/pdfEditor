@@ -162,6 +162,55 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - Prima di passare da una fase all'altra, **tutti i test devono essere eseguiti e passare**
 - Se un test fallisce, la fase non è completa
 
+## Strategia di sicurezza (trasversale, obbligatoria in ogni fase)
+
+Ogni funzione/feature implementata **deve** includere i seguenti controlli di sicurezza. Non sono opzionali né rimandabili.
+
+### Sicurezza upload file
+
+| Controllo | Descrizione |
+|-----------|-------------|
+| **Magic bytes** | Validare il reale contenuto del file (non fidarsi del MIME dichiarato né dell'estensione) |
+| **Sanificazione nome file** | Salvare i file con UUID + estensione originale. Mai usare il nome utente come path |
+| **Limite dimensione** | Bloccare file > 50MB a ogni livello (client + server) |
+| **Struttura PDF sicura** | Analizzare il PDF con PyMuPDF per rilevare bombe (oggetti eccessivi, compressione infinita) |
+| **Timeout processing** | Ogni operazione su PDF deve avere un timeout massimo (30s default) |
+
+### Sicurezza API
+
+| Controllo | Descrizione |
+|-----------|-------------|
+| **Validazione input** | Pydantic schema per ogni endpoint. Mai fidarsi dei parametri raw |
+| **Rate limiting** | Proteggere endpoint sensibili (upload, auth) con rate limit |
+| **Autenticazione JWT** | Token scadenza breve + refresh token. Password con hash bcrypt/argon2 |
+| **Path traversal** | Bloccare nomi file che contengono `../`, `..\\`, o path assoluti |
+| **Content-Type** | Forzare `Content-Type: application/json` su tutte le risposte API |
+
+### Sicurezza frontend
+
+| Controllo | Descrizione |
+|-----------|-------------|
+| **CSP headers** | Content Security Policy per prevenire XSS |
+| **Sanitizzazione output** | Non fidarsi del contenuto PDF per il rendering (PDF.js è safe, ma attenzione ai metadati mostrati in UI) |
+| **Dipendencies** | Mantenere librerie aggiornate (Dependabot su GitHub) |
+
+### Sicurezza desktop (Tauri)
+
+| Controllo | Descrizione |
+|-----------|-------------|
+| **Sidecar isolato** | FastAPI eseguito con permessi ridotti, accesso limitato al file system |
+| **Timeout RPC** | Ogni chiamata al sidecar ha timeout massimo |
+| **No eval** | Mai eseguire codice dinamico derivato da input utente |
+
+### Checklist di sicurezza per ogni commit
+
+Prima di considerare completata una funzione, verificare:
+- [ ] I file caricati superano i controlli magic bytes?
+- [ ] I nomi file sono sanitizzati con UUID?
+- [ ] C'è un timeout su operazioni lunghe?
+- [ ] L'input è validato con Pydantic schema?
+- [ ] I test coprono anche i casi edge di sicurezza (file malformati, path traversal)?
+
 ## Librerie chiave
 
 | Libreria             | Scopo                                     | Licenza                        |
