@@ -4,6 +4,18 @@
 
 Applicazione **cross-platform** per la modifica e gestione di file PDF, con funzionalità di visualizzazione, annotazione, conversione, modifica testo e manipolazione avanzata. Desktop (Tauri), Web (Next.js), Mobile (React Native).
 
+## Stato avanzamento
+
+_Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `dev`)._
+
+- [x] **Fase 0** — Prototipo HTML statico ✅
+- [ ] **Fase 1a** — Backend FastAPI (issue #2)
+- [ ] **Fase 1b** — Frontend Next.js (issue #3)
+- [ ] **Fase 1c** — Desktop Tauri (issue #4)
+- [ ] **Fase 2** — Web app su cloud (issue #5)
+- [ ] **Fase 3** — Cloud sync (issue #6)
+- [ ] **Fase 4** — Mobile app React Native (issue #7)
+
 ## Stack scelto
 
 | Livello                | Tecnologia             | Ruolo                                          |
@@ -168,43 +180,44 @@ Ogni funzione/feature implementata **deve** includere i seguenti controlli di si
 
 ### Sicurezza upload file
 
-| Controllo | Descrizione |
-|-----------|-------------|
-| **Magic bytes** | Validare il reale contenuto del file (non fidarsi del MIME dichiarato né dell'estensione) |
-| **Sanificazione nome file** | Salvare i file con UUID + estensione originale. Mai usare il nome utente come path |
-| **Limite dimensione** | Bloccare file > 50MB a ogni livello (client + server) |
-| **Struttura PDF sicura** | Analizzare il PDF con PyMuPDF per rilevare bombe (oggetti eccessivi, compressione infinita) |
-| **Timeout processing** | Ogni operazione su PDF deve avere un timeout massimo (30s default) |
+| Controllo                   | Descrizione                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| **Magic bytes**             | Validare il reale contenuto del file (non fidarsi del MIME dichiarato né dell'estensione)   |
+| **Sanificazione nome file** | Salvare i file con UUID + estensione originale. Mai usare il nome utente come path          |
+| **Limite dimensione**       | Bloccare file > 50MB a ogni livello (client + server)                                       |
+| **Struttura PDF sicura**    | Analizzare il PDF con PyMuPDF per rilevare bombe (oggetti eccessivi, compressione infinita) |
+| **Timeout processing**      | Ogni operazione su PDF deve avere un timeout massimo (30s default)                          |
 
 ### Sicurezza API
 
-| Controllo | Descrizione |
-|-----------|-------------|
-| **Validazione input** | Pydantic schema per ogni endpoint. Mai fidarsi dei parametri raw |
-| **Rate limiting** | Proteggere endpoint sensibili (upload, auth) con rate limit |
+| Controllo              | Descrizione                                                           |
+| ---------------------- | --------------------------------------------------------------------- |
+| **Validazione input**  | Pydantic schema per ogni endpoint. Mai fidarsi dei parametri raw      |
+| **Rate limiting**      | Proteggere endpoint sensibili (upload, auth) con rate limit           |
 | **Autenticazione JWT** | Token scadenza breve + refresh token. Password con hash bcrypt/argon2 |
-| **Path traversal** | Bloccare nomi file che contengono `../`, `..\\`, o path assoluti |
-| **Content-Type** | Forzare `Content-Type: application/json` su tutte le risposte API |
+| **Path traversal**     | Bloccare nomi file che contengono `../`, `..\\`, o path assoluti      |
+| **Content-Type**       | Forzare `Content-Type: application/json` su tutte le risposte API     |
 
 ### Sicurezza frontend
 
-| Controllo | Descrizione |
-|-----------|-------------|
-| **CSP headers** | Content Security Policy per prevenire XSS |
+| Controllo                 | Descrizione                                                                                              |
+| ------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **CSP headers**           | Content Security Policy per prevenire XSS                                                                |
 | **Sanitizzazione output** | Non fidarsi del contenuto PDF per il rendering (PDF.js è safe, ma attenzione ai metadati mostrati in UI) |
-| **Dipendencies** | Mantenere librerie aggiornate (Dependabot su GitHub) |
+| **Dipendencies**          | Mantenere librerie aggiornate (Dependabot su GitHub)                                                     |
 
 ### Sicurezza desktop (Tauri)
 
-| Controllo | Descrizione |
-|-----------|-------------|
+| Controllo           | Descrizione                                                            |
+| ------------------- | ---------------------------------------------------------------------- |
 | **Sidecar isolato** | FastAPI eseguito con permessi ridotti, accesso limitato al file system |
-| **Timeout RPC** | Ogni chiamata al sidecar ha timeout massimo |
-| **No eval** | Mai eseguire codice dinamico derivato da input utente |
+| **Timeout RPC**     | Ogni chiamata al sidecar ha timeout massimo                            |
+| **No eval**         | Mai eseguire codice dinamico derivato da input utente                  |
 
 ### Checklist di sicurezza per ogni commit
 
 Prima di considerare completata una funzione, verificare:
+
 - [ ] I file caricati superano i controlli magic bytes?
 - [ ] I nomi file sono sanitizzati con UUID?
 - [ ] C'è un timeout su operazioni lunghe?
