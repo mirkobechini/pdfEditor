@@ -99,6 +99,24 @@
         </div>
     </div>
 
+    <!-- MODAL RINOMINA -->
+    <div id="renameModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+                <h3 class="font-semibold text-slate-700">Rinomina file</h3>
+                <button id="closeRenameModal" class="p-1 hover:bg-slate-100 rounded text-slate-500">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-3">
+                <input type="text" id="renameInput" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none" />
+                <button id="renameConfirm" class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition">
+                    Rinomina
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================================
         // PDF EDITOR — PROTOTIPO CLIENT-SIDE
