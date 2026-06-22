@@ -1057,6 +1057,62 @@
                 btn.disabled = false;
             });
 
+            // ---- RIMUOVI PAGINE ----
+            document.getElementById('addRemoveBtn').addEventListener('click', function() {
+                if (!pdfDoc || !activePdfId) return;
+                document.getElementById('arPageCount').textContent = pdfDoc.numPages;
+                document.getElementById('removePagesInput').value = '';
+                document.getElementById('addRemoveStatus').classList.add('hidden');
+                document.getElementById('removePagesConfirm').disabled = false;
+                document.getElementById('addRemoveModal').classList.remove('hidden');
+                document.getElementById('addRemoveModal').classList.add('flex');
+            });
+            document.getElementById('closeAddRemoveModal').addEventListener('click', function() {
+                document.getElementById('addRemoveModal').classList.add('hidden');
+                document.getElementById('addRemoveModal').classList.remove('flex');
+            });
+            document.getElementById('addRemoveModal').addEventListener('click', function(e) {
+                if (e.target === this) { this.classList.add('hidden'); this.classList.remove('flex'); }
+            });
+
+            document.getElementById('removePagesConfirm').addEventListener('click', async function() {
+                if (!pdfDoc || !activePdfId) return;
+                const btn = this;
+                btn.disabled = true;
+                document.getElementById('addRemoveStatus').classList.remove('hidden');
+                try {
+                    const file = pdfFiles.find(f => f.id === activePdfId);
+                    const srcDoc = await PDFLib.PDFDocument.load(file.data);
+                    const totalPages = srcDoc.getPageCount();
+                    const input = document.getElementById('removePagesInput').value.trim();
+                    if (!input) { alert('Inserisci le pagine da rimuovere (es. 1, 3, 5-7).'); btn.disabled = false; document.getElementById('addRemoveStatus').classList.add('hidden'); return; }
+
+                    const toRemove = parsePageRanges(input, totalPages);
+                    if (!toRemove.length) { alert('Nessuna pagina valida da rimuovere.'); btn.disabled = false; document.getElementById('addRemoveStatus').classList.add('hidden'); return; }
+
+                    const keepIndices = [];
+                    for (let i = 0; i < totalPages; i++) {
+                        if (toRemove.indexOf(i + 1) === -1) keepIndices.push(i);
+                    }
+                    if (!keepIndices.length) { alert('Non puoi rimuovere tutte le pagine!'); btn.disabled = false; document.getElementById('addRemoveStatus').classList.add('hidden'); return; }
+
+                    const newDoc = await PDFLib.PDFDocument.create();
+                    const copied = await newDoc.copyPages(srcDoc, keepIndices);
+                    copied.forEach(function(p) { newDoc.addPage(p); });
+                    const bytes = await newDoc.save();
+                    downloadPdf(bytes, sanitizeName(file.name) + '_senza_pagine.pdf');
+
+                    document.getElementById('addRemoveStatus').classList.add('hidden');
+                    document.getElementById('addRemoveModal').classList.add('hidden');
+                    document.getElementById('addRemoveModal').classList.remove('flex');
+                } catch (err) {
+                    console.error(err);
+                    alert('Errore durante la rimozione pagine: ' + err.message);
+                    document.getElementById('addRemoveStatus').classList.add('hidden');
+                }
+                btn.disabled = false;
+            });
+
             console.log('PdfEditor — Prototipo completo');
         })();
     </script>
