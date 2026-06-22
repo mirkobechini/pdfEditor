@@ -63,6 +63,26 @@
                 <span id="fileStatus" class="hidden sm:inline">Nessun file caricato</span>
             </div>
         </header>
+
+        <!-- MAIN LAYOUT -->
+        <div class="flex flex-1 overflow-hidden">
+            <!-- SIDEBAR -->
+            <aside id="sidebar" class="sidebar-transition w-72 bg-white border-r border-slate-200 flex flex-col shrink-0
+                        max-lg:fixed max-lg:left-0 max-lg:top-0 max-lg:h-full max-lg:z-40 max-lg:-translate-x-full">
+                <div class="lg:hidden flex items-center justify-between p-3 border-b border-slate-200">
+                    <span class="font-medium text-slate-700">File PDF</span>
+                    <button id="sidebarClose" class="p-1 rounded hover:bg-slate-100 text-slate-500">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+                <div class="flex-1 p-4 text-sm text-slate-400 text-center">
+                    <p>Sidebar — in fase di sviluppo</p>
+                </div>
+            </aside>
+
+            <!-- Overlay mobile -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black/30 z-30 hidden lg:hidden"></div>
+        </div>
     </div>
 
     <script>
