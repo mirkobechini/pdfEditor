@@ -81,6 +81,23 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - Tauri lo avvia come **sidecar** all'avvio dell'app
 - Occupazione extra: ~30-50MB (accettabile, sotto il limite di 50MB dichiarato)
 
+## Componenti principali
+
+- Visualizzazione dei file PDF
+- Barra laterale con elenco dei PDF caricati e opzioni di gestione (elimina, rinomina, ecc.)
+- Barra degli strumenti in alto con opzioni per annotare, modificare e convertire i PDF
+- Area di lavoro centrale per visualizzare il PDF selezionato
+- Conversione dei PDF in altri formati (Word, Excel, immagini) e viceversa
+
+### Funzionalità bonus (post-MVP)
+
+- Unione e divisione di file PDF (merge/split)
+- Modifica del contenuto dei PDF (aggiunta/rimozione di pagine, modifica del testo, riordino pagine con drag & drop)
+- Modifica metadati PDF (titolo, autore, soggetto, parole chiave)
+- Dark mode
+- SSO con Google (futuro: Apple, Samsung)
+- Cloud save opzionale (offline-first)
+
 ## Architettura
 
 ```
