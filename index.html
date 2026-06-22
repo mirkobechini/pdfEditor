@@ -261,6 +261,118 @@
         </div>
     </div>
 
+    <!-- MODAL MERGE (Unione PDF) -->
+    <div id="mergeModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+                <h3 class="font-semibold text-slate-700">Unisci PDF</h3>
+                <button id="closeMergeModal" class="p-1 hover:bg-slate-100 rounded text-slate-500">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-3">
+                <p class="text-sm text-slate-600">Carica altri PDF da unire a quello attuale. L'unione avviene in ordine di caricamento.</p>
+                <div class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center">
+                    <label class="cursor-pointer flex flex-col items-center gap-1 text-slate-500 hover:text-blue-600 transition">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+                        <span class="text-sm font-medium">Aggiungi PDF</span>
+                        <input type="file" id="mergeFileInput" accept=".pdf" class="hidden" multiple />
+                    </label>
+                </div>
+                <ul id="mergeFileList" class="text-sm text-slate-600 space-y-1 max-h-32 overflow-y-auto">
+                    <li class="text-slate-400 italic">Nessun file aggiunto</li>
+                </ul>
+                <button id="mergeConfirm" class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50" disabled>
+                    <i class="fa-solid fa-object-group mr-1"></i> Unisci e scarica
+                </button>
+                <p id="mergeStatus" class="text-sm text-slate-500 text-center hidden">
+                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Unione in corso...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SPLIT (Divisione PDF) -->
+    <div id="splitModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+                <h3 class="font-semibold text-slate-700">Dividi PDF</h3>
+                <button id="closeSplitModal" class="p-1 hover:bg-slate-100 rounded text-slate-500">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-3">
+                <p class="text-sm text-slate-600">Il PDF attuale ha <strong id="splitPageCount">0</strong> pagine. Scegli come dividerlo:</p>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2 text-sm">
+                        <input type="radio" name="splitMode" value="range" checked />
+                        Intervallo di pagine (es. 1-3, 5, 7-9)
+                    </label>
+                    <div class="ml-6">
+                        <input type="text" id="splitRangeInput" placeholder="es. 1-3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none" />
+                    </div>
+                    <label class="flex items-center gap-2 text-sm">
+                        <input type="radio" name="splitMode" value="every" />
+                        Ogni pagina singolarmente
+                    </label>
+                </div>
+                <button id="splitConfirm" class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
+                    <i class="fa-solid fa-object-ungroup mr-1"></i> Dividi e scarica
+                </button>
+                <p id="splitStatus" class="text-sm text-slate-500 text-center hidden">
+                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Divisione in corso...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RIORDINO PAGINE -->
+    <div id="reorderModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+                <h3 class="font-semibold text-slate-700">Riordina pagine</h3>
+                <button id="closeReorderModal" class="p-1 hover:bg-slate-100 rounded text-slate-500">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-3">
+                <p class="text-sm text-slate-600">Sposta le pagine nell'ordine desiderato usando i pulsanti <strong>Su</strong> e <strong>Giù</strong>.</p>
+                <ul id="reorderPageList" class="space-y-1 max-h-60 overflow-y-auto custom-scroll border border-slate-200 rounded-lg p-2">
+                </ul>
+                <button id="reorderConfirm" class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
+                    <i class="fa-solid fa-check mr-1"></i> Applica e scarica
+                </button>
+                <p id="reorderStatus" class="text-sm text-slate-500 text-center hidden">
+                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Elaborazione in corso...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AGGIUNGI/RIMUOVI PAGINE -->
+    <div id="addRemoveModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+                <h3 class="font-semibold text-slate-700">Gestisci pagine</h3>
+                <button id="closeAddRemoveModal" class="p-1 hover:bg-slate-100 rounded text-slate-500">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-3">
+                <p class="text-sm text-slate-600">Seleziona le pagine da rimuovere (es. 1, 3, 5-7) dal PDF attuale (<strong id="arPageCount">0</strong> pagine).</p>
+                <input type="text" id="removePagesInput" placeholder="es. 1, 3, 5-7" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none" />
+                <div class="flex gap-2">
+                    <button id="removePagesConfirm" class="flex-1 bg-red-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-red-700 transition disabled:opacity-50">
+                        <i class="fa-solid fa-trash-can mr-1"></i> Rimuovi e scarica
+                    </button>
+                </div>
+                <p id="addRemoveStatus" class="text-sm text-slate-500 text-center hidden">
+                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Elaborazione in corso...
+                </p>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================================
         // PDF EDITOR — PROTOTIPO CLIENT-SIDE
