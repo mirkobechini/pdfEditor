@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -19,37 +20,46 @@
 
     <style>
         /* Full-height layout */
-        html, body {
+        html,
+        body {
             height: 100%;
             overflow: hidden;
         }
+
         #app {
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
+
         /* Custom scrollbar */
         .custom-scroll::-webkit-scrollbar {
             width: 6px;
         }
+
         .custom-scroll::-webkit-scrollbar-track {
             background: transparent;
         }
+
         .custom-scroll::-webkit-scrollbar-thumb {
             background: #94a3b8;
             border-radius: 3px;
         }
+
         .custom-scroll::-webkit-scrollbar-thumb:hover {
             background: #64748b;
         }
+
         /* Sidebar mobile transition */
         .sidebar-transition {
             transition: transform 0.3s ease-in-out;
         }
+
         /* Tooltip */
         [title] {
             position: relative;
         }
+
         [title]:hover::after {
             content: attr(title);
             position: absolute;
@@ -67,11 +77,13 @@
         }
     </style>
 </head>
+
 <body class="bg-slate-100 text-slate-800">
 
     <div id="app">
         <!-- TOP BAR -->
-        <header class="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0 shadow-sm">
+        <header
+            class="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between shrink-0 shadow-sm">
             <div class="flex items-center gap-3">
                 <button id="menuToggle" class="lg:hidden p-1.5 rounded hover:bg-slate-100 text-slate-600" title="Menu">
                     <i class="fa-solid fa-bars text-lg"></i>
@@ -100,7 +112,8 @@
 
                 <!-- Upload area -->
                 <div class="p-3 border-b border-slate-200">
-                    <label class="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-slate-300 rounded-lg p-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition text-slate-500">
+                    <label
+                        class="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-slate-300 rounded-lg p-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition text-slate-500">
                         <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
                         <span class="text-sm font-medium">Carica PDF</span>
                         <span class="text-xs">massimo 50 MB</span>
@@ -122,23 +135,33 @@
             <!-- WORKSPACE -->
             <main class="flex-1 flex flex-col overflow-hidden">
                 <!-- TOOLBAR -->
-                <div class="bg-white border-b border-slate-200 px-3 py-1.5 flex items-center gap-1 shrink-0 overflow-x-auto custom-scroll">
+                <div
+                    class="bg-white border-b border-slate-200 px-3 py-1.5 flex items-center gap-1 shrink-0 overflow-x-auto custom-scroll">
                     <!-- Navigazione pagine -->
                     <div class="flex items-center gap-1 mr-2">
-                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed" id="firstPage" title="Prima pagina">
+                        <button
+                            class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            id="firstPage" title="Prima pagina">
                             <i class="fa-solid fa-angles-left text-xs"></i>
                         </button>
-                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed" id="prevPage" title="Pagina precedente">
+                        <button
+                            class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            id="prevPage" title="Pagina precedente">
                             <i class="fa-solid fa-chevron-left text-xs"></i>
                         </button>
                         <span class="text-sm text-slate-600 mx-1 whitespace-nowrap">
-                            <input type="number" id="pageInput" value="1" min="1" class="w-10 text-center border border-slate-300 rounded text-sm py-0.5" />
+                            <input type="number" id="pageInput" value="1" min="1"
+                                class="w-10 text-center border border-slate-300 rounded text-sm py-0.5" />
                             <span id="pageCount">/ 0</span>
                         </span>
-                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed" id="nextPage" title="Pagina successiva">
+                        <button
+                            class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            id="nextPage" title="Pagina successiva">
                             <i class="fa-solid fa-chevron-right text-xs"></i>
                         </button>
-                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed" id="lastPage" title="Ultima pagina">
+                        <button
+                            class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            id="lastPage" title="Ultima pagina">
                             <i class="fa-solid fa-angles-right text-xs"></i>
                         </button>
                     </div>
@@ -154,7 +177,8 @@
                         <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600" id="zoomIn" title="Zoom +">
                             <i class="fa-solid fa-plus text-xs"></i>
                         </button>
-                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 ml-1" id="fitWidth" title="Adatta alla larghezza">
+                        <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 ml-1" id="fitWidth"
+                            title="Adatta alla larghezza">
                             <i class="fa-solid fa-expand text-xs"></i>
                         </button>
                     </div>
@@ -162,32 +186,40 @@
                     <div class="w-px h-6 bg-slate-200 mx-1"></div>
 
                     <!-- Strumenti -->
-                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="annotateBtn" disabled title="Annota PDF">
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="annotateBtn"
+                        disabled title="Annota PDF">
                         <i class="fa-solid fa-highlighter text-sm"></i>
                     </button>
-                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="editBtn" disabled title="Modifica PDF">
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="editBtn"
+                        disabled title="Modifica PDF">
                         <i class="fa-solid fa-pen text-sm"></i>
                     </button>
-                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="convertBtn" disabled title="Converti PDF">
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="convertBtn"
+                        disabled title="Converti PDF">
                         <i class="fa-solid fa-file-export text-sm"></i>
                     </button>
-                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="downloadBtn" disabled title="Scarica">
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="downloadBtn"
+                        disabled title="Scarica">
                         <i class="fa-solid fa-download text-sm"></i>
                     </button>
 
                     <div class="w-px h-6 bg-slate-200 mx-1"></div>
 
                     <!-- Bonus: manipolazione pagine -->
-                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="mergeBtn" disabled title="Unisci PDF">
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="mergeBtn"
+                        disabled title="Unisci PDF">
                         <i class="fa-solid fa-object-group text-sm"></i>
                     </button>
-                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="splitBtn" disabled title="Dividi PDF">
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="splitBtn"
+                        disabled title="Dividi PDF">
                         <i class="fa-solid fa-object-ungroup text-sm"></i>
                     </button>
-                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="reorderBtn" disabled title="Riordina pagine">
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="reorderBtn"
+                        disabled title="Riordina pagine">
                         <i class="fa-solid fa-arrows-alt text-sm"></i>
                     </button>
-                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30" id="addRemoveBtn" disabled title="Aggiungi/Rimuovi pagine">
+                    <button class="p-1.5 rounded hover:bg-slate-100 text-slate-600 disabled:opacity-30"
+                        id="addRemoveBtn" disabled title="Aggiungi/Rimuovi pagine">
                         <i class="fa-solid fa-layer-group text-sm"></i>
                     </button>
                 </div>
@@ -217,8 +249,10 @@
                 </button>
             </div>
             <div class="p-5 space-y-3">
-                <input type="text" id="renameInput" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none" />
-                <button id="renameConfirm" class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition">
+                <input type="text" id="renameInput"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none" />
+                <button id="renameConfirm"
+                    class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition">
                     Rinomina
                 </button>
             </div>
@@ -237,19 +271,27 @@
             <div class="p-5 space-y-3">
                 <p class="text-sm text-slate-600">Scegli il formato di destinazione:</p>
                 <div class="grid grid-cols-2 gap-3">
-                    <button class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition" data-format="docx">
+                    <button
+                        class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition"
+                        data-format="docx">
                         <i class="fa-regular fa-file-word text-3xl text-blue-600"></i>
                         <span class="text-sm font-medium">Word (DOCX)</span>
                     </button>
-                    <button class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition" data-format="xlsx">
+                    <button
+                        class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition"
+                        data-format="xlsx">
                         <i class="fa-regular fa-file-excel text-3xl text-green-600"></i>
                         <span class="text-sm font-medium">Excel (XLSX)</span>
                     </button>
-                    <button class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition" data-format="png">
+                    <button
+                        class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition"
+                        data-format="png">
                         <i class="fa-regular fa-file-image text-3xl text-purple-600"></i>
                         <span class="text-sm font-medium">Immagini (PNG)</span>
                     </button>
-                    <button class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-yellow-400 hover:bg-yellow-50 transition" data-format="jpg">
+                    <button
+                        class="flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl hover:border-yellow-400 hover:bg-yellow-50 transition"
+                        data-format="jpg">
                         <i class="fa-regular fa-file-image text-3xl text-yellow-600"></i>
                         <span class="text-sm font-medium">Immagini (JPG)</span>
                     </button>
@@ -271,9 +313,11 @@
                 </button>
             </div>
             <div class="p-5 space-y-3">
-                <p class="text-sm text-slate-600">Carica altri PDF da unire a quello attuale. L'unione avviene in ordine di caricamento.</p>
+                <p class="text-sm text-slate-600">Carica altri PDF da unire a quello attuale. L'unione avviene in ordine
+                    di caricamento.</p>
                 <div class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center">
-                    <label class="cursor-pointer flex flex-col items-center gap-1 text-slate-500 hover:text-blue-600 transition">
+                    <label
+                        class="cursor-pointer flex flex-col items-center gap-1 text-slate-500 hover:text-blue-600 transition">
                         <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
                         <span class="text-sm font-medium">Aggiungi PDF</span>
                         <input type="file" id="mergeFileInput" accept=".pdf" class="hidden" multiple />
@@ -282,7 +326,9 @@
                 <ul id="mergeFileList" class="text-sm text-slate-600 space-y-1 max-h-32 overflow-y-auto">
                     <li class="text-slate-400 italic">Nessun file aggiunto</li>
                 </ul>
-                <button id="mergeConfirm" class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50" disabled>
+                <button id="mergeConfirm"
+                    class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50"
+                    disabled>
                     <i class="fa-solid fa-object-group mr-1"></i> Unisci e scarica
                 </button>
                 <p id="mergeStatus" class="text-sm text-slate-500 text-center hidden">
@@ -302,21 +348,24 @@
                 </button>
             </div>
             <div class="p-5 space-y-3">
-                <p class="text-sm text-slate-600">Il PDF attuale ha <strong id="splitPageCount">0</strong> pagine. Scegli come dividerlo:</p>
+                <p class="text-sm text-slate-600">Il PDF attuale ha <strong id="splitPageCount">0</strong> pagine.
+                    Scegli come dividerlo:</p>
                 <div class="space-y-2">
                     <label class="flex items-center gap-2 text-sm">
                         <input type="radio" name="splitMode" value="range" checked />
                         Intervallo di pagine (es. 1-3, 5, 7-9)
                     </label>
                     <div class="ml-6">
-                        <input type="text" id="splitRangeInput" placeholder="es. 1-3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none" />
+                        <input type="text" id="splitRangeInput" placeholder="es. 1-3"
+                            class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none" />
                     </div>
                     <label class="flex items-center gap-2 text-sm">
                         <input type="radio" name="splitMode" value="every" />
                         Ogni pagina singolarmente
                     </label>
                 </div>
-                <button id="splitConfirm" class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
+                <button id="splitConfirm"
+                    class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
                     <i class="fa-solid fa-object-ungroup mr-1"></i> Dividi e scarica
                 </button>
                 <p id="splitStatus" class="text-sm text-slate-500 text-center hidden">
@@ -336,10 +385,13 @@
                 </button>
             </div>
             <div class="p-5 space-y-3">
-                <p class="text-sm text-slate-600">Sposta le pagine nell'ordine desiderato usando i pulsanti <strong>Su</strong> e <strong>Giù</strong>.</p>
-                <ul id="reorderPageList" class="space-y-1 max-h-60 overflow-y-auto custom-scroll border border-slate-200 rounded-lg p-2">
+                <p class="text-sm text-slate-600">Sposta le pagine nell'ordine desiderato usando i pulsanti
+                    <strong>Su</strong> e <strong>Giù</strong>.</p>
+                <ul id="reorderPageList"
+                    class="space-y-1 max-h-60 overflow-y-auto custom-scroll border border-slate-200 rounded-lg p-2">
                 </ul>
-                <button id="reorderConfirm" class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
+                <button id="reorderConfirm"
+                    class="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
                     <i class="fa-solid fa-check mr-1"></i> Applica e scarica
                 </button>
                 <p id="reorderStatus" class="text-sm text-slate-500 text-center hidden">
@@ -359,10 +411,13 @@
                 </button>
             </div>
             <div class="p-5 space-y-3">
-                <p class="text-sm text-slate-600">Seleziona le pagine da rimuovere (es. 1, 3, 5-7) dal PDF attuale (<strong id="arPageCount">0</strong> pagine).</p>
-                <input type="text" id="removePagesInput" placeholder="es. 1, 3, 5-7" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none" />
+                <p class="text-sm text-slate-600">Seleziona le pagine da rimuovere (es. 1, 3, 5-7) dal PDF attuale
+                    (<strong id="arPageCount">0</strong> pagine).</p>
+                <input type="text" id="removePagesInput" placeholder="es. 1, 3, 5-7"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none" />
                 <div class="flex gap-2">
-                    <button id="removePagesConfirm" class="flex-1 bg-red-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-red-700 transition disabled:opacity-50">
+                    <button id="removePagesConfirm"
+                        class="flex-1 bg-red-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-red-700 transition disabled:opacity-50">
                         <i class="fa-solid fa-trash-can mr-1"></i> Rimuovi e scarica
                     </button>
                 </div>
@@ -378,7 +433,7 @@
         // PDF EDITOR — PROTOTIPO CLIENT-SIDE
         // ============================================================
 
-        (function() {
+        (function () {
             'use strict';
 
             // ---- Costanti ----
@@ -402,7 +457,7 @@
 
             // ---- Upload file ----
             const fileInput = document.getElementById('fileInput');
-            fileInput.addEventListener('change', function(e) {
+            fileInput.addEventListener('change', function (e) {
                 const files = e.target.files;
                 if (!files.length) return;
 
@@ -418,7 +473,7 @@
 
                     const reader = new FileReader();
                     const fileId = ++fileIdCounter;
-                    reader.onload = function(ev) {
+                    reader.onload = function (ev) {
                         pdfFiles.push({
                             id: fileId,
                             name: file.name,
@@ -476,7 +531,7 @@
                 pdfList.innerHTML = html;
 
                 pdfList.querySelectorAll('li[data-id]').forEach(li => {
-                    li.addEventListener('click', function(e) {
+                    li.addEventListener('click', function (e) {
                         if (e.target.closest('.rename-btn') || e.target.closest('.delete-btn')) return;
                         loadPdfFromFile(parseInt(this.dataset.id));
                     });
@@ -484,7 +539,7 @@
 
                 // Delega eventi rename
                 pdfList.querySelectorAll('.rename-btn').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
+                    btn.addEventListener('click', function (e) {
                         e.stopPropagation();
                         const id = parseInt(this.dataset.id);
                         const file = pdfFiles.find(f => f.id === id);
@@ -502,21 +557,21 @@
             // ---- Rinomina ----
             const renameModal = document.getElementById('renameModal');
             const renameInput = document.getElementById('renameInput');
-            document.getElementById('closeRenameModal').addEventListener('click', function() {
+            document.getElementById('closeRenameModal').addEventListener('click', function () {
                 renameModal.classList.add('hidden');
                 renameModal.classList.remove('flex');
             });
-            renameModal.addEventListener('click', function(e) {
+            renameModal.addEventListener('click', function (e) {
                 if (e.target === this) {
                     renameModal.classList.add('hidden');
                     renameModal.classList.remove('flex');
                 }
             });
-            renameInput.addEventListener('keydown', function(e) {
+            renameInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') document.getElementById('renameConfirm').click();
                 if (e.key === 'Escape') document.getElementById('closeRenameModal').click();
             });
-            document.getElementById('renameConfirm').addEventListener('click', function() {
+            document.getElementById('renameConfirm').addEventListener('click', function () {
                 const newName = renameInput.value.trim();
                 if (!newName) {
                     alert('Il nome non può essere vuoto.');
@@ -535,7 +590,7 @@
             });
 
             // ---- Elimina file ----
-            pdfList.addEventListener('click', function(e) {
+            pdfList.addEventListener('click', function (e) {
                 const btn = e.target.closest('.delete-btn');
                 if (!btn) return;
                 e.stopPropagation();
@@ -574,9 +629,9 @@
                     overlay.classList.add('hidden');
                 }
             }
-            document.getElementById('menuToggle').addEventListener('click', function() { toggleSidebar(true); });
-            document.getElementById('sidebarClose').addEventListener('click', function() { toggleSidebar(false); });
-            document.getElementById('sidebarOverlay').addEventListener('click', function() { toggleSidebar(false); });
+            document.getElementById('menuToggle').addEventListener('click', function () { toggleSidebar(true); });
+            document.getElementById('sidebarClose').addEventListener('click', function () { toggleSidebar(false); });
+            document.getElementById('sidebarOverlay').addEventListener('click', function () { toggleSidebar(false); });
 
             // ---- PDF.js ----
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -597,7 +652,7 @@
                 currentPage = pageNum;
                 document.getElementById('pageInput').value = pageNum;
 
-                pdfDoc.getPage(pageNum).then(function(page) {
+                pdfDoc.getPage(pageNum).then(function (page) {
                     const viewport = page.getViewport({ scale: currentScale });
                     canvas.width = viewport.width;
                     canvas.height = viewport.height;
@@ -609,11 +664,11 @@
                         canvasContext: ctx,
                         viewport: viewport,
                     }).promise;
-                }).then(function() {
+                }).then(function () {
                     const ws = document.getElementById('workspace');
                     ws.scrollTop = 0;
                     ws.scrollLeft = 0;
-                }).catch(function(err) {
+                }).catch(function (err) {
                     console.error('Errore rendering pagina:', err);
                 });
             }
@@ -621,7 +676,7 @@
             // ---- Carica PDF con PDF.js ----
             function loadPdfInViewer(arrayBuffer) {
                 const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer.slice(0) });
-                loadingTask.promise.then(function(doc) {
+                loadingTask.promise.then(function (doc) {
                     pdfDoc = doc;
                     currentPage = 1;
                     currentScale = 1.0;
@@ -630,7 +685,7 @@
                     document.getElementById('pageInput').max = doc.numPages;
                     updateButtons();
                     renderPage();
-                }).catch(function(err) {
+                }).catch(function (err) {
                     console.error('Errore caricamento PDF:', err);
                     alert('Impossibile leggere il file PDF. Potrebbe essere danneggiato.');
                 });
@@ -655,27 +710,27 @@
             }
 
             // ---- Navigazione bottoni ----
-            document.getElementById('firstPage').addEventListener('click', function() {
+            document.getElementById('firstPage').addEventListener('click', function () {
                 if (!pdfDoc) return;
                 currentPage = 1;
                 renderPage();
             });
-            document.getElementById('prevPage').addEventListener('click', function() {
+            document.getElementById('prevPage').addEventListener('click', function () {
                 if (!pdfDoc || currentPage <= 1) return;
                 currentPage--;
                 renderPage();
             });
-            document.getElementById('nextPage').addEventListener('click', function() {
+            document.getElementById('nextPage').addEventListener('click', function () {
                 if (!pdfDoc || currentPage >= pdfDoc.numPages) return;
                 currentPage++;
                 renderPage();
             });
-            document.getElementById('lastPage').addEventListener('click', function() {
+            document.getElementById('lastPage').addEventListener('click', function () {
                 if (!pdfDoc) return;
                 currentPage = pdfDoc.numPages;
                 renderPage();
             });
-            document.getElementById('pageInput').addEventListener('change', function() {
+            document.getElementById('pageInput').addEventListener('change', function () {
                 if (!pdfDoc) return;
                 const p = parseInt(this.value);
                 if (p >= 1 && p <= pdfDoc.numPages) {
@@ -687,7 +742,7 @@
             });
 
             // ---- Navigazione tastiera ----
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (!pdfDoc) return;
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
                 if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
@@ -705,21 +760,21 @@
             const MAX_SCALE = 3.0;
             const zoomLevel = document.getElementById('zoomLevel');
 
-            document.getElementById('zoomIn').addEventListener('click', function() {
+            document.getElementById('zoomIn').addEventListener('click', function () {
                 currentScale = Math.min(MAX_SCALE, currentScale + SCALE_STEP);
                 zoomLevel.textContent = Math.round(currentScale * 100) + '%';
                 if (pdfDoc) renderPage();
             });
-            document.getElementById('zoomOut').addEventListener('click', function() {
+            document.getElementById('zoomOut').addEventListener('click', function () {
                 currentScale = Math.max(MIN_SCALE, currentScale - SCALE_STEP);
                 zoomLevel.textContent = Math.round(currentScale * 100) + '%';
                 if (pdfDoc) renderPage();
             });
-            document.getElementById('fitWidth').addEventListener('click', function() {
+            document.getElementById('fitWidth').addEventListener('click', function () {
                 if (!pdfDoc) return;
                 const ws = document.getElementById('workspace');
                 const containerWidth = ws.clientWidth - 32;
-                pdfDoc.getPage(currentPage).then(function(page) {
+                pdfDoc.getPage(currentPage).then(function (page) {
                     const viewport = page.getViewport({ scale: 1.0 });
                     currentScale = containerWidth / viewport.width;
                     currentScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, currentScale));
@@ -729,7 +784,7 @@
             });
 
             // ---- Download ----
-            document.getElementById('downloadBtn').addEventListener('click', function() {
+            document.getElementById('downloadBtn').addEventListener('click', function () {
                 if (!pdfDoc || !activePdfId) return;
                 const file = pdfFiles.find(f => f.id === activePdfId);
                 if (!file) return;
@@ -744,27 +799,27 @@
 
             // ---- Modale conversione ----
             const convertModal = document.getElementById('convertModal');
-            document.getElementById('convertBtn').addEventListener('click', function() {
+            document.getElementById('convertBtn').addEventListener('click', function () {
                 if (!pdfDoc || !activePdfId) return;
                 convertModal.classList.remove('hidden');
                 convertModal.classList.add('flex');
                 document.getElementById('convertStatus').classList.add('hidden');
             });
-            document.getElementById('closeConvertModal').addEventListener('click', function() {
+            document.getElementById('closeConvertModal').addEventListener('click', function () {
                 convertModal.classList.add('hidden');
                 convertModal.classList.remove('flex');
             });
-            convertModal.addEventListener('click', function(e) {
+            convertModal.addEventListener('click', function (e) {
                 if (e.target === this) {
                     convertModal.classList.add('hidden');
                     convertModal.classList.remove('flex');
                 }
             });
-            convertModal.querySelectorAll('[data-format]').forEach(function(btn) {
-                btn.addEventListener('click', function() {
+            convertModal.querySelectorAll('[data-format]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
                     const format = this.dataset.format;
                     document.getElementById('convertStatus').classList.remove('hidden');
-                    setTimeout(function() {
+                    setTimeout(function () {
                         document.getElementById('convertStatus').classList.add('hidden');
                         convertModal.classList.add('hidden');
                         convertModal.classList.remove('flex');
@@ -801,7 +856,7 @@
             const mergeStatus = document.getElementById('mergeStatus');
             let mergeFiles = [];
 
-            document.getElementById('mergeBtn').addEventListener('click', function() {
+            document.getElementById('mergeBtn').addEventListener('click', function () {
                 if (!pdfDoc || !activePdfId) return;
                 mergeFiles = [];
                 mergeFileList.innerHTML = '<li class="text-slate-400 italic">Nessun file aggiunto</li>';
@@ -811,19 +866,19 @@
                 mergeModal.classList.add('flex');
             });
 
-            document.getElementById('closeMergeModal').addEventListener('click', function() {
+            document.getElementById('closeMergeModal').addEventListener('click', function () {
                 mergeModal.classList.add('hidden');
                 mergeModal.classList.remove('flex');
             });
-            mergeModal.addEventListener('click', function(e) {
+            mergeModal.addEventListener('click', function (e) {
                 if (e.target === this) { mergeModal.classList.add('hidden'); mergeModal.classList.remove('flex'); }
             });
 
-            mergeFileInput.addEventListener('change', function(e) {
+            mergeFileInput.addEventListener('change', function (e) {
                 for (const file of e.target.files) {
                     if (file.type !== 'application/pdf') continue;
                     const reader = new FileReader();
-                    reader.onload = function(ev) {
+                    reader.onload = function (ev) {
                         mergeFiles.push({ name: file.name, data: ev.target.result });
                         renderMergeList();
                     };
@@ -839,16 +894,16 @@
                     return;
                 }
                 let html = '';
-                mergeFiles.forEach(function(f, i) {
+                mergeFiles.forEach(function (f, i) {
                     html += '<li class="flex items-center justify-between bg-slate-50 rounded px-2 py-1">' +
                         '<span class="truncate">' + f.name + '</span>' +
                         '<button class="text-red-500 hover:text-red-700 text-xs ml-2 remove-merge-file" data-index="' + i + '"><i class="fa-solid fa-times"></i></button>' +
-                    '</li>';
+                        '</li>';
                 });
                 mergeFileList.innerHTML = html;
                 mergeConfirm.disabled = false;
-                mergeFileList.querySelectorAll('.remove-merge-file').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
+                mergeFileList.querySelectorAll('.remove-merge-file').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
                         const idx = parseInt(this.dataset.index);
                         mergeFiles.splice(idx, 1);
                         renderMergeList();
@@ -856,7 +911,7 @@
                 });
             }
 
-            mergeConfirm.addEventListener('click', async function() {
+            mergeConfirm.addEventListener('click', async function () {
                 if (!mergeFiles.length || !activePdfId) return;
                 mergeConfirm.disabled = true;
                 mergeStatus.classList.remove('hidden');
@@ -865,12 +920,12 @@
                     const mergedPdf = await PDFLib.PDFDocument.create();
                     const activeDoc = await PDFLib.PDFDocument.load(activeFile.data);
                     const activePages = await mergedPdf.copyPages(activeDoc, activeDoc.getPageIndices());
-                    activePages.forEach(function(p) { mergedPdf.addPage(p); });
+                    activePages.forEach(function (p) { mergedPdf.addPage(p); });
 
                     for (const mf of mergeFiles) {
                         const doc = await PDFLib.PDFDocument.load(mf.data);
                         const pages = await mergedPdf.copyPages(doc, doc.getPageIndices());
-                        pages.forEach(function(p) { mergedPdf.addPage(p); });
+                        pages.forEach(function (p) { mergedPdf.addPage(p); });
                     }
 
                     const pdfBytes = await mergedPdf.save();
@@ -888,7 +943,7 @@
 
             // ---- SPLIT PDF ----
             const splitModal = document.getElementById('splitModal');
-            document.getElementById('splitBtn').addEventListener('click', function() {
+            document.getElementById('splitBtn').addEventListener('click', function () {
                 if (!pdfDoc || !activePdfId) return;
                 document.getElementById('splitPageCount').textContent = pdfDoc.numPages;
                 document.getElementById('splitRangeInput').value = '';
@@ -897,15 +952,15 @@
                 splitModal.classList.remove('hidden');
                 splitModal.classList.add('flex');
             });
-            document.getElementById('closeSplitModal').addEventListener('click', function() {
+            document.getElementById('closeSplitModal').addEventListener('click', function () {
                 splitModal.classList.add('hidden');
                 splitModal.classList.remove('flex');
             });
-            splitModal.addEventListener('click', function(e) {
+            splitModal.addEventListener('click', function (e) {
                 if (e.target === this) { splitModal.classList.add('hidden'); splitModal.classList.remove('flex'); }
             });
 
-            document.getElementById('splitConfirm').addEventListener('click', async function() {
+            document.getElementById('splitConfirm').addEventListener('click', async function () {
                 if (!pdfDoc || !activePdfId) return;
                 const btn = this;
                 btn.disabled = true;
@@ -916,7 +971,7 @@
                     const srcDoc = await PDFLib.PDFDocument.load(file.data);
                     const totalPages = srcDoc.getPageCount();
                     const mode = document.querySelector('input[name="splitMode"]:checked').value;
-                    
+
                     if (mode === 'every') {
                         // Ogni pagina in un file separato
                         for (let i = 0; i < totalPages; i++) {
@@ -930,13 +985,13 @@
                         // Intervallo di pagine
                         const input = document.getElementById('splitRangeInput').value.trim();
                         if (!input) { alert('Inserisci un intervallo valido (es. 1-3, 5, 7-9).'); btn.disabled = false; document.getElementById('splitStatus').classList.add('hidden'); return; }
-                        
+
                         const pagesToExtract = parsePageRanges(input, totalPages);
                         if (!pagesToExtract.length) { alert('Nessuna pagina valida nell\'intervallo specificato.'); btn.disabled = false; document.getElementById('splitStatus').classList.add('hidden'); return; }
-                        
+
                         const newDoc = await PDFLib.PDFDocument.create();
                         const copied = await newDoc.copyPages(srcDoc, pagesToExtract.map(p => p - 1));
-                        copied.forEach(function(p) { newDoc.addPage(p); });
+                        copied.forEach(function (p) { newDoc.addPage(p); });
                         const bytes = await newDoc.save();
                         downloadPdf(bytes, sanitizeName(file.name) + '_estratto.pdf');
                     }
@@ -954,7 +1009,7 @@
 
             // ---- Utility: parse page ranges (es. "1, 3, 5-7") ----
             function parsePageRanges(str, max) {
-                const parts = str.split(',').map(function(s) { return s.trim(); });
+                const parts = str.split(',').map(function (s) { return s.trim(); });
                 const pages = [];
                 for (const part of parts) {
                     const m = part.match(/^(\d+)-(\d+)$/);
@@ -969,14 +1024,14 @@
                         if (n >= 1 && n <= max && pages.indexOf(n) === -1) pages.push(n);
                     }
                 }
-                return pages.sort(function(a, b) { return a - b; });
+                return pages.sort(function (a, b) { return a - b; });
             }
 
             // ---- RIORDINO PAGINE ----
             const reorderModal = document.getElementById('reorderModal');
             let reorderPages = [];
 
-            document.getElementById('reorderBtn').addEventListener('click', function() {
+            document.getElementById('reorderBtn').addEventListener('click', function () {
                 if (!pdfDoc || !activePdfId) return;
                 reorderPages = [];
                 for (let i = 1; i <= pdfDoc.numPages; i++) reorderPages.push(i);
@@ -986,30 +1041,30 @@
                 reorderModal.classList.remove('hidden');
                 reorderModal.classList.add('flex');
             });
-            document.getElementById('closeReorderModal').addEventListener('click', function() {
+            document.getElementById('closeReorderModal').addEventListener('click', function () {
                 reorderModal.classList.add('hidden');
                 reorderModal.classList.remove('flex');
             });
-            reorderModal.addEventListener('click', function(e) {
+            reorderModal.addEventListener('click', function (e) {
                 if (e.target === this) { reorderModal.classList.add('hidden'); reorderModal.classList.remove('flex'); }
             });
 
             function renderReorderList() {
                 const list = document.getElementById('reorderPageList');
                 let html = '';
-                reorderPages.forEach(function(p, i) {
+                reorderPages.forEach(function (p, i) {
                     html += '<li class="flex items-center justify-between bg-slate-50 rounded px-3 py-2 border border-slate-100" data-index="' + i + '">' +
                         '<span class="text-sm font-medium">Pagina ' + p + '</span>' +
                         '<div class="flex gap-1">' +
-                            (i > 0 ? '<button class="move-up p-1 rounded hover:bg-blue-100 text-blue-600 text-xs" title="Sposta su"><i class="fa-solid fa-chevron-up"></i></button>' : '') +
-                            (i < reorderPages.length - 1 ? '<button class="move-down p-1 rounded hover:bg-blue-100 text-blue-600 text-xs" title="Sposta giù"><i class="fa-solid fa-chevron-down"></i></button>' : '') +
+                        (i > 0 ? '<button class="move-up p-1 rounded hover:bg-blue-100 text-blue-600 text-xs" title="Sposta su"><i class="fa-solid fa-chevron-up"></i></button>' : '') +
+                        (i < reorderPages.length - 1 ? '<button class="move-down p-1 rounded hover:bg-blue-100 text-blue-600 text-xs" title="Sposta giù"><i class="fa-solid fa-chevron-down"></i></button>' : '') +
                         '</div>' +
-                    '</li>';
+                        '</li>';
                 });
                 list.innerHTML = html;
 
-                list.querySelectorAll('.move-up').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
+                list.querySelectorAll('.move-up').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
                         const idx = parseInt(this.closest('li').dataset.index);
                         if (idx > 0) {
                             const tmp = reorderPages[idx];
@@ -1019,8 +1074,8 @@
                         }
                     });
                 });
-                list.querySelectorAll('.move-down').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
+                list.querySelectorAll('.move-down').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
                         const idx = parseInt(this.closest('li').dataset.index);
                         if (idx < reorderPages.length - 1) {
                             const tmp = reorderPages[idx];
@@ -1032,7 +1087,7 @@
                 });
             }
 
-            document.getElementById('reorderConfirm').addEventListener('click', async function() {
+            document.getElementById('reorderConfirm').addEventListener('click', async function () {
                 if (!pdfDoc || !activePdfId) return;
                 const btn = this;
                 btn.disabled = true;
@@ -1041,9 +1096,9 @@
                     const file = pdfFiles.find(f => f.id === activePdfId);
                     const srcDoc = await PDFLib.PDFDocument.load(file.data);
                     const newDoc = await PDFLib.PDFDocument.create();
-                    const pageIndices = reorderPages.map(function(p) { return p - 1; });
+                    const pageIndices = reorderPages.map(function (p) { return p - 1; });
                     const copied = await newDoc.copyPages(srcDoc, pageIndices);
-                    copied.forEach(function(p) { newDoc.addPage(p); });
+                    copied.forEach(function (p) { newDoc.addPage(p); });
                     const bytes = await newDoc.save();
                     downloadPdf(bytes, sanitizeName(file.name) + '_riordinato.pdf');
                     document.getElementById('reorderStatus').classList.add('hidden');
@@ -1058,7 +1113,7 @@
             });
 
             // ---- RIMUOVI PAGINE ----
-            document.getElementById('addRemoveBtn').addEventListener('click', function() {
+            document.getElementById('addRemoveBtn').addEventListener('click', function () {
                 if (!pdfDoc || !activePdfId) return;
                 document.getElementById('arPageCount').textContent = pdfDoc.numPages;
                 document.getElementById('removePagesInput').value = '';
@@ -1067,15 +1122,15 @@
                 document.getElementById('addRemoveModal').classList.remove('hidden');
                 document.getElementById('addRemoveModal').classList.add('flex');
             });
-            document.getElementById('closeAddRemoveModal').addEventListener('click', function() {
+            document.getElementById('closeAddRemoveModal').addEventListener('click', function () {
                 document.getElementById('addRemoveModal').classList.add('hidden');
                 document.getElementById('addRemoveModal').classList.remove('flex');
             });
-            document.getElementById('addRemoveModal').addEventListener('click', function(e) {
+            document.getElementById('addRemoveModal').addEventListener('click', function (e) {
                 if (e.target === this) { this.classList.add('hidden'); this.classList.remove('flex'); }
             });
 
-            document.getElementById('removePagesConfirm').addEventListener('click', async function() {
+            document.getElementById('removePagesConfirm').addEventListener('click', async function () {
                 if (!pdfDoc || !activePdfId) return;
                 const btn = this;
                 btn.disabled = true;
@@ -1098,7 +1153,7 @@
 
                     const newDoc = await PDFLib.PDFDocument.create();
                     const copied = await newDoc.copyPages(srcDoc, keepIndices);
-                    copied.forEach(function(p) { newDoc.addPage(p); });
+                    copied.forEach(function (p) { newDoc.addPage(p); });
                     const bytes = await newDoc.save();
                     downloadPdf(bytes, sanitizeName(file.name) + '_senza_pagine.pdf');
 
@@ -1118,4 +1173,5 @@
     </script>
 
 </body>
+
 </html>
