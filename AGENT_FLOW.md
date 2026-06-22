@@ -26,7 +26,7 @@ This document outlines the development flow for the PDF Editor project, includin
 
 - Don't commit directly to the `main` branch.
 - Don't merge to the `main` branch without approval from the user.
-- Don't push to remote. Push only after review and approval to open a Pull Request.
+- Don't push to remote. The remote is managed manually by the user.
 
 ---
 
@@ -40,19 +40,12 @@ This document outlines the development flow for the PDF Editor project, includin
 
 main -> dev -> feature/<issue-number>-<short-description>
 
-#### Initial setup (one-time only)
-
-```bash
-git checkout main
-git checkout -b dev
-git push origin dev
-```
+> ✅ **Initial setup già completato** — il branch `dev` esiste già sia in locale che su remote.
 
 #### Per-feature workflow
 
 ```bash
 git checkout dev
-git pull origin dev
 git checkout -b feature/<issue-number>-<short-description>
 ```
 
@@ -60,7 +53,7 @@ git checkout -b feature/<issue-number>-<short-description>
 
 - Commit frequently using descriptive commit messages.
 - Do one feature at a time. Change feature only after the previous one is complete and all tests have passed.
-- Do NOT push until all tests have passed and review is complete.
+- Push only when the user explicitly asks for it.
 
 ---
 
