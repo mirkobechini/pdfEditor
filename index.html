@@ -574,7 +574,57 @@
                 });
             });
 
-            console.log('PdfEditor — Sidebar completa');
+            // ---- Download ----
+            document.getElementById('downloadBtn').addEventListener('click', function() {
+                if (!pdfDoc || !activePdfId) return;
+                const file = pdfFiles.find(f => f.id === activePdfId);
+                if (!file) return;
+                const blob = new Blob([file.data], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // ---- Modale conversione ----
+            const convertModal = document.getElementById('convertModal');
+            document.getElementById('convertBtn').addEventListener('click', function() {
+                if (!pdfDoc || !activePdfId) return;
+                convertModal.classList.remove('hidden');
+                convertModal.classList.add('flex');
+                document.getElementById('convertStatus').classList.add('hidden');
+            });
+            document.getElementById('closeConvertModal').addEventListener('click', function() {
+                convertModal.classList.add('hidden');
+                convertModal.classList.remove('flex');
+            });
+            convertModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    convertModal.classList.add('hidden');
+                    convertModal.classList.remove('flex');
+                }
+            });
+            convertModal.querySelectorAll('[data-format]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const format = this.dataset.format;
+                    document.getElementById('convertStatus').classList.remove('hidden');
+                    setTimeout(function() {
+                        document.getElementById('convertStatus').classList.add('hidden');
+                        convertModal.classList.add('hidden');
+                        convertModal.classList.remove('flex');
+                        alert(
+                            `Conversione in ${format.toUpperCase()} simulata.\n\n` +
+                            `Nella versione completa, il file verrà convertito ` +
+                            `e scaricato in formato ${format.toUpperCase()}.\n\n` +
+                            `Questa funzionalità richiede il backend (Laravel).`
+                        );
+                    }, 1200);
+                });
+            });
+
+            console.log('PdfEditor — Prototipo completo');
         })();
     </script>
 
