@@ -6,13 +6,13 @@ This document outlines the development flow for the PDF Editor project, includin
 
 ## Branch Structure
 
-| Branch     | Convention                           | Description                                                    |
-| ---------- | ------------------------------------ | -------------------------------------------------------------- |
-| `main`     | —                                    | Stable codebase. Only the user merges here from `dev`.         |
-| `dev`      | —                                    | Permanent development branch. All feature branches merge here. |
-| `feature/` | `<issue-number>-<short-description>` | One branch per task / issue.                                   |
-| `hotfix/`  | `<issue-number>-<short-description>` | Urgent bug fixes (same flow as feature).                       |
-| `chore/`   | `<issue-number>-<short-description>` | Non-feature tasks (refactoring, documentation, etc.).          |
+| Branch | Convention | Description |
+| ------ | ---------- | ----------- |
+| `main` | — | Stable codebase. Only the user merges here from `dev`. |
+| `dev` | — | Permanent development branch. All feature branches merge here. |
+| `feature/` | `<issue-number>-<short-description>` | One branch per task / issue. |
+| `hotfix/` | `<issue-number>-<short-description>` | Urgent bug fixes (same flow as feature). |
+| `chore/` | `<issue-number>-<short-description>` | Non-feature tasks (refactoring, documentation, etc.). |
 
 ---
 
@@ -27,95 +27,176 @@ This document outlines the development flow for the PDF Editor project, includin
 
 - Don't commit directly to the `main` branch.
 - Don't merge to the `main` branch without approval from the user.
-- Don't push to remote. The remote is managed manually by the user.
+- Don't push without a reason (CI, sync, or user request).
 
 ---
 
 ## Workflow Steps
 
-### 1. Plan
+### 1. Plan — Create a GitHub Issue
 
-- Create an **issue** for every task on GitHub. The issue should contain a detailed description of the task, including any relevant information or resources.
+For every task, the AI agent creates a GitHub issue with:
+- **Title**: concise description of the task
+- **Body**: detailed description, acceptance criteria, technical notes
+- **Labels**: `phase-1a`, `backend`, `frontend`, `tauri`, `mobile`, etc.
+
+The agent uses the `mcp_gitkraken_cli_issues_create` tool to create issues. The issue number determines the branch name.
 
 ### 2. Branching
-
-main -> dev -> feature/<issue-number>-<short-description>
-
-> ✅ **Initial setup già completato** — il branch `dev` esiste già sia in locale che su remote.
-
-#### Per-feature workflow
 
 ```bash
 git checkout dev
 git checkout -b feature/<issue-number>-<short-description>
 ```
 
+Example: issue #2 "FastAPI backend setup" → branch `feature/2-fastapi-backend`
+
 ### 3. Implementation
 
-- **One commit per logical component.** Implement one single component/feature at a time, then commit immediately before moving to the next.
-- Commit frequently using descriptive commit messages.
-- Do one feature at a time. Change feature only after the previous one is complete and all tests have passed.
-- Push only when the user explicitly asks for it.
+- **One commit per atomic function.** Each commit = one API endpoint, one React component, one test file.
+- Commit messages MUST reference the issue for auto-close on merge:
+  ```
+  feat(api): add POST /upload endpoint
+  closes #2
+  ```
+- After each commit, stop, briefly describe what was done, and wait before proceeding.
 
-> **Rule for the AI agent:** Each commit MUST represent ONE single atomic component or feature — one section of the DOM, or one logical JS feature. Do NOT group multiple components in the same commit. After each commit, stop and briefly describe what you did, then wait before proceeding to the next.
+> ⚠️ When the feature branch is merged into `dev`, GitHub auto-closes the issue because the commit message contains `closes #N`.
 
-### 4. Commit granularity — Prototype (Phase 0)
+### 4. Backend architecture pattern (FastAPI)
 
-✅ **Completato.** Table maintained for reference.
+Equivalent to MVC in Laravel. Controllers (routers) do NOT contain validation — that goes in schemas.
 
-| #    | Section                                                             | Commit message    |
-| ---- | ------------------------------------------------------------------- | ----------------- |
-| 1-20 | Head → Header → Sidebar → Toolbar → Viewer → Modals → Final touches | 20 atomic commits |
+```
+backend/
+├── app/
+│   ├── api/              # Router (≈ Controller) — solo routing
+│   │   ├── v1/
+│   │   │   ├── upload.py
+│   │   │   ├── merge.py
+│   │   │   ├── split.py
+│   │   │   ├── text.py
+│   │   │   ├── metadata.py
+│   │   │   ├── convert.py
+│   │   │   └── auth.py
+│   │   └── deps.py       # Dipendenze (get_current_user, get_db)
+│   ├── schemas/          # Pydantic (≈ FormRequest) — validazione
+│   │   ├── pdf.py
+│   │   ├── auth.py
+│   │   └── sync.py
+│   ├── models/           # SQLAlchemy (≈ Eloquent Model)
+│   │   ├── pdf.py
+│   │   ├── user.py
+│   │   └── sync.py
+│   ├── services/         # Logica di business
+│   │   ├── pdf_service.py
+│   │   ├── auth_service.py
+│   │   └── sync_service.py
+│   ├── repositories/     # Accesso DB
+│   │   ├── pdf_repo.py
+│   │   └── user_repo.py
+│   ├── core/             # Config, security, database
+│   │   ├── config.py
+│   │   ├── security.py
+│   │   ├── database.py
+│   │   └── storage.py
+│   └── main.py
+├── tests/
+│   ├── conftest.py
+│   ├── test_upload.py
+│   ├── test_merge.py
+│   ├── test_split.py
+│   └── ...
+├── alembic/              # Migrations (≈ Laravel Migrations)
+│   ├── versions/
+│   └── env.py
+├── requirements.txt
+└── pyproject.toml
+```
 
-### 5. Commit granularity — Phase 1 onward
+**Rules:**
+- **Router** = solo mapping URL → funzione. Massimo 5 righe per handler
+- **Schema (Pydantic)** = validazione input/output. Ogni endpoint ha il suo schema
+- **Service** = logica di business. Testabile isolatamente
+- **Repository** = query SQLAlchemy. Testabile con mock
+- **Model** = definizione tabella. Nessuna logica di business
 
-For subsequent phases, the AI agent MUST follow these guidelines:
+### 5. GitHub Actions (CI)
 
-- **One commit per atomic API endpoint** (FastAPI) — e.g., one commit for `POST /upload`, one for `POST /merge`, one for `POST /split`
-- **One commit per component** (Next.js/React) — e.g., one commit for Sidebar component, one for Toolbar component
-- **One commit per integration step** (Tauri/React Native) — e.g., one commit for Tauri setup, one for sidecar config
-- After each commit, stop, briefly describe what was done, and wait before proceeding
+Every push to `dev` or any `feature/*` branch triggers automated tests:
 
-> ⚠️ **Rule for the AI agent:** This rule applies to ALL phases, not just the prototype. One atomic functionality = one commit. Always.
+```yaml
+# .github/workflows/ci.yml
+name: CI
+on: [push, pull_request]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install -r requirements.txt
+      - run: pytest --cov
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npm run test
+```
+
+This CI file is created at the start of Phase 1a as the first commit.
 
 ### 6. Testing strategy
 
+| Layer | Tool | Scope |
+|-------|------|-------|
+| Backend (Python) | **pytest** + `httpx.AsyncClient` | API endpoint testing |
+| Frontend (React) | **vitest** | Business logic, hooks |
+| Integration | **Playwright** | E2E user flows |
+
 - **Every atomic function MUST have a corresponding test** before being considered complete
-- Backend (Python/FastAPI): use **pytest** with `httpx.AsyncClient` for async endpoint testing
-- Frontend (React/Next.js): use **vitest** for business logic/hooks, **Playwright** for E2E
-- Before advancing from one phase to the next: **ALL tests must be re-run and pass**
-- If any test fails, the phase is NOT complete — fix the issue first
+- Before advancing from one phase to the next: **ALL tests must pass on CI**
+- If any test fails, the phase is NOT complete
 
-### 7. Development order (enforced)
+### 7. Development order
 
-1. **FastAPI backend first** — all endpoints with tests (pytest)
-2. **Next.js frontend** — components + pages with tests (vitest)
-3. **Tauri wrapper** — desktop app, manual testing by user
-4. Only after user approval → Web deploy → Cloud sync → Mobile app
+```
+Phase 1a: FastAPI backend → pytest ✅ → user approves
+Phase 1b: Next.js frontend → vitest ✅ → user approves
+Phase 1c: Tauri desktop → manual test ✅ → user approves
+Phase 2:   Web deploy (Next.js + FastAPI cloud)
+Phase 3:   Cloud sync (SQLite ↔ PostgreSQL)
+Phase 4:   Mobile app (React Native)
+```
 
-> The AI agent MUST NOT start a phase until the previous phase has been approved by the user.
+> The AI agent MUST NOT start a phase until the previous phase has been approved by the user. Approval is given via chat (e.g., "ok, procedi").
 
 ---
 
 ## Commit Message Format
 
-- Use the following format for commit messages:
-
 ```
 <type>(<scope>): <short description>
 
 Types: feat, fix, style, refactor, test, chore
-Scope: The scope of the change (e.g., component, module, etc.)
+Scope: api, ui, tauri, sync, ci, docs
 ```
+
+Always append `closes #<issue-number>` when the commit completes the issue.
 
 Examples:
 
 ```
-feat(auth): add login functionality
-fix(api): remove deprecated endpoint
-style(ui): update button styles
-chore(docs): update README with new instructions
-refactor(auth): refactor login component for better readability
-```
+feat(api): add POST /upload endpoint
+closes #2
 
----
+test(api): add pytest for /upload endpoint
+
+fix(ui): correct page navigation on edge case
+closes #5
+```

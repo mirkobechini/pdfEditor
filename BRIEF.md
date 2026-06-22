@@ -6,43 +6,51 @@ Applicazione **cross-platform** per la modifica e gestione di file PDF, con funz
 
 ## Stack scelto
 
-| Livello | Tecnologia | Ruolo |
-| ------- | ---------- | ----- |
-| **Frontend** | React + TailwindCSS | UI condivisa tra web, desktop e mobile |
-| **Web app** | Next.js (pages router) | Versione browser, PWA installabile |
-| **Desktop** | Tauri (Rust) | App nativa leggera (~5MB), stessa web UI |
-| **Mobile** | React Native | App nativa iOS/Android, logica React condivisa |
-| **Backend** | FastAPI (Python) | Auth, elaborazione PDF, cloud sync |
-| **PDF modifica testo** | PyMuPDF (fitz) | Modifica testo, estrazione, manipolazione |
-| **PDF viewer** | PDF.js (Mozilla) | Render lato client |
-| **Database offline** | SQLite | Stessa struttura del cloud, sync bidirezionale |
-| **Database cloud** | PostgreSQL | Produzione, sincronizzato con SQLite locale |
+| Livello                | Tecnologia             | Ruolo                                          |
+| ---------------------- | ---------------------- | ---------------------------------------------- |
+| **Frontend**           | React + TailwindCSS    | UI condivisa tra web, desktop e mobile         |
+| **Web app**            | Next.js (pages router) | Versione browser, PWA installabile             |
+| **Desktop**            | Tauri (Rust)           | App nativa leggera (~5MB), stessa web UI       |
+| **Mobile**             | React Native           | App nativa iOS/Android, logica React condivisa |
+| **Backend**            | FastAPI (Python)       | Auth, elaborazione PDF, cloud sync             |
+| **PDF modifica testo** | PyMuPDF (fitz)         | Modifica testo, estrazione, manipolazione      |
+| **PDF viewer**         | PDF.js (Mozilla)       | Render lato client                             |
+| **Database offline**   | SQLite                 | Stessa struttura del cloud, sync bidirezionale |
+| **Database cloud**     | PostgreSQL             | Produzione, sincronizzato con SQLite locale    |
 
 ## Roadmap (ordine di implementazione)
 
-1. **Prototipo (Fase 0)** — Singola pagina HTML statica ✅ Completato
+1. **Prototipo (Fase 0)** — Singola pagina HTML statica ✅ Completato (issue #1)
 2. **Desktop app (Fase 1)** — Tauri + Next.js + FastAPI locale (sidecar). Prima versione funzionante offline
-3. **Web app (Fase 2)** — Next.js + FastAPI cloud. Stessa UI, backend remoto
-4. **Mobile app (Fase 3)** — React Native. Stesse API cloud
+   - **Fase 1a**: Backend FastAPI (issue #2)
+   - **Fase 1b**: Frontend Next.js (issue #3)
+   - **Fase 1c**: Tauri wrapper (issue #4)
+3. **Web app (Fase 2)** — Next.js + FastAPI cloud. Stessa UI, backend remoto (issue #5)
+4. **Cloud sync (Fase 3)** — Sync bidirezionale SQLite ↔ PostgreSQL (issue #6)
+5. **Mobile app (Fase 4)** — React Native. Stesse API cloud (issue #7)
 
 > Ogni fase parte SOLO dopo che la precedente è stata approvata dall'utente.
 
 ## Risoluzione falle tecniche
 
 ### 1. PyMuPDF — Licenza AGPL
+
 Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza AGPL è compatibile. Se un domani dovesse diventare closed source, si valuterà licenza commerciale PyMuPDF o alternative.
 
 ### 2. Next.js per Tauri (static export)
+
 - Usare **pages router** (non app router) per compatibilità con `next export`
 - Le API routes non servono: tutte le API vanno su FastAPI
 - Next.js è solo UI + chiamate REST
 
 ### 3. React Native: UI ≠ condivisa, logica sì
+
 - **Logica condivisibile**: hook personalizzati (usePdfFiles, useAuth), API client, contesti, utility
 - **UI separata**: componenti HTML (Next.js) vs componenti nativi (React Native). Non copia-incollare
 - `react-native-web` valutabile per ridurre il gap
 
 ### 4. SQLite ↔ PostgreSQL sync
+
 - **UUID** come chiavi primarie dappertutto (nessun autoincrement)
 - **timestamp** su ogni record per `updated_at`
 - API di sync dedicata:
@@ -51,10 +59,12 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - Il sync è una fase separata, non blocca lo sviluppo offline
 
 ### 5. PDF.js su React Native
+
 - Mobile viewer via **WebView** che carica PDF.js
 - Stessa libreria, stesso rendering, UX accettabile
 
 ### 6. Tauri sidecar per FastAPI locale
+
 - FastAPI bundlato con **PyInstaller** in un eseguibile unico
 - Tauri lo avvia come **sidecar** all'avvio dell'app
 - Occupazione extra: ~30-50MB (accettabile, sotto il limite di 50MB dichiarato)
@@ -91,6 +101,7 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 ## Feature roadmap (ordine di implementazione)
 
 ### Fase 1a — Backend API (FastAPI) — per desktop offline
+
 - [ ] Setup FastAPI + SQLite (offline) + supporto PostgreSQL (futuro sync)
 - [ ] API upload/download file PDF (file system locale)
 - [ ] API merge/split PDF (PyMuPDF)
@@ -102,6 +113,7 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - [ ] SSO con Google
 
 ### Fase 1b — Desktop UI (Next.js + TailwindCSS) — prima versione
+
 - [ ] Setup Next.js (pages router) + React + TailwindCSS
 - [ ] Porting prototipo da HTML statico a componenti React
 - [ ] Sidebar con elenco PDF (upload, elimina, rinomina)
@@ -112,6 +124,7 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - [ ] Bonus: merge, split, riordino, rimozione pagine (via pdf-lib lato client + conferma server)
 
 ### Fase 1c — Desktop app (Tauri)
+
 - [ ] Setup Tauri + Next.js build statica
 - [ ] PyInstaller: bundle FastAPI in eseguibile
 - [ ] Sidecar: avvio FastAPI locale all'avvio
@@ -120,6 +133,7 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - [ ] Installer per Windows (primario), macOS/Linux (secondario)
 
 ### Fase 2 — Web app (Next.js su cloud)
+
 - [ ] Deploy FastAPI su Railway/Render/Fly.io
 - [ ] Deploy Next.js su Vercel
 - [ ] PostgreSQL cloud
@@ -127,11 +141,13 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - [ ] Stessa UI, backend remoto invece di locale
 
 ### Fase 3 — Cloud sync
+
 - [ ] Sync bidirezionale SQLite → PostgreSQL (UUID + timestamp)
 - [ ] Risoluzione conflitti (last-writer-wins)
 - [ ] Modalità offline/online seamless
 
 ### Fase 4 — Mobile app (React Native)
+
 - [ ] Setup React Native (Expo)
 - [ ] Logica React condivisa (API client, hooks auth, utility PDF)
 - [ ] UI nativa: schermate con View/Text/TouchableOpacity
@@ -148,16 +164,16 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 
 ## Librerie chiave
 
-| Libreria | Scopo | Licenza |
-| -------- | ----- | ------- |
-| **PDF.js** (Mozilla) | Viewer lato client | Apache 2.0 |
-| **PyMuPDF** (fitz) | Modifica testo, estrazione, manipolazione | AGPL (⚡ progetto open source) |
-| **pdf-lib** | Merge/split/riordino (anche lato client) | MIT |
-| **python-docx** | PDF ↔ DOCX | MIT |
-| **openpyxl** | PDF ↔ XLSX | MIT |
-| **Pillow** | PDF ↔ immagini | Historical |
-| **Authlib** | SSO Google/Apple/Samsung | BSD |
-| **SQLAlchemy** | ORM Python | MIT |
+| Libreria             | Scopo                                     | Licenza                        |
+| -------------------- | ----------------------------------------- | ------------------------------ |
+| **PDF.js** (Mozilla) | Viewer lato client                        | Apache 2.0                     |
+| **PyMuPDF** (fitz)   | Modifica testo, estrazione, manipolazione | AGPL (⚡ progetto open source) |
+| **pdf-lib**          | Merge/split/riordino (anche lato client)  | MIT                            |
+| **python-docx**      | PDF ↔ DOCX                                | MIT                            |
+| **openpyxl**         | PDF ↔ XLSX                                | MIT                            |
+| **Pillow**           | PDF ↔ immagini                            | Historical                     |
+| **Authlib**          | SSO Google/Apple/Samsung                  | BSD                            |
+| **SQLAlchemy**       | ORM Python                                | MIT                            |
 
 ## Vincoli
 
@@ -174,14 +190,14 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 
 ## Output atteso per fase
 
-| Fase | Output | Collaudo |
-| ---- | ------ | -------- |
-| 1a | FastAPI funzionante con SQLite + test passanti | `pytest` OK |
-| 1b | Next.js che chiama FastAPI locale + test passanti | `vitest` OK |
-| 1c | Tauri app con FastAPI sidecar, installer Windows | Collaudo utente |
-| 2 | Next.js + FastAPI su cloud | Collaudo utente |
-| 3 | Sync offline↔cloud funzionante | Collaudo utente |
-| 4 | React Native su store | Collaudo utente |
+| Fase | Output                                            | Collaudo        |
+| ---- | ------------------------------------------------- | --------------- |
+| 1a   | FastAPI funzionante con SQLite + test passanti    | `pytest` OK     |
+| 1b   | Next.js che chiama FastAPI locale + test passanti | `vitest` OK     |
+| 1c   | Tauri app con FastAPI sidecar, installer Windows  | Collaudo utente |
+| 2    | Next.js + FastAPI su cloud                        | Collaudo utente |
+| 3    | Sync offline↔cloud funzionante                    | Collaudo utente |
+| 4    | React Native su store                             | Collaudo utente |
 
 ## Output atteso
 
