@@ -392,3 +392,65 @@ class PdfService:
             return text, source.page_count
         finally:
             source.close()
+
+    def get_metadata(self, pdf_id: str) -> dict:
+        """Get PDF metadata."""
+        import fitz
+
+        pdf = self.repo.get_by_id(pdf_id)
+        if not pdf:
+            raise ValueError(f"PDF {pdf_id} not found")
+
+        content = self.get_file_content(pdf)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        source = fitz.open(stream=content, filetype="pdf")
+        try:
+            meta = source.metadata
+            return {
+                "title": meta.get("title"),
+                "author": meta.get("author"),
+                "subject": meta.get("subject"),
+                "keywords": meta.get("keywords"),
+            }
+        finally:
+            source.close()
+
+    def update_metadata(
+        self, pdf_id: str, updates: dict
+    ) -> PdfDocument:
+        """Update PDF metadata. Creates a new file preserving original content."""
+        import fitz
+
+        pdf = self.repo.get_by_id(pdf_id)
+        if not pdf:
+            raise ValueError(f"PDF {pdf_id} not found")
+
+        content = self.get_file_content(pdf)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        source = fitz.open(stream=content, filetype="pdf")
+        try:
+            new_meta = dict(source.metadata)
+            # Update only provided fields
+            for key in ("title", "author", "subject", "keywords"):
+                if key in updates and updates[key] is not None:
+                    new_meta[key] = updates[key]
+
+            source.set_metadata(new_meta)
+            out_bytes = source.tobytes()
+        finally:
+            source.close()
+
+        file_uuid = save_pdf(out_bytes)
+        new_name = f"{pdf.original_filename.replace('.pdf', '')}_metadata_updated.pdf"
+
+        new_pdf = PdfDocument(
+            original_filename=new_name,
+            storage_filename=f"{file_uuid}.pdf",
+            file_size=len(out_bytes),
+            page_count=pdf.page_count,
+        )
+        return self.repo.create(new_pdf)

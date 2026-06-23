@@ -177,7 +177,7 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 - [x] API merge/split PDF (PyMuPDF)
 - [x] API riordino e rimozione pagine (PyMuPDF)
 - [x] API **modifica testo** nei PDF (PyMuPDF)
-- [ ] API **modifica metadati** PDF
+- [x] API **modifica metadati** PDF
 - [ ] API conversione PDF ↔ DOCX/XLSX/PNG/JPG
 - [ ] Autenticazione JWT (email/password)
 - [ ] SSO con Google
