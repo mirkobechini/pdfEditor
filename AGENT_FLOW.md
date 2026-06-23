@@ -166,12 +166,9 @@ backend/
 - **Repository** = query SQLAlchemy. Testabile con mock
 - **Model** = definizione tabella. Nessuna logica di business
 
-### 5. GitHub Actions (CI + Superlinter)
+### 5. GitHub Actions (CI + Superlinter + Security)
 
-Every push to `dev` or any `feature/*` branch triggers:
-
-1. **Superlinter** — linting automated di tutti i linguaggi
-2. **Test** — pytest (backend) + vitest (frontend) + Playwright (E2E)
+Every push to any `phase/*` branch or `dev` triggers CI **automatically**. If CI fails, the phase branch CANNOT be merged into `dev`. This is called **gating**.
 
 ```yaml
 # .github/workflows/ci.yml
@@ -199,19 +196,42 @@ jobs:
           VALIDATE_YAML: true
           VALIDATE_MARKDOWN: true
 
-  # Backend tests
-  backend:
+  # Security — Python vulnerability scan
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install bandit pip-audit
+      - run: bandit -r app/ -ll   # Scan solo criticità medie/alte
+      - run: pip-audit            # Check CVE nelle dipendenze
+
+  # Type check — mypy (strict)
+  typecheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install -r requirements.txt
-      - run: pytest --cov --cov-report=term-missing
+      - run: mypy app/ --strict
 
-  # Frontend tests
+  # Backend tests — active in Phase 1a
+  backend:
+    runs-on: ubuntu-latest
+    if: github.ref_name == 'phase/1a-fastapi-backend' || github.ref_name == 'dev'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - run: pytest --cov --cov-report=term-missing -v
+
+  # Frontend tests — active from Phase 1b onward
   frontend:
     runs-on: ubuntu-latest
+    if: github.ref_name != 'phase/1a-fastapi-backend'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -222,30 +242,45 @@ jobs:
 
 ### 6. Best practices (enforced by Superlinter + conventions)
 
-| Rule                   | Description                                                                                |
-| ---------------------- | ------------------------------------------------------------------------------------------ |
-| **Code style Python**  | PEP8 via flake8 + pylint. Docstring obbligatoria su ogni funzione pubblica                 |
-| **Code style JS/TS**   | ESLint + Prettier. Arrow functions preferite, nomi camelCase                               |
-| **Type hints Python**  | Obbligatori su tutte le funzioni. MyPy in CI                                               |
-| **TypeScript**         | Strict mode. Nessun `any` senza commento                                                   |
-| **Security**           | Seguire la checklist in BRIEF.md (magic bytes, UUID storage, timeout, Pydantic validation) |
-| **File naming**        | Python: snake_case. React: PascalCase per componenti, camelCase per utility                |
-| **Error handling**     | Ogni endpoint deve gestire errori 400/404/500 con messaggi descrittivi                     |
-| **No secrets in code** | Usare variabili d'ambiente. Mai hardcode API key o password                                |
+| Rule | Description |
+|------|-------------|
+| **Code style Python** | PEP8 via flake8 + pylint. Docstring obbligatoria su ogni funzione pubblica |
+| **Code style JS/TS** | ESLint + Prettier. Arrow functions preferite, nomi camelCase |
+| **Type hints Python** | Obbligatori su tutte le funzioni. MyPy in CI |
+| **TypeScript** | Strict mode. Nessun `any` senza commento |
+| **Security** | Seguire la checklist in BRIEF.md (magic bytes, UUID storage, timeout, Pydantic validation) |
+| **File naming** | Python: snake_case. React: PascalCase per componenti, camelCase per utility |
+| **Error handling** | Ogni endpoint deve gestire errori 400/404/500 con messaggi descrittivi |
+| **No secrets in code** | Usare variabili d'ambiente. Mai hardcode API key o password |
 
-### 6. Testing strategy
+### 7. CI gates by phase
 
-| Layer            | Tool                             | Scope                 |
-| ---------------- | -------------------------------- | --------------------- |
-| Backend (Python) | **pytest** + `httpx.AsyncClient` | API endpoint testing  |
-| Frontend (React) | **vitest**                       | Business logic, hooks |
-| Integration      | **Playwright**                   | E2E user flows        |
+| Phase | CI jobs | Lighthouse |
+|-------|---------|------------|
+| **1a** (FastAPI) | Superlinter + bandit + pip-audit + mypy + pytest | ❌ |
+| **1b** (Next.js) | Superlinter + bandit + vitest + Playwright | 🟡 Consigliato su localhost |
+| **1c** (Tauri) | Superlinter + Tauri build check + vitest | ❌ |
+| **2** (Web cloud) | Tutti i precedenti + Lighthouse CI | ✅ **Obbligatorio** (performance, PWA, SEO, accessibilità) |
+| **3** (Cloud sync) | Tutti i precedenti | ✅ Obbligatorio |
+| **4** (Mobile) | Tutti i precedenti + Detox/Maestro E2E | ❌ (mobile nativo) |
+
+### 8. Testing strategy
+
+| Layer | Tool | Scope |
+|-------|------|-------|
+| Backend (Python) | **pytest** + `httpx.AsyncClient` | API endpoint testing |
+| Frontend (React) | **vitest** | Business logic, hooks |
+| Integration | **Playwright** | E2E user flows |
+| Security Python | **bandit** + **pip-audit** | Vulnerability scan |
+| Type checking | **mypy** (strict) | Type hints enforcement |
+| Web audit | **Lighthouse CI** | Performance, PWA, SEO, a11y (Phase 2+) |
 
 - **Every atomic function MUST have a corresponding test** before being considered complete
+- **Every push triggers CI automatically** — if CI fails, the phase branch CANNOT be merged into `dev`
 - Before advancing from one phase to the next: **ALL tests must pass on CI**
-- If any test fails, the phase is NOT complete
+- If any test fails, the phase is NOT complete — fix the issue first
 
-### 7. Development order
+### 9. Development order
 
 ```
 Phase 1a: FastAPI backend → pytest ✅ → user approves
