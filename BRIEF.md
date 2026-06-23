@@ -141,6 +141,8 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 - [ ] #7 — API conversione PDF ↔ DOCX/XLSX/PNG/JPG
 - [ ] #8 — Autenticazione JWT (email/password)
 - [ ] #9 — SSO con Google
+- [ ] #10 — Modelli licensing (User.license_tier, LicenseFeature)
+- [ ] #11 — API bug reporting (BugReport model + endpoint)
 
 ### Fase 1b — Desktop UI (Next.js + TailwindCSS) — prima versione
 
@@ -152,6 +154,8 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 - [ ] Dark mode toggle nell'header
 - [ ] Design responsive completo
 - [ ] Bonus: merge, split, riordino, rimozione pagine (via pdf-lib lato client + conferma server)
+- [ ] Pulsante segnalazione bug nell'interfaccia
+- [ ] Dashboard admin per gestione utenti, licenze e bug report
 
 ### Fase 1c — Desktop app (Tauri)
 
@@ -191,6 +195,81 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 - I test sono eseguiti con **pytest** (backend Python) e **vitest** (frontend React)
 - Prima di passare da una fase all'altra, **tutti i test devono essere eseguiti e passare**
 - Se un test fallisce, la fase non è completa
+
+## Licensing (futuro — architettura preparata ora)
+
+Non è previsto un sistema di abbonamento nella prima versione, ma l'architettura dei modelli e del middleware è progettata per supportarlo senza migrazioni future.
+
+### Tier previsti
+
+| Tier         | Dispositivi per tipo          | Descrizione                                 |
+| ------------ | ----------------------------- | ------------------------------------------- |
+| **free**     | 0 desktop, 0 mobile, 1 web    | Solo web, funzionalità base                 |
+| **premium**  | 1 desktop, 1 mobile, 3 web    | Tutte le funzionalità, pagamento ricorrente |
+| **lifetime** | 5 desktop, 5 mobile, 10 web   | Accesso perpetuo, assegnato manualmente     |
+| **admin**    | 99 desktop, 99 mobile, 99 web | Nessun limite. Solo per il proprietario.    |
+
+### Come si gestisce
+
+- **Admin**: solo il proprietario tramite dashboard dedicata
+- **Lifetime**: assegnato manualmente via dashboard (es. beta tester, amici, collaboratori)
+- **Premium**: gestito tramite integrazione pagamenti (Stripe/Lemon Squeezy) — futura
+- **Free**: tier predefinito per nuovi utenti
+
+### Modelli dati (creati in Fase 1a)
+
+```python
+class User(Base):
+    license_tier: str  # "free" | "premium" | "lifetime" | "admin"
+    # Default in fase di sviluppo: "admin"
+
+class LicenseFeature(Base):
+    tier: str
+    feature: str
+    enabled: bool
+```
+
+### Funzionalità bloccabili per tier
+
+| Funzionalità          | free              | premium | lifetime | admin |
+| --------------------- | ----------------- | ------- | -------- | ----- |
+| Visualizzazione PDF   | ✅                | ✅      | ✅       | ✅    |
+| Upload PDF            | ❌ (web limitato) | ✅      | ✅       | ✅    |
+| Merge/split           | ❌                | ✅      | ✅       | ✅    |
+| Modifica testo        | ❌                | ✅      | ✅       | ✅    |
+| Conversione DOCX/XLSX | ❌                | ✅      | ✅       | ✅    |
+| Modifica metadati     | ❌                | ✅      | ✅       | ✅    |
+| Export PNG/JPG        | ❌                | ✅      | ✅       | ✅    |
+| Cloud sync            | ❌                | ✅      | ✅       | ✅    |
+| SSO Google            | ✅                | ✅      | ✅       | ✅    |
+
+## Bug reporting (futuro)
+
+Gli utenti potranno segnalare bug tramite un pulsante nell'app. Il report includerà:
+
+| Campo            | Descrizione                                                                                                            |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Utente**       | ID utente autenticato (se loggato)                                                                                     |
+| **Piattaforma**  | web, desktop, mobile                                                                                                   |
+| **Versione app** | Numero versione (es. 1.2.3)                                                                                            |
+| **System info**  | OS, browser (web), modello (mobile)                                                                                    |
+| **Descrizione**  | Testo libero: "cosa stavi facendo quando è successo?"                                                                  |
+| **Timestamp**    | Data/ora del report                                                                                                    |
+| **Conteggio**    | Quanti utenti diversi hanno riportato lo stesso bug (tramite deduplica sul testo descrizione o su un ID bug opzionale) |
+
+Il backend salverà i report in una tabella `bug_reports` accessibile solo dall'admin tramite dashboard.
+
+### Modello dati bug report (creato in Fase 1a)
+
+```python
+class BugReport(Base):
+    user_id: UUID (nullable — anche utenti non loggati)
+    platform: str       # "web", "desktop", "mobile"
+    app_version: str
+    os_info: str
+    description: text
+    created_at: datetime
+```
 
 ## Strategia di sicurezza (trasversale, obbligatoria in ogni fase)
 
