@@ -71,6 +71,24 @@ class TextResponse(BaseModel):
     pages: int
 
 
+class MetadataResponse(BaseModel):
+    """Schema for PDF metadata."""
+
+    title: str | None = None
+    author: str | None = None
+    subject: str | None = None
+    keywords: str | None = None
+
+
+class UpdateMetadataRequest(BaseModel):
+    """Schema for updating PDF metadata. All fields optional."""
+
+    title: str | None = None
+    author: str | None = None
+    subject: str | None = None
+    keywords: str | None = None
+
+
 class ErrorResponse(BaseModel):
     """Schema for error responses."""
 
