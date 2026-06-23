@@ -202,3 +202,93 @@ class PdfService:
             source.close()
 
         return results
+
+    def reorder(self, pdf_id: str, page_order: list[int]) -> PdfDocument:
+        """Reorder pages of a PDF. page_order is 1-based."""
+        import fitz
+
+        pdf = self.repo.get_by_id(pdf_id)
+        if not pdf:
+            raise ValueError(f"PDF {pdf_id} not found")
+
+        content = self.get_file_content(pdf)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        source = fitz.open(stream=content, filetype="pdf")
+        if len(page_order) != source.page_count:
+            source.close()
+            raise ValueError(
+                f"page_order must contain exactly {source.page_count} pages, "
+                f"got {len(page_order)}"
+            )
+
+        # Convert 1-based to 0-based
+        zero_based = [p - 1 for p in page_order]
+
+        # Validate all indices are valid
+        for idx in zero_based:
+            if idx < 0 or idx >= source.page_count:
+                source.close()
+                raise ValueError(f"Page number {idx + 1} is out of range")
+
+        # select() reorders/selects pages from the document
+        source.select(zero_based)
+        out_bytes = source.tobytes()
+        source.close()
+
+        file_uuid = save_pdf(out_bytes)
+        new_name = f"{pdf.original_filename.replace('.pdf', '')}_reordered.pdf"
+
+        new_pdf = PdfDocument(
+            original_filename=new_name,
+            storage_filename=f"{file_uuid}.pdf",
+            file_size=len(out_bytes),
+            page_count=len(page_order),
+        )
+        return self.repo.create(new_pdf)
+
+    def remove_pages(self, pdf_id: str, page_numbers: list[int]) -> PdfDocument:
+        """Remove specific pages from a PDF. page_numbers is 1-based."""
+        import fitz
+
+        pdf = self.repo.get_by_id(pdf_id)
+        if not pdf:
+            raise ValueError(f"PDF {pdf_id} not found")
+
+        content = self.get_file_content(pdf)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        source = fitz.open(stream=content, filetype="pdf")
+
+        # Validate page numbers
+        for p in page_numbers:
+            if p < 1 or p > source.page_count:
+                source.close()
+                raise ValueError(
+                    f"Page {p} is out of range. PDF has {source.page_count} pages"
+                )
+
+        # Convert to 0-based and build list of pages to KEEP
+        remove_set = set(p - 1 for p in page_numbers)
+        keep_pages = [i for i in range(source.page_count) if i not in remove_set]
+
+        if len(keep_pages) == 0:
+            source.close()
+            raise ValueError("Cannot remove all pages")
+
+        source.select(keep_pages)
+        out_bytes = source.tobytes()
+        source.close()
+
+        file_uuid = save_pdf(out_bytes)
+        new_name = f"{pdf.original_filename.replace('.pdf', '')}_pages_removed.pdf"
+
+        new_pdf = PdfDocument(
+            original_filename=new_name,
+            storage_filename=f"{file_uuid}.pdf",
+            file_size=len(out_bytes),
+            page_count=len(keep_pages),
+        )
+        return self.repo.create(new_pdf)
