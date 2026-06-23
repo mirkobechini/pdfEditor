@@ -179,7 +179,7 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 - [x] API **modifica testo** nei PDF (PyMuPDF)
 - [x] API **modifica metadati** PDF
 - [x] API conversione PDF ↔ DOCX/XLSX/PNG/JPG
-- [ ] Autenticazione JWT (email/password)
+- [x] Autenticazione JWT (email/password)
 - [ ] SSO con Google
 - [ ] Modelli licensing (User.license_tier, LicenseFeature)
 - [ ] API bug reporting (BugReport model + endpoint)
