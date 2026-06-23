@@ -247,7 +247,7 @@ jobs:
   # Backend tests — active in Phase 1a
   backend:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref_name, 'feature/') || github.ref_name == 'dev'
+    if: startsWith(github.head_ref, 'feature/') || github.ref_name == 'dev'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -258,11 +258,11 @@ jobs:
   # Frontend tests — active from Phase 1b onward
   frontend:
     runs-on: ubuntu-latest
-    if: startsWith(github.ref_name, 'feature/') || github.ref_name == 'dev'
+    if: startsWith(github.head_ref, 'feature/') || github.ref_name == 'dev'
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
-        with: { node-version: "24" }
+        with: { node-version: "22" }
       - run: npm ci
       - run: npm run test -- --coverage
 ```
