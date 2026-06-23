@@ -481,14 +481,10 @@ class PdfService:
                 filename = f"{pdf.original_filename.replace('.pdf', '')}.txt"
 
             elif fmt in ("png", "jpg", "jpeg"):
-                import io
-
-                buf = io.BytesIO()
-                page = source[0]  # First page only for single image export
                 ext = "jpeg" if fmt in ("jpg", "jpeg") else "png"
+                page = source[0]  # First page only for single image export
                 pix = page.get_pixmap(dpi=150)
-                pix.save(buf, ext)
-                result = buf.getvalue()
+                result = pix.tobytes(ext)
                 media_type = f"image/{ext}"
                 filename = f"{pdf.original_filename.replace('.pdf', '')}.{ext}"
 
@@ -515,7 +511,8 @@ class PdfService:
         if ext == "txt":
             text = content.decode("utf-8", errors="replace")
             doc = fitz.open()
-            page = doc.insert_page(-1, width=612, height=792)
+            page_idx = doc.insert_page(-1, width=612, height=792)
+            page = doc[page_idx]
             page.insert_text((50, 100), text, fontname="helv", fontsize=11)
             pdf_bytes = doc.tobytes()
             doc.close()
