@@ -96,13 +96,13 @@ git push origin feature/<issue-number>-<short-description>
 # Create Pull Request (CI gating)
 gh pr create --base dev --title "feat(api): add POST /upload endpoint" --body "closes #<issue-number>"
 
-# Wait for CI to pass, then squash-merge:
-gh pr merge --squash --delete-branch
+# Wait for CI to pass, then merge (preserves atomic commits):
+gh pr merge --merge --delete-branch
 
 # Verify issue auto-closed (GitHub sometimes misses the body reference):
 gh issue list --limit 5 | grep "#<issue-number>"
 # If still open, close manually:
-#   gh issue close <issue-number> --comment "Issue risolta con PR #<pr-number> (squash-merged in dev)."
+#   gh issue close <issue-number> --comment "Issue risolta con PR #<pr-number>."
 
 # Switch back to dev and sync
 git checkout dev
@@ -112,7 +112,7 @@ git pull origin dev
 git branch -d feature/<issue-number>-<short-description>
 ```
 
-> ⚠️ When the PR is merged via `gh pr merge --squash`, GitHub should auto-close the issue because the PR body contains `closes #N`. However, this occasionally fails (especially with CLI merges). **Always verify** with `gh issue list` after merge. If the issue is still open, close it manually with `gh issue close <number>`. The commit message in the squash commit is derived from the PR title, not the individual commit messages.
+> ⚠️ Use `--merge` (not `--squash`) to preserve atomic commit history on `dev`. GitHub should auto-close the issue because the PR body contains `closes #N`. However, this occasionally fails. **Always verify** with `gh issue list` after merge. If the issue is still open, close it manually with `gh issue close <number>`.
 
 ### 4. Implementation
 
@@ -372,8 +372,8 @@ git commit -m "fix(scope): short description"
 git push origin hotfix/<issue-number>-<short-description>
 # create PR for CI gating
 gh pr create --base dev --title "fix(scope): short description" --body "closes #N"
-# wait for CI, then squash-merge
-gh pr merge --squash --delete-branch
+# wait for CI, then merge
+gh pr merge --merge --delete-branch
 git checkout dev
 git pull origin dev
 git branch -d hotfix/<issue-number>-<short-description>
