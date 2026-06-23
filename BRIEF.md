@@ -9,7 +9,7 @@ Applicazione **cross-platform** per la modifica e gestione di file PDF, con funz
 _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `dev`)._
 
 - [x] **Fase 0** — Prototipo HTML statico ✅
-- [x] **Fase 1a** — Backend FastAPI (in corso: issue #13 completata ✅)
+- [ ] **Fase 1a** — Backend FastAPI (in corso: issue #13 completata ✅)
 - [ ] **Fase 1b** — Frontend Next.js
 - [ ] **Fase 1c** — Desktop Tauri v2
 - [ ] **Fase 2** — Web app su cloud
@@ -174,15 +174,15 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 ### Fase 1a — Backend API (FastAPI) — per desktop offline
 
 - [x] #13 — API upload/download file PDF (file system locale)
-- [ ] #3 — API merge/split PDF (PyMuPDF)
-- [ ] #4 — API riordino e rimozione pagine (PyMuPDF)
-- [ ] #5 — API **modifica testo** nei PDF (PyMuPDF)
-- [ ] #6 — API **modifica metadati** PDF
-- [ ] #7 — API conversione PDF ↔ DOCX/XLSX/PNG/JPG
-- [ ] #8 — Autenticazione JWT (email/password)
-- [ ] #9 — SSO con Google
-- [ ] #10 — Modelli licensing (User.license_tier, LicenseFeature)
-- [ ] #11 — API bug reporting (BugReport model + endpoint)
+- [ ] #14 — API merge/split PDF (PyMuPDF)
+- [ ] #15 — API riordino e rimozione pagine (PyMuPDF)
+- [ ] #16 — API **modifica testo** nei PDF (PyMuPDF)
+- [ ] #17 — API **modifica metadati** PDF
+- [ ] #18 — API conversione PDF ↔ DOCX/XLSX/PNG/JPG
+- [ ] #19 — Autenticazione JWT (email/password)
+- [ ] #20 — SSO con Google
+- [ ] #21 — Modelli licensing (User.license_tier, LicenseFeature)
+- [ ] #22 — API bug reporting (BugReport model + endpoint)
 
 ### Fase 1b — Desktop UI (Next.js + TailwindCSS) — prima versione
 
