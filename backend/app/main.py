@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.merge_split import router as merge_split_router
 from app.api.v1.reorder import router as reorder_router
+from app.api.v1.text import router as text_router
 from app.api.v1.upload import router as pdf_router
 from app.core.config import settings
 from app.core.database import Base, engine
@@ -36,3 +37,4 @@ app.add_middleware(
 app.include_router(pdf_router)
 app.include_router(merge_split_router)
 app.include_router(reorder_router)
+app.include_router(text_router)

@@ -292,3 +292,103 @@ class PdfService:
             page_count=len(keep_pages),
         )
         return self.repo.create(new_pdf)
+
+    def replace_text(
+        self,
+        pdf_id: str,
+        search: str,
+        replace: str,
+        occurrence: int | None = None,
+    ) -> PdfDocument:
+        """Find and replace text in a PDF. If occurrence is None, replaces all."""
+        import fitz
+
+        if not search.strip():
+            raise ValueError("Search text cannot be empty")
+
+        pdf = self.repo.get_by_id(pdf_id)
+        if not pdf:
+            raise ValueError(f"PDF {pdf_id} not found")
+
+        content = self.get_file_content(pdf)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        source = fitz.open(stream=content, filetype="pdf")
+        total_replacements = 0
+
+        try:
+            for page_num in range(source.page_count):
+                page = source[page_num]
+                rects = page.search_for(search)
+
+                if not rects:
+                    continue
+
+                for rect in rects:
+                    if occurrence is not None and total_replacements >= occurrence:
+                        break
+
+                    # Redact the found text area
+                    page.add_redact_annot(rect, fill=None)
+                    page.apply_redactions()
+                    # Insert replacement text
+                    fontsize = rect.y1 - rect.y0 - 2
+                    if fontsize < 6:
+                        fontsize = 10
+                    page.insert_text(
+                        (rect.x0, rect.y0 + 1),
+                        replace,
+                        fontname="helv",
+                        fontsize=fontsize,
+                    )
+                    total_replacements += 1
+
+                if occurrence is not None and total_replacements >= occurrence:
+                    break
+
+            out_bytes = source.tobytes()
+        finally:
+            source.close()
+
+        file_uuid = save_pdf(out_bytes)
+        new_name = f"{pdf.original_filename.replace('.pdf', '')}_text_replaced.pdf"
+
+        new_pdf = PdfDocument(
+            original_filename=new_name,
+            storage_filename=f"{file_uuid}.pdf",
+            file_size=len(out_bytes),
+            page_count=pdf.page_count,
+        )
+        return self.repo.create(new_pdf)
+
+    def extract_text(self, pdf_id: str, page: int | None = None) -> tuple[str, int]:
+        """Extract text from a PDF. If page is None, extracts from all pages."""
+        import fitz
+
+        pdf = self.repo.get_by_id(pdf_id)
+        if not pdf:
+            raise ValueError(f"PDF {pdf_id} not found")
+
+        content = self.get_file_content(pdf)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        source = fitz.open(stream=content, filetype="pdf")
+
+        try:
+            if page is not None:
+                if page < 1 or page > source.page_count:
+                    raise ValueError(
+                        f"Page {page} is out of range. PDF has {source.page_count} pages"
+                    )
+                text = source[page - 1].get_text()
+            else:
+                text_parts = []
+                for page_num in range(source.page_count):
+                    text_parts.append(source[page_num].get_text())
+                text = "\n---\n".join(text_parts)
+
+            return text, source.page_count
+        finally:
+            source.close()

@@ -56,6 +56,21 @@ class RemovePagesRequest(BaseModel):
     page_numbers: list[int]
 
 
+class ReplaceTextRequest(BaseModel):
+    """Schema for find & replace text in a PDF."""
+
+    search: str
+    replace: str
+    occurrence: int | None = None  # None = replace all
+
+
+class TextResponse(BaseModel):
+    """Schema for extracted text response."""
+
+    text: str
+    pages: int
+
+
 class ErrorResponse(BaseModel):
     """Schema for error responses."""
 
