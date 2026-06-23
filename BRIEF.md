@@ -174,15 +174,15 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 ### Fase 1a — Backend API (FastAPI) — per desktop offline
 
 - [x] #13 — API upload/download file PDF (file system locale)
-- [ ] #14 — API merge/split PDF (PyMuPDF)
-- [ ] #15 — API riordino e rimozione pagine (PyMuPDF)
-- [ ] #16 — API **modifica testo** nei PDF (PyMuPDF)
-- [ ] #17 — API **modifica metadati** PDF
-- [ ] #18 — API conversione PDF ↔ DOCX/XLSX/PNG/JPG
-- [ ] #19 — Autenticazione JWT (email/password)
-- [ ] #20 — SSO con Google
-- [ ] #21 — Modelli licensing (User.license_tier, LicenseFeature)
-- [ ] #22 — API bug reporting (BugReport model + endpoint)
+- [x] #15 — API merge/split PDF (PyMuPDF)
+- [ ] #16 — API riordino e rimozione pagine (PyMuPDF)
+- [ ] #17 — API **modifica testo** nei PDF (PyMuPDF)
+- [ ] #18 — API **modifica metadati** PDF
+- [ ] #19 — API conversione PDF ↔ DOCX/XLSX/PNG/JPG
+- [ ] #20 — Autenticazione JWT (email/password)
+- [ ] #21 — SSO con Google
+- [ ] #22 — Modelli licensing (User.license_tier, LicenseFeature)
+- [ ] #23 — API bug reporting (BugReport model + endpoint)
 
 ### Fase 1b — Desktop UI (Next.js + TailwindCSS) — prima versione
 
