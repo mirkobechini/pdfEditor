@@ -204,8 +204,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install bandit pip-audit
-      - run: bandit -r app/ -ll   # Scan solo criticità medie/alte
-      - run: pip-audit            # Check CVE nelle dipendenze
+      - run: bandit -r app/ -ll # Scan solo criticità medie/alte
+      - run: pip-audit # Check CVE nelle dipendenze
 
   # Type check — mypy (strict)
   typecheck:
@@ -242,38 +242,38 @@ jobs:
 
 ### 6. Best practices (enforced by Superlinter + conventions)
 
-| Rule | Description |
-|------|-------------|
-| **Code style Python** | PEP8 via flake8 + pylint. Docstring obbligatoria su ogni funzione pubblica |
-| **Code style JS/TS** | ESLint + Prettier. Arrow functions preferite, nomi camelCase |
-| **Type hints Python** | Obbligatori su tutte le funzioni. MyPy in CI |
-| **TypeScript** | Strict mode. Nessun `any` senza commento |
-| **Security** | Seguire la checklist in BRIEF.md (magic bytes, UUID storage, timeout, Pydantic validation) |
-| **File naming** | Python: snake_case. React: PascalCase per componenti, camelCase per utility |
-| **Error handling** | Ogni endpoint deve gestire errori 400/404/500 con messaggi descrittivi |
-| **No secrets in code** | Usare variabili d'ambiente. Mai hardcode API key o password |
+| Rule                   | Description                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| **Code style Python**  | PEP8 via flake8 + pylint. Docstring obbligatoria su ogni funzione pubblica                 |
+| **Code style JS/TS**   | ESLint + Prettier. Arrow functions preferite, nomi camelCase                               |
+| **Type hints Python**  | Obbligatori su tutte le funzioni. MyPy in CI                                               |
+| **TypeScript**         | Strict mode. Nessun `any` senza commento                                                   |
+| **Security**           | Seguire la checklist in BRIEF.md (magic bytes, UUID storage, timeout, Pydantic validation) |
+| **File naming**        | Python: snake_case. React: PascalCase per componenti, camelCase per utility                |
+| **Error handling**     | Ogni endpoint deve gestire errori 400/404/500 con messaggi descrittivi                     |
+| **No secrets in code** | Usare variabili d'ambiente. Mai hardcode API key o password                                |
 
 ### 7. CI gates by phase
 
-| Phase | CI jobs | Lighthouse |
-|-------|---------|------------|
-| **1a** (FastAPI) | Superlinter + bandit + pip-audit + mypy + pytest | ❌ |
-| **1b** (Next.js) | Superlinter + bandit + vitest + Playwright | 🟡 Consigliato su localhost |
-| **1c** (Tauri) | Superlinter + Tauri build check + vitest | ❌ |
-| **2** (Web cloud) | Tutti i precedenti + Lighthouse CI | ✅ **Obbligatorio** (performance, PWA, SEO, accessibilità) |
-| **3** (Cloud sync) | Tutti i precedenti | ✅ Obbligatorio |
-| **4** (Mobile) | Tutti i precedenti + Detox/Maestro E2E | ❌ (mobile nativo) |
+| Phase              | CI jobs                                          | Lighthouse                                                 |
+| ------------------ | ------------------------------------------------ | ---------------------------------------------------------- |
+| **1a** (FastAPI)   | Superlinter + bandit + pip-audit + mypy + pytest | ❌                                                         |
+| **1b** (Next.js)   | Superlinter + bandit + vitest + Playwright       | 🟡 Consigliato su localhost                                |
+| **1c** (Tauri)     | Superlinter + Tauri build check + vitest         | ❌                                                         |
+| **2** (Web cloud)  | Tutti i precedenti + Lighthouse CI               | ✅ **Obbligatorio** (performance, PWA, SEO, accessibilità) |
+| **3** (Cloud sync) | Tutti i precedenti                               | ✅ Obbligatorio                                            |
+| **4** (Mobile)     | Tutti i precedenti + Detox/Maestro E2E           | ❌ (mobile nativo)                                         |
 
 ### 8. Testing strategy
 
-| Layer | Tool | Scope |
-|-------|------|-------|
-| Backend (Python) | **pytest** + `httpx.AsyncClient` | API endpoint testing |
-| Frontend (React) | **vitest** | Business logic, hooks |
-| Integration | **Playwright** | E2E user flows |
-| Security Python | **bandit** + **pip-audit** | Vulnerability scan |
-| Type checking | **mypy** (strict) | Type hints enforcement |
-| Web audit | **Lighthouse CI** | Performance, PWA, SEO, a11y (Phase 2+) |
+| Layer            | Tool                             | Scope                                  |
+| ---------------- | -------------------------------- | -------------------------------------- |
+| Backend (Python) | **pytest** + `httpx.AsyncClient` | API endpoint testing                   |
+| Frontend (React) | **vitest**                       | Business logic, hooks                  |
+| Integration      | **Playwright**                   | E2E user flows                         |
+| Security Python  | **bandit** + **pip-audit**       | Vulnerability scan                     |
+| Type checking    | **mypy** (strict)                | Type hints enforcement                 |
+| Web audit        | **Lighthouse CI**                | Performance, PWA, SEO, a11y (Phase 2+) |
 
 - **Every atomic function MUST have a corresponding test** before being considered complete
 - **Every push triggers CI automatically** — if CI fails, the phase branch CANNOT be merged into `dev`
