@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1.merge_split import router as merge_split_router
 from app.api.v1.upload import router as pdf_router
 from app.core.config import settings
 from app.core.database import Base, engine
@@ -32,3 +33,4 @@ app.add_middleware(
 
 # Routers
 app.include_router(pdf_router)
+app.include_router(merge_split_router)
