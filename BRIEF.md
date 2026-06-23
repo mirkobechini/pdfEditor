@@ -18,17 +18,17 @@ _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `d
 
 ## Stack scelto
 
-| Livello                | Tecnologia             | Ruolo                                          |
-| ---------------------- | ---------------------- | ---------------------------------------------- |
-| **Frontend**           | React + TailwindCSS    | UI condivisa tra web, desktop e mobile         |
-| **Web app**            | Next.js (pages router) | Versione browser, PWA installabile             |
-| **Desktop**            | Tauri (Rust)           | App nativa leggera (~5MB), stessa web UI       |
-| **Mobile**             | React Native           | App nativa iOS/Android, logica React condivisa |
-| **Backend**            | FastAPI (Python)       | Auth, elaborazione PDF, cloud sync             |
-| **PDF modifica testo** | PyMuPDF (fitz)         | Modifica testo, estrazione, manipolazione      |
-| **PDF viewer**         | PDF.js (Mozilla)       | Render lato client                             |
-| **Database offline**   | SQLite                 | Stessa struttura del cloud, sync bidirezionale |
-| **Database cloud**     | PostgreSQL             | Produzione, sincronizzato con SQLite locale    |
+| Livello                | Tecnologia             | Ruolo                                                                  |
+| ---------------------- | ---------------------- | ---------------------------------------------------------------------- |
+| **Frontend**           | React + TailwindCSS    | UI condivisa tra web, desktop e mobile                                 |
+| **Web app**            | Next.js (pages router) | Versione browser, PWA installabile                                     |
+| **Desktop**            | Tauri (Rust)           | App nativa leggera (~5MB UI + ~30-50MB sidecar FastAPI), stessa web UI |
+| **Mobile**             | React Native           | App nativa iOS/Android, logica React condivisa                         |
+| **Backend**            | FastAPI (Python)       | Auth, elaborazione PDF, cloud sync                                     |
+| **PDF modifica testo** | PyMuPDF (fitz)         | Modifica testo, estrazione, manipolazione                              |
+| **PDF viewer**         | PDF.js (Mozilla)       | Render lato client                                                     |
+| **Database offline**   | SQLite                 | Stessa struttura del cloud, sync bidirezionale                         |
+| **Database cloud**     | PostgreSQL             | Produzione, sincronizzato con SQLite locale                            |
 
 ## Roadmap (ordine di implementazione)
 

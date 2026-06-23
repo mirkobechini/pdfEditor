@@ -20,8 +20,8 @@ This document outlines the development flow for the PDF Editor project, includin
 ## Core Principles
 
 - Each task should be implemented in a separate branch.
-- Branch naming convention: `feature/<issue-number>-<short-description>` (e.g., `feature/3-pdf-annotation`).
-- Each branch should be created from the `dev` branch. The `dev` branch is a **permanent** branch created from `main` at the start of the project.
+- Branch naming convention: `phase/<phase-name>` for multi-issue phases, `feature/<issue-number>-<short-description>` for single issues.
+- Each phase branch should be created from the `dev` branch. The `dev` branch is a **permanent** branch created from `main` at the start of the project.
 - **No merge to the `main` branch without approval from the user.** The user must review and approve the changes before they are merged into `main`.
 
 ## NEVER
@@ -64,33 +64,39 @@ The agent uses the `mcp_gitkraken_cli_issues_create` tool to create issues. The 
 Each **phase** gets its own branch. All feature issues of that phase are implemented inside the same branch.
 
 ```bash
+# Create and push phase branch (CI needs push to trigger tests)
 git checkout dev
 git checkout -b phase/<phase-name>
+git push origin phase/<phase-name>
 ```
 
 Examples:
 
-| Branch                     | Issues                         | What it contains          |
-| -------------------------- | ------------------------------ | ------------------------- |
-| `phase/1a-fastapi-backend` | #2, #3, #4, #5, #6, #7, #8, #9 | All backend API endpoints |
-| `phase/1b-nextjs-frontend` | #10, #11, ...                  | All React components      |
-| `phase/1c-tauri-desktop`   | ...                            | Tauri wrappering          |
+| Branch                     | Issues                                   | What it contains          |
+| -------------------------- | ---------------------------------------- | ------------------------- |
+| `phase/1a-fastapi-backend` | #2, #3, #4, #5, #6, #7, #8, #9, #10, #11 | All backend API endpoints |
+| `phase/1b-nextjs-frontend` | #12, #13, ...                            | All React components      |
+| `phase/1c-tauri-desktop`   | ...                                      | Tauri wrappering          |
 
 ### 3. Per-feature workflow inside a phase branch
 
 For each issue inside the phase branch:
 
 ```bash
-# Already inside the phase branch
+# Already inside the phase branch (pushed)
 git checkout phase/1a-fastapi-backend
 
 # Implement the feature + tests
 # Commit with auto-close reference:
 git commit -m "feat(api): add POST /upload endpoint\n\ncloses #2"
 
+# Push to trigger CI (Superlinter + tests run automatically)
+git push origin phase/1a-fastapi-backend
+
 # When all issues in the phase are done, merge into dev
 git checkout dev
 git merge phase/1a-fastapi-backend
+git push origin dev
 ```
 
 > Multiple `closes #N` in different commits within the same branch will auto-close each issue individually when the branch is merged into `dev`.
@@ -107,7 +113,7 @@ git merge phase/1a-fastapi-backend
 
 > ⚠️ When the feature branch is merged into `dev`, GitHub auto-closes the issue because the commit message contains `closes #N`.
 
-### 4. Backend architecture pattern (FastAPI)
+### 5. Backend architecture pattern (FastAPI)
 
 Equivalent to MVC in Laravel. Controllers (routers) do NOT contain validation — that goes in schemas.
 
@@ -166,7 +172,7 @@ backend/
 - **Repository** = query SQLAlchemy. Testabile con mock
 - **Model** = definizione tabella. Nessuna logica di business
 
-### 5. GitHub Actions (CI + Superlinter + Security)
+### 6. GitHub Actions (CI + Superlinter + Security)
 
 Every push to any `phase/*` branch or `dev` triggers CI **automatically**. If CI fails, the phase branch CANNOT be merged into `dev`. This is called **gating**.
 
@@ -240,7 +246,7 @@ jobs:
       - run: npm run test -- --coverage
 ```
 
-### 6. Best practices (enforced by Superlinter + conventions)
+### 7. Best practices (enforced by Superlinter + conventions)
 
 | Rule                   | Description                                                                                |
 | ---------------------- | ------------------------------------------------------------------------------------------ |
@@ -253,7 +259,7 @@ jobs:
 | **Error handling**     | Ogni endpoint deve gestire errori 400/404/500 con messaggi descrittivi                     |
 | **No secrets in code** | Usare variabili d'ambiente. Mai hardcode API key o password                                |
 
-### 7. CI gates by phase
+### 8. CI gates by phase
 
 | Phase              | CI jobs                                          | Lighthouse                                                 |
 | ------------------ | ------------------------------------------------ | ---------------------------------------------------------- |
@@ -264,7 +270,7 @@ jobs:
 | **3** (Cloud sync) | Tutti i precedenti                               | ✅ Obbligatorio                                            |
 | **4** (Mobile)     | Tutti i precedenti + Detox/Maestro E2E           | ❌ (mobile nativo)                                         |
 
-### 8. Testing strategy
+### 9. Testing strategy
 
 | Layer            | Tool                             | Scope                                  |
 | ---------------- | -------------------------------- | -------------------------------------- |
@@ -280,7 +286,7 @@ jobs:
 - Before advancing from one phase to the next: **ALL tests must pass on CI**
 - If any test fails, the phase is NOT complete — fix the issue first
 
-### 9. Development order
+### 10. Development order
 
 ```
 Phase 1a: FastAPI backend → pytest ✅ → user approves
@@ -292,6 +298,22 @@ Phase 4:   Mobile app (React Native)
 ```
 
 > The AI agent MUST NOT start a phase until the previous phase has been approved by the user. Approval is given via chat (e.g., "ok, procedi").
+
+## Hotfix workflow
+
+For urgent fixes directly on `dev` or `main`:
+
+```bash
+git checkout dev
+git checkout -b hotfix/<issue-number>-<short-description>
+# fix + commit + push
+git commit -m "fix(scope): description\n\ncloses #N"
+git push origin hotfix/<issue-number>-<short-description>
+# merge into dev
+git checkout dev
+git merge hotfix/<issue-number>-<short-description>
+git push origin dev
+```
 
 ---
 
