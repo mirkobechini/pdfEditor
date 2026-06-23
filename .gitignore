@@ -28,3 +28,6 @@ backend/storage/pdfs/*.pdf
 .coverage
 coverage.xml
 .pytest_cache/
+
+# Databases
+*.db
