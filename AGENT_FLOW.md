@@ -99,14 +99,20 @@ gh pr create --base dev --title "feat(api): add POST /upload endpoint" --body "c
 # Wait for CI to pass, then squash-merge:
 gh pr merge --squash --delete-branch
 
+# Verify issue auto-closed (GitHub sometimes misses the body reference):
+gh issue list --limit 5 | grep "#<issue-number>"
+# If still open, close manually:
+#   gh issue close <issue-number> --comment "Issue risolta con PR #<pr-number> (squash-merged in dev)."
+
 # Switch back to dev and sync
 git checkout dev
 git pull origin dev
+# ⚠️ If `git pull` reports conflicts, resolve them first, then commit.
 # Delete local branch (remote already deleted by --delete-branch)
 git branch -d feature/<issue-number>-<short-description>
 ```
 
-> ⚠️ When the PR is merged via `gh pr merge --squash`, GitHub auto-closes the issue because the PR body contains `closes #N`. The commit message in the squash commit is derived from the PR title, not the individual commit messages.
+> ⚠️ When the PR is merged via `gh pr merge --squash`, GitHub should auto-close the issue because the PR body contains `closes #N`. However, this occasionally fails (especially with CLI merges). **Always verify** with `gh issue list` after merge. If the issue is still open, close it manually with `gh issue close <number>`. The commit message in the squash commit is derived from the PR title, not the individual commit messages.
 
 ### 4. Implementation
 
@@ -193,6 +199,37 @@ backend/
 - **Service** = logica di business. Testabile isolatamente
 - **Repository** = query SQLAlchemy. Testabile con mock
 - **Model** = definizione tabella. Nessuna logica di business
+
+### ⚠️ Bug noti e soluzioni
+
+#### 1. Override `dependency_overrides` in test
+
+Quando FastAPI ha un wrapper `deps.py` che fa `yield from _get_db()`, la dipendenza registrata nei route è `deps.get_db`, **non** `core.database.get_db`. Il `yield from` è una chiamata Python diretta, FastAPI non la intercetta.
+
+❌ **Sbagliato** — override su `core.database.get_db`:
+
+```python
+app.dependency_overrides[get_db] = override_get_db  # non funziona!
+```
+
+✅ **Corretto** — override su `deps.get_db`:
+
+```python
+from app.api.deps import get_db as deps_get_db
+app.dependency_overrides[deps_get_db] = override_get_db  # funziona!
+```
+
+#### 2. Isolamento DB nei test su Windows
+
+SQLite in-memory su Windows ha un comportamento particolare: ogni connessione crea un DB separato con `sqlite://`. Per test isolati, usare **file temporanei unici** (`tmp_path` di pytest + `uuid`) invece che `sqlite://` o `StaticPool`.
+
+#### 3. Issue auto-close via PR body
+
+Il `closes #N` nel body della PR a volte non viene riconosciuto da GitHub (specie con merge via CLI). **Sempre verificare** dopo il merge:
+
+```bash
+gh issue list | grep "#N"  # se ancora aperta, chiudere manualmente
+```
 
 ### 6. GitHub Actions (CI + Superlinter + Security)
 
