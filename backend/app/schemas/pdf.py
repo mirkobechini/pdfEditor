@@ -44,6 +44,18 @@ class SplitResponse(BaseModel):
     items: list[PdfResponse]
 
 
+class ReorderRequest(BaseModel):
+    """Schema for reorder request — new page order (1-based)."""
+
+    page_order: list[int]
+
+
+class RemovePagesRequest(BaseModel):
+    """Schema for remove-pages request — page numbers to remove (1-based)."""
+
+    page_numbers: list[int]
+
+
 class ErrorResponse(BaseModel):
     """Schema for error responses."""
 
