@@ -9,37 +9,39 @@ Applicazione **cross-platform** per la modifica e gestione di file PDF, con funz
 _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `dev`)._
 
 - [x] **Fase 0** — Prototipo HTML statico ✅
-- [ ] **Fase 1a** — Backend FastAPI (issue #2)
-- [ ] **Fase 1b** — Frontend Next.js (issue #3)
-- [ ] **Fase 1c** — Desktop Tauri (issue #4)
-- [ ] **Fase 2** — Web app su cloud (issue #5)
-- [ ] **Fase 3** — Cloud sync (issue #6)
-- [ ] **Fase 4** — Mobile app React Native (issue #7)
+- [ ] **Fase 1a** — Backend FastAPI (in corso: issue #13 completata ✅)
+- [ ] **Fase 1b** — Frontend Next.js
+- [ ] **Fase 1c** — Desktop Tauri v2
+- [ ] **Fase 2** — Web app su cloud
+- [ ] **Fase 3** — Cloud sync
+- [ ] **Fase 4** — Mobile app React Native
 
 ## Stack scelto
 
-| Livello                | Tecnologia             | Ruolo                                                                  |
-| ---------------------- | ---------------------- | ---------------------------------------------------------------------- |
-| **Frontend**           | React + TailwindCSS    | UI condivisa tra web, desktop e mobile                                 |
-| **Web app**            | Next.js (pages router) | Versione browser, PWA installabile                                     |
-| **Desktop**            | Tauri (Rust)           | App nativa leggera (~5MB UI + ~30-50MB sidecar FastAPI), stessa web UI |
-| **Mobile**             | React Native           | App nativa iOS/Android, logica React condivisa                         |
-| **Backend**            | FastAPI (Python)       | Auth, elaborazione PDF, cloud sync                                     |
-| **PDF modifica testo** | PyMuPDF (fitz)         | Modifica testo, estrazione, manipolazione                              |
-| **PDF viewer**         | PDF.js (Mozilla)       | Render lato client                                                     |
-| **Database offline**   | SQLite                 | Stessa struttura del cloud, sync bidirezionale                         |
-| **Database cloud**     | PostgreSQL             | Produzione, sincronizzato con SQLite locale                            |
+| Livello                | Tecnologia               | Ruolo                                                                  |
+| ---------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| **Frontend**           | React + TailwindCSS      | UI condivisa tra web, desktop e mobile                                 |
+| **Web app**            | Next.js (app router)     | Versione browser, PWA installabile                                     |
+| **Desktop**            | Tauri v2 (Rust)          | App nativa leggera (~5MB UI + ~30-50MB sidecar FastAPI), stessa web UI |
+| **Mobile**             | React Native (Expo bare) | App nativa iOS/Android, logica React condivisa                         |
+| **Backend**            | FastAPI (Python)         | Auth, elaborazione PDF, cloud sync                                     |
+| **PDF modifica testo** | PyMuPDF (fitz)           | Modifica testo, estrazione, manipolazione                              |
+| **PDF viewer**         | PDF.js (Mozilla)         | Render lato client                                                     |
+| **Database offline**   | SQLite                   | Stessa struttura del cloud, sync bidirezionale                         |
+| **Database cloud**     | PostgreSQL               | Produzione, sincronizzato con SQLite locale                            |
 
 ## Roadmap (ordine di implementazione)
 
-1. **Prototipo (Fase 0)** — Singola pagina HTML statica ✅ Completato (issue #1)
+> Panoramica macro delle fasi. Il dettaglio operativo con issue number è nella sezione [Feature roadmap](#feature-roadmap-ordine-di-implementazione) più avanti.
+
+1. **Prototipo (Fase 0)** — Singola pagina HTML statica ✅ Completato
 2. **Desktop app (Fase 1)** — Tauri + Next.js + FastAPI locale (sidecar). Prima versione funzionante offline
-   - **Fase 1a**: Backend FastAPI (issue #2)
-   - **Fase 1b**: Frontend Next.js (issue #3)
-   - **Fase 1c**: Tauri wrapper (issue #4)
-3. **Web app (Fase 2)** — Next.js + FastAPI cloud. Stessa UI, backend remoto (issue #5)
-4. **Cloud sync (Fase 3)** — Sync bidirezionale SQLite ↔ PostgreSQL (issue #6)
-5. **Mobile app (Fase 4)** — React Native. Stesse API cloud (issue #7)
+   - **Fase 1a**: Backend FastAPI
+   - **Fase 1b**: Frontend Next.js
+   - **Fase 1c**: Tauri wrapper
+3. **Web app (Fase 2)** — Next.js + FastAPI cloud. Stessa UI, backend remoto
+4. **Cloud sync (Fase 3)** — Sync bidirezionale SQLite ↔ PostgreSQL
+5. **Mobile app (Fase 4)** — React Native. Stesse API cloud
 
 > Ogni fase parte SOLO dopo che la precedente è stata approvata dall'utente.
 
@@ -51,7 +53,7 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 
 ### 2. Next.js per Tauri (static export)
 
-- Usare **pages router** (non app router) per compatibilità con `next export`
+- Usare **app router** per compatibilità con `output: 'export'` di Next.js
 - Le API routes non servono: tutte le API vanno su FastAPI
 - Next.js è solo UI + chiamate REST
 
@@ -60,6 +62,7 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - **Logica condivisibile**: hook personalizzati (usePdfFiles, useAuth), API client, contesti, utility
 - **UI separata**: componenti HTML (Next.js) vs componenti nativi (React Native). Non copia-incollare
 - `react-native-web` valutabile per ridurre il gap
+- **Expo bare workflow** (Dev Client) — accesso completo ai moduli nativi senza migrazioni future. WebView, file system e SQLite nativi già coperti
 
 ### 4. SQLite ↔ PostgreSQL sync
 
@@ -67,7 +70,8 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - **timestamp** su ogni record per `updated_at`
 - API di sync dedicata:
   - `GET /sync/pull?since=<timestamp>` — tutte le modifiche dopo X
-  - `POST /sync/push` — invia modifiche locali con risoluzione last-writer-wins
+  - `POST /sync/push` — invia modifiche locali
+- **Risoluzione conflitti**: lock ottimistico — quando un utente apre un PDF per modificarlo, viene registrato un lock. Se un altro utente prova a modificare lo stesso PDF, lo vede in sola lettura. Il lock si rilascia al salvataggio esplicito o dopo un timeout di inattività (es. 30 min)
 - Il sync è una fase separata, non blocca lo sviluppo offline
 
 ### 5. PDF.js su React Native
@@ -75,11 +79,47 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - Mobile viewer via **WebView** che carica PDF.js
 - Stessa libreria, stesso rendering, UX accettabile
 
-### 6. Tauri sidecar per FastAPI locale
+### 6. Tauri v2 sidecar per FastAPI locale
 
+- Tauri **v2** (non v1) — versione attuale, future-proof, con supporto plugin nativi e architettura a plugin npm/cargo
 - FastAPI bundlato con **PyInstaller** in un eseguibile unico
 - Tauri lo avvia come **sidecar** all'avvio dell'app
 - Occupazione extra: ~30-50MB (accettabile, sotto il limite di 50MB dichiarato)
+
+### 7. PDF protetti da password
+
+- **Rilevamento automatico**: all'upload, PyMuPDF rileva se il PDF è criptato e restituisce un flag `requires_password: true`
+- **UI**: la toolbar mostra un modale "Questo PDF è protetto — inserisci password" prima di permettere visualizzazione/modifica
+- **API**: l'endpoint di apertura accetta un campo `password` opzionale; se omessa e il file è protetto, risponde con 403 + flag
+- **Cache**: la password viene tenuta in memoria per la sessione (non salvata su disco)
+- **Fallback**: se la password è errata, l'API restituisce errore e l'utente può riprovare
+
+### 8. Undo/redo per modifiche PDF
+
+- **Cronologia lato server**: ogni operazione di modifica (riordino pagine, rimozione, modifica testo) registra uno snapshot del file prima dell'operazione
+- **Limite**: massimo 10 snapshot per sessione (configurabile), i più vecchi vengono scartati
+- **API undo/redo**:
+  - `POST /pdf/{id}/undo` — ripristina lo snapshot precedente
+  - `POST /pdf/{id}/redo` — riapplica l'operazione annullata
+- **Reset cronologia**: il salvataggio esplicito del file resetta la cronologia undo/redo
+- **Lato UI**: pulsanti Undo/redo nella toolbar, con shortcut `Ctrl+Z` / `Ctrl+Shift+Z`
+
+### 9. Internazionalizzazione (i18n)
+
+- **Libreria**: `next-intl` — nativamente compatibile con Next.js App Router
+- **Struttura**: file JSON per lingua in `messages/{locale}.json`
+- **Lingue**: italiano (`it`) come lingua primaria, inglese (`en`) come fallback. Pronte per aggiungere altre lingue
+- **Setup**: integrata da subito nel progetto Next.js per evitare rifattorizzazioni future
+- **Scope**: UI (menu, toolbar, pulsanti) + messaggi di errore API. Il contenuto dei PDF ovviamente non è tradotto
+- **Selettore lingua**: dropdown nell'header, posizionamento accanto al dark mode toggle
+
+### 10. Tagged PDF (accessibilità output)
+
+- **Default**: tutti i PDF generati dal programma (merge, split, conversione DOCX→PDF, modifica testo) sono **tagged PDF** — contengono tag strutturali (intestazioni, paragrafi, ordine di lettura, lingua)
+- **Screen reader compatibili**: i PDF prodotti sono leggibili da VoiceOver, JAWS, NVDA
+- **Implementazione**: PyMuPDF supporta l'aggiunta di tag a livello di pagina. Ogni operazione di output include la generazione dei tag
+- **Complessità**: media — si integra nel service layer di generazione PDF, non nella logica di modifica
+- **Test**: aggiungere un test di validazione struttura tagged per ogni operazione di output
 
 ## Componenti principali
 
@@ -133,20 +173,20 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 
 ### Fase 1a — Backend API (FastAPI) — per desktop offline
 
-- [ ] #2 — API upload/download file PDF (file system locale)
-- [ ] #3 — API merge/split PDF (PyMuPDF)
-- [ ] #4 — API riordino e rimozione pagine (PyMuPDF)
-- [ ] #5 — API **modifica testo** nei PDF (PyMuPDF)
-- [ ] #6 — API **modifica metadati** PDF
-- [ ] #7 — API conversione PDF ↔ DOCX/XLSX/PNG/JPG
-- [ ] #8 — Autenticazione JWT (email/password)
-- [ ] #9 — SSO con Google
-- [ ] #10 — Modelli licensing (User.license_tier, LicenseFeature)
-- [ ] #11 — API bug reporting (BugReport model + endpoint)
+- [x] #13 — API upload/download file PDF (file system locale)
+- [ ] #14 — API merge/split PDF (PyMuPDF)
+- [ ] #15 — API riordino e rimozione pagine (PyMuPDF)
+- [ ] #16 — API **modifica testo** nei PDF (PyMuPDF)
+- [ ] #17 — API **modifica metadati** PDF
+- [ ] #18 — API conversione PDF ↔ DOCX/XLSX/PNG/JPG
+- [ ] #19 — Autenticazione JWT (email/password)
+- [ ] #20 — SSO con Google
+- [ ] #21 — Modelli licensing (User.license_tier, LicenseFeature)
+- [ ] #22 — API bug reporting (BugReport model + endpoint)
 
 ### Fase 1b — Desktop UI (Next.js + TailwindCSS) — prima versione
 
-- [ ] Setup Next.js (pages router) + React + TailwindCSS
+- [ ] Setup Next.js (app router) + React + TailwindCSS
 - [ ] Porting prototipo da HTML statico a componenti React
 - [ ] Sidebar con elenco PDF (upload, elimina, rinomina)
 - [ ] Toolbar navigazione + zoom + azioni
@@ -157,7 +197,7 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 - [ ] Pulsante segnalazione bug nell'interfaccia
 - [ ] Dashboard admin per gestione utenti, licenze e bug report
 
-### Fase 1c — Desktop app (Tauri)
+### Fase 1c — Desktop app (Tauri v2)
 
 - [ ] Setup Tauri + Next.js build statica
 - [ ] PyInstaller: bundle FastAPI in eseguibile
@@ -177,12 +217,12 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 ### Fase 3 — Cloud sync
 
 - [ ] Sync bidirezionale SQLite → PostgreSQL (UUID + timestamp)
-- [ ] Risoluzione conflitti (last-writer-wins)
+- [ ] Risoluzione conflitti (lock ottimistico)
 - [ ] Modalità offline/online seamless
 
 ### Fase 4 — Mobile app (React Native)
 
-- [ ] Setup React Native (Expo)
+- [ ] Setup React Native (Expo bare workflow)
 - [ ] Logica React condivisa (API client, hooks auth, utility PDF)
 - [ ] UI nativa: schermate con View/Text/TouchableOpacity
 - [ ] Viewer PDF.js via WebView
@@ -303,7 +343,7 @@ Ogni funzione/feature implementata **deve** includere i seguenti controlli di si
 | **Sanitizzazione output** | Non fidarsi del contenuto PDF per il rendering (PDF.js è safe, ma attenzione ai metadati mostrati in UI) |
 | **Dipendencies**          | Mantenere librerie aggiornate (Dependabot su GitHub)                                                     |
 
-### Sicurezza desktop (Tauri)
+### Sicurezza desktop (Tauri v2)
 
 | Controllo           | Descrizione                                                            |
 | ------------------- | ---------------------------------------------------------------------- |
@@ -345,7 +385,7 @@ Prima di considerare completata una funzione, verificare:
 - Solo librerie open source o gratuite
 - Cloud save **opzionale** (offline-first)
 - **UUID** come chiavi primarie (fondamentale per sync futuro)
-- **pages router** di Next.js (non app router) per compatibilità Tauri
+- **app router** di Next.js (con `output: 'export'` per compatibilità Tauri)
 
 ## Output atteso per fase
 
@@ -363,6 +403,6 @@ Prima di considerare completata una funzione, verificare:
 - Prototipo Fase 0 ✅ completato
 - Backend FastAPI con API REST per tutte le operazioni PDF
 - Frontend Next.js + TailwindCSS per browser (PWA)
-- App desktop Tauri (Windows, macOS, Linux)
+- App desktop Tauri v2 (Windows, macOS, Linux)
 - App mobile React Native (iOS, Android)
 - Cloud sync opzionale con PostgresSQL + S3

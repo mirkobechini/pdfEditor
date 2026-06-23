@@ -1,0 +1,17 @@
+[project]
+name = "pdf-editor-backend"
+version = "0.1.0"
+description = "FastAPI backend for PDF Editor"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
