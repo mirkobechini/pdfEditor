@@ -9,7 +9,7 @@ Applicazione **cross-platform** per la modifica e gestione di file PDF, con funz
 _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `dev`)._
 
 - [x] **Fase 0** — Prototipo HTML statico ✅
-- [ ] **Fase 1a** — Backend FastAPI
+- [x] **Fase 1a** — Backend FastAPI (in corso: issue #13 completata ✅)
 - [ ] **Fase 1b** — Frontend Next.js
 - [ ] **Fase 1c** — Desktop Tauri v2
 - [ ] **Fase 2** — Web app su cloud
@@ -173,7 +173,7 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 
 ### Fase 1a — Backend API (FastAPI) — per desktop offline
 
-- [ ] #2 — API upload/download file PDF (file system locale)
+- [x] #13 — API upload/download file PDF (file system locale)
 - [ ] #3 — API merge/split PDF (PyMuPDF)
 - [ ] #4 — API riordino e rimozione pagine (PyMuPDF)
 - [ ] #5 — API **modifica testo** nei PDF (PyMuPDF)
