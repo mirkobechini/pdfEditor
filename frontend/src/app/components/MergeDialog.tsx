@@ -2,6 +2,7 @@
 
 import React from "react";
 import { PDFDocument } from "pdf-lib";
+import { useI18n } from "../lib/i18n";
 import { api, PdfDocument } from "../lib/api";
 
 interface MergeDialogProps {
@@ -11,6 +12,7 @@ interface MergeDialogProps {
 }
 
 export default function MergeDialog({ open, onClose, onMergeComplete }: MergeDialogProps) {
+  const { t } = useI18n();
   const [files, setFiles] = React.useState<PdfDocument[]>([]);
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [merging, setMerging] = React.useState(false);
@@ -56,7 +58,7 @@ export default function MergeDialog({ open, onClose, onMergeComplete }: MergeDia
       onClose();
     } catch (err) {
       console.error("Merge failed:", err);
-      alert("Merge failed: " + err);
+      alert(t("mergeDialog.failed") + ": " + err);
     } finally {
       setMerging(false);
     }
@@ -68,9 +70,9 @@ export default function MergeDialog({ open, onClose, onMergeComplete }: MergeDia
         className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold mb-4">Merge PDFs</h2>
+        <h2 className="text-lg font-bold mb-4">{t("mergeDialog.title")}</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Select at least 2 PDFs to merge.
+          {t("mergeDialog.description")}
         </p>
 
         <div className="max-h-60 overflow-y-auto space-y-2 mb-4">
@@ -95,14 +97,14 @@ export default function MergeDialog({ open, onClose, onMergeComplete }: MergeDia
             className="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
             onClick={onClose}
           >
-            Cancel
+            {t("mergeDialog.cancel")}
           </button>
           <button
             className="px-4 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
             disabled={selected.size < 2 || merging}
             onClick={handleMerge}
           >
-            {merging ? "Merging..." : "Merge"}
+            {merging ? t("mergeDialog.merging") : t("mergeDialog.merge")}
           </button>
         </div>
       </div>

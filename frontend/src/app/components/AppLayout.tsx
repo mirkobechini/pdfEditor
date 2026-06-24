@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useI18n } from "../lib/i18n";
 
 interface LayoutProps {
   sidebar: React.ReactNode;
@@ -73,6 +74,7 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
 }
 
 function ToggleDarkMode() {
+  const { t } = useI18n();
   const [dark, setDark] = React.useState(false);
 
   React.useEffect(() => {
@@ -87,7 +89,7 @@ function ToggleDarkMode() {
     <button
       onClick={() => setDark(!dark)}
       className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-      title="Toggle dark mode"
+      title={t("darkMode.toggle")}
     >
       {dark ? "☀️" : "🌙"}
     </button>
@@ -95,11 +97,11 @@ function ToggleDarkMode() {
 }
 
 function LanguageSelector() {
-  const [lang, setLang] = React.useState("it");
+  const { locale, setLocale } = useI18n();
   return (
     <select
-      value={lang}
-      onChange={(e) => setLang(e.target.value)}
+      value={locale}
+      onChange={(e) => setLocale(e.target.value as "it" | "en")}
       className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
     >
       <option value="it">IT</option>

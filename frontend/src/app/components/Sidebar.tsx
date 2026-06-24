@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useI18n } from "../lib/i18n";
 import { api, PdfDocument } from "../lib/api";
 
 interface SidebarProps {
@@ -12,6 +13,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: SidebarProps) {
+  const { t } = useI18n();
   const [files, setFiles] = React.useState<PdfDocument[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [dragOver, setDragOver] = React.useState(false);
@@ -38,7 +40,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
 
   async function handleUpload(file: File) {
     if (!file.name.toLowerCase().endsWith(".pdf")) {
-      alert("Only PDF files are allowed");
+      alert(t("sidebar.uploadOnlyPdf"));
       return;
     }
     try {
@@ -47,7 +49,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
       onUpload(doc);
       onSelect(doc.id);
     } catch (err) {
-      alert("Upload failed: " + err);
+      alert(t("sidebar.uploadFailed") + ": " + err);
     }
   }
 
@@ -57,7 +59,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
       setFiles((prev) => prev.filter((f) => f.id !== id));
       onDelete(id);
     } catch {
-      alert("Delete failed");
+      alert(t("sidebar.deleteFailed"));
     }
     setDeleteConfirm(null);
   }
@@ -95,14 +97,14 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
           }}
         />
         <div className="text-2xl mb-1">📄</div>
-        <div className="text-gray-500 dark:text-gray-400">Drop PDF here or click to upload</div>
+        <div className="text-gray-500 dark:text-gray-400">{t("sidebar.dropHere")}</div>
       </div>
 
       {/* File list */}
       <div className="flex-1 overflow-y-auto px-3 pb-3">
-        {loading && <div className="text-center text-sm text-gray-400">Loading...</div>}
+        {loading && <div className="text-center text-sm text-gray-400">{t("sidebar.loading")}</div>}
         {!loading && files.length === 0 && (
-          <div className="text-center text-sm text-gray-400 mt-8">No PDFs uploaded yet</div>
+          <div className="text-center text-sm text-gray-400 mt-8">{t("sidebar.noPdfs")}</div>
         )}
         {files.map((file) => (
           <div
@@ -134,7 +136,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
                   setRenameId(file.id);
                   setRenameValue(file.original_filename);
                 }}
-                title="Rename"
+                title={t("sidebar.rename")}
               >
                 ✏️
               </button>

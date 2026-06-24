@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useI18n } from "../lib/i18n";
 
 interface PdfViewerProps {
   fileUrl: string | null;
@@ -21,6 +22,7 @@ export default function PdfViewer({
   zoom,
   onZoomChange,
 }: PdfViewerProps) {
+  const { t } = useI18n();
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [rendering, setRendering] = React.useState(false);
@@ -125,7 +127,7 @@ export default function PdfViewer({
     return (
       <div className="text-center text-gray-400">
         <div className="text-6xl mb-4">📄</div>
-        <p>Select a PDF to view</p>
+        <p>{t("app.selectPdf")}</p>
       </div>
     );
   }
@@ -133,7 +135,7 @@ export default function PdfViewer({
   return (
     <div className="min-h-full flex flex-col items-center">
       {rendering && (
-        <div className="text-sm text-gray-400 mb-2">Rendering...</div>
+        <div className="text-sm text-gray-400 mb-2">{t("app.rendering")}</div>
       )}
       <div ref={containerRef} className="flex items-center justify-center">
         <canvas ref={canvasRef} className="shadow-lg" />
