@@ -211,7 +211,7 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 - [x] Viewer PDF.js integrato
 - [x] Dark mode toggle nell'header
 - [x] Design responsive completo
-- [ ] Bonus: merge, split, riordino, rimozione pagine (via pdf-lib lato client + conferma server)
+- [x] Bonus: merge, split, riordino, rimozione pagine (via pdf-lib lato client + conferma server)
 - [ ] Pulsante segnalazione bug nell'interfaccia
 - [ ] Dashboard admin per gestione utenti, licenze e bug report
 
