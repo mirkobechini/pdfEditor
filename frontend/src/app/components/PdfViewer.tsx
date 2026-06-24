@@ -29,6 +29,8 @@ export default function PdfViewer({
   React.useEffect(() => {
     // If already loaded (e.g., by another instance), skip
     if ((window as any).pdfjsLib) {
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
       setPdfJsLoaded(true);
       return;
     }
@@ -36,7 +38,11 @@ export default function PdfViewer({
     const script = document.createElement("script");
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
     script.async = true;
-    script.onload = () => setPdfJsLoaded(true);
+    script.onload = () => {
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      setPdfJsLoaded(true);
+    };
     document.body.appendChild(script);
     return () => {
       document.body.removeChild(script);
