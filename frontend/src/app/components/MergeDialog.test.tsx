@@ -3,6 +3,15 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import MergeDialog from "./MergeDialog";
 import { api } from "../lib/api";
 
+// Wrap with minimal i18n context for translated components
+vi.mock("../lib/i18n", () => ({
+  useI18n: () => ({
+    t: (key: string) => key,
+    locale: "it" as const,
+    setLocale: () => {},
+  }),
+}));
+
 vi.mock("../lib/api", () => ({
   api: {
     listPdfs: vi.fn(),
@@ -37,7 +46,7 @@ describe("MergeDialog", () => {
       <MergeDialog open={true} onClose={() => {}} onMergeComplete={() => {}} />
     );
 
-    const mergeBtn = await screen.findByText("Merge");
+    const mergeBtn = await screen.findByText("mergeDialog.merge");
     expect(mergeBtn).toBeDisabled();
 
     // Select one file
