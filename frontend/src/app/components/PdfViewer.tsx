@@ -7,6 +7,7 @@ interface PdfViewerProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  onTotalPagesChange: (total: number) => void;
   zoom: number;
   onZoomChange: (zoom: number) => void;
 }
@@ -16,12 +17,14 @@ export default function PdfViewer({
   currentPage,
   totalPages,
   onPageChange,
+  onTotalPagesChange,
   zoom,
   onZoomChange,
 }: PdfViewerProps) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const [rendering, setRendering] = React.useState(false);
   const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
+  const [loadVersion, setLoadVersion] = React.useState(0);
   const pdfDocRef = React.useRef<any>(null);
   const renderTaskRef = React.useRef<any>(null);
 
@@ -57,8 +60,11 @@ export default function PdfViewer({
       try {
         const pdf = await (window as any).pdfjsLib.getDocument(fileUrl).promise;
         pdfDocRef.current = pdf;
+        onTotalPagesChange(pdf.numPages);
         onPageChange(1);
         onZoomChange(1);
+        // Force render effect to run even if currentPage is already 1
+        setLoadVersion((v) => v + 1);
       } catch (err) {
         console.error("Failed to load PDF:", err);
       }
@@ -106,7 +112,7 @@ export default function PdfViewer({
       }
     };
     renderPage();
-  }, [currentPage, zoom]);
+  }, [currentPage, zoom, loadVersion]);
 
   if (!fileUrl) {
     return (
