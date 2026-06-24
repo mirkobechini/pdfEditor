@@ -1,0 +1,30 @@
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+
+from app.core.database import Base
+
+
+class BugReport(Base):
+    __tablename__ = "bug_reports"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=False)
+    page_url = Column(String(500), nullable=True)
+    status = Column(String(20), nullable=False, default="open", index=True)
+
+    created_at = Column(
+        DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at = Column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    def __repr__(self) -> str:
+        return f"<BugReport(id={self.id}, title={self.title}, status={self.status})>"
