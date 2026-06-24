@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status as http_status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
@@ -13,7 +13,7 @@ def get_bug_service(db: Session = Depends(get_db)) -> BugReportService:
     return BugReportService(db)
 
 
-@router.post("/bugs", response_model=BugReportResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/bugs", response_model=BugReportResponse, status_code=http_status.HTTP_201_CREATED)
 def create_bug_report(
     req: BugReportRequest,
     current_user: User = Depends(get_current_user),
@@ -31,7 +31,7 @@ def create_bug_report(
 
 @router.get("/admin/bugs", response_model=list[BugReportResponse])
 def list_bug_reports(
-    status: str | None = Query(None, description="Filter by status"),
+    status_filter: str | None = Query(None, alias="status", description="Filter by status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     current_user: User = Depends(get_current_user),
@@ -40,11 +40,11 @@ def list_bug_reports(
     """List bug reports (admin only)."""
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=http_status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
         )
 
-    reports = service.get_all(status=status, skip=skip, limit=limit)
+    reports = service.get_all(status=status_filter, skip=skip, limit=limit)
     return [BugReportResponse.model_validate(r) for r in reports]
 
 
@@ -58,7 +58,7 @@ def update_bug_report_status(
     """Update bug report status (admin only)."""
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=http_status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
         )
 
@@ -66,13 +66,13 @@ def update_bug_report_status(
         report = service.update_status(bug_id, req.status)
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
 
     if not report:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="Bug report not found",
         )
 
