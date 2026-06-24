@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.security import create_access_token, decode_access_token, get_password_hash, verify_password
 from app.models.user import User
 from app.repositories.user_repo import UserRepository
@@ -59,3 +60,76 @@ class AuthService:
             raise ValueError("Account is inactive")
 
         return user
+
+    def google_login(self, id_token: str) -> tuple[User, str]:
+        """Authenticate with Google SSO. Returns (user, jwt_token)."""
+        if not id_token or not id_token.strip():
+            raise ValueError("Invalid Google token")
+
+        import requests
+
+        # Verify the id_token by downloading Google's public keys
+        resp = requests.get("https://www.googleapis.com/oauth2/v3/certs", timeout=10)
+        if resp.status_code != 200:
+            raise ValueError("Failed to verify Google token")
+
+        # Decode JWT using python-jose + Google certs
+        from jose import jwt, JWTError
+
+        certs = resp.json()
+        try:
+            header = jwt.get_unverified_header(id_token)
+        except JWTError:
+            raise ValueError("Invalid or expired Google token")
+
+        if header.get("alg") != "RS256":
+            raise ValueError("Invalid token algorithm")
+
+        kid = header.get("kid")
+        if not kid or kid not in certs.get("keys", {}):
+            # certs is {"keys": [...]}, we need to find by kid
+            key = None
+            for k in certs.get("keys", []):
+                if k.get("kid") == kid:
+                    key = k
+                    break
+            if not key:
+                raise ValueError("Invalid token key ID")
+        else:
+            key = certs[kid]
+
+        try:
+            payload = jwt.decode(
+                id_token,
+                key,
+                algorithms=["RS256"],
+                audience=settings.GOOGLE_CLIENT_ID,
+            )
+        except JWTError:
+            raise ValueError("Invalid or expired Google token")
+
+        email = payload.get("email")
+        if not email:
+            raise ValueError("Google token missing email")
+
+        name = payload.get("name", email.split("@")[0])
+
+        # Check if user exists, otherwise create
+        user = self.repo.get_by_email(email)
+        if not user:
+            import secrets
+
+            random_pw = secrets.token_urlsafe(32)
+            hashed = get_password_hash(random_pw)
+            user = User(
+                email=email,
+                hashed_password=hashed,
+                full_name=name,
+            )
+            user = self.repo.create(user)
+
+        if not user.is_active:
+            raise ValueError("Account is inactive")
+
+        token = create_access_token(data={"sub": user.id})
+        return user, token

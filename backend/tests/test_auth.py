@@ -128,3 +128,23 @@ class TestMe:
             headers={"Authorization": "Bearer invalid_token"},
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class TestGoogleSSO:
+    """Test suite for POST /auth/google."""
+
+    def test_google_login_invalid_token(self, client):
+        """Should reject an invalid Google id_token."""
+        response = client.post(
+            "/auth/google",
+            json={"id_token": "fake.google.token.12345"},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_google_login_empty_token(self, client):
+        """Should reject empty token."""
+        response = client.post(
+            "/auth/google",
+            json={"id_token": ""},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
