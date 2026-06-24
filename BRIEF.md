@@ -9,7 +9,7 @@ Applicazione **cross-platform** per la modifica e gestione di file PDF, con funz
 _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `dev`)._
 
 - [x] **Fase 0** — Prototipo HTML statico ✅
-- [ ] **Fase 1a** — Backend FastAPI (in corso: issue #13 completata ✅)
+- [x] **Fase 1a** — Backend FastAPI ✅
 - [ ] **Fase 1b** — Frontend Next.js
 - [ ] **Fase 1c** — Desktop Tauri v2
 - [ ] **Fase 2** — Web app su cloud
