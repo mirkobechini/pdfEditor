@@ -101,6 +101,13 @@ export default function Home() {
           setSelectedId(doc.id);
         }}
       />
+      <ReorderDialog
+        open={reorderOpen}
+        onClose={() => setReorderOpen(false)}
+        onReorderComplete={(doc) => {
+          setSelectedId(doc.id);
+        }}
+      />
     </>
   );
 }
