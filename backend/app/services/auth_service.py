@@ -63,6 +63,9 @@ class AuthService:
 
     def google_login(self, id_token: str) -> tuple[User, str]:
         """Authenticate with Google SSO. Returns (user, jwt_token)."""
+        if not id_token or not id_token.strip():
+            raise ValueError("Invalid Google token")
+
         import requests
 
         # Verify the id_token by downloading Google's public keys
@@ -71,26 +74,38 @@ class AuthService:
             raise ValueError("Failed to verify Google token")
 
         # Decode JWT using python-jose + Google certs
-        from jose import jwt
+        from jose import jwt, JWTError
 
         certs = resp.json()
-        header = jwt.get_unverified_header(id_token)
+        try:
+            header = jwt.get_unverified_header(id_token)
+        except JWTError:
+            raise ValueError("Invalid or expired Google token")
 
         if header.get("alg") != "RS256":
             raise ValueError("Invalid token algorithm")
 
         kid = header.get("kid")
-        if not kid or kid not in certs:
-            raise ValueError("Invalid token key ID")
+        if not kid or kid not in certs.get("keys", {}):
+            # certs is {"keys": [...]}, we need to find by kid
+            key = None
+            for k in certs.get("keys", []):
+                if k.get("kid") == kid:
+                    key = k
+                    break
+            if not key:
+                raise ValueError("Invalid token key ID")
+        else:
+            key = certs[kid]
 
         try:
             payload = jwt.decode(
                 id_token,
-                certs[kid],
+                key,
                 algorithms=["RS256"],
-                audience=settings.GOOGLE_CLIENT_ID or id_token,
+                audience=settings.GOOGLE_CLIENT_ID,
             )
-        except Exception:
+        except JWTError:
             raise ValueError("Invalid or expired Google token")
 
         email = payload.get("email")
