@@ -62,19 +62,8 @@ export default function PdfViewer({
         const pdf = await (window as any).pdfjsLib.getDocument(fileUrl).promise;
         pdfDocRef.current = pdf;
         onTotalPagesChange(pdf.numPages);
-
-        // Calculate initial zoom to fit page width inside container
-        const firstPage = await pdf.getPage(1);
-        const vp = firstPage.getViewport({ scale: 1 });
-        const containerWidth = containerRef.current?.clientWidth ?? 800;
-        const containerHeight = containerRef.current?.clientHeight ?? 600;
-        // Fit by width, but don't exceed a zoom that makes height taller than container
-        const fitWidth = (containerWidth - 32) / vp.width;
-        const fitHeight = (containerHeight - 32) / vp.height;
-        const initialZoom = Math.min(fitWidth, fitHeight, 1.5);
-
-        onZoomChange(Math.round(initialZoom * 100) / 100);
         onPageChange(1);
+        onZoomChange(1);
         // Force render effect to run even if currentPage is already 1
         setLoadVersion((v) => v + 1);
       } catch (err) {

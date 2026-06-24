@@ -15,6 +15,7 @@ export default function Home() {
   const [zoom, setZoom] = React.useState(1);
 
   async function handleSelect(id: string) {
+    if (id === selectedId) return;
     setSelectedId(id);
     try {
       const blob = await api.downloadPdf(id);
