@@ -7,6 +7,7 @@ import Toolbar from "./components/Toolbar";
 import PdfViewer from "./components/PdfViewer";
 import MergeDialog from "./components/MergeDialog";
 import SplitDialog from "./components/SplitDialog";
+import ReorderDialog from "./components/ReorderDialog";
 import { api, PdfDocument } from "./lib/api";
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
   const [zoom, setZoom] = React.useState(1);
   const [mergeOpen, setMergeOpen] = React.useState(false);
   const [splitOpen, setSplitOpen] = React.useState(false);
+  const [reorderOpen, setReorderOpen] = React.useState(false);
 
   async function handleSelect(id: string) {
     if (id === selectedId) return;
