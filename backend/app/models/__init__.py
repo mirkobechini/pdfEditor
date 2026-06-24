@@ -1,5 +1,6 @@
+from app.models.bug_report import BugReport
 from app.models.license import LicenseFeature
 from app.models.pdf import PdfDocument
 from app.models.user import User
 
-__all__ = ["PdfDocument", "User", "LicenseFeature"]
+__all__ = ["PdfDocument", "User", "LicenseFeature", "BugReport"]
