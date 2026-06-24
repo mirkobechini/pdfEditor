@@ -59,12 +59,10 @@ Each feature from the BRIEF gets its own issue. Examples:
 | API merge/split PDF     | #3    |
 | API text editing        | #4    |
 | ...                     | ...   |
-| PDF viewer component    | #?    |
-| Sidebar component       | #?    |
-| Tauri shell setup       | #?    |
-| Sidecar FastAPI         | #?    |
 
 The agent uses the `mcp_gitkraken_cli_issues_create` tool to create issues. The issue number determines the branch name.
+
+> **Subito dopo aver creato l'issue**, l'agente deve scrivere nel body della issue la **lista completa dei commit atomici previsti** (es. `feat(ui): add MergeDialog component`, `feat(ui): integrate in page.tsx`, ecc.). Questa lista serve da roadmap — ogni commit deve essere eseguito esattamente come pianificato prima di passare al successivo. Se durante l'implementazione emerge la necessità di un commit extra, va aggiunto alla lista.
 
 ### 2. Branching — one branch per issue
 
