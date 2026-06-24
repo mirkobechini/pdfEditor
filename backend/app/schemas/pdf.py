@@ -89,6 +89,35 @@ class UpdateMetadataRequest(BaseModel):
     keywords: str | None = None
 
 
+class BugReportRequest(BaseModel):
+    """Schema for creating a bug report."""
+
+    title: str
+    description: str
+    page_url: str | None = None
+
+
+class BugReportResponse(BaseModel):
+    """Schema for bug report response."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    user_id: str
+    title: str
+    description: str
+    page_url: str | None = None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class BugReportStatusUpdate(BaseModel):
+    """Schema for updating a bug report status."""
+
+    status: str  # "open", "in_progress", "resolved", "closed"
+
+
 class ErrorResponse(BaseModel):
     """Schema for error responses."""
 
