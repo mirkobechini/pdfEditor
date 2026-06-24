@@ -205,11 +205,11 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 ### Fase 1b — Desktop UI (Next.js + TailwindCSS) — prima versione
 
 - [x] Setup Next.js (app router) + React + TailwindCSS
-- [ ] Porting prototipo da HTML statico a componenti React
-- [ ] Sidebar con elenco PDF (upload, elimina, rinomina)
-- [ ] Toolbar navigazione + zoom + azioni
-- [ ] Viewer PDF.js integrato
-- [ ] Dark mode toggle nell'header
+- [x] Porting prototipo da HTML statico a componenti React
+- [x] Sidebar con elenco PDF (upload, elimina, rinomina)
+- [x] Toolbar navigazione + zoom + azioni
+- [x] Viewer PDF.js integrato
+- [x] Dark mode toggle nell'header
 - [ ] Design responsive completo
 - [ ] Bonus: merge, split, riordino, rimozione pagine (via pdf-lib lato client + conferma server)
 - [ ] Pulsante segnalazione bug nell'interfaccia
