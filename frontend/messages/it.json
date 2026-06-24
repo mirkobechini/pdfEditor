@@ -27,6 +27,20 @@
     "merging": "Unione in corso...",
     "failed": "Unione fallita"
   },
+  "splitDialog": {
+    "title": "Dividi PDF",
+    "selectFile": "Seleziona un PDF",
+    "choose": "Scegli --",
+    "pages": "pagine",
+    "pageLabel": "Pagine da estrarre",
+    "pagePlaceholder": "es. 1-3, 5, 7",
+    "available": "Pagine disponibili",
+    "pagesSelected": "pagine selezionate",
+    "cancel": "Annulla",
+    "split": "Dividi",
+    "splitting": "Divisione in corso...",
+    "failed": "Divisione fallita"
+  },
   "darkMode": {
     "toggle": "Attiva/disattiva modalità scura"
   }
