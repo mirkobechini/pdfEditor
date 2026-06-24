@@ -21,23 +21,31 @@ export default function PdfViewer({
 }: PdfViewerProps) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const [rendering, setRendering] = React.useState(false);
+  const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
   const pdfDocRef = React.useRef<any>(null);
   const renderTaskRef = React.useRef<any>(null);
 
   // Load PDF.js on mount
   React.useEffect(() => {
+    // If already loaded (e.g., by another instance), skip
+    if ((window as any).pdfjsLib) {
+      setPdfJsLoaded(true);
+      return;
+    }
+
     const script = document.createElement("script");
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
     script.async = true;
+    script.onload = () => setPdfJsLoaded(true);
     document.body.appendChild(script);
     return () => {
       document.body.removeChild(script);
     };
   }, []);
 
-  // Load PDF document when fileUrl changes
+  // Load PDF document when fileUrl changes (or when pdfjsLib finishes loading)
   React.useEffect(() => {
-    if (!fileUrl || !(window as any).pdfjsLib) return;
+    if (!fileUrl || !pdfJsLoaded) return;
 
     const loadPdf = async () => {
       try {
@@ -57,7 +65,7 @@ export default function PdfViewer({
         renderTaskRef.current.cancel();
       }
     };
-  }, [fileUrl]);
+  }, [fileUrl, pdfJsLoaded]);
 
   // Render page when page or zoom changes
   React.useEffect(() => {
