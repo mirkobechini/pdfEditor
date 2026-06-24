@@ -6,6 +6,7 @@ import Sidebar from "./components/Sidebar";
 import Toolbar from "./components/Toolbar";
 import PdfViewer from "./components/PdfViewer";
 import MergeDialog from "./components/MergeDialog";
+import SplitDialog from "./components/SplitDialog";
 import { api, PdfDocument } from "./lib/api";
 
 export default function Home() {
@@ -15,6 +16,7 @@ export default function Home() {
   const [totalPages, setTotalPages] = React.useState(0);
   const [zoom, setZoom] = React.useState(1);
   const [mergeOpen, setMergeOpen] = React.useState(false);
+  const [splitOpen, setSplitOpen] = React.useState(false);
 
   async function handleSelect(id: string) {
     if (id === selectedId) return;
@@ -65,7 +67,7 @@ export default function Home() {
             zoom={zoom}
             onZoomChange={setZoom}
             onMerge={() => setMergeOpen(true)}
-            onSplit={() => {}}
+            onSplit={() => setSplitOpen(true)}
             onReorder={() => {}}
             onRemovePages={() => {}}
             onReplaceText={() => {}}
@@ -87,6 +89,13 @@ export default function Home() {
         open={mergeOpen}
         onClose={() => setMergeOpen(false)}
         onMergeComplete={(doc) => {
+          setSelectedId(doc.id);
+        }}
+      />
+      <SplitDialog
+        open={splitOpen}
+        onClose={() => setSplitOpen(false)}
+        onSplitComplete={(doc) => {
           setSelectedId(doc.id);
         }}
       />
