@@ -3,7 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.schemas.auth import TokenResponse, UserLoginRequest, UserRegisterRequest, UserResponse
+from app.schemas.auth import GoogleLoginRequest, TokenResponse, UserLoginRequest, UserRegisterRequest, UserResponse
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -68,3 +68,20 @@ def get_me(
         )
 
     return UserResponse.model_validate(user)
+
+
+@router.post("/google", response_model=TokenResponse)
+def google_login(
+    req: GoogleLoginRequest,
+    service: AuthService = Depends(get_auth_service),
+) -> TokenResponse:
+    """Login with Google SSO using an id_token."""
+    try:
+        user, token = service.google_login(req.id_token)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+
+    return TokenResponse(access_token=token)
