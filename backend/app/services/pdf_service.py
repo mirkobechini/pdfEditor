@@ -61,7 +61,9 @@ class PdfService:
         if not pdf:
             return False
         self.repo.delete(pdf)
-        delete_pdf(pdf.id)
+        # storage_filename is "{uuid}.pdf" — extract UUID for delete_pdf
+        file_uuid = pdf.storage_filename.replace(".pdf", "")
+        delete_pdf(file_uuid)
         return True
 
     def merge(self, pdf_ids: list[str]) -> PdfDocument:

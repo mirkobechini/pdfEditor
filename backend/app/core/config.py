@@ -1,4 +1,9 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
+
+# Backend root = 3 levels up from app/core/config.py
+BACKEND_DIR = Path(__file__).parent.parent.parent
 
 
 class Settings(BaseSettings):
@@ -15,11 +20,11 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""  # Set in .env for production
     GOOGLE_CLIENT_SECRET: str = ""  # Set in .env for production
 
-    # Database
-    DATABASE_URL: str = "sqlite:///./pdf_editor.db"
+    # Database — use as_posix() to get forward slashes for SQLAlchemy URI
+    DATABASE_URL: str = f"sqlite:///{(BACKEND_DIR / 'pdf_editor.db').as_posix()}"
 
-    # Storage
-    UPLOAD_DIR: str = "storage/pdfs"
+    # Storage — absolute path to backend/storage/pdfs
+    UPLOAD_DIR: str = (BACKEND_DIR / "storage" / "pdfs").as_posix()
     MAX_UPLOAD_SIZE_MB: int = 50
     ALLOWED_EXTENSIONS: list[str] = [".pdf"]
 

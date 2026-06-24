@@ -7,6 +7,7 @@ interface PdfViewerProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  onTotalPagesChange: (total: number) => void;
   zoom: number;
   onZoomChange: (zoom: number) => void;
 }
@@ -16,35 +17,54 @@ export default function PdfViewer({
   currentPage,
   totalPages,
   onPageChange,
+  onTotalPagesChange,
   zoom,
   onZoomChange,
 }: PdfViewerProps) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const [rendering, setRendering] = React.useState(false);
+  const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
+  const [loadVersion, setLoadVersion] = React.useState(0);
   const pdfDocRef = React.useRef<any>(null);
   const renderTaskRef = React.useRef<any>(null);
 
   // Load PDF.js on mount
   React.useEffect(() => {
+    // If already loaded (e.g., by another instance), skip
+    if ((window as any).pdfjsLib) {
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      setPdfJsLoaded(true);
+      return;
+    }
+
     const script = document.createElement("script");
     script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
     script.async = true;
+    script.onload = () => {
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      setPdfJsLoaded(true);
+    };
     document.body.appendChild(script);
     return () => {
       document.body.removeChild(script);
     };
   }, []);
 
-  // Load PDF document when fileUrl changes
+  // Load PDF document when fileUrl changes (or when pdfjsLib finishes loading)
   React.useEffect(() => {
-    if (!fileUrl || !(window as any).pdfjsLib) return;
+    if (!fileUrl || !pdfJsLoaded) return;
 
     const loadPdf = async () => {
       try {
         const pdf = await (window as any).pdfjsLib.getDocument(fileUrl).promise;
         pdfDocRef.current = pdf;
+        onTotalPagesChange(pdf.numPages);
         onPageChange(1);
         onZoomChange(1);
+        // Force render effect to run even if currentPage is already 1
+        setLoadVersion((v) => v + 1);
       } catch (err) {
         console.error("Failed to load PDF:", err);
       }
@@ -57,7 +77,7 @@ export default function PdfViewer({
         renderTaskRef.current.cancel();
       }
     };
-  }, [fileUrl]);
+  }, [fileUrl, pdfJsLoaded]);
 
   // Render page when page or zoom changes
   React.useEffect(() => {
@@ -92,7 +112,7 @@ export default function PdfViewer({
       }
     };
     renderPage();
-  }, [currentPage, zoom]);
+  }, [currentPage, zoom, loadVersion]);
 
   if (!fileUrl) {
     return (

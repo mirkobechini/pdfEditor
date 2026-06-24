@@ -73,6 +73,7 @@ export default function Home() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
+          onTotalPagesChange={setTotalPages}
           zoom={zoom}
           onZoomChange={setZoom}
         />
