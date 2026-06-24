@@ -1,0 +1,33 @@
+{
+  "app": {
+    "title": "PdfEditor",
+    "selectPdf": "Seleziona un PDF da visualizzare",
+    "rendering": "Rendering...",
+    "merge": "Unisci",
+    "split": "Dividi",
+    "reorder": "Riordina",
+    "remove": "Rimuovi"
+  },
+  "sidebar": {
+    "dropHere": "Trascina un PDF qui o clicca per caricare",
+    "loading": "Caricamento...",
+    "noPdfs": "Nessun PDF caricato",
+    "uploadOnlyPdf": "Solo file PDF consentiti",
+    "uploadFailed": "Caricamento fallito",
+    "deleteFailed": "Cancellazione fallita",
+    "rename": "Rinomina",
+    "delete": "Elimina",
+    "confirmDelete": "Conferma eliminazione"
+  },
+  "mergeDialog": {
+    "title": "Unisci PDF",
+    "description": "Seleziona almeno 2 PDF da unire.",
+    "cancel": "Annulla",
+    "merge": "Unisci",
+    "merging": "Unione in corso...",
+    "failed": "Unione fallita"
+  },
+  "darkMode": {
+    "toggle": "Attiva/disattiva modalità scura"
+  }
+}
