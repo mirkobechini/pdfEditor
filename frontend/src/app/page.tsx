@@ -5,6 +5,7 @@ import AppLayout from "./components/AppLayout";
 import Sidebar from "./components/Sidebar";
 import Toolbar from "./components/Toolbar";
 import PdfViewer from "./components/PdfViewer";
+import MergeDialog from "./components/MergeDialog";
 import { api, PdfDocument } from "./lib/api";
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [totalPages, setTotalPages] = React.useState(0);
   const [zoom, setZoom] = React.useState(1);
+  const [mergeOpen, setMergeOpen] = React.useState(false);
 
   async function handleSelect(id: string) {
     if (id === selectedId) return;
@@ -44,41 +46,50 @@ export default function Home() {
   }
 
   return (
-    <AppLayout
-      sidebar={
-        <Sidebar
-          selectedId={selectedId}
-          onSelect={handleSelect}
-          onUpload={handleUpload}
-          onDelete={handleDelete}
-          onRename={() => {}}
-        />
-      }
-      toolbar={
-        <Toolbar
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          zoom={zoom}
-          onZoomChange={setZoom}
-          onMerge={() => {}}
-          onSplit={() => {}}
-          onReorder={() => {}}
-          onRemovePages={() => {}}
-          onReplaceText={() => {}}
-        />
-      }
-      viewer={
-        <PdfViewer
-          fileUrl={fileUrl}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          onTotalPagesChange={setTotalPages}
-          zoom={zoom}
-          onZoomChange={setZoom}
-        />
-      }
-    />
+    <>
+      <AppLayout
+        sidebar={
+          <Sidebar
+            selectedId={selectedId}
+            onSelect={handleSelect}
+            onUpload={handleUpload}
+            onDelete={handleDelete}
+            onRename={() => {}}
+          />
+        }
+        toolbar={
+          <Toolbar
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            zoom={zoom}
+            onZoomChange={setZoom}
+            onMerge={() => setMergeOpen(true)}
+            onSplit={() => {}}
+            onReorder={() => {}}
+            onRemovePages={() => {}}
+            onReplaceText={() => {}}
+          />
+        }
+        viewer={
+          <PdfViewer
+            fileUrl={fileUrl}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            onTotalPagesChange={setTotalPages}
+            zoom={zoom}
+            onZoomChange={setZoom}
+          />
+        }
+      />
+      <MergeDialog
+        open={mergeOpen}
+        onClose={() => setMergeOpen(false)}
+        onMergeComplete={(doc) => {
+          setSelectedId(doc.id);
+        }}
+      />
+    </>
   );
 }
