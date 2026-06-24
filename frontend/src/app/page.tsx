@@ -110,6 +110,13 @@ export default function Home() {
           setSelectedId(doc.id);
         }}
       />
+      <RemoveDialog
+        open={removeOpen}
+        onClose={() => setRemoveOpen(false)}
+        onRemoveComplete={(doc) => {
+          setSelectedId(doc.id);
+        }}
+      />
     </>
   );
 }
