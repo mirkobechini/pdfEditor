@@ -63,7 +63,7 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
           </div>
 
           {/* PDF Viewer */}
-          <div className="flex-1 flex items-center justify-center bg-gray-100 dark:bg-gray-950 overflow-auto p-2 md:p-4">
+          <div className="flex-1 bg-gray-100 dark:bg-gray-950 overflow-auto p-2 md:p-4">
             {viewer}
           </div>
         </main>

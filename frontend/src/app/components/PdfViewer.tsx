@@ -131,11 +131,11 @@ export default function PdfViewer({
   }
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="min-h-full flex flex-col items-center">
       {rendering && (
         <div className="text-sm text-gray-400 mb-2">Rendering...</div>
       )}
-      <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-auto">
+      <div ref={containerRef} className="flex items-center justify-center">
         <canvas ref={canvasRef} className="shadow-lg" />
       </div>
     </div>
