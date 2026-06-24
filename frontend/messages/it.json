@@ -41,6 +41,17 @@
     "splitting": "Divisione in corso...",
     "failed": "Divisione fallita"
   },
+  "reorderDialog": {
+    "title": "Riordina Pagine",
+    "selectFile": "Seleziona un PDF",
+    "choose": "Scegli --",
+    "pages": "pagine",
+    "page": "Pagina",
+    "cancel": "Annulla",
+    "reorder": "Riordina",
+    "reordering": "Riordino in corso...",
+    "failed": "Riordino fallito"
+  },
   "darkMode": {
     "toggle": "Attiva/disattiva modalità scura"
   }

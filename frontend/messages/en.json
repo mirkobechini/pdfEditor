@@ -41,6 +41,17 @@
     "splitting": "Splitting...",
     "failed": "Split failed"
   },
+  "reorderDialog": {
+    "title": "Reorder Pages",
+    "selectFile": "Select a PDF",
+    "choose": "Choose --",
+    "pages": "pages",
+    "page": "Page",
+    "cancel": "Cancel",
+    "reorder": "Reorder",
+    "reordering": "Reordering...",
+    "failed": "Reorder failed"
+  },
   "darkMode": {
     "toggle": "Toggle dark mode"
   }
