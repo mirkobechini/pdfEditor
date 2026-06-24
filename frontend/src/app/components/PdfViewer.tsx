@@ -22,6 +22,7 @@ export default function PdfViewer({
   onZoomChange,
 }: PdfViewerProps) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [rendering, setRendering] = React.useState(false);
   const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
   const [loadVersion, setLoadVersion] = React.useState(0);
@@ -61,8 +62,19 @@ export default function PdfViewer({
         const pdf = await (window as any).pdfjsLib.getDocument(fileUrl).promise;
         pdfDocRef.current = pdf;
         onTotalPagesChange(pdf.numPages);
+
+        // Calculate initial zoom to fit page width inside container
+        const firstPage = await pdf.getPage(1);
+        const vp = firstPage.getViewport({ scale: 1 });
+        const containerWidth = containerRef.current?.clientWidth ?? 800;
+        const containerHeight = containerRef.current?.clientHeight ?? 600;
+        // Fit by width, but don't exceed a zoom that makes height taller than container
+        const fitWidth = (containerWidth - 32) / vp.width;
+        const fitHeight = (containerHeight - 32) / vp.height;
+        const initialZoom = Math.min(fitWidth, fitHeight, 1.5);
+
+        onZoomChange(Math.round(initialZoom * 100) / 100);
         onPageChange(1);
-        onZoomChange(1);
         // Force render effect to run even if currentPage is already 1
         setLoadVersion((v) => v + 1);
       } catch (err) {
@@ -93,10 +105,16 @@ export default function PdfViewer({
         const page = await pdfDocRef.current.getPage(currentPage);
         const viewport = page.getViewport({ scale: zoom });
         const canvas = canvasRef.current!;
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+
+        // devicePixelRatio for crisp rendering on HiDPI screens
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = viewport.width * dpr;
+        canvas.height = viewport.height * dpr;
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
 
         const ctx = canvas.getContext("2d")!;
+        ctx.scale(dpr, dpr);
         const renderTask = page.render({
           canvasContext: ctx,
           viewport,
@@ -128,7 +146,9 @@ export default function PdfViewer({
       {rendering && (
         <div className="text-sm text-gray-400 mb-2">Rendering...</div>
       )}
-      <canvas ref={canvasRef} className="shadow-lg" />
+      <div ref={containerRef} className="w-full h-full flex items-center justify-center overflow-auto">
+        <canvas ref={canvasRef} className="shadow-lg" />
+      </div>
     </div>
   );
 }
