@@ -70,7 +70,7 @@ export default function Home() {
             onZoomChange={setZoom}
             onMerge={() => setMergeOpen(true)}
             onSplit={() => setSplitOpen(true)}
-            onReorder={() => {}}
+            onReorder={() => setReorderOpen(true)}
             onRemovePages={() => {}}
             onReplaceText={() => {}}
           />
