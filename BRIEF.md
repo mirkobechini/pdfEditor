@@ -204,7 +204,7 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 
 ### Fase 1b — Desktop UI (Next.js + TailwindCSS) — prima versione
 
-- [ ] Setup Next.js (app router) + React + TailwindCSS
+- [x] Setup Next.js (app router) + React + TailwindCSS
 - [ ] Porting prototipo da HTML statico a componenti React
 - [ ] Sidebar con elenco PDF (upload, elimina, rinomina)
 - [ ] Toolbar navigazione + zoom + azioni
