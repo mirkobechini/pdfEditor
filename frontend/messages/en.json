@@ -1,0 +1,33 @@
+{
+  "app": {
+    "title": "PdfEditor",
+    "selectPdf": "Select a PDF to view",
+    "rendering": "Rendering...",
+    "merge": "Merge",
+    "split": "Split",
+    "reorder": "Reorder",
+    "remove": "Remove"
+  },
+  "sidebar": {
+    "dropHere": "Drop PDF here or click to upload",
+    "loading": "Loading...",
+    "noPdfs": "No PDFs uploaded yet",
+    "uploadOnlyPdf": "Only PDF files are allowed",
+    "uploadFailed": "Upload failed",
+    "deleteFailed": "Delete failed",
+    "rename": "Rename",
+    "delete": "Delete",
+    "confirmDelete": "Confirm delete"
+  },
+  "mergeDialog": {
+    "title": "Merge PDFs",
+    "description": "Select at least 2 PDFs to merge.",
+    "cancel": "Cancel",
+    "merge": "Merge",
+    "merging": "Merging...",
+    "failed": "Merge failed"
+  },
+  "darkMode": {
+    "toggle": "Toggle dark mode"
+  }
+}

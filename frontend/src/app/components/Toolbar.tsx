@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useI18n } from "../lib/i18n";
 
 interface ToolbarProps {
   currentPage: number;
@@ -27,6 +28,7 @@ export default function Toolbar({
   onRemovePages,
   onReplaceText,
 }: ToolbarProps) {
+  const { t } = useI18n();
   return (
     <>
       {/* Page navigation */}
@@ -87,16 +89,16 @@ export default function Toolbar({
 
       {/* Actions */}
       <button className="px-3 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50" onClick={onMerge}>
-        Merge
+        {t("app.merge")}
       </button>
       <button className="px-3 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50" disabled>
-        Split
+        {t("app.split")}
       </button>
       <button className="px-3 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50" disabled>
-        Reorder
+        {t("app.reorder")}
       </button>
       <button className="px-3 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50" disabled>
-        Remove
+        {t("app.remove")}
       </button>
     </>
   );
