@@ -32,6 +32,8 @@ This document outlines the development flow for the PDF Editor project, includin
 - Don't go to the next issue without all tests passing and user approval of the previous issue.
 - **Never create or modify files without committing them before proceeding to the next step.** After writing each atomic unit (a model, a service, a router, a test file, etc.), the agent MUST commit before writing the next file or making the next edit. The only exception is when editing the same file multiple times in quick succession to fix the same feature (e.g., fixing a bug discovered in the same session).
 - **Never create a GitHub issue or branch that covers multiple BRIEF checkboxes.** Each checkbox in `BRIEF.md` (e.g. "Sidebar", "Toolbar", "PDF Viewer", "Dark mode") is ONE separate issue + ONE separate feature branch. Do not group them even if they seem related. The only exception is if the BRIEF explicitly says "Setup + X" in a single checkbox.
+- **Never group multiple bugs into a single issue.** Each bug fix MUST have its own GitHub issue, its own branch, its own PR. Even if bugs are in the same component or file, they are separate issues. Do not group them.
+- **Every feature MUST include its own tests before the PR is created.** A feature is not complete until its tests are written AND pass. The PR must include both the feature code and the test code. CI must be green before merge.
 - **Never batch multiple atomic units into a single commit.** Each commit MUST contain exactly ONE logical unit: one model, one schema file, one service, one router, one test file. Commits like "feat(api): add service + API router + main.py registration" are NOT allowed — that's three separate commits.
 - **Never skip asking when in doubt.** If the agent is unsure about any decision (architecture, implementation, naming, rule interpretation), it MUST ask the user BEFORE proceeding. After the user answers, the agent MUST immediately update `AGENT_FLOW.md` with the outcome of the discussion, so the same doubt never recurs.
 - **Never ask the user what to do next.** The sequential order is defined in `BRIEF.md` — the agent MUST follow it without asking. Do not propose skipping or reordering.
@@ -86,6 +88,8 @@ Examples:
 ### 3. Implementation — one commit per atomic function
 
 For each issue inside the feature branch:
+
+> ⚠️ **Regola fondamentale: feature → test → merge.** Ogni feature deve essere accompagnata dai suoi test nella stessa PR. I test devono essere scritti SUBITO dopo il codice della feature, prima di creare la PR. Se la PR non ha test, non può essere mergiata.
 
 ```bash
 # Already inside the feature branch (pushed)
