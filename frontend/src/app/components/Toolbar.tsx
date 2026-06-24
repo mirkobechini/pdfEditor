@@ -97,7 +97,7 @@ export default function Toolbar({
       <button className="px-3 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50" onClick={onReorder}>
         {t("app.reorder")}
       </button>
-      <button className="px-3 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50" disabled>
+      <button className="px-3 py-1 text-xs rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50" onClick={onRemovePages}>
         {t("app.remove")}
       </button>
     </>
