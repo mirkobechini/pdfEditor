@@ -167,6 +167,24 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 └──────────────────────────────────────────────────────┘
 ```
 
+## Struttura repository
+
+```
+PdfEditor/
+├── backend/              # FastAPI (Python)
+│   ├── app/
+│   ├── tests/
+│   ├── alembic/
+│   └── requirements.txt
+├── frontend/             # Next.js (Fase 1b)
+│   └── ...
+├── desktop/              # Tauri v2 sidecar (Fase 1c - futuro)
+├── mobile/               # React Native Expo (Fase 4 - futuro)
+└── .gitignore
+```
+
+> La struttura parte semplice (`frontend/` per Next.js). Quando arriveranno Tauri e mobile, si valuterà la migrazione a monorepo (es. `apps/web`, `apps/desktop`, `apps/mobile`, `packages/shared`).
+
 ## Feature roadmap (ordine di implementazione)
 
 _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
