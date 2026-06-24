@@ -181,7 +181,7 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 - [x] API conversione PDF ↔ DOCX/XLSX/PNG/JPG
 - [x] Autenticazione JWT (email/password)
 - [x] SSO con Google
-- [ ] Modelli licensing (User.license_tier, LicenseFeature)
+- [x] Modelli licensing (User.license_tier, LicenseFeature)
 - [ ] API bug reporting (BugReport model + endpoint)
 
 ### Fase 1b — Desktop UI (Next.js + TailwindCSS) — prima versione
