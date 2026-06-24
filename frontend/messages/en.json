@@ -27,6 +27,20 @@
     "merging": "Merging...",
     "failed": "Merge failed"
   },
+  "splitDialog": {
+    "title": "Split PDF",
+    "selectFile": "Select a PDF",
+    "choose": "Choose --",
+    "pages": "pages",
+    "pageLabel": "Pages to extract",
+    "pagePlaceholder": "e.g. 1-3, 5, 7",
+    "available": "Available pages",
+    "pagesSelected": "pages selected",
+    "cancel": "Cancel",
+    "split": "Split",
+    "splitting": "Splitting...",
+    "failed": "Split failed"
+  },
   "darkMode": {
     "toggle": "Toggle dark mode"
   }
