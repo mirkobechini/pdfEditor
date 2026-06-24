@@ -1,0 +1,127 @@
+"""Tests for licensing API endpoints."""
+
+from fastapi import status
+
+
+def _register_and_login(client, email="user@test.com", password="pass123"):
+    """Helper: register and login a normal user."""
+    client.post(
+        "/auth/register",
+        json={"email": email, "password": password, "full_name": "User"},
+    )
+    resp = client.post(
+        "/auth/login",
+        json={"email": email, "password": password},
+    )
+    return resp.json()["access_token"]
+
+
+def _create_admin(client, db_engine):
+    """Helper: register a user and promote to admin via the test DB."""
+    client.post(
+        "/auth/register",
+        json={"email": "admin@test.com", "password": "admin123", "full_name": "Admin"},
+    )
+
+    resp = client.post(
+        "/auth/login",
+        json={"email": "admin@test.com", "password": "admin123"},
+    )
+    token = resp.json()["access_token"]
+
+    me = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    user_id = me.json()["id"]
+
+    from sqlalchemy import text
+
+    with db_engine.connect() as conn:
+        conn.execute(
+            text("UPDATE users SET is_admin = 1 WHERE id = :uid"),
+            {"uid": user_id},
+        )
+        conn.commit()
+
+    return token
+
+
+class TestLicenses:
+    """Test suite for license features endpoint."""
+
+    def test_get_features_free(self, client):
+        """Should return features for free tier."""
+        token = _register_and_login(client)
+
+        response = client.get(
+            "/licenses/features",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert len(data) > 0
+        # Free tier should have at least upload_pdf and download_pdf
+        keys = [f["feature_key"] for f in data]
+        assert "upload_pdf" in keys
+        assert "download_pdf" in keys
+
+
+class TestAdmin:
+    """Test suite for admin endpoints."""
+
+    def test_admin_list_users(self, client, db_engine):
+        """Should list users for admin."""
+        token = _create_admin(client, db_engine)
+
+        response = client.get(
+            "/admin/users",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert len(data) >= 1
+
+    def test_admin_list_users_denied(self, client, db_engine):
+        """Should deny non-admin users."""
+        token = _register_and_login(client)
+
+        response = client.get(
+            "/admin/users",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_update_license(self, client, db_engine):
+        """Should update user license tier."""
+        admin_token = _create_admin(client, db_engine)
+        user_token = _register_and_login(client, email="target@test.com")
+
+        # Get users list to find target ID
+        users_resp = client.get(
+            "/admin/users",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        target_id = [u["id"] for u in users_resp.json() if u["email"] == "target@test.com"][0]
+
+        response = client.put(
+            f"/admin/users/{target_id}/license",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"license_tier": "pro"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["license_tier"] == "pro"
+
+    def test_admin_update_license_invalid_tier(self, client, db_engine):
+        """Should reject invalid tier."""
+        admin_token = _create_admin(client, db_engine)
+
+        users_resp = client.get(
+            "/admin/users",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        target_id = users_resp.json()[0]["id"]
+
+        response = client.put(
+            f"/admin/users/{target_id}/license",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"license_tier": "ultra"},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
