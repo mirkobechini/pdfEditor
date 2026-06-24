@@ -8,6 +8,7 @@ import PdfViewer from "./components/PdfViewer";
 import MergeDialog from "./components/MergeDialog";
 import SplitDialog from "./components/SplitDialog";
 import ReorderDialog from "./components/ReorderDialog";
+import RemoveDialog from "./components/RemoveDialog";
 import { api, PdfDocument } from "./lib/api";
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
   const [mergeOpen, setMergeOpen] = React.useState(false);
   const [splitOpen, setSplitOpen] = React.useState(false);
   const [reorderOpen, setReorderOpen] = React.useState(false);
+  const [removeOpen, setRemoveOpen] = React.useState(false);
 
   async function handleSelect(id: string) {
     if (id === selectedId) return;
@@ -71,7 +73,7 @@ export default function Home() {
             onMerge={() => setMergeOpen(true)}
             onSplit={() => setSplitOpen(true)}
             onReorder={() => setReorderOpen(true)}
-            onRemovePages={() => {}}
+            onRemovePages={() => setRemoveOpen(true)}
             onReplaceText={() => {}}
           />
         }
@@ -105,6 +107,13 @@ export default function Home() {
         open={reorderOpen}
         onClose={() => setReorderOpen(false)}
         onReorderComplete={(doc) => {
+          setSelectedId(doc.id);
+        }}
+      />
+      <RemoveDialog
+        open={removeOpen}
+        onClose={() => setRemoveOpen(false)}
+        onRemoveComplete={(doc) => {
           setSelectedId(doc.id);
         }}
       />

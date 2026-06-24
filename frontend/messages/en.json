@@ -52,6 +52,18 @@
     "reordering": "Reordering...",
     "failed": "Reorder failed"
   },
+  "removeDialog": {
+    "title": "Remove Pages",
+    "selectFile": "Select a PDF",
+    "choose": "Choose --",
+    "pages": "pages",
+    "page": "Page",
+    "pagesRemaining": "pages remaining",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "removing": "Removing...",
+    "failed": "Remove failed"
+  },
   "darkMode": {
     "toggle": "Toggle dark mode"
   }

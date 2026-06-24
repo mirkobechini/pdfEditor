@@ -52,6 +52,18 @@
     "reordering": "Riordino in corso...",
     "failed": "Riordino fallito"
   },
+  "removeDialog": {
+    "title": "Rimuovi Pagine",
+    "selectFile": "Seleziona un PDF",
+    "choose": "Scegli --",
+    "pages": "pagine",
+    "page": "Pagina",
+    "pagesRemaining": "pagine rimanenti",
+    "cancel": "Annulla",
+    "remove": "Rimuovi",
+    "removing": "Rimozione in corso...",
+    "failed": "Rimozione fallita"
+  },
   "darkMode": {
     "toggle": "Attiva/disattiva modalità scura"
   }
