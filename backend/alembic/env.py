@@ -4,7 +4,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app.core.database import Base
-from app.models.pdf import PdfDocument  # noqa: F401 — ensure models are loaded
+from app.models import PdfDocument, User, LicenseFeature  # noqa: F401 — ensure models are loaded
 
 config = context.config
 if config.config_file_name is not None:
