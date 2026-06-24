@@ -34,8 +34,27 @@ class UserResponse(BaseModel):
     email: str
     full_name: str
     is_active: bool
+    is_admin: bool
+    license_tier: str
     created_at: datetime
     updated_at: datetime
+
+
+class UpdateLicenseRequest(BaseModel):
+    """Schema for updating a user's license tier."""
+
+    license_tier: str
+
+
+class LicenseFeatureResponse(BaseModel):
+    """Schema for a single license feature."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    tier: str
+    feature_key: str
+    enabled: bool
 
 
 class TokenResponse(BaseModel):
