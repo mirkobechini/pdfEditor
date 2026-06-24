@@ -73,7 +73,7 @@ export default function Home() {
             onMerge={() => setMergeOpen(true)}
             onSplit={() => setSplitOpen(true)}
             onReorder={() => setReorderOpen(true)}
-            onRemovePages={() => {}}
+            onRemovePages={() => setRemoveOpen(true)}
             onReplaceText={() => {}}
           />
         }
