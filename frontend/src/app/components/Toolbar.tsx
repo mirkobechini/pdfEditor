@@ -21,6 +21,11 @@ export default function Toolbar({
   onPageChange,
   zoom,
   onZoomChange,
+  onMerge,
+  onSplit,
+  onReorder,
+  onRemovePages,
+  onReplaceText,
 }: ToolbarProps) {
   return (
     <>
