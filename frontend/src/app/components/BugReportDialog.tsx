@@ -1,0 +1,129 @@
+"use client";
+
+import React from "react";
+import { useI18n } from "../lib/i18n";
+import { api } from "../lib/api";
+
+interface BugReportDialogProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export default function BugReportDialog({ open, onClose }: BugReportDialogProps) {
+  const { t } = useI18n();
+  const [title, setTitle] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [sending, setSending] = React.useState(false);
+  const [done, setDone] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (open) {
+      setTitle("");
+      setDescription("");
+      setSending(false);
+      setDone(false);
+      setError(null);
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !description.trim()) return;
+
+    setSending(true);
+    setError(null);
+    try {
+      await api.createBugReport(title.trim(), description.trim());
+      setDone(true);
+    } catch (err) {
+      setError(t("bugReport.failed") + ": " + (err instanceof Error ? err.message : err));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {done ? (
+          <>
+            <h2 className="text-lg font-bold mb-2">{t("bugReport.sentTitle")}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              {t("bugReport.sentDescription")}
+            </p>
+            <div className="flex justify-end">
+              <button
+                className="px-4 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600"
+                onClick={onClose}
+              >
+                {t("bugReport.close")}
+              </button>
+            </div>
+          </>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <h2 className="text-lg font-bold mb-4">{t("bugReport.title")}</h2>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                {t("bugReport.fieldTitle")} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={t("bugReport.titlePlaceholder")}
+                required
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                {t("bugReport.fieldDescription")} <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 resize-vertical min-h-[100px]"
+                placeholder={t("bugReport.descriptionPlaceholder")}
+                required
+                rows={4}
+              />
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">
+                {error}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+                onClick={onClose}
+                disabled={sending}
+              >
+                {t("bugReport.cancel")}
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                disabled={sending || !title.trim() || !description.trim()}
+              >
+                {sending ? t("bugReport.sending") : t("bugReport.submit")}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
