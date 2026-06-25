@@ -14,6 +14,9 @@ class BugReport(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
     page_url = Column(String(500), nullable=True)
+    platform = Column(String(100), nullable=True)
+    app_version = Column(String(50), nullable=True)
+    os_info = Column(String(255), nullable=True)
     status = Column(String(20), nullable=False, default="open", index=True)
 
     created_at = Column(

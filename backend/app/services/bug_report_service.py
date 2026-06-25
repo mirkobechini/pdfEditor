@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.bug_report import BugReport
-from app.repositories.user_repo import UserRepository
+from app.repositories.bug_report_repo import BugReportRepository
 
 
 class BugReportService:
@@ -10,35 +10,33 @@ class BugReportService:
     VALID_STATUSES = {"open", "in_progress", "resolved", "closed"}
 
     def __init__(self, db: Session):
-        self.db = db
+        self.repo = BugReportRepository(db)
 
     def create(
-        self, user_id: str, title: str, description: str, page_url: str | None = None
+        self,
+        user_id: str,
+        title: str,
+        description: str,
+        page_url: str | None = None,
+        platform: str | None = None,
+        app_version: str | None = None,
+        os_info: str | None = None,
     ) -> BugReport:
         report = BugReport(
             user_id=user_id,
             title=title,
             description=description,
             page_url=page_url,
+            platform=platform,
+            app_version=app_version,
+            os_info=os_info,
         )
-        self.db.add(report)
-        self.db.flush()
-        self.db.refresh(report)
-        return report
+        return self.repo.create(report)
 
     def get_all(self, status: str | None = None, skip: int = 0, limit: int = 100) -> list[BugReport]:
-        query = self.db.query(BugReport).order_by(BugReport.created_at.desc())
-        if status and status in self.VALID_STATUSES:
-            query = query.filter(BugReport.status == status)
-        return query.offset(skip).limit(limit).all()
+        return self.repo.get_all(status=status, skip=skip, limit=limit)
 
     def update_status(self, report_id: str, new_status: str) -> BugReport | None:
         if new_status not in self.VALID_STATUSES:
             raise ValueError(f"Invalid status '{new_status}'. Valid: {', '.join(sorted(self.VALID_STATUSES))}")
-        report = self.db.query(BugReport).filter(BugReport.id == report_id).first()
-        if not report:
-            return None
-        report.status = new_status
-        self.db.flush()
-        self.db.refresh(report)
-        return report
+        return self.repo.update_status(report_id, new_status)
