@@ -45,6 +45,17 @@ class ApiClient {
     this.baseUrl = baseUrl;
   }
 
+  static async extractError(res: Response): Promise<string> {
+    try {
+      const body = await res.json();
+      if (typeof body.detail === "string") return body.detail;
+      if (Array.isArray(body.detail)) return body.detail[0]?.msg || res.statusText;
+      return JSON.stringify(body);
+    } catch {
+      return res.statusText;
+    }
+  }
+
   setToken(token: string | null) {
     this.token = token;
   }
@@ -66,7 +77,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: formData,
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -74,7 +85,7 @@ class ApiClient {
     const res = await fetch(`${this.baseUrl}/pdfs?skip=${skip}&limit=${limit}`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -82,7 +93,7 @@ class ApiClient {
     const res = await fetch(`${this.baseUrl}/pdfs/${id}`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -91,14 +102,14 @@ class ApiClient {
       method: "DELETE",
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
   }
 
   async downloadPdf(id: string): Promise<Blob> {
     const res = await fetch(`${this.baseUrl}/pdfs/${id}/download`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.blob();
   }
 
@@ -109,7 +120,7 @@ class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ pdf_ids: pdfIds }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -121,7 +132,7 @@ class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -132,7 +143,7 @@ class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ page_order: pageOrder }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -142,7 +153,7 @@ class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ page_numbers: pageNumbers }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -160,7 +171,7 @@ class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -169,7 +180,7 @@ class ApiClient {
     const res = await fetch(`${this.baseUrl}/pdfs/${id}/text${params}`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -178,7 +189,7 @@ class ApiClient {
     const res = await fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -188,7 +199,7 @@ class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(metadata),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -198,7 +209,7 @@ class ApiClient {
       method: "POST",
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.blob();
   }
 
@@ -210,7 +221,7 @@ class ApiClient {
       headers: this.getHeaders(),
       body: formData,
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -225,7 +236,7 @@ class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, full_name: fullName }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -235,7 +246,7 @@ class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -245,7 +256,7 @@ class ApiClient {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_token: idToken }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -253,11 +264,10 @@ class ApiClient {
     const res = await fetch(`${this.baseUrl}/auth/me`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
-  // Bugs
   async createBugReport(
     title: string,
     description: string,
@@ -270,7 +280,7 @@ class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
@@ -281,7 +291,7 @@ class ApiClient {
     const res = await fetch(`${this.baseUrl}/licenses/features`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 }
