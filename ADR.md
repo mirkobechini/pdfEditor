@@ -65,7 +65,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - Ogni funzione atomica richiede test pytest/vitest prima di essere considerata completa
 - Le feature partono solo dopo approvazione esplicita dell'utente (roadmap a fasi)
 - Max 10 snapshot undo/redo per sessione
-- Dark mode con persistenza (manca localStorage — da fixare)
+- Dark mode con persistenza (localStorage + system preference fallback)
 
 ## Cosa NON è in scope (per ora)
 
@@ -86,6 +86,7 @@ Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'o
 
 - [x] **Bug report button (frontend)** — Pulsante "Segnala bug" nell'header con dialog modale. Completata (PR #56, issue #55)
 - [x] **UI autenticazione (login/register)** — Pagine `/login` e `/register` con form, AuthContext JWT, route protection, logout in header. Completata (PR #58, issue #57)
+- [x] **Persistenza dark mode (localStorage)** — localStorage + system preference fallback + flash prevention. Completata (PR #60, issue #59)
 
 ### Da implementare (in ordine)
 

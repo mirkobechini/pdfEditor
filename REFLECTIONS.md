@@ -23,7 +23,7 @@ Tutte le API richieste dal brief sono state implementate: upload/download con va
 | Sidebar (upload, elimina, rinomina)            | ✅                                                                                               |
 | Toolbar navigazione + zoom + azioni            | ✅                                                                                               |
 | Viewer PDF.js via CDN                          | ✅                                                                                               |
-| Dark mode toggle                               | ✅ (ma **non persiste** — manca localStorage)                                                    |
+| **Dark mode toggle**                           | **✅ Completato (PR #60)** — localStorage persist + system preference fallback                   |
 | Design responsive                              | ✅                                                                                               |
 | Merge/split/riordino/rimozione (pdf-lib)       | ✅                                                                                               |
 | **Pulsante segnalazione bug**                  | **✅ Completato (PR #56)**                                                                       |
