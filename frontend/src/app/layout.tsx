@@ -27,7 +27,21 @@ export default function RootLayout({
     <html
       lang="it"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* Prevent flash of unstyled content — apply dark class before React hydrates */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              var dark = localStorage.getItem("darkMode");
+              if (dark === "true" || (dark === null && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+                document.documentElement.classList.add("dark");
+              }
+            })();
+          `
+        }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <ClientLayout>{children}</ClientLayout>
       </body>

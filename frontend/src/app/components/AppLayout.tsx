@@ -104,12 +104,51 @@ function ToggleDarkMode() {
   const { t } = useI18n();
   const [dark, setDark] = React.useState(false);
 
+  // On mount: restore from localStorage, fallback to system preference
+  React.useEffect(() => {
+    const stored = localStorage.getItem("darkMode");
+    if (stored !== null) {
+      const isDark = stored === "true";
+      setDark(isDark);
+      if (isDark) {
+        document.documentElement.classList.add("dark");
+      }
+    } else {
+      // First visit — check system preference
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (prefersDark) {
+        setDark(true);
+        document.documentElement.classList.add("dark");
+      }
+    }
+  }, []);
+
+  // Listen for system preference changes (only when no explicit user choice)
+  React.useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => {
+      const stored = localStorage.getItem("darkMode");
+      if (stored === null) {
+        // No explicit choice — follow system
+        setDark(e.matches);
+        if (e.matches) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      }
+    };
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   React.useEffect(() => {
     if (dark) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
+    localStorage.setItem("darkMode", String(dark));
   }, [dark]);
 
   return (
