@@ -11,9 +11,8 @@ Tutte le API richieste dal brief sono state implementate: upload/download con va
 **Problemi critici:**
 
 1. **❌ Zero enforcement licenze** — Il backend ha endpoint `/licenses/features` che _elenca_ le feature per tier, ma **nessun middleware/blocco** impedisce a un utente free di chiamare merge, split, export, ecc. È un guscio vuoto.
-2. **❌ Bug nella migrazione Alembic** — La migration `01fd6e2d14bc` ripete l'aggiunta delle colonne `is_admin` e `license_tier` già fatte in `7ffbd97b3386`. Eseguendo le migrazioni in sequenza, la seconda fallisce perché le colonne esistono già.
-3. **⚠️ Nessuna autenticazione sugli endpoint PDF** — upload, merge, split, reorder... sono tutti pubblici. Potrebbe essere voluto per uso desktop offline, ma non è specificato.
-4. **⚠️ BugReportService bypassa il repository pattern** — usa query dirette invece dei repository come fanno AuthService e PdfService.
+2. **⚠️ Nessuna autenticazione sugli endpoint PDF** — upload, merge, split, reorder... sono tutti pubblici. Potrebbe essere voluto per uso desktop offline, ma non è specificato.
+3. **⚠️ BugReportService bypassa il repository pattern** — usa query dirette invece dei repository come fanno AuthService e PdfService.
 
 ### Frontend (Fase 1b) — ❌ Parzialmente
 
@@ -67,14 +66,13 @@ Tutte le API richieste dal brief sono state implementate: upload/download con va
 
 ## Prossimo passo
 
-Prima di procedere, risolverei questi punti nell'ordine:
+Prima di procedere, risolveremo questi punti nell'ordine:
 
-1. **Rimuovere le colonne duplicate dalla migration `01fd6e2d14bc`** — altrimenti `alembic upgrade head` fallisce
-2. **Aggiungere il pulsante di segnalazione bug nel frontend** — previsto dalla roadmap Fase 1b
-3. **Aggiungere UI di autenticazione (login/register)** — i metodi API ci sono, mancano i componenti
-4. **Persistenza dark mode (localStorage)** — fix piccolo, alto impatto UX
-5. **Implementare l'enforcement licenze** — middleware/dependency che blocchi operazioni non consentite per tier
-6. **Allineare modello BugReport al brief** (campi `platform`, `app_version`, `os_info`)
-7. **Aggiungere dashboard admin** (gestione utenti, licenze, bug report)
-8. **Sostituire I18nProvider custom con next-intl** (già installato)
-9. **Decidere se merge/split deve avvenire lato client o server** — attualmente fanno entrambi la stessa cosa in modo indipendente
+1. **Aggiungere il pulsante di segnalazione bug nel frontend** — previsto dalla roadmap Fase 1b, API backend già pronta ✅
+2. **Aggiungere UI di autenticazione (login/register)** — i metodi API ci sono, mancano i componenti
+3. **Persistenza dark mode (localStorage)** — fix piccolo, alto impatto UX
+4. **Implementare l'enforcement licenze** — middleware/dependency che blocchi operazioni non consentite per tier
+5. **Allineare modello BugReport al brief** (campi `platform`, `app_version`, `os_info`)
+6. **Aggiungere dashboard admin** (gestione utenti, licenze, bug report)
+7. **Sostituire I18nProvider custom con next-intl** (già installato)
+8. **Decidere se merge/split deve avvenire lato client o server** — attualmente fanno entrambi la stessa cosa in modo indipendente
