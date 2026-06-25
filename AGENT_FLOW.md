@@ -1,312 +1,152 @@
 # Agent Development Flow
 
-This document outlines the development flow for the PDF Editor project, including the feature flow, branch structure, core principles, and workflow steps.
+This document defines the **git workflow** that the AI agent must follow for every project. It covers branching, committing, pull requests, and the overall issue lifecycle.
 
 ---
 
 ## Branch Structure
 
-| Branch     | Convention                           | Description                                                       |
-| ---------- | ------------------------------------ | ----------------------------------------------------------------- |
-| `main`     | —                                    | Stable codebase. Only the user merges here from `dev`.            |
-| `dev`      | —                                    | Permanent development branch. All phase branches merge here.      |
-| `feature/` | `<issue-number>-<short-description>` | Legacy — used only for single-issue branches (prototype Phase 0). |
-| `hotfix/`  | `<issue-number>-<short-description>` | Urgent bug fixes (same flow as feature).                          |
-| `chore/`   | `<issue-number>-<short-description>` | Non-feature tasks (refactoring, documentation, etc.).             |
+| Branch     | Convention                           | Description                                                  |
+| ---------- | ------------------------------------ | ------------------------------------------------------------ |
+| `main`     | —                                    | Stable codebase. Only the user merges here from `dev`.       |
+| `dev`      | —                                    | Permanent development branch. All phase branches merge here. |
+| `feature/` | `<issue-number>-<short-description>` | New features (one branch per issue).                         |
+| `hotfix/`  | `<issue-number>-<short-description>` | Urgent bug fixes (same flow as feature).                     |
+| `chore/`   | `<issue-number>-<short-description>` | Non-feature tasks (refactoring, documentation, etc.).        |
 
 ---
 
 ## Core Principles
 
-- Each task should be implemented in a separate branch.
-- Branch naming convention: `feature/<issue-number>-<short-description>` for every issue.
-- Each feature branch should be created from the `dev` branch. The `dev` branch is a **permanent** branch created from `main` at the start of the project.
-- **No merge to the `main` branch without approval from the user.** The user must review and approve the changes before they are merged into `main`.
+- **One branch per issue.** Branch naming: `feature/<issue-number>-<short-description>`.
+- Every feature branch is created from `dev`. `dev` is a permanent branch created from `main` at project start.
+- **No merge to `main` without user approval.**
 
 ## NEVER
 
-- Don't commit directly to the `main` branch.
-- Don't merge to the `main` branch without approval from the user.
-- Don't push without a reason (CI, sync, or user request).
-- Don't create a branch without an associated GitHub issue.
-- Don't go to the next issue without all tests passing and user approval of the previous issue.
-- **Never create or modify files without committing them before proceeding to the next step.** After writing each atomic unit (a model, a service, a router, a test file, etc.), the agent MUST commit before writing the next file or making the next edit. The only exception is when editing the same file multiple times in quick succession to fix the same feature (e.g., fixing a bug discovered in the same session).
-- **Never create a GitHub issue or branch that covers multiple BRIEF checkboxes.** Each checkbox in `BRIEF.md` (e.g. "Sidebar", "Toolbar", "PDF Viewer", "Dark mode") is ONE separate issue + ONE separate feature branch. Do not group them even if they seem related. The only exception is if the BRIEF explicitly says "Setup + X" in a single checkbox.
-- **Never group multiple bugs into a single issue.** Each bug fix MUST have its own GitHub issue, its own branch, its own PR. Even if bugs are in the same component or file, they are separate issues. Do not group them.
-- **Every feature MUST include its own tests before the PR is created.** A feature is not complete until its tests are written AND pass. The PR must include both the feature code and the test code. CI must be green before merge.
-- **Never batch multiple atomic units into a single commit.** Each commit MUST contain exactly ONE logical unit: one model, one schema file, one service, one router, one test file. Commits like "feat(api): add service + API router + main.py registration" are NOT allowed — that's three separate commits.
-- **Never skip asking when in doubt.** If the agent is unsure about any decision (architecture, implementation, naming, rule interpretation), it MUST ask the user BEFORE proceeding. After the user answers, the agent MUST immediately update `AGENT_FLOW.md` with the outcome of the discussion, so the same doubt never recurs.
-- **Never ask the user what to do next.** The sequential order is defined in `BRIEF.md` — the agent MUST follow it without asking. Do not propose skipping or reordering.
-- **Always ask for approval before starting a new issue.** After completing an issue (tests passing, PR merged, issue closed), briefly describe what was done and ask "Posso procedere con la prossima issue?" — do NOT start the next issue without user confirmation.
+- Do not commit directly to `main`.
+- Do not merge to `main` without user approval.
+- Do not push without a reason (CI must run, sync with remote, or user explicitly requests it).
+- Do not create a branch without an associated issue.
+- Do not proceed to the next issue without all tests passing and user approval of the previous one.
+- **Never create or modify files without committing before proceeding.** Each atomic unit (a model, a service, a route handler, a test file, etc.) must be committed before writing the next file. The only exception is when editing the same file multiple times in quick succession for the same feature (e.g., fixing a bug discovered in the same session).
+- **Never create an issue or branch that covers multiple task items.** Each task item is ONE separate issue + ONE separate branch.
+- **Never group multiple bugs into a single issue.** Each bug fix gets its own issue, branch, and PR.
+- **Every feature MUST include its own tests before the PR is created.** A feature is not complete until its tests are written AND pass. CI must be green before merge.
+- **Never batch multiple atomic units into a single commit.** Each commit MUST contain exactly ONE logical unit: one model, one schema file, one service, one route file, one test file. Commits like "feat: add service + routes + registration" are NOT allowed — that's three separate commits.
+- **Never skip asking when in doubt.** If unsure about any decision (architecture, implementation, naming, rule interpretation), ask the user BEFORE proceeding. After the user answers, immediately update this file with the outcome.
+- **Never ask the user what to do next.** The sequential order is defined in the project's task list — follow it without asking. Do not propose skipping or reordering.
+- **Always ask for approval before starting a new issue.** After completing an issue (tests passing, PR merged, issue closed), briefly describe what was done and ask _"May I proceed with the next issue?"_ — do NOT start the next issue without user confirmation.
 
 ---
 
 ## Workflow Steps
 
-### 1. Plan — Create a GitHub Issue
+### 1. Plan — Create an Issue
 
-For every **feature**, the AI agent creates a GitHub issue with:
+For every **feature**, create an issue with:
 
 - **Title**: concise feature description
-- **Body**: detailed description, acceptance criteria, technical notes, security checklist
-- **Labels**: `backend`, `frontend`, `tauri`, `mobile`
+- **Body**: detailed description, acceptance criteria, technical notes
+- **Labels**: relevant labels (e.g. `backend`, `frontend`, `bug`)
 
-Each feature from the BRIEF gets its own issue. Examples:
+Use the `mcp_gitkraken_cli_issues_create` tool (or project's issue tracker). The issue number determines the branch name.
 
-| Feature                 | Issue |
-| ----------------------- | ----- |
-| API upload/download PDF | #2    |
-| API merge/split PDF     | #3    |
-| API text editing        | #4    |
-| ...                     | ...   |
-
-The agent uses the `mcp_gitkraken_cli_issues_create` tool to create issues. The issue number determines the branch name.
-
-> **Subito dopo aver creato l'issue**, l'agente deve scrivere nel body della issue la **lista completa dei commit atomici previsti** (es. `feat(ui): add MergeDialog component`, `feat(ui): integrate in page.tsx`, ecc.). Questa lista serve da roadmap — ogni commit deve essere eseguito esattamente come pianificato prima di passare al successivo. Se durante l'implementazione emerge la necessità di un commit extra, va aggiunto alla lista.
+> **Right after creating the issue**, write in the issue body the **complete list of expected atomic commits** (e.g. `feat(api): add User model`, `feat(api): add POST /auth/register`, `test(api): add auth tests`). This list serves as a roadmap — each commit must be executed exactly as planned before moving to the next. If an extra commit becomes necessary during implementation, add it to the list.
 
 ### 2. Branching — one branch per issue
 
-Each **issue** gets its own branch.
-
 ```bash
-# Create and push issue branch (CI needs push to trigger tests)
 git checkout dev
 git checkout -b feature/<issue-number>-<short-description>
 git push origin feature/<issue-number>-<short-description>
 ```
 
-Examples:
+### 3. Implementation & commit loop
 
-| Branch                 | Issues | What it contains      |
-| ---------------------- | ------ | --------------------- |
-| `feature/2-upload-pdf` | #2     | Upload PDF endpoint   |
-| `feature/3-merge-pdf`  | #3     | Merge PDF endpoint    |
-| `feature/4-edit-text`  | #4     | Text editing endpoint |
-
-### 3. Implementation — one commit per atomic function
-
-For each issue inside the feature branch:
-
-> ⚠️ **Regola fondamentale: feature → test → merge.** Ogni feature deve essere accompagnata dai suoi test nella stessa PR. I test devono essere scritti SUBITO dopo il codice della feature, prima di creare la PR. Se la PR non ha test, non può essere mergiata.
+While inside the feature branch, implement **one atomic unit at a time** and commit immediately:
 
 ```bash
-# Already inside the feature branch (pushed)
+# Inside the feature branch
 git checkout feature/<issue-number>-<short-description>
 
-# Implement the feature + tests
-# Commit:
-git commit -m "feat(api): add POST /upload endpoint"
+# 1. Write code for ONE atomic unit (a model, a schema, a service, a route handler, a test file, etc.)
+# 2. Stage and commit immediately
+git add .
+git commit -m "<type>(<scope>): <description>"
 
-# Push to trigger CI (Superlinter + tests run automatically)
+# 3. Push to trigger CI
 git push origin feature/<issue-number>-<short-description>
 
-# Create Pull Request (CI gating)
-gh pr create --base dev --title "feat(api): add POST /upload endpoint" --body "closes #<issue-number>"
+# 4. Stop and wait. Then repeat from step 1 for the next atomic unit.
+```
 
-# Wait for CI to pass, then merge (preserves atomic commits):
+> ⚠️ **Fundamental rule: feature → tests → merge.** Every feature MUST include its tests in the same PR. Write tests right after the feature code (in a **separate commit**), before creating the PR. A PR without tests cannot be merged.
+>
+> **Tests go in separate commits.** Do not bundle tests into the same commit as the feature code.
+
+Valid commit sequence example for one issue:
+
+```
+feat(api): add User model
+feat(api): add POST /auth/register endpoint
+feat(api): add POST /auth/login endpoint
+feat(api): add JWT middleware
+test(api): add auth tests
+```
+
+Commit message format:
+
+```
+<type>(<scope>): <short description>
+
+Types: feat, fix, style, refactor, test, chore
+Scope: api, ui, cli, core, ci, docs, deps
+```
+
+Always put `closes #<issue-number>` in the **PR body** (not the commit message), so the issue auto-closes on merge.
+
+### 4. PR, Merge & cleanup
+
+Once **ALL atomic units** (code + tests) are committed and pushed:
+
+> 💡 **Keep your branch in sync**: during development, periodically rebase on `dev` to avoid large conflicts later. Prefer small, frequent rebases over a single painful one.
+
+```bash
+# Keep feature branch in sync with dev (rebase, don't merge)
+git fetch origin dev
+git rebase origin/dev
+# Resolve conflicts if any, then:
+git push origin feature/<issue-number>-<short-description> --force-with-lease
+
+# Create Pull Request
+gh pr create --base dev --title "<type>(<scope>): <feature description>" --body "closes #<issue-number>"
+
+# Wait for CI to pass, then merge (preserves atomic commits)
 gh pr merge --merge --delete-branch
 
-# Verify issue auto-closed (GitHub sometimes misses the body reference):
+# Verify issue auto-closed (GitHub sometimes misses the body reference)
 gh issue list --limit 5 | grep "#<issue-number>"
 # If still open, close manually:
-#   gh issue close <issue-number> --comment "Issue risolta con PR #<pr-number>."
+#   gh issue close <issue-number> --comment "Resolved by PR #<pr-number>."
 
 # Switch back to dev and sync
 git checkout dev
 git pull origin dev
-# ⚠️ If `git pull` reports conflicts, resolve them first, then commit.
+
 # Delete local branch (remote already deleted by --delete-branch)
 git branch -d feature/<issue-number>-<short-description>
 ```
 
-> ⚠️ Use `--merge` (not `--squash`) to preserve atomic commit history on `dev`. GitHub should auto-close the issue because the PR body contains `closes #N`. However, this occasionally fails. **Always verify** with `gh issue list` after merge. If the issue is still open, close it manually with `gh issue close <number>`.
+> ⚠️ Use `--merge` (not `--squash`) to preserve atomic commit history on `dev`. GitHub should auto-close the issue because the PR body contains `closes #N`. However, this occasionally fails. **Always verify** with `gh issue list` after merge. If still open, close manually with `gh issue close <number>`.
 
-### 4. Implementation
+### 5. After merge — update progress
 
-- **One commit per atomic function.** Each commit = one function, one API endpoint, one React component, one test file.
-- **Migration**: ogni volta che crei o modifichi un modello SQLAlchemy, genera la migration Alembic:
-  ```bash
-  alembic revision --autogenerate -m "add <table_name> table"
-  ```
-  La migration va committata insieme al modello (`alembic/versions/xxx.py`), prima dei test. Se non ci sono modifiche ai modelli, non serve migration.
-- Commit messages MUST be clear, but `closes #N` goes in **the PR body**, not the commit message:
+After the PR is merged and the issue is closed:
 
-  ```
-  # commit message
-  feat(api): add POST /upload endpoint
-
-  # PR body (via --body flag)
-  closes #2
-  ```
-
-- After each commit, stop, briefly describe what was done, and wait before proceeding.
-- Dopo il push, crea una **Pull Request** con `gh pr create` e attendi CI verde prima di fare `gh pr merge`.
-- **Security checklist**: prima di considerare completata una funzione, verificare:
-  - [ ] I file caricati superano i controlli magic bytes?
-  - [ ] I nomi file sono sanitizzati con UUID?
-  - [ ] C'è un timeout su operazioni lunghe?
-  - [ ] L'input è validato con Pydantic schema?
-  - [ ] I test coprono anche i casi edge di sicurezza (file malformati, path traversal)?
-
-### ⚠️ Bug noti e soluzioni
-
-#### 1. Override `dependency_overrides` in test
-
-Quando FastAPI ha un wrapper `deps.py` che fa `yield from _get_db()`, la dipendenza registrata nei route è `deps.get_db`, **non** `core.database.get_db`. Il `yield from` è una chiamata Python diretta, FastAPI non la intercetta.
-
-❌ **Sbagliato** — override su `core.database.get_db`:
-
-```python
-app.dependency_overrides[get_db] = override_get_db  # non funziona!
-```
-
-✅ **Corretto** — override su `deps.get_db`:
-
-```python
-from app.api.deps import get_db as deps_get_db
-app.dependency_overrides[deps_get_db] = override_get_db  # funziona!
-```
-
-#### 2. Isolamento DB nei test su Windows
-
-SQLite in-memory su Windows ha un comportamento particolare: ogni connessione crea un DB separato con `sqlite://`. Per test isolati, usare **file temporanei unici** (`tmp_path` di pytest + `uuid`) invece che `sqlite://` o `StaticPool`.
-
-#### 3. Issue auto-close via PR body
-
-Il `closes #N` nel body della PR a volte non viene riconosciuto da GitHub (specie con merge via CLI). **Sempre verificare** dopo il merge:
-
-```bash
-gh issue list | grep "#N"  # se ancora aperta, chiudere manualmente
-```
-
-### 6. GitHub Actions (CI + Superlinter + Security)
-
-Every push to any `feature/*` branch or `dev` triggers CI **automatically**. If CI fails, the feature branch CANNOT be merged into `dev`. This is called **gating**.
-
-```yaml
-# .github/workflows/ci.yml
-name: CI
-on: [push, pull_request]
-jobs:
-  # Superlinter — linting code quality
-  lint:
-    name: Superlinter
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Super-linter
-        uses: super-linter/super-linter@v7
-        env:
-          VALIDATE_ALL_CODEBASE: true
-          DEFAULT_BRANCH: dev
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_PYTHON_FLAKE8: true
-          VALIDATE_PYTHON_PYLINT: true
-          VALIDATE_JAVASCRIPT_ES: true
-          VALIDATE_TYPESCRIPT_ES: true
-          VALIDATE_HTML: true
-          VALIDATE_CSS: true
-          VALIDATE_YAML: true
-          VALIDATE_MARKDOWN: true
-
-  # Security — Python vulnerability scan
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with: { python-version: "3.12" }
-      - run: pip install bandit pip-audit
-      - run: bandit -r app/ -ll # Scan solo criticità medie/alte
-      - run: pip-audit # Check CVE nelle dipendenze
-
-  # Type check — mypy (strict)
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with: { python-version: "3.12" }
-      - run: pip install -r requirements.txt
-      - run: mypy app/ --strict
-
-  # Backend tests — active in Phase 1a
-  backend:
-    runs-on: ubuntu-latest
-    if: startsWith(github.head_ref, 'feature/') || github.ref_name == 'dev'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with: { python-version: "3.12" }
-      - run: pip install -r requirements.txt
-      - run: pytest --cov --cov-report=term-missing -v
-
-  # Frontend tests — active from Phase 1b onward
-  frontend:
-    runs-on: ubuntu-latest
-    if: startsWith(github.head_ref, 'feature/') || github.ref_name == 'dev'
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with: { node-version: "22" }
-      - run: npm ci
-      - run: npm run test -- --coverage
-```
-
-### 7. Best practices (enforced by Superlinter + conventions)
-
-| Rule                   | Description                                                                                          |
-| ---------------------- | ---------------------------------------------------------------------------------------------------- |
-| **Code style Python**  | PEP8 via flake8 + pylint. Docstring obbligatoria su ogni funzione pubblica                           |
-| **Code style JS/TS**   | ESLint + Prettier. Arrow functions preferite, nomi camelCase                                         |
-| **Type hints Python**  | Obbligatori su tutte le funzioni. MyPy in CI                                                         |
-| **TypeScript**         | Strict mode. Nessun `any` senza commento                                                             |
-| **Security**           | Seguire la **security checklist** nella sezione 4 (Implementation). Riferimento completo in BRIEF.md |
-| **File naming**        | Python: snake_case. React: PascalCase per componenti, camelCase per utility                          |
-| **Error handling**     | Ogni endpoint deve gestire errori 400/404/500 con messaggi descrittivi                               |
-| **No secrets in code** | Usare variabili d'ambiente. Mai hardcode API key o password                                          |
-
-### 8. CI gates by phase
-
-| Phase              | CI jobs                                          | Lighthouse                                                 |
-| ------------------ | ------------------------------------------------ | ---------------------------------------------------------- |
-| **1a** (FastAPI)   | Superlinter + bandit + pip-audit + mypy + pytest | ❌                                                         |
-| **1b** (Next.js)   | Superlinter + bandit + vitest + Playwright       | 🟡 Consigliato su localhost                                |
-| **1c** (Tauri)     | Superlinter + Tauri build check + vitest         | ❌                                                         |
-| **2** (Web cloud)  | Tutti i precedenti + Lighthouse CI               | ✅ **Obbligatorio** (performance, PWA, SEO, accessibilità) |
-| **3** (Cloud sync) | Tutti i precedenti                               | ✅ Obbligatorio                                            |
-| **4** (Mobile)     | Tutti i precedenti + Detox/Maestro E2E           | ❌ (mobile nativo)                                         |
-
-### 9. Testing strategy
-
-| Layer            | Tool                             | Scope                                  |
-| ---------------- | -------------------------------- | -------------------------------------- |
-| Backend (Python) | **pytest** + `httpx.AsyncClient` | API endpoint testing                   |
-| Frontend (React) | **vitest**                       | Business logic, hooks                  |
-| Integration      | **Playwright**                   | E2E user flows                         |
-| Security Python  | **bandit** + **pip-audit**       | Vulnerability scan                     |
-| Type checking    | **mypy** (strict)                | Type hints enforcement                 |
-| Web audit        | **Lighthouse CI**                | Performance, PWA, SEO, a11y (Phase 2+) |
-
-- **Every atomic function MUST have a corresponding test** before being considered complete
-- **Every push triggers CI automatically** — if CI fails, the phase branch CANNOT be merged into `dev`
-- Before advancing from one phase to the next: **ALL tests must pass on CI**
-- If any test fails, the phase is NOT complete — fix the issue first
-
-### 10. Development order
-
-```
-Phase 1a: FastAPI backend → pytest ✅ → user approves
-Phase 1b: Next.js frontend → vitest ✅ → user approves
-Phase 1c: Tauri desktop → manual test ✅ → user approves
-Phase 2:   Web deploy (Next.js + FastAPI cloud)
-Phase 3:   Cloud sync (SQLite ↔ PostgreSQL)
-Phase 4:   Mobile app (React Native)
-```
-
-> Per la lista completa delle issue di ogni fase, consultare [BRIEF.md](./BRIEF.md).
-
-> The AI agent MUST NOT start a phase until the previous phase has been approved by the user. Approval is given via chat (e.g., "ok, procedi").
+1. **Update the project's task list** (e.g. `BRIEF.md`, `README.md`, or any checklist): mark the relevant checkbox as `[x]`.
+2. **Update this file**: if the discussion produced a new rule or clarification, add it.
+3. **Ask for approval**: briefly describe what was done and ask _"May I proceed with the next issue?"_ — do NOT start the next issue without user confirmation.
 
 ## Hotfix workflow
 
@@ -318,43 +158,10 @@ git checkout -b hotfix/<issue-number>-<short-description>
 # fix + commit + push
 git commit -m "fix(scope): short description"
 git push origin hotfix/<issue-number>-<short-description>
-# create PR for CI gating
 gh pr create --base dev --title "fix(scope): short description" --body "closes #N"
 # wait for CI, then merge
 gh pr merge --merge --delete-branch
 git checkout dev
 git pull origin dev
 git branch -d hotfix/<issue-number>-<short-description>
-```
-
----
-
-## Commit Message Format
-
-```
-<type>(<scope>): <short description>
-
-Types: feat, fix, style, refactor, test, chore
-Scope: api, ui, tauri, sync, ci, docs
-```
-
-Always put `closes #<issue-number>` in the **PR body** (not the commit message), so GitHub auto-closes the issue on squash-merge.
-
-Examples:
-
-```
-# commit message
-feat(api): add POST /upload endpoint
-
-# PR body
-closes #2
-
-# commit message
-test(api): add pytest for /upload endpoint
-
-# commit message
-fix(ui): correct page navigation on edge case
-
-# PR body
-closes #5
 ```

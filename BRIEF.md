@@ -313,6 +313,34 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 - I test sono eseguiti con **pytest** (backend Python) e **vitest** (frontend React)
 - Prima di passare da una fase all'altra, **tutti i test devono essere eseguiti e passare**
 - Se un test fallisce, la fase non è completa
+- **Ordering**: il BRIEF definisce l'ordine di sviluppo. L'agente segue la roadmap senza saltare o riordinare feature
+
+### Best practices di sviluppo
+
+- **Migration rule**: ogni volta che si crea o modifica un modello SQLAlchemy, generare migration Alembic con `alembic revision --autogenerate -m "descrizione"`. Committare la migration insieme al modello, prima dei test
+
+### Bug noti e soluzioni tecniche
+
+#### 1. Override `dependency_overrides` in test
+
+Quando FastAPI ha un wrapper `deps.py` che fa `yield from _get_db()`, la dipendenza registrata nei route è `deps.get_db`, **non** `core.database.get_db`. Il `yield from` è una chiamata Python diretta, FastAPI non la intercetta.
+
+❌ **Sbagliato** — override su `core.database.get_db`:
+
+```python
+app.dependency_overrides[get_db] = override_get_db  # non funziona!
+```
+
+✅ **Corretto** — override su `deps.get_db`:
+
+```python
+from app.api.deps import get_db as deps_get_db
+app.dependency_overrides[deps_get_db] = override_get_db  # funziona!
+```
+
+#### 2. Isolamento DB nei test su Windows
+
+SQLite in-memory su Windows ha un comportamento particolare: ogni connessione crea un DB separato con `sqlite://`. Per test isolati, usare **file temporanei unici** (`tmp_path` di pytest + `uuid`) invece che `sqlite://` o `StaticPool`.
 
 ## Licensing (futuro — architettura preparata ora)
 
