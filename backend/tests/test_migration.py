@@ -81,22 +81,34 @@ class TestMigrationIntegrity:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
-            # Downgrade one step (remove bug_reports)
+            # Verify new columns exist before downgrade
+            engine = create_engine(f"sqlite:///{db_path}")
+            inspector = inspect(engine)
+            bug_cols_before = {c["name"] for c in inspector.get_columns("bug_reports")}
+            assert "platform" in bug_cols_before
+            assert "app_version" in bug_cols_before
+            assert "os_info" in bug_cols_before
+            engine.dispose()
+
+            # Downgrade one step (remove platform, app_version, os_info columns)
             rc, out, err = _run_migration(db_path, "downgrade -1")
             assert rc == 0, f"alembic downgrade -1 failed:\n{err}\n{out}"
 
-            # Verify bug_reports table is gone
+            # Verify new columns are gone, but table still exists
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            assert "bug_reports" not in inspector.get_table_names(), \
-                "bug_reports still exists after downgrade -1"
+            bug_cols_after = {c["name"] for c in inspector.get_columns("bug_reports")}
+            assert "bug_reports" in inspector.get_table_names(), "bug_reports table should still exist"
+            assert "platform" not in bug_cols_after, "platform column should be gone after downgrade"
+            assert "app_version" not in bug_cols_after
+            assert "os_info" not in bug_cols_after
             engine.dispose()
 
             # Upgrade again
             rc, out, err = _run_migration(db_path, "upgrade head")
-            assert rc == 0, f"alembic upgrade head after downgrade failed:\n{err}\n{out}"
+            assert rc == 0, f"alembic upgrade head after downgrade failed:\n{out}\n{err}"
 
-            # Verify bug_reports is back
+            # Verify columns are restored
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
             assert "bug_reports" in inspector.get_table_names(), \
