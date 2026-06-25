@@ -10,8 +10,10 @@ import SplitDialog from "./components/SplitDialog";
 import ReorderDialog from "./components/ReorderDialog";
 import RemoveDialog from "./components/RemoveDialog";
 import { api, PdfDocument } from "./lib/api";
+import { useAuth } from "./lib/auth";
 
 export default function Home() {
+  const { user, loading } = useAuth();
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [fileUrl, setFileUrl] = React.useState<string | null>(null);
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -21,6 +23,20 @@ export default function Home() {
   const [splitOpen, setSplitOpen] = React.useState(false);
   const [reorderOpen, setReorderOpen] = React.useState(false);
   const [removeOpen, setRemoveOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!loading && !user) {
+      window.location.href = "/login";
+    }
+  }, [loading, user]);
+
+  if (loading || !user) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+      </div>
+    );
+  }
 
   async function handleSelect(id: string) {
     if (id === selectedId) return;
