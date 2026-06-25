@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useI18n } from "../lib/i18n";
+import { useAuth } from "../lib/auth";
 import BugReportDialog from "./BugReportDialog";
 
 interface LayoutProps {
@@ -11,6 +12,8 @@ interface LayoutProps {
 }
 
 export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
+  const { t } = useI18n();
+  const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [bugReportOpen, setBugReportOpen] = React.useState(false);
 
@@ -30,6 +33,20 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
           <h1 className="text-lg font-bold">PdfEditor</h1>
         </div>
         <div className="flex items-center gap-3">
+          {user && (
+            <>
+              <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">
+                {user.full_name}
+              </span>
+              <button
+                className="px-2 py-1 text-xs rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+                onClick={() => { logout(); window.location.href = "/login"; }}
+                title={t("auth.logout")}
+              >
+                {t("auth.logout")}
+              </button>
+            </>
+          )}
           <button
             className="px-3 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600"
             onClick={() => setBugReportOpen(true)}
