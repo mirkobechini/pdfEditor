@@ -22,12 +22,13 @@ class TestReorder:
         )
         return resp.json()["id"]
 
-    def test_reorder_pages(self, client):
+    def test_reorder_pages(self, client, pro_headers):
         """Should reorder pages of a PDF."""
         doc_id = self.upload_pages(client, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/reorder",
+            headers=pro_headers,
             json={"page_order": [3, 1, 2]},
         )
         assert response.status_code == status.HTTP_200_OK
@@ -35,40 +36,44 @@ class TestReorder:
         assert data["page_count"] == 3
         assert "_reordered.pdf" in data["original_filename"]
 
-    def test_reorder_single_page_invalid(self, client):
+    def test_reorder_single_page_invalid(self, client, pro_headers):
         """Should reject reorder with only one page."""
         doc_id = self.upload_pages(client, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/reorder",
-            json={"page_order": [1]},  # only 1 page, but PDF has 3
+            headers=pro_headers,
+            json={"page_order": [1]},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_reorder_wrong_count(self, client):
+    def test_reorder_wrong_count(self, client, pro_headers):
         """Should reject reorder with wrong number of pages."""
         doc_id = self.upload_pages(client, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/reorder",
-            json={"page_order": [1, 2, 3, 4]},  # 4 pages, but PDF has 3
+            headers=pro_headers,
+            json={"page_order": [1, 2, 3, 4]},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_reorder_invalid_page_number(self, client):
+    def test_reorder_invalid_page_number(self, client, pro_headers):
         """Should reject reorder with out-of-range page."""
         doc_id = self.upload_pages(client, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/reorder",
+            headers=pro_headers,
             json={"page_order": [1, 2, 99]},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_reorder_non_existent_pdf(self, client):
+    def test_reorder_non_existent_pdf(self, client, pro_headers):
         """Should reject reorder on non-existent PDF."""
         response = client.post(
             "/pdfs/fake-id/reorder",
+            headers=pro_headers,
             json={"page_order": [1, 2, 3]},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -93,12 +98,13 @@ class TestRemovePages:
         )
         return resp.json()["id"]
 
-    def test_remove_single_page(self, client):
+    def test_remove_single_page(self, client, pro_headers):
         """Should remove a single page from a PDF."""
         doc_id = self.upload_pages(client, 5)
 
         response = client.post(
             f"/pdfs/{doc_id}/remove-pages",
+            headers=pro_headers,
             json={"page_numbers": [3]},
         )
         assert response.status_code == status.HTTP_200_OK
@@ -106,52 +112,57 @@ class TestRemovePages:
         assert data["page_count"] == 4
         assert "_pages_removed.pdf" in data["original_filename"]
 
-    def test_remove_multiple_pages(self, client):
+    def test_remove_multiple_pages(self, client, pro_headers):
         """Should remove multiple pages from a PDF."""
         doc_id = self.upload_pages(client, 5)
 
         response = client.post(
             f"/pdfs/{doc_id}/remove-pages",
+            headers=pro_headers,
             json={"page_numbers": [2, 4]},
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["page_count"] == 3
 
-    def test_remove_invalid_page(self, client):
+    def test_remove_invalid_page(self, client, pro_headers):
         """Should reject removal of non-existent page."""
         doc_id = self.upload_pages(client, 5)
 
         response = client.post(
             f"/pdfs/{doc_id}/remove-pages",
+            headers=pro_headers,
             json={"page_numbers": [99]},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_remove_all_pages_invalid(self, client):
+    def test_remove_all_pages_invalid(self, client, pro_headers):
         """Should reject removal of all pages."""
         doc_id = self.upload_pages(client, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/remove-pages",
+            headers=pro_headers,
             json={"page_numbers": [1, 2, 3]},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_remove_empty_list(self, client):
+    def test_remove_empty_list(self, client, pro_headers):
         """Should reject empty page_numbers list."""
         doc_id = self.upload_pages(client, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/remove-pages",
+            headers=pro_headers,
             json={"page_numbers": []},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_remove_non_existent_pdf(self, client):
+    def test_remove_non_existent_pdf(self, client, pro_headers):
         """Should reject remove-pages on non-existent PDF."""
         response = client.post(
             "/pdfs/fake-id/remove-pages",
+            headers=pro_headers,
             json={"page_numbers": [1]},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST

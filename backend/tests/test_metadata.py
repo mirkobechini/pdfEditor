@@ -30,7 +30,7 @@ class TestGetMetadata:
 class TestUpdateMetadata:
     """Test suite for PDF metadata PUT endpoint."""
 
-    def test_update_title(self, client, sample_pdf_content):
+    def test_update_title(self, client, sample_pdf_content, pro_headers):
         """Should update the title metadata."""
         resp = client.post(
             "/pdfs/upload",
@@ -40,13 +40,14 @@ class TestUpdateMetadata:
 
         response = client.put(
             f"/pdfs/{doc_id}/metadata",
+            headers=pro_headers,
             json={"title": "New Title"},
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert "_metadata_updated.pdf" in data["original_filename"]
 
-    def test_update_all_fields(self, client, sample_pdf_content):
+    def test_update_all_fields(self, client, sample_pdf_content, pro_headers):
         """Should update all metadata fields."""
         resp = client.post(
             "/pdfs/upload",
@@ -56,6 +57,7 @@ class TestUpdateMetadata:
 
         response = client.put(
             f"/pdfs/{doc_id}/metadata",
+            headers=pro_headers,
             json={
                 "title": "New Title",
                 "author": "New Author",
@@ -65,7 +67,7 @@ class TestUpdateMetadata:
         )
         assert response.status_code == status.HTTP_200_OK
 
-    def test_update_empty_body(self, client, sample_pdf_content):
+    def test_update_empty_body(self, client, sample_pdf_content, pro_headers):
         """Should reject empty update."""
         resp = client.post(
             "/pdfs/upload",
@@ -75,14 +77,16 @@ class TestUpdateMetadata:
 
         response = client.put(
             f"/pdfs/{doc_id}/metadata",
+            headers=pro_headers,
             json={},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_update_non_existent(self, client):
+    def test_update_non_existent(self, client, pro_headers):
         """Should return 400 for non-existent PDF."""
         response = client.put(
             "/pdfs/fake-id/metadata",
+            headers=pro_headers,
             json={"title": "New Title"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
