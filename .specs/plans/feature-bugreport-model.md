@@ -23,4 +23,6 @@ Aggiornare il modello BugReport e il relativo service per corrispondere esattame
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+**Completata il:** 2026-06-25
+**Note:** Aggiunti campi platform, app_version, os_info al modello BugReport. Creato BugReportRepository. Refactoring BugReportService con repository pattern. Migration 5eec22a141a3. 93/94 test backend passanti. PR #64 merged in dev, closes #63.

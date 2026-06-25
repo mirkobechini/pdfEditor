@@ -56,7 +56,7 @@ Tutte le API richieste dal brief sono state implementate: upload/download con va
 1. **Autenticazione endpoint PDF** — Il brief descrive JWT ma non specifica se _tutti_ gli endpoint debbano essere protetti o solo admin/bug report.
 2. **Stato effettivo Fase 1b** — La checklist ha voci barrate come completate ma bug report button e admin dashboard non sono implementati.
 3. **Merge/split lato client vs server** — I dialoghi usano pdf-lib lato client _invece_ degli endpoint API corrispondenti. Coesistono due implementazioni parallele.
-4. **Modello BugReport divergente** — Il modello implementato (`title`, `description`, `page_url`, `status`) è diverso dal brief (`platform`, `app_version`, `os_info`, sistema di deduplica). Manca: `platform`, `app_version`, `os_info`. In più ha: `title`, `page_url`, `status`.
+4. **Modello BugReport divergente** — ✅ Risolto (PR #64): aggiunti `platform`, `app_version`, `os_info`. Refactoring con repository pattern.
 5. **Enforcement licenze non specificato** — Il brief descrive tabelle e tier ma non dice esplicitamente "blocca le operazioni non consentite". Chi implementa può pensare basti esporre le feature via API.
 6. **GOOGLE_CLIENT_ID vuoto in dev** — Non è chiaro se in sviluppo il SSO Google debba funzionare o sia accettabile che fallisca senza configurazione.
 
