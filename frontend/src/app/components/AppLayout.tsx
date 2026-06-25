@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useI18n } from "../lib/i18n";
+import BugReportDialog from "./BugReportDialog";
 
 interface LayoutProps {
   sidebar: React.ReactNode;
@@ -11,6 +12,7 @@ interface LayoutProps {
 
 export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [bugReportOpen, setBugReportOpen] = React.useState(false);
 
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-hidden">
@@ -28,6 +30,13 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
           <h1 className="text-lg font-bold">PdfEditor</h1>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            className="px-3 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600"
+            onClick={() => setBugReportOpen(true)}
+            title={t("bugReport.button")}
+          >
+            {t("bugReport.button")}
+          </button>
           <ToggleDarkMode />
           <LanguageSelector />
         </div>
@@ -69,6 +78,7 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
           </div>
         </main>
       </div>
+      <BugReportDialog open={bugReportOpen} onClose={() => setBugReportOpen(false)} />
     </div>
   );
 }

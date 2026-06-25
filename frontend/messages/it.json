@@ -64,6 +64,21 @@
     "removing": "Rimozione in corso...",
     "failed": "Rimozione fallita"
   },
+  "bugReport": {
+    "title": "Segnala un Bug",
+    "fieldTitle": "Titolo",
+    "titlePlaceholder": "Breve riepilogo del problema",
+    "fieldDescription": "Descrizione",
+    "descriptionPlaceholder": "Descrivi cosa è successo e come riprodurlo",
+    "submit": "Invia Segnalazione",
+    "sending": "Invio in corso...",
+    "sentTitle": "Grazie!",
+    "sentDescription": "La tua segnalazione è stata inviata con successo.",
+    "close": "Chiudi",
+    "cancel": "Annulla",
+    "failed": "Invio segnalazione fallito",
+    "button": "Segnala Bug"
+  },
   "darkMode": {
     "toggle": "Attiva/disattiva modalità scura"
   }
