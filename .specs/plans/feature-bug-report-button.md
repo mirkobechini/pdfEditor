@@ -22,4 +22,6 @@ Aggiungere il pulsante di segnalazione bug nell'interfaccia, collegato all'API b
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+**Completata il:** 2026-06-25
+**Note:** BugReportDialog creato con campi title/description + validazione. Pulsante arancione nell'header. 9 test vitest. Commit: feat(ui): add BugReportDialog component, feat(ui): add bug report translations, feat(ui): integrate bug report button in header, test(ui): add BugReportDialog tests. PR #56 merged in dev, closes #55.

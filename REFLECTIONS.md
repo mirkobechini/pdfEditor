@@ -26,7 +26,7 @@ Tutte le API richieste dal brief sono state implementate: upload/download con va
 | Dark mode toggle                               | ✅ (ma **non persiste** — manca localStorage)                                                    |
 | Design responsive                              | ✅                                                                                               |
 | Merge/split/riordino/rimozione (pdf-lib)       | ✅                                                                                               |
-| **Pulsante segnalazione bug**                  | **❌ Non implementato**                                                                          |
+| **Pulsante segnalazione bug**                  | **✅ Completato (PR #56)**                                                                       |
 | **Dashboard admin**                            | **❌ Non implementata**                                                                          |
 | **UI autenticazione (login/register)**         | **❌ Assente** — `api.ts` ha i metodi ma nessun componente li usa                                |
 | **i18n con next-intl**                         | **⚠️** `next-intl` è installato ma **non usato** — è stato implementato un `I18nProvider` custom |
