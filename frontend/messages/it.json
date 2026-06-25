@@ -81,5 +81,26 @@
   },
   "darkMode": {
     "toggle": "Attiva/disattiva modalità scura"
+  },
+  "auth": {
+    "loginTitle": "Accedi",
+    "registerTitle": "Crea Account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Conferma Password",
+    "fullName": "Nome Completo",
+    "loginButton": "Accedi",
+    "registerButton": "Crea Account",
+    "loggingIn": "Accesso in corso...",
+    "registering": "Creazione account in corso...",
+    "loginFailed": "Accesso fallito",
+    "registerFailed": "Registrazione fallita",
+    "passwordMismatch": "Le password non coincidono",
+    "passwordTooShort": "La password deve essere almeno 6 caratteri",
+    "noAccount": "Non hai un account?",
+    "hasAccount": "Hai già un account?",
+    "registerLink": "Registrati",
+    "loginLink": "Accedi",
+    "logout": "Esci"
   }
 }
