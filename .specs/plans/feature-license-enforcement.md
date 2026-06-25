@@ -23,4 +23,6 @@ Aggiungere middleware/dependency injection che blocchi le operazioni non consent
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+**Completata il:** 2026-06-25
+**Note:** verify_feature_access() dependency in deps.py. Protegge merge/split/reorder/remove-pages/replace-text/extract-text/edit-metadata/export/import. Admin bypass. Formato-specific feature keys per export/import. 93 test backend totali, tutti passanti. PR #62 merged in dev, closes #61.

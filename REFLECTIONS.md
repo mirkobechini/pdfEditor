@@ -10,7 +10,7 @@ Tutte le API richieste dal brief sono state implementate: upload/download con va
 
 **Problemi critici:**
 
-1. **❌ Zero enforcement licenze** — Il backend ha endpoint `/licenses/features` che _elenca_ le feature per tier, ma **nessun middleware/blocco** impedisce a un utente free di chiamare merge, split, export, ecc. È un guscio vuoto.
+1. **✅ Enforcement licenze** — Implementato con `verify_feature_access()` in `deps.py`. Protegge tutti gli endpoint PDF avanzati. PR #62.
 2. **⚠️ Nessuna autenticazione sugli endpoint PDF** — upload, merge, split, reorder... sono tutti pubblici. Potrebbe essere voluto per uso desktop offline, ma non è specificato.
 3. **⚠️ BugReportService bypassa il repository pattern** — usa query dirette invece dei repository come fanno AuthService e PdfService.
 

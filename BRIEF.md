@@ -10,7 +10,7 @@ _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `d
 
 - [x] **Fase 0** — Prototipo HTML statico ✅
 - [x] **Fase 1a** — Backend FastAPI ✅
-- [x] **Fase 1b** — Frontend Next.js (bug report button ✅, auth UI ✅, dark mode persist ✅, resto in corso)
+- [x] **Fase 1b** — Frontend Next.js (parziale: bug report ✅, auth UI ✅, dark mode ✅)
 - [ ] **Fase 1c** — Desktop Tauri v2
 - [ ] **Fase 2** — Web app su cloud
 - [ ] **Fase 3** — Cloud sync
