@@ -80,4 +80,22 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Feature future pianificate
 
-_[Sezione da compilare insieme all'agente dopo l'approvazione dell'ADR]_
+Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'ordine di implementazione è definito dalla priorità indicata.
+
+### In corso / Completate
+
+- [x] **Bug report button (frontend)** — Pulsante "Segnala bug" nell'header con dialog modale. Completata (PR #56, issue #55)
+
+### Da implementare (in ordine)
+
+1. [ ] **UI autenticazione (login/register)** — Pagine `/login` e `/register` con form, JWT management, protezione route. API backend già pronte
+2. [ ] **Persistenza dark mode (localStorage)** — Salvataggio preferenza dark mode in localStorage invece di useState
+3. [ ] **Enforcement licenze (backend)** — Middleware/dependency `verify_feature_access()` per bloccare operazioni non consentite per tier
+4. [ ] **Allineamento modello BugReport al brief** — Aggiunta campi `platform`, `app_version`, `os_info` e refactoring BugReportService con repository pattern
+5. [ ] **Dashboard admin** — Pagina `/admin` per gestione utenti, licenze e bug report
+6. [ ] **Sostituzione I18nProvider custom con next-intl** — next-intl già installato ma inutilizzato
+7. [ ] **API upload protette da autenticazione** — Decisione e implementazione protezione endpoint PDF con JWT
+8. [ ] **PDF protetti da password** — Rilevamento automatico, modale richiesta password, gestione sessione
+9. [ ] **Undo/Redo per modifiche PDF** — Cronologia snapshot lato server con pulsanti toolbar
+
+> **Nota:** Le feature di Fase 2-4 (cloud, sync, mobile, Tauri) sono elencate in "Cosa NON è in scope" e saranno pianificate dopo il completamento della Fase 1.
