@@ -69,10 +69,72 @@ Tutte le API richieste dal brief sono state implementate: upload/download con va
 Prima di procedere, risolveremo questi punti nell'ordine:
 
 1. **Aggiungere il pulsante di segnalazione bug nel frontend** — previsto dalla roadmap Fase 1b, API backend già pronta ✅
-2. **Aggiungere UI di autenticazione (login/register)** — i metodi API ci sono, mancano i componenti
-3. **Persistenza dark mode (localStorage)** — fix piccolo, alto impatto UX
-4. **Implementare l'enforcement licenze** — middleware/dependency che blocchi operazioni non consentite per tier
-5. **Allineare modello BugReport al brief** (campi `platform`, `app_version`, `os_info`)
+2. **Aggiungere UI di autenticazione (login/register)** — i metodi API ci sono, mancano i componenti ✅
+3. **Persistenza dark mode (localStorage)** — fix piccolo, alto impatto UX ✅
+4. **Implementare l'enforcement licenze** — middleware/dependency che blocchi operazioni non consentite per tier ✅
+5. **Allineare modello BugReport al brief** (campi `platform`, `app_version`, `os_info`) ✅
 6. **Aggiungere dashboard admin** (gestione utenti, licenze, bug report)
 7. **Sostituire I18nProvider custom con next-intl** (già installato)
 8. **Decidere se merge/split deve avvenire lato client o server** — attualmente fanno entrambi la stessa cosa in modo indipendente
+
+## Bug aperti scoperti durante l'esplorazione (2026-06-25)
+
+1. **🐛 Dark mode toggle non accessibile su login/register** — `ToggleDarkMode` è solo dentro `AppLayout` (usato dalla home protetta da auth). Un utente non loggato non può cambiare tema.
+2. **🐛 Testo illeggibile in dark mode su login/register** — `<h1>`, `<label>` e `<input>` senza `dark:text-*` ereditano il colore nero di default su `bg-gray-800`.
+3. **🐛 Validazione email backend troppo restrittiva** — `prova@example` viene rifiutata (422). Il backend usa validazione Pydantic che richiede un TLD valido.
+4. **🐛 Messaggi di errore validazione in inglese** — Anche con lingua IT, gli errori di validazione lato server arrivano in inglese (es. "Invalid email address").
+
+## UX feedback dall'esplorazione (2026-06-25)
+
+### Ordine header (da destra a sinistra)
+
+Attuale: `[Nome] [Esci] [Segnala Bug] [☀️] [IT/EN]`
+Richiesto: `[☀️] [IT/EN] [Segnala Bug] [Nome] [Esci]`
+
+### Language selector
+
+- Deve essere visibile a chiunque (anche non loggato), non solo dentro AppLayout
+
+### Upload PDF
+
+- Drag & drop anche sul viewer centrale (non solo sidebar), specialmente quando appare "Seleziona un PDF da visualizzare"
+
+### Merge / Split / Reorder / Remove (modifiche all'UX)
+
+- Devono operare **sul PDF attualmente visualizzato**, senza richiedere di selezionare altri PDF
+- **Reorder**: mostrare miniature di tutte le pagine con drag & drop per riordinare
+- **Split**: simile a reorder — mostrare miniature e selezionare pagine da estrarre
+- **Remove**: mostrare miniature di tutte le pagine, selezionare quelle da rimuovere, modale di conferma finale
+- **Default**: qualsiasi modifica crea **un nuovo file da scaricare**, non modifica l'originale
+
+### Login/Register
+
+- Pagina register: migliorare layout dei messaggi di errore (stile più curato)
+
+### Dark mode - prima visita
+
+- Punto già implementato in PR #60: prima visita segue `prefers-color-scheme`, poi memorizza in localStorage. Verificare che funzioni correttamente su login/register (potrebbero non ereditare la classe `dark` all'avvio perché non passano da AppLayout).
+
+## Sicurezza upload file — analisi (2026-06-25)
+
+### Già protetto ✅
+
+- Estensione controllata (.pdf)
+- Magic bytes `%PDF` verificati
+- Validazione PyMuPDF (apre e verifica che sia un PDF valido)
+- Path traversal impossibile (filename UUID generato dal server)
+
+### Da implementare ❌
+
+1. **Limite dimensione non enforceato** — `MAX_UPLOAD_SIZE_MB=50` in config.py ma **mai controllato** nell'upload. File da 5GB crasherebbe il server.
+2. **Lettura in memoria senza limiti** — `file.file.read()` carica tutto in RAM. Va controllata la dimensione PRIMA di leggere.
+3. **Limite pagine** — Un PDF con 100.000 pagine passerebbe la validazione ma esaurirebbe risorse.
+4. **Validazione endpoint `/pddfs/import`** — Accetta TXT/PNG/JPG/GIF/BMP con validazione minima.
+5. **Nessun antivirus/ClamAV** — Oltre le tue esigenze probabilmente, ma segnalato per completezza.
+
+## UX miglioramenti da fare (2026-06-25)
+
+### Delete confirmation con modale e anteprima
+
+- Attualmente: conferma inline con ✓ / ✗ accanto al file nella sidebar
+- Richiesto: modale con anteprima prima pagina del PDF da eliminare
