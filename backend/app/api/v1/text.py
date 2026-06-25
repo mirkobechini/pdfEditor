@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.api.deps import get_pdf_service
+from app.api.deps import get_current_user, get_pdf_service, verify_feature_access
+from app.models.user import User
 from app.schemas.pdf import PdfResponse, ReplaceTextRequest, TextResponse
 from app.services.pdf_service import PdfService
 
@@ -11,6 +12,7 @@ router = APIRouter(prefix="/pdfs", tags=["pdfs"])
 def replace_pdf_text(
     pdf_id: str,
     req: ReplaceTextRequest,
+    current_user: User = Depends(verify_feature_access("replace_text")),
     service: PdfService = Depends(get_pdf_service),
 ) -> PdfResponse:
     """Replace text in a PDF document (find & replace)."""
@@ -40,6 +42,7 @@ def replace_pdf_text(
 def extract_pdf_text(
     pdf_id: str,
     page: int | None = Query(None, description="Page number (1-based). Omit for all pages."),
+    current_user: User = Depends(verify_feature_access("extract_text")),
     service: PdfService = Depends(get_pdf_service),
 ) -> TextResponse:
     """Extract text from a PDF document."""

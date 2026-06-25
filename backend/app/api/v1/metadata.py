@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.api.deps import get_pdf_service
+from app.api.deps import get_current_user, get_pdf_service, verify_feature_access
+from app.models.user import User
 from app.schemas.pdf import MetadataResponse, PdfResponse, UpdateMetadataRequest
 from app.services.pdf_service import PdfService
 
@@ -28,6 +29,7 @@ def get_pdf_metadata(
 def update_pdf_metadata(
     pdf_id: str,
     req: UpdateMetadataRequest,
+    current_user: User = Depends(verify_feature_access("edit_metadata")),
     service: PdfService = Depends(get_pdf_service),
 ) -> PdfResponse:
     """Update PDF metadata. Only provided fields are changed."""

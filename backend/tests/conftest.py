@@ -101,3 +101,74 @@ def clean_storage():
     for f in os.listdir(storage_dir):
         if f != ".gitkeep":
             os.remove(os.path.join(storage_dir, f))
+
+
+# ---------------------------------------------------------------------------
+# Auth helper fixtures — these register real users in the per-test DB
+# ---------------------------------------------------------------------------
+
+@pytest.fixture()
+def free_token(client):
+    """Register + login a free-tier user, return the JWT token string."""
+    client.post(
+        "/auth/register",
+        json={"email": "free@test.com", "password": "pass123", "full_name": "Free"},
+    )
+    resp = client.post(
+        "/auth/login",
+        json={"email": "free@test.com", "password": "pass123"},
+    )
+    return resp.json()["access_token"]
+
+
+@pytest.fixture()
+def free_headers(free_token):
+    """HTTP headers with free-tier JWT."""
+    return {"Authorization": f"Bearer {free_token}"}
+
+
+@pytest.fixture()
+def pro_token(client, db_engine):
+    """Register + login a pro-tier user, promote to pro, return the JWT."""
+    client.post(
+        "/auth/register",
+        json={"email": "pro@test.com", "password": "pro123", "full_name": "Pro"},
+    )
+    resp = client.post(
+        "/auth/login",
+        json={"email": "pro@test.com", "password": "pro123"},
+    )
+    token = resp.json()["access_token"]
+
+    me = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    user_id = me.json()["id"]
+
+    from sqlalchemy import text
+    with db_engine.connect() as conn:
+        conn.execute(
+            text("UPDATE users SET license_tier = 'pro' WHERE id = :uid"),
+            {"uid": user_id},
+        )
+        conn.commit()
+
+    return token
+
+
+@pytest.fixture()
+def pro_headers(pro_token):
+    """HTTP headers with pro-tier JWT."""
+    return {"Authorization": f"Bearer {pro_token}"}
+
+
+def upload_pdf(client, headers, content, filename="test.pdf"):
+    """Helper: upload a PDF with auth headers, return the doc ID."""
+    resp = client.post(
+        "/pdfs/upload",
+        headers=headers,
+        files={"file": (filename, content, "application/pdf")},
+    )
+    assert resp.status_code == 201, f"Upload failed: {resp.text}"
+    return resp.json()["id"]
+    for f in os.listdir(storage_dir):
+        if f != ".gitkeep":
+            os.remove(os.path.join(storage_dir, f))
