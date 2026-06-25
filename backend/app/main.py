@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.admin import router as admin_router
 from app.api.v1.auth import router as auth_router
@@ -80,6 +82,25 @@ app = FastAPI(
     version=settings.VERSION,
     lifespan=lifespan,
 )
+
+
+# ---------------------------------------------------------------------------
+# Custom exception handler — flatten Pydantic validation errors
+# ---------------------------------------------------------------------------
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Return a flat error message instead of Pydantic's nested structure."""
+    first_error = exc.errors()[0] if exc.errors() else {}
+    msg = first_error.get("msg", str(exc))
+    # Pydantic prepends "Value error, " — strip it
+    if msg.startswith("Value error, "):
+        msg = msg[len("Value error, "):]
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": msg},
+    )
+
 
 # CORS — allow all origins in dev (Tauri and Next.js)
 app.add_middleware(
