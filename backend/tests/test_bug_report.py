@@ -61,6 +61,27 @@ class TestCreateBug:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json()["page_url"] == "/editor"
 
+    def test_create_bug_with_platform_info(self, client):
+        """Should create a bug report with platform, app_version, os_info."""
+        token = _login(client)
+
+        response = client.post(
+            "/bugs",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "title": "Platform bug",
+                "description": "Something broke",
+                "platform": "web",
+                "app_version": "1.0.0",
+                "os_info": "Windows 10",
+            },
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        data = response.json()
+        assert data["platform"] == "web"
+        assert data["app_version"] == "1.0.0"
+        assert data["os_info"] == "Windows 10"
+
     def test_create_bug_unauthorized(self, client):
         """Should reject bug report without auth."""
         response = client.post(
