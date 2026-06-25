@@ -85,6 +85,7 @@ Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'o
 ### In corso / Completate
 
 - [x] **Bug report button (frontend)** — Pulsante "Segnala bug" nell'header con dialog modale. Completata (PR #56, issue #55)
+- [x] **UI autenticazione (login/register)** — Pagine `/login` e `/register` con form, AuthContext JWT, route protection, logout in header. Completata (PR #58, issue #57)
 
 ### Da implementare (in ordine)
 

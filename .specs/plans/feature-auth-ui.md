@@ -25,4 +25,6 @@ Aggiungere i componenti React per login, registrazione e gestione sessione utent
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+**Completata il:** 2026-06-25
+**Note:** AuthProvider con JWT localStorage persist, pagine /login e /register con validazione, route protection su home, logout in header, traduzioni EN/IT. 19 test. Commit: feat(ui): add AuthContext provider, feat(ui): add login page, feat(ui): add register page, feat(ui): add auth translations, feat(ui): integrate auth in layout and route protection, test(ui): add auth tests. PR #58 merged in dev, closes #57.

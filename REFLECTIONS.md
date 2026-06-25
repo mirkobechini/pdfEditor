@@ -28,7 +28,7 @@ Tutte le API richieste dal brief sono state implementate: upload/download con va
 | Merge/split/riordino/rimozione (pdf-lib)       | ✅                                                                                               |
 | **Pulsante segnalazione bug**                  | **✅ Completato (PR #56)**                                                                       |
 | **Dashboard admin**                            | **❌ Non implementata**                                                                          |
-| **UI autenticazione (login/register)**         | **❌ Assente** — `api.ts` ha i metodi ma nessun componente li usa                                |
+| **UI autenticazione (login/register)**         | **✅ Completato (PR #58)**                                                                       |
 | **i18n con next-intl**                         | **⚠️** `next-intl` è installato ma **non usato** — è stato implementato un `I18nProvider` custom |
 
 ## L'agente ha rispettato lo stack?
