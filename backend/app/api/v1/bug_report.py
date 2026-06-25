@@ -25,6 +25,9 @@ def create_bug_report(
         title=req.title,
         description=req.description,
         page_url=req.page_url,
+        platform=req.platform,
+        app_version=req.app_version,
+        os_info=req.os_info,
     )
     return BugReportResponse.model_validate(report)
 

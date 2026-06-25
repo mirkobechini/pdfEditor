@@ -29,6 +29,9 @@ export interface BugReport {
   title: string;
   description: string;
   page_url?: string | null;
+  platform?: string | null;
+  app_version?: string | null;
+  os_info?: string | null;
   status: string;
   created_at: string;
   updated_at: string;

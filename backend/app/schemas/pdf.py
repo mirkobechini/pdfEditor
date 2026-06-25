@@ -95,6 +95,9 @@ class BugReportRequest(BaseModel):
     title: str
     description: str
     page_url: str | None = None
+    platform: str | None = None
+    app_version: str | None = None
+    os_info: str | None = None
 
 
 class BugReportResponse(BaseModel):
@@ -107,6 +110,9 @@ class BugReportResponse(BaseModel):
     title: str
     description: str
     page_url: str | None = None
+    platform: str | None = None
+    app_version: str | None = None
+    os_info: str | None = None
     status: str
     created_at: datetime
     updated_at: datetime
