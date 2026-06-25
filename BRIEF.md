@@ -185,6 +185,66 @@ PdfEditor/
 
 > La struttura parte semplice (`frontend/` per Next.js). Quando arriveranno Tauri e mobile, si valuterà la migrazione a monorepo (es. `apps/web`, `apps/desktop`, `apps/mobile`, `packages/shared`).
 
+## Backend architecture pattern (FastAPI)
+
+Equivalente a MVC in Laravel. I router (≈ Controllers) NON contengono validazione — quella va negli schemas Pydantic.
+
+```
+backend/
+├── app/
+│   ├── api/              # Router (≈ Controller) — solo routing
+│   │   ├── v1/
+│   │   │   ├── upload.py
+│   │   │   ├── merge_split.py
+│   │   │   ├── reorder.py
+│   │   │   ├── text.py
+│   │   │   ├── metadata.py
+│   │   │   ├── convert.py
+│   │   │   ├── auth.py
+│   │   │   ├── admin.py
+│   │   │   └── bug_report.py
+│   │   └── deps.py       # Dipendenze (get_current_user, get_db)
+│   ├── schemas/          # Pydantic (≈ FormRequest) — validazione
+│   │   ├── pdf.py
+│   │   ├── auth.py
+│   │   └── sync.py
+│   ├── models/           # SQLAlchemy (≈ Eloquent Model)
+│   │   ├── pdf.py
+│   │   ├── user.py
+│   │   ├── license.py
+│   │   └── bug_report.py
+│   ├── services/         # Logica di business
+│   │   ├── pdf_service.py
+│   │   ├── auth_service.py
+│   │   ├── bug_report_service.py
+│   │   └── sync_service.py
+│   ├── repositories/     # Accesso DB
+│   │   ├── pdf_repo.py
+│   │   └── user_repo.py
+│   ├── core/             # Config, security, database
+│   │   ├── config.py
+│   │   ├── security.py
+│   │   ├── database.py
+│   │   └── storage.py
+│   └── main.py
+├── tests/
+│   ├── conftest.py
+│   ├── test_upload.py
+│   ├── test_merge_split.py
+│   ├── test_reorder.py
+│   ├── test_text.py
+│   ├── test_metadata.py
+│   ├── test_convert.py
+│   ├── test_auth.py
+│   ├── test_license.py
+│   └── test_bug_report.py
+├── alembic/              # Migrations (≈ Laravel Migrations)
+│   ├── versions/
+│   └── env.py
+├── requirements.txt
+└── pyproject.toml
+```
+
 ## Feature roadmap (ordine di implementazione)
 
 _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
