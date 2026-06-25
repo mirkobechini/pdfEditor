@@ -64,6 +64,21 @@
     "removing": "Removing...",
     "failed": "Remove failed"
   },
+  "bugReport": {
+    "title": "Report a Bug",
+    "fieldTitle": "Title",
+    "titlePlaceholder": "Brief summary of the issue",
+    "fieldDescription": "Description",
+    "descriptionPlaceholder": "Describe what happened and how to reproduce it",
+    "submit": "Send Report",
+    "sending": "Sending...",
+    "sentTitle": "Thank you!",
+    "sentDescription": "Your bug report has been submitted successfully.",
+    "close": "Close",
+    "cancel": "Cancel",
+    "failed": "Failed to send report",
+    "button": "Report Bug"
+  },
   "darkMode": {
     "toggle": "Toggle dark mode"
   }
