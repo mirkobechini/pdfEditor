@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.api.deps import get_pdf_service
+from app.api.deps import get_current_user, get_pdf_service, verify_feature_access
+from app.models.user import User
 from app.schemas.pdf import PdfResponse, ReorderRequest, RemovePagesRequest
 from app.services.pdf_service import PdfService
 
@@ -11,6 +12,7 @@ router = APIRouter(prefix="/pdfs", tags=["pdfs"])
 def reorder_pdf_pages(
     pdf_id: str,
     req: ReorderRequest,
+    current_user: User = Depends(verify_feature_access("reorder_pages")),
     service: PdfService = Depends(get_pdf_service),
 ) -> PdfResponse:
     """Reorder pages of a PDF document."""
@@ -35,6 +37,7 @@ def reorder_pdf_pages(
 def remove_pdf_pages(
     pdf_id: str,
     req: RemovePagesRequest,
+    current_user: User = Depends(verify_feature_access("remove_pages")),
     service: PdfService = Depends(get_pdf_service),
 ) -> PdfResponse:
     """Remove specific pages from a PDF document."""

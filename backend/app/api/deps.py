@@ -5,6 +5,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db as _get_db
+from app.models.user import User
+from app.repositories.user_repo import UserRepository
 from app.services.auth_service import AuthService
 from app.services.pdf_service import PdfService
 
@@ -32,3 +34,33 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
         )
+
+
+def verify_feature_access(feature_key: str):
+    """Dependency factory: check that the current user's license tier
+    enables the given feature_key. Admin users bypass all checks."""
+
+    def _check(
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db),
+    ) -> User:
+        # Admin bypass
+        if current_user.is_admin:
+            return current_user
+
+        repo = UserRepository(db)
+        features = repo.get_features_for_tier(current_user.license_tier)
+        enabled_keys = {f.feature_key for f in features if f.enabled}
+
+        if feature_key not in enabled_keys:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    f"License tier '{current_user.license_tier}' does not "
+                    f"include '{feature_key}'. Upgrade to access this feature."
+                ),
+            )
+
+        return current_user
+
+    return _check
