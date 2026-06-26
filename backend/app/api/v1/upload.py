@@ -8,7 +8,9 @@ from app.services.pdf_service import PdfService
 
 router = APIRouter(prefix="/pdfs", tags=["pdfs"])
 
-MAX_UPLOAD_BYTES = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+def _get_max_upload_bytes() -> int:
+    """Return the maximum upload size in bytes."""
+    return settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 
 @router.get("", response_model=PdfListResponse)
@@ -34,7 +36,8 @@ def upload_pdf(
         )
 
     # Enforce upload size limit before reading into memory
-    if file.size is not None and file.size >= MAX_UPLOAD_BYTES:
+    max_bytes = _get_max_upload_bytes()
+    if file.size is not None and file.size >= max_bytes:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB",
@@ -43,7 +46,7 @@ def upload_pdf(
     content = file.file.read()
 
     # Also check after reading (covers cases where Content-Length header is missing)
-    if len(content) >= MAX_UPLOAD_BYTES:
+    if len(content) >= max_bytes:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB",
