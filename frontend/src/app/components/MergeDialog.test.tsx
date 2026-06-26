@@ -16,8 +16,12 @@ vi.mock("../lib/api", () => ({
   api: {
     listPdfs: vi.fn(),
     downloadPdf: vi.fn(),
-    uploadPdf: vi.fn(),
+    mergePdfs: vi.fn(),
   },
+}));
+
+vi.mock("../lib/download", () => ({
+  downloadBlob: vi.fn(),
 }));
 
 const mockFiles = [
@@ -31,7 +35,7 @@ describe("MergeDialog", () => {
     (api.listPdfs as any).mockResolvedValue({ items: mockFiles, total: 3 });
 
     render(
-      <MergeDialog open={true} onClose={() => {}} onMergeComplete={() => {}} />
+      <MergeDialog open={true} onClose={() => {}} selectedId={null} onMergeComplete={() => {}} />
     );
 
     expect(await screen.findByText("doc1.pdf")).toBeTruthy();
@@ -43,7 +47,7 @@ describe("MergeDialog", () => {
     (api.listPdfs as any).mockResolvedValue({ items: mockFiles, total: 3 });
 
     render(
-      <MergeDialog open={true} onClose={() => {}} onMergeComplete={() => {}} />
+      <MergeDialog open={true} onClose={() => {}} selectedId={null} onMergeComplete={() => {}} />
     );
 
     const mergeBtn = await screen.findByText("mergeDialog.merge");
@@ -57,5 +61,15 @@ describe("MergeDialog", () => {
     // Select second file
     fireEvent.click(checkbox1[1]);
     expect(mergeBtn).toBeEnabled();
+  });
+
+  it("labels current file when selectedId matches", async () => {
+    (api.listPdfs as any).mockResolvedValue({ items: mockFiles, total: 3 });
+
+    render(
+      <MergeDialog open={true} onClose={() => {}} selectedId="1" onMergeComplete={() => {}} />
+    );
+
+    expect(await screen.findByText("app.currentFile")).toBeTruthy();
   });
 });
