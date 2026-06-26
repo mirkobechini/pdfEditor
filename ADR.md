@@ -85,6 +85,9 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - [x] **Dark text illegibile in dark mode su login/register** — Aggiunte classi `dark:text-*` a h1, label, input. (PR #66, issue #65)
 - [x] **Errori validazione Pydantic in inglese e raw JSON** — Custom exception handler backend + `ApiClient.extractError()` frontend. (PR #68, issue #67)
 - [x] **Dark mode toggle + language selector non accessibili su login/register** — Estratto `HeaderControls` condiviso, aggiunto header a login/register. (PR #70, issue #69)
+- [x] **Limite dimensione upload non enforceato** — Enforceato `MAX_UPLOAD_SIZE_MB=50` prima di leggere in RAM. (PR #86, issue #85)
+- [x] **Lettura in memoria senza limiti** — Controllo dimensione prima di `file.file.read()`. (PR #86, issue #85)
+- [x] **Limite pagine** — Aggiunto `MAX_PAGE_COUNT=500` enforceato in `PdfService.upload()`. (PR #86, issue #85)
 
 ### In corso 🔄
 
@@ -92,10 +95,7 @@ _nessuno_
 
 ### Da risolvere ⏳
 
-1. [ ] **Limite dimensione upload non enforceato** — `MAX_UPLOAD_SIZE_MB=50` in config ma mai controllato
-2. [ ] **Lettura in memoria senza limiti** — `file.file.read()` carica tutto in RAM
-3. [ ] **Limite pagine** — PDF con troppe pagine esaurirebbe risorse
-4. [ ] **Validazione endpoint `/pdfs/import`** — Accetta TXT/PNG/JPG/GIF/BMP con validazione minima
+1. [ ] **Validazione endpoint `/pdfs/import`** — Accetta TXT/PNG/JPG/GIF/BMP con validazione minima
 
 ## Feature future pianificate
 

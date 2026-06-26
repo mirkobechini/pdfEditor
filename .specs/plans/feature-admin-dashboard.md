@@ -25,4 +25,6 @@ Creare una dashboard admin per gestione utenti, licenze e bug report.
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+**Completata il:** 2026-06-26
+**Note:** Pagina `/admin` con tab Users (tabella utenti, cambio license_tier inline) e Bug Reports (tabella segnalazioni, filtro per status, cambio status inline). Admin link viola nell'header (visibile solo a `user.is_admin`). Route guard: redirect a `/` se non admin. 4 API methods aggiunti a `api.ts`. 6 test. Commit: feat(ui): add admin API methods to api.ts, feat(ui): create admin dashboard page with users and bug reports management, feat(ui): add admin link in header for admin users, test(ui): add admin page tests. PR #88 merged in dev, closes #87.
