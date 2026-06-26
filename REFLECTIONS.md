@@ -73,9 +73,10 @@ Prima di procedere, risolveremo questi punti nell'ordine:
 3. **Persistenza dark mode (localStorage)** — fix piccolo, alto impatto UX ✅
 4. **Implementare l'enforcement licenze** — middleware/dependency che blocchi operazioni non consentite per tier ✅
 5. **Allineare modello BugReport al brief** (campi `platform`, `app_version`, `os_info`) ✅
-6. **Aggiungere dashboard admin** (gestione utenti, licenze, bug report)
-7. **Sostituire I18nProvider custom con next-intl** (già installato)
-8. **Decidere se merge/split deve avvenire lato client o server** — attualmente fanno entrambi la stessa cosa in modo indipendente
+6. **DeleteModal con anteprima PDF per conferma eliminazione** ✅ (PR #74, issue #73)
+7. **Aggiungere dashboard admin** (gestione utenti, licenze, bug report)
+8. **Sostituire I18nProvider custom con next-intl** (già installato)
+9. **Decidere se merge/split deve avvenire lato client o server** — attualmente fanno entrambi la stessa cosa in modo indipendente
 
 ## Bug aperti scoperti durante l'esplorazione (2026-06-25)
 
@@ -138,3 +139,4 @@ Richiesto: `[☀️] [IT/EN] [Segnala Bug] [Nome] [Esci]`
 
 - Attualmente: conferma inline con ✓ / ✗ accanto al file nella sidebar
 - Richiesto: modale con anteprima prima pagina del PDF da eliminare
+- ✅ **Completato (PR #74, issue #73)** — Creato `DeleteModal` con anteprima prima pagina via PDF.js, integrato in `Sidebar`, test completi (10 test passati)

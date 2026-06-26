@@ -273,6 +273,7 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 - [x] Design responsive completo
 - [x] Bonus: merge, split, riordino, rimozione pagine (via pdf-lib lato client + conferma server)
 - [x] Pulsante segnalazione bug nell'interfaccia
+- [x] DeleteModal con anteprima PDF per conferma eliminazione
 - [ ] Dashboard admin per gestione utenti, licenze e bug report
 
 ### Fase 1c — Desktop app (Tauri v2)
