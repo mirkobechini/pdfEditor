@@ -50,7 +50,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | Next.js con `output: 'export'`      | SSR/API Routes        | Compatibilità Tauri (static export), API tutte su FastAPI       |
 | UUID come PK                        | autoincrement integer | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti          |
 | PyMuPDF                             | pdf-lib, pikepdf      | Supporto nativo modifica testo, metadati, tagging accessibilità |
-| PyJWT + requests per SSO Google     | Authlib               | Scelta implementativa che si discosta dallo stack dichiarato    |
+| python-jose[cryptography] + requests per SSO Google     | Authlib               | Scelta implementativa che si discosta dallo stack dichiarato    |
 | Provider i18n custom                | next-intl             | next-intl installato ma non utilizzato; provider custom attivo  |
 | FastAPI sidecar con PyInstaller     | Backend remoto sempre | Funzionamento offline desktop (Fase 1c)                         |
 | pdf-lib lato client per merge/split | Solo API server       | Sostituito da API backend — refactoring PR #72                  |
@@ -101,7 +101,16 @@ _nessuno_
 
 Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'ordine di implementazione è definito dalla priorità indicata.
 
-### In corso / Completate
+### Fasi successive (macro)
+
+Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue con le seguenti macro-fasi:
+
+- [ ] **Fase 1c — Desktop app (Tauri v2)** — Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI in eseguibile. Sidecar: avvio FastAPI locale all'avvio. SQLite locale per dati offline. Installer per Windows (primario), macOS/Linux (secondario).
+- [ ] **Fase 2 — Web app su cloud** — Deploy FastAPI su Railway/Render/Fly.io. Deploy Next.js su Vercel. PostgreSQL cloud. Upload file su S3.
+- [ ] **Fase 3 — Cloud sync** — Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti (lock ottimistico). Modalità offline/online seamless.
+- [ ] **Fase 4 — Mobile app (React Native)** — Setup React Native (Expo bare workflow). Logica React condivisa (API client, hooks auth, utility PDF). UI nativa. Viewer PDF.js via WebView. SSO Google login. Store deployment (Google Play / Apple).
+
+### Feature minori completate
 
 - [x] **Bug report button (frontend)** — Pulsante "Segnala bug" nell'header con dialog modale. Completata (PR #56, issue #55)
 - [x] **UI autenticazione (login/register)** — Pagine `/login` e `/register` con form, AuthContext JWT, route protection, logout in header. Completata (PR #58, issue #57)
@@ -119,11 +128,9 @@ Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'o
 - [x] **Enforce MAX_UPLOAD_SIZE_MB e MAX_PAGE_COUNT** — Limite 50MB e 500 pagine enforceati in upload. Completata (PR #86, issue #85)
 - [x] **Dashboard admin** — Pagina `/admin` per gestione utenti, licenze e bug report. Completata (PR #88, issue #87)
 
-### Da implementare (in ordine)
+### Feature minori da implementare (in ordine)
 
 1. [ ] **Sostituzione I18nProvider custom con next-intl** — next-intl già installato ma inutilizzato
 2. [ ] **API upload protette da autenticazione** — Decisione e implementazione protezione endpoint PDF con JWT
 3. [ ] **PDF protetti da password** — Rilevamento automatico, modale richiesta password, gestione sessione
 4. [ ] **Undo/Redo per modifiche PDF** — Cronologia snapshot lato server con pulsanti toolbar
-
-> **Nota:** Le feature di Fase 2-4 (cloud, sync, mobile, Tauri) sono elencate in "Cosa NON è in scope" e saranno pianificate dopo il completamento della Fase 1.
