@@ -64,21 +64,29 @@ git push origin feature/<issue-number>-<short-description>
 
 ### 3. Implementation & commit loop
 
-While inside the feature branch, implement **one atomic unit at a time** and commit immediately:
+While inside the feature branch, implement **one atomic unit at a time**, **commit immediately**, then move to the next unit.
+
+An **atomic unit** is a single file or logical change: a component, a utility, a test file, a translation update. Do NOT batch multiple files into one commit.
 
 ```bash
 # Inside the feature branch
 git checkout feature/<issue-number>-<short-description>
 
-# 1. Write code for ONE atomic unit (a model, a schema, a service, a route handler, a test file, etc.)
-# 2. Stage and commit immediately
-git add .
-git commit -m "<type>(<scope>): <description>"
-
-# 3. Push to trigger CI
+# === SUBTASK 1: Write file A ===
+# Write ONE file (e.g. a component)
+# Stage and commit immediately
+git add <file-A>
+git commit -m "<type>(<scope>): <description of file A>"
 git push origin feature/<issue-number>-<short-description>
 
-# 4. Stop and wait. Then repeat from step 1 for the next atomic unit.
+# === SUBTASK 2: Write file B ===
+# Write ONE file (e.g. tests for file A)
+git add <file-B>
+git commit -m "test(<scope>): <description of test file B>"
+git push origin feature/<issue-number>-<short-description>
+
+# === Continue for each atomic unit ===
+# Do NOT batch multiple files into one commit!
 ```
 
 > ⚠️ **Fundamental rule: feature → tests → merge.** Every feature MUST include its tests in the same PR. Write tests right after the feature code (in a **separate commit**), before creating the PR. A PR without tests cannot be merged.
