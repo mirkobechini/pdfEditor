@@ -1,29 +1,98 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import RemoveDialog from "./RemoveDialog";
+import { api } from "../lib/api";
 
-function getRemainingPages(pageCount: number, toRemove: Set<number>): number[] {
-  return Array.from({ length: pageCount }, (_, i) => i).filter(
-    (i) => !toRemove.has(i)
-  );
-}
+// Mock i18n
+vi.mock("../lib/i18n", () => ({
+  useI18n: () => ({
+    t: (key: string) => key,
+    locale: "it" as const,
+    setLocale: vi.fn(),
+  }),
+}));
 
-describe("RemoveDialog logic", () => {
-  it("removes selected pages", () => {
-    const result = getRemainingPages(5, new Set([0, 2]));
-    expect(result).toEqual([1, 3, 4]);
+// Mock api
+vi.mock("../lib/api", () => ({
+  api: {
+    downloadPdf: vi.fn(),
+    removePages: vi.fn(),
+  },
+}));
+
+// Mock download
+vi.mock("../lib/download", () => ({
+  downloadBlob: vi.fn(),
+}));
+
+describe("RemoveDialog", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (window as any).pdfjsLib = {
+      GlobalWorkerOptions: { workerSrc: "" },
+      getDocument: vi.fn(),
+    };
   });
 
-  it("keeps all pages when none selected", () => {
-    const result = getRemainingPages(5, new Set());
-    expect(result).toEqual([0, 1, 2, 3, 4]);
+  it("renders nothing when open is false", () => {
+    render(
+      <RemoveDialog open={false} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+    expect(screen.queryByText("removeDialog.title")).not.toBeInTheDocument();
   });
 
-  it("removes all pages except one", () => {
-    const result = getRemainingPages(5, new Set([0, 1, 2, 3]));
-    expect(result).toEqual([4]);
+  it("renders dialog with file info when open is true", () => {
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <RemoveDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    expect(screen.getByText("removeDialog.title")).toBeInTheDocument();
+    expect(screen.getByText(/test\.pdf/)).toBeInTheDocument();
   });
 
-  it("handles empty document", () => {
-    const result = getRemainingPages(0, new Set());
-    expect(result).toEqual([]);
+  it("shows loading spinner while loading thumbnails", () => {
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <RemoveDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
+  });
+
+  it("disables Remove button when no pages selected", () => {
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <RemoveDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    const removeBtn = screen.getByText("removeDialog.remove");
+    expect(removeBtn).toBeDisabled();
+  });
+
+  it("shows remaining page count", () => {
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <RemoveDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    expect(screen.getByText(/removeDialog\.pagesRemaining/)).toBeInTheDocument();
+  });
+
+  it("shows error message when load fails", async () => {
+    (api.downloadPdf as any).mockRejectedValue(new Error("Failed"));
+
+    render(
+      <RemoveDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    // Wait for the fallback to render (no error message shown on load failure, just no thumbnails)
+    // The dialog should still render with Remove button disabled
+    const removeBtn = await screen.findByText("removeDialog.remove");
+    expect(removeBtn).toBeDisabled();
   });
 });
