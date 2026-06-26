@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.sqlite import TEXT
 
 from app.core.database import Base
@@ -11,6 +11,7 @@ class PdfDocument(Base):
     __tablename__ = "pdf_documents"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     original_filename = Column(String(255), nullable=False)
     storage_filename = Column(String(255), nullable=False)  # UUID-based filename
     file_size = Column(Integer, nullable=False)  # in bytes

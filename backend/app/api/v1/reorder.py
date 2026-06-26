@@ -23,7 +23,7 @@ def reorder_pdf_pages(
         )
 
     try:
-        pdf = service.reorder(pdf_id, req.page_order)
+        pdf = service.reorder(pdf_id, current_user.id, req.page_order)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -48,7 +48,7 @@ def remove_pdf_pages(
         )
 
     try:
-        pdf = service.remove_pages(pdf_id, req.page_numbers)
+        pdf = service.remove_pages(pdf_id, current_user.id, req.page_numbers)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

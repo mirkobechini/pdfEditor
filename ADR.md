@@ -50,6 +50,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | Next.js con `output: 'export'`      | SSR/API Routes        | Compatibilità Tauri (static export), API tutte su FastAPI       |
 | UUID come PK                        | autoincrement integer | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti          |
 | PyMuPDF                             | pdf-lib, pikepdf      | Supporto nativo modifica testo, metadati, tagging accessibilità |
+| Autenticazione obbligatoria per ogni operazione PDF | Endpoint /pdfs/* pubblici | Ogni PDF è associato a un utente (user_id). Anche le operazioni base (upload/list/download/delete) richiedono login, perché senza user_id non esiste ownership. Il free tier è un utente registrato a tutti gli effetti. |
 | python-jose[cryptography] + requests per SSO Google     | Authlib               | Scelta implementativa che si discosta dallo stack dichiarato    |
 | Provider i18n custom                | next-intl             | next-intl installato ma non utilizzato; provider custom attivo  |
 | FastAPI sidecar con PyInstaller     | Backend remoto sempre | Funzionamento offline desktop (Fase 1c)                         |

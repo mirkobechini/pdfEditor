@@ -25,6 +25,7 @@ def replace_pdf_text(
     try:
         pdf = service.replace_text(
             pdf_id,
+            user_id=current_user.id,
             search=req.search,
             replace=req.replace,
             occurrence=req.occurrence,
@@ -47,7 +48,7 @@ def extract_pdf_text(
 ) -> TextResponse:
     """Extract text from a PDF document."""
     try:
-        text, pages = service.extract_text(pdf_id, page=page)
+        text, pages = service.extract_text(pdf_id, current_user.id, page=page)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
