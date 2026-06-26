@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useI18n } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
 import BugReportDialog from "./BugReportDialog";
@@ -35,6 +36,15 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
         </div>
         <div className="flex items-center gap-3">
           <HeaderControls />
+          {user?.is_admin && (
+            <Link
+              href="/admin"
+              className="px-2 py-1 text-xs rounded bg-purple-500 text-white hover:bg-purple-600"
+              title="Admin"
+            >
+              Admin
+            </Link>
+          )}
           <button
             className="px-3 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600"
             onClick={() => setBugReportOpen(true)}
