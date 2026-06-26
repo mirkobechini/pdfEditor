@@ -3,6 +3,8 @@
     "title": "PdfEditor",
     "selectPdf": "Select a PDF to view",
     "rendering": "Rendering...",
+    "dropToUpload": "Drop to upload",
+    "dragAndDrop": "Or drag and drop a PDF here",
     "merge": "Merge",
     "split": "Split",
     "reorder": "Reorder",

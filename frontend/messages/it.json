@@ -2,8 +2,8 @@
   "app": {
     "title": "PdfEditor",
     "selectPdf": "Seleziona un PDF da visualizzare",
-    "rendering": "Rendering...",
-    "merge": "Unisci",
+    "rendering": "Rendering...",    "dropToUpload": "Rilascia per caricare",
+    "dragAndDrop": "Oppure trascina un PDF qui",    "merge": "Unisci",
     "split": "Dividi",
     "reorder": "Riordina",
     "remove": "Rimuovi",
