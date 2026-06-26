@@ -66,6 +66,7 @@
     "choose": "Choose --",
     "pages": "pages",
     "page": "Page",
+    "pageThumbnail": "Page {page}",
     "pagesRemaining": "pages remaining",
     "cancel": "Cancel",
     "remove": "Remove",
