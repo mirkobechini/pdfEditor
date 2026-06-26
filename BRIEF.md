@@ -10,7 +10,7 @@ _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `d
 
 - [x] **Fase 0** — Prototipo HTML statico ✅
 - [x] **Fase 1a** — Backend FastAPI ✅ (con enforcement licenze ✅ e BugReport model allineato ✅)
-- [x] **Fase 1b** — Frontend Next.js (parziale: bug report ✅, auth UI ✅, dark mode ✅)
+- [x] **Fase 1b** — Frontend Next.js (bug report ✅, auth UI ✅, dark mode ✅, header controls ✅, dialog refactor ✅)
 - [ ] **Fase 1c** — Desktop Tauri v2
 - [ ] **Fase 2** — Web app su cloud
 - [ ] **Fase 3** — Cloud sync
@@ -272,7 +272,7 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 - [x] Dark mode toggle nell'header
 - [x] Design responsive completo
 - [x] Bonus: merge, split, riordino, rimozione pagine (via pdf-lib lato client + conferma server)
-- [ ] Pulsante segnalazione bug nell'interfaccia
+- [x] Pulsante segnalazione bug nell'interfaccia
 - [ ] Dashboard admin per gestione utenti, licenze e bug report
 
 ### Fase 1c — Desktop app (Tauri v2)

@@ -53,7 +53,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | PyJWT + requests per SSO Google     | Authlib               | Scelta implementativa che si discosta dallo stack dichiarato    |
 | Provider i18n custom                | next-intl             | next-intl installato ma non utilizzato; provider custom attivo  |
 | FastAPI sidecar con PyInstaller     | Backend remoto sempre | Funzionamento offline desktop (Fase 1c)                         |
-| pdf-lib lato client per merge/split | Solo API server       | Coesistono due implementazioni parallele (client e server)      |
+| pdf-lib lato client per merge/split | Solo API server       | Sostituito da API backend — refactoring PR #72                  |
 | Tagged PDF in output                | PDF non strutturati   | Accessibilità screen reader (obbligo AGPL indiretto)            |
 
 ## Vincoli
@@ -108,6 +108,8 @@ Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'o
 - [x] **Persistenza dark mode (localStorage)** — localStorage + system preference fallback + flash prevention. Completata (PR #60, issue #59)
 - [x] **Enforcement licenze (backend)** — `verify_feature_access()` dependency per bloccare operazioni non consentite per tier. Completata (PR #62, issue #61)
 - [x] **Allineamento modello BugReport al brief** — Aggiunti `platform`, `app_version`, `os_info`. Refactoring con repository pattern. Completata (PR #64, issue #63)
+- [x] **Header controls su login/register** — `HeaderControls` condiviso con dark mode toggle e language selector sempre visibili. Completata (PR #70, issue #69)
+- [x] **Refactor dialoghi merge/split/reorder/remove** — Operano sul PDF corrente, usano API backend, scaricano il risultato come file nuovo. Completata (PR #72, issue #71)
 
 ### Da implementare (in ordine)
 
