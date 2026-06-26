@@ -47,8 +47,10 @@
     "selectFile": "Seleziona un PDF",
     "choose": "Scegli --",
     "pages": "pagine",
-    "page": "Pagina",
-    "cancel": "Annulla",
+    "page": "Pagina",    "pageThumbnail": "Pagina {page}",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù",
+    "noPreview": "Anteprima non disponibile",    "cancel": "Annulla",
     "reorder": "Riordina",
     "reordering": "Riordino in corso...",
     "failed": "Riordino fallito"
