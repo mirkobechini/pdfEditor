@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.storage import save_pdf, validate_pdf, get_pdf_path, delete_pdf
 from app.models.pdf import PdfDocument
 from app.repositories.pdf_repo import PdfRepository
@@ -18,15 +19,21 @@ class PdfService:
         if not validate_pdf(content):
             raise ValueError("Invalid PDF file")
 
-        # Save to storage
-        file_uuid = save_pdf(content)
-
-        # Get page count with PyMuPDF
+        # Get page count with PyMuPDF before saving
         import fitz
 
         doc = fitz.open(stream=content, filetype="pdf")
         page_count = doc.page_count
         doc.close()
+
+        # Enforce page limit
+        if page_count > settings.MAX_PAGE_COUNT:
+            raise ValueError(
+                f"PDF has {page_count} pages. Maximum allowed is {settings.MAX_PAGE_COUNT}"
+            )
+
+        # Save to storage
+        file_uuid = save_pdf(content)
 
         # Create DB record
         pdf = PdfDocument(

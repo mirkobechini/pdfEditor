@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     # Storage — absolute path to backend/storage/pdfs
     UPLOAD_DIR: str = (BACKEND_DIR / "storage" / "pdfs").as_posix()
     MAX_UPLOAD_SIZE_MB: int = 50
+    MAX_PAGE_COUNT: int = 500
     ALLOWED_EXTENSIONS: list[str] = [".pdf"]
 
     class Config:
