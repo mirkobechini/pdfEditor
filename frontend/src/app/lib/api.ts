@@ -37,6 +37,17 @@ export interface BugReport {
   updated_at: string;
 }
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  is_admin: boolean;
+  license_tier: string;
+  created_at: string;
+  updated_at: string;
+}
+
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
@@ -290,6 +301,45 @@ class ApiClient {
   > {
     const res = await fetch(`${this.baseUrl}/licenses/features`, {
       headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // Admin
+  async listUsers(skip = 0, limit = 100): Promise<{ items: AdminUser[]; total: number }> {
+    const res = await fetch(`${this.baseUrl}/admin/users?skip=${skip}&limit=${limit}`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async updateUserLicense(userId: string, licenseTier: string): Promise<AdminUser> {
+    const res = await fetch(`${this.baseUrl}/admin/users/${userId}/license`, {
+      method: "PUT",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ license_tier: licenseTier }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async listBugReports(skip = 0, limit = 100, status?: string): Promise<{ items: BugReport[]; total: number }> {
+    const params = new URLSearchParams({ skip: String(skip), limit: String(limit) });
+    if (status) params.set("status", status);
+    const res = await fetch(`${this.baseUrl}/admin/bugs?${params}`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async updateBugReportStatus(bugId: string, status: string): Promise<BugReport> {
+    const res = await fetch(`${this.baseUrl}/admin/bugs/${bugId}/status`, {
+      method: "PUT",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
