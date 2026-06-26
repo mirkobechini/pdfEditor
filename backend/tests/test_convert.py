@@ -6,9 +6,10 @@ from fastapi import status
 class TestExport:
     """Test suite for PDF export endpoint."""
 
-    def upload_pdf(self, client):
+    def upload_pdf(self, client, headers):
         resp = client.post(
             "/pdfs/upload",
+            headers=headers,
             files={"file": ("test.pdf", self._make_pdf(), "application/pdf")},
         )
         return resp.json()["id"]
@@ -24,7 +25,7 @@ class TestExport:
 
     def test_export_txt(self, client, pro_headers):
         """Should export PDF to text."""
-        doc_id = self.upload_pdf(client)
+        doc_id = self.upload_pdf(client, pro_headers)
 
         response = client.post(f"/pdfs/{doc_id}/export?fmt=txt", headers=pro_headers)
         assert response.status_code == status.HTTP_200_OK
@@ -32,7 +33,7 @@ class TestExport:
 
     def test_export_png(self, client, pro_headers):
         """Should export PDF to PNG image."""
-        doc_id = self.upload_pdf(client)
+        doc_id = self.upload_pdf(client, pro_headers)
 
         response = client.post(f"/pdfs/{doc_id}/export?fmt=png", headers=pro_headers)
         assert response.status_code == status.HTTP_200_OK
@@ -40,7 +41,7 @@ class TestExport:
 
     def test_export_jpg(self, client, pro_headers):
         """Should export PDF to JPEG image."""
-        doc_id = self.upload_pdf(client)
+        doc_id = self.upload_pdf(client, pro_headers)
 
         response = client.post(f"/pdfs/{doc_id}/export?fmt=jpg", headers=pro_headers)
         assert response.status_code == status.HTTP_200_OK
@@ -48,7 +49,7 @@ class TestExport:
 
     def test_export_invalid_format(self, client, pro_headers):
         """Should reject unsupported export format."""
-        doc_id = self.upload_pdf(client)
+        doc_id = self.upload_pdf(client, pro_headers)
 
         response = client.post(f"/pdfs/{doc_id}/export?fmt=docx", headers=pro_headers)
         assert response.status_code == status.HTTP_400_BAD_REQUEST

@@ -8,7 +8,7 @@ class TestReplaceText:
 
     URL = "/pdfs/{pdf_id}/replace-text"
 
-    def upload_text_pdf(self, client):
+    def upload_text_pdf(self, client, headers):
         """Create a PDF with known text content."""
         import fitz
 
@@ -19,15 +19,12 @@ class TestReplaceText:
         content = doc.tobytes()
         doc.close()
 
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("text.pdf", content, "application/pdf")},
-        )
-        return resp.json()["id"]
+        from tests.conftest import upload_pdf
+        return upload_pdf(client, headers, content, filename="text.pdf")
 
     def test_replace_text_single(self, client, pro_headers):
         """Should replace text in a PDF."""
-        doc_id = self.upload_text_pdf(client)
+        doc_id = self.upload_text_pdf(client, pro_headers)
 
         response = client.post(
             f"/pdfs/{doc_id}/replace-text",
@@ -41,7 +38,7 @@ class TestReplaceText:
 
     def test_replace_text_occurrence(self, client, pro_headers):
         """Should replace a specific occurrence."""
-        doc_id = self.upload_text_pdf(client)
+        doc_id = self.upload_text_pdf(client, pro_headers)
 
         response = client.post(
             f"/pdfs/{doc_id}/replace-text",
@@ -52,7 +49,7 @@ class TestReplaceText:
 
     def test_replace_empty_search(self, client, pro_headers):
         """Should reject empty search text."""
-        doc_id = self.upload_text_pdf(client)
+        doc_id = self.upload_text_pdf(client, pro_headers)
 
         response = client.post(
             f"/pdfs/{doc_id}/replace-text",
@@ -76,11 +73,8 @@ class TestExtractText:
 
     def test_extract_text_all_pages(self, client, sample_pdf_content, free_headers):
         """Should extract text from a PDF (basic sanity)."""
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("text.pdf", sample_pdf_content, "application/pdf")},
-        )
-        doc_id = resp.json()["id"]
+        from tests.conftest import upload_pdf
+        doc_id = upload_pdf(client, free_headers, sample_pdf_content)
 
         response = client.get(f"/pdfs/{doc_id}/text", headers=free_headers)
         assert response.status_code == status.HTTP_200_OK
@@ -98,11 +92,8 @@ class TestExtractText:
         content = doc.tobytes()
         doc.close()
 
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("multi.pdf", content, "application/pdf")},
-        )
-        doc_id = resp.json()["id"]
+        from tests.conftest import upload_pdf
+        doc_id = upload_pdf(client, free_headers, content, filename="multi.pdf")
 
         response = client.get(f"/pdfs/{doc_id}/text?page=2", headers=free_headers)
         assert response.status_code == status.HTTP_200_OK
@@ -111,11 +102,8 @@ class TestExtractText:
 
     def test_extract_text_invalid_page(self, client, sample_pdf_content, free_headers):
         """Should reject invalid page number."""
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
-        )
-        doc_id = resp.json()["id"]
+        from tests.conftest import upload_pdf
+        doc_id = upload_pdf(client, free_headers, sample_pdf_content)
 
         response = client.get(f"/pdfs/{doc_id}/text?page=99", headers=free_headers)
         assert response.status_code == status.HTTP_400_BAD_REQUEST

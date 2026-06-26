@@ -6,24 +6,21 @@ from fastapi import status
 class TestGetMetadata:
     """Test suite for PDF metadata GET endpoint."""
 
-    def test_get_metadata(self, client, sample_pdf_content):
+    def test_get_metadata(self, client, sample_pdf_content, free_headers):
         """Should return metadata for a PDF."""
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
-        )
-        doc_id = resp.json()["id"]
+        from tests.conftest import upload_pdf
+        doc_id = upload_pdf(client, free_headers, sample_pdf_content)
 
-        response = client.get(f"/pdfs/{doc_id}/metadata")
+        response = client.get(f"/pdfs/{doc_id}/metadata", headers=free_headers)
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         # New PDFs have default metadata
         assert "title" in data
         assert "author" in data
 
-    def test_get_metadata_non_existent(self, client):
+    def test_get_metadata_non_existent(self, client, free_headers):
         """Should return 400 for non-existent PDF."""
-        response = client.get("/pdfs/fake-id/metadata")
+        response = client.get("/pdfs/fake-id/metadata", headers=free_headers)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
@@ -32,11 +29,8 @@ class TestUpdateMetadata:
 
     def test_update_title(self, client, sample_pdf_content, pro_headers):
         """Should update the title metadata."""
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
-        )
-        doc_id = resp.json()["id"]
+        from tests.conftest import upload_pdf
+        doc_id = upload_pdf(client, pro_headers, sample_pdf_content)
 
         response = client.put(
             f"/pdfs/{doc_id}/metadata",
@@ -49,11 +43,8 @@ class TestUpdateMetadata:
 
     def test_update_all_fields(self, client, sample_pdf_content, pro_headers):
         """Should update all metadata fields."""
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
-        )
-        doc_id = resp.json()["id"]
+        from tests.conftest import upload_pdf
+        doc_id = upload_pdf(client, pro_headers, sample_pdf_content)
 
         response = client.put(
             f"/pdfs/{doc_id}/metadata",
@@ -69,11 +60,8 @@ class TestUpdateMetadata:
 
     def test_update_empty_body(self, client, sample_pdf_content, pro_headers):
         """Should reject empty update."""
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
-        )
-        doc_id = resp.json()["id"]
+        from tests.conftest import upload_pdf
+        doc_id = upload_pdf(client, pro_headers, sample_pdf_content)
 
         response = client.put(
             f"/pdfs/{doc_id}/metadata",
