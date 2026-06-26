@@ -3,6 +3,7 @@
 import os
 
 from fastapi import status
+from app.core.config import settings
 
 
 class TestUpload:
@@ -49,6 +50,28 @@ class TestUpload:
             files={"file": ("empty.pdf", b"", "application/pdf")},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_upload_exceeds_size_limit(self, client, monkeypatch):
+        """Should reject files that exceed MAX_UPLOAD_SIZE_MB."""
+        # Temporarily set limit to 0 MB, so any file exceeds it
+        monkeypatch.setattr(settings, "MAX_UPLOAD_SIZE_MB", 0)
+        response = client.post(
+            self.UPLOAD_URL,
+            files={"file": ("large.pdf", b"%PDF-1.4 some content", "application/pdf")},
+        )
+        assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+        assert "too large" in response.json()["detail"].lower()
+
+    def test_upload_exceeds_page_limit(self, client, monkeypatch, sample_pdf_content):
+        """Should reject PDFs with too many pages."""
+        # Temporarily set page limit to 0
+        monkeypatch.setattr(settings, "MAX_PAGE_COUNT", 0)
+        response = client.post(
+            self.UPLOAD_URL,
+            files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Maximum allowed" in response.json()["detail"]
 
 
 class TestGetPdf:
