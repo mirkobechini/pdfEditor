@@ -1,0 +1,215 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import DeleteModal from "./DeleteModal";
+import { api } from "../lib/api";
+
+// Mock i18n
+vi.mock("../lib/i18n", () => ({
+  useI18n: () => ({
+    t: (key: string) => key,
+    locale: "it" as const,
+    setLocale: vi.fn(),
+  }),
+}));
+
+// Mock api
+vi.mock("../lib/api", () => ({
+  api: {
+    downloadPdf: vi.fn(),
+    deletePdf: vi.fn(),
+  },
+}));
+
+// Mock pdfPreview
+vi.mock("../lib/pdfPreview", () => ({
+  renderFirstPageToDataUrl: vi.fn(),
+}));
+
+const mockFile = {
+  id: "1",
+  original_filename: "test.pdf",
+  file_size: 100,
+  page_count: 5,
+  created_at: "",
+  updated_at: "",
+};
+
+describe("DeleteModal", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renders nothing when open is false", () => {
+    render(<DeleteModal open={false} onClose={() => {}} file={null} onConfirm={() => {}} />);
+    expect(screen.queryByText("deleteModal.title")).not.toBeInTheDocument();
+  });
+
+  it("renders modal with file info when open is true", () => {
+    render(
+      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+    );
+
+    expect(screen.getByText("deleteModal.title")).toBeInTheDocument();
+    // The confirm message is split by <strong> element, so use a regex
+    expect(screen.getByText(/deleteModal\.confirmMessage/)).toBeInTheDocument();
+    expect(screen.getByText("test.pdf")).toBeInTheDocument();
+    expect(screen.getByText("deleteModal.pageCount")).toBeInTheDocument();
+  });
+
+  it("shows loading spinner while loading preview", async () => {
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+    (api.deletePdf as any).mockResolvedValue(undefined);
+
+    render(
+      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+    );
+
+    expect(screen.getByText("deleteModal.preview")).toBeInTheDocument();
+    // The loading spinner is an animate-spin div
+    const spinner = screen.getByTestId("loading-spinner");
+    expect(spinner).toBeInTheDocument();
+  });
+
+  it("shows preview image when loaded", async () => {
+    const mockBlob = new Blob(["test"], { type: "application/pdf" });
+    (api.downloadPdf as any).mockResolvedValue(mockBlob);
+    (api.deletePdf as any).mockResolvedValue(undefined);
+    const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
+    (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
+
+    render(
+      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+    );
+
+    await waitFor(() => {
+      const img = screen.getByAltText("deleteModal.previewAlt");
+      expect(img).toBeInTheDocument();
+      expect(img).toHaveAttribute("src", "data:image/png;base64,test");
+    });
+  });
+
+  it("shows fallback when preview fails", async () => {
+    (api.downloadPdf as any).mockRejectedValue(new Error("Failed"));
+    (api.deletePdf as any).mockResolvedValue(undefined);
+
+    render(
+      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("📄")).toBeInTheDocument();
+    });
+  });
+
+  it("calls onConfirm when confirm button is clicked", async () => {
+    const mockBlob = new Blob(["test"], { type: "application/pdf" });
+    (api.downloadPdf as any).mockResolvedValue(mockBlob);
+    (api.deletePdf as any).mockResolvedValue(undefined);
+    const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
+    (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
+
+    const onConfirm = vi.fn();
+    render(
+      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={onConfirm} />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("deleteModal.confirm")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("deleteModal.confirm"));
+    });
+
+    await waitFor(() => {
+      expect(api.deletePdf).toHaveBeenCalledWith("1");
+      expect(onConfirm).toHaveBeenCalled();
+    });
+  });
+
+  it("calls onClose when cancel button is clicked", async () => {
+    const mockBlob = new Blob(["test"], { type: "application/pdf" });
+    (api.downloadPdf as any).mockResolvedValue(mockBlob);
+    (api.deletePdf as any).mockResolvedValue(undefined);
+    const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
+    (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
+
+    const onClose = vi.fn();
+    render(
+      <DeleteModal open={true} onClose={onClose} file={mockFile} onConfirm={() => {}} />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("deleteModal.cancel")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("deleteModal.cancel"));
+    });
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("calls onClose when backdrop is clicked", async () => {
+    const mockBlob = new Blob(["test"], { type: "application/pdf" });
+    (api.downloadPdf as any).mockResolvedValue(mockBlob);
+    (api.deletePdf as any).mockResolvedValue(undefined);
+    const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
+    (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
+
+    const onClose = vi.fn();
+    render(
+      <DeleteModal open={true} onClose={onClose} file={mockFile} onConfirm={() => {}} />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("deleteModal.cancel")).toBeInTheDocument();
+    });
+
+    // Click on the backdrop (the outer div with onClick handler)
+    const backdrop = screen.getByRole("dialog");
+    await act(async () => {
+      fireEvent.click(backdrop);
+    });
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("shows deleting state while deleting", async () => {
+    const mockBlob = new Blob(["test"], { type: "application/pdf" });
+    (api.downloadPdf as any).mockResolvedValue(mockBlob);
+    (api.deletePdf as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+    const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
+    (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
+
+    render(
+      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("deleteModal.confirm")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("deleteModal.confirm"));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("deleteModal.deleting")).toBeInTheDocument();
+    });
+  });
+
+  it("shows warning message", async () => {
+    const mockBlob = new Blob(["test"], { type: "application/pdf" });
+    (api.downloadPdf as any).mockResolvedValue(mockBlob);
+    (api.deletePdf as any).mockResolvedValue(undefined);
+    const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
+    (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
+
+    render(
+      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("deleteModal.warning")).toBeInTheDocument();
+    });
+  });
+});
