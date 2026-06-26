@@ -3,6 +3,7 @@
 import React from "react";
 import { useI18n } from "../lib/i18n";
 import { api } from "../lib/api";
+import { downloadBlob } from "../lib/download";
 
 interface RemoveDialogProps {
   open: boolean;
@@ -12,20 +13,89 @@ interface RemoveDialogProps {
   totalPages: number;
 }
 
+interface PageThumbnail {
+  pageNum: number;
+  dataUrl: string;
+}
+
 export default function RemoveDialog({ open, onClose, selectedId, selectedName, totalPages }: RemoveDialogProps) {
   const { t } = useI18n();
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [toRemove, setToRemove] = React.useState<Set<number>>(new Set());
   const [removing, setRemoving] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [thumbnails, setThumbnails] = React.useState<PageThumbnail[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
 
+  // Load PDF.js on mount
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    if ((window as any).pdfjsLib) {
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      setPdfJsLoaded(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    script.async = true;
+    script.onload = () => {
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      setPdfJsLoaded(true);
+    };
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // Initialize when dialog opens
   React.useEffect(() => {
     if (open) {
       setToRemove(new Set());
       setConfirmOpen(false);
       setError("");
+      setThumbnails([]);
+      if (selectedId && pdfJsLoaded) {
+        loadThumbnails();
+      }
     }
-  }, [open]);
+  }, [open, selectedId, pdfJsLoaded]);
+
+  async function loadThumbnails() {
+    if (!selectedId) return;
+    setLoading(true);
+    try {
+      const blob = await api.downloadPdf(selectedId);
+      const url = URL.createObjectURL(blob);
+      const pdfjsLib = (window as any).pdfjsLib;
+      const pdf = await pdfjsLib.getDocument(url).promise;
+
+      const results: PageThumbnail[] = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 0.3 });
+        const canvas = document.createElement("canvas");
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = viewport.width * dpr;
+        canvas.height = viewport.height * dpr;
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+        const ctx = canvas.getContext("2d")!;
+        ctx.scale(dpr, dpr);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        results.push({ pageNum: i, dataUrl: canvas.toDataURL("image/png") });
+      }
+      setThumbnails(results);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to load thumbnails:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   if (!open) return null;
 
@@ -48,14 +118,8 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
     try {
       const pageNumbers = Array.from(toRemove).map((i) => i + 1);
       const result = await api.removePages(selectedId, pageNumbers);
-      // Trigger download
       const blob = await api.downloadPdf(result.id);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `trimmed_${selectedName}`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `trimmed_${selectedName}`);
       onClose();
     } catch (err) {
       setError(t("removeDialog.failed") + ": " + err);
@@ -67,7 +131,7 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={onClose}>
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-bold mb-4">{t("removeDialog.title")}</h2>
@@ -80,24 +144,52 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
           {t("removeDialog.pagesRemaining")}: {remaining}
         </p>
 
-        <div className="grid grid-cols-5 gap-2 mb-4 max-h-60 overflow-y-auto">
-          {Array.from({ length: totalPages }, (_, i) => i).map((idx) => {
-            const selected = toRemove.has(idx);
-            return (
-              <button
-                key={idx}
-                onClick={() => togglePage(idx)}
-                className={`aspect-square rounded text-sm font-medium transition-colors ${
-                  selected
-                    ? "bg-red-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
-                }`}
-              >
-                {idx + 1}
-              </button>
-            );
-          })}
-        </div>
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent" data-testid="loading-spinner"></div>
+          </div>
+        )}
+
+        {!loading && thumbnails.length > 0 && (
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 mb-4 overflow-y-auto p-1">
+            {Array.from({ length: totalPages }, (_, i) => i).map((idx) => {
+              const isSelected = toRemove.has(idx);
+              const thumb = thumbnails[idx];
+              return (
+                <div
+                  key={idx}
+                  className={`relative border rounded overflow-hidden cursor-pointer transition-all ${
+                    isSelected
+                      ? "border-red-500 ring-2 ring-red-400 opacity-60"
+                      : "border-gray-200 dark:border-gray-600 hover:border-blue-400"
+                  }`}
+                  onClick={() => togglePage(idx)}
+                >
+                  {thumb && (
+                    <img
+                      src={thumb.dataUrl}
+                      alt={t("removeDialog.pageThumbnail", { page: idx + 1 })}
+                      className="w-full h-auto"
+                      draggable={false}
+                    />
+                  )}
+                  <div className={`absolute top-1 left-1 text-xs px-1.5 py-0.5 rounded ${
+                    isSelected
+                      ? "bg-red-500 text-white"
+                      : "bg-black/60 text-white"
+                  }`}>
+                    {idx + 1}
+                  </div>
+                  {isSelected && (
+                    <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
+                      <span className="text-red-500 text-lg font-bold bg-white rounded-full w-6 h-6 flex items-center justify-center">✕</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
 
@@ -124,7 +216,7 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
             </div>
           </div>
         ) : (
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 mt-auto pt-2 border-t dark:border-gray-700">
             <button
               className="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
               onClick={onClose}
@@ -140,58 +232,6 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
             </button>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-          {files.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.original_filename} ({f.page_count} {t("removeDialog.pages")})
-            </option>
-          ))}
-        </select>
-
-        {pageCount > 0 && (
-          <>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              {remaining} / {pageCount} {t("removeDialog.pagesRemaining")}
-            </p>
-            <div className="space-y-1 mb-4 max-h-60 overflow-y-auto">
-              {Array.from({ length: pageCount }, (_, i) => i).map((idx) => (
-                <label
-                  key={idx}
-                  className="flex items-center gap-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={toRemove.has(idx)}
-                    onChange={() => togglePage(idx)}
-                    className="accent-red-500"
-                  />
-                  <span>{t("removeDialog.page")} {idx + 1}</span>
-                </label>
-              ))}
-            </div>
-          </>
-        )}
-
-        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
-
-        <div className="flex justify-end gap-2">
-          <button
-            className="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-            onClick={onClose}
-          >
-            {t("removeDialog.cancel")}
-          </button>
-          <button
-            className="px-4 py-2 text-sm rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
-            disabled={!canConfirm || removing}
-            onClick={handleRemove}
-          >
-            {removing ? t("removeDialog.removing") : t("removeDialog.remove")}
-          </button>
-        </div>
       </div>
     </div>
   );
