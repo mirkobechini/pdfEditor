@@ -3,6 +3,7 @@
 import React from "react";
 import { useI18n } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
+import HeaderControls from "../components/HeaderControls";
 
 export default function LoginPage() {
   const { t } = useI18n();
@@ -29,7 +30,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+    <>
+      <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-end px-4 shrink-0">
+        <HeaderControls />
+      </header>
+      <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
         <h1 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">{t("auth.loginTitle")}</h1>
 
@@ -82,5 +87,6 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+    </>
   );
 }
