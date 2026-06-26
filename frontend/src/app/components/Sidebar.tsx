@@ -3,6 +3,7 @@
 import React from "react";
 import { useI18n } from "../lib/i18n";
 import { api, PdfDocument } from "../lib/api";
+import DeleteModal from "./DeleteModal";
 
 interface SidebarProps {
   selectedId: string | null;
@@ -19,7 +20,8 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
   const [dragOver, setDragOver] = React.useState(false);
   const [renameId, setRenameId] = React.useState<string | null>(null);
   const [renameValue, setRenameValue] = React.useState("");
-  const [deleteConfirm, setDeleteConfirm] = React.useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
+  const [fileToDelete, setFileToDelete] = React.useState<PdfDocument | null>(null);
 
   // Load files on mount
   React.useEffect(() => {
@@ -53,15 +55,26 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
     }
   }
 
-  async function handleDelete(id: string) {
+  function openDeleteModal(file: PdfDocument) {
+    setFileToDelete(file);
+    setDeleteModalOpen(true);
+  }
+
+  function closeDeleteModal() {
+    setDeleteModalOpen(false);
+    setFileToDelete(null);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!fileToDelete) return;
     try {
-      await api.deletePdf(id);
-      setFiles((prev) => prev.filter((f) => f.id !== id));
-      onDelete(id);
+      await api.deletePdf(fileToDelete.id);
+      setFiles((prev) => prev.filter((f) => f.id !== fileToDelete.id));
+      onDelete(fileToDelete.id);
     } catch {
       alert(t("sidebar.deleteFailed"));
     }
-    setDeleteConfirm(null);
+    closeDeleteModal();
   }
 
   // Drag & drop
@@ -140,43 +153,28 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
               >
                 ✏️
               </button>
-              {deleteConfirm === file.id ? (
-                <>
-                  <button
-                    className="text-xs text-red-500 font-bold"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(file.id);
-                    }}
-                  >
-                    ✓
-                  </button>
-                  <button
-                    className="text-xs text-gray-400"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteConfirm(null);
-                    }}
-                  >
-                    ✗
-                  </button>
-                </>
-              ) : (
-                <button
-                  className="text-xs text-gray-400 hover:text-red-500"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteConfirm(file.id);
-                  }}
-                  title="Delete"
-                >
-                  🗑️
-                </button>
-              )}
+              <button
+                className="text-xs text-gray-400 hover:text-red-500"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openDeleteModal(file);
+                }}
+                title={t("sidebar.delete")}
+              >
+                🗑️
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Delete Modal */}
+      <DeleteModal
+        open={deleteModalOpen}
+        onClose={closeDeleteModal}
+        file={fileToDelete}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   );
 }
