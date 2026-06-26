@@ -21,4 +21,6 @@ Decidere e implementare la protezione degli endpoint PDF (upload, merge, split, 
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+**Completata il:** 2026-06-26
+**Note:** Aggiunta colonna `user_id` a `PdfDocument`. Tutti gli endpoint `/pdfs/*` protetti con `Depends(get_current_user)`. Ogni utente vede/modifica/elimina solo i propri PDF. Migration `450f3b0491f0`. 107 test backend passanti. (PR #91, issue #89)

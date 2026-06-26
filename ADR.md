@@ -45,17 +45,17 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Decisioni architetturali
 
-| Scelta                              | Alternativa implicita | Motivo                                                          |
-| ----------------------------------- | --------------------- | --------------------------------------------------------------- |
-| Next.js con `output: 'export'`      | SSR/API Routes        | Compatibilità Tauri (static export), API tutte su FastAPI       |
-| UUID come PK                        | autoincrement integer | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti          |
-| PyMuPDF                             | pdf-lib, pikepdf      | Supporto nativo modifica testo, metadati, tagging accessibilità |
-| Autenticazione obbligatoria per ogni operazione PDF | Endpoint /pdfs/* pubblici | Ogni PDF è associato a un utente (user_id). Anche le operazioni base (upload/list/download/delete) richiedono login, perché senza user_id non esiste ownership. Il free tier è un utente registrato a tutti gli effetti. |
-| python-jose[cryptography] + requests per SSO Google     | Authlib               | Scelta implementativa che si discosta dallo stack dichiarato    |
-| Provider i18n custom                | next-intl             | next-intl installato ma non utilizzato; provider custom attivo  |
-| FastAPI sidecar con PyInstaller     | Backend remoto sempre | Funzionamento offline desktop (Fase 1c)                         |
-| pdf-lib lato client per merge/split | Solo API server       | Sostituito da API backend — refactoring PR #72                  |
-| Tagged PDF in output                | PDF non strutturati   | Accessibilità screen reader (obbligo AGPL indiretto)            |
+| Scelta                                              | Alternativa implicita      | Motivo                                                                                                                                                                                                                   |
+| --------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Next.js con `output: 'export'`                      | SSR/API Routes             | Compatibilità Tauri (static export), API tutte su FastAPI                                                                                                                                                                |
+| UUID come PK                                        | autoincrement integer      | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti                                                                                                                                                                   |
+| PyMuPDF                                             | pdf-lib, pikepdf           | Supporto nativo modifica testo, metadati, tagging accessibilità                                                                                                                                                          |
+| Autenticazione obbligatoria per ogni operazione PDF | Endpoint /pdfs/\* pubblici | Ogni PDF è associato a un utente (user_id). Anche le operazioni base (upload/list/download/delete) richiedono login, perché senza user_id non esiste ownership. Il free tier è un utente registrato a tutti gli effetti. |
+| python-jose[cryptography] + requests per SSO Google | Authlib                    | Scelta implementativa che si discosta dallo stack dichiarato                                                                                                                                                             |
+| Provider i18n custom                                | next-intl                  | next-intl installato ma non utilizzato; provider custom attivo                                                                                                                                                           |
+| FastAPI sidecar con PyInstaller                     | Backend remoto sempre      | Funzionamento offline desktop (Fase 1c)                                                                                                                                                                                  |
+| pdf-lib lato client per merge/split                 | Solo API server            | Sostituito da API backend — refactoring PR #72                                                                                                                                                                           |
+| Tagged PDF in output                                | PDF non strutturati        | Accessibilità screen reader (obbligo AGPL indiretto)                                                                                                                                                                     |
 
 ## Vincoli
 
@@ -128,6 +128,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [x] **Drag & drop viewer centrale** — PdfViewer accetta drop di PDF nello stato vuoto e overlay quando occupato. Completata (PR #84, issue #83)
 - [x] **Enforce MAX_UPLOAD_SIZE_MB e MAX_PAGE_COUNT** — Limite 50MB e 500 pagine enforceati in upload. Completata (PR #86, issue #85)
 - [x] **Dashboard admin** — Pagina `/admin` per gestione utenti, licenze e bug report. Completata (PR #88, issue #87)
+- [x] **Auth endpoint PDF** — Aggiunto `user_id` a `PdfDocument`, protetti tutti gli endpoint `/pdfs/*` con JWT, filtro per utente corrente. Completata (PR #91, issue #89)
 
 ### Feature minori da implementare (in ordine)
 
