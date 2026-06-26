@@ -11,6 +11,7 @@ interface PdfViewerProps {
   onTotalPagesChange: (total: number) => void;
   zoom: number;
   onZoomChange: (zoom: number) => void;
+  onFileDrop?: (file: File) => void;
 }
 
 export default function PdfViewer({
@@ -21,6 +22,7 @@ export default function PdfViewer({
   onTotalPagesChange,
   zoom,
   onZoomChange,
+  onFileDrop,
 }: PdfViewerProps) {
   const { t } = useI18n();
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -28,6 +30,7 @@ export default function PdfViewer({
   const [rendering, setRendering] = React.useState(false);
   const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
   const [loadVersion, setLoadVersion] = React.useState(0);
+  const [dragOver, setDragOver] = React.useState(false);
   const pdfDocRef = React.useRef<any>(null);
   const renderTaskRef = React.useRef<any>(null);
 
@@ -125,19 +128,63 @@ export default function PdfViewer({
 
   if (!fileUrl) {
     return (
-      <div className="text-center text-gray-400">
-        <div className="text-6xl mb-4">📄</div>
-        <p>{t("app.selectPdf")}</p>
+      <div
+        className={`flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed rounded-lg transition-colors ${
+          dragOver
+            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+            : "border-gray-300 dark:border-gray-600"
+        }`}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          const file = e.dataTransfer.files[0];
+          if (file && file.name.toLowerCase().endsWith(".pdf")) {
+            onFileDrop?.(file);
+          } else {
+            alert(t("sidebar.uploadOnlyPdf"));
+          }
+        }}
+      >
+        <div className="text-6xl mb-4">
+          {dragOver ? "📥" : "📄"}
+        </div>
+        <p className="text-gray-400 text-center">
+          {dragOver ? t("app.dropToUpload") : t("app.selectPdf")}
+        </p>
+        <p className="text-xs text-gray-500 mt-2">{t("app.dragAndDrop")}</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-full flex flex-col items-center">
+    <div
+      className="min-h-full flex flex-col items-center"
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files[0];
+        if (file && file.name.toLowerCase().endsWith(".pdf")) {
+          onFileDrop?.(file);
+        }
+      }}
+    >
       {rendering && (
         <div className="text-sm text-gray-400 mb-2">{t("app.rendering")}</div>
       )}
-      <div ref={containerRef} className="flex items-center justify-center">
+      {/* Drag-over overlay */}
+      {dragOver && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-blue-500/10 border-2 border-dashed border-blue-500 rounded-lg pointer-events-none">
+          <div className="text-center">
+            <div className="text-4xl mb-2">📥</div>
+            <p className="text-blue-500 font-medium">{t("app.dropToUpload")}</p>
+          </div>
+        </div>
+      )}
+      <div ref={containerRef} className="flex items-center justify-center relative">
         <canvas ref={canvasRef} className="shadow-lg" />
       </div>
     </div>

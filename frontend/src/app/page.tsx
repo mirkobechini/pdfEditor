@@ -107,6 +107,15 @@ export default function Home() {
             onTotalPagesChange={setTotalPages}
             zoom={zoom}
             onZoomChange={setZoom}
+            onFileDrop={async (file) => {
+              try {
+                const doc = await api.uploadPdf(file);
+                handleUpload(doc);
+                handleSelect(doc.id);
+              } catch (err) {
+                alert("Upload failed: " + err);
+              }
+            }}
           />
         }
       />
