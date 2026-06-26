@@ -15,6 +15,7 @@ import { useAuth } from "./lib/auth";
 export default function Home() {
   const { user, loading } = useAuth();
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [selectedName, setSelectedName] = React.useState("");
   const [fileUrl, setFileUrl] = React.useState<string | null>(null);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [totalPages, setTotalPages] = React.useState(0);
@@ -42,6 +43,8 @@ export default function Home() {
     if (id === selectedId) return;
     setSelectedId(id);
     try {
+      const doc = await api.getPdf(id);
+      setSelectedName(doc.original_filename);
       const blob = await api.downloadPdf(id);
       const url = URL.createObjectURL(blob);
       if (fileUrl) URL.revokeObjectURL(fileUrl);
@@ -53,11 +56,13 @@ export default function Home() {
 
   function handleUpload(doc: PdfDocument) {
     setSelectedId(doc.id);
+    setSelectedName(doc.original_filename);
   }
 
   function handleDelete(id: string) {
     if (selectedId === id) {
       setSelectedId(null);
+      setSelectedName("");
       if (fileUrl) {
         URL.revokeObjectURL(fileUrl);
         setFileUrl(null);
@@ -108,30 +113,32 @@ export default function Home() {
       <MergeDialog
         open={mergeOpen}
         onClose={() => setMergeOpen(false)}
+        selectedId={selectedId}
         onMergeComplete={(doc) => {
           setSelectedId(doc.id);
+          setSelectedName(doc.original_filename);
         }}
       />
       <SplitDialog
         open={splitOpen}
         onClose={() => setSplitOpen(false)}
-        onSplitComplete={(doc) => {
-          setSelectedId(doc.id);
-        }}
+        selectedId={selectedId}
+        selectedName={selectedName}
+        totalPages={totalPages}
       />
       <ReorderDialog
         open={reorderOpen}
         onClose={() => setReorderOpen(false)}
-        onReorderComplete={(doc) => {
-          setSelectedId(doc.id);
-        }}
+        selectedId={selectedId}
+        selectedName={selectedName}
+        totalPages={totalPages}
       />
       <RemoveDialog
         open={removeOpen}
         onClose={() => setRemoveOpen(false)}
-        onRemoveComplete={(doc) => {
-          setSelectedId(doc.id);
-        }}
+        selectedId={selectedId}
+        selectedName={selectedName}
+        totalPages={totalPages}
       />
     </>
   );

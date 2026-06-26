@@ -1,41 +1,30 @@
 "use client";
 
 import React from "react";
-import { PDFDocument } from "pdf-lib";
 import { useI18n } from "../lib/i18n";
-import { api, PdfDocument as PdfDoc } from "../lib/api";
+import { api } from "../lib/api";
+import { downloadBlob } from "../lib/download";
 
 interface ReorderDialogProps {
   open: boolean;
   onClose: () => void;
-  onReorderComplete: (doc: PdfDoc) => void;
+  selectedId: string | null;
+  selectedName: string;
+  totalPages: number;
 }
 
-export default function ReorderDialog({ open, onClose, onReorderComplete }: ReorderDialogProps) {
+export default function ReorderDialog({ open, onClose, selectedId, selectedName, totalPages }: ReorderDialogProps) {
   const { t } = useI18n();
-  const [files, setFiles] = React.useState<PdfDoc[]>([]);
-  const [selectedFileId, setSelectedFileId] = React.useState<string>("");
   const [order, setOrder] = React.useState<number[]>([]);
   const [reordering, setReordering] = React.useState(false);
   const [error, setError] = React.useState("");
 
   React.useEffect(() => {
     if (open) {
-      api.listPdfs().then((res) => setFiles(res.items));
-      setSelectedFileId("");
-      setOrder([]);
+      setOrder(Array.from({ length: totalPages }, (_, i) => i + 1));
       setError("");
     }
-  }, [open]);
-
-  function selectFile(id: string) {
-    setSelectedFileId(id);
-    const file = files.find((f) => f.id === id);
-    if (file) {
-      setOrder(Array.from({ length: file.page_count }, (_, i) => i));
-    }
-    setError("");
-  }
+  }, [open, totalPages]);
 
   function moveUp(index: number) {
     if (index === 0) return;
@@ -55,27 +44,16 @@ export default function ReorderDialog({ open, onClose, onReorderComplete }: Reor
     });
   }
 
-  const isOrderChanged =
-    selectedFileId && order.some((pageIdx, pos) => pageIdx !== pos);
+  const isOrderChanged = order.some((pageNum, pos) => pageNum !== pos + 1);
 
   async function handleReorder() {
-    if (!selectedFileId || !isOrderChanged) return;
+    if (!selectedId || !isOrderChanged) return;
     setReordering(true);
+    setError("");
     try {
-      const blob = await api.downloadPdf(selectedFileId);
-      const buffer = await blob.arrayBuffer();
-      const srcPdf = await PDFDocument.load(buffer);
-      const newPdf = await PDFDocument.create();
-      const copied = await newPdf.copyPages(srcPdf, order);
-      copied.forEach((page) => newPdf.addPage(page));
-      const bytes = await newPdf.save();
-      const selectedFile = files.find((f) => f.id === selectedFileId);
-      const name = selectedFile
-        ? `reordered_${selectedFile.original_filename}`
-        : "reordered.pdf";
-      const file = new File([bytes], name, { type: "application/pdf" });
-      const doc = await api.uploadPdf(file);
-      onReorderComplete(doc);
+      const result = await api.reorderPages(selectedId, order);
+      const blob = await api.downloadPdf(result.id);
+      downloadBlob(blob, `reordered_${selectedName}`);
       onClose();
     } catch (err) {
       setError(t("reorderDialog.failed") + ": " + err);
@@ -94,10 +72,62 @@ export default function ReorderDialog({ open, onClose, onReorderComplete }: Reor
       >
         <h2 className="text-lg font-bold mb-4">{t("reorderDialog.title")}</h2>
 
-        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-          {t("reorderDialog.selectFile")}
-        </label>
-        <select
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          {selectedName} ({totalPages} {t("reorderDialog.pages")})
+        </p>
+
+        {order.length > 0 && (
+          <div className="space-y-1 mb-4 max-h-60 overflow-y-auto">
+            {order.map((pageNum, pos) => (
+              <div
+                key={pos}
+                className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-700 text-sm"
+              >
+                <span>
+                  {t("reorderDialog.page")} {pageNum}
+                </span>
+                <div className="flex gap-1">
+                  <button
+                    className="px-2 py-0.5 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30"
+                    onClick={() => moveUp(pos)}
+                    disabled={pos === 0}
+                  >
+                    ▲
+                  </button>
+                  <button
+                    className="px-2 py-0.5 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-30"
+                    onClick={() => moveDown(pos)}
+                    disabled={pos === order.length - 1}
+                  >
+                    ▼
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+
+        <div className="flex justify-end gap-2">
+          <button
+            className="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+            onClick={onClose}
+          >
+            {t("reorderDialog.cancel")}
+          </button>
+          <button
+            className="px-4 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+            disabled={!selectedId || !isOrderChanged || reordering}
+            onClick={handleReorder}
+          >
+            {reordering ? t("reorderDialog.reordering") : t("reorderDialog.reorder")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
           value={selectedFileId}
           onChange={(e) => selectFile(e.target.value)}
           className="w-full mb-4 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"

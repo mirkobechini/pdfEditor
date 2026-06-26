@@ -1,36 +1,33 @@
 "use client";
 
 import React from "react";
-import { PDFDocument } from "pdf-lib";
 import { useI18n } from "../lib/i18n";
-import { api, PdfDocument as PdfDoc } from "../lib/api";
+import { api } from "../lib/api";
 
 interface RemoveDialogProps {
   open: boolean;
   onClose: () => void;
-  onRemoveComplete: (doc: PdfDoc) => void;
+  selectedId: string | null;
+  selectedName: string;
+  totalPages: number;
 }
 
-export default function RemoveDialog({ open, onClose, onRemoveComplete }: RemoveDialogProps) {
+export default function RemoveDialog({ open, onClose, selectedId, selectedName, totalPages }: RemoveDialogProps) {
   const { t } = useI18n();
-  const [files, setFiles] = React.useState<PdfDoc[]>([]);
-  const [selectedFileId, setSelectedFileId] = React.useState<string>("");
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [toRemove, setToRemove] = React.useState<Set<number>>(new Set());
   const [removing, setRemoving] = React.useState(false);
   const [error, setError] = React.useState("");
-  // Set of page indices (0-based) to remove
-  const [toRemove, setToRemove] = React.useState<Set<number>>(new Set());
 
   React.useEffect(() => {
     if (open) {
-      api.listPdfs().then((res) => setFiles(res.items));
-      setSelectedFileId("");
       setToRemove(new Set());
+      setConfirmOpen(false);
       setError("");
     }
   }, [open]);
 
-  const selectedFile = files.find((f) => f.id === selectedFileId);
-  const pageCount = selectedFile?.page_count ?? 0;
+  if (!open) return null;
 
   function togglePage(idx: number) {
     setToRemove((prev) => {
@@ -41,32 +38,24 @@ export default function RemoveDialog({ open, onClose, onRemoveComplete }: Remove
     });
   }
 
-  const remaining = pageCount - toRemove.size;
+  const remaining = totalPages - toRemove.size;
   const canConfirm = remaining >= 1 && toRemove.size > 0;
 
   async function handleRemove() {
-    if (!selectedFileId || !canConfirm) return;
+    if (!selectedId || !canConfirm) return;
     setRemoving(true);
+    setError("");
     try {
-      const blob = await api.downloadPdf(selectedFileId);
-      const buffer = await blob.arrayBuffer();
-      const srcPdf = await PDFDocument.load(buffer);
-
-      const keepIndices = Array.from({ length: pageCount }, (_, i) => i).filter(
-        (i) => !toRemove.has(i)
-      );
-
-      const newPdf = await PDFDocument.create();
-      const copied = await newPdf.copyPages(srcPdf, keepIndices);
-      copied.forEach((page) => newPdf.addPage(page));
-
-      const bytes = await newPdf.save();
-      const name = selectedFile
-        ? `trimmed_${selectedFile.original_filename}`
-        : "trimmed.pdf";
-      const file = new File([bytes], name, { type: "application/pdf" });
-      const doc = await api.uploadPdf(file);
-      onRemoveComplete(doc);
+      const pageNumbers = Array.from(toRemove).map((i) => i + 1);
+      const result = await api.removePages(selectedId, pageNumbers);
+      // Trigger download
+      const blob = await api.downloadPdf(result.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `trimmed_${selectedName}`;
+      a.click();
+      URL.revokeObjectURL(url);
       onClose();
     } catch (err) {
       setError(t("removeDialog.failed") + ": " + err);
@@ -74,8 +63,6 @@ export default function RemoveDialog({ open, onClose, onRemoveComplete }: Remove
       setRemoving(false);
     }
   }
-
-  if (!open) return null;
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={onClose}>
@@ -85,19 +72,78 @@ export default function RemoveDialog({ open, onClose, onRemoveComplete }: Remove
       >
         <h2 className="text-lg font-bold mb-4">{t("removeDialog.title")}</h2>
 
-        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
-          {t("removeDialog.selectFile")}
-        </label>
-        <select
-          value={selectedFileId}
-          onChange={(e) => {
-            setSelectedFileId(e.target.value);
-            setToRemove(new Set());
-            setError("");
-          }}
-          className="w-full mb-4 text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
-        >
-          <option value="">-- {t("removeDialog.choose")} --</option>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          {selectedName} ({totalPages} {t("removeDialog.pages")})
+        </p>
+
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+          {t("removeDialog.pagesRemaining")}: {remaining}
+        </p>
+
+        <div className="grid grid-cols-5 gap-2 mb-4 max-h-60 overflow-y-auto">
+          {Array.from({ length: totalPages }, (_, i) => i).map((idx) => {
+            const selected = toRemove.has(idx);
+            return (
+              <button
+                key={idx}
+                onClick={() => togglePage(idx)}
+                className={`aspect-square rounded text-sm font-medium transition-colors ${
+                  selected
+                    ? "bg-red-500 text-white"
+                    : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+                }`}
+              >
+                {idx + 1}
+              </button>
+            );
+          })}
+        </div>
+
+        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+
+        {confirmOpen ? (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+            <p className="text-sm text-red-700 dark:text-red-300 mb-3 font-medium">
+              {t("removeDialog.confirmMessage")}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-3 py-1.5 text-xs rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+                onClick={() => setConfirmOpen(false)}
+                disabled={removing}
+              >
+                {t("removeDialog.cancel")}
+              </button>
+              <button
+                className="px-3 py-1.5 text-xs rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+                disabled={removing}
+                onClick={handleRemove}
+              >
+                {removing ? t("removeDialog.removing") : t("removeDialog.confirmDelete")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <button
+              className="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+              onClick={onClose}
+            >
+              {t("removeDialog.cancel")}
+            </button>
+            <button
+              className="px-4 py-2 text-sm rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+              disabled={!selectedId || !canConfirm}
+              onClick={() => setConfirmOpen(true)}
+            >
+              {t("removeDialog.remove")}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
           {files.map((f) => (
             <option key={f.id} value={f.id}>
               {f.original_filename} ({f.page_count} {t("removeDialog.pages")})
