@@ -1,49 +1,87 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import ReorderDialog from "./ReorderDialog";
+import { api } from "../lib/api";
 
-function moveUp(order: number[], index: number): number[] {
-  if (index === 0) return order;
-  const next = [...order];
-  [next[index - 1], next[index]] = [next[index], next[index - 1]];
-  return next;
-}
+// Mock i18n
+vi.mock("../lib/i18n", () => ({
+  useI18n: () => ({
+    t: (key: string) => key,
+    locale: "it" as const,
+    setLocale: vi.fn(),
+  }),
+}));
 
-function moveDown(order: number[], index: number): number[] {
-  if (index === order.length - 1) return order;
-  const next = [...order];
-  [next[index], next[index + 1]] = [next[index + 1], next[index]];
-  return next;
-}
+// Mock api
+vi.mock("../lib/api", () => ({
+  api: {
+    downloadPdf: vi.fn(),
+    reorderPages: vi.fn(),
+  },
+}));
 
-function isOrderChanged(order: number[]): boolean {
-  return order.some((pageIdx, pos) => pageIdx !== pos);
-}
+// Mock download
+vi.mock("../lib/download", () => ({
+  downloadBlob: vi.fn(),
+}));
 
-describe("ReorderDialog logic", () => {
-  it("moves a page up", () => {
-    const order = [0, 1, 2, 3];
-    expect(moveUp(order, 2)).toEqual([0, 2, 1, 3]);
+describe("ReorderDialog", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Simulate PDF.js already loaded (jsdom doesn't load scripts)
+    (window as any).pdfjsLib = {
+      GlobalWorkerOptions: { workerSrc: "" },
+      getDocument: vi.fn(),
+    };
   });
 
-  it("does not move first page up", () => {
-    const order = [0, 1, 2];
-    expect(moveUp(order, 0)).toEqual([0, 1, 2]);
+  it("renders nothing when open is false", () => {
+    render(
+      <ReorderDialog open={false} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+    expect(screen.queryByText("reorderDialog.title")).not.toBeInTheDocument();
   });
 
-  it("moves a page down", () => {
-    const order = [0, 1, 2, 3];
-    expect(moveDown(order, 1)).toEqual([0, 2, 1, 3]);
+  it("renders dialog with file info when open is true", () => {
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <ReorderDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    expect(screen.getByText("reorderDialog.title")).toBeInTheDocument();
+    expect(screen.getByText(/test\.pdf/)).toBeInTheDocument();
   });
 
-  it("does not move last page down", () => {
-    const order = [0, 1, 2];
-    expect(moveDown(order, 2)).toEqual([0, 1, 2]);
+  it("shows loading spinner while loading thumbnails", () => {
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <ReorderDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
   });
 
-  it("detects when order changed", () => {
-    expect(isOrderChanged([0, 2, 1])).toBe(true);
+  it("disables Reorder button when order is unchanged", () => {
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <ReorderDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    const reorderBtn = screen.getByText("reorderDialog.reorder");
+    expect(reorderBtn).toBeDisabled();
   });
 
-  it("detects when order unchanged", () => {
-    expect(isOrderChanged([0, 1, 2])).toBe(false);
+  it("shows error message when thumbnails fail to load", async () => {
+    (api.downloadPdf as any).mockRejectedValue(new Error("Failed"));
+
+    render(
+      <ReorderDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    const errorText = await screen.findByText(/reorderDialog\.failed/);
+    expect(errorText).toBeInTheDocument();
   });
 });
