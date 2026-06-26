@@ -1,28 +1,29 @@
-import { describe, it, expect } from "vitest";
-import { parsePageRanges } from "./SplitDialog";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import SplitDialog, { parsePageRanges } from "./SplitDialog";
+import { api } from "../lib/api";
 
-// parsePageRanges is exported from SplitDialog for testing
-// We re-import it via the function defined in the component file
+// Mock i18n
+vi.mock("../lib/i18n", () => ({
+  useI18n: () => ({
+    t: (key: string) => key,
+    locale: "it" as const,
+    setLocale: vi.fn(),
+  }),
+}));
 
-// Since parsePageRanges is not exported from the component,
-// we test the logic directly by duplicating the function
-function parsePageRanges(input: string, maxPages: number): number[] {
-  const pages = new Set<number>();
-  const parts = input.split(",");
-  for (const part of parts) {
-    const trimmed = part.trim();
-    if (!trimmed) continue;
-    const range = trimmed.split("-").map((s) => parseInt(s.trim(), 10));
-    if (range.length === 1 && !isNaN(range[0])) {
-      if (range[0] >= 1 && range[0] <= maxPages) pages.add(range[0]);
-    } else if (range.length === 2 && !isNaN(range[0]) && !isNaN(range[1])) {
-      const start = Math.max(1, range[0]);
-      const end = Math.min(maxPages, range[1]);
-      for (let i = start; i <= end; i++) pages.add(i);
-    }
-  }
-  return Array.from(pages).sort((a, b) => a - b);
-}
+// Mock api
+vi.mock("../lib/api", () => ({
+  api: {
+    downloadPdf: vi.fn(),
+    splitPdf: vi.fn(),
+  },
+}));
+
+// Mock download
+vi.mock("../lib/download", () => ({
+  downloadBlob: vi.fn(),
+}));
 
 describe("parsePageRanges", () => {
   it("parses single pages", () => {
@@ -48,5 +49,54 @@ describe("parsePageRanges", () => {
 
   it("clamps to minimum page 1", () => {
     expect(parsePageRanges("0-3", 10)).toEqual([1, 2, 3]);
+  });
+});
+
+describe("SplitDialog", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (window as any).pdfjsLib = {
+      GlobalWorkerOptions: { workerSrc: "" },
+      getDocument: vi.fn(),
+    };
+  });
+
+  it("renders nothing when open is false", () => {
+    render(
+      <SplitDialog open={false} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+    expect(screen.queryByText("splitDialog.title")).not.toBeInTheDocument();
+  });
+
+  it("renders dialog with file info when open is true", () => {
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <SplitDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    expect(screen.getByText("splitDialog.title")).toBeInTheDocument();
+    expect(screen.getByText(/test\.pdf/)).toBeInTheDocument();
+  });
+
+  it("shows loading spinner while loading thumbnails", () => {
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <SplitDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
+  });
+
+  it("disables Split button when no pages selected", () => {
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+
+    render(
+      <SplitDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+    );
+
+    const splitBtn = screen.getByText("splitDialog.split");
+    expect(splitBtn).toBeDisabled();
   });
 });
