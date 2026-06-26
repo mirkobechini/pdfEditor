@@ -41,7 +41,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - **Licensing** — Modelli LicenseFeature per blocco feature per tier (free/premium/lifetime/admin)
 - **Bug reporting** — Modello BugReport API per segnalazioni dall'interfaccia
 - **Conversione formati** — PDF ↔ DOCX/XLSX/PNG/JPG/TXT/SVG tramite PyMuPDF + librerie ausiliarie
-- **Dashboard admin** — Gestione utenti, licenze e bug report (da implementare)
+- **Dashboard admin** — Gestione utenti, licenze e bug report
 
 ## Decisioni architetturali
 
@@ -117,13 +117,13 @@ Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'o
 - [x] **Remove miniature + conferma** — RemoveDialog con miniature PDF, selezione visuale, modale conferma. Completata (PR #82, issue #81)
 - [x] **Drag & drop viewer centrale** — PdfViewer accetta drop di PDF nello stato vuoto e overlay quando occupato. Completata (PR #84, issue #83)
 - [x] **Enforce MAX_UPLOAD_SIZE_MB e MAX_PAGE_COUNT** — Limite 50MB e 500 pagine enforceati in upload. Completata (PR #86, issue #85)
+- [x] **Dashboard admin** — Pagina `/admin` per gestione utenti, licenze e bug report. Completata (PR #88, issue #87)
 
 ### Da implementare (in ordine)
 
-1. [ ] **Dashboard admin** — Pagina `/admin` per gestione utenti, licenze e bug report
-2. [ ] **Sostituzione I18nProvider custom con next-intl** — next-intl già installato ma inutilizzato
-3. [ ] **API upload protette da autenticazione** — Decisione e implementazione protezione endpoint PDF con JWT
-4. [ ] **PDF protetti da password** — Rilevamento automatico, modale richiesta password, gestione sessione
-5. [ ] **Undo/Redo per modifiche PDF** — Cronologia snapshot lato server con pulsanti toolbar
+1. [ ] **Sostituzione I18nProvider custom con next-intl** — next-intl già installato ma inutilizzato
+2. [ ] **API upload protette da autenticazione** — Decisione e implementazione protezione endpoint PDF con JWT
+3. [ ] **PDF protetti da password** — Rilevamento automatico, modale richiesta password, gestione sessione
+4. [ ] **Undo/Redo per modifiche PDF** — Cronologia snapshot lato server con pulsanti toolbar
 
 > **Nota:** Le feature di Fase 2-4 (cloud, sync, mobile, Tauri) sono elencate in "Cosa NON è in scope" e saranno pianificate dopo il completamento della Fase 1.
