@@ -2,10 +2,15 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 
 from app.api.deps import get_pdf_service
+from app.core.config import settings
 from app.schemas.pdf import PdfListResponse, PdfResponse
 from app.services.pdf_service import PdfService
 
 router = APIRouter(prefix="/pdfs", tags=["pdfs"])
+
+def _get_max_upload_bytes() -> int:
+    """Return the maximum upload size in bytes."""
+    return settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 
 @router.get("", response_model=PdfListResponse)
@@ -30,7 +35,22 @@ def upload_pdf(
             detail="Only PDF files are allowed",
         )
 
+    # Enforce upload size limit before reading into memory
+    max_bytes = _get_max_upload_bytes()
+    if file.size is not None and file.size >= max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB",
+        )
+
     content = file.file.read()
+
+    # Also check after reading (covers cases where Content-Length header is missing)
+    if len(content) >= max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB",
+        )
 
     try:
         pdf = service.upload(filename=file.filename, content=content)
