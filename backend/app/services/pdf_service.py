@@ -13,7 +13,14 @@ class PdfService:
     def __init__(self, db: Session):
         self.repo = PdfRepository(db)
 
-    def upload(self, filename: str, content: bytes) -> PdfDocument:
+    def _get_user_pdf(self, pdf_id: str, user_id: str) -> PdfDocument:
+        """Get a PDF owned by the given user, or raise ValueError."""
+        pdf = self.repo.get_by_id_and_user(pdf_id, user_id)
+        if not pdf:
+            raise ValueError(f"PDF {pdf_id} not found")
+        return pdf
+
+    def upload(self, filename: str, content: bytes, user_id: str) -> PdfDocument:
         """Validate, save to disk, and create DB record."""
         # Validate PDF
         if not validate_pdf(content):
@@ -41,15 +48,16 @@ class PdfService:
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(content),
             page_count=page_count,
+            user_id=user_id,
         )
         return self.repo.create(pdf)
 
     def get_by_id(self, pdf_id: str) -> PdfDocument | None:
         return self.repo.get_by_id(pdf_id)
 
-    def get_all(self, skip: int = 0, limit: int = 100) -> PdfListResponse:
-        items = self.repo.get_all(skip=skip, limit=limit)
-        total = self.repo.count()
+    def get_all(self, user_id: str, skip: int = 0, limit: int = 100) -> PdfListResponse:
+        items = self.repo.get_all_by_user(user_id, skip=skip, limit=limit)
+        total = self.repo.count_by_user(user_id)
         return PdfListResponse(
             items=[PdfResponse.model_validate(p) for p in items],
             total=total,
@@ -62,10 +70,11 @@ class PdfService:
         path = get_pdf_path(file_uuid)
         return path.read_bytes() if path else None
 
-    def delete(self, pdf_id: str) -> bool:
+    def delete(self, pdf_id: str, user_id: str) -> bool:
         """Delete a PDF from DB and disk. Returns True if deleted."""
-        pdf = self.repo.get_by_id(pdf_id)
-        if not pdf:
+        try:
+            pdf = self._get_user_pdf(pdf_id, user_id)
+        except ValueError:
             return False
         self.repo.delete(pdf)
         # storage_filename is "{uuid}.pdf" — extract UUID for delete_pdf
@@ -73,7 +82,7 @@ class PdfService:
         delete_pdf(file_uuid)
         return True
 
-    def merge(self, pdf_ids: list[str]) -> PdfDocument:
+    def merge(self, pdf_ids: list[str], user_id: str) -> PdfDocument:
         """Merge multiple PDFs into one. Returns the new PDF document."""
         import fitz
 
@@ -86,12 +95,7 @@ class PdfService:
         source_names: list[str] = []
 
         for pid in pdf_ids:
-            pdf = self.repo.get_by_id(pid)
-            if not pdf:
-                # Close any already-opened docs
-                for d in source_docs:
-                    d.close()
-                raise ValueError(f"PDF {pid} not found")
+            pdf = self._get_user_pdf(pid, user_id)
 
             content = self.get_file_content(pdf)
             if not content:
@@ -124,16 +128,15 @@ class PdfService:
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(output_bytes),
             page_count=total_pages,
+            user_id=user_id,
         )
         return self.repo.create(pdf)
 
-    def split_by_ranges(self, pdf_id: str, ranges: list[str]) -> list[PdfDocument]:
+    def split_by_ranges(self, pdf_id: str, user_id: str, ranges: list[str]) -> list[PdfDocument]:
         """Split a PDF by page ranges (e.g. ['1-3', '5-7'])."""
         import fitz
 
-        pdf = self.repo.get_by_id(pdf_id)
-        if not pdf:
-            raise ValueError(f"PDF {pdf_id} not found")
+        pdf = self._get_user_pdf(pdf_id, user_id)
 
         content = self.get_file_content(pdf)
         if not content:
@@ -168,6 +171,7 @@ class PdfService:
                     storage_filename=f"{file_uuid}.pdf",
                     file_size=len(out_bytes),
                     page_count=end - start,
+                    user_id=user_id,
                 )
                 results.append(self.repo.create(new_pdf))
         finally:
@@ -175,13 +179,11 @@ class PdfService:
 
         return results
 
-    def split_every_page(self, pdf_id: str) -> list[PdfDocument]:
+    def split_every_page(self, pdf_id: str, user_id: str) -> list[PdfDocument]:
         """Split a PDF into one file per page."""
         import fitz
 
-        pdf = self.repo.get_by_id(pdf_id)
-        if not pdf:
-            raise ValueError(f"PDF {pdf_id} not found")
+        pdf = self._get_user_pdf(pdf_id, user_id)
 
         content = self.get_file_content(pdf)
         if not content:
@@ -205,6 +207,7 @@ class PdfService:
                     storage_filename=f"{file_uuid}.pdf",
                     file_size=len(out_bytes),
                     page_count=1,
+                    user_id=user_id,
                 )
                 results.append(self.repo.create(new_pdf))
         finally:
@@ -212,13 +215,11 @@ class PdfService:
 
         return results
 
-    def reorder(self, pdf_id: str, page_order: list[int]) -> PdfDocument:
+    def reorder(self, pdf_id: str, user_id: str, page_order: list[int]) -> PdfDocument:
         """Reorder pages of a PDF. page_order is 1-based."""
         import fitz
 
-        pdf = self.repo.get_by_id(pdf_id)
-        if not pdf:
-            raise ValueError(f"PDF {pdf_id} not found")
+        pdf = self._get_user_pdf(pdf_id, user_id)
 
         content = self.get_file_content(pdf)
         if not content:
@@ -254,16 +255,15 @@ class PdfService:
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(out_bytes),
             page_count=len(page_order),
+            user_id=user_id,
         )
         return self.repo.create(new_pdf)
 
-    def remove_pages(self, pdf_id: str, page_numbers: list[int]) -> PdfDocument:
+    def remove_pages(self, pdf_id: str, user_id: str, page_numbers: list[int]) -> PdfDocument:
         """Remove specific pages from a PDF. page_numbers is 1-based."""
         import fitz
 
-        pdf = self.repo.get_by_id(pdf_id)
-        if not pdf:
-            raise ValueError(f"PDF {pdf_id} not found")
+        pdf = self._get_user_pdf(pdf_id, user_id)
 
         content = self.get_file_content(pdf)
         if not content:
@@ -299,12 +299,14 @@ class PdfService:
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(out_bytes),
             page_count=len(keep_pages),
+            user_id=user_id,
         )
         return self.repo.create(new_pdf)
 
     def replace_text(
         self,
         pdf_id: str,
+        user_id: str,
         search: str,
         replace: str,
         occurrence: int | None = None,
@@ -315,9 +317,7 @@ class PdfService:
         if not search.strip():
             raise ValueError("Search text cannot be empty")
 
-        pdf = self.repo.get_by_id(pdf_id)
-        if not pdf:
-            raise ValueError(f"PDF {pdf_id} not found")
+        pdf = self._get_user_pdf(pdf_id, user_id)
 
         content = self.get_file_content(pdf)
         if not content:
@@ -368,16 +368,15 @@ class PdfService:
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(out_bytes),
             page_count=pdf.page_count,
+            user_id=user_id,
         )
         return self.repo.create(new_pdf)
 
-    def extract_text(self, pdf_id: str, page: int | None = None) -> tuple[str, int]:
+    def extract_text(self, pdf_id: str, user_id: str, page: int | None = None) -> tuple[str, int]:
         """Extract text from a PDF. If page is None, extracts from all pages."""
         import fitz
 
-        pdf = self.repo.get_by_id(pdf_id)
-        if not pdf:
-            raise ValueError(f"PDF {pdf_id} not found")
+        pdf = self._get_user_pdf(pdf_id, user_id)
 
         content = self.get_file_content(pdf)
         if not content:
@@ -402,13 +401,11 @@ class PdfService:
         finally:
             source.close()
 
-    def get_metadata(self, pdf_id: str) -> dict:
+    def get_metadata(self, pdf_id: str, user_id: str) -> dict:
         """Get PDF metadata."""
         import fitz
 
-        pdf = self.repo.get_by_id(pdf_id)
-        if not pdf:
-            raise ValueError(f"PDF {pdf_id} not found")
+        pdf = self._get_user_pdf(pdf_id, user_id)
 
         content = self.get_file_content(pdf)
         if not content:
@@ -427,14 +424,12 @@ class PdfService:
             source.close()
 
     def update_metadata(
-        self, pdf_id: str, updates: dict
+        self, pdf_id: str, user_id: str, updates: dict
     ) -> PdfDocument:
         """Update PDF metadata. Creates a new file preserving original content."""
         import fitz
 
-        pdf = self.repo.get_by_id(pdf_id)
-        if not pdf:
-            raise ValueError(f"PDF {pdf_id} not found")
+        pdf = self._get_user_pdf(pdf_id, user_id)
 
         content = self.get_file_content(pdf)
         if not content:
@@ -461,18 +456,17 @@ class PdfService:
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(out_bytes),
             page_count=pdf.page_count,
+            user_id=user_id,
         )
         return self.repo.create(new_pdf)
 
     def export_pdf(
-        self, pdf_id: str, fmt: str
+        self, pdf_id: str, user_id: str, fmt: str
     ) -> tuple[bytes, str]:
         """Export a PDF to another format. Returns (content, media_type)."""
         import fitz
 
-        pdf = self.repo.get_by_id(pdf_id)
-        if not pdf:
-            raise ValueError(f"PDF {pdf_id} not found")
+        pdf = self._get_user_pdf(pdf_id, user_id)
 
         content = self.get_file_content(pdf)
         if not content:
@@ -511,7 +505,7 @@ class PdfService:
         finally:
             source.close()
 
-    def import_file_to_pdf(self, filename: str, content: bytes) -> PdfDocument:
+    def import_file_to_pdf(self, filename: str, content: bytes, user_id: str) -> PdfDocument:
         """Import a file and convert it to PDF."""
         import fitz
 
@@ -548,5 +542,6 @@ class PdfService:
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(pdf_bytes),
             page_count=page_count,
+            user_id=user_id,
         )
         return self.repo.create(pdf)

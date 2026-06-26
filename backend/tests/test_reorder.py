@@ -6,7 +6,7 @@ from fastapi import status
 class TestReorder:
     """Test suite for PDF reorder endpoint."""
 
-    def upload_pages(self, client, n=3):
+    def upload_pages(self, client, headers, n=3):
         """Upload a multi-page PDF."""
         import fitz
 
@@ -16,15 +16,12 @@ class TestReorder:
         content = doc.tobytes()
         doc.close()
 
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("multi.pdf", content, "application/pdf")},
-        )
-        return resp.json()["id"]
+        from tests.conftest import upload_pdf
+        return upload_pdf(client, headers, content, filename="multi.pdf")
 
     def test_reorder_pages(self, client, pro_headers):
         """Should reorder pages of a PDF."""
-        doc_id = self.upload_pages(client, 3)
+        doc_id = self.upload_pages(client, pro_headers, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/reorder",
@@ -38,7 +35,7 @@ class TestReorder:
 
     def test_reorder_single_page_invalid(self, client, pro_headers):
         """Should reject reorder with only one page."""
-        doc_id = self.upload_pages(client, 3)
+        doc_id = self.upload_pages(client, pro_headers, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/reorder",
@@ -49,7 +46,7 @@ class TestReorder:
 
     def test_reorder_wrong_count(self, client, pro_headers):
         """Should reject reorder with wrong number of pages."""
-        doc_id = self.upload_pages(client, 3)
+        doc_id = self.upload_pages(client, pro_headers, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/reorder",
@@ -60,7 +57,7 @@ class TestReorder:
 
     def test_reorder_invalid_page_number(self, client, pro_headers):
         """Should reject reorder with out-of-range page."""
-        doc_id = self.upload_pages(client, 3)
+        doc_id = self.upload_pages(client, pro_headers, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/reorder",
@@ -82,7 +79,7 @@ class TestReorder:
 class TestRemovePages:
     """Test suite for PDF remove-pages endpoint."""
 
-    def upload_pages(self, client, n=5):
+    def upload_pages(self, client, headers, n=5):
         """Upload a multi-page PDF."""
         import fitz
 
@@ -92,15 +89,12 @@ class TestRemovePages:
         content = doc.tobytes()
         doc.close()
 
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("multi.pdf", content, "application/pdf")},
-        )
-        return resp.json()["id"]
+        from tests.conftest import upload_pdf
+        return upload_pdf(client, headers, content, filename="multi.pdf")
 
     def test_remove_single_page(self, client, pro_headers):
         """Should remove a single page from a PDF."""
-        doc_id = self.upload_pages(client, 5)
+        doc_id = self.upload_pages(client, pro_headers, 5)
 
         response = client.post(
             f"/pdfs/{doc_id}/remove-pages",
@@ -114,7 +108,7 @@ class TestRemovePages:
 
     def test_remove_multiple_pages(self, client, pro_headers):
         """Should remove multiple pages from a PDF."""
-        doc_id = self.upload_pages(client, 5)
+        doc_id = self.upload_pages(client, pro_headers, 5)
 
         response = client.post(
             f"/pdfs/{doc_id}/remove-pages",
@@ -127,7 +121,7 @@ class TestRemovePages:
 
     def test_remove_invalid_page(self, client, pro_headers):
         """Should reject removal of non-existent page."""
-        doc_id = self.upload_pages(client, 5)
+        doc_id = self.upload_pages(client, pro_headers, 5)
 
         response = client.post(
             f"/pdfs/{doc_id}/remove-pages",
@@ -138,7 +132,7 @@ class TestRemovePages:
 
     def test_remove_all_pages_invalid(self, client, pro_headers):
         """Should reject removal of all pages."""
-        doc_id = self.upload_pages(client, 3)
+        doc_id = self.upload_pages(client, pro_headers, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/remove-pages",
@@ -149,7 +143,7 @@ class TestRemovePages:
 
     def test_remove_empty_list(self, client, pro_headers):
         """Should reject empty page_numbers list."""
-        doc_id = self.upload_pages(client, 3)
+        doc_id = self.upload_pages(client, pro_headers, 3)
 
         response = client.post(
             f"/pdfs/{doc_id}/remove-pages",

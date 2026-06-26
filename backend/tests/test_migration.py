@@ -81,38 +81,34 @@ class TestMigrationIntegrity:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
-            # Verify new columns exist before downgrade
+            # Verify new user_id column exists on pdf_documents before downgrade
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            bug_cols_before = {c["name"] for c in inspector.get_columns("bug_reports")}
-            assert "platform" in bug_cols_before
-            assert "app_version" in bug_cols_before
-            assert "os_info" in bug_cols_before
+            pdf_cols_before = {c["name"] for c in inspector.get_columns("pdf_documents")}
+            assert "user_id" in pdf_cols_before
             engine.dispose()
 
-            # Downgrade one step (remove platform, app_version, os_info columns)
+            # Downgrade one step (remove user_id from pdf_documents)
             rc, out, err = _run_migration(db_path, "downgrade -1")
             assert rc == 0, f"alembic downgrade -1 failed:\n{err}\n{out}"
 
-            # Verify new columns are gone, but table still exists
+            # Verify new column is gone, but table still exists
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            bug_cols_after = {c["name"] for c in inspector.get_columns("bug_reports")}
-            assert "bug_reports" in inspector.get_table_names(), "bug_reports table should still exist"
-            assert "platform" not in bug_cols_after, "platform column should be gone after downgrade"
-            assert "app_version" not in bug_cols_after
-            assert "os_info" not in bug_cols_after
+            pdf_cols_after = {c["name"] for c in inspector.get_columns("pdf_documents")}
+            assert "pdf_documents" in inspector.get_table_names(), "table should still exist"
+            assert "user_id" not in pdf_cols_after, "user_id should be gone after downgrade"
             engine.dispose()
 
             # Upgrade again
             rc, out, err = _run_migration(db_path, "upgrade head")
             assert rc == 0, f"alembic upgrade head after downgrade failed:\n{out}\n{err}"
 
-            # Verify columns are restored
+            # Verify column is restored
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            assert "bug_reports" in inspector.get_table_names(), \
-                "bug_reports not restored after re-upgrade"
+            assert "pdf_documents" in inspector.get_table_names(), \
+                "pdf_documents not restored after re-upgrade"
             engine.dispose()
 
     def test_downgrade_all_the_way(self):

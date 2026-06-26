@@ -10,17 +10,9 @@ class TestMerge:
 
     def test_merge_two_pdfs(self, client, sample_pdf_content, pro_headers):
         """Should merge two PDFs into one."""
-        # Upload two PDFs (upload is public)
-        resp1 = client.post(
-            "/pdfs/upload",
-            files={"file": ("a.pdf", sample_pdf_content, "application/pdf")},
-        )
-        resp2 = client.post(
-            "/pdfs/upload",
-            files={"file": ("b.pdf", sample_pdf_content, "application/pdf")},
-        )
-        id1 = resp1.json()["id"]
-        id2 = resp2.json()["id"]
+        from tests.conftest import upload_pdf
+        id1 = upload_pdf(client, pro_headers, sample_pdf_content)
+        id2 = upload_pdf(client, pro_headers, sample_pdf_content)
 
         response = client.post(self.MERGE_URL, headers=pro_headers, json={"pdf_ids": [id1, id2]})
         assert response.status_code == status.HTTP_201_CREATED
@@ -30,11 +22,8 @@ class TestMerge:
 
     def test_merge_single_pdf_raises_error(self, client, sample_pdf_content, pro_headers):
         """Should reject merge with only one PDF."""
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("a.pdf", sample_pdf_content, "application/pdf")},
-        )
-        pid = resp.json()["id"]
+        from tests.conftest import upload_pdf
+        pid = upload_pdf(client, pro_headers, sample_pdf_content)
 
         response = client.post(self.MERGE_URL, headers=pro_headers, json={"pdf_ids": [pid]})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -50,8 +39,8 @@ class TestMerge:
 class TestSplit:
     """Test suite for PDF split endpoint."""
 
-    def upload_single(self, client, sample_pdf_content, pages=3):
-        """Upload a multi-page PDF for split testing."""
+    def upload_single(self, client, pro_headers, sample_pdf_content, pages=3):
+        """Upload a multi-page PDF for split testing with pro auth."""
         import fitz
 
         doc = fitz.open()
@@ -60,15 +49,12 @@ class TestSplit:
         content = doc.tobytes()
         doc.close()
 
-        resp = client.post(
-            "/pdfs/upload",
-            files={"file": ("multi.pdf", content, "application/pdf")},
-        )
-        return resp.json()["id"]
+        from tests.conftest import upload_pdf
+        return upload_pdf(client, pro_headers, content, filename="multi.pdf")
 
     def test_split_every_page(self, client, sample_pdf_content, pro_headers):
         """Should split a PDF into individual pages."""
-        doc_id = self.upload_single(client, sample_pdf_content, pages=3)
+        doc_id = self.upload_single(client, pro_headers, sample_pdf_content, pages=3)
 
         response = client.post(f"/pdfs/{doc_id}/split", headers=pro_headers, json={"mode": "every"})
         assert response.status_code == status.HTTP_200_OK
@@ -79,7 +65,7 @@ class TestSplit:
 
     def test_split_by_range(self, client, sample_pdf_content, pro_headers):
         """Should split a PDF by page ranges."""
-        doc_id = self.upload_single(client, sample_pdf_content, pages=5)
+        doc_id = self.upload_single(client, pro_headers, sample_pdf_content, pages=5)
 
         response = client.post(
             f"/pdfs/{doc_id}/split",
@@ -94,7 +80,7 @@ class TestSplit:
 
     def test_split_invalid_mode(self, client, sample_pdf_content, pro_headers):
         """Should reject split with invalid mode."""
-        doc_id = self.upload_single(client, sample_pdf_content, pages=3)
+        doc_id = self.upload_single(client, pro_headers, sample_pdf_content, pages=3)
 
         response = client.post(
             f"/pdfs/{doc_id}/split", headers=pro_headers, json={"mode": "invalid"}
@@ -103,7 +89,7 @@ class TestSplit:
 
     def test_split_missing_ranges(self, client, sample_pdf_content, pro_headers):
         """Should reject range mode without ranges."""
-        doc_id = self.upload_single(client, sample_pdf_content, pages=3)
+        doc_id = self.upload_single(client, pro_headers, sample_pdf_content, pages=3)
 
         response = client.post(
             f"/pdfs/{doc_id}/split", headers=pro_headers, json={"mode": "range"}
@@ -112,7 +98,7 @@ class TestSplit:
 
     def test_split_invalid_range(self, client, sample_pdf_content, pro_headers):
         """Should reject invalid page range."""
-        doc_id = self.upload_single(client, sample_pdf_content, pages=3)
+        doc_id = self.upload_single(client, pro_headers, sample_pdf_content, pages=3)
 
         response = client.post(
             f"/pdfs/{doc_id}/split",

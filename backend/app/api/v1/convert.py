@@ -76,7 +76,7 @@ def export_pdf(
     _check_license_for_format(current_user, db, fmt, EXPORT_FEATURE_MAP)
 
     try:
-        result, media_type, filename = service.export_pdf(pdf_id, fmt)
+        result, media_type, filename = service.export_pdf(pdf_id, current_user.id, fmt)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -116,7 +116,7 @@ def import_file(
     content = file.file.read()
 
     try:
-        pdf = service.import_file_to_pdf(file.filename, content)
+        pdf = service.import_file_to_pdf(file.filename, content, current_user.id)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -11,11 +11,12 @@ router = APIRouter(prefix="/pdfs", tags=["pdfs"])
 @router.get("/{pdf_id}/metadata", response_model=MetadataResponse)
 def get_pdf_metadata(
     pdf_id: str,
+    current_user: User = Depends(get_current_user),
     service: PdfService = Depends(get_pdf_service),
 ) -> MetadataResponse:
     """Get PDF metadata (title, author, subject, keywords)."""
     try:
-        meta = service.get_metadata(pdf_id)
+        meta = service.get_metadata(pdf_id, current_user.id)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -41,7 +42,7 @@ def update_pdf_metadata(
         )
 
     try:
-        pdf = service.update_metadata(pdf_id, updates)
+        pdf = service.update_metadata(pdf_id, current_user.id, updates)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

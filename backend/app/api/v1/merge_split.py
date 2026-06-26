@@ -28,7 +28,7 @@ def merge_pdfs(
         )
 
     try:
-        pdf = service.merge(req.pdf_ids)
+        pdf = service.merge(req.pdf_ids, current_user.id)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -59,7 +59,7 @@ def split_pdf(
                 detail="Ranges are required when mode is 'range'",
             )
         try:
-            results = service.split_by_ranges(pdf_id, req.ranges)
+            results = service.split_by_ranges(pdf_id, current_user.id, req.ranges)
         except ValueError as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -67,7 +67,7 @@ def split_pdf(
             )
     else:
         try:
-            results = service.split_every_page(pdf_id)
+            results = service.split_every_page(pdf_id, current_user.id)
         except ValueError as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
