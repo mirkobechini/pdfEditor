@@ -78,6 +78,25 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - react-native-web (valutabile, non deciso)
 - Annotazioni PDF (drawing, highlight, commenti — non menzionati)
 
+## Bug tracker
+
+### Risolti ✅
+
+- [x] **Dark text illegibile in dark mode su login/register** — Aggiunte classi `dark:text-*` a h1, label, input. (PR #66, issue #65)
+- [x] **Errori validazione Pydantic in inglese e raw JSON** — Custom exception handler backend + `ApiClient.extractError()` frontend. (PR #68, issue #67)
+- [x] **Dark mode toggle + language selector non accessibili su login/register** — Estratto `HeaderControls` condiviso, aggiunto header a login/register. (PR #70, issue #69)
+
+### In corso 🔄
+
+_nessuno_
+
+### Da risolvere ⏳
+
+1. [ ] **Limite dimensione upload non enforceato** — `MAX_UPLOAD_SIZE_MB=50` in config ma mai controllato
+2. [ ] **Lettura in memoria senza limiti** — `file.file.read()` carica tutto in RAM
+3. [ ] **Limite pagine** — PDF con troppe pagine esaurirebbe risorse
+4. [ ] **Validazione endpoint `/pdfs/import`** — Accetta TXT/PNG/JPG/GIF/BMP con validazione minima
+
 ## Feature future pianificate
 
 Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'ordine di implementazione è definito dalla priorità indicata.
@@ -92,14 +111,10 @@ Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'o
 
 ### Da implementare (in ordine)
 
-1. [ ] **UI autenticazione (login/register)** — Pagine `/login` e `/register` con form, JWT management, protezione route. API backend già pronte
-2. [ ] **Persistenza dark mode (localStorage)** — Salvataggio preferenza dark mode in localStorage invece di useState
-3. [ ] **Enforcement licenze (backend)** — Middleware/dependency `verify_feature_access()` per bloccare operazioni non consentite per tier
-4. [ ] **Allineamento modello BugReport al brief** — Aggiunta campi `platform`, `app_version`, `os_info` e refactoring BugReportService con repository pattern
-5. [ ] **Dashboard admin** — Pagina `/admin` per gestione utenti, licenze e bug report
-6. [ ] **Sostituzione I18nProvider custom con next-intl** — next-intl già installato ma inutilizzato
-7. [ ] **API upload protette da autenticazione** — Decisione e implementazione protezione endpoint PDF con JWT
-8. [ ] **PDF protetti da password** — Rilevamento automatico, modale richiesta password, gestione sessione
-9. [ ] **Undo/Redo per modifiche PDF** — Cronologia snapshot lato server con pulsanti toolbar
+1. [ ] **Dashboard admin** — Pagina `/admin` per gestione utenti, licenze e bug report
+2. [ ] **Sostituzione I18nProvider custom con next-intl** — next-intl già installato ma inutilizzato
+3. [ ] **API upload protette da autenticazione** — Decisione e implementazione protezione endpoint PDF con JWT
+4. [ ] **PDF protetti da password** — Rilevamento automatico, modale richiesta password, gestione sessione
+5. [ ] **Undo/Redo per modifiche PDF** — Cronologia snapshot lato server con pulsanti toolbar
 
 > **Nota:** Le feature di Fase 2-4 (cloud, sync, mobile, Tauri) sono elencate in "Cosa NON è in scope" e saranno pianificate dopo il completamento della Fase 1.
