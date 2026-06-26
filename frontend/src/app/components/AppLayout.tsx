@@ -34,6 +34,14 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
           <h1 className="text-lg font-bold">PdfEditor</h1>
         </div>
         <div className="flex items-center gap-3">
+          <HeaderControls />
+          <button
+            className="px-3 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600"
+            onClick={() => setBugReportOpen(true)}
+            title={t("bugReport.button")}
+          >
+            {t("bugReport.button")}
+          </button>
           {user && (
             <>
               <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">
@@ -48,14 +56,6 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
               </button>
             </>
           )}
-          <button
-            className="px-3 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600"
-            onClick={() => setBugReportOpen(true)}
-            title={t("bugReport.button")}
-          >
-            {t("bugReport.button")}
-          </button>
-          <HeaderControls />
         </div>
       </header>
 
