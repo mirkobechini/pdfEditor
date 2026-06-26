@@ -175,6 +175,7 @@ Se `architecture.mmd` non esiste ancora nel repository, generalo automaticamen
   - `fix:` correzione bug
   - `docs:` documentazione
   - `refactor:` refactoring senza nuove feature
+- Segui `AGENT_FLOW.md` per il flusso di sviluppo completo (branch, commit, PR, merge)
 
 ### Aggiornamento ADR
 
