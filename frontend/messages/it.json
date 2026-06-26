@@ -6,7 +6,8 @@
     "merge": "Unisci",
     "split": "Dividi",
     "reorder": "Riordina",
-    "remove": "Rimuovi"
+    "remove": "Rimuovi",
+    "currentFile": "(corrente)"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -62,7 +63,9 @@
     "cancel": "Annulla",
     "remove": "Rimuovi",
     "removing": "Rimozione in corso...",
-    "failed": "Rimozione fallita"
+    "failed": "Rimozione fallita",
+    "confirmDelete": "Sì, Elimina",
+    "confirmMessage": "Sei sicuro di voler rimuovere le pagine selezionate? Verrà creato un nuovo file PDF."
   },
   "bugReport": {
     "title": "Segnala un Bug",

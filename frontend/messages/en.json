@@ -6,7 +6,8 @@
     "merge": "Merge",
     "split": "Split",
     "reorder": "Reorder",
-    "remove": "Remove"
+    "remove": "Remove",
+    "currentFile": "(current)"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -62,7 +63,9 @@
     "cancel": "Cancel",
     "remove": "Remove",
     "removing": "Removing...",
-    "failed": "Remove failed"
+    "failed": "Remove failed",
+    "confirmDelete": "Yes, Delete",
+    "confirmMessage": "Are you sure you want to remove the selected pages? This will create a new PDF file."
   },
   "bugReport": {
     "title": "Report a Bug",

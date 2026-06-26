@@ -1,28 +1,38 @@
 "use client";
 
 import React from "react";
-import { PDFDocument } from "pdf-lib";
 import { useI18n } from "../lib/i18n";
 import { api, PdfDocument } from "../lib/api";
+import { downloadBlob } from "../lib/download";
 
 interface MergeDialogProps {
   open: boolean;
   onClose: () => void;
+  selectedId: string | null;
   onMergeComplete: (doc: PdfDocument) => void;
 }
 
-export default function MergeDialog({ open, onClose, onMergeComplete }: MergeDialogProps) {
+export default function MergeDialog({ open, onClose, selectedId, onMergeComplete }: MergeDialogProps) {
   const { t } = useI18n();
   const [files, setFiles] = React.useState<PdfDocument[]>([]);
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [merging, setMerging] = React.useState(false);
+  const [error, setError] = React.useState("");
 
   React.useEffect(() => {
     if (open) {
-      api.listPdfs().then((res) => setFiles(res.items));
-      setSelected(new Set());
+      api.listPdfs().then((res) => {
+        setFiles(res.items);
+        // Pre-select current PDF if applicable
+        if (selectedId) {
+          setSelected(new Set([selectedId]));
+        } else {
+          setSelected(new Set());
+        }
+      });
+      setError("");
     }
-  }, [open]);
+  }, [open, selectedId]);
 
   if (!open) return null;
 
@@ -38,27 +48,17 @@ export default function MergeDialog({ open, onClose, onMergeComplete }: MergeDia
   async function handleMerge() {
     if (selected.size < 2) return;
     setMerging(true);
+    setError("");
     try {
-      const selectedFiles = files.filter((f) => selected.has(f.id));
-      const blobs = await Promise.all(selectedFiles.map((f) => api.downloadPdf(f.id)));
-      const buffers = await Promise.all(blobs.map((b) => b.arrayBuffer()));
-
-      const mergedPdf = await PDFDocument.create();
-      for (const buffer of buffers) {
-        const pdf = await PDFDocument.load(buffer);
-        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
-      }
-
-      const mergedBytes = await mergedPdf.save();
-      const mergedBlob = new Blob([mergedBytes], { type: "application/pdf" });
-      const mergedFile = new File([mergedBlob], "merged.pdf", { type: "application/pdf" });
-      const doc = await api.uploadPdf(mergedFile);
-      onMergeComplete(doc);
+      const ids = Array.from(selected);
+      const result = await api.mergePdfs(ids);
+      // Download the resulting merged PDF
+      const blob = await api.downloadPdf(result.id);
+      downloadBlob(blob, result.original_filename);
+      onMergeComplete(result);
       onClose();
     } catch (err) {
-      console.error("Merge failed:", err);
-      alert(t("mergeDialog.failed") + ": " + err);
+      setError(t("mergeDialog.failed") + ": " + err);
     } finally {
       setMerging(false);
     }
@@ -79,7 +79,9 @@ export default function MergeDialog({ open, onClose, onMergeComplete }: MergeDia
           {files.map((f) => (
             <label
               key={f.id}
-              className="flex items-center gap-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+              className={`flex items-center gap-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer ${
+                selectedId === f.id ? "bg-blue-50 dark:bg-blue-900/20" : ""
+              }`}
             >
               <input
                 type="checkbox"
@@ -87,10 +89,15 @@ export default function MergeDialog({ open, onClose, onMergeComplete }: MergeDia
                 onChange={() => toggle(f.id)}
                 className="accent-blue-500"
               />
-              <span className="text-sm truncate">{f.original_filename}</span>
+              <span className="text-sm truncate flex-1">{f.original_filename}</span>
+              {selectedId === f.id && (
+                <span className="text-xs text-blue-500 font-medium">{t("app.currentFile")}</span>
+              )}
             </label>
           ))}
         </div>
+
+        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
 
         <div className="flex justify-end gap-2">
           <button
