@@ -17,6 +17,18 @@ vi.mock("../lib/i18n", () => ({
   }),
 }));
 
+// Mock matchMedia for HeaderControls dark mode
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })),
+});
+
 const mockRegister = vi.fn();
 
 beforeEach(() => {
