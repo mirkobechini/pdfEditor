@@ -97,10 +97,18 @@ def clean_storage():
     """Clean up storage directory after each test."""
     storage_dir = "storage/pdfs"
     os.makedirs(storage_dir, exist_ok=True)
+    snapshots_dir = "storage/snapshots"
     yield
     for f in os.listdir(storage_dir):
         if f != ".gitkeep":
             os.remove(os.path.join(storage_dir, f))
+    # Clean snapshot directories recursively
+    if os.path.isdir(snapshots_dir):
+        for root, dirs, files in os.walk(snapshots_dir, topdown=False):
+            for name in files:
+                os.remove(os.path.join(root, name))
+            for name in dirs:
+                os.rmdir(os.path.join(root, name))
 
 
 # ---------------------------------------------------------------------------
