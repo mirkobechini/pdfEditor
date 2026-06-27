@@ -59,7 +59,7 @@ export default function MergeDialog({ open, onClose, selectedId, onMergeComplete
       onMergeComplete(result);
       onClose();
     } catch (err) {
-      setError(t("failed") + ": " + err);
+      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
     } finally {
       setMerging(false);
     }
@@ -97,7 +97,7 @@ export default function MergeDialog({ open, onClose, selectedId, onMergeComplete
           ))}
         </div>
 
-        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+        {error && <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">{error}</div>}
 
         <div className="flex justify-end gap-2">
           <button
