@@ -9,6 +9,7 @@ import MergeDialog from "./components/MergeDialog";
 import SplitDialog from "./components/SplitDialog";
 import ReorderDialog from "./components/ReorderDialog";
 import RemoveDialog from "./components/RemoveDialog";
+import DeleteModal from "./components/DeleteModal";
 import { api, PdfDocument } from "./lib/api";
 import { useAuth } from "./lib/auth";
 
@@ -24,6 +25,8 @@ export default function Home() {
   const [splitOpen, setSplitOpen] = React.useState(false);
   const [reorderOpen, setReorderOpen] = React.useState(false);
   const [removeOpen, setRemoveOpen] = React.useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
+  const [fileToDelete, setFileToDelete] = React.useState<PdfDocument | null>(null);
   const [requiresPassword, setRequiresPassword] = React.useState(false);
   const [passwordError, setPasswordError] = React.useState<string | null>(null);
 
@@ -133,6 +136,27 @@ export default function Home() {
     }
   }
 
+  function handleDeleteClick(file: PdfDocument) {
+    setFileToDelete(file);
+    setDeleteModalOpen(true);
+  }
+
+  function handleDeleteModalClose() {
+    setDeleteModalOpen(false);
+    setFileToDelete(null);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!fileToDelete) return;
+    try {
+      await api.deletePdf(fileToDelete.id);
+      handleDelete(fileToDelete.id);
+    } catch {
+      console.error("Delete failed");
+    }
+    handleDeleteModalClose();
+  }
+
   return (
     <>
       <AppLayout
@@ -143,6 +167,7 @@ export default function Home() {
             onUpload={handleUpload}
             onDelete={handleDelete}
             onRename={() => { }}
+            onDeleteClick={handleDeleteClick}
           />
         }
         toolbar={
@@ -214,6 +239,12 @@ export default function Home() {
         selectedId={selectedId}
         selectedName={selectedName}
         totalPages={totalPages}
+      />
+      <DeleteModal
+        open={deleteModalOpen}
+        onClose={handleDeleteModalClose}
+        file={fileToDelete}
+        onConfirm={handleDeleteConfirm}
       />
     </>
   );
