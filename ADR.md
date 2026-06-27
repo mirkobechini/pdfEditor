@@ -100,6 +100,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - [x] **Messaggi errore non formattati** — Corretto doppio prefisso `"Error: "` e migliorato stile error container in Split/Merge/Reorder/Remove dialog. (PR #110, issue #109)
 - [x] **Sostituire `<img>` con `<Image />` di next/image** — Sostituiti tutti i tag `<img>` con `<Image>` da `next/image` (con `unoptimized` per data URL) in DeleteModal, SplitDialog, ReorderDialog, RemoveDialog. (PR #112, issue #111)
 - [x] **Split: linee di separazione tra pagine** — Ridisegnato SplitDialog con linee di separazione cliccabili tra le pagine invece di checkbox. (PR #114, issue #113)
+- [x] **Super admin protetto da revoca** — Aggiunto `SUPER_ADMIN_EMAIL` in config, protetto repository/endpoint/CLI. Seed automatico allo startup. CLI tool `backend/cli.py`. (PR #116, issue #115)
 
 ### In corso 🔄
 
