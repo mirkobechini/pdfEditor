@@ -19,32 +19,13 @@ interface PageThumbnail {
   dataUrl: string;
 }
 
-export function parsePageRanges(input: string, maxPages: number): number[] {
-  const pages = new Set<number>();
-  const parts = input.split(",");
-  for (const part of parts) {
-    const trimmed = part.trim();
-    if (!trimmed) continue;
-    const range = trimmed.split("-").map((s) => parseInt(s.trim(), 10));
-    if (range.length === 1 && !isNaN(range[0])) {
-      if (range[0] >= 1 && range[0] <= maxPages) pages.add(range[0]);
-    } else if (range.length === 2 && !isNaN(range[0]) && !isNaN(range[1])) {
-      const start = Math.max(1, range[0]);
-      const end = Math.min(maxPages, range[1]);
-      for (let i = start; i <= end; i++) pages.add(i);
-    }
-  }
-  return Array.from(pages).sort((a, b) => a - b);
-}
-
 export default function SplitDialog({ open, onClose, selectedId, selectedName, totalPages }: SplitDialogProps) {
   const t = useTranslations("splitDialog");
-  const [pageInput, setPageInput] = React.useState("");
   const [splitting, setSplitting] = React.useState(false);
   const [error, setError] = React.useState("");
   const [thumbnails, setThumbnails] = React.useState<PageThumbnail[]>([]);
   const [loading, setLoading] = React.useState(false);
-  const [selectedPages, setSelectedPages] = React.useState<Set<number>>(new Set());
+  const [cuts, setCuts] = React.useState<Set<number>>(new Set());
   const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
 
   // Load PDF.js on mount
@@ -73,9 +54,8 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
   // Initialize when dialog opens
   React.useEffect(() => {
     if (open) {
-      setPageInput("");
       setError("");
-      setSelectedPages(new Set());
+      setCuts(new Set());
       setThumbnails([]);
       if (selectedId && pdfJsLoaded) {
         loadThumbnails();
@@ -116,31 +96,44 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
     }
   }
 
-  function togglePage(pageNum: number) {
-    setSelectedPages((prev) => {
+  function toggleCut(afterPage: number) {
+    setCuts((prev) => {
       const next = new Set(prev);
-      if (next.has(pageNum)) {
-        next.delete(pageNum);
+      if (next.has(afterPage)) {
+        next.delete(afterPage);
       } else {
-        next.add(pageNum);
+        next.add(afterPage);
       }
-      // Sync with text input
-      const sorted = Array.from(next).sort((a, b) => a - b);
-      setPageInput(sorted.join(","));
       return next;
     });
   }
 
-  const parsedPages = pageInput ? parsePageRanges(pageInput, totalPages) : [];
+  function getPreviewSections(): { start: number; end: number }[] {
+    if (cuts.size === 0) return [{ start: 1, end: totalPages }];
+    const sortedCuts = Array.from(cuts).sort((a, b) => a - b);
+    const sections: { start: number; end: number }[] = [];
+    let start = 1;
+    for (const cut of sortedCuts) {
+      sections.push({ start, end: cut });
+      start = cut + 1;
+    }
+    sections.push({ start, end: totalPages });
+    return sections;
+  }
+
+  function getRangesFromCuts(): string[] {
+    return getPreviewSections().map((s) =>
+      s.start === s.end ? `${s.start}` : `${s.start}-${s.end}`,
+    );
+  }
 
   async function handleSplit() {
-    if (!selectedId || parsedPages.length === 0) return;
+    if (!selectedId) return;
+    const ranges = getRangesFromCuts();
     setSplitting(true);
     setError("");
     try {
-      const result = await api.splitPdf(selectedId, "range", [
-        parsedPages.join(","),
-      ]);
+      const result = await api.splitPdf(selectedId, "range", ranges);
       const docId = result.items?.[0]?.id;
       if (docId) {
         const blob = await api.downloadPdf(docId);
@@ -156,6 +149,8 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
 
   if (!open) return null;
 
+  const sections = getPreviewSections();
+
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={onClose}>
       <div
@@ -168,7 +163,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
           {selectedName} ({totalPages} {t("pages")})
         </p>
 
-        {/* Thumbnails grid */}
+        {/* Thumbnails row with separators */}
         {loading && (
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent" data-testid="loading-spinner"></div>
@@ -177,18 +172,11 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
 
         {!loading && thumbnails.length > 0 && (
           <>
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2 mb-4 overflow-y-auto p-1">
-              {thumbnails.map((thumb) => {
-                const isSelected = selectedPages.has(thumb.pageNum);
-                return (
-                  <div
-                    key={thumb.pageNum}
-                    className={`relative border rounded overflow-hidden cursor-pointer transition-all ${isSelected
-                        ? "border-blue-500 ring-2 ring-blue-400"
-                        : "border-gray-200 dark:border-gray-600 hover:border-blue-400"
-                      }`}
-                    onClick={() => togglePage(thumb.pageNum)}
-                  >
+            <div className="flex gap-0 mb-4 overflow-x-auto pb-2 items-stretch">
+              {thumbnails.map((thumb, idx) => (
+                <React.Fragment key={thumb.pageNum}>
+                  {/* Page thumbnail card */}
+                  <div className="flex-shrink-0 w-20 border border-gray-200 dark:border-gray-600 rounded overflow-hidden">
                     <Image
                       src={thumb.dataUrl}
                       alt={t("pageThumbnail", { page: thumb.pageNum })}
@@ -197,44 +185,51 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
                       className="w-full h-auto"
                       unoptimized
                     />
-                    <div className={`absolute top-1 left-1 text-xs px-1.5 py-0.5 rounded ${isSelected
-                        ? "bg-blue-500 text-white"
-                        : "bg-black/60 text-white"
-                      }`}>
+                    <div className="text-center text-xs py-0.5 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                       {thumb.pageNum}
                     </div>
-                    {isSelected && (
-                      <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
-                        <span className="text-white text-lg font-bold bg-blue-500 rounded-full w-6 h-6 flex items-center justify-center">✓</span>
-                      </div>
-                    )}
                   </div>
-                );
-              })}
+
+                  {/* Separator line (not after last page) */}
+                  {idx < thumbnails.length - 1 && (
+                    <div className="flex-shrink-0 flex items-stretch px-0.5">
+                      <button
+                        onClick={() => toggleCut(thumb.pageNum)}
+                        className={`w-3 rounded transition-all cursor-pointer ${cuts.has(thumb.pageNum)
+                            ? "bg-blue-500 shadow-md shadow-blue-300 dark:shadow-blue-800"
+                            : "bg-gray-200 dark:bg-gray-600 hover:bg-blue-300 dark:hover:bg-blue-700"
+                          }`}
+                        title={cuts.has(thumb.pageNum) ? "Rimuovi separazione" : "Aggiungi separazione"}
+                      />
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
             </div>
 
-            {/* Selected count and text input */}
+            {/* Preview: resulting document groups */}
             <div className="mb-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                {selectedPages.size > 0
-                  ? `${selectedPages.size} ${t("pagesSelected")}`
-                  : t("clickToSelect")}
+              <p className="text-xs font-medium mb-2 text-gray-500 dark:text-gray-400">
+                Documenti risultanti:
               </p>
-              <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-gray-400">
-                {t("orTypeRange")}
-              </label>
-              <input
-                type="text"
-                value={pageInput}
-                onChange={(e) => {
-                  setPageInput(e.target.value);
-                  // Sync selected pages from text input
-                  const pages = parsePageRanges(e.target.value, totalPages);
-                  setSelectedPages(new Set(pages));
-                }}
-                placeholder={t("pagePlaceholder")}
-                className="w-full text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
-              />
+              <div className="flex flex-wrap gap-2">
+                {sections.map((sec, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1 text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-2 py-1 rounded"
+                  >
+                    {idx > 0 && <span className="text-gray-400 mx-0.5">|</span>}
+                    {sec.start === sec.end
+                      ? `${t("page")} ${sec.start}`
+                      : `${t("page")} ${sec.start}-${sec.end}`}
+                  </span>
+                ))}
+              </div>
+              {cuts.size === 0 && (
+                <p className="text-xs text-gray-400 mt-1">
+                  Clicca tra le pagine per aggiungere una separazione
+                </p>
+              )}
             </div>
           </>
         )}
@@ -250,7 +245,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
           </button>
           <button
             className="px-4 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
-            disabled={!selectedId || parsedPages.length === 0 || splitting}
+            disabled={!selectedId || splitting}
             onClick={handleSplit}
           >
             {splitting ? t("splitting") : t("split")}
