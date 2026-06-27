@@ -13,7 +13,7 @@ interface DeleteModalProps {
 }
 
 export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteModalProps) {
-  const t = useTranslations("app");
+  const t = useTranslations("deleteModal");
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
@@ -75,12 +75,12 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
           <h2 id="delete-modal-title" className="text-lg font-semibold">
-            {t("deleteModal.title")}
+            {t("title")}
           </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none"
-            aria-label={t("deleteModal.close")}
+            aria-label={t("close")}
           >
             ×
           </button>
@@ -91,17 +91,17 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
           {/* File info */}
           <div className="mb-4">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-              {t("deleteModal.confirmMessage")} <strong>{file.original_filename}</strong>?
+              {t("confirmMessage")} <strong>{file.original_filename}</strong>?
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-500">
-              {t("deleteModal.pageCount", { count: file.page_count })}
+              {t("pageCount", { count: file.page_count })}
             </p>
           </div>
 
           {/* Preview */}
           <div className="mb-4">
             <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-              {t("deleteModal.preview")}
+              {t("preview")}
             </div>
             <div className="border rounded overflow-hidden bg-gray-100 dark:bg-gray-700 aspect-[1.4]">
               {loadingPreview ? (
@@ -111,7 +111,7 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
               ) : previewUrl ? (
                 <img
                   src={previewUrl}
-                  alt={t("deleteModal.previewAlt", { filename: file.original_filename })}
+                  alt={t("previewAlt", { filename: file.original_filename })}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -124,7 +124,7 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
 
           {/* Warning */}
           <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded">
-            {t("deleteModal.warning")}
+            {t("warning")}
           </div>
         </div>
 
@@ -135,14 +135,14 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
             disabled={deleting}
             className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50"
           >
-            {t("deleteModal.cancel")}
+            {t("cancel")}
           </button>
           <button
             onClick={handleConfirm}
             disabled={deleting}
             className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
           >
-            {deleting ? t("deleteModal.deleting") : t("deleteModal.confirm")}
+            {deleting ? t("deleting") : t("confirm")}
           </button>
         </div>
       </div>
