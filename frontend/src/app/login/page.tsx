@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
 import HeaderControls from "../components/HeaderControls";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
@@ -78,7 +79,13 @@ export default function LoginPage() {
               {loading ? t("loggingIn") : t("loginButton")}
             </button>
           </form>
+          <div className="mt-4 mb-4 flex items-center gap-2">
+            <hr className="flex-1 border-gray-300 dark:border-gray-600" />
+            <span className="text-xs text-gray-400">or</span>
+            <hr className="flex-1 border-gray-300 dark:border-gray-600" />
+          </div>
 
+          <GoogleLoginButton />
           <p className="mt-4 text-sm text-center text-gray-500 dark:text-gray-400">
             {t("noAccount")}{" "}
             <a href="/register" className="text-blue-500 hover:underline">
