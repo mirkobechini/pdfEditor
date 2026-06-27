@@ -12,7 +12,7 @@ const messages: Record<Locale, typeof en> = { en, it };
 const LocaleCtx = React.createContext<{
   locale: Locale;
   setLocale: (locale: Locale) => void;
-}>({ locale: "it", setLocale: () => {} });
+}>({ locale: "it", setLocale: () => { } });
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = React.useState<Locale>("it");

@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { useI18n } from "../lib/i18n";
+import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
 import { api, AdminUser, BugReport } from "../lib/api";
 import HeaderControls from "../components/HeaderControls";
@@ -82,7 +82,7 @@ export default function AdminPage() {
 }
 
 function UsersTable() {
-    const { t } = useI18n();
+    const t = useTranslations("admin");
     const [users, setUsers] = React.useState<AdminUser[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [editingId, setEditingId] = React.useState<string | null>(null);
@@ -209,7 +209,7 @@ function UsersTable() {
 }
 
 function BugReportsTable() {
-    const { t } = useI18n();
+    const t = useTranslations("admin");
     const [bugs, setBugs] = React.useState<BugReport[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [statusFilter, setStatusFilter] = React.useState<string>("");
