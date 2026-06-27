@@ -103,6 +103,8 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - [x] **Super admin protetto da revoca** — Aggiunto `SUPER_ADMIN_EMAIL` in config, protetto repository/endpoint/CLI. Seed automatico allo startup. CLI tool `backend/cli.py`. (PR #116, issue #115)
 - [x] **Bottone SSO Google in login/register** — Installato `@react-oauth/google`, aggiunto bottone Google a login e register pages, `GoogleLoginButton` componente condiviso. (PR #118, issue #117)
 
+> **ℹ️ Setup richiesto:** Creare un OAuth Client ID su [Google Cloud Console](https://console.cloud.google.com/apis/credentials) e impostarlo in `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local` e `GOOGLE_CLIENT_ID` in `backend/.env`.
+
 ### In corso 🔄
 
 _nessuno_
