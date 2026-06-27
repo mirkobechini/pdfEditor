@@ -3,15 +3,6 @@ import { render, screen } from "@testing-library/react";
 import RemoveDialog from "./RemoveDialog";
 import { api } from "../lib/api";
 
-// Mock i18n
-vi.mock("../lib/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: "it" as const,
-    setLocale: vi.fn(),
-  }),
-}));
-
 // Mock api
 vi.mock("../lib/api", () => ({
   api: {
@@ -38,7 +29,7 @@ describe("RemoveDialog", () => {
     render(
       <RemoveDialog open={false} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
-    expect(screen.queryByText("removeDialog.title")).not.toBeInTheDocument();
+    expect(screen.queryByText("title")).not.toBeInTheDocument();
   });
 
   it("renders dialog with file info when open is true", () => {
@@ -48,7 +39,7 @@ describe("RemoveDialog", () => {
       <RemoveDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
-    expect(screen.getByText("removeDialog.title")).toBeInTheDocument();
+    expect(screen.getByText("title")).toBeInTheDocument();
     expect(screen.getByText(/test\.pdf/)).toBeInTheDocument();
   });
 
@@ -69,7 +60,7 @@ describe("RemoveDialog", () => {
       <RemoveDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
-    const removeBtn = screen.getByText("removeDialog.remove");
+    const removeBtn = screen.getByText("remove");
     expect(removeBtn).toBeDisabled();
   });
 
@@ -80,7 +71,7 @@ describe("RemoveDialog", () => {
       <RemoveDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
-    expect(screen.getByText(/removeDialog\.pagesRemaining/)).toBeInTheDocument();
+    expect(screen.getByText(/pagesRemaining/)).toBeInTheDocument();
   });
 
   it("shows error message when load fails", async () => {
@@ -92,7 +83,7 @@ describe("RemoveDialog", () => {
 
     // Wait for the fallback to render (no error message shown on load failure, just no thumbnails)
     // The dialog should still render with Remove button disabled
-    const removeBtn = await screen.findByText("removeDialog.remove");
+    const removeBtn = await screen.findByText("remove");
     expect(removeBtn).toBeDisabled();
   });
 });
