@@ -132,6 +132,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [x] **Uniform license checking** — Estratta `check_feature_access()` condivisa in `deps.py`, rimossa duplicata `_check_license_for_format()` in `convert.py`. Completata (PR #92, issue #90)
 - [x] **Sostituzione I18nProvider custom con next-intl** — Rimosso provider i18n custom, sostituito con `NextIntlClientProvider`. Tutti i componenti migrati a `useTranslations()`. Completata (PR #94, issue #93)
 - [x] **PDF protetti da password** — Rilevamento automatico all'upload via PyMuPDF, endpoint `/pdfs/{id}/unlock`, cache password in memoria, modale UI in PdfViewer. Completata (PR #96, issue #95)
+- [x] **Undo/Redo per modifiche PDF** — Snapshot prima di ogni modifica, max 10 per PDF, stack undo/redo separati, pulsanti ↩↪ con Ctrl+Z/Ctrl+Shift+Z. Completata (PR #98, issue #97)
 
 ### Feature minori da implementare (in ordine)
 

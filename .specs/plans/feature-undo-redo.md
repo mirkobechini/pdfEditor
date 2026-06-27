@@ -24,4 +24,6 @@ Implementare cronologia undo/redo lato server con snapshot del PDF prima di ogni
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+**Completata il:** 2026-06-27
+**Note:** Snapshot storage in `storage.py` con prune a max 10. `_create_snapshot()` chiamato in split, reorder, remove-pages, replace-text, edit-metadata. Due stack undo/redo separati. Pulsanti ↩↪ con Ctrl+Z/Ctrl+Shift+Z. 193 test passanti. (PR #98, issue #97)
