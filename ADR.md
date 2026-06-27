@@ -89,6 +89,11 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - [x] **Limite dimensione upload non enforceato** — Enforceato `MAX_UPLOAD_SIZE_MB=50` prima di leggere in RAM. (PR #86, issue #85)
 - [x] **Lettura in memoria senza limiti** — Controllo dimensione prima di `file.file.read()`. (PR #86, issue #85)
 - [x] **Limite pagine** — Aggiunto `MAX_PAGE_COUNT=500` enforceato in `PdfService.upload()`. (PR #86, issue #85)
+- [x] **DeleteModal: chiavi i18n mancanti** — Aggiunta sezione `deleteModal` a `en.json` e `it.json`. (PR #102, issue #101)
+- [x] **MISSING_MESSAGE: splitDialog.splitDialog.pageThumbnail** — Corretta chiave annidata in SplitDialog. (PR #102, issue #101)
+- [x] **MISSING_MESSAGE: reorderDialog.reorderDialog.pageThumbnail** — Corretta chiave annidata in ReorderDialog. (PR #102, issue #101)
+- [x] **MISSING_MESSAGE: removeDialog.removeDialog.pageThumbnail** — Corretta chiave annidata in RemoveDialog. (PR #102, issue #101)
+- [x] **DeleteModal: sidebar.deleteFailed reference** — Corretto riferimento a chiave sbagliata. (PR #102, issue #101)
 
 ### In corso 🔄
 
@@ -97,16 +102,12 @@ _nessuno_
 ### Da risolvere ⏳
 
 1. [ ] **Validazione endpoint `/pdfs/import`** — Accetta TXT/PNG/JPG/GIF/BMP con validazione minima
-2. [ ] **DeleteModal: chiavi i18n mancanti** — `deleteModal.warning` e altre chiavi non presenti nei file di traduzione, causano errore `MISSING_MESSAGE: Could not resolve 'deleteModal'`. Aggiungere tutte le chiavi mancanti a `en.json` e `it.json`.
 3. [ ] **DeleteModal posizionato nella sidebar invece che al centro** — Il modale di conferma eliminazione si apre all'interno della sidebar invece che come overlay centrato sulla schermata.
 4. [ ] **Cancellazione PDF fallita** — L'operazione di delete PDF restituisce errore. Diagnosticare e fixare l'endpoint backend o la chiamata API.
 5. [ ] **Merge dialog: impossibile selezionare secondo file** — La UI del merge permette solo di selezionare/deselezionare il PDF corrente con una checkbox (che dovrebbe essere sempre selezionato di default senza opzione di rimozione), ma non offre un selettore per scegliere un secondo PDF da unire.
 6. [ ] **Messaggi errore non formattati** — Errori come "divisione fallita" vengono mostrati raw, senza formattazione adeguata. Migliorare la presentazione degli errori API.
 7. [ ] **Split: linee di separazione tra pagine** — Nello split, l'utente vuole poter inserire linee divisorie tra le pagine per separarle, invece di selezionare singole pagine da checkbox.
 8. [ ] **Come impostare un account come admin?** — Manca un modo per promuovere un utente a ruolo admin (via CLI/seed/endpoint). Documentare o implementare.
-9. [ ] **MISSING_MESSAGE: splitDialog.splitDialog.pageThumbnail** — Chiave i18n annidata erroneamente (`splitDialog.splitDialog.*`) in `SplitDialog`. Correggere la chiave nei file di traduzione.
-10. [ ] **MISSING_MESSAGE: reorderDialog.reorderDialog.pageThumbnail** — Chiave i18n annidata erroneamente (`reorderDialog.reorderDialog.*`) in `ReorderDialog`. Correggere la chiave nei file di traduzione.
-11. [ ] **MISSING_MESSAGE: removeDialog.removeDialog.pageThumbnail** — Chiave i18n annidata erroneamente (`removeDialog.removeDialog.*`) in `RemoveDialog`. Correggere la chiave nei file di traduzione.
 12. [ ] **"PDF not found" su caricamento thumbnail** — Errore `ApiClient.downloadPdf` restituisce "PDF not found" durante `loadThumbnails`. Investigare causa (file eliminato? race condition?).
 13. [ ] **"Nothing to redo / Nothing to undo" — messaggi raw** — I messaggi "Nothing to redo" e "Nothing to undo" vengono stampati in console come errori. Andrebbero gestiti silenziosamente (nessun undo/redo disponibile è un caso normale, non un errore).
 14. [ ] **Sostituire `<img>` con `<Image />` di next/image** — Usare `<img>` può causare LCP più lento e bandwidth maggiore. Rivedere tutti i file del frontend che usano il tag `<img>` e sostituire con `<Image />` da `next/image` o un custom image loader. Vedi: https://nextjs.org/docs/messages/no-img-element
