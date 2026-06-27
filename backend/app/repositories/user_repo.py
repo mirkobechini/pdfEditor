@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.license import LicenseFeature
 from app.models.user import User
 
@@ -38,6 +39,9 @@ class UserRepository:
         user = self.get_by_id(user_id)
         if not user:
             return None
+        # Super admin cannot be demoted
+        if user.email == settings.SUPER_ADMIN_EMAIL and not is_admin:
+            raise ValueError("Cannot revoke super admin privileges")
         user.is_admin = is_admin
         self.db.flush()
         self.db.refresh(user)
