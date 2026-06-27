@@ -7,7 +7,12 @@
     "split": "Dividi",
     "reorder": "Riordina",
     "remove": "Rimuovi",
-    "currentFile": "(corrente)"
+    "currentFile": "(corrente)",
+    "passwordRequired": "Questo PDF è protetto da password",
+    "passwordPrompt": "Inserisci la password per visualizzare questo PDF",
+    "passwordPlaceholder": "Inserisci password",
+    "passwordInvalid": "Password errata. Riprova.",
+    "unlock": "Sblocca"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",

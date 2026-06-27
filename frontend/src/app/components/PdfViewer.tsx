@@ -12,6 +12,9 @@ interface PdfViewerProps {
   zoom: number;
   onZoomChange: (zoom: number) => void;
   onFileDrop?: (file: File) => void;
+  requiresPassword?: boolean;
+  onUnlock?: (password: string) => Promise<void>;
+  passwordError?: string | null;
 }
 
 export default function PdfViewer({
@@ -23,6 +26,9 @@ export default function PdfViewer({
   zoom,
   onZoomChange,
   onFileDrop,
+  requiresPassword,
+  onUnlock,
+  passwordError,
 }: PdfViewerProps) {
   const t = useTranslations("app");
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -31,6 +37,8 @@ export default function PdfViewer({
   const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
   const [loadVersion, setLoadVersion] = React.useState(0);
   const [dragOver, setDragOver] = React.useState(false);
+  const [password, setPassword] = React.useState("");
+  const [unlocking, setUnlocking] = React.useState(false);
   const pdfDocRef = React.useRef<any>(null);
   const renderTaskRef = React.useRef<any>(null);
 
@@ -125,6 +133,51 @@ export default function PdfViewer({
     };
     renderPage();
   }, [currentPage, zoom, loadVersion]);
+
+  if (requiresPassword) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8">
+        <div className="text-6xl mb-4">🔒</div>
+        <h3 className="text-lg font-semibold mb-2">{t("passwordRequired")}</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">
+          {t("passwordPrompt")}
+        </p>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (password.trim() && onUnlock) {
+              setUnlocking(true);
+              try {
+                await onUnlock(password.trim());
+              } finally {
+                setUnlocking(false);
+              }
+            }
+          }}
+          className="w-full max-w-sm flex flex-col gap-3"
+        >
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder={t("passwordPlaceholder")}
+            autoFocus
+          />
+          {passwordError && (
+            <p className="text-sm text-red-500">{passwordError}</p>
+          )}
+          <button
+            type="submit"
+            className="w-full py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 font-medium"
+            disabled={unlocking || !password.trim()}
+          >
+            {unlocking ? t("rendering") : t("unlock")}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   if (!fileUrl) {
     return (

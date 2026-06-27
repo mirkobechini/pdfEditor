@@ -13,6 +13,7 @@ from app.api.v1.metadata import router as metadata_router
 from app.api.v1.merge_split import router as merge_split_router
 from app.api.v1.reorder import router as reorder_router
 from app.api.v1.text import router as text_router
+from app.api.v1.unlock import router as unlock_router
 from app.api.v1.upload import router as pdf_router
 from app.core.config import settings
 from app.core.database import Base, engine
@@ -121,3 +122,4 @@ app.include_router(metadata_router)
 app.include_router(convert_router)
 app.include_router(reorder_router)
 app.include_router(text_router)
+app.include_router(unlock_router)

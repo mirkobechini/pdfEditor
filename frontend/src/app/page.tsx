@@ -24,6 +24,8 @@ export default function Home() {
   const [splitOpen, setSplitOpen] = React.useState(false);
   const [reorderOpen, setReorderOpen] = React.useState(false);
   const [removeOpen, setRemoveOpen] = React.useState(false);
+  const [requiresPassword, setRequiresPassword] = React.useState(false);
+  const [passwordError, setPasswordError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!loading && !user) {
@@ -42,15 +44,41 @@ export default function Home() {
   async function handleSelect(id: string) {
     if (id === selectedId) return;
     setSelectedId(id);
+    setPasswordError(null);
     try {
       const doc = await api.getPdf(id);
       setSelectedName(doc.original_filename);
+
+      if (doc.is_password_protected) {
+        setRequiresPassword(true);
+        setFileUrl(null);
+        return;
+      }
+
+      setRequiresPassword(false);
       const blob = await api.downloadPdf(id);
       const url = URL.createObjectURL(blob);
       if (fileUrl) URL.revokeObjectURL(fileUrl);
       setFileUrl(url);
     } catch (err) {
       console.error("Failed to load PDF:", err);
+    }
+  }
+
+  async function handleUnlock(password: string) {
+    if (!selectedId) return;
+    setPasswordError(null);
+    try {
+      await api.unlockPdf(selectedId, password);
+      setRequiresPassword(false);
+      // Now download the unlocked PDF
+      const blob = await api.downloadPdf(selectedId);
+      const url = URL.createObjectURL(blob);
+      if (fileUrl) URL.revokeObjectURL(fileUrl);
+      setFileUrl(url);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Incorrect password";
+      setPasswordError(message);
     }
   }
 
@@ -63,6 +91,8 @@ export default function Home() {
     if (selectedId === id) {
       setSelectedId(null);
       setSelectedName("");
+      setRequiresPassword(false);
+      setPasswordError(null);
       if (fileUrl) {
         URL.revokeObjectURL(fileUrl);
         setFileUrl(null);
@@ -81,7 +111,7 @@ export default function Home() {
             onSelect={handleSelect}
             onUpload={handleUpload}
             onDelete={handleDelete}
-            onRename={() => {}}
+            onRename={() => { }}
           />
         }
         toolbar={
@@ -95,7 +125,7 @@ export default function Home() {
             onSplit={() => setSplitOpen(true)}
             onReorder={() => setReorderOpen(true)}
             onRemovePages={() => setRemoveOpen(true)}
-            onReplaceText={() => {}}
+            onReplaceText={() => { }}
           />
         }
         viewer={
@@ -107,6 +137,9 @@ export default function Home() {
             onTotalPagesChange={setTotalPages}
             zoom={zoom}
             onZoomChange={setZoom}
+            requiresPassword={requiresPassword}
+            passwordError={passwordError}
+            onUnlock={handleUnlock}
             onFileDrop={async (file) => {
               try {
                 const doc = await api.uploadPdf(file);
