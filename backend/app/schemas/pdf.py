@@ -14,8 +14,14 @@ class PdfResponse(BaseModel):
     page_count: int
     title: str | None = None
     author: str | None = None
+    is_password_protected: bool = False
     created_at: datetime
     updated_at: datetime
+
+
+class UnlockRequest(BaseModel):
+    """Schema for unlocking a password-protected PDF."""
+    password: str
 
 
 class PdfListResponse(BaseModel):
