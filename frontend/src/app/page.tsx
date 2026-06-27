@@ -27,6 +27,7 @@ export default function Home() {
   const [removeOpen, setRemoveOpen] = React.useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [fileToDelete, setFileToDelete] = React.useState<PdfDocument | null>(null);
+  const [sidebarRefreshKey, setSidebarRefreshKey] = React.useState(0);
   const [requiresPassword, setRequiresPassword] = React.useState(false);
   const [passwordError, setPasswordError] = React.useState<string | null>(null);
 
@@ -151,6 +152,7 @@ export default function Home() {
     try {
       await api.deletePdf(fileToDelete.id);
       handleDelete(fileToDelete.id);
+      setSidebarRefreshKey((k) => k + 1);
     } catch {
       console.error("Delete failed");
     }
@@ -168,6 +170,7 @@ export default function Home() {
             onDelete={handleDelete}
             onRename={() => { }}
             onDeleteClick={handleDeleteClick}
+            refreshKey={sidebarRefreshKey}
           />
         }
         toolbar={

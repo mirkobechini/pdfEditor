@@ -11,9 +11,10 @@ interface SidebarProps {
   onDelete: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onDeleteClick: (file: PdfDocument) => void;
+  refreshKey?: number;
 }
 
-export default function Sidebar({ selectedId, onSelect, onUpload, onDelete, onDeleteClick }: SidebarProps) {
+export default function Sidebar({ selectedId, onSelect, onUpload, onDelete, onDeleteClick, refreshKey }: SidebarProps) {
   const t = useTranslations("sidebar");
   const [files, setFiles] = React.useState<PdfDocument[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -21,10 +22,10 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete, onDe
   const [renameId, setRenameId] = React.useState<string | null>(null);
   const [renameValue, setRenameValue] = React.useState("");
 
-  // Load files on mount
+  // Load files on mount and when refreshKey changes
   React.useEffect(() => {
     loadFiles();
-  }, []);
+  }, [refreshKey]);
 
   async function loadFiles() {
     setLoading(true);
