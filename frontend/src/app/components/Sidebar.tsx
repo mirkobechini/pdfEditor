@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useI18n } from "../lib/i18n";
+import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
 import DeleteModal from "./DeleteModal";
 
@@ -14,7 +14,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: SidebarProps) {
-  const { t } = useI18n();
+  const t = useTranslations("sidebar");
   const [files, setFiles] = React.useState<PdfDocument[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [dragOver, setDragOver] = React.useState(false);
@@ -42,7 +42,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
 
   async function handleUpload(file: File) {
     if (!file.name.toLowerCase().endsWith(".pdf")) {
-      alert(t("sidebar.uploadOnlyPdf"));
+      alert(t("uploadOnlyPdf"));
       return;
     }
     try {
@@ -51,7 +51,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
       onUpload(doc);
       onSelect(doc.id);
     } catch (err) {
-      alert(t("sidebar.uploadFailed") + ": " + err);
+      alert(t("uploadFailed") + ": " + err);
     }
   }
 
@@ -72,7 +72,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
       setFiles((prev) => prev.filter((f) => f.id !== fileToDelete.id));
       onDelete(fileToDelete.id);
     } catch {
-      alert(t("sidebar.deleteFailed"));
+      alert(t("deleteFailed"));
     }
     closeDeleteModal();
   }
@@ -89,11 +89,10 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
     <div className="flex flex-col h-full">
       {/* Upload area */}
       <div
-        className={`m-3 p-4 border-2 border-dashed rounded-lg text-center text-sm cursor-pointer transition-colors ${
-          dragOver
-            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-            : "border-gray-300 dark:border-gray-600 hover:border-blue-400"
-        }`}
+        className={`m-3 p-4 border-2 border-dashed rounded-lg text-center text-sm cursor-pointer transition-colors ${dragOver
+          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+          : "border-gray-300 dark:border-gray-600 hover:border-blue-400"
+          }`}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
@@ -110,21 +109,20 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
           }}
         />
         <div className="text-2xl mb-1">📄</div>
-        <div className="text-gray-500 dark:text-gray-400">{t("sidebar.dropHere")}</div>
+        <div className="text-gray-500 dark:text-gray-400">{t("dropHere")}</div>
       </div>
 
       {/* File list */}
       <div className="flex-1 overflow-y-auto px-3 pb-3">
-        {loading && <div className="text-center text-sm text-gray-400">{t("sidebar.loading")}</div>}
+        {loading && <div className="text-center text-sm text-gray-400">{t("loading")}</div>}
         {!loading && files.length === 0 && (
-          <div className="text-center text-sm text-gray-400 mt-8">{t("sidebar.noPdfs")}</div>
+          <div className="text-center text-sm text-gray-400 mt-8">{t("noPdfs")}</div>
         )}
         {files.map((file) => (
           <div
             key={file.id}
-            className={`p-2 mb-1 rounded cursor-pointer flex items-center justify-between text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
-              selectedId === file.id ? "bg-blue-100 dark:bg-blue-900/30" : ""
-            }`}
+            className={`p-2 mb-1 rounded cursor-pointer flex items-center justify-between text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedId === file.id ? "bg-blue-100 dark:bg-blue-900/30" : ""
+              }`}
             onClick={() => onSelect(file.id)}
           >
             {renameId === file.id ? (
@@ -149,7 +147,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
                   setRenameId(file.id);
                   setRenameValue(file.original_filename);
                 }}
-                title={t("sidebar.rename")}
+                title={t("rename")}
               >
                 ✏️
               </button>
@@ -159,7 +157,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
                   e.stopPropagation();
                   openDeleteModal(file);
                 }}
-                title={t("sidebar.delete")}
+                title={t("delete")}
               >
                 🗑️
               </button>

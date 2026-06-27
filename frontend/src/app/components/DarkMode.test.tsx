@@ -2,15 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import AppLayout from "./AppLayout";
 
-// Mock i18n
-vi.mock("../lib/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: "it" as const,
-    setLocale: () => {},
-  }),
-}));
-
 // Mock auth
 vi.mock("../lib/auth", () => ({
   useAuth: () => ({
@@ -68,7 +59,7 @@ describe("ToggleDarkMode", () => {
       <AppLayout sidebar={null} toolbar={null} viewer={null} />
     );
 
-    fireEvent.click(screen.getByTitle("darkMode.toggle"));
+    fireEvent.click(screen.getByTitle("toggle"));
 
     expect(screen.getByText("☀️")).toBeTruthy();
     expect(document.documentElement.classList.contains("dark")).toBe(true);
@@ -79,7 +70,7 @@ describe("ToggleDarkMode", () => {
       <AppLayout sidebar={null} toolbar={null} viewer={null} />
     );
 
-    fireEvent.click(screen.getByTitle("darkMode.toggle"));
+    fireEvent.click(screen.getByTitle("toggle"));
 
     expect(localStorageMock.getItem("darkMode")).toBe("true");
   });
@@ -112,11 +103,11 @@ describe("ToggleDarkMode", () => {
     );
 
     // Enable dark mode
-    fireEvent.click(screen.getByTitle("darkMode.toggle"));
+    fireEvent.click(screen.getByTitle("toggle"));
     expect(localStorageMock.getItem("darkMode")).toBe("true");
 
     // Disable dark mode
-    fireEvent.click(screen.getByTitle("darkMode.toggle"));
+    fireEvent.click(screen.getByTitle("toggle"));
     expect(localStorageMock.getItem("darkMode")).toBe("false");
     expect(screen.getByText("🌙")).toBeTruthy();
   });

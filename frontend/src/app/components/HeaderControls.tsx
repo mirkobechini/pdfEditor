@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
-import { useI18n } from "../lib/i18n";
+import { useTranslations } from "next-intl";
+import { useLocaleControl } from "../lib/i18n";
 
 export function ToggleDarkMode() {
-  const { t } = useI18n();
+  const t = useTranslations("darkMode");
   const [dark, setDark] = React.useState(false);
 
   // On mount: restore from localStorage, fallback to system preference
@@ -57,7 +58,7 @@ export function ToggleDarkMode() {
     <button
       onClick={() => setDark(!dark)}
       className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-      title={t("darkMode.toggle")}
+      title={t("toggle")}
     >
       {dark ? "☀️" : "🌙"}
     </button>
@@ -65,7 +66,7 @@ export function ToggleDarkMode() {
 }
 
 export function LanguageSelector() {
-  const { locale, setLocale } = useI18n();
+  const { locale, setLocale } = useLocaleControl();
   return (
     <select
       value={locale}

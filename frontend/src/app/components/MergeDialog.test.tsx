@@ -4,14 +4,6 @@ import MergeDialog from "./MergeDialog";
 import { api } from "../lib/api";
 
 // Wrap with minimal i18n context for translated components
-vi.mock("../lib/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: "it" as const,
-    setLocale: () => {},
-  }),
-}));
-
 vi.mock("../lib/api", () => ({
   api: {
     listPdfs: vi.fn(),
@@ -50,7 +42,7 @@ describe("MergeDialog", () => {
       <MergeDialog open={true} onClose={() => {}} selectedId={null} onMergeComplete={() => {}} />
     );
 
-    const mergeBtn = await screen.findByText("mergeDialog.merge");
+    const mergeBtn = await screen.findByText("merge");
     expect(mergeBtn).toBeDisabled();
 
     // Select one file
@@ -70,6 +62,6 @@ describe("MergeDialog", () => {
       <MergeDialog open={true} onClose={() => {}} selectedId="1" onMergeComplete={() => {}} />
     );
 
-    expect(await screen.findByText("app.currentFile")).toBeTruthy();
+    expect(await screen.findByText("currentFile")).toBeTruthy();
   });
 });

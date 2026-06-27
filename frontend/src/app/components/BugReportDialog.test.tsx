@@ -4,14 +4,6 @@ import BugReportDialog from "./BugReportDialog";
 import { api } from "../lib/api";
 
 // Wrap with minimal i18n context for translated components
-vi.mock("../lib/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: "it" as const,
-    setLocale: () => {},
-  }),
-}));
-
 vi.mock("../lib/api", () => ({
   api: {
     createBugReport: vi.fn(),
@@ -21,75 +13,75 @@ vi.mock("../lib/api", () => ({
 describe("BugReportDialog", () => {
   it("renders nothing when closed", () => {
     const { container } = render(
-      <BugReportDialog open={false} onClose={() => {}} />
+      <BugReportDialog open={false} onClose={() => { }} />
     );
     expect(container.innerHTML).toBe("");
   });
 
   it("renders form fields when open", () => {
-    render(<BugReportDialog open={true} onClose={() => {}} />);
+    render(<BugReportDialog open={true} onClose={() => { }} />);
 
-    expect(screen.getByText("bugReport.title")).toBeTruthy();
-    expect(screen.getByText("bugReport.fieldTitle")).toBeTruthy();
-    expect(screen.getByText("bugReport.fieldDescription")).toBeTruthy();
-    expect(screen.getByText("bugReport.submit")).toBeTruthy();
-    expect(screen.getByText("bugReport.cancel")).toBeTruthy();
+    expect(screen.getByText("title")).toBeTruthy();
+    expect(screen.getByText("fieldTitle")).toBeTruthy();
+    expect(screen.getByText("fieldDescription")).toBeTruthy();
+    expect(screen.getByText("submit")).toBeTruthy();
+    expect(screen.getByText("cancel")).toBeTruthy();
   });
 
   it("has Submit button disabled when form is empty", () => {
-    render(<BugReportDialog open={true} onClose={() => {}} />);
+    render(<BugReportDialog open={true} onClose={() => { }} />);
 
-    const submitBtn = screen.getByText("bugReport.submit");
+    const submitBtn = screen.getByText("submit");
     expect(submitBtn).toBeDisabled();
   });
 
   it("enables Submit button when form is filled", () => {
-    render(<BugReportDialog open={true} onClose={() => {}} />);
+    render(<BugReportDialog open={true} onClose={() => { }} />);
 
-    const titleInput = screen.getByPlaceholderText("bugReport.titlePlaceholder");
-    const descInput = screen.getByPlaceholderText("bugReport.descriptionPlaceholder");
+    const titleInput = screen.getByPlaceholderText("titlePlaceholder");
+    const descInput = screen.getByPlaceholderText("descriptionPlaceholder");
 
     fireEvent.change(titleInput, { target: { value: "Test bug" } });
     fireEvent.change(descInput, { target: { value: "Test description" } });
 
-    expect(screen.getByText("bugReport.submit")).toBeEnabled();
+    expect(screen.getByText("submit")).toBeEnabled();
   });
 
   it("calls createBugReport on submit and shows success", async () => {
     (api.createBugReport as any).mockResolvedValue({ id: "1" });
 
-    render(<BugReportDialog open={true} onClose={() => {}} />);
+    render(<BugReportDialog open={true} onClose={() => { }} />);
 
-    const titleInput = screen.getByPlaceholderText("bugReport.titlePlaceholder");
-    const descInput = screen.getByPlaceholderText("bugReport.descriptionPlaceholder");
+    const titleInput = screen.getByPlaceholderText("titlePlaceholder");
+    const descInput = screen.getByPlaceholderText("descriptionPlaceholder");
 
     fireEvent.change(titleInput, { target: { value: "Test bug" } });
     fireEvent.change(descInput, { target: { value: "Test description" } });
 
-    fireEvent.click(screen.getByText("bugReport.submit"));
+    fireEvent.click(screen.getByText("submit"));
 
     await waitFor(() => {
       expect(api.createBugReport).toHaveBeenCalledWith("Test bug", "Test description");
     });
 
-    expect(screen.getByText("bugReport.sentTitle")).toBeTruthy();
+    expect(screen.getByText("sentTitle")).toBeTruthy();
   });
 
   it("shows error message on failure", async () => {
     (api.createBugReport as any).mockRejectedValue(new Error("Network error"));
 
-    render(<BugReportDialog open={true} onClose={() => {}} />);
+    render(<BugReportDialog open={true} onClose={() => { }} />);
 
-    const titleInput = screen.getByPlaceholderText("bugReport.titlePlaceholder");
-    const descInput = screen.getByPlaceholderText("bugReport.descriptionPlaceholder");
+    const titleInput = screen.getByPlaceholderText("titlePlaceholder");
+    const descInput = screen.getByPlaceholderText("descriptionPlaceholder");
 
     fireEvent.change(titleInput, { target: { value: "Test bug" } });
     fireEvent.change(descInput, { target: { value: "Test description" } });
 
-    fireEvent.click(screen.getByText("bugReport.submit"));
+    fireEvent.click(screen.getByText("submit"));
 
     await waitFor(() => {
-      expect(screen.getByText(/bugReport.failed/)).toBeTruthy();
+      expect(screen.getByText(/failed/)).toBeTruthy();
     });
   });
 
@@ -97,7 +89,7 @@ describe("BugReportDialog", () => {
     const onClose = vi.fn();
     render(<BugReportDialog open={true} onClose={onClose} />);
 
-    fireEvent.click(screen.getByText("bugReport.cancel"));
+    fireEvent.click(screen.getByText("cancel"));
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -107,23 +99,23 @@ describe("BugReportDialog", () => {
     render(<BugReportDialog open={true} onClose={onClose} />);
 
     // The backdrop is the outermost div with bg-black/40
-    const backdrop = screen.getByText("bugReport.title").closest(".fixed")!;
+    const backdrop = screen.getByText("title").closest(".fixed")!;
     fireEvent.click(backdrop);
     expect(onClose).toHaveBeenCalled();
   });
 
   it("resets form on re-open", () => {
-    const { rerender } = render(<BugReportDialog open={true} onClose={() => {}} />);
+    const { rerender } = render(<BugReportDialog open={true} onClose={() => { }} />);
 
     // Fill form
-    const titleInput = screen.getByPlaceholderText("bugReport.titlePlaceholder") as HTMLInputElement;
+    const titleInput = screen.getByPlaceholderText("titlePlaceholder") as HTMLInputElement;
     fireEvent.change(titleInput, { target: { value: "Test" } });
 
     // Close and re-open
-    rerender(<BugReportDialog open={false} onClose={() => {}} />);
-    rerender(<BugReportDialog open={true} onClose={() => {}} />);
+    rerender(<BugReportDialog open={false} onClose={() => { }} />);
+    rerender(<BugReportDialog open={true} onClose={() => { }} />);
 
-    const newTitleInput = screen.getByPlaceholderText("bugReport.titlePlaceholder") as HTMLInputElement;
+    const newTitleInput = screen.getByPlaceholderText("titlePlaceholder") as HTMLInputElement;
     expect(newTitleInput.value).toBe("");
   });
 });

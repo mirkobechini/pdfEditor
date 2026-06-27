@@ -8,15 +8,6 @@ vi.mock("../lib/auth", () => ({
   useAuth: vi.fn(),
 }));
 
-// Mock i18n
-vi.mock("../lib/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: "it" as const,
-    setLocale: () => {},
-  }),
-}));
-
 // Mock matchMedia for HeaderControls dark mode
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -51,17 +42,17 @@ describe("LoginPage", () => {
   it("renders login form", () => {
     render(<LoginPage />);
 
-    expect(screen.getByText("auth.loginTitle")).toBeTruthy();
-    expect(screen.getByText("auth.email")).toBeTruthy();
-    expect(screen.getByText("auth.password")).toBeTruthy();
-    expect(screen.getByText("auth.loginButton")).toBeTruthy();
-    expect(screen.getByText("auth.noAccount")).toBeTruthy();
-    expect(screen.getByText("auth.registerLink")).toBeTruthy();
+    expect(screen.getByText("loginTitle")).toBeTruthy();
+    expect(screen.getByText("email")).toBeTruthy();
+    expect(screen.getByText("password")).toBeTruthy();
+    expect(screen.getByText("loginButton")).toBeTruthy();
+    expect(screen.getByText("noAccount")).toBeTruthy();
+    expect(screen.getByText("registerLink")).toBeTruthy();
   });
 
   it("has Login button disabled when form is empty", () => {
     render(<LoginPage />);
-    expect(screen.getByText("auth.loginButton")).toBeDisabled();
+    expect(screen.getByText("loginButton")).toBeDisabled();
   });
 
   it("enables Login button when form is filled", () => {
@@ -74,7 +65,7 @@ describe("LoginPage", () => {
       target: { value: "password123" },
     });
 
-    expect(screen.getByText("auth.loginButton")).toBeEnabled();
+    expect(screen.getByText("loginButton")).toBeEnabled();
   });
 
   it("calls login on submit and redirects", async () => {
@@ -89,7 +80,7 @@ describe("LoginPage", () => {
       target: { value: "password123" },
     });
 
-    fireEvent.click(screen.getByText("auth.loginButton"));
+    fireEvent.click(screen.getByText("loginButton"));
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith("test@example.com", "password123");
@@ -109,16 +100,16 @@ describe("LoginPage", () => {
       target: { value: "wrong" },
     });
 
-    fireEvent.click(screen.getByText("auth.loginButton"));
+    fireEvent.click(screen.getByText("loginButton"));
 
     await waitFor(() => {
-      expect(screen.getByText(/auth.loginFailed/)).toBeTruthy();
+      expect(screen.getByText(/loginFailed/)).toBeTruthy();
     });
   });
 
   it("has a link to register page", () => {
     render(<LoginPage />);
-    const link = screen.getByText("auth.registerLink");
+    const link = screen.getByText("registerLink");
     expect(link.getAttribute("href")).toBe("/register");
   });
 });

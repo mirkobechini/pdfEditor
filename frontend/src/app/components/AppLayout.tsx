@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { useI18n } from "../lib/i18n";
+import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
 import BugReportDialog from "./BugReportDialog";
 import HeaderControls from "./HeaderControls";
@@ -14,7 +14,8 @@ interface LayoutProps {
 }
 
 export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
-  const { t } = useI18n();
+  const bugT = useTranslations("bugReport");
+  const authT = useTranslations("auth");
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [bugReportOpen, setBugReportOpen] = React.useState(false);
@@ -48,9 +49,9 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
           <button
             className="px-3 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600"
             onClick={() => setBugReportOpen(true)}
-            title={t("bugReport.button")}
+            title={bugT("button")}
           >
-            {t("bugReport.button")}
+            {bugT("button")}
           </button>
           {user && (
             <>
@@ -60,9 +61,9 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
               <button
                 className="px-2 py-1 text-xs rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
                 onClick={() => { logout(); window.location.href = "/login"; }}
-                title={t("auth.logout")}
+                title={authT("logout")}
               >
-                {t("auth.logout")}
+                {authT("logout")}
               </button>
             </>
           )}

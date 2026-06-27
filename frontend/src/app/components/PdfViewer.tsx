@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useI18n } from "../lib/i18n";
+import { useTranslations } from "next-intl";
 
 interface PdfViewerProps {
   fileUrl: string | null;
@@ -24,7 +24,7 @@ export default function PdfViewer({
   onZoomChange,
   onFileDrop,
 }: PdfViewerProps) {
-  const { t } = useI18n();
+  const t = useTranslations("app");
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [rendering, setRendering] = React.useState(false);
@@ -143,7 +143,7 @@ export default function PdfViewer({
           if (file && file.name.toLowerCase().endsWith(".pdf")) {
             onFileDrop?.(file);
           } else {
-            alert(t("sidebar.uploadOnlyPdf"));
+            alert(t("uploadOnlyPdf"));
           }
         }}
       >
@@ -151,9 +151,9 @@ export default function PdfViewer({
           {dragOver ? "📥" : "📄"}
         </div>
         <p className="text-gray-400 text-center">
-          {dragOver ? t("app.dropToUpload") : t("app.selectPdf")}
+          {dragOver ? t("dropToUpload") : t("selectPdf")}
         </p>
-        <p className="text-xs text-gray-500 mt-2">{t("app.dragAndDrop")}</p>
+        <p className="text-xs text-gray-500 mt-2">{t("dragAndDrop")}</p>
       </div>
     );
   }
@@ -173,14 +173,14 @@ export default function PdfViewer({
       }}
     >
       {rendering && (
-        <div className="text-sm text-gray-400 mb-2">{t("app.rendering")}</div>
+        <div className="text-sm text-gray-400 mb-2">{t("rendering")}</div>
       )}
       {/* Drag-over overlay */}
       {dragOver && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-blue-500/10 border-2 border-dashed border-blue-500 rounded-lg pointer-events-none">
           <div className="text-center">
             <div className="text-4xl mb-2">📥</div>
-            <p className="text-blue-500 font-medium">{t("app.dropToUpload")}</p>
+            <p className="text-blue-500 font-medium">{t("dropToUpload")}</p>
           </div>
         </div>
       )}

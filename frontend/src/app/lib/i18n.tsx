@@ -1,31 +1,18 @@
 "use client";
 
-import React, { createContext, useContext, useCallback } from "react";
+import React from "react";
+import { NextIntlClientProvider } from "next-intl";
 import en from "../../../messages/en.json";
 import it from "../../../messages/it.json";
 
-type Messages = typeof en;
 type Locale = "it" | "en";
 
-const messages: Record<Locale, Messages> = { en, it };
+const messages: Record<Locale, typeof en> = { en, it };
 
-interface I18nContextValue {
+const LocaleCtx = React.createContext<{
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: string) => string;
-}
-
-const I18nContext = createContext<I18nContextValue | null>(null);
-
-function getNestedValue(obj: any, path: string): string {
-  const keys = path.split(".");
-  let current = obj;
-  for (const key of keys) {
-    if (current == null || typeof current !== "object") return path;
-    current = current[key];
-  }
-  return typeof current === "string" ? current : path;
-}
+}>({ locale: "it", setLocale: () => { } });
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = React.useState<Locale>("it");
@@ -35,28 +22,20 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     if (stored === "it" || stored === "en") setLocaleState(stored);
   }, []);
 
-  const setLocale = useCallback(
-    (newLocale: Locale) => {
-      setLocaleState(newLocale);
-      localStorage.setItem("locale", newLocale);
-    },
-    []
-  );
-
-  const t = useCallback(
-    (key: string) => getNestedValue(messages[locale], key),
-    [locale]
-  );
+  const setLocale = React.useCallback((newLocale: Locale) => {
+    setLocaleState(newLocale);
+    localStorage.setItem("locale", newLocale);
+  }, []);
 
   return (
-    <I18nContext.Provider value={{ locale, setLocale, t }}>
-      {children}
-    </I18nContext.Provider>
+    <LocaleCtx.Provider value={{ locale, setLocale }}>
+      <NextIntlClientProvider locale={locale} messages={messages[locale]}>
+        {children}
+      </NextIntlClientProvider>
+    </LocaleCtx.Provider>
   );
 }
 
-export function useI18n() {
-  const ctx = useContext(I18nContext);
-  if (!ctx) throw new Error("useI18n must be used within I18nProvider");
-  return ctx;
+export function useLocaleControl() {
+  return React.useContext(LocaleCtx);
 }
