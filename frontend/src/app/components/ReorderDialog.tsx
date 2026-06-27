@@ -90,7 +90,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Failed to load thumbnails:", err);
-      setError(t("failed") + ": " + err);
+      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
     } finally {
       setLoading(false);
     }
@@ -126,7 +126,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
       downloadBlob(blob, `reordered_${selectedName}`);
       onClose();
     } catch (err) {
-      setError(t("failed") + ": " + err);
+      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
     } finally {
       setReordering(false);
     }
@@ -246,7 +246,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
           </div>
         )}
 
-        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+        {error && <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">{error}</div>}
 
         <div className="flex justify-end gap-2 mt-auto pt-2 border-t dark:border-gray-700">
           <button

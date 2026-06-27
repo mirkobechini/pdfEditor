@@ -122,7 +122,7 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
       downloadBlob(blob, `trimmed_${selectedName}`);
       onClose();
     } catch (err) {
-      setError(t("failed") + ": " + err);
+      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
     } finally {
       setRemoving(false);
     }
@@ -191,7 +191,7 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
           </div>
         )}
 
-        {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
+        {error && <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">{error}</div>}
 
         {confirmOpen ? (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
