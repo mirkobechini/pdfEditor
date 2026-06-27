@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     MAX_PAGE_COUNT: int = 500
     ALLOWED_EXTENSIONS: list[str] = [".pdf"]
 
+    # Super admin (cannot be revoked)
+    SUPER_ADMIN_EMAIL: str = "mirkobechini@gmail.com"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

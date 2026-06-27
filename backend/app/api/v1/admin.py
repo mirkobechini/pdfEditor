@@ -76,7 +76,13 @@ def update_user_admin(
         )
 
     repo = UserRepository(db)
-    user = repo.update_is_admin(user_id, req.is_admin)
+    try:
+        user = repo.update_is_admin(user_id, req.is_admin)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
