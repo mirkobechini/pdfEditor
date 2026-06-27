@@ -7,6 +7,10 @@ from app.repositories.pdf_repo import PdfRepository
 from app.schemas.pdf import PdfListResponse, PdfResponse
 
 
+# In-memory password cache for password-protected PDFs (never persisted to disk)
+_password_cache: dict[str, str] = {}
+
+
 class PdfService:
     """Business logic for PDF operations."""
 
@@ -547,3 +551,34 @@ class PdfService:
             user_id=user_id,
         )
         return self.repo.create(pdf)
+
+    def unlock(self, pdf_id: str, user_id: str, password: str) -> PdfDocument:
+        """Try to unlock a password-protected PDF. Returns the PDF if successful."""
+        import fitz
+
+        pdf = self._get_user_pdf(pdf_id, user_id)
+
+        if not pdf.is_password_protected:
+            return pdf  # Not encrypted, nothing to do
+
+        content = self.get_file_content(pdf)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        doc = fitz.open(stream=content, filetype="pdf")
+        try:
+            if not doc.needs_pass:
+                # File was flagged but isn't actually encrypted anymore
+                pdf.is_password_protected = False
+                self.repo.db.flush()
+                return pdf
+
+            auth = doc.authenticate(password)
+            if auth == 0:
+                raise ValueError("Incorrect password")
+        finally:
+            doc.close()
+
+        # Cache the password in memory
+        _password_cache[pdf_id] = password
+        return pdf
