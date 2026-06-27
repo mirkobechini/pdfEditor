@@ -9,7 +9,12 @@
     "split": "Split",
     "reorder": "Reorder",
     "remove": "Remove",
-    "currentFile": "(current)"
+    "currentFile": "(current)",
+    "passwordRequired": "This PDF is password protected",
+    "passwordPrompt": "Enter the password to view this PDF",
+    "passwordPlaceholder": "Enter password",
+    "passwordInvalid": "Incorrect password. Try again.",
+    "unlock": "Unlock"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
