@@ -3,7 +3,6 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
-import DeleteModal from "./DeleteModal";
 
 interface SidebarProps {
   selectedId: string | null;
@@ -11,17 +10,16 @@ interface SidebarProps {
   onUpload: (doc: PdfDocument) => void;
   onDelete: (id: string) => void;
   onRename: (id: string, name: string) => void;
+  onDeleteClick: (file: PdfDocument) => void;
 }
 
-export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: SidebarProps) {
+export default function Sidebar({ selectedId, onSelect, onUpload, onDelete, onDeleteClick }: SidebarProps) {
   const t = useTranslations("sidebar");
   const [files, setFiles] = React.useState<PdfDocument[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [dragOver, setDragOver] = React.useState(false);
   const [renameId, setRenameId] = React.useState<string | null>(null);
   const [renameValue, setRenameValue] = React.useState("");
-  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
-  const [fileToDelete, setFileToDelete] = React.useState<PdfDocument | null>(null);
 
   // Load files on mount
   React.useEffect(() => {
@@ -53,28 +51,6 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
     } catch (err) {
       alert(t("uploadFailed") + ": " + err);
     }
-  }
-
-  function openDeleteModal(file: PdfDocument) {
-    setFileToDelete(file);
-    setDeleteModalOpen(true);
-  }
-
-  function closeDeleteModal() {
-    setDeleteModalOpen(false);
-    setFileToDelete(null);
-  }
-
-  async function handleDeleteConfirm() {
-    if (!fileToDelete) return;
-    try {
-      await api.deletePdf(fileToDelete.id);
-      setFiles((prev) => prev.filter((f) => f.id !== fileToDelete.id));
-      onDelete(fileToDelete.id);
-    } catch {
-      alert(t("deleteFailed"));
-    }
-    closeDeleteModal();
   }
 
   // Drag & drop
@@ -155,7 +131,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
                 className="text-xs text-gray-400 hover:text-red-500"
                 onClick={(e) => {
                   e.stopPropagation();
-                  openDeleteModal(file);
+                  onDeleteClick(file);
                 }}
                 title={t("delete")}
               >
@@ -165,14 +141,6 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDelete }: Si
           </div>
         ))}
       </div>
-
-      {/* Delete Modal */}
-      <DeleteModal
-        open={deleteModalOpen}
-        onClose={closeDeleteModal}
-        file={fileToDelete}
-        onConfirm={handleDeleteConfirm}
-      />
     </div>
   );
 }
