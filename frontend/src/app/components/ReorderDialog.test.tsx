@@ -3,15 +3,6 @@ import { render, screen } from "@testing-library/react";
 import ReorderDialog from "./ReorderDialog";
 import { api } from "../lib/api";
 
-// Mock i18n
-vi.mock("../lib/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: "it" as const,
-    setLocale: vi.fn(),
-  }),
-}));
-
 // Mock api
 vi.mock("../lib/api", () => ({
   api: {
@@ -39,7 +30,7 @@ describe("ReorderDialog", () => {
     render(
       <ReorderDialog open={false} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
-    expect(screen.queryByText("reorderDialog.title")).not.toBeInTheDocument();
+    expect(screen.queryByText("title")).not.toBeInTheDocument();
   });
 
   it("renders dialog with file info when open is true", () => {
@@ -49,7 +40,7 @@ describe("ReorderDialog", () => {
       <ReorderDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
-    expect(screen.getByText("reorderDialog.title")).toBeInTheDocument();
+    expect(screen.getByText("title")).toBeInTheDocument();
     expect(screen.getByText(/test\.pdf/)).toBeInTheDocument();
   });
 
@@ -70,7 +61,7 @@ describe("ReorderDialog", () => {
       <ReorderDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
-    const reorderBtn = screen.getByText("reorderDialog.reorder");
+    const reorderBtn = screen.getByText("reorder");
     expect(reorderBtn).toBeDisabled();
   });
 
@@ -81,7 +72,7 @@ describe("ReorderDialog", () => {
       <ReorderDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
-    const errorText = await screen.findByText(/reorderDialog\.failed/);
+    const errorText = await screen.findByText(/failed/);
     expect(errorText).toBeInTheDocument();
   });
 });
