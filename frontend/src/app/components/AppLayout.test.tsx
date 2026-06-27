@@ -8,15 +8,6 @@ vi.mock("../lib/auth", () => ({
   useAuth: vi.fn(),
 }));
 
-// Mock i18n
-vi.mock("../lib/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: "it" as const,
-    setLocale: vi.fn(),
-  }),
-}));
-
 // Mock matchMedia for HeaderControls dark mode
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -90,19 +81,19 @@ describe("AppLayout header order", () => {
 
     // Find indices of key components in order
     const darkModeIdx = children.findIndex(
-      (c) => c.querySelector('[title="darkMode.toggle"]')
+      (c) => c.querySelector('[title="toggle"]')
     );
     const langSelectorIdx = children.findIndex(
       (c) => c.querySelector("select")
     );
     const bugReportIdx = children.findIndex(
-      (c) => c.textContent === "bugReport.button"
+      (c) => c.textContent === "button"
     );
     const userNameIdx = children.findIndex(
       (c) => c.textContent?.includes("Test User")
     );
     const logoutIdx = children.findIndex(
-      (c) => c.textContent === "auth.logout"
+      (c) => c.textContent === "logout"
     );
 
     // HeaderControls (dark mode + language) should come first
@@ -126,10 +117,10 @@ describe("AppLayout header order", () => {
 
     renderLayout();
 
-    expect(screen.getByTitle("darkMode.toggle")).toBeInTheDocument();
+    expect(screen.getByTitle("toggle")).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toBeInTheDocument();
-    expect(screen.getByText("bugReport.button")).toBeInTheDocument();
+    expect(screen.getByText("button")).toBeInTheDocument();
     // User info should not appear
-    expect(screen.queryByText("auth.logout")).not.toBeInTheDocument();
+    expect(screen.queryByText("logout")).not.toBeInTheDocument();
   });
 });
