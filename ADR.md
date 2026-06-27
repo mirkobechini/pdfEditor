@@ -109,6 +109,7 @@ _nessuno_
 11. [ ] **MISSING_MESSAGE: removeDialog.removeDialog.pageThumbnail** — Chiave i18n annidata erroneamente (`removeDialog.removeDialog.*`) in `RemoveDialog`. Correggere la chiave nei file di traduzione.
 12. [ ] **"PDF not found" su caricamento thumbnail** — Errore `ApiClient.downloadPdf` restituisce "PDF not found" durante `loadThumbnails`. Investigare causa (file eliminato? race condition?).
 13. [ ] **"Nothing to redo / Nothing to undo" — messaggi raw** — I messaggi "Nothing to redo" e "Nothing to undo" vengono stampati in console come errori. Andrebbero gestiti silenziosamente (nessun undo/redo disponibile è un caso normale, non un errore).
+14. [ ] **Sostituire `<img>` con `<Image />` di next/image** — Usare `<img>` può causare LCP più lento e bandwidth maggiore. Rivedere tutti i file del frontend che usano il tag `<img>` e sostituire con `<Image />` da `next/image` o un custom image loader. Vedi: https://nextjs.org/docs/messages/no-img-element
 
 > **Nota:** Feature minori completate. Non rimangono feature pendenti oltre ai bug aperti. Prossima macro-fase: Fase 1c (Tauri v2).
 
