@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.sqlite import TEXT
 
 from app.core.database import Base
@@ -18,6 +18,7 @@ class PdfDocument(Base):
     page_count = Column(Integer, nullable=False, default=0)
     title = Column(String(255), nullable=True)
     author = Column(String(255), nullable=True)
+    is_password_protected = Column(Boolean, default=False, nullable=False)
 
     created_at = Column(
         DateTime,
