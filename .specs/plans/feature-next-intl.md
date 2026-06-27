@@ -25,4 +25,6 @@ Nessuna — refactoring UI autonomo.
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+**Completata il:** 2026-06-27
+**Note:** Sostituito il provider i18n custom con `NextIntlClientProvider` (client-side, compatibile con `output: 'export'`). Rimosso `useI18n()` a favore di `useTranslations(namespace)`. Test mock globale in setup.ts. 86 test passanti. 29 file modificati. (PR #94, issue #93)

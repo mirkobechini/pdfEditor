@@ -52,7 +52,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | PyMuPDF                                             | pdf-lib, pikepdf           | Supporto nativo modifica testo, metadati, tagging accessibilità                                                                                                                                                          |
 | Autenticazione obbligatoria per ogni operazione PDF | Endpoint /pdfs/\* pubblici | Ogni PDF è associato a un utente (user_id). Anche le operazioni base (upload/list/download/delete) richiedono login, perché senza user_id non esiste ownership. Il free tier è un utente registrato a tutti gli effetti. |
 | python-jose[cryptography] + requests per SSO Google | Authlib                    | Scelta implementativa che si discosta dallo stack dichiarato                                                                                                                                                             |
-| Provider i18n custom                                | next-intl                  | next-intl installato ma non utilizzato; provider custom attivo                                                                                                                                                           |
+| Provider i18n custom → next-intl client-side       | next-intl con middleware    | next-intl già installato ma inutilizzato. Rifattorizzato in PR #94: NextIntlClientProvider client-side (compatibile con output: 'export'). |
 | FastAPI sidecar con PyInstaller                     | Backend remoto sempre      | Funzionamento offline desktop (Fase 1c)                                                                                                                                                                                  |
 | pdf-lib lato client per merge/split                 | Solo API server            | Sostituito da API backend — refactoring PR #72                                                                                                                                                                           |
 | Tagged PDF in output                                | PDF non strutturati        | Accessibilità screen reader (obbligo AGPL indiretto)                                                                                                                                                                     |
@@ -130,9 +130,9 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [x] **Dashboard admin** — Pagina `/admin` per gestione utenti, licenze e bug report. Completata (PR #88, issue #87)
 - [x] **Auth endpoint PDF** — Aggiunto `user_id` a `PdfDocument`, protetti tutti gli endpoint `/pdfs/*` con JWT, filtro per utente corrente. Completata (PR #91, issue #89)
 - [x] **Uniform license checking** — Estratta `check_feature_access()` condivisa in `deps.py`, rimossa duplicata `_check_license_for_format()` in `convert.py`. Completata (PR #92, issue #90)
+- [x] **Sostituzione I18nProvider custom con next-intl** — Rimosso provider i18n custom, sostituito con `NextIntlClientProvider`. Tutti i componenti migrati a `useTranslations()`. Completata (PR #94, issue #93)
 
 ### Feature minori da implementare (in ordine)
 
-1. [ ] **Sostituzione I18nProvider custom con next-intl** — next-intl già installato ma inutilizzato
-2. [ ] **PDF protetti da password** — Rilevamento automatico, modale richiesta password, gestione sessione
-3. [ ] **Undo/Redo per modifiche PDF** — Cronologia snapshot lato server con pulsanti toolbar
+1. [ ] **PDF protetti da password** — Rilevamento automatico, modale richiesta password, gestione sessione
+2. [ ] **Undo/Redo per modifiche PDF** — Cronologia snapshot lato server con pulsanti toolbar
