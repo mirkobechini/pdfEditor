@@ -80,9 +80,8 @@ export default function MergeDialog({ open, onClose, selectedId, onMergeComplete
           {files.map((f) => (
             <label
               key={f.id}
-              className={`flex items-center gap-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer ${
-                selectedId === f.id ? "bg-blue-50 dark:bg-blue-900/20" : ""
-              }`}
+              className={`flex items-center gap-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer ${selectedId === f.id ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                }`}
             >
               <input
                 type="checkbox"
