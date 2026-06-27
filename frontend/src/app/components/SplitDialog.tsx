@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
@@ -182,24 +183,24 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
                 return (
                   <div
                     key={thumb.pageNum}
-                    className={`relative border rounded overflow-hidden cursor-pointer transition-all ${
-                      isSelected
+                    className={`relative border rounded overflow-hidden cursor-pointer transition-all ${isSelected
                         ? "border-blue-500 ring-2 ring-blue-400"
                         : "border-gray-200 dark:border-gray-600 hover:border-blue-400"
-                    }`}
+                      }`}
                     onClick={() => togglePage(thumb.pageNum)}
                   >
-                    <img
+                    <Image
                       src={thumb.dataUrl}
                       alt={t("pageThumbnail", { page: thumb.pageNum })}
+                      width={200}
+                      height={280}
                       className="w-full h-auto"
-                      draggable={false}
+                      unoptimized
                     />
-                    <div className={`absolute top-1 left-1 text-xs px-1.5 py-0.5 rounded ${
-                      isSelected
+                    <div className={`absolute top-1 left-1 text-xs px-1.5 py-0.5 rounded ${isSelected
                         ? "bg-blue-500 text-white"
                         : "bg-black/60 text-white"
-                    }`}>
+                      }`}>
                       {thumb.pageNum}
                     </div>
                     {isSelected && (
