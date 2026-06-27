@@ -98,6 +98,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - [x] **Cancellazione PDF fallita** — Aggiunto `refreshKey` alla Sidebar per ricaricare la lista dopo eliminazione. (PR #106, issue #105)
 - [x] **Come impostare un account come admin** — Aggiunto endpoint `PUT /admin/users/{id}/admin` + toggle UI nella dashboard admin. (PR #108, issue #107)
 - [x] **Messaggi errore non formattati** — Corretto doppio prefisso `"Error: "` e migliorato stile error container in Split/Merge/Reorder/Remove dialog. (PR #110, issue #109)
+- [x] **Sostituire `<img>` con `<Image />` di next/image** — Sostituiti tutti i tag `<img>` con `<Image>` da `next/image` (con `unoptimized` per data URL) in DeleteModal, SplitDialog, ReorderDialog, RemoveDialog. (PR #112, issue #111)
 
 ### In corso 🔄
 
@@ -110,7 +111,6 @@ _nessuno_
 3. [ ] **Split: linee di separazione tra pagine** — Nello split, l'utente vuole poter inserire linee divisorie tra le pagine per separarle, invece di selezionare singole pagine da checkbox.
 4. [ ] **"PDF not found" su caricamento thumbnail** — Errore `ApiClient.downloadPdf` restituisce "PDF not found" durante `loadThumbnails`. Investigare causa (file eliminato? race condition?).
 5. [ ] **"Nothing to redo / Nothing to undo" — messaggi raw** — I messaggi "Nothing to redo" e "Nothing to undo" vengono stampati in console come errori. Andrebbero gestiti silenziosamente (nessun undo/redo disponibile è un caso normale, non un errore).
-6. [ ] **Sostituire `<img>` con `<Image />` di next/image** — Usare `<img>` può causare LCP più lento e bandwidth maggiore. Rivedere tutti i file del frontend che usano il tag `<img>` e sostituire con `<Image />` da `next/image` o un custom image loader. Vedi: https://nextjs.org/docs/messages/no-img-element
 
 > **Nota:** Feature minori completate. Non rimangono feature pendenti oltre ai bug aperti. Prossima macro-fase: Fase 1c (Tauri v2).
 
