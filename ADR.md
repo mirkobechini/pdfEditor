@@ -136,4 +136,6 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Feature minori da implementare (in ordine)
 
-1. [ ] **Undo/Redo per modifiche PDF** — Cronologia snapshot lato server con pulsanti toolbar
+_Completate tutte — non rimangono feature minori pendenti. Prossimo passo: macro-fasi (Fase 1c Tauri)._
+
+<!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
