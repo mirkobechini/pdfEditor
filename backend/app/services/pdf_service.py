@@ -1,7 +1,17 @@
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.storage import save_pdf, validate_pdf, get_pdf_path, delete_pdf
+from app.core.storage import (
+    save_pdf,
+    validate_pdf,
+    get_pdf_path,
+    delete_pdf,
+    save_snapshot,
+    get_latest_snapshot,
+    pop_latest_snapshot,
+    clear_snapshots,
+)
+from app.models.pdf import PdfDocument
 from app.models.pdf import PdfDocument
 from app.repositories.pdf_repo import PdfRepository
 from app.schemas.pdf import PdfListResponse, PdfResponse
@@ -23,6 +33,30 @@ class PdfService:
         if not pdf:
             raise ValueError(f"PDF {pdf_id} not found")
         return pdf
+
+    def _create_snapshot(self, pdf_id: str, user_id: str) -> None:
+        """Save a snapshot of the PDF before a modification."""
+        import fitz
+
+        pdf = self._get_user_pdf(pdf_id, user_id)
+        content = self.get_file_content(pdf)
+        if content:
+            save_snapshot(pdf_id, content)
+
+    def _read_file_with_password(self, pdf_id: str, user_id: str) -> bytes:
+        """Read file content, unlocking with cached password if needed."""
+        pdf = self._get_user_pdf(pdf_id, user_id)
+        content = self.get_file_content(pdf)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+        if pdf.is_password_protected and pdf_id in _password_cache:
+            import fitz
+            doc = fitz.open(stream=content, filetype="pdf")
+            if doc.needs_pass:
+                doc.authenticate(_password_cache[pdf_id])
+                content = doc.tobytes()
+            doc.close()
+        return content
 
     def upload(self, filename: str, content: bytes, user_id: str) -> PdfDocument:
         """Validate, save to disk, and create DB record."""
@@ -140,6 +174,7 @@ class PdfService:
 
     def split_by_ranges(self, pdf_id: str, user_id: str, ranges: list[str]) -> list[PdfDocument]:
         """Split a PDF by page ranges (e.g. ['1-3', '5-7'])."""
+        self._create_snapshot(pdf_id, user_id)
         import fitz
 
         pdf = self._get_user_pdf(pdf_id, user_id)
@@ -187,6 +222,7 @@ class PdfService:
 
     def split_every_page(self, pdf_id: str, user_id: str) -> list[PdfDocument]:
         """Split a PDF into one file per page."""
+        self._create_snapshot(pdf_id, user_id)
         import fitz
 
         pdf = self._get_user_pdf(pdf_id, user_id)
@@ -223,6 +259,7 @@ class PdfService:
 
     def reorder(self, pdf_id: str, user_id: str, page_order: list[int]) -> PdfDocument:
         """Reorder pages of a PDF. page_order is 1-based."""
+        self._create_snapshot(pdf_id, user_id)
         import fitz
 
         pdf = self._get_user_pdf(pdf_id, user_id)
@@ -267,6 +304,7 @@ class PdfService:
 
     def remove_pages(self, pdf_id: str, user_id: str, page_numbers: list[int]) -> PdfDocument:
         """Remove specific pages from a PDF. page_numbers is 1-based."""
+        self._create_snapshot(pdf_id, user_id)
         import fitz
 
         pdf = self._get_user_pdf(pdf_id, user_id)
@@ -318,6 +356,7 @@ class PdfService:
         occurrence: int | None = None,
     ) -> PdfDocument:
         """Find and replace text in a PDF. If occurrence is None, replaces all."""
+        self._create_snapshot(pdf_id, user_id)
         import fitz
 
         if not search.strip():
@@ -433,6 +472,7 @@ class PdfService:
         self, pdf_id: str, user_id: str, updates: dict
     ) -> PdfDocument:
         """Update PDF metadata. Creates a new file preserving original content."""
+        self._create_snapshot(pdf_id, user_id)
         import fitz
 
         pdf = self._get_user_pdf(pdf_id, user_id)
@@ -582,3 +622,51 @@ class PdfService:
         # Cache the password in memory
         _password_cache[pdf_id] = password
         return pdf
+
+    def undo(self, pdf_id: str, user_id: str) -> PdfDocument:
+        """Undo the last modification: restore the most recent snapshot."""
+        import fitz
+
+        pdf = self._get_user_pdf(pdf_id, user_id)
+        content = get_latest_snapshot(pdf_id)
+        if not content:
+            raise ValueError("Nothing to undo")
+
+        # Save current state as redo candidate, then restore snapshot
+        save_snapshot(f"{pdf_id}_redo", self._read_file_with_password(pdf_id, user_id))
+        pop_latest_snapshot(pdf_id)  # remove the snapshot we just read
+
+        file_uuid = save_pdf(content)
+        new_name = f"{pdf.original_filename.replace('.pdf', '')}_restored.pdf"
+
+        new_pdf = PdfDocument(
+            original_filename=new_name,
+            storage_filename=f"{file_uuid}.pdf",
+            file_size=len(content),
+            page_count=len(content),
+            user_id=user_id,
+        )
+        return self.repo.create(new_pdf)
+
+    def redo(self, pdf_id: str, user_id: str) -> PdfDocument:
+        """Redo the last undone operation: restore from redo stack."""
+        import fitz
+
+        pdf = self._get_user_pdf(pdf_id, user_id)
+        content = get_latest_snapshot(f"{pdf_id}_redo")
+        if not content:
+            raise ValueError("Nothing to redo")
+
+        pop_latest_snapshot(f"{pdf_id}_redo")
+
+        file_uuid = save_pdf(content)
+        new_name = f"{pdf.original_filename.replace('.pdf', '')}_restored.pdf"
+
+        new_pdf = PdfDocument(
+            original_filename=new_name,
+            storage_filename=f"{file_uuid}.pdf",
+            file_size=len(content),
+            page_count=len(content),
+            user_id=user_id,
+        )
+        return self.repo.create(new_pdf)

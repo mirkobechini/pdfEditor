@@ -14,6 +14,10 @@ interface ToolbarProps {
   onReorder: () => void;
   onRemovePages: () => void;
   onReplaceText: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
 export default function Toolbar({
@@ -27,10 +31,54 @@ export default function Toolbar({
   onReorder,
   onRemovePages,
   onReplaceText,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
 }: ToolbarProps) {
   const t = useTranslations("app");
+
+  // Keyboard shortcuts: Ctrl+Z for undo, Ctrl+Shift+Z for redo
+  React.useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (!e.ctrlKey && !e.metaKey) return;
+      if (e.shiftKey && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        onRedo();
+      } else if (e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        onUndo();
+      }
+    }
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onUndo, onRedo]);
+
   return (
     <>
+      {/* Undo / Redo */}
+      <div className="flex items-center gap-1">
+        <button
+          className="px-2 py-1 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30"
+          onClick={onUndo}
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+        >
+          ↩
+        </button>
+        <button
+          className="px-2 py-1 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30"
+          onClick={onRedo}
+          disabled={!canRedo}
+          title="Redo (Ctrl+Shift+Z)"
+        >
+          ↪
+        </button>
+      </div>
+
+      {/* Separator */}
+      <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
+
       {/* Page navigation */}
       <div className="flex items-center gap-2">
         <button

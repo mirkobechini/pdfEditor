@@ -15,6 +15,7 @@ from app.api.v1.reorder import router as reorder_router
 from app.api.v1.text import router as text_router
 from app.api.v1.unlock import router as unlock_router
 from app.api.v1.upload import router as pdf_router
+from app.api.v1.undo_redo import router as undo_redo_router
 from app.core.config import settings
 from app.core.database import Base, engine
 
@@ -123,3 +124,4 @@ app.include_router(convert_router)
 app.include_router(reorder_router)
 app.include_router(text_router)
 app.include_router(unlock_router)
+app.include_router(undo_redo_router)

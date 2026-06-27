@@ -291,6 +291,28 @@ class ApiClient {
     return res.json();
   }
 
+  // Undo / Redo
+  async undoPdf(id: string): Promise<PdfDocument> {
+    const res = await fetch(`${this.baseUrl}/pdfs/${id}/undo`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: "{}",
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async redoPdf(id: string): Promise<PdfDocument> {
+    const res = await fetch(`${this.baseUrl}/pdfs/${id}/redo`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: "{}",
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // Bug reports
   async createBugReport(
     title: string,
     description: string,
