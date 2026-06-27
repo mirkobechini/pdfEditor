@@ -82,6 +82,37 @@ export default function Home() {
     }
   }
 
+  async function handleUndo() {
+    if (!selectedId) return;
+    try {
+      const doc = await api.undoPdf(selectedId);
+      // Reload the restored PDF
+      const blob = await api.downloadPdf(doc.id);
+      const url = URL.createObjectURL(blob);
+      if (fileUrl) URL.revokeObjectURL(fileUrl);
+      setFileUrl(url);
+      setSelectedId(doc.id);
+      setSelectedName(doc.original_filename);
+    } catch (err) {
+      console.error("Undo failed:", err);
+    }
+  }
+
+  async function handleRedo() {
+    if (!selectedId) return;
+    try {
+      const doc = await api.redoPdf(selectedId);
+      const blob = await api.downloadPdf(doc.id);
+      const url = URL.createObjectURL(blob);
+      if (fileUrl) URL.revokeObjectURL(fileUrl);
+      setFileUrl(url);
+      setSelectedId(doc.id);
+      setSelectedName(doc.original_filename);
+    } catch (err) {
+      console.error("Redo failed:", err);
+    }
+  }
+
   function handleUpload(doc: PdfDocument) {
     setSelectedId(doc.id);
     setSelectedName(doc.original_filename);
@@ -125,8 +156,10 @@ export default function Home() {
             onSplit={() => setSplitOpen(true)}
             onReorder={() => setReorderOpen(true)}
             onRemovePages={() => setRemoveOpen(true)}
-            onReplaceText={() => { }}
-          />
+            onReplaceText={() => { }} canUndo={!!selectedId}
+            canRedo={!!selectedId}
+            onUndo={handleUndo}
+            onRedo={handleRedo} />
         }
         viewer={
           <PdfViewer
