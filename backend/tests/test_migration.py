@@ -81,23 +81,23 @@ class TestMigrationIntegrity:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
-            # Verify new user_id column exists on pdf_documents before downgrade
+            # Verify new is_password_protected column exists on pdf_documents
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
             pdf_cols_before = {c["name"] for c in inspector.get_columns("pdf_documents")}
-            assert "user_id" in pdf_cols_before
+            assert "is_password_protected" in pdf_cols_before
             engine.dispose()
 
-            # Downgrade one step (remove user_id from pdf_documents)
+            # Downgrade one step (remove is_password_protected)
             rc, out, err = _run_migration(db_path, "downgrade -1")
             assert rc == 0, f"alembic downgrade -1 failed:\n{err}\n{out}"
 
-            # Verify new column is gone, but table still exists
+            # Verify column is gone, but table still exists
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
             pdf_cols_after = {c["name"] for c in inspector.get_columns("pdf_documents")}
-            assert "pdf_documents" in inspector.get_table_names(), "table should still exist"
-            assert "user_id" not in pdf_cols_after, "user_id should be gone after downgrade"
+            assert "pdf_documents" in inspector.get_table_names()
+            assert "is_password_protected" not in pdf_cols_after
             engine.dispose()
 
             # Upgrade again
@@ -107,8 +107,7 @@ class TestMigrationIntegrity:
             # Verify column is restored
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            assert "pdf_documents" in inspector.get_table_names(), \
-                "pdf_documents not restored after re-upgrade"
+            assert "pdf_documents" in inspector.get_table_names()
             engine.dispose()
 
     def test_downgrade_all_the_way(self):
