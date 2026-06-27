@@ -359,6 +359,16 @@ class ApiClient {
     return res.json();
   }
 
+  async updateUserAdmin(userId: string, isAdmin: boolean): Promise<AdminUser> {
+    const res = await fetch(`${this.baseUrl}/admin/users/${userId}/admin`, {
+      method: "PUT",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ is_admin: isAdmin }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
   async listBugReports(skip = 0, limit = 100, status?: string): Promise<{ items: BugReport[]; total: number }> {
     const params = new URLSearchParams({ skip: String(skip), limit: String(limit) });
     if (status) params.set("status", status);
