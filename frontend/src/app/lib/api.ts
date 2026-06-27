@@ -7,6 +7,7 @@ export interface PdfDocument {
   page_count: number;
   title?: string | null;
   author?: string | null;
+  is_password_protected?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -199,6 +200,17 @@ class ApiClient {
   async getMetadata(id: string): Promise<Metadata> {
     const res = await fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
       headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // Password-protected PDFs
+  async unlockPdf(id: string, password: string): Promise<PdfDocument> {
+    const res = await fetch(`${this.baseUrl}/pdfs/${id}/unlock`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
