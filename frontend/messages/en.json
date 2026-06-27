@@ -119,7 +119,9 @@
     "hasAccount": "Already have an account?",
     "registerLink": "Register",
     "loginLink": "Sign In",
-    "logout": "Sign Out"
+    "logout": "Sign Out",
+    "googleLogin": "Sign in with Google",
+    "googleRegister": "Sign up with Google"
   },
   "admin": {
     "title": "Admin Dashboard",
