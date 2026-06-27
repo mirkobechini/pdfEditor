@@ -98,6 +98,8 @@ _nessuno_
 
 1. [ ] **Validazione endpoint `/pdfs/import`** — Accetta TXT/PNG/JPG/GIF/BMP con validazione minima
 
+> **Nota:** Feature minori completate. Non rimangono feature pendenti oltre ai bug aperti. Prossima macro-fase: Fase 1c (Tauri v2).
+
 ## Feature future pianificate
 
 Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'ordine di implementazione è definito dalla priorità indicata.
