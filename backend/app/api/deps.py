@@ -44,23 +44,29 @@ def verify_feature_access(feature_key: str):
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db),
     ) -> User:
-        # Admin bypass
-        if current_user.is_admin:
-            return current_user
-
-        repo = UserRepository(db)
-        features = repo.get_features_for_tier(current_user.license_tier)
-        enabled_keys = {f.feature_key for f in features if f.enabled}
-
-        if feature_key not in enabled_keys:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=(
-                    f"License tier '{current_user.license_tier}' does not "
-                    f"include '{feature_key}'. Upgrade to access this feature."
-                ),
-            )
-
+        check_feature_access(current_user, db, feature_key)
         return current_user
 
     return _check
+
+
+def check_feature_access(
+    current_user: User, db: Session, feature_key: str
+) -> None:
+    """Shared helper: raise HTTPException 403 if the user's license tier
+    does not enable the given feature_key. Admin users bypass all checks."""
+    if current_user.is_admin:
+        return
+
+    repo = UserRepository(db)
+    features = repo.get_features_for_tier(current_user.license_tier)
+    enabled_keys = {f.feature_key for f in features if f.enabled}
+
+    if feature_key not in enabled_keys:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                f"License tier '{current_user.license_tier}' does not "
+                f"include '{feature_key}'. Upgrade to access this feature."
+            ),
+        )

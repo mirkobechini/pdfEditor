@@ -1,10 +1,8 @@
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
-from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, get_current_user, get_pdf_service, verify_feature_access
+from app.api.deps import check_feature_access, get_current_user, get_pdf_service
 from app.models.user import User
-from app.repositories.user_repo import UserRepository
 from app.schemas.pdf import PdfResponse
 from app.services.pdf_service import PdfService
 
@@ -32,38 +30,12 @@ IMPORT_FEATURE_MAP = {
 }
 
 
-def _check_license_for_format(
-    current_user: User,
-    db: Session,
-    fmt_key: str,
-    feature_map: dict[str, str],
-):
-    """Verify that the current user's license covers a specific format."""
-    if current_user.is_admin:
-        return
-    feature_key = feature_map.get(fmt_key)
-    if not feature_key:
-        return
-    repo = UserRepository(db)
-    features = repo.get_features_for_tier(current_user.license_tier)
-    enabled_keys = {f.feature_key for f in features if f.enabled}
-    if feature_key not in enabled_keys:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=(
-                f"License tier '{current_user.license_tier}' does not "
-                f"include '{feature_key}'. Upgrade to access this feature."
-            ),
-        )
-
-
 @router.post("/{pdf_id}/export")
 def export_pdf(
     pdf_id: str,
     fmt: str = Query(..., description="Export format: txt, png, jpg, svg"),
     current_user: User = Depends(get_current_user),
     service: PdfService = Depends(get_pdf_service),
-    db: Session = Depends(get_db),
 ):
     """Export a PDF to another format."""
     fmt = fmt.lower()
@@ -73,7 +45,9 @@ def export_pdf(
             detail=f"Unsupported format '{fmt}'. Supported: {', '.join(sorted(EXPORT_FORMATS))}",
         )
 
-    _check_license_for_format(current_user, db, fmt, EXPORT_FEATURE_MAP)
+    feature_key = EXPORT_FEATURE_MAP.get(fmt)
+    if feature_key:
+        check_feature_access(current_user, service.repo.db, feature_key)
 
     try:
         result, media_type, filename = service.export_pdf(pdf_id, current_user.id, fmt)
@@ -95,7 +69,6 @@ def import_file(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     service: PdfService = Depends(get_pdf_service),
-    db: Session = Depends(get_db),
 ) -> PdfResponse:
     """Import a file and convert it to PDF."""
     if not file.filename:
@@ -111,7 +84,9 @@ def import_file(
             detail=f"Unsupported file type '.{ext}'. Supported: {', '.join(sorted(IMPORT_EXTENSIONS))}",
         )
 
-    _check_license_for_format(current_user, db, ext, IMPORT_FEATURE_MAP)
+    feature_key = IMPORT_FEATURE_MAP.get(ext)
+    if feature_key:
+        check_feature_access(current_user, service.repo.db, feature_key)
 
     content = file.file.read()
 
