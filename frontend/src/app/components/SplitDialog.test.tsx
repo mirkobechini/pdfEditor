@@ -3,15 +3,6 @@ import { render, screen } from "@testing-library/react";
 import SplitDialog, { parsePageRanges } from "./SplitDialog";
 import { api } from "../lib/api";
 
-// Mock i18n
-vi.mock("../lib/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: "it" as const,
-    setLocale: vi.fn(),
-  }),
-}));
-
 // Mock api
 vi.mock("../lib/api", () => ({
   api: {
@@ -65,7 +56,7 @@ describe("SplitDialog", () => {
     render(
       <SplitDialog open={false} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
-    expect(screen.queryByText("splitDialog.title")).not.toBeInTheDocument();
+    expect(screen.queryByText("title")).not.toBeInTheDocument();
   });
 
   it("renders dialog with file info when open is true", () => {
@@ -75,7 +66,7 @@ describe("SplitDialog", () => {
       <SplitDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
-    expect(screen.getByText("splitDialog.title")).toBeInTheDocument();
+    expect(screen.getByText("title")).toBeInTheDocument();
     expect(screen.getByText(/test\.pdf/)).toBeInTheDocument();
   });
 
@@ -96,7 +87,7 @@ describe("SplitDialog", () => {
       <SplitDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
-    const splitBtn = screen.getByText("splitDialog.split");
+    const splitBtn = screen.getByText("split");
     expect(splitBtn).toBeDisabled();
   });
 });
