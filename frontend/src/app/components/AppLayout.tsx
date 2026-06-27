@@ -49,9 +49,9 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
           <button
             className="px-3 py-1 text-xs rounded bg-orange-500 text-white hover:bg-orange-600"
             onClick={() => setBugReportOpen(true)}
-            title={t("bugReport.button")}
+            title={bugT("button")}
           >
-            {t("bugReport.button")}
+            {bugT("button")}
           </button>
           {user && (
             <>
