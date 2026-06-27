@@ -151,5 +151,18 @@
     "tierPro": "Pro",
     "tierEnterprise": "Enterprise",
     "tierAdmin": "Admin"
+  },
+  "deleteModal": {
+    "title": "Delete PDF",
+    "close": "Close",
+    "confirmMessage": "Are you sure you want to delete",
+    "pageCount": "{count} pages",
+    "preview": "Preview",
+    "previewAlt": "Preview of {filename}",
+    "warning": "This action cannot be undone. The file will be permanently deleted.",
+    "cancel": "Cancel",
+    "deleting": "Deleting...",
+    "confirm": "Delete",
+    "deleteFailed": "Delete failed"
   }
 }

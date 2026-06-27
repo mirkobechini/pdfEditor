@@ -145,5 +145,18 @@
     "tierPro": "Pro",
     "tierEnterprise": "Enterprise",
     "tierAdmin": "Admin"
+  },
+  "deleteModal": {
+    "title": "Elimina PDF",
+    "close": "Chiudi",
+    "confirmMessage": "Sei sicuro di voler eliminare",
+    "pageCount": "{count} pagine",
+    "preview": "Anteprima",
+    "previewAlt": "Anteprima di {filename}",
+    "warning": "Questa azione non può essere annullata. Il file verrà eliminato permanentemente.",
+    "cancel": "Annulla",
+    "deleting": "Eliminazione in corso...",
+    "confirm": "Elimina",
+    "deleteFailed": "Cancellazione fallita"
   }
 }

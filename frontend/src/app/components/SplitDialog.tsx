@@ -191,7 +191,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
                   >
                     <img
                       src={thumb.dataUrl}
-                      alt={t("splitDialog.pageThumbnail", { page: thumb.pageNum })}
+                      alt={t("pageThumbnail", { page: thumb.pageNum })}
                       className="w-full h-auto"
                       draggable={false}
                     />
