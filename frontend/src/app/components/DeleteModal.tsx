@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
 import { renderFirstPageToDataUrl } from "../lib/pdfPreview";
@@ -109,10 +110,13 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
                   <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent"></div>
                 </div>
               ) : previewUrl ? (
-                <img
+                <Image
                   src={previewUrl}
                   alt={t("previewAlt", { filename: file.original_filename })}
+                  width={400}
+                  height={560}
                   className="w-full h-full object-cover"
+                  unoptimized
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
