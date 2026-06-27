@@ -34,6 +34,15 @@ class UserRepository:
         self.db.refresh(user)
         return user
 
+    def update_is_admin(self, user_id: str, is_admin: bool) -> User | None:
+        user = self.get_by_id(user_id)
+        if not user:
+            return None
+        user.is_admin = is_admin
+        self.db.flush()
+        self.db.refresh(user)
+        return user
+
     def get_features_for_tier(self, tier: str) -> list[LicenseFeature]:
         return (
             self.db.query(LicenseFeature)

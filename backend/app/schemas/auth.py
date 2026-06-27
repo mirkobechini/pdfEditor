@@ -46,6 +46,12 @@ class UpdateLicenseRequest(BaseModel):
     license_tier: str
 
 
+class UpdateAdminRequest(BaseModel):
+    """Schema for promoting/demoting a user to/from admin."""
+
+    is_admin: bool
+
+
 class LicenseFeatureResponse(BaseModel):
     """Schema for a single license feature."""
 
