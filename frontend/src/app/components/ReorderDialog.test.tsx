@@ -28,16 +28,16 @@ describe("ReorderDialog", () => {
 
   it("renders nothing when open is false", () => {
     render(
-      <ReorderDialog open={false} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+      <ReorderDialog open={false} onClose={() => { }} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
     expect(screen.queryByText("title")).not.toBeInTheDocument();
   });
 
   it("renders dialog with file info when open is true", () => {
-    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => { }));
 
     render(
-      <ReorderDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+      <ReorderDialog open={true} onClose={() => { }} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
     expect(screen.getByText("title")).toBeInTheDocument();
@@ -45,20 +45,20 @@ describe("ReorderDialog", () => {
   });
 
   it("shows loading spinner while loading thumbnails", () => {
-    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => { }));
 
     render(
-      <ReorderDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+      <ReorderDialog open={true} onClose={() => { }} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
     expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
   });
 
   it("disables Reorder button when order is unchanged", () => {
-    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {}));
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => { }));
 
     render(
-      <ReorderDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+      <ReorderDialog open={true} onClose={() => { }} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
     const reorderBtn = screen.getByText("reorder");
@@ -69,7 +69,7 @@ describe("ReorderDialog", () => {
     (api.downloadPdf as any).mockRejectedValue(new Error("Failed"));
 
     render(
-      <ReorderDialog open={true} onClose={() => {}} selectedId="1" selectedName="test.pdf" totalPages={5} />
+      <ReorderDialog open={true} onClose={() => { }} selectedId="1" selectedName="test.pdf" totalPages={5} />
     );
 
     const errorText = await screen.findByText(/failed/);
