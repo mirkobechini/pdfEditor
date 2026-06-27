@@ -26,6 +26,8 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     # Seed license features
     _seed_license_features()
+    # Seed super admin if not exists
+    _seed_super_admin()
     yield
 
 
@@ -75,6 +77,24 @@ def _seed_license_features():
             db.add(lf)
 
         db.commit()
+    finally:
+        db.close()
+
+
+def _seed_super_admin():
+    """Ensure the super admin user exists. Does NOT create if not already registered."""
+    from app.core.database import SessionLocal
+    from app.models.user import User
+    from app.repositories.user_repo import UserRepository
+
+    db = SessionLocal()
+    try:
+        repo = UserRepository(db)
+        user = repo.get_by_email(settings.SUPER_ADMIN_EMAIL)
+        if user and not user.is_admin:
+            user.is_admin = True
+            db.flush()
+            print(f"🔐 Super admin '{settings.SUPER_ADMIN_EMAIL}' promoted on startup.")
     finally:
         db.close()
 
