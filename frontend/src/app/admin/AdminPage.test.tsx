@@ -22,15 +22,6 @@ vi.mock("next/link", () => ({
     ),
 }));
 
-// Mock i18n
-vi.mock("../lib/i18n", () => ({
-    useI18n: () => ({
-        t: (key: string) => key,
-        locale: "it" as const,
-        setLocale: vi.fn(),
-    }),
-}));
-
 // Mock auth
 vi.mock("../lib/auth", () => ({
     useAuth: () => ({
@@ -64,7 +55,7 @@ describe("AdminPage", () => {
 
         render(<AdminPage />);
 
-        expect(screen.getByText("admin.title")).toBeInTheDocument();
+        expect(screen.getByText("title")).toBeInTheDocument();
     });
 
     it("renders both tabs", () => {
@@ -72,8 +63,8 @@ describe("AdminPage", () => {
 
         render(<AdminPage />);
 
-        expect(screen.getByText("admin.users")).toBeInTheDocument();
-        expect(screen.getByText("admin.bugReports")).toBeInTheDocument();
+        expect(screen.getByText("users")).toBeInTheDocument();
+        expect(screen.getByText("bugReports")).toBeInTheDocument();
     });
 
     it("shows users tab by default", () => {
@@ -82,7 +73,7 @@ describe("AdminPage", () => {
         render(<AdminPage />);
 
         // Users tab should have active styling
-        const usersTab = screen.getByText("admin.users");
+        const usersTab = screen.getByText("users");
         expect(usersTab.className).toContain("border-blue-500");
     });
 
@@ -91,7 +82,7 @@ describe("AdminPage", () => {
 
         render(<AdminPage />);
 
-        expect(screen.getByText("admin.loading")).toBeInTheDocument();
+        expect(screen.getByText("loading")).toBeInTheDocument();
     });
 
     it("has back to app link", () => {
@@ -99,7 +90,7 @@ describe("AdminPage", () => {
 
         render(<AdminPage />);
 
-        expect(screen.getByText("admin.backToApp")).toBeInTheDocument();
+        expect(screen.getByText("backToApp")).toBeInTheDocument();
     });
 
     it("renders users table when data loads", async () => {
