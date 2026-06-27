@@ -148,13 +148,16 @@ git branch -d feature/<issue-number>-<short-description>
 
 > ⚠️ Use `--merge` (not `--squash`) to preserve atomic commit history on `dev`. GitHub should auto-close the issue because the PR body contains `closes #N`. However, this occasionally fails. **Always verify** with `gh issue list` after merge. If still open, close manually with `gh issue close <number>`.
 
-### 5. After merge — update progress
+### 5. After merge — update progress & close issue
 
-After the PR is merged and the issue is closed:
+After the PR is merged:
 
-1. **Update the project's task list** (e.g. `BRIEF.md`, `README.md`, or any checklist): mark the relevant checkbox as `[x]`.
-2. **Update this file**: if the discussion produced a new rule or clarification, add it.
-3. **Ask for approval**: briefly describe what was done and ask _"May I proceed with the next issue?"_ — do NOT start the next issue without user confirmation.
+1. **Update ADR.md**: se la feature introduce una nuova dipendenza, vincolo o scelta architetturale, aggiornare le rispettive sezioni. Spostare la feature da "Da implementare" a "Completate".
+2. **Update `.specs/plans/feature-[nome].md`**: impostare Status a `[x] Completata`, aggiungere data e note.
+3. **Commit the updates**: `git add ADR.md .specs/plans/ && git commit -m "docs: update ADR and specs for completed issue-#N" && git push origin dev`
+4. **Close the issue**: `gh issue close <number> --comment "Risolto da PR #<pr-number>."`
+5. **Verify**: `gh issue list --limit 3 | grep "#<number>"` — se ancora aperta, chiudere manualmente
+6. **Ask for approval**: briefly describe what was done and ask _"May I proceed with the next issue?"_ — do NOT start the next issue without user confirmation.
 
 ## Hotfix workflow
 

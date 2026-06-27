@@ -129,10 +129,10 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [x] **Enforce MAX_UPLOAD_SIZE_MB e MAX_PAGE_COUNT** — Limite 50MB e 500 pagine enforceati in upload. Completata (PR #86, issue #85)
 - [x] **Dashboard admin** — Pagina `/admin` per gestione utenti, licenze e bug report. Completata (PR #88, issue #87)
 - [x] **Auth endpoint PDF** — Aggiunto `user_id` a `PdfDocument`, protetti tutti gli endpoint `/pdfs/*` con JWT, filtro per utente corrente. Completata (PR #91, issue #89)
+- [x] **Uniform license checking** — Estratta `check_feature_access()` condivisa in `deps.py`, rimossa duplicata `_check_license_for_format()` in `convert.py`. Completata (PR #92, issue #90)
 
 ### Feature minori da implementare (in ordine)
 
 1. [ ] **Sostituzione I18nProvider custom con next-intl** — next-intl già installato ma inutilizzato
-2. [ ] **API upload protette da autenticazione** — Decisione e implementazione protezione endpoint PDF con JWT
-3. [ ] **PDF protetti da password** — Rilevamento automatico, modale richiesta password, gestione sessione
-4. [ ] **Undo/Redo per modifiche PDF** — Cronologia snapshot lato server con pulsanti toolbar
+2. [ ] **PDF protetti da password** — Rilevamento automatico, modale richiesta password, gestione sessione
+3. [ ] **Undo/Redo per modifiche PDF** — Cronologia snapshot lato server con pulsanti toolbar
