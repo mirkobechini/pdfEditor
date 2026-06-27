@@ -2,15 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import HeaderControls, { ToggleDarkMode, LanguageSelector } from "./HeaderControls";
 
-// Mock i18n
-vi.mock("../lib/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: "it" as const,
-    setLocale: vi.fn(),
-  }),
-}));
-
 // Mock matchMedia
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -43,13 +34,13 @@ beforeEach(() => {
 describe("HeaderControls", () => {
   it("renders dark mode toggle and language selector", () => {
     render(<HeaderControls />);
-    expect(screen.getByTitle("darkMode.toggle")).toBeTruthy();
+    expect(screen.getByTitle("toggle")).toBeTruthy();
     expect(screen.getByRole("combobox")).toBeTruthy();
   });
 
   it("toggles dark mode on click", () => {
     render(<HeaderControls />);
-    fireEvent.click(screen.getByTitle("darkMode.toggle"));
+    fireEvent.click(screen.getByTitle("toggle"));
     expect(screen.getByText("☀️")).toBeTruthy();
   });
 });
@@ -62,7 +53,7 @@ describe("ToggleDarkMode", () => {
 
   it("toggles to sun icon on click", () => {
     render(<ToggleDarkMode />);
-    fireEvent.click(screen.getByTitle("darkMode.toggle"));
+    fireEvent.click(screen.getByTitle("toggle"));
     expect(screen.getByText("☀️")).toBeTruthy();
   });
 });
@@ -71,7 +62,7 @@ describe("LanguageSelector", () => {
   it("renders with current locale", () => {
     render(<LanguageSelector />);
     const select = screen.getByRole("combobox") as HTMLSelectElement;
-    expect(select.value).toBe("it");
+    expect(select.value).toBe("en");
   });
 
   it("has both language options", () => {
