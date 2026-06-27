@@ -168,7 +168,7 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
                   {thumb && (
                     <img
                       src={thumb.dataUrl}
-                      alt={t("removeDialog.pageThumbnail", { page: idx + 1 })}
+                      alt={t("pageThumbnail", { page: idx + 1 })}
                       className="w-full h-auto"
                       draggable={false}
                     />
