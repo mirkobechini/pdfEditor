@@ -24,4 +24,6 @@ Implementare rilevamento automatico di PDF criptati all'upload, modale per richi
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+**Completata il:** 2026-06-27
+**Note:** Rilevamento automatico PDF criptati in upload. Endpoint `POST /pdfs/{id}/unlock` con cache password in memoria (dict `_password_cache`). Modale password in PdfViewer. Migration `6c82d728bff3`. 193 test passanti (107 backend + 86 frontend). (PR #96, issue #95)
