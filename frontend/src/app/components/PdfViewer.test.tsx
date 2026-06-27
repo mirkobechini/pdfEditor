@@ -3,15 +3,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import PdfViewer from "./PdfViewer";
 import { useI18n } from "../lib/i18n";
 
-// Mock i18n
-vi.mock("../lib/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: "it" as const,
-    setLocale: vi.fn(),
-  }),
-}));
-
 describe("PdfViewer", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -33,8 +24,8 @@ describe("PdfViewer", () => {
         onZoomChange={() => {}}
       />
     );
-    expect(screen.getByText("app.selectPdf")).toBeInTheDocument();
-    expect(screen.getByText("app.dragAndDrop")).toBeInTheDocument();
+    expect(screen.getByText("selectPdf")).toBeInTheDocument();
+    expect(screen.getByText("dragAndDrop")).toBeInTheDocument();
   });
 
   it("shows visual feedback on drag over empty state", () => {
@@ -50,11 +41,11 @@ describe("PdfViewer", () => {
       />
     );
 
-    const dropZone = screen.getByText("app.selectPdf").closest("div")!;
+    const dropZone = screen.getByText("selectPdf").closest("div")!;
     fireEvent.dragOver(dropZone);
 
     // After drag over, the icon should change to 📥
-    expect(screen.getByText("app.dropToUpload")).toBeInTheDocument();
+    expect(screen.getByText("dropToUpload")).toBeInTheDocument();
   });
 
   it("calls onFileDrop when PDF is dropped on empty state", () => {
@@ -72,7 +63,7 @@ describe("PdfViewer", () => {
       />
     );
 
-    const dropZone = screen.getByText("app.selectPdf").closest("div")!;
+    const dropZone = screen.getByText("selectPdf").closest("div")!;
     const file = new File(["test"], "test.pdf", { type: "application/pdf" });
     fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
 
@@ -94,7 +85,7 @@ describe("PdfViewer", () => {
       />
     );
 
-    const dropZone = screen.getByText("app.selectPdf").closest("div")!;
+    const dropZone = screen.getByText("selectPdf").closest("div")!;
     const file = new File(["test"], "test.txt", { type: "text/plain" });
     fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
 
