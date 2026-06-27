@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useI18n } from "../lib/i18n";
+import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
 
@@ -19,7 +19,7 @@ interface PageThumbnail {
 }
 
 export default function RemoveDialog({ open, onClose, selectedId, selectedName, totalPages }: RemoveDialogProps) {
-  const { t } = useI18n();
+  const t = useTranslations("app");
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [toRemove, setToRemove] = React.useState<Set<number>>(new Set());
   const [removing, setRemoving] = React.useState(false);

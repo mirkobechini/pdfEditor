@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useI18n } from "../lib/i18n";
+import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
 import { renderFirstPageToDataUrl } from "../lib/pdfPreview";
 
@@ -13,7 +13,7 @@ interface DeleteModalProps {
 }
 
 export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteModalProps) {
-  const { t } = useI18n();
+  const t = useTranslations("app");
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);

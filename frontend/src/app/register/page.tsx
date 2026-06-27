@@ -22,12 +22,12 @@ export default function RegisterPage() {
     if (!fullName.trim() || !email.trim() || !password.trim()) return;
 
     if (password !== confirmPassword) {
-      setError(t("auth.passwordMismatch"));
+      setError(t("passwordMismatch"));
       return;
     }
 
     if (password.length < 6) {
-      setError(t("auth.passwordTooShort"));
+      setError(t("passwordTooShort"));
       return;
     }
 
@@ -36,7 +36,7 @@ export default function RegisterPage() {
       await register(email.trim(), password, fullName.trim());
       window.location.href = "/";
     } catch (err) {
-      setError(t("auth.registerFailed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("registerFailed") + ": " + (err instanceof Error ? err.message : err));
     } finally {
       setLoading(false);
     }
@@ -49,11 +49,11 @@ export default function RegisterPage() {
       </header>
       <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
         <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
-          <h1 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">{t("auth.registerTitle")}</h1>
+          <h1 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">{t("registerTitle")}</h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("auth.fullName")}</label>
+              <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("fullName")}</label>
               <input
                 type="text"
                 value={fullName}
@@ -66,7 +66,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("auth.email")}</label>
+              <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("email")}</label>
               <input
                 type="email"
                 value={email}
@@ -78,7 +78,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("auth.password")}</label>
+              <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("password")}</label>
               <input
                 type="password"
                 value={password}
@@ -91,7 +91,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("auth.confirmPassword")}</label>
+              <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("confirmPassword")}</label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -113,14 +113,14 @@ export default function RegisterPage() {
               className="w-full py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 font-medium"
               disabled={loading || !fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()}
             >
-              {loading ? t("auth.registering") : t("auth.registerButton")}
+              {loading ? t("registering") : t("registerButton")}
             </button>
           </form>
 
           <p className="mt-4 text-sm text-center text-gray-500 dark:text-gray-400">
-            {t("auth.hasAccount")}{" "}
+            {t("hasAccount")}{" "}
             <a href="/login" className="text-blue-500 hover:underline">
-              {t("auth.loginLink")}
+              {t("loginLink")}
             </a>
           </p>
         </div>

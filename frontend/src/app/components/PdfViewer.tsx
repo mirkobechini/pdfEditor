@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useI18n } from "../lib/i18n";
+import { useTranslations } from "next-intl";
 
 interface PdfViewerProps {
   fileUrl: string | null;
@@ -24,7 +24,7 @@ export default function PdfViewer({
   onZoomChange,
   onFileDrop,
 }: PdfViewerProps) {
-  const { t } = useI18n();
+  const t = useTranslations("app");
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [rendering, setRendering] = React.useState(false);

@@ -13,7 +13,7 @@ const LICENSE_TIERS = ["free", "pro", "enterprise", "admin"] as const;
 const BUG_STATUSES = ["open", "in_progress", "resolved", "closed"] as const;
 
 export default function AdminPage() {
-    const { t } = useI18n();
+    const t = useTranslations("admin");
     const { user, loading } = useAuth();
     const [tab, setTab] = React.useState<Tab>("users");
 
@@ -27,7 +27,7 @@ export default function AdminPage() {
     if (loading || !user || !user.is_admin) {
         return (
             <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-                <p className="text-gray-500 dark:text-gray-400">{t("admin.loading")}</p>
+                <p className="text-gray-500 dark:text-gray-400">{t("loading")}</p>
             </div>
         );
     }
@@ -37,14 +37,14 @@ export default function AdminPage() {
             {/* Header */}
             <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shrink-0">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-lg font-bold">{t("admin.title")}</h1>
+                    <h1 className="text-lg font-bold">{t("title")}</h1>
                 </div>
                 <div className="flex items-center gap-3">
                     <Link
                         href="/"
                         className="px-3 py-1 text-xs rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
                     >
-                        {t("admin.backToApp")}
+                        {t("backToApp")}
                     </Link>
                     <HeaderControls />
                 </div>
@@ -61,7 +61,7 @@ export default function AdminPage() {
                             }`}
                         onClick={() => setTab("users")}
                     >
-                        {t("admin.users")}
+                        {t("users")}
                     </button>
                     <button
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "bugs"
@@ -70,7 +70,7 @@ export default function AdminPage() {
                             }`}
                         onClick={() => setTab("bugs")}
                     >
-                        {t("admin.bugReports")}
+                        {t("bugReports")}
                     </button>
                 </div>
 
@@ -119,21 +119,21 @@ function UsersTable() {
     }
 
     if (loading)
-        return <p className="text-sm text-gray-400">{t("admin.loading")}</p>;
+        return <p className="text-sm text-gray-400">{t("loading")}</p>;
     if (users.length === 0)
-        return <p className="text-sm text-gray-400">{t("admin.noUsers")}</p>;
+        return <p className="text-sm text-gray-400">{t("noUsers")}</p>;
 
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
                 <thead>
                     <tr className="border-b dark:border-gray-700 text-left">
-                        <th className="p-2 font-medium">{t("admin.email")}</th>
-                        <th className="p-2 font-medium">{t("admin.fullName")}</th>
-                        <th className="p-2 font-medium">{t("admin.licenseTier")}</th>
-                        <th className="p-2 font-medium">{t("admin.isAdmin")}</th>
-                        <th className="p-2 font-medium">{t("admin.createdAt")}</th>
-                        <th className="p-2 font-medium">{t("admin.actions")}</th>
+                        <th className="p-2 font-medium">{t("email")}</th>
+                        <th className="p-2 font-medium">{t("fullName")}</th>
+                        <th className="p-2 font-medium">{t("licenseTier")}</th>
+                        <th className="p-2 font-medium">{t("isAdmin")}</th>
+                        <th className="p-2 font-medium">{t("createdAt")}</th>
+                        <th className="p-2 font-medium">{t("actions")}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -179,13 +179,13 @@ function UsersTable() {
                                             className="text-xs px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
                                             onClick={() => handleSaveLicense(u.id)}
                                         >
-                                            {t("admin.save")}
+                                            {t("save")}
                                         </button>
                                         <button
                                             className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
                                             onClick={() => setEditingId(null)}
                                         >
-                                            {t("admin.cancel")}
+                                            {t("cancel")}
                                         </button>
                                     </div>
                                 ) : (
@@ -196,7 +196,7 @@ function UsersTable() {
                                             setEditTier(u.license_tier);
                                         }}
                                     >
-                                        {t("admin.save")}
+                                        {t("save")}
                                     </button>
                                 )}
                             </td>
@@ -248,16 +248,16 @@ function BugReportsTable() {
     }
 
     if (loading)
-        return <p className="text-sm text-gray-400">{t("admin.loading")}</p>;
+        return <p className="text-sm text-gray-400">{t("loading")}</p>;
     if (bugs.length === 0)
-        return <p className="text-sm text-gray-400">{t("admin.noBugs")}</p>;
+        return <p className="text-sm text-gray-400">{t("noBugs")}</p>;
 
     return (
         <div>
             {/* Filter */}
             <div className="mb-4 flex items-center gap-2">
                 <label className="text-sm text-gray-500">
-                    {t("admin.filterStatus")}:
+                    {t("filterStatus")}:
                 </label>
                 <select
                     value={statusFilter}
@@ -267,7 +267,7 @@ function BugReportsTable() {
                     }}
                     className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
                 >
-                    <option value="">{t("admin.all")}</option>
+                    <option value="">{t("all")}</option>
                     {BUG_STATUSES.map((s) => (
                         <option key={s} value={s}>
                             {t(
@@ -283,12 +283,12 @@ function BugReportsTable() {
                 <table className="w-full text-sm border-collapse">
                     <thead>
                         <tr className="border-b dark:border-gray-700 text-left">
-                            <th className="p-2 font-medium">{t("admin.titleField")}</th>
-                            <th className="p-2 font-medium">{t("admin.userId")}</th>
-                            <th className="p-2 font-medium">{t("admin.status")}</th>
-                            <th className="p-2 font-medium">{t("admin.createdAt")}</th>
-                            <th className="p-2 font-medium">{t("admin.description")}</th>
-                            <th className="p-2 font-medium">{t("admin.actions")}</th>
+                            <th className="p-2 font-medium">{t("titleField")}</th>
+                            <th className="p-2 font-medium">{t("userId")}</th>
+                            <th className="p-2 font-medium">{t("status")}</th>
+                            <th className="p-2 font-medium">{t("createdAt")}</th>
+                            <th className="p-2 font-medium">{t("description")}</th>
+                            <th className="p-2 font-medium">{t("actions")}</th>
                         </tr>
                     </thead>
                     <tbody>

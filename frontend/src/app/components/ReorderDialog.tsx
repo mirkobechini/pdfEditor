@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useI18n } from "../lib/i18n";
+import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
 
@@ -19,7 +19,7 @@ interface PageThumbnail {
 }
 
 export default function ReorderDialog({ open, onClose, selectedId, selectedName, totalPages }: ReorderDialogProps) {
-  const { t } = useI18n();
+  const t = useTranslations("app");
   const [order, setOrder] = React.useState<number[]>([]);
   const [thumbnails, setThumbnails] = React.useState<PageThumbnail[]>([]);
   const [loading, setLoading] = React.useState(false);

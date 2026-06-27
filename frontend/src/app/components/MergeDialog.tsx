@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useI18n } from "../lib/i18n";
+import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
 import { downloadBlob } from "../lib/download";
 
@@ -13,7 +13,7 @@ interface MergeDialogProps {
 }
 
 export default function MergeDialog({ open, onClose, selectedId, onMergeComplete }: MergeDialogProps) {
-  const { t } = useI18n();
+  const t = useTranslations("app");
   const [files, setFiles] = React.useState<PdfDocument[]>([]);
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [merging, setMerging] = React.useState(false);

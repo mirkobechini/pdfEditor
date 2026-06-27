@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useI18n } from "../lib/i18n";
+import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
 
@@ -37,7 +37,7 @@ export function parsePageRanges(input: string, maxPages: number): number[] {
 }
 
 export default function SplitDialog({ open, onClose, selectedId, selectedName, totalPages }: SplitDialogProps) {
-  const { t } = useI18n();
+  const t = useTranslations("app");
   const [pageInput, setPageInput] = React.useState("");
   const [splitting, setSplitting] = React.useState(false);
   const [error, setError] = React.useState("");
