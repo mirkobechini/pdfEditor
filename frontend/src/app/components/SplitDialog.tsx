@@ -37,7 +37,7 @@ export function parsePageRanges(input: string, maxPages: number): number[] {
 }
 
 export default function SplitDialog({ open, onClose, selectedId, selectedName, totalPages }: SplitDialogProps) {
-  const t = useTranslations("app");
+  const t = useTranslations("splitDialog");
   const [pageInput, setPageInput] = React.useState("");
   const [splitting, setSplitting] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -147,7 +147,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
       }
       onClose();
     } catch (err) {
-      setError(t("splitDialog.failed") + ": " + err);
+      setError(t("failed") + ": " + err);
     } finally {
       setSplitting(false);
     }
@@ -161,10 +161,10 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
         className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold mb-4">{t("splitDialog.title")}</h2>
+        <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
 
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          {selectedName} ({totalPages} {t("splitDialog.pages")})
+          {selectedName} ({totalPages} {t("pages")})
         </p>
 
         {/* Thumbnails grid */}
@@ -216,11 +216,11 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
             <div className="mb-4">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                 {selectedPages.size > 0
-                  ? `${selectedPages.size} ${t("splitDialog.pagesSelected")}`
-                  : t("splitDialog.clickToSelect")}
+                  ? `${selectedPages.size} ${t("pagesSelected")}`
+                  : t("clickToSelect")}
               </p>
               <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-gray-400">
-                {t("splitDialog.orTypeRange")}
+                {t("orTypeRange")}
               </label>
               <input
                 type="text"
@@ -231,7 +231,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
                   const pages = parsePageRanges(e.target.value, totalPages);
                   setSelectedPages(new Set(pages));
                 }}
-                placeholder={t("splitDialog.pagePlaceholder")}
+                placeholder={t("pagePlaceholder")}
                 className="w-full text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
               />
             </div>
@@ -245,14 +245,14 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
             className="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
             onClick={onClose}
           >
-            {t("splitDialog.cancel")}
+            {t("cancel")}
           </button>
           <button
             className="px-4 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
             disabled={!selectedId || parsedPages.length === 0 || splitting}
             onClick={handleSplit}
           >
-            {splitting ? t("splitDialog.splitting") : t("splitDialog.split")}
+            {splitting ? t("splitting") : t("split")}
           </button>
         </div>
       </div>
