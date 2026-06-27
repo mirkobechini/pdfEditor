@@ -8,15 +8,6 @@ vi.mock("../lib/auth", () => ({
   useAuth: vi.fn(),
 }));
 
-// Mock i18n
-vi.mock("../lib/i18n", () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    locale: "it" as const,
-    setLocale: () => {},
-  }),
-}));
-
 // Mock matchMedia for HeaderControls dark mode
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -51,19 +42,19 @@ describe("RegisterPage", () => {
   it("renders register form", () => {
     render(<RegisterPage />);
 
-    expect(screen.getByText("auth.registerTitle")).toBeTruthy();
-    expect(screen.getByText("auth.fullName")).toBeTruthy();
-    expect(screen.getByText("auth.email")).toBeTruthy();
-    expect(screen.getByText("auth.password")).toBeTruthy();
-    expect(screen.getByText("auth.confirmPassword")).toBeTruthy();
-    expect(screen.getByText("auth.registerButton")).toBeTruthy();
-    expect(screen.getByText("auth.hasAccount")).toBeTruthy();
-    expect(screen.getByText("auth.loginLink")).toBeTruthy();
+    expect(screen.getByText("registerTitle")).toBeTruthy();
+    expect(screen.getByText("fullName")).toBeTruthy();
+    expect(screen.getByText("email")).toBeTruthy();
+    expect(screen.getByText("password")).toBeTruthy();
+    expect(screen.getByText("confirmPassword")).toBeTruthy();
+    expect(screen.getByText("registerButton")).toBeTruthy();
+    expect(screen.getByText("hasAccount")).toBeTruthy();
+    expect(screen.getByText("loginLink")).toBeTruthy();
   });
 
   it("has Register button disabled when form is empty", () => {
     render(<RegisterPage />);
-    expect(screen.getByText("auth.registerButton")).toBeDisabled();
+    expect(screen.getByText("registerButton")).toBeDisabled();
   });
 
   it("enables Register button when form is filled", () => {
@@ -79,7 +70,7 @@ describe("RegisterPage", () => {
     fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
     fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
 
-    expect(screen.getByText("auth.registerButton")).toBeEnabled();
+    expect(screen.getByText("registerButton")).toBeEnabled();
   });
 
   it("shows error when passwords do not match", async () => {
@@ -95,9 +86,9 @@ describe("RegisterPage", () => {
     fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
     fireEvent.change(passwordInputs[1], { target: { value: "different" } });
 
-    fireEvent.click(screen.getByText("auth.registerButton"));
+    fireEvent.click(screen.getByText("registerButton"));
 
-    expect(screen.getByText("auth.passwordMismatch")).toBeTruthy();
+    expect(screen.getByText("passwordMismatch")).toBeTruthy();
     expect(mockRegister).not.toHaveBeenCalled();
   });
 
@@ -116,7 +107,7 @@ describe("RegisterPage", () => {
     fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
     fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
 
-    fireEvent.click(screen.getByText("auth.registerButton"));
+    fireEvent.click(screen.getByText("registerButton"));
 
     await waitFor(() => {
       expect(mockRegister).toHaveBeenCalledWith("test@example.com", "password123", "Test User");
@@ -139,16 +130,16 @@ describe("RegisterPage", () => {
     fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
     fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
 
-    fireEvent.click(screen.getByText("auth.registerButton"));
+    fireEvent.click(screen.getByText("registerButton"));
 
     await waitFor(() => {
-      expect(screen.getByText(/auth.registerFailed/)).toBeTruthy();
+      expect(screen.getByText(/registerFailed/)).toBeTruthy();
     });
   });
 
   it("has a link to login page", () => {
     render(<RegisterPage />);
-    const link = screen.getByText("auth.loginLink");
+    const link = screen.getByText("loginLink");
     expect(link.getAttribute("href")).toBe("/login");
   });
 });
