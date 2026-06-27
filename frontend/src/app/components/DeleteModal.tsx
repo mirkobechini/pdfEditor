@@ -52,7 +52,7 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
       onConfirm();
     } catch (err) {
       console.error("Delete failed:", err);
-      alert(t("sidebar.deleteFailed"));
+      alert(t("deleteFailed"));
     } finally {
       setDeleting(false);
     }
