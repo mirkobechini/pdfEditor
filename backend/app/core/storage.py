@@ -49,3 +49,57 @@ def delete_pdf(file_uuid: str) -> bool:
         path.unlink()
         return True
     return False
+
+
+# ---------------------------------------------------------------------------
+# Undo/Redo snapshot storage
+# ---------------------------------------------------------------------------
+
+MAX_SNAPSHOTS = 10
+
+
+def get_snapshot_dir(pdf_id: str) -> Path:
+    """Return the snapshot directory for a given PDF ID, creating it if needed."""
+    snap_dir = get_storage_path().parent / "snapshots" / pdf_id
+    snap_dir.mkdir(parents=True, exist_ok=True)
+    return snap_dir
+
+
+def save_snapshot(pdf_id: str, content: bytes) -> None:
+    """Save a snapshot of the PDF before a modification. Keeps at most MAX_SNAPSHOTS."""
+    snap_dir = get_snapshot_dir(pdf_id)
+    timestamp = int(uuid.uuid4().time_low)  # monotonic-ish timestamp
+    (snap_dir / f"{timestamp}.pdf").write_bytes(content)
+
+    # Prune old snapshots
+    files = sorted(snap_dir.glob("*.pdf"), key=lambda f: f.stat().st_mtime)
+    while len(files) > MAX_SNAPSHOTS:
+        files[0].unlink()
+        files = files[1:]
+
+
+def get_latest_snapshot(pdf_id: str) -> bytes | None:
+    """Return the most recent snapshot content, or None."""
+    snap_dir = get_snapshot_dir(pdf_id)
+    files = sorted(snap_dir.glob("*.pdf"), key=lambda f: f.stat().st_mtime, reverse=True)
+    if not files:
+        return None
+    return files[0].read_bytes()
+
+
+def pop_latest_snapshot(pdf_id: str) -> bytes | None:
+    """Return the most recent snapshot and delete it from disk. Returns None if no snapshots."""
+    snap_dir = get_snapshot_dir(pdf_id)
+    files = sorted(snap_dir.glob("*.pdf"), key=lambda f: f.stat().st_mtime, reverse=True)
+    if not files:
+        return None
+    content = files[0].read_bytes()
+    files[0].unlink()
+    return content
+
+
+def clear_snapshots(pdf_id: str) -> None:
+    """Delete all snapshots for a given PDF ID."""
+    snap_dir = get_snapshot_dir(pdf_id)
+    for f in snap_dir.glob("*.pdf"):
+        f.unlink()
