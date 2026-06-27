@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
@@ -190,13 +191,12 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
               return (
                 <div
                   key={pageNum}
-                  className={`relative border rounded overflow-hidden cursor-grab active:cursor-grabbing transition-all ${
-                    dragIndex === pos
+                  className={`relative border rounded overflow-hidden cursor-grab active:cursor-grabbing transition-all ${dragIndex === pos
                       ? "opacity-50 border-blue-500 shadow-lg scale-95"
                       : dropIndex === pos
-                      ? "border-blue-500 border-2"
-                      : "border-gray-200 dark:border-gray-600 hover:border-blue-400"
-                  }`}
+                        ? "border-blue-500 border-2"
+                        : "border-gray-200 dark:border-gray-600 hover:border-blue-400"
+                    }`}
                   draggable
                   onDragStart={() => handleDragStart(pos)}
                   onDragOver={(e) => handleDragOver(e, pos)}
@@ -205,11 +205,13 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
                   onDragEnd={handleDragEnd}
                 >
                   {thumb && (
-                    <img
+                    <Image
                       src={thumb.dataUrl}
                       alt={t("pageThumbnail", { page: pageNum })}
+                      width={200}
+                      height={280}
                       className="w-full h-auto"
-                      draggable={false}
+                      unoptimized
                     />
                   )}
                   <div className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
