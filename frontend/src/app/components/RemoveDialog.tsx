@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
@@ -158,26 +159,26 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
               return (
                 <div
                   key={idx}
-                  className={`relative border rounded overflow-hidden cursor-pointer transition-all ${
-                    isSelected
+                  className={`relative border rounded overflow-hidden cursor-pointer transition-all ${isSelected
                       ? "border-red-500 ring-2 ring-red-400 opacity-60"
                       : "border-gray-200 dark:border-gray-600 hover:border-blue-400"
-                  }`}
+                    }`}
                   onClick={() => togglePage(idx)}
                 >
                   {thumb && (
-                    <img
+                    <Image
                       src={thumb.dataUrl}
                       alt={t("pageThumbnail", { page: idx + 1 })}
+                      width={200}
+                      height={280}
                       className="w-full h-auto"
-                      draggable={false}
+                      unoptimized
                     />
                   )}
-                  <div className={`absolute top-1 left-1 text-xs px-1.5 py-0.5 rounded ${
-                    isSelected
+                  <div className={`absolute top-1 left-1 text-xs px-1.5 py-0.5 rounded ${isSelected
                       ? "bg-red-500 text-white"
                       : "bg-black/60 text-white"
-                  }`}>
+                    }`}>
                     {idx + 1}
                   </div>
                   {isSelected && (
