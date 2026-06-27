@@ -31,13 +31,13 @@ describe("DeleteModal", () => {
   });
 
   it("renders nothing when open is false", () => {
-    render(<DeleteModal open={false} onClose={() => {}} file={null} onConfirm={() => {}} />);
+    render(<DeleteModal open={false} onClose={() => { }} file={null} onConfirm={() => { }} />);
     expect(screen.queryByText("title")).not.toBeInTheDocument();
   });
 
   it("renders modal with file info when open is true", () => {
     render(
-      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+      <DeleteModal open={true} onClose={() => { }} file={mockFile} onConfirm={() => { }} />
     );
 
     expect(screen.getByText("title")).toBeInTheDocument();
@@ -48,11 +48,11 @@ describe("DeleteModal", () => {
   });
 
   it("shows loading spinner while loading preview", async () => {
-    (api.downloadPdf as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+    (api.downloadPdf as any).mockImplementation(() => new Promise(() => { })); // Never resolves
     (api.deletePdf as any).mockResolvedValue(undefined);
 
     render(
-      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+      <DeleteModal open={true} onClose={() => { }} file={mockFile} onConfirm={() => { }} />
     );
 
     expect(screen.getByText("preview")).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe("DeleteModal", () => {
     (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
 
     render(
-      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+      <DeleteModal open={true} onClose={() => { }} file={mockFile} onConfirm={() => { }} />
     );
 
     await waitFor(() => {
@@ -84,7 +84,7 @@ describe("DeleteModal", () => {
     (api.deletePdf as any).mockResolvedValue(undefined);
 
     render(
-      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+      <DeleteModal open={true} onClose={() => { }} file={mockFile} onConfirm={() => { }} />
     );
 
     await waitFor(() => {
@@ -101,7 +101,7 @@ describe("DeleteModal", () => {
 
     const onConfirm = vi.fn();
     render(
-      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={onConfirm} />
+      <DeleteModal open={true} onClose={() => { }} file={mockFile} onConfirm={onConfirm} />
     );
 
     await waitFor(() => {
@@ -127,7 +127,7 @@ describe("DeleteModal", () => {
 
     const onClose = vi.fn();
     render(
-      <DeleteModal open={true} onClose={onClose} file={mockFile} onConfirm={() => {}} />
+      <DeleteModal open={true} onClose={onClose} file={mockFile} onConfirm={() => { }} />
     );
 
     await waitFor(() => {
@@ -149,7 +149,7 @@ describe("DeleteModal", () => {
 
     const onClose = vi.fn();
     render(
-      <DeleteModal open={true} onClose={onClose} file={mockFile} onConfirm={() => {}} />
+      <DeleteModal open={true} onClose={onClose} file={mockFile} onConfirm={() => { }} />
     );
 
     await waitFor(() => {
@@ -167,12 +167,12 @@ describe("DeleteModal", () => {
   it("shows deleting state while deleting", async () => {
     const mockBlob = new Blob(["test"], { type: "application/pdf" });
     (api.downloadPdf as any).mockResolvedValue(mockBlob);
-    (api.deletePdf as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+    (api.deletePdf as any).mockImplementation(() => new Promise(() => { })); // Never resolves
     const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
     (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
 
     render(
-      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+      <DeleteModal open={true} onClose={() => { }} file={mockFile} onConfirm={() => { }} />
     );
 
     await waitFor(() => {
@@ -196,7 +196,7 @@ describe("DeleteModal", () => {
     (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
 
     render(
-      <DeleteModal open={true} onClose={() => {}} file={mockFile} onConfirm={() => {}} />
+      <DeleteModal open={true} onClose={() => { }} file={mockFile} onConfirm={() => { }} />
     );
 
     await waitFor(() => {
