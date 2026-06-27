@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.repositories.user_repo import UserRepository
-from app.schemas.auth import LicenseFeatureResponse, UpdateLicenseRequest, UserResponse
+from app.schemas.auth import LicenseFeatureResponse, UpdateAdminRequest, UpdateLicenseRequest, UserResponse
 
 router = APIRouter(tags=["admin"])
 
@@ -58,6 +58,30 @@ def update_user_license(
             detail="User not found",
         )
 
+    return UserResponse.model_validate(user)
+
+
+@router.put("/admin/users/{user_id}/admin", response_model=UserResponse)
+def update_user_admin(
+    user_id: str,
+    req: UpdateAdminRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserResponse:
+    """Promote or demote a user to/from admin (admin only)."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+
+    repo = UserRepository(db)
+    user = repo.update_is_admin(user_id, req.is_admin)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
     return UserResponse.model_validate(user)
 
 

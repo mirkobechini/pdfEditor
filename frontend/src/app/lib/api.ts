@@ -61,7 +61,8 @@ class ApiClient {
     try {
       const body = await res.json();
       if (typeof body.detail === "string") return body.detail;
-      if (Array.isArray(body.detail)) return body.detail[0]?.msg || res.statusText;
+      if (Array.isArray(body.detail))
+        return body.detail[0]?.msg || res.statusText;
       return JSON.stringify(body);
     } catch {
       return res.statusText;
@@ -94,9 +95,12 @@ class ApiClient {
   }
 
   async listPdfs(skip = 0, limit = 100): Promise<PdfListResponse> {
-    const res = await fetch(`${this.baseUrl}/pdfs?skip=${skip}&limit=${limit}`, {
-      headers: this.getHeaders(),
-    });
+    const res = await fetch(
+      `${this.baseUrl}/pdfs?skip=${skip}&limit=${limit}`,
+      {
+        headers: this.getHeaders(),
+      },
+    );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
@@ -174,7 +178,7 @@ class ApiClient {
     id: string,
     search: string,
     replace: string,
-    occurrence?: number
+    occurrence?: number,
   ): Promise<PdfDocument> {
     const body: Record<string, unknown> = { search, replace };
     if (occurrence !== undefined) body.occurrence = occurrence;
@@ -187,7 +191,10 @@ class ApiClient {
     return res.json();
   }
 
-  async extractText(id: string, page?: number): Promise<{ text: string; pages: number }> {
+  async extractText(
+    id: string,
+    page?: number,
+  ): Promise<{ text: string; pages: number }> {
     const params = page ? `?page=${page}` : "";
     const res = await fetch(`${this.baseUrl}/pdfs/${id}/text${params}`, {
       headers: this.getHeaders(),
@@ -216,7 +223,10 @@ class ApiClient {
     return res.json();
   }
 
-  async updateMetadata(id: string, metadata: Partial<Metadata>): Promise<PdfDocument> {
+  async updateMetadata(
+    id: string,
+    metadata: Partial<Metadata>,
+  ): Promise<PdfDocument> {
     const res = await fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
       method: "PUT",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
@@ -252,7 +262,7 @@ class ApiClient {
   async register(
     email: string,
     password: string,
-    fullName: string
+    fullName: string,
   ): Promise<{ id: string; email: string; full_name: string }> {
     const res = await fetch(`${this.baseUrl}/auth/register`, {
       method: "POST",
@@ -263,7 +273,10 @@ class ApiClient {
     return res.json();
   }
 
-  async login(email: string, password: string): Promise<{ access_token: string; token_type: string }> {
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{ access_token: string; token_type: string }> {
     const res = await fetch(`${this.baseUrl}/auth/login`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
@@ -273,7 +286,9 @@ class ApiClient {
     return res.json();
   }
 
-  async googleLogin(idToken: string): Promise<{ access_token: string; token_type: string }> {
+  async googleLogin(
+    idToken: string,
+  ): Promise<{ access_token: string; token_type: string }> {
     const res = await fetch(`${this.baseUrl}/auth/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -283,7 +298,14 @@ class ApiClient {
     return res.json();
   }
 
-  async getMe(): Promise<{ id: string; email: string; full_name: string; is_active: boolean; is_admin: boolean; license_tier: string }> {
+  async getMe(): Promise<{
+    id: string;
+    email: string;
+    full_name: string;
+    is_active: boolean;
+    is_admin: boolean;
+    license_tier: string;
+  }> {
     const res = await fetch(`${this.baseUrl}/auth/me`, {
       headers: this.getHeaders(),
     });
@@ -316,7 +338,7 @@ class ApiClient {
   async createBugReport(
     title: string,
     description: string,
-    pageUrl?: string
+    pageUrl?: string,
   ): Promise<BugReport> {
     const body: Record<string, unknown> = { title, description };
     if (pageUrl) body.page_url = pageUrl;
@@ -341,15 +363,24 @@ class ApiClient {
   }
 
   // Admin
-  async listUsers(skip = 0, limit = 100): Promise<{ items: AdminUser[]; total: number }> {
-    const res = await fetch(`${this.baseUrl}/admin/users?skip=${skip}&limit=${limit}`, {
-      headers: this.getHeaders(),
-    });
+  async listUsers(
+    skip = 0,
+    limit = 100,
+  ): Promise<{ items: AdminUser[]; total: number }> {
+    const res = await fetch(
+      `${this.baseUrl}/admin/users?skip=${skip}&limit=${limit}`,
+      {
+        headers: this.getHeaders(),
+      },
+    );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
-  async updateUserLicense(userId: string, licenseTier: string): Promise<AdminUser> {
+  async updateUserLicense(
+    userId: string,
+    licenseTier: string,
+  ): Promise<AdminUser> {
     const res = await fetch(`${this.baseUrl}/admin/users/${userId}/license`, {
       method: "PUT",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
@@ -359,8 +390,25 @@ class ApiClient {
     return res.json();
   }
 
-  async listBugReports(skip = 0, limit = 100, status?: string): Promise<{ items: BugReport[]; total: number }> {
-    const params = new URLSearchParams({ skip: String(skip), limit: String(limit) });
+  async updateUserAdmin(userId: string, isAdmin: boolean): Promise<AdminUser> {
+    const res = await fetch(`${this.baseUrl}/admin/users/${userId}/admin`, {
+      method: "PUT",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ is_admin: isAdmin }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async listBugReports(
+    skip = 0,
+    limit = 100,
+    status?: string,
+  ): Promise<{ items: BugReport[]; total: number }> {
+    const params = new URLSearchParams({
+      skip: String(skip),
+      limit: String(limit),
+    });
     if (status) params.set("status", status);
     const res = await fetch(`${this.baseUrl}/admin/bugs?${params}`, {
       headers: this.getHeaders(),
@@ -369,7 +417,10 @@ class ApiClient {
     return res.json();
   }
 
-  async updateBugReportStatus(bugId: string, status: string): Promise<BugReport> {
+  async updateBugReportStatus(
+    bugId: string,
+    status: string,
+  ): Promise<BugReport> {
     const res = await fetch(`${this.baseUrl}/admin/bugs/${bugId}/status`, {
       method: "PUT",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },

@@ -125,3 +125,63 @@ class TestAdmin:
             json={"license_tier": "ultra"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_admin_update_is_admin(self, client, db_engine):
+        """Should promote a user to admin."""
+        admin_token = _create_admin(client, db_engine)
+        user_token = _register_and_login(client, email="target@test.com")
+
+        # Find target user ID
+        users_resp = client.get(
+            "/admin/users",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        target_id = [u["id"] for u in users_resp.json() if u["email"] == "target@test.com"][0]
+
+        # Promote to admin
+        response = client.put(
+            f"/admin/users/{target_id}/admin",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"is_admin": True},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["is_admin"] is True
+
+        # Demote back
+        response = client.put(
+            f"/admin/users/{target_id}/admin",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"is_admin": False},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["is_admin"] is False
+
+    def test_admin_update_is_admin_denied_for_non_admin(self, client, db_engine):
+        """Should deny non-admin users from promoting others."""
+        user_token = _register_and_login(client, email="user@test.com")
+        admin_token = _create_admin(client, db_engine)
+
+        users_resp = client.get(
+            "/admin/users",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        # Get any user ID
+        target_id = users_resp.json()[0]["id"]
+
+        response = client.put(
+            f"/admin/users/{target_id}/admin",
+            headers={"Authorization": f"Bearer {user_token}"},
+            json={"is_admin": True},
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_update_is_admin_not_found(self, client, db_engine):
+        """Should return 404 for non-existent user."""
+        admin_token = _create_admin(client, db_engine)
+
+        response = client.put(
+            "/admin/users/non-existent-id/admin",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"is_admin": True},
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
