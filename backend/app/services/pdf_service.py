@@ -26,15 +26,16 @@ class PdfService:
         if not validate_pdf(content):
             raise ValueError("Invalid PDF file")
 
-        # Get page count with PyMuPDF before saving
+        # Get page count and check encryption with PyMuPDF
         import fitz
 
         doc = fitz.open(stream=content, filetype="pdf")
         page_count = doc.page_count
+        is_encrypted = bool(doc.needs_pass)
         doc.close()
 
-        # Enforce page limit
-        if page_count > settings.MAX_PAGE_COUNT:
+        # Enforce page limit (skip for encrypted — can't verify without password)
+        if not is_encrypted and page_count > settings.MAX_PAGE_COUNT:
             raise ValueError(
                 f"PDF has {page_count} pages. Maximum allowed is {settings.MAX_PAGE_COUNT}"
             )
@@ -47,7 +48,8 @@ class PdfService:
             original_filename=filename,
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(content),
-            page_count=page_count,
+            page_count=page_count if not is_encrypted else 0,
+            is_password_protected=is_encrypted,
             user_id=user_id,
         )
         return self.repo.create(pdf)
