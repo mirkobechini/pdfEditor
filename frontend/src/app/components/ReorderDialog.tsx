@@ -207,7 +207,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
                   {thumb && (
                     <img
                       src={thumb.dataUrl}
-                      alt={t("reorderDialog.pageThumbnail", { page: pageNum })}
+                      alt={t("pageThumbnail", { page: pageNum })}
                       className="w-full h-auto"
                       draggable={false}
                     />
