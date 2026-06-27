@@ -19,7 +19,7 @@ interface PageThumbnail {
 }
 
 export default function ReorderDialog({ open, onClose, selectedId, selectedName, totalPages }: ReorderDialogProps) {
-  const t = useTranslations("app");
+  const t = useTranslations("reorderDialog");
   const [order, setOrder] = React.useState<number[]>([]);
   const [thumbnails, setThumbnails] = React.useState<PageThumbnail[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -90,7 +90,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Failed to load thumbnails:", err);
-      setError(t("reorderDialog.failed") + ": " + err);
+      setError(t("failed") + ": " + err);
     } finally {
       setLoading(false);
     }
@@ -126,7 +126,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
       downloadBlob(blob, `reordered_${selectedName}`);
       onClose();
     } catch (err) {
-      setError(t("reorderDialog.failed") + ": " + err);
+      setError(t("failed") + ": " + err);
     } finally {
       setReordering(false);
     }
@@ -171,10 +171,10 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
         className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold mb-4">{t("reorderDialog.title")}</h2>
+        <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
 
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          {selectedName} ({totalPages} {t("reorderDialog.pages")})
+          {selectedName} ({totalPages} {t("pages")})
         </p>
 
         {loading && (
@@ -220,7 +220,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
                       className="bg-black/50 text-white text-xs px-1 hover:bg-black/70 rounded-l"
                       onClick={(e) => { e.stopPropagation(); moveUp(pos); }}
                       disabled={pos === 0}
-                      title={t("reorderDialog.moveUp")}
+                      title={t("moveUp")}
                     >
                       ▲
                     </button>
@@ -228,7 +228,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
                       className="bg-black/50 text-white text-xs px-1 hover:bg-black/70 rounded-r"
                       onClick={(e) => { e.stopPropagation(); moveDown(pos); }}
                       disabled={pos === order.length - 1}
-                      title={t("reorderDialog.moveDown")}
+                      title={t("moveDown")}
                     >
                       ▼
                     </button>
@@ -242,7 +242,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
         {!loading && thumbnails.length === 0 && !error && (
           <div className="text-center py-8 text-gray-400">
             <span className="text-4xl">📄</span>
-            <p className="text-sm mt-2">{t("reorderDialog.noPreview")}</p>
+            <p className="text-sm mt-2">{t("noPreview")}</p>
           </div>
         )}
 
@@ -253,14 +253,14 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
             className="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
             onClick={onClose}
           >
-            {t("reorderDialog.cancel")}
+            {t("cancel")}
           </button>
           <button
             className="px-4 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
             disabled={!selectedId || !isOrderChanged || reordering}
             onClick={handleReorder}
           >
-            {reordering ? t("reorderDialog.reordering") : t("reorderDialog.reorder")}
+            {reordering ? t("reordering") : t("reorder")}
           </button>
         </div>
       </div>
