@@ -112,6 +112,7 @@ _nessuno_
 2. [ ] **Merge dialog: impossibile selezionare secondo file** — La UI del merge permette solo di selezionare/deselezionare il PDF corrente con una checkbox (che dovrebbe essere sempre selezionato di default senza opzione di rimozione), ma non offre un selettore per scegliere un secondo PDF da unire.
 3. [ ] **"PDF not found" su caricamento thumbnail** — Errore `ApiClient.downloadPdf` restituisce "PDF not found" durante `loadThumbnails`. Investigare causa (file eliminato? race condition?).
 4. [ ] **"Nothing to redo / Nothing to undo" — messaggi raw** — I messaggi "Nothing to redo" e "Nothing to undo" vengono stampati in console come errori. Andrebbero gestiti silenziosamente (nessun undo/redo disponibile è un caso normale, non un errore).
+5. [ ] **Bottone SSO Google mancante in login/register** — Il backend ha già l'endpoint `/auth/google` funzionante, l'API client ha `googleLogin()`, ma il frontend non ha il bottone "Accedi con Google" né in login né in register. Manca anche la libreria `@react-oauth/google` e l'integrazione con `AuthContext`.
 
 > **Nota:** Feature minori completate. Non rimangono feature pendenti oltre ai bug aperti. Prossima macro-fase: Fase 1c (Tauri v2).
 
