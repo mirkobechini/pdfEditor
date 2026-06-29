@@ -15,6 +15,9 @@ Usage:
 
     # List all users
     python cli.py list-users
+
+    # Clean up orphan PDFs (DB records without files on disk)
+    python cli.py cleanup-orphans
 """
 
 import argparse
@@ -26,6 +29,7 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 from app.core.database import Base
 from app.core.config import settings
+from app.models.pdf import PdfDocument
 from app.repositories.user_repo import UserRepository
 
 
@@ -97,6 +101,32 @@ def list_users():
         db.close()
 
 
+def cleanup_orphans():
+    """Delete PDF records from DB whose file no longer exists on disk."""
+    from app.core.storage import get_pdf_path
+    from app.repositories.pdf_repo import PdfRepository
+
+    db = get_db_session()
+    try:
+        repo = PdfRepository(db)
+        from app.models.pdf import PdfDocument
+        all_pdfs = db.query(PdfDocument).all()
+        removed = 0
+        for pdf in all_pdfs:
+            file_uuid = pdf.storage_filename.replace(".pdf", "")
+            path = get_pdf_path(file_uuid)
+            if not path:
+                db.delete(pdf)
+                removed += 1
+        db.flush()
+        if removed > 0:
+            print(f"✅ Removed {removed} orphan PDF record(s) from database.")
+        else:
+            print("ℹ️  No orphan PDFs found.")
+    finally:
+        db.close()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="PdfEditor development CLI",
@@ -116,12 +146,20 @@ def main():
     # list-users
     subparsers.add_parser("list-users", help="List all registered users")
 
+    # cleanup-orphans
+    subparsers.add_parser(
+        "cleanup-orphans",
+        help="Remove PDF records whose files no longer exist on disk",
+    )
+
     args = parser.parse_args()
 
     if args.command == "make-admin":
         make_admin(args.email, args.remove)
     elif args.command == "list-users":
         list_users()
+    elif args.command == "cleanup-orphans":
+        cleanup_orphans()
     else:
         parser.print_help()
         sys.exit(1)
