@@ -168,29 +168,7 @@ function UsersTable() {
                                     </span>
                                 )}
                             </td>
-                            <td className="p-2">
-                                <button
-                                    className={`text-xs px-2 py-1 rounded font-medium ${u.is_admin
-                                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                        : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                                        } hover:opacity-80`}
-                                    onClick={async () => {
-                                        try {
-                                            await api.updateUserAdmin(u.id, !u.is_admin);
-                                            setUsers((prev) =>
-                                                prev.map((x) =>
-                                                    x.id === u.id ? { ...x, is_admin: !x.is_admin } : x,
-                                                ),
-                                            );
-                                        } catch (err) {
-                                            alert("Failed to update admin status: " + err);
-                                        }
-                                    }}
-                                    title={u.is_admin ? "Revoke admin" : "Grant admin"}
-                                >
-                                    {u.is_admin ? "✓ Admin" : "—"}
-                                </button>
-                            </td>
+                            <td className="p-2">{u.is_admin ? "✓" : "—"}</td>
                             <td className="p-2 text-gray-500">
                                 {new Date(u.created_at).toLocaleDateString()}
                             </td>
