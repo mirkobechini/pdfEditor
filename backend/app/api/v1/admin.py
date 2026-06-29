@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user, get_db
@@ -11,7 +12,14 @@ router = APIRouter(tags=["admin"])
 VALID_TIERS = {"free", "pro", "enterprise"}
 
 
-@router.get("/admin/users", response_model=list[UserResponse])
+class UserListResponse(BaseModel):
+    """Response model for paginated user list."""
+
+    items: list[UserResponse]
+    total: int
+
+
+@router.get("/admin/users", response_model=UserListResponse)
 def list_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
@@ -27,7 +35,10 @@ def list_users(
 
     repo = UserRepository(db)
     users = repo.get_all_users(skip=skip, limit=limit)
-    return [UserResponse.model_validate(u) for u in users]
+    return UserListResponse(
+        items=[UserResponse.model_validate(u) for u in users],
+        total=len(users),
+    )
 
 
 @router.put("/admin/users/{user_id}/license", response_model=UserResponse)
