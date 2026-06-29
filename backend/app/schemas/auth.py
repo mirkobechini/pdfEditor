@@ -74,3 +74,16 @@ class GoogleLoginRequest(BaseModel):
     """Schema for Google SSO login request."""
 
     id_token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Schema for requesting a password reset email."""
+
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    """Schema for resetting password with a token."""
+
+    token: str
+    new_password: str
