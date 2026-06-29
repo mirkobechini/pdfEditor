@@ -121,7 +121,19 @@
     "loginLink": "Accedi",
     "logout": "Esci",
     "googleLogin": "Accedi con Google",
-    "googleRegister": "Registrati con Google"
+    "googleRegister": "Registrati con Google",
+    "forgotTitle": "Password Dimenticata",
+    "forgotDescription": "Inserisci la tua email e ti invieremo un link per reimpostare la password.",
+    "sendResetLink": "Invia Link di Reset",
+    "resetSent": "Un link di reset è stato inviato alla tua email. In sviluppo, controlla la console del server.",
+    "backToLogin": "Torna al Login",
+    "resetTitle": "Reimposta Password",
+    "newPassword": "Nuova Password",
+    "resetButton": "Reimposta Password",
+    "resetting": "Reimpostazione in corso...",
+    "resetInvalidToken": "Token di reset non valido o mancante.",
+    "requestNewReset": "Richiedi un nuovo link di reset",
+    "sending": "Invio in corso..."
   },
   "admin": {
     "title": "Pannello Admin",
