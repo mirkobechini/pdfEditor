@@ -94,6 +94,7 @@ def _seed_super_admin():
         if user and not user.is_admin:
             user.is_admin = True
             db.flush()
+            db.commit()
             print(f"🔐 Super admin '{settings.SUPER_ADMIN_EMAIL}' promoted on startup.")
     finally:
         db.close()
