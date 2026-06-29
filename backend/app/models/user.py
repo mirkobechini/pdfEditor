@@ -16,6 +16,8 @@ class User(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
     license_tier = Column(String(20), default="free", nullable=False)
+    reset_token = Column(String(255), nullable=True, index=True)
+    reset_token_expires = Column(DateTime, nullable=True)
 
     created_at = Column(
         DateTime,

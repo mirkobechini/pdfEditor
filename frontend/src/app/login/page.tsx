@@ -79,6 +79,11 @@ export default function LoginPage() {
               {loading ? t("loggingIn") : t("loginButton")}
             </button>
           </form>
+          <div className="mt-2 text-right">
+            <a href="/forgot-password" className="text-xs text-blue-500 hover:underline">
+              {t("forgotTitle")}?
+            </a>
+          </div>
           <div className="mt-4 mb-4 flex items-center gap-2">
             <hr className="flex-1 border-gray-300 dark:border-gray-600" />
             <span className="text-xs text-gray-400">or</span>

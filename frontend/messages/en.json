@@ -121,7 +121,19 @@
     "loginLink": "Sign In",
     "logout": "Sign Out",
     "googleLogin": "Sign in with Google",
-    "googleRegister": "Sign up with Google"
+    "googleRegister": "Sign up with Google",
+    "forgotTitle": "Forgot Password",
+    "forgotDescription": "Enter your email address and we'll send you a link to reset your password.",
+    "sendResetLink": "Send Reset Link",
+    "resetSent": "A reset link has been sent to your email. In development, check the server console.",
+    "backToLogin": "Back to Login",
+    "resetTitle": "Reset Password",
+    "newPassword": "New Password",
+    "resetButton": "Reset Password",
+    "resetting": "Resetting...",
+    "resetInvalidToken": "Invalid or missing reset token.",
+    "requestNewReset": "Request a new reset link",
+    "sending": "Sending..."
   },
   "admin": {
     "title": "Admin Dashboard",

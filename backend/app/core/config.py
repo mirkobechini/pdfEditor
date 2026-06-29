@@ -32,6 +32,20 @@ class Settings(BaseSettings):
     # Super admin (cannot be revoked)
     SUPER_ADMIN_EMAIL: str = "mirkobechini@gmail.com"
 
+    # SMTP (for password reset emails)
+    SMTP_HOST: str = "localhost"
+    SMTP_PORT: int = 1025
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_USE_TLS: bool = False
+    SMTP_FROM_EMAIL: str = "noreply@pdfeditor.app"
+
+    # Password reset
+    RESET_TOKEN_EXPIRE_MINUTES: int = 30
+
+    # Frontend URL (for password reset link)
+    FRONTEND_URL: str = "http://localhost:3000"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

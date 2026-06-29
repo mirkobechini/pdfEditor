@@ -53,3 +53,21 @@ class UserRepository:
             .filter(LicenseFeature.tier == tier)
             .all()
         )
+
+    def get_by_reset_token(self, token: str) -> User | None:
+        return (
+            self.db.query(User)
+            .filter(User.reset_token == token)
+            .first()
+        )
+
+    def update_password(self, user_id: str, hashed_password: str) -> User | None:
+        user = self.get_by_id(user_id)
+        if not user:
+            return None
+        user.hashed_password = hashed_password
+        user.reset_token = None
+        user.reset_token_expires = None
+        self.db.flush()
+        self.db.refresh(user)
+        return user

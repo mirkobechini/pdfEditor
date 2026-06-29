@@ -298,6 +298,26 @@ class ApiClient {
     return res.json();
   }
 
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const res = await fetch(`${this.baseUrl}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, new_password: newPassword }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
   async getMe(): Promise<{
     id: string;
     email: string;
