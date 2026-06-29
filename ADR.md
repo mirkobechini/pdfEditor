@@ -115,6 +115,8 @@ _nessuno_
 2. [ ] **Merge dialog: impossibile selezionare secondo file** — La UI del merge permette solo di selezionare/deselezionare il PDF corrente con una checkbox (che dovrebbe essere sempre selezionato di default senza opzione di rimozione), ma non offre un selettore per scegliere un secondo PDF da unire.
 3. [ ] **"PDF not found" su caricamento thumbnail** — Errore `ApiClient.downloadPdf` restituisce "PDF not found" durante `loadThumbnails`. Investigare causa (file eliminato? race condition?).
 4. [ ] **"Nothing to redo / Nothing to undo" — messaggi raw** — I messaggi "Nothing to redo" e "Nothing to undo" vengono stampati in console come errori. Andrebbero gestiti silenziosamente (nessun undo/redo disponibile è un caso normale, non un errore).
+5. [ ] **timeZone non configurata in next.config** — Errore `There is no 'timeZone' configured, this can lead to markup mismatches caused by environment differences`. Aggiungere `timeZone: 'Europe/Rome'` in `next.config.ts`.
+6. [ ] **Reset password mancante** — Manca flusso di reset password. Backend: endpoint `POST /auth/forgot-password` (genera token temporaneo e invia email con link/password temporanea) e `POST /auth/reset-password`. Frontend: pagina `/reset-password` con form per inserire nuova password. Integrazione con servizio email (es. SMTP).
 
 > **Nota:** Feature minori completate. Non rimangono feature pendenti oltre ai bug aperti. Prossima macro-fase: Fase 1c (Tauri v2).
 
