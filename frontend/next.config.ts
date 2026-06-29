@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  timeZone: "Europe/Rome",
 };
 
 export default nextConfig;
