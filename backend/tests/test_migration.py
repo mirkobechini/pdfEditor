@@ -81,23 +81,23 @@ class TestMigrationIntegrity:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
-            # Verify new is_password_protected column exists on pdf_documents
+            # Verify latest column (reset_token) exists on users
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            pdf_cols_before = {c["name"] for c in inspector.get_columns("pdf_documents")}
-            assert "is_password_protected" in pdf_cols_before
+            user_cols_before = {c["name"] for c in inspector.get_columns("users")}
+            assert "reset_token" in user_cols_before
             engine.dispose()
 
-            # Downgrade one step (remove is_password_protected)
+            # Downgrade one step (remove reset_token)
             rc, out, err = _run_migration(db_path, "downgrade -1")
             assert rc == 0, f"alembic downgrade -1 failed:\n{err}\n{out}"
 
             # Verify column is gone, but table still exists
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            pdf_cols_after = {c["name"] for c in inspector.get_columns("pdf_documents")}
-            assert "pdf_documents" in inspector.get_table_names()
-            assert "is_password_protected" not in pdf_cols_after
+            user_cols_after = {c["name"] for c in inspector.get_columns("users")}
+            assert "users" in inspector.get_table_names()
+            assert "reset_token" not in user_cols_after
             engine.dispose()
 
             # Upgrade again
@@ -107,7 +107,7 @@ class TestMigrationIntegrity:
             # Verify column is restored
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            assert "pdf_documents" in inspector.get_table_names()
+            assert "users" in inspector.get_table_names()
             engine.dispose()
 
     def test_downgrade_all_the_way(self):
