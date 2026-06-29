@@ -146,7 +146,7 @@ class AuthService:
 
         token = secrets.token_urlsafe(48)
         user.reset_token = token
-        user.reset_token_expires = datetime.now(timezone.utc) + timedelta(
+        user.reset_token_expires = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(
             minutes=settings.RESET_TOKEN_EXPIRE_MINUTES,
         )
         self.repo.db.flush()
@@ -160,7 +160,8 @@ class AuthService:
         if not user:
             raise ValueError("Invalid or expired reset token")
 
-        if not user.reset_token_expires or user.reset_token_expires < datetime.now(timezone.utc):
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        if not user.reset_token_expires or user.reset_token_expires < now:
             raise ValueError("Reset token has expired")
 
         hashed = get_password_hash(new_password)
