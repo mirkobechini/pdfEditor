@@ -32,7 +32,7 @@ def create_bug_report(
     return BugReportResponse.model_validate(report)
 
 
-@router.get("/admin/bugs", response_model=list[BugReportResponse])
+@router.get("/admin/bugs")
 def list_bug_reports(
     status_filter: str | None = Query(None, alias="status", description="Filter by status"),
     skip: int = Query(0, ge=0),
@@ -48,7 +48,10 @@ def list_bug_reports(
         )
 
     reports = service.get_all(status=status_filter, skip=skip, limit=limit)
-    return [BugReportResponse.model_validate(r) for r in reports]
+    return {
+        "items": [BugReportResponse.model_validate(r) for r in reports],
+        "total": len(reports),
+    }
 
 
 @router.put("/admin/bugs/{bug_id}/status", response_model=BugReportResponse)
