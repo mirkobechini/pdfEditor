@@ -155,7 +155,7 @@ function UsersTable() {
                                         {LICENSE_TIERS.map((tier) => (
                                             <option key={tier} value={tier}>
                                                 {t(
-                                                    `admin.tier${tier.charAt(0).toUpperCase() + tier.slice(1)}`,
+                                                    `tier${tier.charAt(0).toUpperCase() + tier.slice(1)}`,
                                                 )}
                                             </option>
                                         ))}
@@ -163,7 +163,7 @@ function UsersTable() {
                                 ) : (
                                     <span>
                                         {t(
-                                            `admin.tier${u.license_tier.charAt(0).toUpperCase() + u.license_tier.slice(1)}`,
+                                            `tier${u.license_tier.charAt(0).toUpperCase() + u.license_tier.slice(1)}`,
                                         )}
                                     </span>
                                 )}
