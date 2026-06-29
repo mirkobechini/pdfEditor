@@ -133,3 +133,38 @@ class AuthService:
 
         token = create_access_token(data={"sub": user.id})
         return user, token
+
+    def request_password_reset(self, email: str) -> str | None:
+        """Generate a reset token for the user. Returns the token if user exists, None otherwise.
+        In production, the token would be sent via email. For now, returns it for testing."""
+        user = self.repo.get_by_email(email)
+        if not user:
+            return None
+
+        import secrets
+        from datetime import datetime, timedelta, timezone
+
+        token = secrets.token_urlsafe(48)
+        user.reset_token = token
+        user.reset_token_expires = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.RESET_TOKEN_EXPIRE_MINUTES,
+        )
+        self.repo.db.flush()
+        return token
+
+    def reset_password(self, token: str, new_password: str) -> User:
+        """Reset the user's password using a valid reset token."""
+        from datetime import datetime, timezone
+
+        user = self.repo.get_by_reset_token(token)
+        if not user:
+            raise ValueError("Invalid or expired reset token")
+
+        if not user.reset_token_expires or user.reset_token_expires < datetime.now(timezone.utc):
+            raise ValueError("Reset token has expired")
+
+        hashed = get_password_hash(new_password)
+        updated = self.repo.update_password(user.id, hashed)
+        if not updated:
+            raise ValueError("Failed to update password")
+        return updated
