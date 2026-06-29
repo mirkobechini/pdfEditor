@@ -103,6 +103,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - [x] **Super admin protetto da revoca** — Aggiunto `SUPER_ADMIN_EMAIL` in config, protetto repository/endpoint/CLI. Seed automatico allo startup. CLI tool `backend/cli.py`. (PR #116, issue #115)
 - [x] **Bottone SSO Google in login/register** — Installato `@react-oauth/google`, aggiunto bottone Google a login e register pages, `GoogleLoginButton` componente condiviso. (PR #118, issue #117)
 - [x] **Reset password con token temporaneo** — Aggiunti campi `reset_token`/`reset_token_expires` a User, endpoint `POST /auth/forgot-password` e `POST /auth/reset-password`, pagine `/forgot-password` e `/reset-password` frontend, test. (PR #120, issue #119)
+- [x] **Test migration fix: test_downgrade_single_and_upgrade_again** — Fixato per controllare colonna `reset_token` anziché `is_password_protected`, dispose engine per evitare PermissionError Windows. (PR #122, issue #121)
 
 > **ℹ️ Setup richiesto:** Creare un OAuth Client ID su [Google Cloud Console](https://console.cloud.google.com/apis/credentials) e impostarlo in `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local` e `GOOGLE_CLIENT_ID` in `backend/.env`.
 
@@ -119,7 +120,6 @@ _nessuno_
 3. [ ] **"PDF not found" su caricamento thumbnail** — Errore `ApiClient.downloadPdf` restituisce "PDF not found" durante `loadThumbnails`. Investigare causa (file eliminato? race condition?).
 4. [ ] **"Nothing to redo / Nothing to undo" — messaggi raw** — I messaggi "Nothing to redo" e "Nothing to undo" vengono stampati in console come errori. Andrebbero gestiti silenziosamente (nessun undo/redo disponibile è un caso normale, non un errore).
 5. [ ] **timeZone non configurata in next.config** — Errore `There is no 'timeZone' configured, this can lead to markup mismatches caused by environment differences`. Aggiungere `timeZone: 'Europe/Rome'` in `next.config.ts`.
-6. [ ] **Test migration fallito: test_downgrade_single_and_upgrade_again** — Il test `backend/tests/test_migration.py::TestMigrationIntegrity::test_downgrade_single_and_upgrade_again` fallisce. Diagnosticare e fixare.
 
 > **Nota:** Feature minori completate. Non rimangono feature pendenti oltre ai bug aperti. Prossima macro-fase: Fase 1c (Tauri v2).
 
