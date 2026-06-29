@@ -148,3 +148,86 @@ class TestGoogleSSO:
             json={"id_token": ""},
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class TestPasswordReset:
+    """Test suite for password reset endpoints."""
+
+    URL_FORGOT = "/auth/forgot-password"
+    URL_RESET = "/auth/reset-password"
+
+    def _register_user(self, client, email="reset@test.com"):
+        """Helper: register a user."""
+        client.post(
+            "/auth/register",
+            json={"email": email, "password": "oldpass123", "full_name": "Reset User"},
+        )
+
+    def test_forgot_password_returns_202(self, client):
+        """Should always return 202."""
+        self._register_user(client)
+        response = client.post(self.URL_FORGOT, json={"email": "reset@test.com"})
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        data = response.json()
+        assert "message" in data
+
+    def test_forgot_password_unknown_email(self, client):
+        """Should return 202 even for unknown email (no enumeration)."""
+        response = client.post(self.URL_FORGOT, json={"email": "unknown@test.com"})
+        assert response.status_code == status.HTTP_202_ACCEPTED
+
+    def test_reset_password_success(self, client, db_engine):
+        """Should reset password with valid token."""
+        from datetime import datetime, timedelta, timezone
+        from sqlalchemy import text
+
+        self._register_user(client)
+
+        # Login with old password works
+        login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "oldpass123"})
+        assert login_resp.status_code == status.HTTP_200_OK
+
+        # Set a valid reset token directly in DB
+        with db_engine.connect() as conn:
+            conn.execute(
+                text("UPDATE users SET reset_token = 'test-valid-token', reset_token_expires = :exp WHERE email = 'reset@test.com'"),
+                {"exp": datetime.now(timezone.utc) + timedelta(hours=1)},
+            )
+            conn.commit()
+
+        # Reset password
+        response = client.post(self.URL_RESET, json={"token": "test-valid-token", "new_password": "newpass456"})
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["email"] == "reset@test.com"
+
+        # Login with new password works
+        login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "newpass456"})
+        assert login_resp.status_code == status.HTTP_200_OK
+
+        # Old password fails
+        login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "oldpass123"})
+        assert login_resp.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_reset_password_invalid_token(self, client):
+        """Should reject invalid token."""
+        response = client.post(self.URL_RESET, json={"token": "invalid-token", "new_password": "newpass456"})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Invalid" in response.json()["detail"]
+
+    def test_reset_password_expired_token(self, client, db_engine):
+        """Should reject expired token."""
+        from datetime import datetime, timedelta, timezone
+        from sqlalchemy import text
+
+        self._register_user(client)
+
+        with db_engine.connect() as conn:
+            conn.execute(
+                text("UPDATE users SET reset_token = 'expired-token', reset_token_expires = :exp WHERE email = 'reset@test.com'"),
+                {"exp": datetime.now(timezone.utc) - timedelta(hours=1)},
+            )
+            conn.commit()
+
+        response = client.post(self.URL_RESET, json={"token": "expired-token", "new_password": "newpass456"})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "expired" in response.json()["detail"]
