@@ -12,6 +12,13 @@ type Tab = "users" | "bugs";
 const LICENSE_TIERS = ["free", "pro", "enterprise", "admin"] as const;
 const BUG_STATUSES = ["open", "in_progress", "resolved", "closed"] as const;
 
+const BUG_STATUS_KEYS: Record<string, string> = {
+    open: "open",
+    in_progress: "inProgress",
+    resolved: "resolved",
+    closed: "closed",
+};
+
 export default function AdminPage() {
     const t = useTranslations("admin");
     const { user, loading } = useAuth();
@@ -87,6 +94,10 @@ function UsersTable() {
     const [loading, setLoading] = React.useState(true);
     const [editingId, setEditingId] = React.useState<string | null>(null);
     const [editTier, setEditTier] = React.useState("");
+    const [search, setSearch] = React.useState("");
+    const [tierFilter, setTierFilter] = React.useState("");
+    const [dateFrom, setDateFrom] = React.useState("");
+    const [dateTo, setDateTo] = React.useState("");
 
     React.useEffect(() => {
         loadUsers();
@@ -118,92 +129,171 @@ function UsersTable() {
         }
     }
 
+    const filtered = users.filter((u) => {
+        if (search && !u.email.toLowerCase().includes(search.toLowerCase())) return false;
+        if (tierFilter && u.license_tier !== tierFilter) return false;
+        if (dateFrom) {
+            const created = new Date(u.created_at);
+            const from = new Date(dateFrom);
+            if (created < from) return false;
+        }
+        if (dateTo) {
+            const created = new Date(u.created_at);
+            const to = new Date(dateTo);
+            to.setHours(23, 59, 59, 999);
+            if (created > to) return false;
+        }
+        return true;
+    });
+
     if (loading)
         return <p className="text-sm text-gray-400">{t("loading")}</p>;
-    if (users.length === 0)
-        return <p className="text-sm text-gray-400">{t("noUsers")}</p>;
 
     return (
-        <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-                <thead>
-                    <tr className="border-b dark:border-gray-700 text-left">
-                        <th className="p-2 font-medium">{t("email")}</th>
-                        <th className="p-2 font-medium">{t("fullName")}</th>
-                        <th className="p-2 font-medium">{t("licenseTier")}</th>
-                        <th className="p-2 font-medium">{t("isAdmin")}</th>
-                        <th className="p-2 font-medium">{t("createdAt")}</th>
-                        <th className="p-2 font-medium">{t("actions")}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {users.map((u) => (
-                        <tr
-                            key={u.id}
-                            className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                        >
-                            <td className="p-2">{u.email}</td>
-                            <td className="p-2">{u.full_name}</td>
-                            <td className="p-2">
-                                {editingId === u.id ? (
-                                    <select
-                                        value={editTier}
-                                        onChange={(e) => setEditTier(e.target.value)}
-                                        className="bg-transparent border border-blue-500 rounded px-1 text-sm"
-                                        autoFocus
-                                    >
-                                        {LICENSE_TIERS.map((tier) => (
-                                            <option key={tier} value={tier}>
+        <div>
+            {/* Filters */}
+            <div className="mb-4 flex flex-wrap gap-3 items-end">
+                <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-gray-400">
+                        {t("email")}
+                    </label>
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Cerca per email..."
+                        className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 w-48"
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-gray-400">
+                        {t("licenseTier")}
+                    </label>
+                    <select
+                        value={tierFilter}
+                        onChange={(e) => setTierFilter(e.target.value)}
+                        className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
+                    >
+                        <option value="">{t("all")}</option>
+                        {LICENSE_TIERS.map((tier) => (
+                            <option key={tier} value={tier}>
+                                {t(`tier${tier.charAt(0).toUpperCase() + tier.slice(1)}`)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-gray-400">
+                        {t("createdAt")} da
+                    </label>
+                    <input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
+                    />
+                </div>
+                <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-gray-400">
+                        {t("createdAt")} a
+                    </label>
+                    <input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
+                    />
+                </div>
+            </div>
+
+            {filtered.length === 0 ? (
+                <p className="text-sm text-gray-400">{t("noUsers")}</p>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                        <thead>
+                            <tr className="border-b dark:border-gray-700 text-left">
+                                <th className="p-2 font-medium">{t("email")}</th>
+                                <th className="p-2 font-medium">{t("fullName")}</th>
+                                <th className="p-2 font-medium">{t("licenseTier")}</th>
+                                <th className="p-2 font-medium">{t("isAdmin")}</th>
+                                <th className="p-2 font-medium">{t("createdAt")}</th>
+                                <th className="p-2 font-medium">{t("actions")}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filtered.map((u) => (
+                                <tr
+                                    key={u.id}
+                                    className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                >
+                                    <td className="p-2">{u.email}</td>
+                                    <td className="p-2">{u.full_name}</td>
+                                    <td className="p-2">
+                                        {editingId === u.id ? (
+                                            <select
+                                                value={editTier}
+                                                onChange={(e) => setEditTier(e.target.value)}
+                                                className="bg-transparent border border-blue-500 rounded px-1 text-sm"
+                                                autoFocus
+                                            >
+                                                {LICENSE_TIERS.map((tier) => (
+                                                    <option key={tier} value={tier}>
+                                                        {t(
+                                                            `tier${tier.charAt(0).toUpperCase() + tier.slice(1)}`,
+                                                        )}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <span>
                                                 {t(
-                                                    `tier${tier.charAt(0).toUpperCase() + tier.slice(1)}`,
+                                                    `tier${u.license_tier.charAt(0).toUpperCase() + u.license_tier.slice(1)}`,
                                                 )}
-                                            </option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <span>
-                                        {t(
-                                            `tier${u.license_tier.charAt(0).toUpperCase() + u.license_tier.slice(1)}`,
+                                            </span>
                                         )}
-                                    </span>
-                                )}
-                            </td>
-                            <td className="p-2">{u.is_admin ? "✓" : "—"}</td>
-                            <td className="p-2 text-gray-500">
-                                {new Date(u.created_at).toLocaleDateString()}
-                            </td>
-                            <td className="p-2">
-                                {editingId === u.id ? (
-                                    <div className="flex gap-1">
-                                        <button
-                                            className="text-xs px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
-                                            onClick={() => handleSaveLicense(u.id)}
-                                        >
-                                            {t("save")}
-                                        </button>
-                                        <button
-                                            className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-                                            onClick={() => setEditingId(null)}
-                                        >
-                                            {t("cancel")}
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <button
-                                        className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-                                        onClick={() => {
-                                            setEditingId(u.id);
-                                            setEditTier(u.license_tier);
-                                        }}
-                                    >
-                                        {t("save")}
-                                    </button>
-                                )}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+                                    </td>
+                                    <td className="p-2">{u.is_admin ? "✓" : "—"}</td>
+                                    <td className="p-2 text-gray-500">
+                                        {new Date(u.created_at).toLocaleDateString()}
+                                    </td>
+                                    <td className="p-2">
+                                        {editingId === u.id ? (
+                                            <div className="flex gap-1">
+                                                <button
+                                                    className="text-xs px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
+                                                    onClick={() => handleSaveLicense(u.id)}
+                                                >
+                                                    {t("save")}
+                                                </button>
+                                                <button
+                                                    className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                                    onClick={() => setEditingId(null)}
+                                                >
+                                                    {t("cancel")}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                                onClick={() => {
+                                                    setEditingId(u.id);
+                                                    setEditTier(u.license_tier);
+                                                }}
+                                            >
+                                                {t("save")}
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    <p className="text-xs text-gray-400 mt-2">
+                        Mostrati {filtered.length} di {users.length} utenti
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
@@ -270,9 +360,7 @@ function BugReportsTable() {
                     <option value="">{t("all")}</option>
                     {BUG_STATUSES.map((s) => (
                         <option key={s} value={s}>
-                            {t(
-                                `admin.${s.charAt(0).toLowerCase() + s.slice(1).replace(/_/g, "")}`,
-                            )}
+                            {t(BUG_STATUS_KEYS[s])}
                         </option>
                     ))}
                 </select>
