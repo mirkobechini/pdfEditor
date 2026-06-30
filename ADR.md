@@ -107,6 +107,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - [x] **timeZone non configurata** — Aggiunto `timeZone: 'Europe/Rome'` a `NextIntlClientProvider` in `i18n.tsx`. (PR #124, issue #123)
 - [x] **Admin bugfix: admin/users e admin/bugs wrapping** — Backend ora restituisce `{ items, total }` per admin/users e admin/bugs. Rimosso toggle admin button dalla UI. (PR #126, #128, #131)
 - [x] **CLI per pulizia PDF orfani** — Aggiunto `cleanup-orphans` a `backend/cli.py`. (PR #130, issue #129)
+- [x] **Dashboard admin: filtri e funzionalità** — Aggiunti filtro per tipo licenza, filtro per data creazione (da/a), ricerca per email, cambio licenza inline. Fix chiavi i18n bug report filter. (PR #132, issue #131)
 
 > **ℹ️ Setup richiesto:** Creare un OAuth Client ID su [Google Cloud Console](https://console.cloud.google.com/apis/credentials) e impostarlo in `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local` e `GOOGLE_CLIENT_ID` in `backend/.env`.
 
