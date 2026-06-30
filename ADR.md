@@ -122,7 +122,7 @@ _nessuno_
 2. [ ] **Merge dialog: impossibile selezionare secondo file** — La UI del merge permette solo di selezionare/deselezionare il PDF corrente con una checkbox (che dovrebbe essere sempre selezionato di default senza opzione di rimozione), ma non offre un selettore per scegliere un secondo PDF da unire.
 3. [ ] **"PDF not found" su caricamento thumbnail** — Errore `ApiClient.downloadPdf` restituisce "PDF not found" durante `loadThumbnails`. Investigare causa (file eliminato? race condition?).
 4. [ ] **"Nothing to redo / Nothing to undo" — messaggi raw** — I messaggi "Nothing to redo" e "Nothing to undo" vengono stampati in console come errori. Andrebbero gestiti silenziosamente (nessun undo/redo disponibile è un caso normale, non un errore).
-5. [ ] **Dashboard admin: filtri e funzionalità mancanti** — Nella tabella utenti admin mancano: (a) filtro per tipo licenza, (b) filtro per data creazione account, (c) ricerca per email, (d) possibilità di cambiare la licenza di un utente (dropdown già presente ma da verificare funzionamento).
+
 
 > **Nota:** Feature minori completate. Non rimangono feature pendenti oltre ai bug aperti. Prossima macro-fase: Fase 1c (Tauri v2).
 
@@ -164,6 +164,6 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Feature minori da implementare (in ordine)
 
-_Completate tutte — non rimangono feature minori pendenti. Prossimo passo: macro-fasi (Fase 1c Tauri)._
+1. [ ] **Dashboard admin: filtri e funzionalità mancanti** — Nella tabella utenti admin mancano: (a) filtro per tipo licenza, (b) filtro per data creazione account, (c) ricerca per email, (d) possibilità di cambiare la licenza di un utente (dropdown già presente ma da verificare funzionamento).
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
