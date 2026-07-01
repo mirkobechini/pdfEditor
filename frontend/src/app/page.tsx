@@ -98,6 +98,8 @@ export default function Home() {
       setSelectedId(doc.id);
       setSelectedName(doc.original_filename);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "Nothing to undo") return; // silent: no snapshots available
       console.error("Undo failed:", err);
     }
   }
@@ -113,6 +115,8 @@ export default function Home() {
       setSelectedId(doc.id);
       setSelectedName(doc.original_filename);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "Nothing to redo") return; // silent: no redo available
       console.error("Redo failed:", err);
     }
   }
