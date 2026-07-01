@@ -107,7 +107,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - [x] **timeZone non configurata** — Aggiunto `timeZone: 'Europe/Rome'` a `NextIntlClientProvider` in `i18n.tsx`. (PR #124, issue #123)
 - [x] **Admin bugfix: admin/users e admin/bugs wrapping** — Backend ora restituisce `{ items, total }` per admin/users e admin/bugs. Rimosso toggle admin button dalla UI. (PR #126, #128, #131)
 - [x] **CLI per pulizia PDF orfani** — Aggiunto `cleanup-orphans` a `backend/cli.py`. (PR #130, issue #129)
-
+- [x] **"Nothing to redo / Nothing to undo" — messaggi raw in console** — Gestiti silenziosamente i casi normali (nessun snapshot disponibile) in handleUndo/handleRedo. Test aggiunti. (PR #134, issue #133)
 
 > **ℹ️ Setup richiesto:** Creare un OAuth Client ID su [Google Cloud Console](https://console.cloud.google.com/apis/credentials) e impostarlo in `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local` e `GOOGLE_CLIENT_ID` in `backend/.env`.
 
@@ -122,7 +122,6 @@ _nessuno_
 1. [ ] **Validazione endpoint `/pdfs/import`** — Accetta TXT/PNG/JPG/GIF/BMP con validazione minima
 2. [ ] **Merge dialog: impossibile selezionare secondo file** — La UI del merge permette solo di selezionare/deselezionare il PDF corrente con una checkbox (che dovrebbe essere sempre selezionato di default senza opzione di rimozione), ma non offre un selettore per scegliere un secondo PDF da unire.
 3. [ ] **"PDF not found" su caricamento thumbnail** — Errore `ApiClient.downloadPdf` restituisce "PDF not found" durante `loadThumbnails`. Investigare causa (file eliminato? race condition?).
-4. [ ] **"Nothing to redo / Nothing to undo" — messaggi raw** — I messaggi "Nothing to redo" e "Nothing to undo" vengono stampati in console come errori. Andrebbero gestiti silenziosamente (nessun undo/redo disponibile è un caso normale, non un errore).
 
 > **Nota:** Feature minori completate. Non rimangono feature pendenti oltre ai bug aperti. Prossima macro-fase: Fase 1c (Tauri v2).
 
@@ -164,6 +163,5 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [x] **Dashboard admin: filtri e funzionalità** — Aggiunti filtro per tipo licenza, filtro per data creazione (da/a), ricerca per email, cambio licenza inline. Fix chiavi i18n bug report filter. (PR #132, issue #131)
 
 ### Feature minori da implementare (in ordine)
-
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
