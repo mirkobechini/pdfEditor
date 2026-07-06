@@ -77,7 +77,7 @@ class TestAdmin:
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert len(data) >= 1
+        assert len(data["items"]) >= 1
 
     def test_admin_list_users_denied(self, client, db_engine):
         """Should deny non-admin users."""
@@ -99,7 +99,7 @@ class TestAdmin:
             "/admin/users",
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        target_id = [u["id"] for u in users_resp.json() if u["email"] == "target@test.com"][0]
+        target_id = [u["id"] for u in users_resp.json()["items"] if u["email"] == "target@test.com"][0]
 
         response = client.put(
             f"/admin/users/{target_id}/license",
@@ -117,7 +117,7 @@ class TestAdmin:
             "/admin/users",
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        target_id = users_resp.json()[0]["id"]
+        target_id = users_resp.json()["items"][0]["id"]
 
         response = client.put(
             f"/admin/users/{target_id}/license",
@@ -136,7 +136,7 @@ class TestAdmin:
             "/admin/users",
             headers={"Authorization": f"Bearer {admin_token}"},
         )
-        target_id = [u["id"] for u in users_resp.json() if u["email"] == "target@test.com"][0]
+        target_id = [u["id"] for u in users_resp.json()["items"] if u["email"] == "target@test.com"][0]
 
         # Promote to admin
         response = client.put(
@@ -166,7 +166,7 @@ class TestAdmin:
             headers={"Authorization": f"Bearer {admin_token}"},
         )
         # Get any user ID
-        target_id = users_resp.json()[0]["id"]
+        target_id = users_resp.json()["items"][0]["id"]
 
         response = client.put(
             f"/admin/users/{target_id}/admin",

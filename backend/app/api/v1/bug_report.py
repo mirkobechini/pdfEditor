@@ -39,7 +39,7 @@ def list_bug_reports(
     limit: int = Query(100, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     service: BugReportService = Depends(get_bug_service),
-) -> list[BugReportResponse]:
+) -> dict:
     """List bug reports (admin only)."""
     if not current_user.is_admin:
         raise HTTPException(
