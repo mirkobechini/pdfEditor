@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 # Backend root = 3 levels up from app/core/config.py
@@ -28,6 +29,14 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_MB: int = 50
     MAX_PAGE_COUNT: int = 500
     ALLOWED_EXTENSIONS: list[str] = [".pdf"]
+
+    @field_validator("ALLOWED_EXTENSIONS", mode="before")
+    @classmethod
+    def parse_allowed_extensions(cls, v):
+        """Allow comma-separated string in .env, e.g. ALLOWED_EXTENSIONS=.pdf,.png"""
+        if isinstance(v, str):
+            return [ext.strip() for ext in v.split(",") if ext.strip()]
+        return v
 
     # Admin Configuration
     # Super admin email (cannot be revoked) — read from .env or use default
