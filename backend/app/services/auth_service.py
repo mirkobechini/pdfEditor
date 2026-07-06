@@ -136,7 +136,12 @@ class AuthService:
 
     def request_password_reset(self, email: str) -> str | None:
         """Generate a reset token for the user. Returns the token if user exists, None otherwise.
-        In production, the token would be sent via email. For now, returns it for testing."""
+        In production, the token would be sent via email. For now, returns it for testing.
+
+        Before generating a new token, cleans up expired tokens in the database."""
+        # Lazy cleanup: remove expired tokens before generating a new one
+        self.repo.delete_expired_tokens()
+
         user = self.repo.get_by_email(email)
         if not user:
             return None

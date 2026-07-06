@@ -71,3 +71,24 @@ class UserRepository:
         self.db.flush()
         self.db.refresh(user)
         return user
+
+    def delete_expired_tokens(self) -> int:
+        """Delete all expired reset tokens. Returns the number of rows affected."""
+        from datetime import datetime
+
+        result = (
+            self.db.query(User)
+            .filter(
+                User.reset_token_expires.isnot(None),
+                User.reset_token_expires < datetime.utcnow(),
+            )
+            .update(
+                {
+                    User.reset_token: None,
+                    User.reset_token_expires: None,
+                },
+                synchronize_session=False,
+            )
+        )
+        self.db.flush()
+        return result
