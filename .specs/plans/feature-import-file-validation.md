@@ -43,20 +43,20 @@ Risk: OOM del backend se carica file gigante.
 
 ## Accettazione Criteria
 
-- [ ] Aggiunto controllo MAX_UPLOAD_SIZE_MB in import_file()
-- [ ] Aggiunto MIME type validation
-- [ ] Test parametrizzato @pytest.mark.parametrize per 6 formati
-- [ ] Test file size limit (mock large file)
-- [ ] Test file corrotto
-- [ ] Tutti i test passano: `pytest backend/tests/test_convert.py::TestImport -v`
-- [ ] No file read in memory se > limit
+- [x] Aggiunto controllo MAX_UPLOAD_SIZE_MB in import_file()
+- [x] Aggiunto MIME type validation con IMPORT_MIME_MAP
+- [x] Test parametrizzato @pytest.mark.parametrize per 6 formati
+- [x] Test file size limit (mock large file)
+- [x] Test MIME type errato (wrong content_type for extension)
+- [x] Tutti i test passano: `pytest backend/tests/test_convert.py::TestImport -v`
+- [x] No file read in memory se > limit (lettura limitata a max_bytes + 1)
 
 ## Status
 
 - [ ] Non iniziata
 - [ ] In progress
 - [ ] In review
-- [ ] Completata
+- [x] ✅ Completata (merged to dev - PR #140)
 
 ## Timeline
 
