@@ -1,10 +1,9 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
-import { renderFirstPageToDataUrl } from "../lib/pdfPreview";
+import PdfThumbnail from "./PdfThumbnail";
 
 interface DeleteModalProps {
   open: boolean;
@@ -15,35 +14,7 @@ interface DeleteModalProps {
 
 export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteModalProps) {
   const t = useTranslations("deleteModal");
-  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
-  const [loadingPreview, setLoadingPreview] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
-
-  // Load preview when modal opens
-  React.useEffect(() => {
-    if (open && file) {
-      loadPreview();
-    } else {
-      setPreviewUrl(null);
-    }
-  }, [open, file]);
-
-  async function loadPreview() {
-    if (!file) return;
-    setLoadingPreview(true);
-    try {
-      // Get the download URL for the PDF
-      const blob = await api.downloadPdf(file.id);
-      const url = URL.createObjectURL(blob);
-      const dataUrl = await renderFirstPageToDataUrl(url);
-      setPreviewUrl(dataUrl);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Failed to load preview:", err);
-    } finally {
-      setLoadingPreview(false);
-    }
-  }
 
   async function handleConfirm() {
     if (!file) return;
@@ -104,26 +75,12 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
             <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
               {t("preview")}
             </div>
-            <div className="border rounded overflow-hidden bg-gray-100 dark:bg-gray-700 aspect-[1.4]">
-              {loadingPreview ? (
-                <div className="flex items-center justify-center h-full" data-testid="loading-spinner">
-                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent"></div>
-                </div>
-              ) : previewUrl ? (
-                <Image
-                  src={previewUrl}
-                  alt={t("previewAlt", { filename: file.original_filename })}
-                  width={400}
-                  height={560}
-                  className="w-full h-full object-cover"
-                  unoptimized
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  <span className="text-4xl">📄</span>
-                </div>
-              )}
-            </div>
+            {file && (
+              <PdfThumbnail
+                file={file}
+                className="border rounded overflow-hidden bg-gray-100 dark:bg-gray-700 aspect-[1.4] flex items-center justify-center"
+              />
+            )}
           </div>
 
           {/* Warning */}
