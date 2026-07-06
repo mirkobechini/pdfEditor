@@ -68,6 +68,7 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
   async function loadThumbnails() {
     if (!selectedId) return;
     setLoading(true);
+    setError("");
     try {
       const blob = await api.downloadPdf(selectedId);
       const url = URL.createObjectURL(blob);
@@ -92,7 +93,8 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
       setThumbnails(results);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Failed to load thumbnails:", err);
+      console.debug("Failed to load thumbnails:", err);
+      setError(t("failed") + ": " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -189,6 +191,12 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {!loading && thumbnails.length === 0 && (
+          <div className="py-8 text-center text-gray-400 dark:text-gray-500">
+            <p className="text-sm">Preview unavailable</p>
           </div>
         )}
 
