@@ -1,10 +1,16 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
 import HeaderControls from "../components/HeaderControls";
-import GoogleLoginButton from "../components/GoogleLoginButton";
+
+// Import GoogleLoginButton without SSR to avoid hydration mismatch
+const GoogleLoginButton = dynamic(
+  () => import("../components/GoogleLoginButton"),
+  { ssr: false, loading: () => <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" /> }
+);
 
 export default function LoginPage() {
   const t = useTranslations("auth");
@@ -39,6 +45,17 @@ export default function LoginPage() {
         <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
           <h1 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">{t("loginTitle")}</h1>
 
+          {/* Google SSO - Primary Option */}
+          <GoogleLoginButton />
+
+          {/* Divider */}
+          <div className="mt-6 mb-6 flex items-center gap-2">
+            <hr className="flex-1 border-gray-300 dark:border-gray-600" />
+            <span className="text-xs text-gray-400">or</span>
+            <hr className="flex-1 border-gray-300 dark:border-gray-600" />
+          </div>
+
+          {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("email")}</label>
@@ -79,19 +96,14 @@ export default function LoginPage() {
               {loading ? t("loggingIn") : t("loginButton")}
             </button>
           </form>
-          <div className="mt-2 text-right">
+
+          <div className="mt-3 text-right">
             <a href="/forgot-password" className="text-xs text-blue-500 hover:underline">
               {t("forgotTitle")}?
             </a>
           </div>
-          <div className="mt-4 mb-4 flex items-center gap-2">
-            <hr className="flex-1 border-gray-300 dark:border-gray-600" />
-            <span className="text-xs text-gray-400">or</span>
-            <hr className="flex-1 border-gray-300 dark:border-gray-600" />
-          </div>
 
-          <GoogleLoginButton />
-          <p className="mt-4 text-sm text-center text-gray-500 dark:text-gray-400">
+          <p className="mt-6 text-sm text-center text-gray-500 dark:text-gray-400">
             {t("noAccount")}{" "}
             <a href="/register" className="text-blue-500 hover:underline">
               {t("registerLink")}
