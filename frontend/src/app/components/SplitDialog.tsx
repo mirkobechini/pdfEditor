@@ -66,6 +66,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
   async function loadThumbnails() {
     if (!selectedId) return;
     setLoading(true);
+    setError("");
     try {
       const blob = await api.downloadPdf(selectedId);
       const url = URL.createObjectURL(blob);
@@ -90,7 +91,9 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
       setThumbnails(results);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Failed to load thumbnails:", err);
+      // Gracefully handle error (PDF deleted, race condition, etc.)
+      console.debug("Failed to load thumbnails:", err);
+      setError(t("failed") + ": " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -232,6 +235,12 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
               )}
             </div>
           </>
+        )}
+
+        {!loading && thumbnails.length === 0 && (
+          <div className="py-8 text-center text-gray-400 dark:text-gray-500">
+            <p className="text-sm">Preview unavailable</p>
+          </div>
         )}
 
         {error && <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">{error}</div>}
