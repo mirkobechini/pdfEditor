@@ -74,13 +74,13 @@ class UserRepository:
 
     def delete_expired_tokens(self) -> int:
         """Delete all expired reset tokens. Returns the number of rows affected."""
-        from datetime import datetime
+        from datetime import datetime, timezone
 
         result = (
             self.db.query(User)
             .filter(
                 User.reset_token_expires.isnot(None),
-                User.reset_token_expires < datetime.utcnow(),
+                User.reset_token_expires < datetime.now(timezone.utc),
             )
             .update(
                 {

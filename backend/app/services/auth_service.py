@@ -165,7 +165,7 @@ class AuthService:
         if not user:
             raise ValueError("Invalid or expired reset token")
 
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(timezone.utc)
         if not user.reset_token_expires or user.reset_token_expires < now:
             raise ValueError("Reset token has expired")
 

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from fastapi.responses import Response
 
 from app.api.deps import check_feature_access, get_current_user, get_pdf_service
+from app.core.config import settings
 from app.models.user import User
 from app.schemas.pdf import PdfResponse
 from app.services.pdf_service import PdfService
@@ -11,6 +12,16 @@ router = APIRouter(prefix="/pdfs", tags=["pdfs"])
 # Supported export/import formats
 EXPORT_FORMATS = {"txt", "png", "jpg", "jpeg", "svg"}
 IMPORT_EXTENSIONS = {"txt", "png", "jpg", "jpeg", "gif", "bmp"}
+
+# MIME type validation map for import
+IMPORT_MIME_MAP: dict[str, set[str]] = {
+    "txt": {"text/plain", "text/plain; charset=utf-8"},
+    "png": {"image/png"},
+    "jpg": {"image/jpeg"},
+    "jpeg": {"image/jpeg"},
+    "gif": {"image/gif"},
+    "bmp": {"image/bmp", "image/x-ms-bmp"},
+}
 
 EXPORT_FEATURE_MAP = {
     "txt": "export_txt",
@@ -88,7 +99,23 @@ def import_file(
     if feature_key:
         check_feature_access(current_user, service.repo.db, feature_key)
 
-    content = file.file.read()
+    # Validate MIME type
+    if ext in IMPORT_MIME_MAP and file.content_type:
+        allowed_mimes = IMPORT_MIME_MAP[ext]
+        if file.content_type not in allowed_mimes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid content type '{file.content_type}' for '.{ext}' files. Expected one of: {', '.join(allowed_mimes)}",
+            )
+
+    # Validate file size before reading
+    max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    content = file.file.read(max_bytes + 1)
+    if len(content) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB",
+        )
 
     try:
         pdf = service.import_file_to_pdf(file.filename, content, current_user.id)
