@@ -1,5 +1,6 @@
 """Tests for PDF conversion API endpoints."""
 
+import pytest
 from fastapi import status
 
 
@@ -92,3 +93,61 @@ class TestImport:
             files={"file": ("", b"content", "text/plain")},
         )
         assert response.status_code in (status.HTTP_400_BAD_REQUEST, 422)
+
+    # ------------------------------------------------------------------
+    # Parametrized import tests — one per supported format
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize("filename,content,content_type,expected_status", [
+        ("hello.txt",   b"Hello World",        "text/plain",         status.HTTP_201_CREATED),
+        ("img.png",     b"\x89PNG\r\n\x1a\n",  "image/png",          status.HTTP_201_CREATED),
+        ("img.jpg",     b"\xff\xd8\xff\xe0",   "image/jpeg",         status.HTTP_201_CREATED),
+        ("img.jpeg",    b"\xff\xd8\xff\xe0",   "image/jpeg",         status.HTTP_201_CREATED),
+        ("img.gif",     b"GIF89a\x01\x00",     "image/gif",          status.HTTP_201_CREATED),
+        ("img.bmp",     b"BM\x00\x00\x00\x00", "image/bmp",          status.HTTP_201_CREATED),
+    ])
+    def test_import_parametrized(self, client, pro_headers, filename, content, content_type, expected_status):
+        """Should import files of all supported formats."""
+        response = client.post(
+            "/pdfs/import",
+            headers=pro_headers,
+            files={"file": (filename, content, content_type)},
+        )
+        assert response.status_code == expected_status
+
+    # ------------------------------------------------------------------
+    # MIME type validation tests
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize("filename,content,content_type", [
+        ("hello.txt",  b"Hello", "application/octet-stream"),
+        ("img.png",    b"\x89PNG\x00", "application/octet-stream"),
+        ("img.jpg",    b"\xff\xd8", "text/plain"),
+    ])
+    def test_import_wrong_mime(self, client, pro_headers, filename, content, content_type):
+        """Should reject files with wrong MIME type for their extension."""
+        response = client.post(
+            "/pdfs/import",
+            headers=pro_headers,
+            files={"file": (filename, content, content_type)},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Invalid content type" in response.text
+
+    # ------------------------------------------------------------------
+    # File size validation test
+    # ------------------------------------------------------------------
+
+    def test_import_file_too_large(self, client, pro_headers):
+        """Should reject files larger than MAX_UPLOAD_SIZE_MB."""
+        from app.core.config import settings
+        max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+        large_content = b"x" * (max_bytes + 1)
+
+        response = client.post(
+            "/pdfs/import",
+            headers=pro_headers,
+            files={"file": ("large.txt", large_content, "text/plain")},
+        )
+        assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+        assert "File too large" in response.text
