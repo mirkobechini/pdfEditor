@@ -65,8 +65,10 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - `updated_at` timestamp su ogni record
 - Ogni funzione atomica richiede test pytest/vitest prima di essere considerata completa
 - Le feature partono solo dopo approvazione esplicita dell'utente (roadmap a fasi)
-- Max 10 snapshot undo/redo per sessione
+- Max 10 snapshot undo/redo per sessione (configurabile via MAX_SNAPSHOTS in .env)
 - Dark mode con persistenza (localStorage + system preference fallback)
+- `ALLOWED_EXTENSIONS` in `.env` come stringa (non lista) — parsato via `allowed_extensions_list` property
+- Warning `httpx2` nei test non fixabile (dipende da starlette/fastapi)
 
 ## Cosa NON è in scope (per ora)
 
@@ -108,6 +110,18 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - [x] **Admin bugfix: admin/users e admin/bugs wrapping** — Backend ora restituisce `{ items, total }` per admin/users e admin/bugs. Rimosso toggle admin button dalla UI. (PR #126, #128, #131)
 - [x] **CLI per pulizia PDF orfani** — Aggiunto `cleanup-orphans` a `backend/cli.py`. (PR #130, issue #129)
 - [x] **"Nothing to redo / Nothing to undo" — messaggi raw in console** — Gestiti silenziosamente i casi normali (nessun snapshot disponibile) in handleUndo/handleRedo. Test aggiunti. (PR #134, issue #133)
+- [x] **PDF not found fallback nei dialoghi** — Creato PdfThumbnail.tsx con error handling graceful, refactoring DeleteModal → PdfThumbnail, error handling in SplitDialog/RemoveDialog/ReorderDialog. (PR #135, issue #136)
+- [x] **DeleteModal: chiamata API duplicata** — `api.deletePdf()` chiamato 2 volte (DeleteModal + page.tsx). Rimosso duplicato. Fixato overflow modale. (PR #135, issue #136)
+- [x] **Script tag in React component (layout.tsx)** — Sostituito `<script>` inline con `next/script` (strategy="beforeInteractive"). (commit su dev)
+- [x] **Hydration mismatch GoogleLoginButton** — Dynamic import con `ssr: false` + mount solo client-side via useEffect. (commit su dev)
+- [x] **Admin email hardcoded in config.py** — Spostato `SUPER_ADMIN_EMAIL` da hardcoded a `.env` via Pydantic Settings. Creato `.env.example`. (PR #136, issue #139)
+- [x] **pdfPreview.ts senza test** — 7 unit test per renderFirstPageToDataUrl() con mock di PDF.js e Canvas. (PR #137, issue #137)
+- [x] **Import file validation (/pdfs/import)** — Aggiunto size check (413) e MIME type validation per estensione. 16 test parametrizzati. (PR #140, issue #138)
+- [x] **DeleteModal test obsoleti (PdfThumbnail)** — Aggiornati 3 test DeleteModal per match con PdfThumbnail (skeleton, alt text, fallback). (commit su dev)
+- [x] **MAX_SNAPSHOTS hardcoded** — Spostato da costante in storage.py a `settings.MAX_SNAPSHOTS` (.env configurabile). (PR #138, issue #140)
+- [x] **Expired reset token cleanup** — Lazy cleanup in `request_password_reset()`, nuovo metodo `delete_expired_tokens()` in user_repo.py. (PR #139, issue #141)
+- [x] **Admin test broken (wrapped response)** — 5 test fixati per `{items, total}` response model. (PR #141, issue #145)
+- [x] **Deprecation warnings (6→1)** — Fixati: Pydantic ConfigDict, Starlette HTTP status codes (413/422), SQLite datetime adapter. (PR #141, issue #145)
 
 > **ℹ️ Setup richiesto:** Creare un OAuth Client ID su [Google Cloud Console](https://console.cloud.google.com/apis/credentials) e impostarlo in `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local` e `GOOGLE_CLIENT_ID` in `backend/.env`.
 
@@ -117,13 +131,11 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 _nessuno_
 
-### Da risolvere ⏳
+### Da risolvere/note ⏳
 
-1. [ ] **Validazione endpoint `/pdfs/import`** — Accetta TXT/PNG/JPG/GIF/BMP con validazione minima
-2. [ ] **Merge dialog: impossibile selezionare secondo file** — La UI del merge permette solo di selezionare/deselezionare il PDF corrente con una checkbox (che dovrebbe essere sempre selezionato di default senza opzione di rimozione), ma non offre un selettore per scegliere un secondo PDF da unire.
-3. [ ] **"PDF not found" su caricamento thumbnail** — Errore `ApiClient.downloadPdf` restituisce "PDF not found" durante `loadThumbnails`. Investigare causa (file eliminato? race condition?).
+> **Nota:** Tutte le feature prioritarie Fase 1 completate. Prossima macro-fase: Fase 1c (Tauri v2).
 
-> **Nota:** Feature minori completate. Non rimangono feature pendenti oltre ai bug aperti. Prossima macro-fase: Fase 1c (Tauri v2).
+> **Nota tecnica:** Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile dal nostro codice. La libreria `httpx2` non esiste ancora, è una futura release di starlette. Ignorare.
 
 ## Feature future pianificate
 
@@ -161,6 +173,13 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [x] **PDF protetti da password** — Rilevamento automatico all'upload via PyMuPDF, endpoint `/pdfs/{id}/unlock`, cache password in memoria, modale UI in PdfViewer. Completata (PR #96, issue #95)
 - [x] **Undo/Redo per modifiche PDF** — Snapshot prima di ogni modifica, max 10 per PDF, stack undo/redo separati, pulsanti ↩↪ con Ctrl+Z/Ctrl+Shift+Z. Completata (PR #98, issue #97)
 - [x] **Dashboard admin: filtri e funzionalità** — Aggiunti filtro per tipo licenza, filtro per data creazione (da/a), ricerca per email, cambio licenza inline. Fix chiavi i18n bug report filter. (PR #132, issue #131)
+- [x] **PDF not found fallback nei dialoghi** — `PdfThumbnail` componente riutilizzabile + fallback placeholder. (PR #135, issue #136)
+- [x] **Unit test pdfPreview.ts** — 7 test per `renderFirstPageToDataUrl()` con mock PDF.js + Canvas. (PR #137, issue #137)
+- [x] **Validazione /pdfs/import** — File size + MIME type validation. (PR #140, issue #138)
+- [x] **Admin email in .env** — `SUPER_ADMIN_EMAIL` parametrizzato. (PR #136, issue #139)
+- [x] **MAX_SNAPSHOTS configurabile** — Da hardcoded a settings (.env). (PR #138, issue #140)
+- [x] **Expired token cleanup** — Lazy cleanup all'uso. (PR #139, issue #141)
+- [x] **Google SSO al primo posto login** — Pulsante Google prima del form email/password. (commit su dev)
 
 ### Feature minori da implementare (in ordine)
 
