@@ -47,6 +47,9 @@ class Settings(BaseSettings):
     # Frontend URL (for password reset link)
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # Undo/redo snapshots
+    MAX_SNAPSHOTS: int = 10
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
