@@ -47,7 +47,7 @@ describe("DeleteModal", () => {
     expect(screen.getByText("pageCount")).toBeInTheDocument();
   });
 
-  it("shows loading spinner while loading preview", async () => {
+  it("shows loading skeleton while loading preview", async () => {
     (api.downloadPdf as any).mockImplementation(() => new Promise(() => { })); // Never resolves
     (api.deletePdf as any).mockResolvedValue(undefined);
 
@@ -56,9 +56,9 @@ describe("DeleteModal", () => {
     );
 
     expect(screen.getByText("preview")).toBeInTheDocument();
-    // The loading spinner is an animate-spin div
-    const spinner = screen.getByTestId("loading-spinner");
-    expect(spinner).toBeInTheDocument();
+    // PdfThumbnail renders an animate-pulse div while loading
+    const skeleton = document.querySelector(".animate-pulse");
+    expect(skeleton).toBeInTheDocument();
   });
 
   it("shows preview image when loaded", async () => {
@@ -73,7 +73,7 @@ describe("DeleteModal", () => {
     );
 
     await waitFor(() => {
-      const img = screen.getByAltText("previewAlt");
+      const img = screen.getByAltText("Preview of test.pdf");
       expect(img).toBeInTheDocument();
       expect(img).toHaveAttribute("src", "data:image/png;base64,test");
     });
@@ -88,7 +88,7 @@ describe("DeleteModal", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("📄")).toBeInTheDocument();
+      expect(screen.getByText("Preview unavailable")).toBeInTheDocument();
     });
   });
 
