@@ -29,8 +29,9 @@ class Settings(BaseSettings):
     MAX_PAGE_COUNT: int = 500
     ALLOWED_EXTENSIONS: list[str] = [".pdf"]
 
-    # Super admin (cannot be revoked)
-    SUPER_ADMIN_EMAIL: str = "mirkobechini@gmail.com"
+    # Admin Configuration
+    # Super admin email (cannot be revoked) — read from .env or use default
+    SUPER_ADMIN_EMAIL: str = "admin@pdfeditor.local"
 
     # SMTP (for password reset emails)
     SMTP_HOST: str = "localhost"
