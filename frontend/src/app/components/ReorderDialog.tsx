@@ -66,6 +66,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
   async function loadThumbnails() {
     if (!selectedId) return;
     setLoading(true);
+    setError("");
     try {
       const blob = await api.downloadPdf(selectedId);
       const url = URL.createObjectURL(blob);
@@ -90,7 +91,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
       setThumbnails(results);
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Failed to load thumbnails:", err);
+      console.debug("Failed to load thumbnails:", err);
       setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
     } finally {
       setLoading(false);
