@@ -58,7 +58,7 @@ SUPER_ADMIN_EMAIL: str = "mirkobechini@gmail.com"  # Hardcoded!
 - [ ] Non iniziata
 - [ ] In progress
 - [ ] In review
-- [ ] Completata
+- [x] ✅ Completata (merged to dev - PR #136)
 
 ## Timeline
 
@@ -109,3 +109,19 @@ SUPER_ADMIN_EMAIL: str = "admin@pdfeditor.local"
 ---
 
 **Procediamo con implementation?** 🚀
+
+---
+
+## Implementation Details
+
+**Files created/modified:**
+
+- `backend/.env.example` - Configuration template (new, committed)
+- `backend/app/core/config.py` - Parametrized admin email (modified)
+- `backend/.env` - Local dev config (created, not committed — in .gitignore)
+
+**Commits merged:** 3 atomic commits (PR #136)
+
+1. `chore: add plan for admin email env configuration (issue-139)`
+2. `chore: create .env.example with admin email config (issue-139)`
+3. `chore: move SUPER_ADMIN_EMAIL from hardcoded to .env config (issue-139)`
