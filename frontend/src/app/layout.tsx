@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import ClientLayout from "./ClientLayout";
 
@@ -31,16 +32,16 @@ export default function RootLayout({
     >
       <head>
         {/* Prevent flash of unstyled content — apply dark class before React hydrates */}
-        <script dangerouslySetInnerHTML={{
-          __html: `
+        <Script id="dark-mode-script" strategy="beforeInteractive">
+          {`
             (function() {
               var dark = localStorage.getItem("darkMode");
               if (dark === "true" || (dark === null && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
                 document.documentElement.classList.add("dark");
               }
             })();
-          `
-        }} />
+          `}
+        </Script>
       </head>
       <body className="min-h-full flex flex-col">
         <ClientLayout>{children}</ClientLayout>
