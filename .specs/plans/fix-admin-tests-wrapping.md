@@ -1,4 +1,4 @@
-# Fix: Broken Admin Tests After UserListResponse Wrapping
+# Fix: Broken Admin Tests After UserListResponse Wrapping + Deprecation Warnings
 
 **Issue Number**: issue-145
 
@@ -50,19 +50,20 @@ Per ogni test:
 
 ## Accettazione Criteria
 
-- [ ] test_admin_update_license passa
-- [ ] test_admin_update_license_invalid_tier passa
-- [ ] test_admin_update_is_admin passa
-- [ ] test_admin_update_is_admin_denied_for_non_admin passa
-- [ ] test_list_bugs_admin passa
-- [ ] Full suite: `python -m pytest tests/ -v --tb=no` = 0 failed
+- [x] test_admin_update_license passa
+- [x] test_admin_update_license_invalid_tier passa
+- [x] test_admin_update_is_admin passa
+- [x] test_admin_update_is_admin_denied_for_non_admin passa
+- [x] test_list_bugs_admin passa
+- [x] Full suite: `python -m pytest tests/ -v --tb=no` = 123 passed, 0 failed
+- [x] Deprecation warnings: 6 → 1 (solo httpx2 esterno)
 
 ## Status
 
 - [ ] Non iniziata
 - [ ] In progress
 - [ ] In review
-- [ ] Completata
+- [x] ✅ Completata (merged to dev - PR #141)
 
 ## Timeline
 
