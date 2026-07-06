@@ -162,8 +162,8 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
                 <div
                   key={idx}
                   className={`relative border rounded overflow-hidden cursor-pointer transition-all ${isSelected
-                      ? "border-red-500 ring-2 ring-red-400 opacity-60"
-                      : "border-gray-200 dark:border-gray-600 hover:border-blue-400"
+                    ? "border-red-500 ring-2 ring-red-400 opacity-60"
+                    : "border-gray-200 dark:border-gray-600 hover:border-blue-400"
                     }`}
                   onClick={() => togglePage(idx)}
                 >
@@ -178,8 +178,8 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
                     />
                   )}
                   <div className={`absolute top-1 left-1 text-xs px-1.5 py-0.5 rounded ${isSelected
-                      ? "bg-red-500 text-white"
-                      : "bg-black/60 text-white"
+                    ? "bg-red-500 text-white"
+                    : "bg-black/60 text-white"
                     }`}>
                     {idx + 1}
                   </div>

@@ -193,10 +193,10 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
                 <div
                   key={pageNum}
                   className={`relative border rounded overflow-hidden cursor-grab active:cursor-grabbing transition-all ${dragIndex === pos
-                      ? "opacity-50 border-blue-500 shadow-lg scale-95"
-                      : dropIndex === pos
-                        ? "border-blue-500 border-2"
-                        : "border-gray-200 dark:border-gray-600 hover:border-blue-400"
+                    ? "opacity-50 border-blue-500 shadow-lg scale-95"
+                    : dropIndex === pos
+                      ? "border-blue-500 border-2"
+                      : "border-gray-200 dark:border-gray-600 hover:border-blue-400"
                     }`}
                   draggable
                   onDragStart={() => handleDragStart(pos)}

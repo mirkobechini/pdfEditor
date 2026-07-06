@@ -199,8 +199,8 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
                       <button
                         onClick={() => toggleCut(thumb.pageNum)}
                         className={`w-3 rounded transition-all cursor-pointer ${cuts.has(thumb.pageNum)
-                            ? "bg-blue-500 shadow-md shadow-blue-300 dark:shadow-blue-800"
-                            : "bg-gray-200 dark:bg-gray-600 hover:bg-blue-300 dark:hover:bg-blue-700"
+                          ? "bg-blue-500 shadow-md shadow-blue-300 dark:shadow-blue-800"
+                          : "bg-gray-200 dark:bg-gray-600 hover:bg-blue-300 dark:hover:bg-blue-700"
                           }`}
                         title={cuts.has(thumb.pageNum) ? "Rimuovi separazione" : "Aggiungi separazione"}
                       />
