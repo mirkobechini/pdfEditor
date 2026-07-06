@@ -41,7 +41,7 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
       aria-labelledby="delete-modal-title"
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -78,7 +78,7 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
             {file && (
               <PdfThumbnail
                 file={file}
-                className="border rounded overflow-hidden bg-gray-100 dark:bg-gray-700 aspect-[1.4] flex items-center justify-center"
+                className="border rounded overflow-hidden bg-gray-100 dark:bg-gray-700 aspect-[1.4] max-h-48 object-cover"
               />
             )}
           </div>

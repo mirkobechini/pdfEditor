@@ -151,15 +151,10 @@ export default function Home() {
     setFileToDelete(null);
   }
 
-  async function handleDeleteConfirm() {
-    if (!fileToDelete) return;
-    try {
-      await api.deletePdf(fileToDelete.id);
-      handleDelete(fileToDelete.id);
-      setSidebarRefreshKey((k) => k + 1);
-    } catch {
-      console.error("Delete failed");
-    }
+  function handleDeleteConfirm() {
+    // Called after DeleteModal successfully deletes the PDF via api.deletePdf()
+    handleDelete(fileToDelete?.id || "");
+    setSidebarRefreshKey((k) => k + 1);
     handleDeleteModalClose();
   }
 
