@@ -55,8 +55,6 @@ def delete_pdf(file_uuid: str) -> bool:
 # Undo/Redo snapshot storage
 # ---------------------------------------------------------------------------
 
-MAX_SNAPSHOTS = 10
-
 
 def get_snapshot_dir(pdf_id: str) -> Path:
     """Return the snapshot directory for a given PDF ID, creating it if needed."""
@@ -66,14 +64,14 @@ def get_snapshot_dir(pdf_id: str) -> Path:
 
 
 def save_snapshot(pdf_id: str, content: bytes) -> None:
-    """Save a snapshot of the PDF before a modification. Keeps at most MAX_SNAPSHOTS."""
+    """Save a snapshot of the PDF before a modification. Keeps at most settings.MAX_SNAPSHOTS."""
     snap_dir = get_snapshot_dir(pdf_id)
     timestamp = int(uuid.uuid4().time_low)  # monotonic-ish timestamp
     (snap_dir / f"{timestamp}.pdf").write_bytes(content)
 
     # Prune old snapshots
     files = sorted(snap_dir.glob("*.pdf"), key=lambda f: f.stat().st_mtime)
-    while len(files) > MAX_SNAPSHOTS:
+    while len(files) > settings.MAX_SNAPSHOTS:
         files[0].unlink()
         files = files[1:]
 
