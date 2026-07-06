@@ -15,7 +15,7 @@ class TestValidationErrors:
             self.REGISTER_URL,
             json={"email": "invalid", "password": "pass123", "full_name": "Test"},
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == 422
         data = response.json()
         # Should be a flat string, not a list of errors
         assert isinstance(data["detail"], str)
@@ -27,7 +27,7 @@ class TestValidationErrors:
             self.REGISTER_URL,
             json={"password": "pass123", "full_name": "Test"},
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == 422
         data = response.json()
         assert isinstance(data["detail"], str)
 
@@ -37,6 +37,6 @@ class TestValidationErrors:
             self.LOGIN_URL,
             json={},
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == 422
         data = response.json()
         assert isinstance(data["detail"], str)

@@ -63,7 +63,7 @@ class TestUpload:
             headers=free_headers,
             files={"file": ("large.pdf", b"%PDF-1.4 some content", "application/pdf")},
         )
-        assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+        assert response.status_code == status.HTTP_413_CONTENT_TOO_LARGE
         assert "too large" in response.json()["detail"].lower()
 
     def test_upload_exceeds_page_limit(self, client, monkeypatch, sample_pdf_content, free_headers):

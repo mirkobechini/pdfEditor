@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 # Backend root = 3 levels up from app/core/config.py
@@ -56,9 +57,10 @@ class Settings(BaseSettings):
     # Undo/redo snapshots
     MAX_SNAPSHOTS: int = 10
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
 
 
 settings = Settings()
