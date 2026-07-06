@@ -63,6 +63,7 @@ Stimato: 2 ore (fix componenti + test)
 ## Implementazione Dettagli
 
 **Componenti creati/modificati:**
+
 - `frontend/src/app/components/PdfThumbnail.tsx` - Nuovo componente riutilizzabile
 - `frontend/src/app/components/DeleteModal.tsx` - Refactored per usare PdfThumbnail
 - `frontend/src/app/components/SplitDialog.tsx` - Error handling migliorato
@@ -71,6 +72,7 @@ Stimato: 2 ore (fix componenti + test)
 - `frontend/src/app/page.tsx` - Rimosso duplicate api.deletePdf() call
 
 **Pattern implementato:**
+
 ```typescript
 async function loadPreview() {
   try {
