@@ -41,7 +41,7 @@ class TestRegister:
             self.URL,
             json={"email": "notanemail", "password": "password123", "full_name": "User"},
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.status_code == 422
 
 
 class TestLogin:
@@ -51,7 +51,6 @@ class TestLogin:
 
     def test_login_success(self, client):
         """Should login and return JWT token."""
-        # Register first
         client.post(
             "/auth/register",
             json={"email": "login@example.com", "password": "password123", "full_name": "Login User"},
@@ -133,6 +132,35 @@ class TestMe:
 class TestGoogleSSO:
     """Test suite for POST /auth/google."""
 
+    FAKE_PAYLOAD = {
+        "sub": "google-12345",
+        "email": "googleuser@example.com",
+        "name": "Google User",
+    }
+
+    def _mock_google(self):
+        """Mock Google SSO: requests.get, get_unverified_header, and jose.jwt.decode.
+        This breaks real JWT verification, so tests must use db_engine, not /auth/me."""
+        import unittest.mock as mock
+
+        mock_get = mock.patch("requests.get")
+        mock_header = mock.patch("jose.jwt.get_unverified_header")
+        mock_decode = mock.patch("jose.jwt.decode")
+
+        mock_get_instance = mock_get.start()
+        mock_header_instance = mock_header.start()
+        mock_decode_instance = mock_decode.start()
+
+        fake_response = mock.MagicMock()
+        fake_response.status_code = 200
+        fake_response.json.return_value = {"keys": [{"kty": "RSA", "kid": "fake-kid-123", "n": "fake", "e": "AQAB"}]}
+        mock_get_instance.return_value = fake_response
+
+        mock_header_instance.return_value = {"kid": "fake-kid-123", "alg": "RS256"}
+        mock_decode_instance.return_value = self.FAKE_PAYLOAD
+
+        return mock_get, mock_header, mock_decode
+
     def test_google_login_invalid_token(self, client):
         """Should reject an invalid Google id_token."""
         response = client.post(
@@ -148,6 +176,100 @@ class TestGoogleSSO:
             json={"id_token": ""},
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_google_login_new_user(self, client, db_engine):
+        """Should create a new user via Google SSO and return JWT."""
+        get_p, header_p, decode_p = self._mock_google()
+        try:
+            response = client.post(
+                "/auth/google",
+                json={"id_token": "valid.google.token"},
+            )
+            assert response.status_code == status.HTTP_200_OK
+            data = response.json()
+            assert "access_token" in data
+            assert data["token_type"] == "bearer"
+
+            # Verify user created in DB
+            from sqlalchemy import text
+            with db_engine.connect() as conn:
+                row = conn.execute(
+                    text("SELECT email, full_name, is_active FROM users WHERE email = :e"),
+                    {"e": "googleuser@example.com"},
+                ).fetchone()
+            assert row is not None
+            assert row._mapping["email"] == "googleuser@example.com"
+            assert row._mapping["full_name"] == "Google User"
+            assert row._mapping["is_active"] == 1
+        finally:
+            get_p.stop()
+            header_p.stop()
+            decode_p.stop()
+
+    def test_google_login_existing_user(self, client, db_engine):
+        """Should login existing user via Google SSO (no duplicate)."""
+        get_p, header_p, decode_p = self._mock_google()
+        try:
+            # First login creates the user
+            response1 = client.post(
+                "/auth/google",
+                json={"id_token": "valid.google.token"},
+            )
+            assert response1.status_code == status.HTTP_200_OK
+            token1 = response1.json()["access_token"]
+
+            # Second login returns a new token for the same user
+            response2 = client.post(
+                "/auth/google",
+                json={"id_token": "valid.google.token"},
+            )
+            assert response2.status_code == status.HTTP_200_OK
+            token2 = response2.json()["access_token"]
+
+            # Verify only ONE user exists (no duplicate created)
+            from sqlalchemy import text
+            with db_engine.connect() as conn:
+                count = conn.execute(
+                    text("SELECT COUNT(*) FROM users WHERE email = :e"),
+                    {"e": "googleuser@example.com"},
+                ).scalar()
+            assert count == 1
+        finally:
+            get_p.stop()
+            header_p.stop()
+            decode_p.stop()
+
+    def test_google_login_inactive_user(self, client, db_engine):
+        """Should reject Google login for deactivated user."""
+        from sqlalchemy import text
+
+        get_p, header_p, decode_p = self._mock_google()
+        try:
+            # First login creates the user
+            response1 = client.post(
+                "/auth/google",
+                json={"id_token": "valid.google.token"},
+            )
+            assert response1.status_code == status.HTTP_200_OK
+
+            # Deactivate user directly in DB
+            with db_engine.connect() as conn:
+                conn.execute(
+                    text("UPDATE users SET is_active = 0 WHERE email = :e"),
+                    {"e": "googleuser@example.com"},
+                )
+                conn.commit()
+
+            # Next login attempt should fail
+            response2 = client.post(
+                "/auth/google",
+                json={"id_token": "valid.google.token"},
+            )
+            assert response2.status_code == status.HTTP_401_UNAUTHORIZED
+        finally:
+            get_p.stop()
+            header_p.stop()
+            decode_p.stop()
 
 
 class TestPasswordReset:
@@ -183,11 +305,9 @@ class TestPasswordReset:
 
         self._register_user(client)
 
-        # Login with old password works
         login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "oldpass123"})
         assert login_resp.status_code == status.HTTP_200_OK
 
-        # Set a valid reset token directly in DB
         with db_engine.connect() as conn:
             conn.execute(
                 text("UPDATE users SET reset_token = 'test-valid-token', reset_token_expires = :exp WHERE email = 'reset@test.com'"),
@@ -195,16 +315,13 @@ class TestPasswordReset:
             )
             conn.commit()
 
-        # Reset password
         response = client.post(self.URL_RESET, json={"token": "test-valid-token", "new_password": "newpass456"})
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["email"] == "reset@test.com"
 
-        # Login with new password works
         login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "newpass456"})
         assert login_resp.status_code == status.HTTP_200_OK
 
-        # Old password fails
         login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "oldpass123"})
         assert login_resp.status_code == status.HTTP_401_UNAUTHORIZED
 
