@@ -34,23 +34,19 @@ Aggiungere test per il flusso di login con Google SSO. Attualmente ci sono solo 
 
 ## Accettazione Criteria
 
-- [ ] Mock di `requests.get` per restituire chiavi Google fake
-- [ ] Mock di `jose.jwt.decode` per restituire payload controllato
-- [ ] Test nuovo utente: verifica che user viene creato in DB
-- [ ] Test utente esistente: verifica che non viene duplicato
-- [ ] Test utente inattivo: verifica 401
-- [ ] Tutti i test passano: `pytest backend/tests/test_auth.py::TestGoogleSSO -v`
+- [x] Mock di `requests.get` per restituire chiavi Google fake
+- [x] Mock di `jose.jwt.decode` per restituire payload controllato
+- [x] Test nuovo utente: verifica che user viene creato in DB
+- [x] Test utente esistente: verifica che non viene duplicato
+- [x] Test utente inattivo: verifica 401
+- [x] Tutti i test passano: `pytest backend/tests/test_auth.py::TestGoogleSSO -v`
 
 ## Status
 
 - [ ] Non iniziata
 - [ ] In progress
 - [ ] In review
-- [ ] Completata
-
-## Timeline
-
-Stimato: 1 ora
+- [x] ✅ Completata (merged to dev - PR #142)
 
 ## Note
 
@@ -58,3 +54,4 @@ Stimato: 1 ora
 - Usare `unittest.mock.patch("jose.jwt.decode")` per mockare token verification
 - Il payload mockato deve contenere `email`, `name`, `sub` (Google ID)
 - Non chiamare API Google reali nei test
+- Verifica utente via db_engine (non /auth/me) perché jwt.decode è patchato globalmente
