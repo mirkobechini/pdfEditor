@@ -20,6 +20,7 @@ describe("LandingFooter", () => {
     it("renders copyright text", () => {
         render(<LandingFooter />);
 
-        expect(screen.getByText("copyright")).toBeInTheDocument();
+        // The copyright text is rendered with HTML entity, so we search for part of it
+        expect(screen.getByText(/copyright/i)).toBeInTheDocument();
     });
 });
