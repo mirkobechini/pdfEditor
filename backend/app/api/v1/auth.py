@@ -106,7 +106,7 @@ def forgot_password(
     if token:
         reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
         print(f"🔐 Password reset link: {reset_link}")
-    return {"message": "If the email exists, a reset link has been sent."}
+    return {"message": "If the email exists, the reset request has been received."}
 
 
 @router.post("/reset-password", response_model=UserResponse)
