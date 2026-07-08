@@ -122,6 +122,9 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - [x] **Expired reset token cleanup** — Lazy cleanup in `request_password_reset()`, nuovo metodo `delete_expired_tokens()` in user_repo.py. (PR #139, issue #141)
 - [x] **Admin test broken (wrapped response)** — 5 test fixati per `{items, total}` response model. (PR #141, issue #145)
 - [x] **Deprecation warnings (6→1)** — Fixati: Pydantic ConfigDict, Starlette HTTP status codes (413/422), SQLite datetime adapter. (PR #141, issue #145)
+- [x] **Test Google SSO success paths** — 3 test: nuovo utente, utente esistente, utente inattivo. Mock di requests.get + jose.jwt.decode. (PR #142, issue #142)
+- [x] **Test unlock PDF endpoint** — 6 test per POST /pdfs/{id}/unlock: non protetto, success, wrong password, empty password, unauthorized. (commit su dev, issue #143)
+- [x] **Coverage reporting frontend** — Aggiunto @vitest/coverage-v8, script npm run coverage, config in vitest.config.ts. (commit su dev, issue #144)
 
 > **ℹ️ Setup richiesto:** Creare un OAuth Client ID su [Google Cloud Console](https://console.cloud.google.com/apis/credentials) e impostarlo in `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local` e `GOOGLE_CLIENT_ID` in `backend/.env`.
 
