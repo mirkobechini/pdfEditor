@@ -196,5 +196,135 @@
     "deleting": "Deleting...",
     "confirm": "Delete",
     "deleteFailed": "Delete failed"
+  },
+  "landing": {
+    "navbar": {
+      "features": "Features",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "login": "Sign In",
+      "register": "Sign Up Free"
+    },
+    "hero": {
+      "badge": "New: Edit text in PDFs",
+      "title": "Your PDF editor",
+      "subtitle": "simple, fast, offline",
+      "description": "Merge, split, reorder and edit your PDFs directly from your browser. Free, secure and ad-free.",
+      "ctaPrimary": "Get Started Free",
+      "ctaSecondary": "Learn More",
+      "mockupTitle": "Edit PDFs",
+      "mockupText": "Live preview of your PDF"
+    },
+    "features": {
+      "title": "Everything you need",
+      "description": "Professional tools to manage your PDFs without installing anything.",
+      "merge": {
+        "title": "Merge PDFs",
+        "description": "Combine multiple documents into a single file. Drag and drop in the order you prefer."
+      },
+      "split": {
+        "title": "Split PDFs",
+        "description": "Extract specific pages or ranges. Create a new one with just what you need."
+      },
+      "reorder": {
+        "title": "Reorder Pages",
+        "description": "Move, reorganize and arrange pages with intuitive drag & drop."
+      },
+      "edittext": {
+        "title": "Edit Text",
+        "description": "Correct or update text directly in the PDF. Like a word processor."
+      },
+      "unlock": {
+        "title": "Unlock PDFs",
+        "description": "Remove protection from password-protected PDFs (with permission)."
+      },
+      "metadata": {
+        "title": "Metadata & Info",
+        "description": "View and edit title, author, subject and keywords of your PDFs."
+      }
+    },
+    "howItWorks": {
+      "title": "How it works",
+      "description": "Three simple steps to edit your PDFs.",
+      "step1": {
+        "title": "Upload your PDF",
+        "description": "Drag the file into the upload area or select it from your device."
+      },
+      "step2": {
+        "title": "Edit",
+        "description": "Merge, split, reorder, edit text or update metadata."
+      },
+      "step3": {
+        "title": "Download the result",
+        "description": "Download the edited PDF. Your files are never shared."
+      }
+    },
+    "pricing": {
+      "title": "Simple and transparent pricing",
+      "description": "Start free, upgrade when you need more.",
+      "mostPopular": "MOST POPULAR",
+      "free": {
+        "title": "Free",
+        "description": "For occasional use",
+        "price": "€0",
+        "feature1": "Up to 50 pages",
+        "feature2": "Merge, Split, Reorder",
+        "feature3": "5 PDFs per day",
+        "feature4": "Edit text",
+        "feature5": "Priority support",
+        "cta": "Get Started"
+      },
+      "premium": {
+        "title": "Premium",
+        "description": "For professional use",
+        "price": "€9",
+        "feature1": "Unlimited pages",
+        "feature2": "All features",
+        "feature3": "Unlimited PDFs",
+        "feature4": "Edit text",
+        "feature5": "Priority support",
+        "cta": "Choose Premium"
+      },
+      "enterprise": {
+        "title": "Enterprise",
+        "description": "For teams and companies",
+        "price": "€29",
+        "feature1": "Everything in Premium",
+        "feature2": "Unlimited users",
+        "feature3": "Dedicated API",
+        "feature4": "Guaranteed SLA",
+        "feature5": "On-premise option",
+        "cta": "Contact Us"
+      }
+    },
+    "cta": {
+      "title": "Ready to simplify your PDFs?",
+      "description": "No complicated registration. Get started free in 30 seconds.",
+      "cta": "Create your account"
+    },
+    "footer": {
+      "brand": "Edit your PDFs easily, quickly and securely. Directly from your browser.",
+      "product": {
+        "title": "Product",
+        "features": "Features",
+        "pricing": "Pricing",
+        "api": "API",
+        "roadmap": "Roadmap"
+      },
+      "resources": {
+        "title": "Resources",
+        "docs": "Documentation",
+        "guide": "Guide",
+        "faq": "FAQ",
+        "status": "Status"
+      },
+      "legal": {
+        "title": "Legal",
+        "privacy": "Privacy",
+        "terms": "Terms",
+        "cookies": "Cookies"
+      },
+      "copyright": "All rights reserved."
+    }
   }
 }
