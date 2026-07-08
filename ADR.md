@@ -187,4 +187,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Feature minori da implementare (in ordine)
 
+- [ ] **Invio email reale reset password** — Sostituire il flusso attuale basato su log server con invio SMTP reale, mantenendo risposta neutra anti-enumerazione. Piano: `.specs/plans/feature-reset-password-email-delivery.md`.
+- [ ] **Conferma email account** — Introdurre verifica email post-registrazione con token a scadenza, endpoint di conferma/reinvio e blocco login finche non verificata. Piano: `.specs/plans/feature-email-confirmation.md`.
+
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
