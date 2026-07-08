@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
@@ -33,7 +34,10 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
           >
             {sidebarOpen ? "✕" : "☰"}
           </button>
-          <h1 className="text-lg font-bold">PdfEditor</h1>
+          <Link href="/" className="flex items-center gap-2 hover:opacity-75">
+            <Image src="/orange-monkey_logo.png" alt="PdfEditor Logo" width={32} height={32} />
+            <span className="text-lg font-bold">PdfEditor</span>
+          </Link>
         </div>
         <div className="flex items-center gap-3">
           <HeaderControls />
