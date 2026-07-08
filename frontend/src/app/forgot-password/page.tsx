@@ -9,6 +9,7 @@ export default function ForgotPasswordPage() {
     const t = useTranslations("auth");
     const [email, setEmail] = React.useState("");
     const [sent, setSent] = React.useState(false);
+    const [sentMessage, setSentMessage] = React.useState<string | null>(null);
     const [error, setError] = React.useState<string | null>(null);
     const [loading, setLoading] = React.useState(false);
 
@@ -19,7 +20,8 @@ export default function ForgotPasswordPage() {
         setLoading(true);
         setError(null);
         try {
-            await api.forgotPassword(email.trim());
+            const response = await api.forgotPassword(email.trim());
+            setSentMessage(response.message || null);
             setSent(true);
         } catch (err) {
             setError(err instanceof Error ? err.message : String(err));
@@ -42,7 +44,7 @@ export default function ForgotPasswordPage() {
                     {sent ? (
                         <div>
                             <div className="p-4 text-sm text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 rounded mb-4">
-                                {t("resetSent")}
+                                {sentMessage || t("resetSent")}
                             </div>
                             <a
                                 href="/login"

@@ -143,7 +143,7 @@
     "forgotTitle": "Forgot Password",
     "forgotDescription": "Enter your email address and we'll send you a link to reset your password.",
     "sendResetLink": "Send Reset Link",
-    "resetSent": "A reset link has been sent to your email. In development, check the server console.",
+    "resetSent": "If the email exists, the reset request has been received.",
     "backToLogin": "Back to Login",
     "resetTitle": "Reset Password",
     "newPassword": "New Password",
