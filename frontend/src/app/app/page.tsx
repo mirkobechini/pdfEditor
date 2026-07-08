@@ -203,7 +203,11 @@ export default function EditorPage() {
                     <Sidebar
                         selectedId={selectedId}
                         onSelect={handleSelect}
-                        onDelete={(doc) => {
+                        onUpload={(doc) => {
+                            setSidebarRefreshKey((prev) => prev + 1);
+                            setSelectedId(doc.id);
+                        }}
+                        onDeleteClick={(doc) => {
                             setFileToDelete(doc);
                             setDeleteModalOpen(true);
                         }}
