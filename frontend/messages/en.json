@@ -14,7 +14,8 @@
     "passwordPrompt": "Enter the password to view this PDF",
     "passwordPlaceholder": "Enter password",
     "passwordInvalid": "Incorrect password. Try again.",
-    "unlock": "Unlock"
+    "unlock": "Unlock",
+    "metadata": "Info"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -81,6 +82,23 @@
     "failed": "Remove failed",
     "confirmDelete": "Yes, Delete",
     "confirmMessage": "Are you sure you want to remove the selected pages? This will create a new PDF file."
+  },
+  "metadata": {
+    "title": "PDF Metadata",
+    "loading": "Loading metadata...",
+    "fieldTitle": "Title",
+    "titlePlaceholder": "Enter document title",
+    "fieldAuthor": "Author",
+    "authorPlaceholder": "Enter author name",
+    "fieldSubject": "Subject",
+    "subjectPlaceholder": "Enter subject",
+    "fieldKeywords": "Keywords",
+    "keywordsPlaceholder": "Enter keywords (comma separated)",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "loadFailed": "Failed to load metadata",
+    "saveFailed": "Failed to save metadata"
   },
   "bugReport": {
     "title": "Report a Bug",

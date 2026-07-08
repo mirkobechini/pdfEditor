@@ -9,6 +9,7 @@ import MergeDialog from "./components/MergeDialog";
 import SplitDialog from "./components/SplitDialog";
 import ReorderDialog from "./components/ReorderDialog";
 import RemoveDialog from "./components/RemoveDialog";
+import MetadataDialog from "./components/MetadataDialog";
 import DeleteModal from "./components/DeleteModal";
 import { api, PdfDocument } from "./lib/api";
 import { useAuth } from "./lib/auth";
@@ -25,6 +26,7 @@ export default function Home() {
   const [splitOpen, setSplitOpen] = React.useState(false);
   const [reorderOpen, setReorderOpen] = React.useState(false);
   const [removeOpen, setRemoveOpen] = React.useState(false);
+  const [metadataOpen, setMetadataOpen] = React.useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [fileToDelete, setFileToDelete] = React.useState<PdfDocument | null>(null);
   const [sidebarRefreshKey, setSidebarRefreshKey] = React.useState(0);
@@ -183,6 +185,7 @@ export default function Home() {
             onSplit={() => setSplitOpen(true)}
             onReorder={() => setReorderOpen(true)}
             onRemovePages={() => setRemoveOpen(true)}
+            onMetadata={() => setMetadataOpen(true)}
             onReplaceText={() => { }} canUndo={!!selectedId}
             canRedo={!!selectedId}
             onUndo={handleUndo}
