@@ -26,3 +26,5 @@ describe("LandingFeatures", () => {
 
         // Descriptions also render with mocked keys
         expect(screen.getByText("merge.description")).toBeInTheDocument();
+    });
+});

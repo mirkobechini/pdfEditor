@@ -29,3 +29,5 @@ describe("LandingPricing", () => {
         render(<LandingPricing />);
 
         expect(screen.getByText("mostPopular")).toBeInTheDocument();
+    });
+});

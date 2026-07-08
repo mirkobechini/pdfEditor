@@ -34,3 +34,5 @@ describe("LandingNavbar", () => {
         const homeLink = logoLinks.find(link => link.getAttribute("href") === "/");
 
         expect(homeLink).toBeDefined();
+    });
+});

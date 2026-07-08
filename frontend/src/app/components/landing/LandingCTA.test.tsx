@@ -19,4 +19,6 @@ describe("LandingCTA", () => {
         render(<LandingCTA />);
 
         const button = screen.getByRole("link", { name: /cta/i });
+        expect(button).toHaveAttribute("href", "/register");
     });
+});

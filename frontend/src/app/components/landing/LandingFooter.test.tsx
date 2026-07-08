@@ -21,3 +21,5 @@ describe("LandingFooter", () => {
         render(<LandingFooter />);
 
         expect(screen.getByText("copyright")).toBeInTheDocument();
+    });
+});

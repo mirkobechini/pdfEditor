@@ -35,3 +35,5 @@ describe("LandingHero", () => {
         render(<LandingHero />);
 
         expect(screen.getByText("mockupText")).toBeInTheDocument();
+    });
+});

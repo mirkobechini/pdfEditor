@@ -15,3 +15,5 @@ describe("LandingHowItWorks", () => {
         expect(screen.getByText("step1.title")).toBeInTheDocument();
         expect(screen.getByText("step2.title")).toBeInTheDocument();
         expect(screen.getByText("step3.title")).toBeInTheDocument();
+    });
+});
