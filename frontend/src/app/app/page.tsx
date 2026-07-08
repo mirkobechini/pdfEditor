@@ -120,10 +120,12 @@ export default function EditorPage() {
 
     async function handleSplit(id: string, pages: number[]) {
         try {
-            const split = await api.splitPdf(id, pages);
+            // Convert pages array to ranges string format
+            const ranges = pages.length > 0 ? [pages.map(String).join("-")] : [];
+            const split = await api.splitPdf(id, "range", ranges);
             setSidebarRefreshKey((prev) => prev + 1);
-            setSelectedId(split[0].id);
-            const blob = await api.downloadPdf(split[0].id);
+            setSelectedId(split.items?.[0]?.id || id);
+            const blob = await api.downloadPdf(split.items?.[0]?.id || id);
             const url = URL.createObjectURL(blob);
             if (fileUrl) URL.revokeObjectURL(fileUrl);
             setFileUrl(url);
