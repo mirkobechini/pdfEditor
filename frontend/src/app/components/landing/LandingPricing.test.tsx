@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import LandingPricing from "./LandingPricing";
-import en from "../../../messages/en.json";
+import en from "../../../../messages/en.json";
 
 const mockMessages = en;
 
