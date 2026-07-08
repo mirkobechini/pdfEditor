@@ -196,5 +196,135 @@
     "deleting": "Eliminazione in corso...",
     "confirm": "Elimina",
     "deleteFailed": "Cancellazione fallita"
+  },
+  "landing": {
+    "navbar": {
+      "features": "Funzionalità",
+      "howItWorks": "Come funziona",
+      "pricing": "Prezzi",
+      "login": "Accedi",
+      "register": "Registrati gratis"
+    },
+    "hero": {
+      "badge": "Nuovo: Modifica testo nei PDF",
+      "title": "Il tuo editor PDF",
+      "subtitle": "semplice, veloce, offline",
+      "description": "Unisci, dividi, riordina e modifica i tuoi PDF direttamente dal browser. Gratuito, sicuro e senza pubblicità.",
+      "ctaPrimary": "Inizia gratis",
+      "ctaSecondary": "Scopri di più",
+      "mockupTitle": "Modifica PDF",
+      "mockupText": "Anteprima live del tuo PDF"
+    },
+    "features": {
+      "title": "Tutto quello che ti serve",
+      "description": "Strumenti professionali per gestire i tuoi PDF, senza installare nulla.",
+      "merge": {
+        "title": "Unisci PDF",
+        "description": "Combina più documenti in un unico file. Trascina e rilascia nell'ordine che preferisci."
+      },
+      "split": {
+        "title": "Dividi PDF",
+        "description": "Estrai pagine specifiche o intervalli. Creane uno nuovo con solo ciò che ti serve."
+      },
+      "reorder": {
+        "title": "Riordina Pagine",
+        "description": "Sposta, riorganizza e systemala pagine con un drag & drop intuitivo."
+      },
+      "edittext": {
+        "title": "Modifica Testo",
+        "description": "Correggi o aggiorna il testo direttamente nel PDF. Come un word processor."
+      },
+      "unlock": {
+        "title": "Sblocca PDF",
+        "description": "Rimuovi la protezione da PDF protetti da password (se hai il permesso)."
+      },
+      "metadata": {
+        "title": "Metadati & Info",
+        "description": "Visualizza e modifica titolo, autore, soggetto e keywords dei tuoi PDF."
+      }
+    },
+    "howItWorks": {
+      "title": "Come funziona",
+      "description": "Tre semplici passi per modificare i tuoi PDF.",
+      "step1": {
+        "title": "Carica il tuo PDF",
+        "description": "Trascina il file nell'area di upload o selezionalo dal tuo dispositivo."
+      },
+      "step2": {
+        "title": "Modifica",
+        "description": "Unisci, dividi, riordina, modifica il testo o aggiorna i metadati."
+      },
+      "step3": {
+        "title": "Scarica il risultato",
+        "description": "Scarica il PDF modificato. I tuoi file non vengono mai condivisi."
+      }
+    },
+    "pricing": {
+      "title": "Piani semplici e trasparenti",
+      "description": "Inizia gratis, passa a Premium quando ti serve di più.",
+      "mostPopular": "PIÙ SCELTO",
+      "free": {
+        "title": "Gratis",
+        "description": "Per utilizzo occasionale",
+        "price": "€0",
+        "feature1": "Fino a 50 pagine",
+        "feature2": "Merge, Split, Riordino",
+        "feature3": "5 PDF al giorno",
+        "feature4": "Modifica testo",
+        "feature5": "Supporto priority",
+        "cta": "Inizia gratis"
+      },
+      "premium": {
+        "title": "Premium",
+        "description": "Per uso professionale",
+        "price": "€9",
+        "feature1": "Pagine illimitate",
+        "feature2": "Tutte le funzionalità",
+        "feature3": "PDF illimitati",
+        "feature4": "Modifica testo",
+        "feature5": "Supporto priority",
+        "cta": "Scegli Premium"
+      },
+      "enterprise": {
+        "title": "Enterprise",
+        "description": "Per team e aziende",
+        "price": "€29",
+        "feature1": "Tutto del piano Premium",
+        "feature2": "Utenti illimitati",
+        "feature3": "API dedicata",
+        "feature4": "SLA garantito",
+        "feature5": "Opzione on-premise",
+        "cta": "Contattaci"
+      }
+    },
+    "cta": {
+      "title": "Pronto a semplificare i tuoi PDF?",
+      "description": "Nessuna registrazione complicata. Inizia gratis in 30 secondi.",
+      "cta": "Crea il tuo account"
+    },
+    "footer": {
+      "brand": "Modifica i tuoi PDF in modo semplice, veloce e sicuro. Direttamente dal browser.",
+      "product": {
+        "title": "Prodotto",
+        "features": "Funzionalità",
+        "pricing": "Prezzi",
+        "api": "API",
+        "roadmap": "Roadmap"
+      },
+      "resources": {
+        "title": "Risorse",
+        "docs": "Documentazione",
+        "guide": "Guida",
+        "faq": "FAQ",
+        "status": "Stato"
+      },
+      "legal": {
+        "title": "Legale",
+        "privacy": "Privacy",
+        "terms": "Termini",
+        "cookies": "Cookie"
+      },
+      "copyright": "Tutti i diritti riservati."
+    }
   }
 }
