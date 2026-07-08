@@ -1,6 +1,18 @@
 """Tests for license enforcement on PDF endpoints."""
 
+import pytest
+from unittest.mock import patch
+
 from fastapi import status
+
+from app.core.config import settings
+
+
+@pytest.fixture(autouse=True)
+def _enable_enforcement():
+    """Force license enforcement ON for all tests in this class, regardless of .env."""
+    with patch.object(settings, "DISABLE_LICENSE_ENFORCEMENT", False):
+        yield
 
 
 def _register_and_login(client, email="user@test.com", password="pass123"):

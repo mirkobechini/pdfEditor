@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db as _get_db
 from app.models.user import User
 from app.repositories.user_repo import UserRepository
@@ -54,7 +55,13 @@ def check_feature_access(
     current_user: User, db: Session, feature_key: str
 ) -> None:
     """Shared helper: raise HTTPException 403 if the user's license tier
-    does not enable the given feature_key. Admin users bypass all checks."""
+    does not enable the given feature_key. Admin users bypass all checks.
+
+    When settings.DISABLE_LICENSE_ENFORCEMENT is True, all checks are bypassed
+    and all features are available to all users."""
+    if settings.DISABLE_LICENSE_ENFORCEMENT:
+        return
+
     if current_user.is_admin:
         return
 

@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     # Undo/redo snapshots
     MAX_SNAPSHOTS: int = 10
 
+    # License enforcement
+    # When True, all features are available to all users regardless of tier.
+    # Set to False in production when license system is activated.
+    DISABLE_LICENSE_ENFORCEMENT: bool = False
+
     model_config = ConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

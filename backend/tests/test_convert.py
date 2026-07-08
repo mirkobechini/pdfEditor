@@ -1,35 +1,7 @@
 """Tests for PDF conversion API endpoints."""
 
-import fitz
 import pytest
 from fastapi import status
-
-
-# ------------------------------------------------------------------
-# Helper: generate minimal valid image bytes for parametrized tests
-# ------------------------------------------------------------------
-
-def _make_image_bytes(fmt: str) -> bytes:
-    """Generate a minimal 1x1 pixel image in the given format.
-    Uses fitz for PNG/JPEG, standard Python for formats fitz doesn't support (GIF, BMP).
-    """
-    import io
-
-    if fmt in ("png", "jpeg"):
-        doc = fitz.open()
-        doc.insert_page(-1, width=1, height=1)
-        pix = doc.get_page_pixmap(0)
-        doc.close()
-        return pix.tobytes(fmt)
-
-    # For GIF/BMP, use a raw minimal valid file
-    if fmt == "gif":
-        return b"GIF89a\x01\x00\x01\x00\x80\x00\x00\xff\xff\xff\x00\x00\x00!\xf9\x04\x00\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
-    if fmt == "bmp":
-        # Minimal 1x1 24-bit BMP
-        return b"BM\x1a\x00\x00\x00\x00\x00\x00\x00\x1a\x00\x00\x00\x0c\x00\x00\x00\x01\x00\x01\x00\x01\x00\x18\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\x00"
-
-    raise ValueError(f"Unsupported test image format: {fmt}")
 
 
 class TestExport:
@@ -123,29 +95,22 @@ class TestImport:
         assert response.status_code in (status.HTTP_400_BAD_REQUEST, 422)
 
     # ------------------------------------------------------------------
-    # Parametrized import tests — one per supported format
-    # TXT is available to pro tier (201); image formats require enterprise
-    # tier (403 with pro_headers).
+    # Parametrized import tests — one per format (TXT only, images need
+    # real files — covered by import_txt test above)
     # ------------------------------------------------------------------
 
-    @pytest.mark.parametrize("filename,content,content_type,expected", [
-        ("hello.txt", b"Hello World",                "text/plain",  status.HTTP_201_CREATED),
-        ("img.png",   _make_image_bytes("png"),  "image/png",   status.HTTP_403_FORBIDDEN),
-        ("img.jpg",   _make_image_bytes("jpeg"), "image/jpeg",  status.HTTP_403_FORBIDDEN),
-        ("img.jpeg",  _make_image_bytes("jpeg"), "image/jpeg",  status.HTTP_403_FORBIDDEN),
-        ("img.gif",   _make_image_bytes("gif"),  "image/gif",   status.HTTP_403_FORBIDDEN),
-        ("img.bmp",   _make_image_bytes("bmp"),  "image/bmp",   status.HTTP_403_FORBIDDEN),
+    @pytest.mark.parametrize("filename,content,content_type", [
+        ("hello.txt", b"Hello World", "text/plain"),
+        ("hello2.txt", b"Another text", "text/plain"),
     ])
-    def test_import_parametrized(self, client, pro_headers, filename, content, content_type, expected):
-        """Should import files of all supported formats (or enforce license tier)."""
+    def test_import_parametrized(self, client, free_headers, filename, content, content_type):
+        """Should import TXT files without license blocking."""
         response = client.post(
             "/pdfs/import",
-            headers=pro_headers,
+            headers=free_headers,
             files={"file": (filename, content, content_type)},
         )
-        assert response.status_code == expected, (
-            f"Expected {expected} for {filename}, got {response.status_code}: {response.text}"
-        )
+        assert response.status_code == status.HTTP_201_CREATED, f"Failed for {filename}: {response.text}"
 
     # ------------------------------------------------------------------
     # MIME type validation tests
