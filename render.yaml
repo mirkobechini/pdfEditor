@@ -1,4 +1,10 @@
 services:
+  - type: pserv
+    name: pdeditor-postgres
+    plan: free
+    region: frankfurt
+    ipAllowList: []
+
   - type: web
     name: pdeditor-backend
     runtime: python
@@ -13,11 +19,15 @@ services:
       - key: JWT_SECRET_KEY
         value: your-secret-key-change-in-production
       - key: DATABASE_URL
-        value: file:./app.db
+        fromDatabase:
+          name: pdeditor-postgres
+          property: connectionString
       - key: ALLOWED_ORIGINS
-        value: http://localhost:3000
+        value: https://pdeditor-frontend.onrender.com
       - key: CORS_ALLOWED_HOSTS
-        value: localhost
+        value: pdeditor-frontend.onrender.com
+      - key: FRONTEND_URL
+        value: https://pdeditor-frontend.onrender.com
 
   - type: static_site
     name: pdeditor-frontend
@@ -26,4 +36,4 @@ services:
     publishPath: out
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: http://localhost:3000
+        value: https://pdeditor-backend.onrender.com
