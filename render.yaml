@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: pdeditor-backend
+    runtime: python
+    plan: free
+    region: frankfurt
+    rootDir: backend
+    buildCommand: pip install --no-build-isolation -r requirements.txt
+    startCommand: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+    envVars:
+      - key: JWT_SECRET_KEY
+        value: your-secret-key-change-in-production
+      - key: DATABASE_URL
+        value: file:./app.db
+      - key: ALLOWED_ORIGINS
+        value: http://localhost:3000
+      - key: CORS_ALLOWED_HOSTS
+        value: localhost
+
+  - type: static_site
+    name: pdeditor-frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishPath: out
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: http://localhost:3000

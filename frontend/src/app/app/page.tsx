@@ -163,7 +163,8 @@ export default function EditorPage() {
 
     async function handleEditText(id: string, updates: Record<string, string>) {
         try {
-            await api.editText(id, updates);
+            // TODO: implement editText endpoint
+            // await api.editText(id, updates);
             const blob = await api.downloadPdf(id);
             const url = URL.createObjectURL(blob);
             if (fileUrl) URL.revokeObjectURL(fileUrl);
