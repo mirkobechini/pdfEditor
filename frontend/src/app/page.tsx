@@ -22,12 +22,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors">
-      <LandingNavbar />
+      <LandingNavbar logo={{ src: "/orange-monkey_logo.png", alt: "PdfEditor Logo" }} />
       <main className="pt-16">
         <LandingHero />
         <LandingFeatures />
         <LandingHowItWorks />
-        <LandingPricing />
+        {/* <LandingPricing /> */}
         <LandingCTA />
       </main>
       <LandingFooter />

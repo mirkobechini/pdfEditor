@@ -45,9 +45,6 @@ export default function LandingNavbar({ logo }: { logo?: LogoProps }) {
                     <a href="#how-it-works" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                         {t("howItWorks")}
                     </a>
-                    <a href="#pricing" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
-                        {t("pricing")}
-                    </a>
                 </div>
 
                 {/* Actions */}
