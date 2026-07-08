@@ -8,6 +8,7 @@ python-multipart==0.0.9
 python-jose[cryptography]==3.3.0
 bcrypt==4.2.1
 requests==2.34.2
+psycopg[binary]==3.2.9
 PyMuPDF>=1.26,<1.27
 python-magic==0.4.27
 aiofiles==24.1.0
