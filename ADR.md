@@ -137,7 +137,7 @@ _nessuno_
 
 ### Da risolvere/note ⏳
 
-> **Nota:** Tutte le feature prioritarie Fase 1 completate. Prossima macro-fase: Fase 1c (Tauri v2).
+> **Nota:** Tutte le feature prioritarie Fase 1 completate. **Prossimo passaggio operativo:** migrazione deploy Render da SQLite a PostgreSQL persistente.
 
 > **Nota tecnica:** Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile dal nostro codice. La libreria `httpx2` non esiste ancora, è una futura release di starlette. Ignorare.
 
@@ -187,6 +187,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Feature minori da implementare (in ordine)
 
+- [ ] **Migrazione database Render SQLite → PostgreSQL** — Passare a DB persistente per evitare perdita dati utenti ai redeploy/restart. Piano: `.specs/plans/feature-render-postgres-migration.md`.
 - [ ] **Invio email reale reset password** — Sostituire il flusso attuale basato su log server con invio SMTP reale, mantenendo risposta neutra anti-enumerazione. Piano: `.specs/plans/feature-reset-password-email-delivery.md`.
 - [ ] **Conferma email account** — Introdurre verifica email post-registrazione con token a scadenza, endpoint di conferma/reinvio e blocco login finche non verificata. Piano: `.specs/plans/feature-email-confirmation.md`.
 
