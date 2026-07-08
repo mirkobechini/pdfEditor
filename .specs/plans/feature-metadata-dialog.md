@@ -51,7 +51,7 @@ Aggiungere UI frontend per visualizzare e modificare i metadati dei PDF (titolo,
 - [ ] Non iniziata
 - [ ] In progress
 - [ ] In review
-- [ ] Completata
+- [x] ✅ Completata (merged to dev - PR #144)
 
 ## Timeline
 
