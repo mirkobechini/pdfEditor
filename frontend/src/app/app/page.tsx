@@ -197,47 +197,48 @@ export default function EditorPage() {
     }
 
     return (
-        <AppLayout
-            sidebar={
-                <Sidebar
-                    selectedId={selectedId}
-                    onSelect={handleSelect}
-                    onDelete={(doc) => {
-                        setFileToDelete(doc);
-                        setDeleteModalOpen(true);
-                    }}
-                    refreshKey={sidebarRefreshKey}
-                />
-            }
-            toolbar={
-                <Toolbar
-                    selectedId={selectedId}
-                    selectedName={selectedName}
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    zoom={zoom}
-                    onZoomChange={setZoom}
-                    onMerge={() => setMergeOpen(true)}
-                    onSplit={() => setSplitOpen(true)}
-                    onReorder={() => setReorderOpen(true)}
-                    onRemove={() => setRemoveOpen(true)}
-                    onEditText={() => { }}
-                    onMetadata={() => setMetadataOpen(true)}
-                    onUndo={handleUndo}
-                />
-            }
-            viewer={
-                <PdfViewer
-                    fileUrl={fileUrl}
-                    requiresPassword={requiresPassword}
-                    passwordError={passwordError}
-                    onPasswordSubmit={handleUnlock}
-                    zoom={zoom}
-                    onPageChange={setCurrentPage}
-                    onTotalPagesChange={setTotalPages}
-                />
-            }
-        >
+        <>
+            <AppLayout
+                sidebar={
+                    <Sidebar
+                        selectedId={selectedId}
+                        onSelect={handleSelect}
+                        onDelete={(doc) => {
+                            setFileToDelete(doc);
+                            setDeleteModalOpen(true);
+                        }}
+                        refreshKey={sidebarRefreshKey}
+                    />
+                }
+                toolbar={
+                    <Toolbar
+                        selectedId={selectedId}
+                        selectedName={selectedName}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        zoom={zoom}
+                        onZoomChange={setZoom}
+                        onMerge={() => setMergeOpen(true)}
+                        onSplit={() => setSplitOpen(true)}
+                        onReorder={() => setReorderOpen(true)}
+                        onRemove={() => setRemoveOpen(true)}
+                        onEditText={() => { }}
+                        onMetadata={() => setMetadataOpen(true)}
+                        onUndo={handleUndo}
+                    />
+                }
+                viewer={
+                    <PdfViewer
+                        fileUrl={fileUrl}
+                        requiresPassword={requiresPassword}
+                        passwordError={passwordError}
+                        onPasswordSubmit={handleUnlock}
+                        zoom={zoom}
+                        onPageChange={setCurrentPage}
+                        onTotalPagesChange={setTotalPages}
+                    />
+                }
+            />
 
             {/* Dialogs */}
             <MergeDialog open={mergeOpen} onClose={() => setMergeOpen(false)} onMerge={handleMerge} />
@@ -252,6 +253,6 @@ export default function EditorPage() {
                 title="Delete PDF"
                 message={`Are you sure you want to delete "${fileToDelete?.original_filename}"?`}
             />
-        </AppLayout>
+        </>
     );
 }
