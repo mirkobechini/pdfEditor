@@ -216,19 +216,21 @@ export default function EditorPage() {
                 }
                 toolbar={
                     <Toolbar
-                        selectedId={selectedId}
-                        selectedName={selectedName}
                         currentPage={currentPage}
                         totalPages={totalPages}
+                        onPageChange={setCurrentPage}
                         zoom={zoom}
                         onZoomChange={setZoom}
                         onMerge={() => setMergeOpen(true)}
                         onSplit={() => setSplitOpen(true)}
                         onReorder={() => setReorderOpen(true)}
-                        onRemove={() => setRemoveOpen(true)}
-                        onEditText={() => { }}
+                        onRemovePages={() => setRemoveOpen(true)}
+                        onReplaceText={() => { }}
                         onMetadata={() => setMetadataOpen(true)}
+                        canUndo={!!selectedId}
+                        canRedo={false}
                         onUndo={handleUndo}
+                        onRedo={() => { }}
                     />
                 }
                 viewer={
