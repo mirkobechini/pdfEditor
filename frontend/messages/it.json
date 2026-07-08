@@ -143,7 +143,7 @@
     "forgotTitle": "Password Dimenticata",
     "forgotDescription": "Inserisci la tua email e ti invieremo un link per reimpostare la password.",
     "sendResetLink": "Invia Link di Reset",
-    "resetSent": "Un link di reset è stato inviato alla tua email. In sviluppo, controlla la console del server.",
+    "resetSent": "Se l'email esiste, la richiesta di reset è stata ricevuta.",
     "backToLogin": "Torna al Login",
     "resetTitle": "Reimposta Password",
     "newPassword": "Nuova Password",
