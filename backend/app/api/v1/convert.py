@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
+from sqlalchemy.orm import Session
 
-from app.api.deps import check_feature_access, get_current_user, get_pdf_service
+from app.api.deps import check_feature_access, get_current_user, get_db, get_pdf_service
 from app.core.config import settings
 from app.models.user import User
 from app.schemas.pdf import PdfResponse
@@ -46,6 +47,7 @@ def export_pdf(
     pdf_id: str,
     fmt: str = Query(..., description="Export format: txt, png, jpg, svg"),
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
     service: PdfService = Depends(get_pdf_service),
 ):
     """Export a PDF to another format."""
@@ -58,7 +60,7 @@ def export_pdf(
 
     feature_key = EXPORT_FEATURE_MAP.get(fmt)
     if feature_key:
-        check_feature_access(current_user, service.repo.db, feature_key)
+        check_feature_access(current_user, db, feature_key)
 
     try:
         result, media_type, filename = service.export_pdf(pdf_id, current_user.id, fmt)
@@ -79,6 +81,7 @@ def export_pdf(
 def import_file(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
     service: PdfService = Depends(get_pdf_service),
 ) -> PdfResponse:
     """Import a file and convert it to PDF."""
@@ -97,7 +100,7 @@ def import_file(
 
     feature_key = IMPORT_FEATURE_MAP.get(ext)
     if feature_key:
-        check_feature_access(current_user, service.repo.db, feature_key)
+        check_feature_access(current_user, db, feature_key)
 
     # Validate MIME type
     if ext in IMPORT_MIME_MAP and file.content_type:
