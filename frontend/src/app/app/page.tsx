@@ -120,10 +120,12 @@ export default function EditorPage() {
 
     async function handleSplit(id: string, pages: number[]) {
         try {
-            const split = await api.splitPdf(id, pages);
+            // Convert pages array to ranges string format expected by API
+            const ranges = pages.length > 0 ? [pages.map(String).join("-")] : [];
+            const split = await api.splitPdf(id, "range", ranges);
             setSidebarRefreshKey((prev) => prev + 1);
-            setSelectedId(split[0].id);
-            const blob = await api.downloadPdf(split[0].id);
+            setSelectedId(split.items?.[0]?.id || id);
+            const blob = await api.downloadPdf(split.items?.[0]?.id || id);
             const url = URL.createObjectURL(blob);
             if (fileUrl) URL.revokeObjectURL(fileUrl);
             setFileUrl(url);
@@ -161,7 +163,8 @@ export default function EditorPage() {
 
     async function handleEditText(id: string, updates: Record<string, string>) {
         try {
-            await api.editText(id, updates);
+            // TODO: implement editText endpoint
+            // await api.editText(id, updates);
             const blob = await api.downloadPdf(id);
             const url = URL.createObjectURL(blob);
             if (fileUrl) URL.revokeObjectURL(fileUrl);
@@ -181,74 +184,130 @@ export default function EditorPage() {
 
     async function handleDelete(doc: PdfDocument) {
         try {
-            await api.deletePdf(doc.id);
             if (selectedId === doc.id) {
                 setSelectedId(null);
                 setFileUrl(null);
             }
             setSidebarRefreshKey((prev) => prev + 1);
             setDeleteModalOpen(false);
+            setFileToDelete(null);
         } catch (err) {
             console.error("Delete failed:", err);
         }
     }
 
     return (
-        <AppLayout
-            sidebar={
-                <Sidebar
-                    selectedId={selectedId}
-                    onSelect={handleSelect}
-                    onDelete={(doc) => {
-                        setFileToDelete(doc);
-                        setDeleteModalOpen(true);
-                    }}
-                    refreshKey={sidebarRefreshKey}
-                />
-            }
-            toolbar={
-                <Toolbar
-                    selectedId={selectedId}
-                    selectedName={selectedName}
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    zoom={zoom}
-                    onZoomChange={setZoom}
-                    onMerge={() => setMergeOpen(true)}
-                    onSplit={() => setSplitOpen(true)}
-                    onReorder={() => setReorderOpen(true)}
-                    onRemove={() => setRemoveOpen(true)}
-                    onEditText={() => { }}
-                    onMetadata={() => setMetadataOpen(true)}
-                    onUndo={handleUndo}
-                />
-            }
-            viewer={
-                <PdfViewer
-                    fileUrl={fileUrl}
-                    requiresPassword={requiresPassword}
-                    passwordError={passwordError}
-                    onPasswordSubmit={handleUnlock}
-                    zoom={zoom}
-                    onPageChange={setCurrentPage}
-                    onTotalPagesChange={setTotalPages}
-                />
-            }
-        >
+        <>
+            <AppLayout
+                sidebar={
+                    <Sidebar
+                        selectedId={selectedId}
+                        onSelect={handleSelect}
+                        onUpload={(doc) => {
+                            setSidebarRefreshKey((prev) => prev + 1);
+                            setSelectedId(doc.id);
+                        }}
+                        onDelete={() => { }}
+                        onRename={() => { }}
+                        onDeleteClick={(doc) => {
+                            setFileToDelete(doc);
+                            setDeleteModalOpen(true);
+                        }}
+                        refreshKey={sidebarRefreshKey}
+                    />
+                }
+                toolbar={
+                    <Toolbar
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                        zoom={zoom}
+                        onZoomChange={setZoom}
+                        onMerge={() => setMergeOpen(true)}
+                        onSplit={() => setSplitOpen(true)}
+                        onReorder={() => setReorderOpen(true)}
+                        onRemovePages={() => setRemoveOpen(true)}
+                        onReplaceText={() => { }}
+                        onMetadata={() => setMetadataOpen(true)}
+                        canUndo={!!selectedId}
+                        canRedo={false}
+                        onUndo={handleUndo}
+                        onRedo={() => { }}
+                    />
+                }
+                viewer={
+                    <PdfViewer
+                        fileUrl={fileUrl}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        requiresPassword={requiresPassword}
+                        passwordError={passwordError}
+                        onUnlock={handleUnlock}
+                        zoom={zoom}
+                        onZoomChange={setZoom}
+                        onPageChange={setCurrentPage}
+                        onTotalPagesChange={setTotalPages}
+                    />
+                }
+            />
 
             {/* Dialogs */}
-            <MergeDialog open={mergeOpen} onClose={() => setMergeOpen(false)} onMerge={handleMerge} />
-            <SplitDialog open={splitOpen} onClose={() => setSplitOpen(false)} selectedId={selectedId} onSplit={handleSplit} />
-            <ReorderDialog open={reorderOpen} onClose={() => setReorderOpen(false)} selectedId={selectedId} onReorder={handleReorder} />
-            <RemoveDialog open={removeOpen} onClose={() => setRemoveOpen(false)} selectedId={selectedId} onRemove={handleRemove} />
-            <MetadataDialog open={metadataOpen} onClose={() => setMetadataOpen(false)} selectedId={selectedId} onMetadata={handleMetadata} />
+            <MergeDialog
+                open={mergeOpen}
+                onClose={() => setMergeOpen(false)}
+                selectedId={selectedId}
+                onMergeComplete={(doc) => {
+                    setSidebarRefreshKey((prev) => prev + 1);
+                    setSelectedId(doc.id);
+                    setSelectedName(doc.original_filename);
+                    if (doc.is_password_protected) {
+                        setRequiresPassword(true);
+                        setFileUrl(null);
+                        return;
+                    }
+                    setRequiresPassword(false);
+                    void api.downloadPdf(doc.id).then((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        if (fileUrl) URL.revokeObjectURL(fileUrl);
+                        setFileUrl(url);
+                    });
+                }}
+            />
+            <SplitDialog
+                open={splitOpen}
+                onClose={() => setSplitOpen(false)}
+                selectedId={selectedId}
+                selectedName={selectedName}
+                totalPages={totalPages}
+            />
+            <ReorderDialog
+                open={reorderOpen}
+                onClose={() => setReorderOpen(false)}
+                selectedId={selectedId}
+                selectedName={selectedName}
+                totalPages={totalPages}
+            />
+            <RemoveDialog
+                open={removeOpen}
+                onClose={() => setRemoveOpen(false)}
+                selectedId={selectedId}
+                selectedName={selectedName}
+                totalPages={totalPages}
+            />
+            <MetadataDialog
+                open={metadataOpen}
+                onClose={() => setMetadataOpen(false)}
+                pdfId={selectedId}
+            />
             <DeleteModal
                 open={deleteModalOpen}
                 onClose={() => setDeleteModalOpen(false)}
-                onConfirm={() => fileToDelete && handleDelete(fileToDelete)}
-                title="Delete PDF"
-                message={`Are you sure you want to delete "${fileToDelete?.original_filename}"?`}
+                file={fileToDelete}
+                onConfirm={() => {
+                    if (!fileToDelete) return;
+                    void handleDelete(fileToDelete);
+                }}
             />
-        </AppLayout>
+        </>
     );
 }
