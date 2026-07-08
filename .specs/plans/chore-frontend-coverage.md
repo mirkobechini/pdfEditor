@@ -34,19 +34,20 @@ Configurare coverage reporting per i test frontend (vitest) con `@vitest/coverag
 
 ## Accettazione Criteria
 
-- [ ] `npm install --save-dev @vitest/coverage-v8`
-- [ ] `vitest.config.ts` aggiunge blocco `coverage`
-- [ ] `package.json` aggiunge script `"coverage": "vitest run --coverage"`
-- [ ] `.gitignore` aggiunge `coverage/`
-- [ ] `npm run coverage` produce output text + lcov
-- [ ] lcov report genera correttamente
+- [x] `npm install --save-dev @vitest/coverage-v8`
+- [x] `vitest.config.ts` aggiunge blocco `coverage`
+- [x] `package.json` aggiunge script `"coverage": "vitest run --coverage"`
+- [x] `frontend/.gitignore` già include `/coverage`
+- [x] `npm run coverage` produce output text + lcov
+- [x] lcov report genera correttamente (`frontend/coverage/lcov.info`)
+- [x] Coverage summary: 44.36% statements, 45.41% branches, 37.34% functions, 45.98% lines
 
 ## Status
 
 - [ ] Non iniziata
 - [ ] In progress
 - [ ] In review
-- [ ] Completata
+- [x] ✅ Completata (merged to dev)
 
 ## Timeline
 
