@@ -14,7 +14,8 @@
     "passwordPrompt": "Inserisci la password per visualizzare questo PDF",
     "passwordPlaceholder": "Inserisci password",
     "passwordInvalid": "Password errata. Riprova.",
-    "unlock": "Sblocca"
+    "unlock": "Sblocca",
+    "metadata": "Info"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -81,6 +82,23 @@
     "failed": "Rimozione fallita",
     "confirmDelete": "Sì, Elimina",
     "confirmMessage": "Sei sicuro di voler rimuovere le pagine selezionate? Verrà creato un nuovo file PDF."
+  },
+  "metadata": {
+    "title": "Metadati PDF",
+    "loading": "Caricamento metadati...",
+    "fieldTitle": "Titolo",
+    "titlePlaceholder": "Inserisci titolo documento",
+    "fieldAuthor": "Autore",
+    "authorPlaceholder": "Inserisci nome autore",
+    "fieldSubject": "Soggetto",
+    "subjectPlaceholder": "Inserisci soggetto",
+    "fieldKeywords": "Parole chiave",
+    "keywordsPlaceholder": "Inserisci parole chiave (separate da virgola)",
+    "save": "Salva",
+    "saving": "Salvataggio...",
+    "cancel": "Annulla",
+    "loadFailed": "Caricamento metadati fallito",
+    "saveFailed": "Salvataggio metadati fallito"
   },
   "bugReport": {
     "title": "Segnala un Bug",

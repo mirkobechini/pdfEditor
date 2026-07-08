@@ -14,6 +14,7 @@ interface ToolbarProps {
   onReorder: () => void;
   onRemovePages: () => void;
   onReplaceText: () => void;
+  onMetadata: () => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -31,6 +32,7 @@ export default function Toolbar({
   onReorder,
   onRemovePages,
   onReplaceText,
+  onMetadata,
   canUndo,
   canRedo,
   onUndo,
@@ -147,6 +149,9 @@ export default function Toolbar({
       </button>
       <button className="px-3 py-1 text-xs rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50" onClick={onRemovePages}>
         {t("remove")}
+      </button>
+      <button className="px-3 py-1 text-xs rounded bg-gray-500 text-white hover:bg-gray-600 disabled:opacity-50" onClick={onMetadata}>
+        {t("metadata")}
       </button>
     </>
   );
