@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { vi } from "vitest";
+import React from "react";
 
 // Mock window.matchMedia
 Object.defineProperty(window, "matchMedia", {
@@ -36,4 +37,13 @@ vi.mock("next-intl", () => ({
 // Mock the old useI18n for any remaining references
 vi.mock("../lib/i18n", () => ({
   useLocaleControl: () => ({ locale: "en" as const, setLocale: vi.fn() }),
+}));
+
+// Mock next/image component for tests
+vi.mock("next/image", () => ({
+  default: (props: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { fill, unoptimized, ...imgProps } = props;
+    return React.createElement("img", imgProps);
+  },
 }));

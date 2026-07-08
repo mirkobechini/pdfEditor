@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
 import HeaderControls from "../components/HeaderControls";
@@ -45,7 +47,18 @@ export default function RegisterPage() {
 
   return (
     <>
-      <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-end px-4 shrink-0">
+      <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shrink-0">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-75 transition-opacity">
+          <Image
+            src="/orange-monkey_logo.png"
+            alt="PdfEditor Logo"
+            width={32}
+            height={32}
+            className="rounded-lg"
+            priority
+          />
+          <span className="text-lg font-bold text-gray-900 dark:text-gray-100">PdfEditor</span>
+        </Link>
         <HeaderControls />
       </header>
       <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
@@ -59,7 +72,7 @@ export default function RegisterPage() {
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="Mario Rossi"
                 required
                 autoFocus
@@ -72,7 +85,7 @@ export default function RegisterPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="email@example.com"
                 required
               />
@@ -84,7 +97,7 @@ export default function RegisterPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="••••••••"
                 required
                 minLength={6}
@@ -97,7 +110,7 @@ export default function RegisterPage() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="••••••••"
                 required
               />
@@ -111,7 +124,7 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              className="w-full py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 font-medium"
+              className="w-full py-2 text-sm rounded bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 font-medium"
               disabled={loading || !fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()}
             >
               {loading ? t("registering") : t("registerButton")}
