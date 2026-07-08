@@ -139,7 +139,7 @@ export default function RegisterPage() {
           <GoogleLoginButton />
           <p className="mt-4 text-sm text-center text-gray-500 dark:text-gray-400">
             {t("hasAccount")}{" "}
-            <a href="/login" className="text-blue-500 hover:underline">
+            <a href="/login" className="text-orange-500 hover:underline">
               {t("loginLink")}
             </a>
           </p>
