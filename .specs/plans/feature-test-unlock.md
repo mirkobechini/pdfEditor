@@ -36,28 +36,23 @@ Aggiungere test per `POST /pdfs/{pdf_id}/unlock`. Attualmente non esiste alcun t
 
 ## Accettazione Criteria
 
-- [ ] File test creato: test_unlock.py
-- [ ] 5+ test cases implementati
-- [ ] PDF protetto generato con PyMuPDF `encrypt()` per test
-- [ ] Tutti i test passano: `pytest backend/tests/test_unlock.py -v`
-- [ ] Upload del PDF protetto via `upload_pdf()` helper
+- [x] File test creato: test_unlock.py
+- [x] 6 test cases implementati
+- [x] PDF protetto generato con PyMuPDF `PDF_ENCRYPT_AES_256`
+- [x] Tutti i test passano: `pytest backend/tests/test_unlock.py -v`
+- [x] Upload del PDF protetto via helper `_upload_and_get_id()`
 
 ## Status
 
 - [ ] Non iniziata
 - [ ] In progress
 - [ ] In review
-- [ ] Completata
-
-## Timeline
-
-Stimato: 45 minuti
+- [x] ✅ Completata (merged to dev)
 
 ## Note
 
-- Usare `sample_pdf_content` per creare PDF base
-- Per creare PDF protetto: aprire con fitz, `doc.save()` con `encryption="pdfstd"` e `user_pw="test123"`
-- Per testare 401: non passare `free_headers`
+- Usare `fitz.PDF_ENCRYPT_AES_256` (costante intera, non stringa) per la crittografia
+- `is_password_protected` rimane True dopo unlock nel DB — importante capire che è flag di persistenza, non di sessione
 - Usare helper `upload_pdf(client, free_headers, content, filename="protected.pdf")`
 
 ```python
