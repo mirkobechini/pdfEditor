@@ -6,45 +6,14 @@ import { useLocaleControl } from "../lib/i18n";
 
 export function ToggleDarkMode() {
   const t = useTranslations("darkMode");
-  const [dark, setDark] = React.useState(false);
-
-  // On mount: restore from localStorage, fallback to system preference
-  React.useEffect(() => {
+  const [dark, setDark] = React.useState(() => {
+    // Initialize from localStorage on first render (server-safe)
+    if (typeof window === "undefined") return false;
     const stored = localStorage.getItem("darkMode");
-    if (stored !== null) {
-      const isDark = stored === "true";
-      setDark(isDark);
-      if (isDark) {
-        document.documentElement.classList.add("dark");
-      }
-    } else {
-      // First visit — check system preference
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      if (prefersDark) {
-        setDark(true);
-        document.documentElement.classList.add("dark");
-      }
-    }
-  }, []);
+    return stored === "true" || (stored === null && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  });
 
-  // Listen for system preference changes (only when no explicit user choice)
-  React.useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e: MediaQueryListEvent) => {
-      const stored = localStorage.getItem("darkMode");
-      if (stored === null) {
-        setDark(e.matches);
-        if (e.matches) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-      }
-    };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
+  // Sync dark mode changes to DOM and localStorage
   React.useEffect(() => {
     if (dark) {
       document.documentElement.classList.add("dark");
@@ -54,11 +23,25 @@ export function ToggleDarkMode() {
     localStorage.setItem("darkMode", String(dark));
   }, [dark]);
 
+  // Listen for system preference changes (only when no explicit user choice)
+  React.useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => {
+      const stored = localStorage.getItem("darkMode");
+      if (stored === null) {
+        setDark(e.matches);
+      }
+    };
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   return (
     <button
       onClick={() => setDark(!dark)}
       className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
       title={t("toggle")}
+      suppressHydrationWarning
     >
       {dark ? "☀️" : "🌙"}
     </button>
