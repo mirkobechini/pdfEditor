@@ -1,0 +1,115 @@
+"""Tests for PDF merge and split API endpoints."""
+
+from fastapi import status
+
+
+class TestMerge:
+    """Test suite for PDF merge endpoint."""
+
+    MERGE_URL = "/pdfs/merge"
+
+    def test_merge_two_pdfs(self, client, sample_pdf_content, pro_headers):
+        """Should merge two PDFs into one."""
+        from tests.conftest import upload_pdf
+        id1 = upload_pdf(client, pro_headers, sample_pdf_content)
+        id2 = upload_pdf(client, pro_headers, sample_pdf_content)
+
+        response = client.post(self.MERGE_URL, headers=pro_headers, json={"pdf_ids": [id1, id2]})
+        assert response.status_code == status.HTTP_201_CREATED
+        data = response.json()
+        assert data["original_filename"].startswith("merged_")
+        assert data["page_count"] == 2  # each has 1 page
+
+    def test_merge_single_pdf_raises_error(self, client, sample_pdf_content, pro_headers):
+        """Should reject merge with only one PDF."""
+        from tests.conftest import upload_pdf
+        pid = upload_pdf(client, pro_headers, sample_pdf_content)
+
+        response = client.post(self.MERGE_URL, headers=pro_headers, json={"pdf_ids": [pid]})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_merge_non_existent_pdf(self, client, pro_headers):
+        """Should reject merge with non-existent PDF ID."""
+        response = client.post(
+            self.MERGE_URL, headers=pro_headers, json={"pdf_ids": ["fake-id-1", "fake-id-2"]}
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+class TestSplit:
+    """Test suite for PDF split endpoint."""
+
+    def upload_single(self, client, pro_headers, sample_pdf_content, pages=3):
+        """Upload a multi-page PDF for split testing with pro auth."""
+        import fitz
+
+        doc = fitz.open()
+        for _ in range(pages):
+            doc.insert_page(-1, width=612, height=792)
+        content = doc.tobytes()
+        doc.close()
+
+        from tests.conftest import upload_pdf
+        return upload_pdf(client, pro_headers, content, filename="multi.pdf")
+
+    def test_split_every_page(self, client, sample_pdf_content, pro_headers):
+        """Should split a PDF into individual pages."""
+        doc_id = self.upload_single(client, pro_headers, sample_pdf_content, pages=3)
+
+        response = client.post(f"/pdfs/{doc_id}/split", headers=pro_headers, json={"mode": "every"})
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert len(data["items"]) == 3
+        for item in data["items"]:
+            assert item["page_count"] == 1
+
+    def test_split_by_range(self, client, sample_pdf_content, pro_headers):
+        """Should split a PDF by page ranges."""
+        doc_id = self.upload_single(client, pro_headers, sample_pdf_content, pages=5)
+
+        response = client.post(
+            f"/pdfs/{doc_id}/split",
+            headers=pro_headers,
+            json={"mode": "range", "ranges": ["1-3", "3-5"]},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert len(data["items"]) == 2
+        assert data["items"][0]["page_count"] == 3
+        assert data["items"][1]["page_count"] == 3
+
+    def test_split_invalid_mode(self, client, sample_pdf_content, pro_headers):
+        """Should reject split with invalid mode."""
+        doc_id = self.upload_single(client, pro_headers, sample_pdf_content, pages=3)
+
+        response = client.post(
+            f"/pdfs/{doc_id}/split", headers=pro_headers, json={"mode": "invalid"}
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_split_missing_ranges(self, client, sample_pdf_content, pro_headers):
+        """Should reject range mode without ranges."""
+        doc_id = self.upload_single(client, pro_headers, sample_pdf_content, pages=3)
+
+        response = client.post(
+            f"/pdfs/{doc_id}/split", headers=pro_headers, json={"mode": "range"}
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_split_invalid_range(self, client, sample_pdf_content, pro_headers):
+        """Should reject invalid page range."""
+        doc_id = self.upload_single(client, pro_headers, sample_pdf_content, pages=3)
+
+        response = client.post(
+            f"/pdfs/{doc_id}/split",
+            headers=pro_headers,
+            json={"mode": "range", "ranges": ["1-99"]},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_split_non_existent_pdf(self, client, pro_headers):
+        """Should reject split on non-existent PDF."""
+        response = client.post(
+            "/pdfs/fake-id/split", headers=pro_headers, json={"mode": "every"}
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST

@@ -1,0 +1,57 @@
+graph TD
+    subgraph Client
+        NEXT[Next.js Web / PWA<br/>React 19 + TailwindCSS v4]
+        TAURI[Tauri v2 Desktop<br/>~5MB binary]
+        RN[React Native Mobile<br/>iOS/Android - Futuro]
+    end
+
+    subgraph Client_Libs[Librerie Client]
+        PDFJS[PDF.js Viewer<br/>cdnjs]
+        PDFLIB[pdf-lib<br/>merge/split/riordino offline]
+        NEXT_INTL[next-intl<br/>i18n italiano/inglese]
+    end
+
+    subgraph Backend[Backend FastAPI - Python]
+        API[FastAPI App<br/>REST/JSON]
+        AUTH[Auth Service<br/>JWT + SSO Google]
+        PDF_SVC[PDF Service<br/>PyMuPDF elaboration]
+        CONV[Conversion Service<br/>DOCX/XLSX/PNG/JPG/TXT/SVG]
+        LIC[License Enforcer<br/>Feature gating per tier]
+        BUG[Bug Report Service]
+        UNDO[Undo/Redo Engine<br/>max 10 snapshot/sessione]
+    end
+
+    subgraph Storage[Storage Layer]
+        DB[(SQLite offline<br/>PostgreSQL cloud)]
+        FS[File System<br/>backend/storage/pdfs]
+        AL[Sync Engine<br/>UUID + timestamp]
+    end
+
+    NEXT -->|REST/JSON + JWT| API
+    TAURI -->|Sidecar localhost| API
+    RN -->|REST/JSON + JWT| API
+
+    NEXT --> PDFJS
+    NEXT --> PDFLIB
+    RN -->|WebView| PDFJS
+
+    API --> AUTH
+    API --> PDF_SVC
+    API --> CONV
+    API --> LIC
+    API --> BUG
+    API --> UNDO
+
+    PDF_SVC --> DB
+    PDF_SVC --> FS
+    AUTH --> DB
+    CONV --> FS
+    BUG --> DB
+    UNDO --> FS
+    AL --> DB
+    AL --> FS
+
+    style Client fill:#e1f5fe,stroke:#01579b
+    style Client_Libs fill:#e8eaf6,stroke:#283593
+    style Backend fill:#f3e5f5,stroke:#4a148c
+    style Storage fill:#fff3e0,stroke:#e65100

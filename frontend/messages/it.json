@@ -1,0 +1,330 @@
+{
+  "app": {
+    "title": "PdfEditor",
+    "selectPdf": "Seleziona un PDF da visualizzare",
+    "rendering": "Rendering...",
+    "dropToUpload": "Rilascia per caricare",
+    "dragAndDrop": "Oppure trascina un PDF qui",
+    "merge": "Unisci",
+    "split": "Dividi",
+    "reorder": "Riordina",
+    "remove": "Rimuovi",
+    "currentFile": "(corrente)",
+    "passwordRequired": "Questo PDF è protetto da password",
+    "passwordPrompt": "Inserisci la password per visualizzare questo PDF",
+    "passwordPlaceholder": "Inserisci password",
+    "passwordInvalid": "Password errata. Riprova.",
+    "unlock": "Sblocca",
+    "metadata": "Info"
+  },
+  "sidebar": {
+    "dropHere": "Trascina un PDF qui o clicca per caricare",
+    "loading": "Caricamento...",
+    "noPdfs": "Nessun PDF caricato",
+    "uploadOnlyPdf": "Solo file PDF consentiti",
+    "uploadFailed": "Caricamento fallito",
+    "deleteFailed": "Cancellazione fallita",
+    "rename": "Rinomina",
+    "delete": "Elimina",
+    "confirmDelete": "Conferma eliminazione"
+  },
+  "mergeDialog": {
+    "title": "Unisci PDF",
+    "description": "Seleziona almeno 2 PDF da unire.",
+    "cancel": "Annulla",
+    "merge": "Unisci",
+    "merging": "Unione in corso...",
+    "failed": "Unione fallita"
+  },
+  "splitDialog": {
+    "title": "Dividi PDF",
+    "selectFile": "Seleziona un PDF",
+    "choose": "Scegli --",
+    "pages": "pagine",
+    "pageLabel": "Pagine da estrarre",
+    "pageThumbnail": "Pagina {page}",
+    "pagePlaceholder": "es. 1-3, 5, 7",
+    "available": "Pagine disponibili",
+    "pagesSelected": "pagine selezionate",
+    "clickToSelect": "Clicca sulle miniature per selezionare",
+    "orTypeRange": "Oppure digita gli intervalli:",
+    "cancel": "Annulla",
+    "split": "Dividi",
+    "splitting": "Divisione in corso...",
+    "failed": "Divisione fallita"
+  },
+  "reorderDialog": {
+    "title": "Riordina Pagine",
+    "selectFile": "Seleziona un PDF",
+    "choose": "Scegli --",
+    "pages": "pagine",
+    "page": "Pagina",
+    "pageThumbnail": "Pagina {page}",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù",
+    "noPreview": "Anteprima non disponibile",
+    "cancel": "Annulla",
+    "reorder": "Riordina",
+    "reordering": "Riordino in corso...",
+    "failed": "Riordino fallito"
+  },
+  "removeDialog": {
+    "title": "Rimuovi Pagine",
+    "selectFile": "Seleziona un PDF",
+    "choose": "Scegli --",
+    "pages": "pagine",
+    "page": "Pagina",
+    "pageThumbnail": "Pagina {page}",
+    "pagesRemaining": "pagine rimanenti",
+    "cancel": "Annulla",
+    "remove": "Rimuovi",
+    "removing": "Rimozione in corso...",
+    "failed": "Rimozione fallita",
+    "confirmDelete": "Sì, Elimina",
+    "confirmMessage": "Sei sicuro di voler rimuovere le pagine selezionate? Verrà creato un nuovo file PDF."
+  },
+  "metadata": {
+    "title": "Metadati PDF",
+    "loading": "Caricamento metadati...",
+    "fieldTitle": "Titolo",
+    "titlePlaceholder": "Inserisci titolo documento",
+    "fieldAuthor": "Autore",
+    "authorPlaceholder": "Inserisci nome autore",
+    "fieldSubject": "Soggetto",
+    "subjectPlaceholder": "Inserisci soggetto",
+    "fieldKeywords": "Parole chiave",
+    "keywordsPlaceholder": "Inserisci parole chiave (separate da virgola)",
+    "save": "Salva",
+    "saving": "Salvataggio...",
+    "cancel": "Annulla",
+    "loadFailed": "Caricamento metadati fallito",
+    "saveFailed": "Salvataggio metadati fallito"
+  },
+  "bugReport": {
+    "title": "Segnala un Bug",
+    "fieldTitle": "Titolo",
+    "titlePlaceholder": "Breve riepilogo del problema",
+    "fieldDescription": "Descrizione",
+    "descriptionPlaceholder": "Descrivi cosa è successo e come riprodurlo",
+    "submit": "Invia Segnalazione",
+    "sending": "Invio in corso...",
+    "sentTitle": "Grazie!",
+    "sentDescription": "La tua segnalazione è stata inviata con successo.",
+    "close": "Chiudi",
+    "cancel": "Annulla",
+    "failed": "Invio segnalazione fallito",
+    "button": "Segnala Bug"
+  },
+  "darkMode": {
+    "toggle": "Attiva/disattiva modalità scura"
+  },
+  "auth": {
+    "loginTitle": "Accedi",
+    "registerTitle": "Crea Account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Conferma Password",
+    "fullName": "Nome Completo",
+    "loginButton": "Accedi",
+    "registerButton": "Crea Account",
+    "loggingIn": "Accesso in corso...",
+    "registering": "Creazione account in corso...",
+    "loginFailed": "Accesso fallito",
+    "registerFailed": "Registrazione fallita",
+    "passwordMismatch": "Le password non coincidono",
+    "passwordTooShort": "La password deve essere almeno 6 caratteri",
+    "noAccount": "Non hai un account?",
+    "hasAccount": "Hai già un account?",
+    "registerLink": "Registrati",
+    "loginLink": "Accedi",
+    "logout": "Esci",
+    "googleLogin": "Accedi con Google",
+    "googleRegister": "Registrati con Google",
+    "forgotTitle": "Password Dimenticata",
+    "forgotDescription": "Inserisci la tua email e ti invieremo un link per reimpostare la password.",
+    "sendResetLink": "Invia Link di Reset",
+    "resetSent": "Un link di reset è stato inviato alla tua email. In sviluppo, controlla la console del server.",
+    "backToLogin": "Torna al Login",
+    "resetTitle": "Reimposta Password",
+    "newPassword": "Nuova Password",
+    "resetButton": "Reimposta Password",
+    "resetting": "Reimpostazione in corso...",
+    "resetInvalidToken": "Token di reset non valido o mancante.",
+    "requestNewReset": "Richiedi un nuovo link di reset",
+    "sending": "Invio in corso..."
+  },
+  "admin": {
+    "title": "Pannello Admin",
+    "users": "Utenti",
+    "bugReports": "Segnalazioni Bug",
+    "loading": "Caricamento...",
+    "email": "Email",
+    "fullName": "Nome Completo",
+    "licenseTier": "Tipo Licenza",
+    "isAdmin": "Admin",
+    "status": "Stato",
+    "createdAt": "Creato Il",
+    "actions": "Azioni",
+    "save": "Salva",
+    "cancel": "Annulla",
+    "backToApp": "Torna all'App",
+    "userId": "ID Utente",
+    "titleField": "Titolo",
+    "description": "Descrizione",
+    "noUsers": "Nessun utente trovato",
+    "noBugs": "Nessuna segnalazione trovata",
+    "filterStatus": "Filtra per stato",
+    "all": "Tutti",
+    "open": "Aperto",
+    "inProgress": "In Corso",
+    "resolved": "Risolto",
+    "closed": "Chiuso",
+    "tierFree": "Free",
+    "tierPro": "Pro",
+    "tierEnterprise": "Enterprise",
+    "tierAdmin": "Admin"
+  },
+  "deleteModal": {
+    "title": "Elimina PDF",
+    "close": "Chiudi",
+    "confirmMessage": "Sei sicuro di voler eliminare",
+    "pageCount": "{count} pagine",
+    "preview": "Anteprima",
+    "previewAlt": "Anteprima di {filename}",
+    "warning": "Questa azione non può essere annullata. Il file verrà eliminato permanentemente.",
+    "cancel": "Annulla",
+    "deleting": "Eliminazione in corso...",
+    "confirm": "Elimina",
+    "deleteFailed": "Cancellazione fallita"
+  },
+  "landing": {
+    "navbar": {
+      "features": "Funzionalità",
+      "howItWorks": "Come funziona",
+      "pricing": "Prezzi",
+      "login": "Accedi",
+      "register": "Registrati gratis"
+    },
+    "hero": {
+      "badge": "Nuovo: Modifica testo nei PDF",
+      "title": "Il tuo editor PDF",
+      "subtitle": "semplice, veloce, offline",
+      "description": "Unisci, dividi, riordina e modifica i tuoi PDF direttamente dal browser. Gratuito, sicuro e senza pubblicità.",
+      "ctaPrimary": "Inizia gratis",
+      "ctaSecondary": "Scopri di più",
+      "mockupTitle": "Modifica PDF",
+      "mockupText": "Anteprima live del tuo PDF"
+    },
+    "features": {
+      "title": "Tutto quello che ti serve",
+      "description": "Strumenti professionali per gestire i tuoi PDF, senza installare nulla.",
+      "merge": {
+        "title": "Unisci PDF",
+        "description": "Combina più documenti in un unico file. Trascina e rilascia nell'ordine che preferisci."
+      },
+      "split": {
+        "title": "Dividi PDF",
+        "description": "Estrai pagine specifiche o intervalli. Creane uno nuovo con solo ciò che ti serve."
+      },
+      "reorder": {
+        "title": "Riordina Pagine",
+        "description": "Sposta, riorganizza e systemala pagine con un drag & drop intuitivo."
+      },
+      "edittext": {
+        "title": "Modifica Testo",
+        "description": "Correggi o aggiorna il testo direttamente nel PDF. Come un word processor."
+      },
+      "unlock": {
+        "title": "Sblocca PDF",
+        "description": "Rimuovi la protezione da PDF protetti da password (se hai il permesso)."
+      },
+      "metadata": {
+        "title": "Metadati & Info",
+        "description": "Visualizza e modifica titolo, autore, soggetto e keywords dei tuoi PDF."
+      }
+    },
+    "howItWorks": {
+      "title": "Come funziona",
+      "description": "Tre semplici passi per modificare i tuoi PDF.",
+      "step1": {
+        "title": "Carica il tuo PDF",
+        "description": "Trascina il file nell'area di upload o selezionalo dal tuo dispositivo."
+      },
+      "step2": {
+        "title": "Modifica",
+        "description": "Unisci, dividi, riordina, modifica il testo o aggiorna i metadati."
+      },
+      "step3": {
+        "title": "Scarica il risultato",
+        "description": "Scarica il PDF modificato. I tuoi file non vengono mai condivisi."
+      }
+    },
+    "pricing": {
+      "title": "Piani semplici e trasparenti",
+      "description": "Inizia gratis, passa a Premium quando ti serve di più.",
+      "mostPopular": "PIÙ SCELTO",
+      "free": {
+        "title": "Gratis",
+        "description": "Per utilizzo occasionale",
+        "price": "€0",
+        "feature1": "Fino a 50 pagine",
+        "feature2": "Merge, Split, Riordino",
+        "feature3": "5 PDF al giorno",
+        "feature4": "Modifica testo",
+        "feature5": "Supporto priority",
+        "cta": "Inizia gratis"
+      },
+      "premium": {
+        "title": "Premium",
+        "description": "Per uso professionale",
+        "price": "€9",
+        "feature1": "Pagine illimitate",
+        "feature2": "Tutte le funzionalità",
+        "feature3": "PDF illimitati",
+        "feature4": "Modifica testo",
+        "feature5": "Supporto priority",
+        "cta": "Scegli Premium"
+      },
+      "enterprise": {
+        "title": "Enterprise",
+        "description": "Per team e aziende",
+        "price": "€29",
+        "feature1": "Tutto del piano Premium",
+        "feature2": "Utenti illimitati",
+        "feature3": "API dedicata",
+        "feature4": "SLA garantito",
+        "feature5": "Opzione on-premise",
+        "cta": "Contattaci"
+      }
+    },
+    "cta": {
+      "title": "Pronto a semplificare i tuoi PDF?",
+      "description": "Nessuna registrazione complicata. Inizia gratis in 30 secondi.",
+      "cta": "Crea il tuo account"
+    },
+    "footer": {
+      "brand": "Modifica i tuoi PDF in modo semplice, veloce e sicuro. Direttamente dal browser.",
+      "product": {
+        "title": "Prodotto",
+        "features": "Funzionalità",
+        "pricing": "Prezzi",
+        "api": "API",
+        "roadmap": "Roadmap"
+      },
+      "resources": {
+        "title": "Risorse",
+        "docs": "Documentazione",
+        "guide": "Guida",
+        "faq": "FAQ",
+        "status": "Stato"
+      },
+      "legal": {
+        "title": "Legale",
+        "privacy": "Privacy",
+        "terms": "Termini",
+        "cookies": "Cookie"
+      },
+      "copyright": "Tutti i diritti riservati."
+    }
+  }
+}

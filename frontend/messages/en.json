@@ -1,0 +1,330 @@
+{
+  "app": {
+    "title": "PdfEditor",
+    "selectPdf": "Select a PDF to view",
+    "rendering": "Rendering...",
+    "dropToUpload": "Drop to upload",
+    "dragAndDrop": "Or drag and drop a PDF here",
+    "merge": "Merge",
+    "split": "Split",
+    "reorder": "Reorder",
+    "remove": "Remove",
+    "currentFile": "(current)",
+    "passwordRequired": "This PDF is password protected",
+    "passwordPrompt": "Enter the password to view this PDF",
+    "passwordPlaceholder": "Enter password",
+    "passwordInvalid": "Incorrect password. Try again.",
+    "unlock": "Unlock",
+    "metadata": "Info"
+  },
+  "sidebar": {
+    "dropHere": "Drop PDF here or click to upload",
+    "loading": "Loading...",
+    "noPdfs": "No PDFs uploaded yet",
+    "uploadOnlyPdf": "Only PDF files are allowed",
+    "uploadFailed": "Upload failed",
+    "deleteFailed": "Delete failed",
+    "rename": "Rename",
+    "delete": "Delete",
+    "confirmDelete": "Confirm delete"
+  },
+  "mergeDialog": {
+    "title": "Merge PDFs",
+    "description": "Select at least 2 PDFs to merge.",
+    "cancel": "Cancel",
+    "merge": "Merge",
+    "merging": "Merging...",
+    "failed": "Merge failed"
+  },
+  "splitDialog": {
+    "title": "Split PDF",
+    "selectFile": "Select a PDF",
+    "choose": "Choose --",
+    "pages": "pages",
+    "pageLabel": "Pages to extract",
+    "pageThumbnail": "Page {page}",
+    "pagePlaceholder": "e.g. 1-3, 5, 7",
+    "available": "Available pages",
+    "pagesSelected": "pages selected",
+    "clickToSelect": "Click thumbnails to select pages",
+    "orTypeRange": "Or type page ranges:",
+    "cancel": "Cancel",
+    "split": "Split",
+    "splitting": "Splitting...",
+    "failed": "Split failed"
+  },
+  "reorderDialog": {
+    "title": "Reorder Pages",
+    "selectFile": "Select a PDF",
+    "choose": "Choose --",
+    "pages": "pages",
+    "page": "Page",
+    "pageThumbnail": "Page {page}",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "noPreview": "No preview available",
+    "cancel": "Cancel",
+    "reorder": "Reorder",
+    "reordering": "Reordering...",
+    "failed": "Reorder failed"
+  },
+  "removeDialog": {
+    "title": "Remove Pages",
+    "selectFile": "Select a PDF",
+    "choose": "Choose --",
+    "pages": "pages",
+    "page": "Page",
+    "pageThumbnail": "Page {page}",
+    "pagesRemaining": "pages remaining",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "removing": "Removing...",
+    "failed": "Remove failed",
+    "confirmDelete": "Yes, Delete",
+    "confirmMessage": "Are you sure you want to remove the selected pages? This will create a new PDF file."
+  },
+  "metadata": {
+    "title": "PDF Metadata",
+    "loading": "Loading metadata...",
+    "fieldTitle": "Title",
+    "titlePlaceholder": "Enter document title",
+    "fieldAuthor": "Author",
+    "authorPlaceholder": "Enter author name",
+    "fieldSubject": "Subject",
+    "subjectPlaceholder": "Enter subject",
+    "fieldKeywords": "Keywords",
+    "keywordsPlaceholder": "Enter keywords (comma separated)",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "loadFailed": "Failed to load metadata",
+    "saveFailed": "Failed to save metadata"
+  },
+  "bugReport": {
+    "title": "Report a Bug",
+    "fieldTitle": "Title",
+    "titlePlaceholder": "Brief summary of the issue",
+    "fieldDescription": "Description",
+    "descriptionPlaceholder": "Describe what happened and how to reproduce it",
+    "submit": "Send Report",
+    "sending": "Sending...",
+    "sentTitle": "Thank you!",
+    "sentDescription": "Your bug report has been submitted successfully.",
+    "close": "Close",
+    "cancel": "Cancel",
+    "failed": "Failed to send report",
+    "button": "Report Bug"
+  },
+  "darkMode": {
+    "toggle": "Toggle dark mode"
+  },
+  "auth": {
+    "loginTitle": "Sign In",
+    "registerTitle": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "loginButton": "Sign In",
+    "registerButton": "Create Account",
+    "loggingIn": "Signing in...",
+    "registering": "Creating account...",
+    "loginFailed": "Login failed",
+    "registerFailed": "Registration failed",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "registerLink": "Register",
+    "loginLink": "Sign In",
+    "logout": "Sign Out",
+    "googleLogin": "Sign in with Google",
+    "googleRegister": "Sign up with Google",
+    "forgotTitle": "Forgot Password",
+    "forgotDescription": "Enter your email address and we'll send you a link to reset your password.",
+    "sendResetLink": "Send Reset Link",
+    "resetSent": "A reset link has been sent to your email. In development, check the server console.",
+    "backToLogin": "Back to Login",
+    "resetTitle": "Reset Password",
+    "newPassword": "New Password",
+    "resetButton": "Reset Password",
+    "resetting": "Resetting...",
+    "resetInvalidToken": "Invalid or missing reset token.",
+    "requestNewReset": "Request a new reset link",
+    "sending": "Sending..."
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "users": "Users",
+    "bugReports": "Bug Reports",
+    "loading": "Loading...",
+    "email": "Email",
+    "fullName": "Full Name",
+    "licenseTier": "License Tier",
+    "isAdmin": "Admin",
+    "status": "Status",
+    "createdAt": "Created",
+    "actions": "Actions",
+    "save": "Save",
+    "cancel": "Cancel",
+    "backToApp": "Back to App",
+    "userId": "User ID",
+    "titleField": "Title",
+    "description": "Description",
+    "noUsers": "No users found",
+    "noBugs": "No bug reports found",
+    "filterStatus": "Filter by status",
+    "all": "All",
+    "open": "Open",
+    "inProgress": "In Progress",
+    "resolved": "Resolved",
+    "closed": "Closed",
+    "tierFree": "Free",
+    "tierPro": "Pro",
+    "tierEnterprise": "Enterprise",
+    "tierAdmin": "Admin"
+  },
+  "deleteModal": {
+    "title": "Delete PDF",
+    "close": "Close",
+    "confirmMessage": "Are you sure you want to delete",
+    "pageCount": "{count} pages",
+    "preview": "Preview",
+    "previewAlt": "Preview of {filename}",
+    "warning": "This action cannot be undone. The file will be permanently deleted.",
+    "cancel": "Cancel",
+    "deleting": "Deleting...",
+    "confirm": "Delete",
+    "deleteFailed": "Delete failed"
+  },
+  "landing": {
+    "navbar": {
+      "features": "Features",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "login": "Sign In",
+      "register": "Sign Up Free"
+    },
+    "hero": {
+      "badge": "New: Edit text in PDFs",
+      "title": "Your PDF editor",
+      "subtitle": "simple, fast, offline",
+      "description": "Merge, split, reorder and edit your PDFs directly from your browser. Free, secure and ad-free.",
+      "ctaPrimary": "Get Started Free",
+      "ctaSecondary": "Learn More",
+      "mockupTitle": "Edit PDFs",
+      "mockupText": "Live preview of your PDF"
+    },
+    "features": {
+      "title": "Everything you need",
+      "description": "Professional tools to manage your PDFs without installing anything.",
+      "merge": {
+        "title": "Merge PDFs",
+        "description": "Combine multiple documents into a single file. Drag and drop in the order you prefer."
+      },
+      "split": {
+        "title": "Split PDFs",
+        "description": "Extract specific pages or ranges. Create a new one with just what you need."
+      },
+      "reorder": {
+        "title": "Reorder Pages",
+        "description": "Move, reorganize and arrange pages with intuitive drag & drop."
+      },
+      "edittext": {
+        "title": "Edit Text",
+        "description": "Correct or update text directly in the PDF. Like a word processor."
+      },
+      "unlock": {
+        "title": "Unlock PDFs",
+        "description": "Remove protection from password-protected PDFs (with permission)."
+      },
+      "metadata": {
+        "title": "Metadata & Info",
+        "description": "View and edit title, author, subject and keywords of your PDFs."
+      }
+    },
+    "howItWorks": {
+      "title": "How it works",
+      "description": "Three simple steps to edit your PDFs.",
+      "step1": {
+        "title": "Upload your PDF",
+        "description": "Drag the file into the upload area or select it from your device."
+      },
+      "step2": {
+        "title": "Edit",
+        "description": "Merge, split, reorder, edit text or update metadata."
+      },
+      "step3": {
+        "title": "Download the result",
+        "description": "Download the edited PDF. Your files are never shared."
+      }
+    },
+    "pricing": {
+      "title": "Simple and transparent pricing",
+      "description": "Start free, upgrade when you need more.",
+      "mostPopular": "MOST POPULAR",
+      "free": {
+        "title": "Free",
+        "description": "For occasional use",
+        "price": "€0",
+        "feature1": "Up to 50 pages",
+        "feature2": "Merge, Split, Reorder",
+        "feature3": "5 PDFs per day",
+        "feature4": "Edit text",
+        "feature5": "Priority support",
+        "cta": "Get Started"
+      },
+      "premium": {
+        "title": "Premium",
+        "description": "For professional use",
+        "price": "€9",
+        "feature1": "Unlimited pages",
+        "feature2": "All features",
+        "feature3": "Unlimited PDFs",
+        "feature4": "Edit text",
+        "feature5": "Priority support",
+        "cta": "Choose Premium"
+      },
+      "enterprise": {
+        "title": "Enterprise",
+        "description": "For teams and companies",
+        "price": "€29",
+        "feature1": "Everything in Premium",
+        "feature2": "Unlimited users",
+        "feature3": "Dedicated API",
+        "feature4": "Guaranteed SLA",
+        "feature5": "On-premise option",
+        "cta": "Contact Us"
+      }
+    },
+    "cta": {
+      "title": "Ready to simplify your PDFs?",
+      "description": "No complicated registration. Get started free in 30 seconds.",
+      "cta": "Create your account"
+    },
+    "footer": {
+      "brand": "Edit your PDFs easily, quickly and securely. Directly from your browser.",
+      "product": {
+        "title": "Product",
+        "features": "Features",
+        "pricing": "Pricing",
+        "api": "API",
+        "roadmap": "Roadmap"
+      },
+      "resources": {
+        "title": "Resources",
+        "docs": "Documentation",
+        "guide": "Guide",
+        "faq": "FAQ",
+        "status": "Status"
+      },
+      "legal": {
+        "title": "Legal",
+        "privacy": "Privacy",
+        "terms": "Terms",
+        "cookies": "Cookies"
+      },
+      "copyright": "All rights reserved."
+    }
+  }
+}

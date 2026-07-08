@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backend storage (PDF files are stored with UUID, not tracked)
+backend/storage/pdfs/*.pdf
+!backend/storage/pdfs/.gitkeep
+
+# Environment
+.env
+*.env.local
+
+# Tests artifacts
+.htmlcov/
+.coverage
+coverage.xml
+.pytest_cache/
+
+# Databases
+*.db

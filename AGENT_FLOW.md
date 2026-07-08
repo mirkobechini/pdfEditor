@@ -1,303 +1,164 @@
 # Agent Development Flow
 
-This document outlines the development flow for the PDF Editor project, including the feature flow, branch structure, core principles, and workflow steps.
+This document defines the **git workflow** that the AI agent must follow for every project. It covers branching, committing, pull requests, and the overall issue lifecycle.
 
 ---
 
 ## Branch Structure
 
-| Branch     | Convention                           | Description                                                                                    |
-| ---------- | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `main`     | —                                    | Stable codebase. Only the user merges here from `dev`.                                         |
-| `dev`      | —                                    | Permanent development branch. All phase branches merge here.                                   |
-| `phase/`   | `<phase-name>`                       | One branch per **phase** (e.g. `phase/1a-fastapi-backend`). Contains all issues of that phase. |
-| `feature/` | `<issue-number>-<short-description>` | Legacy — used only for single-issue branches (prototype Phase 0).                              |
-| `hotfix/`  | `<issue-number>-<short-description>` | Urgent bug fixes (same flow as feature).                                                       |
-| `chore/`   | `<issue-number>-<short-description>` | Non-feature tasks (refactoring, documentation, etc.).                                          |
+| Branch     | Convention                           | Description                                                  |
+| ---------- | ------------------------------------ | ------------------------------------------------------------ |
+| `main`     | —                                    | Stable codebase. Only the user merges here from `dev`.       |
+| `dev`      | —                                    | Permanent development branch. All phase branches merge here. |
+| `feature/` | `<issue-number>-<short-description>` | New features (one branch per issue).                         |
+| `hotfix/`  | `<issue-number>-<short-description>` | Urgent bug fixes (same flow as feature).                     |
+| `chore/`   | `<issue-number>-<short-description>` | Non-feature tasks (refactoring, documentation, etc.).        |
 
 ---
 
 ## Core Principles
 
-- Each task should be implemented in a separate branch.
-- Branch naming convention: `phase/<phase-name>` for multi-issue phases, `feature/<issue-number>-<short-description>` for single issues.
-- Each phase branch should be created from the `dev` branch. The `dev` branch is a **permanent** branch created from `main` at the start of the project.
-- **No merge to the `main` branch without approval from the user.** The user must review and approve the changes before they are merged into `main`.
+- **One branch per issue.** Branch naming: `feature/<issue-number>-<short-description>`.
+- Every feature branch is created from `dev`. `dev` is a permanent branch created from `main` at project start.
+- **No merge to `main` without user approval.**
 
 ## NEVER
 
-- Don't commit directly to the `main` branch.
-- Don't merge to the `main` branch without approval from the user.
-- Don't push without a reason (CI, sync, or user request).
-- Don't create a branch without an associated GitHub issue.
-- Don't go to the next phase without all tests passing and user approval of the previous phase.
+- Do not commit directly to `main`.
+- Do not merge to `main` without user approval.
+- Do not push without a reason (CI must run, sync with remote, or user explicitly requests it).
+- Do not create a branch without an associated issue.
+- Do not proceed to the next issue without all tests passing and user approval of the previous one.
+- **Never create or modify files without committing before proceeding.** Each atomic unit (a model, a service, a route handler, a test file, etc.) must be committed before writing the next file. The only exception is when editing the same file multiple times in quick succession for the same feature (e.g., fixing a bug discovered in the same session).
+- **Never create an issue or branch that covers multiple task items.** Each task item is ONE separate issue + ONE separate branch.
+- **Never group multiple bugs into a single issue.** Each bug fix gets its own issue, branch, and PR.
+- **Every feature MUST include its own tests before the PR is created.** A feature is not complete until its tests are written AND pass. CI must be green before merge.
+- **Never batch multiple atomic units into a single commit.** Each commit MUST contain exactly ONE logical unit: one model, one schema file, one service, one route file, one test file. Commits like "feat: add service + routes + registration" are NOT allowed — that's three separate commits.
+- **Exception for mass refactoring (>5 files with identical mechanical change):** When the same mechanical change (e.g. renaming a hook, changing a function signature) touches more than 5 files, the agent MUST ask the user before proceeding: _"Questo refactoring tocca N file con la stessa modifica meccanica. Preferisci un commit bulk approvato o il flusso one-by-one?"_ If the user approves bulk mode, a single commit is allowed but MUST group changes logically (components in one commit, tests in a separate one).
+- **Never skip asking when in doubt.** If unsure about any decision (architecture, implementation, naming, rule interpretation), ask the user BEFORE proceeding. After the user answers, immediately update this file with the outcome.
+- **Never ask the user what to do next.** The sequential order is defined in the project's task list — follow it without asking. Do not propose skipping or reordering.
+- **Always ask for approval before starting a new issue.** After completing an issue (tests passing, PR merged, issue closed), briefly describe what was done and ask _"May I proceed with the next issue?"_ — do NOT start the next issue without user confirmation.
 
 ---
 
 ## Workflow Steps
 
-### 1. Plan — Create a GitHub Issue
+### 1. Plan — Create an Issue
 
-For every **feature** (not phase), the AI agent creates a GitHub issue with:
+For every **feature**, create an issue with:
 
 - **Title**: concise feature description
-- **Body**: detailed description, acceptance criteria, technical notes, security checklist
-- **Labels**: `backend`, `frontend`, `tauri`, `mobile`, plus a phase label (`phase-1a`, `phase-1b`, etc.)
+- **Body**: detailed description, acceptance criteria, technical notes
+- **Labels**: relevant labels (e.g. `backend`, `frontend`, `bug`)
 
-Each feature from the BRIEF gets its own issue. Examples:
+Use the `mcp_gitkraken_cli_issues_create` tool (or project's issue tracker). The issue number determines the branch name.
 
-| Feature                 | Issue | Phase label |
-| ----------------------- | ----- | ----------- |
-| API upload/download PDF | #2    | `phase-1a`  |
-| API merge/split PDF     | #3    | `phase-1a`  |
-| API text editing        | #4    | `phase-1a`  |
-| ...                     | ...   | ...         |
-| PDF viewer component    | #?    | `phase-1b`  |
-| Sidebar component       | #?    | `phase-1b`  |
-| Tauri shell setup       | #?    | `phase-1c`  |
-| Sidecar FastAPI         | #?    | `phase-1c`  |
+> **Right after creating the issue**, write in the issue body the **complete list of expected atomic commits** (e.g. `feat(api): add User model`, `feat(api): add POST /auth/register`, `test(api): add auth tests`). This list serves as a roadmap — each commit must be executed exactly as planned before moving to the next. If an extra commit becomes necessary during implementation, add it to the list.
 
-The agent uses the `mcp_gitkraken_cli_issues_create` tool to create issues. The issue number determines the branch name.
-
-### 2. Branching — one branch per phase
-
-Each **phase** gets its own branch. All feature issues of that phase are implemented inside the same branch.
+### 2. Branching — one branch per issue
 
 ```bash
-# Create and push phase branch (CI needs push to trigger tests)
 git checkout dev
-git checkout -b phase/<phase-name>
-git push origin phase/<phase-name>
+git checkout -b feature/<issue-number>-<short-description>
+git push origin feature/<issue-number>-<short-description>
 ```
 
-Examples:
+### 3. Implementation & commit loop
 
-| Branch                     | Issues                                   | What it contains          |
-| -------------------------- | ---------------------------------------- | ------------------------- |
-| `phase/1a-fastapi-backend` | #2, #3, #4, #5, #6, #7, #8, #9, #10, #11 | All backend API endpoints |
-| `phase/1b-nextjs-frontend` | #12, #13, ...                            | All React components      |
-| `phase/1c-tauri-desktop`   | ...                                      | Tauri wrappering          |
+While inside the feature branch, implement **one atomic unit at a time**, **commit immediately**, then move to the next unit.
 
-### 3. Per-feature workflow inside a phase branch
-
-For each issue inside the phase branch:
+An **atomic unit** is a single file or logical change: a component, a utility, a test file, a translation update. Do NOT batch multiple files into one commit.
 
 ```bash
-# Already inside the phase branch (pushed)
-git checkout phase/1a-fastapi-backend
+# Inside the feature branch
+git checkout feature/<issue-number>-<short-description>
 
-# Implement the feature + tests
-# Commit with auto-close reference:
-git commit -m "feat(api): add POST /upload endpoint\n\ncloses #2"
+# === SUBTASK 1: Write file A ===
+# Write ONE file (e.g. a component)
+# Stage and commit immediately
+git add <file-A>
+git commit -m "<type>(<scope>): <description of file A>"
+git push origin feature/<issue-number>-<short-description>
 
-# Push to trigger CI (Superlinter + tests run automatically)
-git push origin phase/1a-fastapi-backend
+# === SUBTASK 2: Write file B ===
+# Write ONE file (e.g. tests for file A)
+git add <file-B>
+git commit -m "test(<scope>): <description of test file B>"
+git push origin feature/<issue-number>-<short-description>
 
-# When all issues in the phase are done, merge into dev
+# === Continue for each atomic unit ===
+# Do NOT batch multiple files into one commit!
+```
+
+> ⚠️ **Fundamental rule: feature → tests → merge.** Every feature MUST include its tests in the same PR. Write tests right after the feature code (in a **separate commit**), before creating the PR. A PR without tests cannot be merged.
+>
+> **Tests go in separate commits.** Do not bundle tests into the same commit as the feature code.
+
+Valid commit sequence example for one issue:
+
+```
+feat(api): add User model
+feat(api): add POST /auth/register endpoint
+feat(api): add POST /auth/login endpoint
+feat(api): add JWT middleware
+test(api): add auth tests
+```
+
+Commit message format:
+
+```
+<type>(<scope>): <short description>
+
+Types: feat, fix, style, refactor, test, chore
+Scope: api, ui, cli, core, ci, docs, deps
+```
+
+Always put `closes #<issue-number>` in the **PR body** (not the commit message), so the issue auto-closes on merge.
+
+### 4. PR, Merge & cleanup
+
+Once **ALL atomic units** (code + tests) are committed and pushed:
+
+> 💡 **Keep your branch in sync**: during development, periodically rebase on `dev` to avoid large conflicts later. Prefer small, frequent rebases over a single painful one.
+
+```bash
+# Keep feature branch in sync with dev (rebase, don't merge)
+git fetch origin dev
+git rebase origin/dev
+# Resolve conflicts if any, then:
+git push origin feature/<issue-number>-<short-description> --force-with-lease
+
+# Create Pull Request
+gh pr create --base dev --title "<type>(<scope>): <feature description>" --body "closes #<issue-number>"
+
+# Wait for CI to pass, then merge (preserves atomic commits)
+gh pr merge --merge --delete-branch
+
+# Verify issue auto-closed (GitHub sometimes misses the body reference)
+gh issue list --limit 5 | grep "#<issue-number>"
+# If still open, close manually:
+#   gh issue close <issue-number> --comment "Resolved by PR #<pr-number>."
+
+# Switch back to dev and sync
 git checkout dev
-git merge phase/1a-fastapi-backend
-git push origin dev
+git pull origin dev
+
+# Delete local branch (remote already deleted by --delete-branch)
+git branch -d feature/<issue-number>-<short-description>
 ```
 
-> Multiple `closes #N` in different commits within the same branch will auto-close each issue individually when the branch is merged into `dev`.
+> ⚠️ Use `--merge` (not `--squash`) to preserve atomic commit history on `dev`. GitHub should auto-close the issue because the PR body contains `closes #N`. However, this occasionally fails. **Always verify** with `gh issue list` after merge. If still open, close manually with `gh issue close <number>`.
 
-### 4. Implementation
+### 5. After merge — update progress & close issue
 
-- **One commit per atomic function.** Each commit = one API endpoint, one React component, one test file.
-- Commit messages MUST reference the issue for auto-close on merge:
-  ```
-  feat(api): add POST /upload endpoint
-  closes #2
-  ```
-- After each commit, stop, briefly describe what was done, and wait before proceeding.
+After the PR is merged:
 
-> ⚠️ When the feature branch is merged into `dev`, GitHub auto-closes the issue because the commit message contains `closes #N`.
-
-### 5. Backend architecture pattern (FastAPI)
-
-Equivalent to MVC in Laravel. Controllers (routers) do NOT contain validation — that goes in schemas.
-
-```
-backend/
-├── app/
-│   ├── api/              # Router (≈ Controller) — solo routing
-│   │   ├── v1/
-│   │   │   ├── upload.py
-│   │   │   ├── merge.py
-│   │   │   ├── split.py
-│   │   │   ├── text.py
-│   │   │   ├── metadata.py
-│   │   │   ├── convert.py
-│   │   │   └── auth.py
-│   │   └── deps.py       # Dipendenze (get_current_user, get_db)
-│   ├── schemas/          # Pydantic (≈ FormRequest) — validazione
-│   │   ├── pdf.py
-│   │   ├── auth.py
-│   │   └── sync.py
-│   ├── models/           # SQLAlchemy (≈ Eloquent Model)
-│   │   ├── pdf.py
-│   │   ├── user.py
-│   │   └── sync.py
-│   ├── services/         # Logica di business
-│   │   ├── pdf_service.py
-│   │   ├── auth_service.py
-│   │   └── sync_service.py
-│   ├── repositories/     # Accesso DB
-│   │   ├── pdf_repo.py
-│   │   └── user_repo.py
-│   ├── core/             # Config, security, database
-│   │   ├── config.py
-│   │   ├── security.py
-│   │   ├── database.py
-│   │   └── storage.py
-│   └── main.py
-├── tests/
-│   ├── conftest.py
-│   ├── test_upload.py
-│   ├── test_merge.py
-│   ├── test_split.py
-│   └── ...
-├── alembic/              # Migrations (≈ Laravel Migrations)
-│   ├── versions/
-│   └── env.py
-├── requirements.txt
-└── pyproject.toml
-```
-
-**Rules:**
-
-- **Router** = solo mapping URL → funzione. Massimo 5 righe per handler
-- **Schema (Pydantic)** = validazione input/output. Ogni endpoint ha il suo schema
-- **Service** = logica di business. Testabile isolatamente
-- **Repository** = query SQLAlchemy. Testabile con mock
-- **Model** = definizione tabella. Nessuna logica di business
-
-### 6. GitHub Actions (CI + Superlinter + Security)
-
-Every push to any `phase/*` branch or `dev` triggers CI **automatically**. If CI fails, the phase branch CANNOT be merged into `dev`. This is called **gating**.
-
-```yaml
-# .github/workflows/ci.yml
-name: CI
-on: [push, pull_request]
-jobs:
-  # Superlinter — linting code quality
-  lint:
-    name: Superlinter
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Super-linter
-        uses: super-linter/super-linter@v7
-        env:
-          VALIDATE_ALL_CODEBASE: true
-          DEFAULT_BRANCH: dev
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_PYTHON_FLAKE8: true
-          VALIDATE_PYTHON_PYLINT: true
-          VALIDATE_JAVASCRIPT_ES: true
-          VALIDATE_TYPESCRIPT_ES: true
-          VALIDATE_HTML: true
-          VALIDATE_CSS: true
-          VALIDATE_YAML: true
-          VALIDATE_MARKDOWN: true
-
-  # Security — Python vulnerability scan
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
-      - run: pip install bandit pip-audit
-      - run: bandit -r app/ -ll # Scan solo criticità medie/alte
-      - run: pip-audit # Check CVE nelle dipendenze
-
-  # Type check — mypy (strict)
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
-      - run: pip install -r requirements.txt
-      - run: mypy app/ --strict
-
-  # Backend tests — active in Phase 1a
-  backend:
-    runs-on: ubuntu-latest
-    if: github.ref_name == 'phase/1a-fastapi-backend' || github.ref_name == 'dev'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
-      - run: pip install -r requirements.txt
-      - run: pytest --cov --cov-report=term-missing -v
-
-  # Frontend tests — active from Phase 1b onward
-  frontend:
-    runs-on: ubuntu-latest
-    if: github.ref_name != 'phase/1a-fastapi-backend'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
-      - run: npm ci
-      - run: npm run test -- --coverage
-```
-
-### 7. Best practices (enforced by Superlinter + conventions)
-
-| Rule                   | Description                                                                                |
-| ---------------------- | ------------------------------------------------------------------------------------------ |
-| **Code style Python**  | PEP8 via flake8 + pylint. Docstring obbligatoria su ogni funzione pubblica                 |
-| **Code style JS/TS**   | ESLint + Prettier. Arrow functions preferite, nomi camelCase                               |
-| **Type hints Python**  | Obbligatori su tutte le funzioni. MyPy in CI                                               |
-| **TypeScript**         | Strict mode. Nessun `any` senza commento                                                   |
-| **Security**           | Seguire la checklist in BRIEF.md (magic bytes, UUID storage, timeout, Pydantic validation) |
-| **File naming**        | Python: snake_case. React: PascalCase per componenti, camelCase per utility                |
-| **Error handling**     | Ogni endpoint deve gestire errori 400/404/500 con messaggi descrittivi                     |
-| **No secrets in code** | Usare variabili d'ambiente. Mai hardcode API key o password                                |
-
-### 8. CI gates by phase
-
-| Phase              | CI jobs                                          | Lighthouse                                                 |
-| ------------------ | ------------------------------------------------ | ---------------------------------------------------------- |
-| **1a** (FastAPI)   | Superlinter + bandit + pip-audit + mypy + pytest | ❌                                                         |
-| **1b** (Next.js)   | Superlinter + bandit + vitest + Playwright       | 🟡 Consigliato su localhost                                |
-| **1c** (Tauri)     | Superlinter + Tauri build check + vitest         | ❌                                                         |
-| **2** (Web cloud)  | Tutti i precedenti + Lighthouse CI               | ✅ **Obbligatorio** (performance, PWA, SEO, accessibilità) |
-| **3** (Cloud sync) | Tutti i precedenti                               | ✅ Obbligatorio                                            |
-| **4** (Mobile)     | Tutti i precedenti + Detox/Maestro E2E           | ❌ (mobile nativo)                                         |
-
-### 9. Testing strategy
-
-| Layer            | Tool                             | Scope                                  |
-| ---------------- | -------------------------------- | -------------------------------------- |
-| Backend (Python) | **pytest** + `httpx.AsyncClient` | API endpoint testing                   |
-| Frontend (React) | **vitest**                       | Business logic, hooks                  |
-| Integration      | **Playwright**                   | E2E user flows                         |
-| Security Python  | **bandit** + **pip-audit**       | Vulnerability scan                     |
-| Type checking    | **mypy** (strict)                | Type hints enforcement                 |
-| Web audit        | **Lighthouse CI**                | Performance, PWA, SEO, a11y (Phase 2+) |
-
-- **Every atomic function MUST have a corresponding test** before being considered complete
-- **Every push triggers CI automatically** — if CI fails, the phase branch CANNOT be merged into `dev`
-- Before advancing from one phase to the next: **ALL tests must pass on CI**
-- If any test fails, the phase is NOT complete — fix the issue first
-
-### 10. Development order
-
-```
-Phase 1a: FastAPI backend → pytest ✅ → user approves
-Phase 1b: Next.js frontend → vitest ✅ → user approves
-Phase 1c: Tauri desktop → manual test ✅ → user approves
-Phase 2:   Web deploy (Next.js + FastAPI cloud)
-Phase 3:   Cloud sync (SQLite ↔ PostgreSQL)
-Phase 4:   Mobile app (React Native)
-```
-
-> The AI agent MUST NOT start a phase until the previous phase has been approved by the user. Approval is given via chat (e.g., "ok, procedi").
+1. **Update ADR.md**: se la feature introduce una nuova dipendenza, vincolo o scelta architetturale, aggiornare le rispettive sezioni. Spostare la feature da "Da implementare" a "Completate".
+2. **Update `.specs/plans/feature-[nome].md`**: impostare Status a `[x] Completata`, aggiungere data e note.
+3. **Commit the updates**: `git add ADR.md .specs/plans/ && git commit -m "docs: update ADR and specs for completed issue-#N" && git push origin dev`
+4. **Close the issue**: `gh issue close <number> --comment "Risolto da PR #<pr-number>."`
+5. **Verify**: `gh issue list --limit 3 | grep "#<number>"` — se ancora aperta, chiudere manualmente
+6. **Ask for approval**: briefly describe what was done and ask _"May I proceed with the next issue?"_ — do NOT start the next issue without user confirmation.
 
 ## Hotfix workflow
 
@@ -307,35 +168,12 @@ For urgent fixes directly on `dev` or `main`:
 git checkout dev
 git checkout -b hotfix/<issue-number>-<short-description>
 # fix + commit + push
-git commit -m "fix(scope): description\n\ncloses #N"
+git commit -m "fix(scope): short description"
 git push origin hotfix/<issue-number>-<short-description>
-# merge into dev
+gh pr create --base dev --title "fix(scope): short description" --body "closes #N"
+# wait for CI, then merge
+gh pr merge --merge --delete-branch
 git checkout dev
-git merge hotfix/<issue-number>-<short-description>
-git push origin dev
-```
-
----
-
-## Commit Message Format
-
-```
-<type>(<scope>): <short description>
-
-Types: feat, fix, style, refactor, test, chore
-Scope: api, ui, tauri, sync, ci, docs
-```
-
-Always append `closes #<issue-number>` when the commit completes the issue.
-
-Examples:
-
-```
-feat(api): add POST /upload endpoint
-closes #2
-
-test(api): add pytest for /upload endpoint
-
-fix(ui): correct page navigation on edge case
-closes #5
+git pull origin dev
+git branch -d hotfix/<issue-number>-<short-description>
 ```
