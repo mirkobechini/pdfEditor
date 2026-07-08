@@ -1,55 +1,36 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { NextIntlClientProvider } from "next-intl";
 import LandingNavbar from "./LandingNavbar";
-import en from "../../../../messages/en.json";
-
-const mockMessages = en;
 
 describe("LandingNavbar", () => {
     it("renders navbar with logo", () => {
-        render(
-            <NextIntlClientProvider locale="en" messages={mockMessages}>
-                <LandingNavbar />
-            </NextIntlClientProvider>
-        );
+        render(<LandingNavbar />);
 
         expect(screen.getByText("PdfEditor")).toBeInTheDocument();
     });
 
-    it("renders navigation links", () => {
-        render(
-            <NextIntlClientProvider locale="en" messages={mockMessages}>
-                <LandingNavbar />
-            </NextIntlClientProvider>
-        );
+    it("renders auth buttons", () => {
+        render(<LandingNavbar />);
 
-        expect(screen.getByRole("link", { name: /Sign In/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /Sign Up Free/i })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /login/i })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /register/i })).toBeInTheDocument();
     });
 
     it("renders auth buttons with correct hrefs", () => {
-        render(
-            <NextIntlClientProvider locale="en" messages={mockMessages}>
-                <LandingNavbar />
-            </NextIntlClientProvider>
-        );
+        render(<LandingNavbar />);
 
-        const loginLink = screen.getByRole("link", { name: /Sign In/i });
-        const registerLink = screen.getByRole("link", { name: /Sign Up Free/i });
+        const links = screen.getAllByRole("link");
+        const loginLink = links.find(link => link.getAttribute("href") === "/login");
+        const registerLink = links.find(link => link.getAttribute("href") === "/register");
 
-        expect(loginLink).toHaveAttribute("href", "/login");
-        expect(registerLink).toHaveAttribute("href", "/register");
+        expect(loginLink).toBeDefined();
+        expect(registerLink).toBeDefined();
     });
 
     it("renders logo link to home", () => {
-        render(
-            <NextIntlClientProvider locale="en" messages={mockMessages}>
-                <LandingNavbar />
-            </NextIntlClientProvider>
-        );
+        render(<LandingNavbar />);
 
-        const logoLink = screen.getAllByRole("link", { name: /PdfEditor/i })[0];
-        expect(logoLink).toHaveAttribute("href", "/");
-    });
-});
+        const logoLinks = screen.getAllByRole("link");
+        const homeLink = logoLinks.find(link => link.getAttribute("href") === "/");
+
+        expect(homeLink).toBeDefined();

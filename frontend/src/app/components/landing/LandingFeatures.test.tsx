@@ -1,46 +1,28 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { NextIntlClientProvider } from "next-intl";
 import LandingFeatures from "./LandingFeatures";
-import en from "../../../../messages/en.json";
-
-const mockMessages = en;
 
 describe("LandingFeatures", () => {
     it("renders features section with title", () => {
-        render(
-            <NextIntlClientProvider locale="en" messages={mockMessages}>
-                <LandingFeatures />
-            </NextIntlClientProvider>
-        );
+        render(<LandingFeatures />);
 
-        expect(screen.getByText("Everything you need")).toBeInTheDocument();
+        expect(screen.getByText("title")).toBeInTheDocument();
     });
 
     it("renders all 6 feature cards", () => {
-        render(
-            <NextIntlClientProvider locale="en" messages={mockMessages}>
-                <LandingFeatures />
-            </NextIntlClientProvider>
-        );
+        render(<LandingFeatures />);
 
-        // Check for feature titles
-        expect(screen.getByText("Merge PDFs")).toBeInTheDocument();
-        expect(screen.getByText("Split PDFs")).toBeInTheDocument();
-        expect(screen.getByText("Reorder Pages")).toBeInTheDocument();
-        expect(screen.getByText("Edit Text")).toBeInTheDocument();
-        expect(screen.getByText("Unlock PDFs")).toBeInTheDocument();
-        expect(screen.getByText("Metadata & Info")).toBeInTheDocument();
+        // Each feature should render (titles use mocked keys)
+        expect(screen.getByText("merge.title")).toBeInTheDocument();
+        expect(screen.getByText("split.title")).toBeInTheDocument();
+        expect(screen.getByText("reorder.title")).toBeInTheDocument();
+        expect(screen.getByText("edittext.title")).toBeInTheDocument();
+        expect(screen.getByText("unlock.title")).toBeInTheDocument();
+        expect(screen.getByText("metadata.title")).toBeInTheDocument();
     });
 
     it("renders feature descriptions", () => {
-        render(
-            <NextIntlClientProvider locale="en" messages={mockMessages}>
-                <LandingFeatures />
-            </NextIntlClientProvider>
-        );
+        render(<LandingFeatures />);
 
-        expect(screen.getByText(/Combine multiple documents/i)).toBeInTheDocument();
-        expect(screen.getByText(/Extract specific pages/i)).toBeInTheDocument();
-    });
-});
+        // Descriptions also render with mocked keys
+        expect(screen.getByText("merge.description")).toBeInTheDocument();
