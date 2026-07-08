@@ -84,7 +84,7 @@ export default function LandingFeatures() {
                     {features.map((feature) => (
                         <div
                             key={feature.id}
-                            className="p-6 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-transform duration-200 hover:translate-y-[-4px] hover:shadow-xl hover:shadow-blue-500/15 dark:hover:shadow-blue-500/8"
+                            className="p-6 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-transform duration-200 hover:translate-y-[-4px] hover:shadow-xl hover:shadow-orange-500/15 dark:hover:shadow-orange-500/8"
                         >
                             <div className={`w-12 h-12 rounded-lg ${feature.bgColor} flex items-center justify-center text-2xl mb-4`}>
                                 {feature.icon}

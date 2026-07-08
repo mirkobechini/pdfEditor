@@ -11,7 +11,7 @@ export default function LandingHero() {
         <section className="pt-32 pb-20 px-4">
             <div className="max-w-4xl mx-auto text-center">
                 {/* Badge */}
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium mb-6 border border-blue-200 dark:border-blue-800">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm font-medium mb-6 border border-orange-200 dark:border-orange-800">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                     {t("badge")}
                 </div>
@@ -20,7 +20,7 @@ export default function LandingHero() {
                 <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight text-gray-900 dark:text-gray-100">
                     {t("title")}
                     <br />
-                    <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
                         {t("subtitle")}
                     </span>
                 </h1>
@@ -34,7 +34,7 @@ export default function LandingHero() {
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
                     <Link
                         href="/register"
-                        className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold text-base hover:opacity-90 transition-opacity shadow-xl shadow-blue-500/25"
+                        className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-orange-600 to-orange-500 text-white font-semibold text-base hover:opacity-90 transition-opacity shadow-xl shadow-orange-500/25"
                     >
                         {t("ctaPrimary")}
                     </Link>

@@ -90,13 +90,13 @@ export default function LandingPricing() {
                         <div
                             key={plan.id}
                             className={`rounded-2xl p-8 relative transition-all duration-200 ${plan.featured
-                                    ? "border-2 border-blue-500 bg-white dark:bg-gray-900 shadow-xl shadow-blue-500/10 scale-105"
-                                    : "border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
+                                ? "border-2 border-blue-500 bg-white dark:bg-gray-900 shadow-xl shadow-blue-500/10 scale-105"
+                                : "border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
                                 }`}
                         >
                             {/* Featured badge */}
                             {plan.featured && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 text-white text-xs font-semibold">
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-orange-600 to-orange-500 text-white text-xs font-semibold">
                                     {t("mostPopular")}
                                 </div>
                             )}
@@ -124,8 +124,8 @@ export default function LandingPricing() {
                                         <li
                                             key={idx}
                                             className={`flex items-center gap-2 ${isIncluded
-                                                    ? "text-gray-700 dark:text-gray-300"
-                                                    : "text-gray-400 dark:text-gray-600"
+                                                ? "text-gray-700 dark:text-gray-300"
+                                                : "text-gray-400 dark:text-gray-600"
                                                 }`}
                                         >
                                             <span className={isIncluded ? "text-green-500 font-bold" : "text-gray-400"}>
@@ -142,8 +142,8 @@ export default function LandingPricing() {
                                 <a
                                     href={plan.ctaHref}
                                     className={`block w-full text-center py-2.5 rounded-xl text-sm font-semibold transition-colors ${plan.featured
-                                            ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:opacity-90 shadow-lg shadow-blue-500/20"
-                                            : "border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                        ? "bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:opacity-90 shadow-lg shadow-orange-500/20"
+                                        : "border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                                         }`}
                                 >
                                     {t(plan.ctaKey)}
@@ -152,8 +152,8 @@ export default function LandingPricing() {
                                 <Link
                                     href={plan.ctaHref}
                                     className={`block w-full text-center py-2.5 rounded-xl text-sm font-semibold transition-colors ${plan.featured
-                                            ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:opacity-90 shadow-lg shadow-blue-500/20"
-                                            : "border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                        ? "bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:opacity-90 shadow-lg shadow-orange-500/20"
+                                        : "border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                                         }`}
                                 >
                                     {t(plan.ctaKey)}
