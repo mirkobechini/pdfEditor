@@ -194,17 +194,19 @@ export default function EditorPage() {
     }
 
     return (
-        <AppLayout>
-            <Sidebar
-                selectedId={selectedId}
-                onSelect={handleSelect}
-                onDelete={(doc) => {
-                    setFileToDelete(doc);
-                    setDeleteModalOpen(true);
-                }}
-                refreshKey={sidebarRefreshKey}
-            />
-            <div className="flex-1 flex flex-col overflow-hidden">
+        <AppLayout
+            sidebar={
+                <Sidebar
+                    selectedId={selectedId}
+                    onSelect={handleSelect}
+                    onDelete={(doc) => {
+                        setFileToDelete(doc);
+                        setDeleteModalOpen(true);
+                    }}
+                    refreshKey={sidebarRefreshKey}
+                />
+            }
+            toolbar={
                 <Toolbar
                     selectedId={selectedId}
                     selectedName={selectedName}
@@ -220,6 +222,8 @@ export default function EditorPage() {
                     onMetadata={() => setMetadataOpen(true)}
                     onUndo={handleUndo}
                 />
+            }
+            viewer={
                 <PdfViewer
                     fileUrl={fileUrl}
                     requiresPassword={requiresPassword}
@@ -229,7 +233,8 @@ export default function EditorPage() {
                     onPageChange={setCurrentPage}
                     onTotalPagesChange={setTotalPages}
                 />
-            </div>
+            }
+        >
 
             {/* Dialogs */}
             <MergeDialog open={mergeOpen} onClose={() => setMergeOpen(false)} onMerge={handleMerge} />
