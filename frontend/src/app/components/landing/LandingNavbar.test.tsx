@@ -1,8 +1,8 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
-import LandingNavbar from "../components/landing/LandingNavbar";
-import en from "../../messages/en.json";
+import LandingNavbar from "./LandingNavbar";
+import en from "../../../messages/en.json";
 
 const mockMessages = en;
 

@@ -1,8 +1,8 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
-import LandingCTA from "../components/landing/LandingCTA";
-import en from "../../messages/en.json";
+import LandingCTA from "./LandingCTA";
+import en from "../../../messages/en.json";
 
 const mockMessages = en;
 

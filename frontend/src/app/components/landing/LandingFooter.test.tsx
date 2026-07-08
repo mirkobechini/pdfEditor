@@ -1,8 +1,8 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
-import LandingFooter from "../components/landing/LandingFooter";
-import en from "../../messages/en.json";
+import LandingFooter from "./LandingFooter";
+import en from "../../../messages/en.json";
 
 const mockMessages = en;
 
