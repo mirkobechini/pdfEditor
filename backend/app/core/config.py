@@ -12,10 +12,16 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
     DEBUG: bool = True
 
-    # Security
+    # Security — JWT_SECRET_KEY is required in production (via .env or env variable)
+    # Falls back to default only for local development
     SECRET_KEY: str = "dev-secret-key-change-in-production"
+    # Alternative env var name for Render/Docker deployments
+    JWT_SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    # CORS origins (production should restrict this)
+    ALLOWED_ORIGINS: str = "http://localhost:3000"  # Comma-separated URLs
 
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""  # Set in .env for production
@@ -35,6 +41,16 @@ class Settings(BaseSettings):
     def allowed_extensions_list(self) -> list[str]:
         """Return ALLOWED_EXTENSIONS as a list."""
         return [ext.strip() for ext in self.ALLOWED_EXTENSIONS.split(",") if ext.strip()]
+
+    @property
+    def effective_secret_key(self) -> str:
+        """Return JWT_SECRET_KEY if set, otherwise fall back to SECRET_KEY."""
+        return self.JWT_SECRET_KEY if self.JWT_SECRET_KEY else self.SECRET_KEY
+
+    @property
+    def allowed_origins_list(self) -> list[str]:
+        """Return ALLOWED_ORIGINS as a list of URLs."""
+        return [url.strip() for url in self.ALLOWED_ORIGINS.split(",") if url.strip()]
 
     # Admin Configuration
     # Super admin email (cannot be revoked) — read from .env or use default

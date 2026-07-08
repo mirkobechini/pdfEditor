@@ -125,10 +125,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-# CORS — allow all origins in dev (Tauri and Next.js)
+# CORS — restrict origins in production (read from ALLOWED_ORIGINS env var)
+# For local development, defaults to http://localhost:3000
+allow_origins = settings.allowed_origins_list if settings.allowed_origins_list else ["http://localhost:3000"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
