@@ -7,7 +7,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import HeaderControls from "../components/HeaderControls";
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
     const t = useTranslations("auth");
     const { login } = useAuth();
     const router = useRouter();
@@ -18,8 +18,6 @@ export default function ResetPasswordPage() {
     const [confirmPassword, setConfirmPassword] = React.useState("");
     const [error, setError] = React.useState<string | null>(null);
     const [loading, setLoading] = React.useState(false);
-    const [done, setDone] = React.useState(false);
-
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!password.trim()) return;
@@ -125,5 +123,13 @@ export default function ResetPasswordPage() {
                 </div>
             </div>
         </>
+    );
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <React.Suspense fallback={null}>
+            <ResetPasswordContent />
+        </React.Suspense>
     );
 }

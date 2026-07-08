@@ -120,7 +120,7 @@ export default function EditorPage() {
 
     async function handleSplit(id: string, pages: number[]) {
         try {
-            // Convert pages array to ranges string format
+            // Convert pages array to ranges string format expected by API
             const ranges = pages.length > 0 ? [pages.map(String).join("-")] : [];
             const split = await api.splitPdf(id, "range", ranges);
             setSidebarRefreshKey((prev) => prev + 1);
@@ -184,13 +184,13 @@ export default function EditorPage() {
 
     async function handleDelete(doc: PdfDocument) {
         try {
-            await api.deletePdf(doc.id);
             if (selectedId === doc.id) {
                 setSelectedId(null);
                 setFileUrl(null);
             }
             setSidebarRefreshKey((prev) => prev + 1);
             setDeleteModalOpen(false);
+            setFileToDelete(null);
         } catch (err) {
             console.error("Delete failed:", err);
         }
@@ -207,6 +207,8 @@ export default function EditorPage() {
                             setSidebarRefreshKey((prev) => prev + 1);
                             setSelectedId(doc.id);
                         }}
+                        onDelete={() => { }}
+                        onRename={() => { }}
                         onDeleteClick={(doc) => {
                             setFileToDelete(doc);
                             setDeleteModalOpen(true);
@@ -236,10 +238,13 @@ export default function EditorPage() {
                 viewer={
                     <PdfViewer
                         fileUrl={fileUrl}
+                        currentPage={currentPage}
+                        totalPages={totalPages}
                         requiresPassword={requiresPassword}
                         passwordError={passwordError}
-                        onPasswordSubmit={handleUnlock}
+                        onUnlock={handleUnlock}
                         zoom={zoom}
+                        onZoomChange={setZoom}
                         onPageChange={setCurrentPage}
                         onTotalPagesChange={setTotalPages}
                     />
@@ -247,17 +252,61 @@ export default function EditorPage() {
             />
 
             {/* Dialogs */}
-            <MergeDialog open={mergeOpen} onClose={() => setMergeOpen(false)} onMerge={handleMerge} />
-            <SplitDialog open={splitOpen} onClose={() => setSplitOpen(false)} selectedId={selectedId} onSplit={handleSplit} />
-            <ReorderDialog open={reorderOpen} onClose={() => setReorderOpen(false)} selectedId={selectedId} onReorder={handleReorder} />
-            <RemoveDialog open={removeOpen} onClose={() => setRemoveOpen(false)} selectedId={selectedId} onRemove={handleRemove} />
-            <MetadataDialog open={metadataOpen} onClose={() => setMetadataOpen(false)} selectedId={selectedId} onMetadata={handleMetadata} />
+            <MergeDialog
+                open={mergeOpen}
+                onClose={() => setMergeOpen(false)}
+                selectedId={selectedId}
+                onMergeComplete={(doc) => {
+                    setSidebarRefreshKey((prev) => prev + 1);
+                    setSelectedId(doc.id);
+                    setSelectedName(doc.original_filename);
+                    if (doc.is_password_protected) {
+                        setRequiresPassword(true);
+                        setFileUrl(null);
+                        return;
+                    }
+                    setRequiresPassword(false);
+                    void api.downloadPdf(doc.id).then((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        if (fileUrl) URL.revokeObjectURL(fileUrl);
+                        setFileUrl(url);
+                    });
+                }}
+            />
+            <SplitDialog
+                open={splitOpen}
+                onClose={() => setSplitOpen(false)}
+                selectedId={selectedId}
+                selectedName={selectedName}
+                totalPages={totalPages}
+            />
+            <ReorderDialog
+                open={reorderOpen}
+                onClose={() => setReorderOpen(false)}
+                selectedId={selectedId}
+                selectedName={selectedName}
+                totalPages={totalPages}
+            />
+            <RemoveDialog
+                open={removeOpen}
+                onClose={() => setRemoveOpen(false)}
+                selectedId={selectedId}
+                selectedName={selectedName}
+                totalPages={totalPages}
+            />
+            <MetadataDialog
+                open={metadataOpen}
+                onClose={() => setMetadataOpen(false)}
+                pdfId={selectedId}
+            />
             <DeleteModal
                 open={deleteModalOpen}
                 onClose={() => setDeleteModalOpen(false)}
-                onConfirm={() => fileToDelete && handleDelete(fileToDelete)}
-                title="Delete PDF"
-                message={`Are you sure you want to delete "${fileToDelete?.original_filename}"?`}
+                file={fileToDelete}
+                onConfirm={() => {
+                    if (!fileToDelete) return;
+                    void handleDelete(fileToDelete);
+                }}
             />
         </>
     );
