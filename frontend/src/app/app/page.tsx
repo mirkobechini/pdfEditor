@@ -207,8 +207,6 @@ export default function EditorPage() {
                             setSidebarRefreshKey((prev) => prev + 1);
                             setSelectedId(doc.id);
                         }}
-                        onDelete={() => { }}
-                        onRename={() => { }}
                         onDeleteClick={(doc) => {
                             setFileToDelete(doc);
                             setDeleteModalOpen(true);
