@@ -173,6 +173,7 @@
     "sendResetLink": "Send Reset Link",
     "resetSent": "If the email exists, the reset request has been received.",
     "backToLogin": "Back to Login",
+    "backToHome": "Back to Home",
     "resetTitle": "Reset Password",
     "newPassword": "New Password",
     "resetButton": "Reset Password",

@@ -20,8 +20,8 @@ export default function ForgotPasswordPage() {
         setLoading(true);
         setError(null);
         try {
-            const response = await api.forgotPassword(email.trim());
-            setSentMessage(response.message || null);
+            await api.forgotPassword(email.trim());
+            setSentMessage(t("resetSent"));
             setSent(true);
         } catch (err) {
             setError(err instanceof Error ? err.message : String(err));
