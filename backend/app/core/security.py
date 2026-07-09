@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
-from jose import JWTError, jwt
+import jwt
 
 from app.core.config import settings
 
@@ -32,5 +32,5 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 def decode_access_token(token: str) -> dict | None:
     try:
         return jwt.decode(token, settings.effective_secret_key, algorithms=[settings.ALGORITHM])
-    except JWTError:
+    except jwt.InvalidTokenError:
         return None
