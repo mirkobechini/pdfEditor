@@ -135,9 +135,30 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 _nessuno_
 
+### Issue note ma non bloccanti ⏳
+
+| #   | Issue                                                                          | Impatto           | Risoluzione prevista            |
+| --- | ------------------------------------------------------------------------------ | ----------------- | ------------------------------- |
+| 1   | **File system effimero** — PDF/snapshot su disco persi al restart Render       | Alto (produzione) | S3/R2 in Fase 2                 |
+| 2   | **`_password_cache` module-global** — non scala con multi-worker, mai svuotata | Medio             | Redis o DB in Fase 2            |
+| 3   | **Structured logging assente** — tutti i log usano `print()`                   | Medio             | Sostituire con `logging` modulo |
+| 4   | **DB connection pooling** — default pool_size=5, no `pool_pre_ping`            | Medio             | Configurare in `database.py`    |
+| 5   | **Test mancanti** — protect, undo/redo, forgot/reset-password                  | Medio             | Prossima issue                  |
+| 6   | **`.env.example` ha email reale** — `SUPER_ADMIN_EMAIL=mirkobechini@gmail.com` | Basso             | Sostituire con placeholder      |
+| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                  | Basso             | Valutare in Fase 2              |
+| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF             | Basso             | Valutare in Fase 2              |
+| 9   | **No password strength validation** — password di 1 char accettata             | Basso             | Aggiungere validazione          |
+| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato      | Basso             | Sanitizzare filename            |
+| 11  | **`_password_cache` mai pulita** — cresce all'infinito                         | Basso             | Aggiungere TTL o cleanup        |
+| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill              | Basso             | Aggiungere signal handler       |
+| 13  | **No request ID middleware** — impossibile tracciare richieste nei log         | Basso             | Aggiungere middleware           |
+| 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end         | Basso             | Valutare Playwright in futuro   |
+
 ### Da risolvere/note ⏳
 
-> **⚠️ Security audit 2026-07-09 — Risolte 11/24 issue (46%).** Riepilogo fix applicati oggi:
+> **⚠️ Security audit 2026-07-09 — Risolte 10/24 issue (42%).** Vedi tabella sopra per le rimanenti.
+>
+> Riepilogo fix applicati oggi:
 >
 > - ✅ `SECRET_KEY` default → vuoto (forza config esplicita)
 > - ✅ `DEBUG` default → `False`
@@ -148,8 +169,7 @@ _nessuno_
 > - ✅ Dipendenze vulnerabili → PyJWT 2.13.0, python-multipart 0.0.31, pytest 9.0.3
 > - ✅ CodeQL path-injection → `_validate_uuid()` in storage.py
 > - ✅ GitHub: 0 Dependabot alert attivi, 0 Code Scanning alert attivi
->
-> **Rimanenti (Fase 2):** file system effimero (PDF su disco persi al restart — serve S3), `_password_cache` module-global (non scala con multi-worker, mai svuotata), structured logging (tutti i log usano `print()` invece di `logging`), test mancanti su protect/undo-redo/forgot-reset-password, DB connection pooling non configurato (default SQLAlchemy pool_size=5, no `pool_pre_ping`).
+> - ✅ MCP Render configurato → `render-oss/render-mcp-server`
 
 > **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email delivery in pausa (attesa dominio custom per SendGrid sender verification).
 
