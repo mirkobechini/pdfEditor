@@ -1,8 +1,11 @@
+import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from app.core.config import settings
+
+logger = logging.getLogger("pdfeditor")
 
 
 class EmailService:
@@ -16,7 +19,7 @@ class EmailService:
         """
         # Skip if SMTP not configured (development mode)
         if not settings.SMTP_PASSWORD or settings.SMTP_PASSWORD == "":
-            print(f"[DEV MODE] Password reset email not sent. Reset token for {email}: {reset_token}")
+            logger.debug("DEV MODE: Password reset email not sent. Token for %s: %s", email, reset_token)
             return False
 
         try:
@@ -69,13 +72,12 @@ PDF Editor Team
                 server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
                 server.sendmail(settings.SMTP_FROM_EMAIL, email, msg.as_string())
 
-            print(f"Password reset email sent to {email}")
+            logger.info("Password reset email sent to %s", email)
             return True
 
         except smtplib.SMTPException as e:
-            print(f"SMTP Error: {e}")
-            # Don't crash, just log the error
+            logger.error("SMTP Error: %s", e)
             return False
         except Exception as e:
-            print(f"Email Error: {e}")
+            logger.error("Email Error: %s", e)
             return False
