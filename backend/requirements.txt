@@ -5,7 +5,7 @@ alembic==1.13.2
 pydantic>=2.10,<3
 pydantic-settings>=2.6,<3
 python-multipart==0.0.9
-python-jose[cryptography]==3.3.0
+PyJWT==2.10.1
 bcrypt==4.2.1
 requests==2.34.2
 PyMuPDF>=1.26,<1.27
