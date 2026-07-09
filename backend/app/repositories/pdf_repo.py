@@ -15,6 +15,12 @@ class PdfRepository:
         self.db.refresh(pdf)
         return pdf
 
+    def update(self, pdf: PdfDocument) -> PdfDocument:
+        """Update an existing PDF record (already tracked by session)."""
+        self.db.flush()
+        self.db.refresh(pdf)
+        return pdf
+
     def get_by_id(self, pdf_id: str) -> PdfDocument | None:
         return self.db.query(PdfDocument).filter(PdfDocument.id == pdf_id).first()
 
