@@ -1,10 +1,12 @@
 from sqlalchemy.orm import Session
+import time
 
 from app.core.config import settings
 from app.core.storage import (
     save_pdf,
     validate_pdf,
     get_pdf_path,
+    get_file_content,
     delete_pdf,
     save_snapshot,
     get_latest_snapshot,
@@ -12,13 +14,33 @@ from app.core.storage import (
     clear_snapshots,
 )
 from app.models.pdf import PdfDocument
-from app.models.pdf import PdfDocument
 from app.repositories.pdf_repo import PdfRepository
 from app.schemas.pdf import PdfListResponse, PdfResponse
 
 
 # In-memory password cache for password-protected PDFs (never persisted to disk)
-_password_cache: dict[str, str] = {}
+# Each entry is (password, timestamp); auto-expires after 30 minutes
+_password_cache: dict[str, tuple[str, float]] = {}
+_PASSWORD_CACHE_TTL = 1800  # 30 minutes in seconds
+
+
+def _get_cached_password(pdf_id: str) -> str | None:
+    """Return cached password if not expired, cleaning up expired entries."""
+    if pdf_id in _password_cache:
+        password, timestamp = _password_cache[pdf_id]
+        if time.time() - timestamp < _PASSWORD_CACHE_TTL:
+            return password
+        del _password_cache[pdf_id]
+    return None
+
+
+def _cache_password(pdf_id: str, password: str) -> None:
+    """Cache a password with current timestamp."""
+    # Cleanup expired entries on every cache write (lazy cleanup)
+    expired = [k for k, (_, ts) in _password_cache.items() if time.time() - ts >= _PASSWORD_CACHE_TTL]
+    for k in expired:
+        del _password_cache[k]
+    _password_cache[pdf_id] = (password, time.time())
 
 
 class PdfService:
@@ -53,7 +75,7 @@ class PdfService:
             import fitz
             doc = fitz.open(stream=content, filetype="pdf")
             if doc.needs_pass:
-                doc.authenticate(_password_cache[pdf_id])
+                doc.authenticate(_get_cached_password(pdf_id))
                 content = doc.tobytes()
             doc.close()
         return content
@@ -620,7 +642,7 @@ class PdfService:
             doc.close()
 
         # Cache the password in memory
-        _password_cache[pdf_id] = password
+        _cache_password(pdf_id, password)
         return pdf
 
     def undo(self, pdf_id: str, user_id: str) -> PdfDocument:
@@ -703,8 +725,6 @@ class PdfService:
         pdf.is_password_protected = True
 
         # Cache the password in memory
-        _password_cache[pdf_id] = password
+        _cache_password(pdf_id, password)
 
         return self.repo.update(pdf)
-
-        return self.repo.create(new_pdf)
