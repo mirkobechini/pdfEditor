@@ -4,7 +4,7 @@ sqlalchemy==2.0.35
 alembic==1.13.2
 pydantic>=2.10,<3
 pydantic-settings>=2.6,<3
-python-multipart==0.0.9
+python-multipart==0.0.31
 PyJWT==2.10.1
 bcrypt==4.2.1
 requests==2.34.2
