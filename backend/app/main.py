@@ -4,6 +4,9 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.api.v1.admin import router as admin_router
 from app.api.v1.auth import router as auth_router
@@ -18,6 +21,7 @@ from app.api.v1.upload import router as pdf_router
 from app.api.v1.undo_redo import router as undo_redo_router
 from app.core.config import settings
 from app.core.database import Base, engine
+from app.core.limiter import limiter
 
 
 @asynccontextmanager
@@ -106,6 +110,13 @@ app = FastAPI(
     version=settings.VERSION,
     lifespan=lifespan,
 )
+
+# ---------------------------------------------------------------------------
+# Rate limiter — registered on app state
+# ---------------------------------------------------------------------------
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 # ---------------------------------------------------------------------------
