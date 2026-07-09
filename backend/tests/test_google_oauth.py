@@ -4,33 +4,59 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+from sqlalchemy.orm import sessionmaker
 
 from app.services.auth_service import AuthService
+
+
+@pytest.fixture
+def db_session(db_engine):
+    """Create a database session for this test."""
+    if db_engine is None:
+        pytest.skip("Database engine not available")
+    SessionLocal = sessionmaker(bind=db_engine)
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
 
 
 class TestGoogleAuth:
     """Test suite for Google OAuth authentication."""
 
-    @patch("app.services.auth_service.requests.get")
-    def test_google_login_invalid_token_format(self, mock_get, db):
+    @patch("jwt.decode")
+    @patch("jwt.get_unverified_header")
+    @patch("requests.get")
+    def test_google_login_invalid_token_format(self, mock_get, mock_get_header, mock_decode, db_session):
         """Should reject malformed Google token."""
-        service = AuthService(db)
+        service = AuthService(db_session)
+        
+        # Mock successful cert fetch
+        mock_get.return_value = MagicMock(
+            status_code=200,
+            json=lambda: {"keys": [{"kid": "key1", "n": "...", "e": "AQAB"}]}
+        )
+        
+        # Mock header extraction failure (invalid JWT format)
+        import jwt
+        mock_get_header.side_effect = jwt.InvalidTokenError("Invalid JWT")
         
         with pytest.raises(ValueError, match="Invalid or expired Google token"):
             service.google_login("not.a.valid.jwt.token")
 
-    @patch("app.services.auth_service.requests.get")
-    def test_google_login_empty_token(self, mock_get, db):
+    @patch("requests.get")
+    def test_google_login_empty_token(self, mock_get, db_session):
         """Should reject empty Google token."""
-        service = AuthService(db)
+        service = AuthService(db_session)
         
         with pytest.raises(ValueError, match="Invalid Google token"):
             service.google_login("")
 
-    @patch("app.services.auth_service.requests.get")
-    def test_google_login_certs_fetch_failure(self, mock_get, db):
+    @patch("requests.get")
+    def test_google_login_certs_fetch_failure(self, mock_get, db_session):
         """Should handle Google certs fetch failure."""
-        service = AuthService(db)
+        service = AuthService(db_session)
         
         # Mock failed cert fetch
         mock_get.return_value = MagicMock(status_code=500)
@@ -38,11 +64,11 @@ class TestGoogleAuth:
         with pytest.raises(ValueError, match="Failed to verify Google token"):
             service.google_login("some.jwt.token")
 
-    @patch("app.services.auth_service.requests.get")
-    @patch("app.services.auth_service.jwt.get_unverified_header")
-    def test_google_login_invalid_algorithm(self, mock_get_header, mock_get, db):
+    @patch("jwt.get_unverified_header")
+    @patch("requests.get")
+    def test_google_login_invalid_algorithm(self, mock_get, mock_get_header, db_session):
         """Should reject token with non-RS256 algorithm."""
-        service = AuthService(db)
+        service = AuthService(db_session)
         
         # Mock successful cert fetch
         mock_get.return_value = MagicMock(
@@ -56,11 +82,11 @@ class TestGoogleAuth:
         with pytest.raises(ValueError, match="Invalid token algorithm"):
             service.google_login("some.jwt.token")
 
-    @patch("app.services.auth_service.requests.get")
-    @patch("app.services.auth_service.jwt.get_unverified_header")
-    def test_google_login_missing_kid(self, mock_get_header, mock_get, db):
+    @patch("jwt.get_unverified_header")
+    @patch("requests.get")
+    def test_google_login_missing_kid(self, mock_get, mock_get_header, db_session):
         """Should reject token with missing kid."""
-        service = AuthService(db)
+        service = AuthService(db_session)
         
         # Mock successful cert fetch
         mock_get.return_value = MagicMock(
@@ -74,12 +100,12 @@ class TestGoogleAuth:
         with pytest.raises(ValueError, match="Invalid token key ID"):
             service.google_login("some.jwt.token")
 
-    @patch("app.services.auth_service.requests.get")
-    @patch("app.services.auth_service.jwt.get_unverified_header")
-    @patch("app.services.auth_service.jwt.decode")
-    def test_google_login_decode_failure(self, mock_decode, mock_get_header, mock_get, db):
+    @patch("jwt.decode")
+    @patch("jwt.get_unverified_header")
+    @patch("requests.get")
+    def test_google_login_decode_failure(self, mock_get, mock_get_header, mock_decode, db_session):
         """Should reject token if decode fails."""
-        service = AuthService(db)
+        service = AuthService(db_session)
         
         # Mock successful cert fetch
         mock_get.return_value = MagicMock(
@@ -97,12 +123,12 @@ class TestGoogleAuth:
         with pytest.raises(ValueError, match="Invalid or expired Google token"):
             service.google_login("some.jwt.token")
 
-    @patch("app.services.auth_service.requests.get")
-    @patch("app.services.auth_service.jwt.get_unverified_header")
-    @patch("app.services.auth_service.jwt.decode")
-    def test_google_login_missing_email(self, mock_decode, mock_get_header, mock_get, db):
+    @patch("jwt.decode")
+    @patch("jwt.get_unverified_header")
+    @patch("requests.get")
+    def test_google_login_missing_email(self, mock_get, mock_get_header, mock_decode, db_session):
         """Should reject token without email."""
-        service = AuthService(db)
+        service = AuthService(db_session)
         
         # Mock successful cert fetch
         mock_get.return_value = MagicMock(
@@ -119,12 +145,12 @@ class TestGoogleAuth:
         with pytest.raises(ValueError, match="Google token missing email"):
             service.google_login("some.jwt.token")
 
-    @patch("app.services.auth_service.requests.get")
-    @patch("app.services.auth_service.jwt.get_unverified_header")
-    @patch("app.services.auth_service.jwt.decode")
-    def test_google_login_creates_user(self, mock_decode, mock_get_header, mock_get, db):
+    @patch("jwt.decode")
+    @patch("jwt.get_unverified_header")
+    @patch("requests.get")
+    def test_google_login_creates_user(self, mock_get, mock_get_header, mock_decode, db_session):
         """Should create new user from Google token."""
-        service = AuthService(db)
+        service = AuthService(db_session)
         
         # Mock successful cert fetch
         mock_get.return_value = MagicMock(
@@ -153,16 +179,16 @@ class TestGoogleAuth:
         assert token is not None
         assert isinstance(token, str)
 
-    @patch("app.services.auth_service.requests.get")
-    @patch("app.services.auth_service.jwt.get_unverified_header")
-    @patch("app.services.auth_service.jwt.decode")
-    def test_google_login_existing_user(self, mock_decode, mock_get_header, mock_get, db):
+    @patch("jwt.decode")
+    @patch("jwt.get_unverified_header")
+    @patch("requests.get")
+    def test_google_login_existing_user(self, mock_get, mock_get_header, mock_decode, db_session):
         """Should authenticate existing user with Google."""
         from app.models.user import User
         from app.repositories.user_repo import UserRepository
         
         # Pre-create user
-        repo = UserRepository(db)
+        repo = UserRepository(db_session)
         existing_user = User(
             email="existing@gmail.com",
             hashed_password="dummy",
@@ -171,7 +197,7 @@ class TestGoogleAuth:
         )
         repo.create(existing_user)
         
-        service = AuthService(db)
+        service = AuthService(db_session)
         
         # Mock successful cert fetch
         mock_get.return_value = MagicMock(
