@@ -223,6 +223,16 @@ class ApiClient {
     return res.json();
   }
 
+  async protectPdf(id: string, password: string): Promise<PdfDocument> {
+    const res = await fetch(`${this.baseUrl}/pdfs/${id}/protect`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
   async updateMetadata(
     id: string,
     metadata: Partial<Metadata>,

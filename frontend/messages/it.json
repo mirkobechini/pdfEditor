@@ -15,7 +15,9 @@
     "passwordPlaceholder": "Inserisci password",
     "passwordInvalid": "Password errata. Riprova.",
     "unlock": "Sblocca",
-    "metadata": "Info"
+    "metadata": "Info",
+    "replaceText": "Trova e Sostituisci",
+    "protect": "Proteggi"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -99,6 +101,32 @@
     "cancel": "Annulla",
     "loadFailed": "Caricamento metadati fallito",
     "saveFailed": "Salvataggio metadati fallito"
+  },
+  "replaceTextDialog": {
+    "title": "Trova e Sostituisci",
+    "searchLabel": "Testo da trovare",
+    "searchPlaceholder": "Inserisci testo da cercare",
+    "replaceLabel": "Sostituisci con",
+    "replacePlaceholder": "Inserisci testo sostitutivo",
+    "replaceAllLabel": "Sostituisci tutte le occorrenze",
+    "replace": "Sostituisci",
+    "replacing": "Sostituzione in corso...",
+    "cancel": "Annulla",
+    "replaceFailed": "Sostituzione testo fallita"
+  },
+  "protectDialog": {
+    "title": "Proteggi PDF con Password",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Inserisci una password",
+    "confirmLabel": "Conferma password",
+    "confirmPlaceholder": "Reinserisci la password",
+    "securityNote": "Le password non possono essere recuperate. Conservala in luogo sicuro.",
+    "protect": "Proteggi",
+    "protecting": "Protezione in corso...",
+    "cancel": "Annulla",
+    "passwordMismatch": "Le password non corrispondono",
+    "passwordTooShort": "La password deve avere almeno 4 caratteri",
+    "protectFailed": "Protezione PDF fallita"
   },
   "bugReport": {
     "title": "Segnala un Bug",
