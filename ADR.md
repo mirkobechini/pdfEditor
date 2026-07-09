@@ -185,10 +185,114 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [x] **Expired token cleanup** — Lazy cleanup all'uso. (PR #139, issue #141)
 - [x] **Google SSO al primo posto login** — Pulsante Google prima del form email/password. (commit su dev)
 
+## Architectural Guidance
+
+### Q1: Nel database i dati sono protetti?
+
+**Sì, i dati sono protetti a più livelli:**
+
+1. **Autenticazione & Authorization**
+   - Ogni utente deve autenticarsi via JWT (email/password) o Google OAuth
+   - Token ha expiry di 60 minuti
+   - Ogni endpoint richiede token valido; request senza token riceve 401 Unauthorized
+
+2. **SQL Injection Prevention**
+   - SQLAlchemy ORM con parameterized queries (zero risk)
+   - Nessuna concatenazione di SQL, solo ORM methods (`query.filter()`, `query.get()`, ecc.)
+
+3. **Password Hashing**
+   - bcrypt con salt casuale (12 rounds)
+   - Impossibile invertire hash → rainbow tables inutili
+   - Field `password` in DB è sempre hash, mai plain text
+
+4. **User Isolation**
+   - Ogni PDF ha `user_id` (FK a User)
+   - Ogni endpoint filtra `WHERE pdf.user_id = current_user.id`
+   - Utente A non può accedere PDF di Utente B
+
+5. **CORS Handling**
+   - Backend specifica `ALLOWED_ORIGINS` (only frontend domain)
+   - Richieste cross-origin non autorizzate ricevono 403 CORS Forbidden
+   - Credentials sempre required
+
+6. **Sensitive Data in Logs**
+   - Password, token, email mai loggati in plain text
+   - Environment variables per secrets (DATABASE_URL, JWT_SECRET_KEY, SENDGRID_API_KEY)
+
+7. **HTTPS in Production**
+   - Render auto-applica TLS su deployed URL
+   - Cookies marcati HttpOnly, Secure, SameSite=Strict
+
+**Cosa NON è implementato (futuro)**:
+- Encryption at rest per database (PostgreSQL può avere TDE/encryption plugin)
+- Rate limiting per login attempts (brute-force attack protection)
+- Two-factor authentication (2FA)
+- Audit log per accessi utente
+- Field-level encryption per dati sensibili
+
+---
+
+### Q2: SendGrid ha un massimo di mail, si può gestire? Quale strategia consigliata?
+
+**Sì, SendGrid free tier ha limite ~100 email/mese. Strategia consigliata:**
+
+1. **Rilevamento limite raggiunto**
+   - Backend catchesHTTP 429 (Too Many Requests) da SendGrid API
+   - Al limite → endpoint risponde con 429 al client
+   - Frontend mostra messaggio: "Monthly email limit reached. Try again next month."
+   - Bottone "Send Reset Email" disabilitato con tooltip
+
+2. **User Experience**
+   - Toast notification top-right: "⚠️ Email limit reached this month. Please try again next month."
+   - Bottone diventa gray + cursor:not-allowed
+   - Messaggio consigliato: "Admin can manually send reset email if urgent"
+
+3. **Admin Fallback**
+   - Admin dashboard (`/admin`) consente inviare reset email manualmente senza quota
+   - Endpoint `POST /admin/users/{user_id}/send-reset-email` ignora limiti SendGrid
+   - Utile per support team se utente ha emergenza
+
+4. **Monitoring & Alerts**
+   - Log ogni tentativo di invio al limite
+   - (Futuro) Dashboard admin mostra quota email corrente
+   - (Futuro) Alert email quando 80% quota raggiunta
+
+5. **Upgrade Path (Future)**
+   - Messaggio: "Reach email limit frequently? Upgrade account for unlimited emails"
+   - Link a checkout Stripe/Lemon Squeezy con tier "Pro" (unlimited emails)
+
+**Implementazione**:
+- Vedi piano dettagliato: `.specs/plans/feature-sendgrid-rate-limit-handling.md`
+- Backend: `EmailService.send_password_reset_email()` torna `{"success": false, "error": "rate_limit_exceeded"}`
+- Frontend: Catch 429 status code e mostra alert
+
+---
+
+### Recommendation Summary
+
+| Concern | Status | Strategy |
+|---------|--------|----------|
+| Data protection in DB | ✅ Protected | JWT + ORM + bcrypt + user_id filtering |
+| SQL injection | ✅ Protected | SQLAlchemy parameterized queries |
+| Password storage | ✅ Protected | bcrypt hashing, never plain text |
+| Cross-origin attacks | ✅ Protected | CORS + ALLOWED_ORIGINS |
+| Email rate limit | 🟡 Planned | Catch 429, disable button, admin override |
+| Encryption at rest | ❌ Future | PostgreSQL encryption plugin (Phase 3+) |
+| Rate limit login | ❌ Future | Add on Phase 2-3 (brute-force protection) |
+| 2FA support | ❌ Future | Low priority, evaluable in Phase 3+ |
+
 ### Feature minori da implementare (in ordine)
 
-- [ ] **Migrazione database Render SQLite → PostgreSQL** — Passare a DB persistente per evitare perdita dati utenti ai redeploy/restart. Piano: `.specs/plans/feature-render-postgres-migration.md`.
-- [ ] **Invio email reale reset password** — Sostituire il flusso attuale basato su log server con invio SMTP reale, mantenendo risposta neutra anti-enumerazione. Piano: `.specs/plans/feature-reset-password-email-delivery.md`.
+- [ ] **Migrazione database Render SQLite → PostgreSQL** — Passare a DB persistente per evitare perdita dati utenti ai redeploy/restart. Piano: `.specs/plans/feature-render-postgres-migration.md`. **[COMPLETATO]** — PostgreSQL service creato su Render, backend connesso con psycopg v3, migrations applicate automaticamente, persistenza confermata.
+- [ ] **Invio email reale reset password** — Sostituire il flusso attuale basato su log server con invio SMTP reale, mantenendo risposta neutra anti-enumerazione. Piano: `.specs/plans/feature-reset-password-email-delivery.md`. **[IN PROGRESS - PAUSED]** — SendGrid SMTP integrato, email_service.py implementato, endpoint forgot-password invia email con link reset. In pausa: Sender identity verification posticipata a quando dominio custom sarà disponibile.
 - [ ] **Conferma email account** — Introdurre verifica email post-registrazione con token a scadenza, endpoint di conferma/reinvio e blocco login finche non verificata. Piano: `.specs/plans/feature-email-confirmation.md`.
+- [ ] **Google OAuth account linking** — Permettere al login standard (email/password) di collegare in un secondo momento un account Google, consolidando in un unico User. Piano: `.specs/plans/feature-google-oauth-account-linking.md`.
+- [ ] **Navigazione landing page da app autenticata** — Aggiungere link/bottone per tornare alla landing page da `/app`. Piano: `.specs/plans/feature-authenticated-landing-navigation.md`.
+- [ ] **User dashboard (profilo utente)** — Pagina `/app/profile` per modificare nome, visualizzare abbonamento, gestire account collegati (Google OAuth), future impostazioni. Piano: `.specs/plans/feature-user-dashboard.md`.
+- [ ] **Admin: invia reset password via dashboard** — Permettere agli admin di inviare manualmente link reset password a un utente dalla dashboard admin. Piano: `.specs/plans/feature-admin-send-reset-email.md`.
+- [ ] **Miglioramenti UI/UX webapp** — Refactoring componenti, miglior contrast, responsive mobile, accessibility (a11y), animazioni smooth. Piano: `.specs/plans/feature-ui-ux-improvements.md`.
+- [ ] **PDF naming preservation** — Quando si salvano PDF modificati (merge/split/ecc.), il nome file segue il nome scelto dall'utente, non default ("merged_..."). Piano: `.specs/plans/feature-pdf-naming-preservation.md`.
+- [ ] **PDF compression** — Endpoint per comprimere PDF riducendo size mantenendo qualità visiva. Piano: `.specs/plans/feature-pdf-compression.md`.
+- [ ] **SendGrid rate limiting handling** — Rilevare limite email SendGrid raggiunto, disabilitare bottone "Forgot Password" o mostrare alert informativo. Piano: `.specs/plans/feature-sendgrid-rate-limit-handling.md`.
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->

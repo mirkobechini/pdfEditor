@@ -120,6 +120,15 @@ function ResetPasswordContent() {
                             {loading ? t("resetting") : t("resetButton")}
                         </button>
                     </form>
+
+                    <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                        <a
+                            href="/"
+                            className="flex items-center justify-center text-sm text-blue-500 hover:underline gap-2"
+                        >
+                            🏠 {t("backToHome") || "Home"}
+                        </a>
+                    </div>
                 </div>
             </div>
         </>

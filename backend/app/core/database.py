@@ -9,11 +9,20 @@ from app.core.config import settings
 # Register datetime adapter for SQLite to suppress Python 3.12+ deprecation warning
 sqlite3.register_adapter(datetime.datetime, lambda dt: dt.isoformat())
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args={"check_same_thread": False},  # Needed for SQLite
-    echo=settings.DEBUG,
-)
+# Configure engine based on database type
+if "postgresql" in settings.DATABASE_URL:
+    # PostgreSQL with psycopg v3
+    engine = create_engine(
+        settings.DATABASE_URL,
+        echo=settings.DEBUG,
+    )
+else:
+    # SQLite (local development)
+    engine = create_engine(
+        settings.DATABASE_URL,
+        connect_args={"check_same_thread": False},  # Needed for SQLite
+        echo=settings.DEBUG,
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
