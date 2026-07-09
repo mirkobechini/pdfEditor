@@ -1,6 +1,8 @@
 # Feature Plan: Navigazione Landing Page da App Autenticata
 
-**Status:** Planning  
+**Status:** Completed
+**Completata il:** 2026-07-09
+**Note:** Logo in AppLayout punta a `/landing`. LandingNavbar mostra "Vai all'App" per utenti autenticati (invece di Login/Register). Chiavi i18n `landing.navbar.goToApp` in EN/IT.
 **Priority:** High  
 **Complexity:** Low  
 **Estimated Time:** 30 min
