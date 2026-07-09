@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import HeaderControls from "../HeaderControls";
+import { useAuth } from "../../lib/auth";
 
 interface LogoProps {
     src?: string;
@@ -13,6 +14,7 @@ interface LogoProps {
 
 export default function LandingNavbar({ logo }: { logo?: LogoProps }) {
     const t = useTranslations("landing.navbar");
+    const { user } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
     return (
@@ -52,18 +54,29 @@ export default function LandingNavbar({ logo }: { logo?: LogoProps }) {
                     <div className="hidden md:flex">
                         <HeaderControls />
                     </div>
-                    <Link
-                        href="/login"
-                        className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
-                    >
-                        {t("login")}
-                    </Link>
-                    <Link
-                        href="/register"
-                        className="text-sm font-medium px-4 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:opacity-90 transition-opacity shadow-lg shadow-orange-500/20"
-                    >
-                        {t("register")}
-                    </Link>
+                    {user ? (
+                        <Link
+                            href="/app"
+                            className="text-sm font-medium px-4 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:opacity-90 transition-opacity shadow-lg shadow-orange-500/20"
+                        >
+                            {t("goToApp")}
+                        </Link>
+                    ) : (
+                        <>
+                            <Link
+                                href="/login"
+                                className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                            >
+                                {t("login")}
+                            </Link>
+                            <Link
+                                href="/register"
+                                className="text-sm font-medium px-4 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:opacity-90 transition-opacity shadow-lg shadow-orange-500/20"
+                            >
+                                {t("register")}
+                            </Link>
+                        </>
+                    )}
                 </div>
             </div>
         </nav>
