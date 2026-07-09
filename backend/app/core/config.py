@@ -66,11 +66,10 @@ class Settings(BaseSettings):
     SUPER_ADMIN_EMAIL: str = "admin@pdfeditor.local"
 
     # SMTP (for password reset emails)
-    SMTP_HOST: str = "localhost"
-    SMTP_PORT: int = 1025
+    SMTP_SERVER: str = "localhost"
+    SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
-    SMTP_USE_TLS: bool = False
     SMTP_FROM_EMAIL: str = "noreply@pdfeditor.app"
 
     # Password reset

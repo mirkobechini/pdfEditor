@@ -14,6 +14,7 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.services.auth_service import AuthService
+from app.services.email_service import EmailService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()
@@ -104,8 +105,8 @@ def forgot_password(
     """Request a password reset. Always returns 202 to avoid email enumeration."""
     token = service.request_password_reset(req.email)
     if token:
-        reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
-        print(f"🔐 Password reset link: {reset_link}")
+        # Send reset email
+        EmailService.send_password_reset_email(req.email, token)
     return {"message": "If the email exists, the reset request has been received."}
 
 
