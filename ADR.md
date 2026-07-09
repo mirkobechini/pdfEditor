@@ -137,7 +137,19 @@ _nessuno_
 
 ### Da risolvere/note ⏳
 
-> **⚠️ Security audit 2026-07-09:** Risolte 8 issue critiche su 24. Rimanenti: file system effimero (PDF persi al restart — serve S3 in Fase 2), `_password_cache` module-global, no structured logging, test mancanti su protect/undo-redo/forgot-reset-password, no DB connection pooling config, `.env.example` ha email reale.
+> **⚠️ Security audit 2026-07-09 — Risolte 11/24 issue (46%).** Riepilogo fix applicati oggi:
+>
+> - ✅ `SECRET_KEY` default → vuoto (forza config esplicita)
+> - ✅ `DEBUG` default → `False`
+> - ✅ Health check `GET /health`
+> - ✅ `undo()`/`redo()` page_count → `fitz.open().page_count`
+> - ✅ `_read_file_with_password` → tutte le operazioni PDF
+> - ✅ Rate limiting → slowapi (login 5/min, register 3/h, forgot-password 3/h)
+> - ✅ Dipendenze vulnerabili → PyJWT 2.13.0, python-multipart 0.0.31, pytest 9.0.3
+> - ✅ CodeQL path-injection → `_validate_uuid()` in storage.py
+> - ✅ GitHub: 0 Dependabot alert attivi, 0 Code Scanning alert attivi
+>
+> **Rimanenti (Fase 2):** file system effimero (S3), `_password_cache` module-global, structured logging, test protect/undo-redo/forgot-reset, DB connection pooling.
 
 > **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email delivery in pausa (attesa dominio custom per SendGrid sender verification).
 
