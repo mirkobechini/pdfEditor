@@ -10,6 +10,7 @@ import SplitDialog from "../components/SplitDialog";
 import ReorderDialog from "../components/ReorderDialog";
 import RemoveDialog from "../components/RemoveDialog";
 import MetadataDialog from "../components/MetadataDialog";
+import ReplaceTextDialog from "../components/ReplaceTextDialog";
 import DeleteModal from "../components/DeleteModal";
 import { api, PdfDocument } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -27,6 +28,7 @@ export default function EditorPage() {
     const [reorderOpen, setReorderOpen] = React.useState(false);
     const [removeOpen, setRemoveOpen] = React.useState(false);
     const [metadataOpen, setMetadataOpen] = React.useState(false);
+    const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
     const [fileToDelete, setFileToDelete] = React.useState<PdfDocument | null>(null);
     const [sidebarRefreshKey, setSidebarRefreshKey] = React.useState(0);
@@ -225,7 +227,7 @@ export default function EditorPage() {
                         onSplit={() => setSplitOpen(true)}
                         onReorder={() => setReorderOpen(true)}
                         onRemovePages={() => setRemoveOpen(true)}
-                        onReplaceText={() => { }}
+                        onReplaceText={() => setReplaceTextOpen(true)}
                         onMetadata={() => setMetadataOpen(true)}
                         canUndo={!!selectedId}
                         canRedo={false}
@@ -295,6 +297,11 @@ export default function EditorPage() {
             <MetadataDialog
                 open={metadataOpen}
                 onClose={() => setMetadataOpen(false)}
+                pdfId={selectedId}
+            />
+            <ReplaceTextDialog
+                open={replaceTextOpen}
+                onClose={() => setReplaceTextOpen(false)}
                 pdfId={selectedId}
             />
             <DeleteModal
