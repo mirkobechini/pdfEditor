@@ -18,6 +18,12 @@ _engine = None  # Store the current test engine
 
 
 @pytest.fixture(autouse=True)
+def test_secret_key(monkeypatch):
+    """Ensure tests always have a valid SECRET_KEY."""
+    monkeypatch.setattr("app.core.config.settings.SECRET_KEY", "test-secret-key-for-pytest")
+
+
+@pytest.fixture(autouse=True)
 def per_test_db(tmp_path):
     """Each test gets its OWN SQLite file + overrides deps.get_db correctly."""
     global _engine
