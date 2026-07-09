@@ -55,6 +55,10 @@ Aggiungere funzionalità per proteggere un PDF con password (lock). Attualmente 
 
 ## Status
 
+[x] Completata
+**Completata il:** 2026-07-02
+**Note:** Endpoint `POST /pdfs/{id}/protect` in backend, `pdf_service.protect()` con `PDF_ENCRYPT_AES_256`. ProtectDialog con password+conferma, pulsante "Protect" in Toolbar, chiavi i18n protectDialog in en.json/it.json.
+
 - [ ] Non iniziata
 - [ ] In progress
 - [ ] In review

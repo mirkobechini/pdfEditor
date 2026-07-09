@@ -48,6 +48,10 @@ Aggiungere UI frontend per la sostituzione testo nei PDF (find & replace). Backe
 
 ## Status
 
+[x] Completata
+**Completata il:** 2026-07-02
+**Note:** ReplaceTextDialog.tsx creato con Find & Replace, singola/tutte occorrenze. Pulsante "Find & Replace" in Toolbar, handler in page.tsx, chiavi i18n replaceTextDialog in en.json/it.json.
+
 - [ ] Non iniziata
 - [ ] In progress
 - [ ] In review

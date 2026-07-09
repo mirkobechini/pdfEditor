@@ -27,7 +27,9 @@ Inviare realmente via SMTP il link di reset password, eliminando la dipendenza d
 
 ## Status
 
-[ ] Non iniziata
+[~] In progress — Paused
+**Avviata il:** 2026-07-01
+**Note:** SendGrid SMTP integrato, `email_service.py` implementato con `send_password_reset_email()`, endpoint forgot-password invia email con link reset. **In pausa:** Sender identity verification su SendGrid posticipata a quando dominio custom sarà disponibile. Il token viene ancora stampato in console in development come fallback.
 
 ## Implementazione proposta (step by step)
 
