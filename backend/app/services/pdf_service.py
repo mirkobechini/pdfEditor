@@ -39,7 +39,7 @@ class PdfService:
         import fitz
 
         pdf = self._get_user_pdf(pdf_id, user_id)
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if content:
             save_snapshot(pdf_id, content)
 
@@ -137,7 +137,7 @@ class PdfService:
         for pid in pdf_ids:
             pdf = self._get_user_pdf(pid, user_id)
 
-            content = self.get_file_content(pdf)
+            content = self._read_file_with_password(pid, user_id)
             if not content:
                 for d in source_docs:
                     d.close()
@@ -179,7 +179,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -227,7 +227,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -264,7 +264,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -309,7 +309,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -364,7 +364,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -423,7 +423,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -452,7 +452,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -477,7 +477,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -514,7 +514,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
