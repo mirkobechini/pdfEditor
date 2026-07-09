@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, field_validator
 from pydantic_settings import BaseSettings
 
 # Backend root = 3 levels up from app/core/config.py
@@ -29,6 +29,15 @@ class Settings(BaseSettings):
 
     # Database — use as_posix() to get forward slashes for SQLAlchemy URI
     DATABASE_URL: str = f"sqlite:///{(BACKEND_DIR / 'pdf_editor.db').as_posix()}"
+
+    @field_validator("DATABASE_URL", mode="after")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        """Ensure PostgreSQL URLs use psycopg (v3) dialect instead of psycopg2."""
+        if v.startswith("postgresql://") and "+psycopg" not in v:
+            # Convert postgresql:// to postgresql+psycopg://
+            return v.replace("postgresql://", "postgresql+psycopg://", 1)
+        return v
 
     # Storage — absolute path to backend/storage/pdfs
     UPLOAD_DIR: str = (BACKEND_DIR / "storage" / "pdfs").as_posix()
