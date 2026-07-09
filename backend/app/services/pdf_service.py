@@ -639,11 +639,14 @@ class PdfService:
         file_uuid = save_pdf(content)
         new_name = f"{pdf.original_filename.replace('.pdf', '')}_restored.pdf"
 
+        # Count actual pages with fitz instead of using len(content) (bytes)
+        page_count = fitz.open(stream=content, filetype="pdf").page_count
+
         new_pdf = PdfDocument(
             original_filename=new_name,
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(content),
-            page_count=len(content),
+            page_count=page_count,
             user_id=user_id,
         )
         return self.repo.create(new_pdf)
@@ -662,11 +665,14 @@ class PdfService:
         file_uuid = save_pdf(content)
         new_name = f"{pdf.original_filename.replace('.pdf', '')}_restored.pdf"
 
+        # Count actual pages with fitz instead of using len(content) (bytes)
+        page_count = fitz.open(stream=content, filetype="pdf").page_count
+
         new_pdf = PdfDocument(
             original_filename=new_name,
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(content),
-            page_count=len(content),
+            page_count=page_count,
             user_id=user_id,
         )
         return self.repo.create(new_pdf)

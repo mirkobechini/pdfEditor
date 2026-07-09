@@ -109,6 +109,16 @@ app = FastAPI(
 
 
 # ---------------------------------------------------------------------------
+# Health check — required by Render/Railway for zero-downtime deploys
+# ---------------------------------------------------------------------------
+
+@app.get("/health", tags=["system"])
+def health_check():
+    """Return 200 if the application is running."""
+    return {"status": "ok"}
+
+
+# ---------------------------------------------------------------------------
 # Custom exception handler — flatten Pydantic validation errors
 # ---------------------------------------------------------------------------
 
