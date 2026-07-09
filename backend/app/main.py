@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import logging
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -22,6 +23,8 @@ from app.api.v1.undo_redo import router as undo_redo_router
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.core.limiter import limiter
+
+logger = logging.getLogger("pdfeditor")
 
 
 @asynccontextmanager
@@ -100,7 +103,7 @@ def _seed_super_admin():
             user.is_admin = True
             db.flush()
             db.commit()
-            print(f"🔐 Super admin '{settings.SUPER_ADMIN_EMAIL}' promoted on startup.")
+            logger.info("Super admin '%s' promoted on startup.", settings.SUPER_ADMIN_EMAIL)
     finally:
         db.close()
 
@@ -127,6 +130,20 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 def health_check():
     """Return 200 if the application is running."""
     return {"status": "ok"}
+
+
+# ---------------------------------------------------------------------------
+# Request ID middleware
+# ---------------------------------------------------------------------------
+
+@app.middleware("http")
+async def add_request_id(request: Request, call_next):
+    import uuid
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
 
 
 # ---------------------------------------------------------------------------
