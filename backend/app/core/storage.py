@@ -6,6 +6,12 @@ import fitz  # PyMuPDF
 from app.core.config import settings
 
 
+def _validate_uuid(value: str) -> str:
+    """Validate that a string is a valid UUID to prevent path traversal."""
+    uuid.UUID(value)
+    return value
+
+
 def get_storage_path() -> Path:
     path = Path(settings.UPLOAD_DIR)
     path.mkdir(parents=True, exist_ok=True)
@@ -58,7 +64,8 @@ def delete_pdf(file_uuid: str) -> bool:
 
 def get_snapshot_dir(pdf_id: str) -> Path:
     """Return the snapshot directory for a given PDF ID, creating it if needed."""
-    snap_dir = get_storage_path().parent / "snapshots" / pdf_id
+    safe_id = _validate_uuid(pdf_id)
+    snap_dir = get_storage_path().parent / "snapshots" / safe_id
     snap_dir.mkdir(parents=True, exist_ok=True)
     return snap_dir
 
