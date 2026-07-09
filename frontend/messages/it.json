@@ -232,7 +232,8 @@
       "howItWorks": "Come funziona",
       "pricing": "Prezzi",
       "login": "Accedi",
-      "register": "Registrati gratis"
+      "register": "Registrati gratis",
+      "goToApp": "Vai all'App"
     },
     "hero": {
       "badge": "Nuovo: Modifica testo nei PDF",

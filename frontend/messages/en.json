@@ -232,7 +232,8 @@
       "howItWorks": "How it works",
       "pricing": "Pricing",
       "login": "Sign In",
-      "register": "Sign Up Free"
+      "register": "Sign Up Free",
+      "goToApp": "Go to App"
     },
     "hero": {
       "badge": "New: Edit text in PDFs",
