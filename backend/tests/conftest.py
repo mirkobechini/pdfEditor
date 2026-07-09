@@ -7,8 +7,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.api.deps import get_db as deps_get_db
+# Explicitly import models to ensure they are registered with Base
+# This MUST come before importing app.main, which imports routers that import models
+from app.models import User, PdfDocument, LicenseFeature, BugReport
 from app.core.database import Base
+from app.api.deps import get_db as deps_get_db
 from app.main import app
 
 _engine = None  # Store the current test engine
@@ -18,6 +21,13 @@ _engine = None  # Store the current test engine
 def per_test_db(tmp_path):
     """Each test gets its OWN SQLite file + overrides deps.get_db correctly."""
     global _engine
+    
+    # Ensure models are imported before creating tables
+    from app.models.user import User
+    from app.models.pdf import PdfDocument
+    from app.models.license import LicenseFeature
+    from app.models.bug_report import BugReport
+    
     db_path = os.path.join(tmp_path, f"test_{uuid.uuid4().hex}.db")
     engine = create_engine(
         f"sqlite:///{db_path}",
@@ -25,6 +35,11 @@ def per_test_db(tmp_path):
     )
     Base.metadata.create_all(bind=engine)
     _engine = engine
+    
+    # CRITICAL: Override the main database engine so app.main lifespan uses our test engine
+    import app.core.database as database_module
+    original_engine = database_module.engine
+    database_module.engine = engine
 
     # Seed license features for this test DB
     from app.models.license import LicenseFeature
@@ -66,6 +81,8 @@ def per_test_db(tmp_path):
     app.dependency_overrides[deps_get_db] = override_get_db
     yield
     app.dependency_overrides.clear()
+    # Restore original engine
+    database_module.engine = original_engine
     engine.dispose()
     _engine = None
 
@@ -78,8 +95,10 @@ def db_engine():
 
 @pytest.fixture()
 def client():
+    app.state.testing = True
     with TestClient(app) as c:
         yield c
+    app.state.testing = False
 
 
 @pytest.fixture()
