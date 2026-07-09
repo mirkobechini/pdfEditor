@@ -22,12 +22,13 @@ from app.core.database import Base, engine
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: create tables
-    Base.metadata.create_all(bind=engine)
-    # Seed license features
-    _seed_license_features()
-    # Seed super admin if not exists
-    _seed_super_admin()
+    # Startup: create tables (skip if running in test mode)
+    if not getattr(app.state, "testing", False):
+        Base.metadata.create_all(bind=engine)
+        # Seed license features
+        _seed_license_features()
+        # Seed super admin if not exists
+        _seed_super_admin()
     yield
 
 
