@@ -10,11 +10,11 @@ BACKEND_DIR = Path(__file__).parent.parent.parent
 class Settings(BaseSettings):
     APP_NAME: str = "PdfEditor API"
     VERSION: str = "0.1.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # Security — JWT_SECRET_KEY is required in production (via .env or env variable)
-    # Falls back to default only for local development
-    SECRET_KEY: str = "dev-secret-key-change-in-production"
+    # SECRET_KEY empty by default; must be set explicitly in .env for production
+    SECRET_KEY: str = ""
     # Alternative env var name for Render/Docker deployments
     JWT_SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
