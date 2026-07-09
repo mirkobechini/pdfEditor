@@ -16,7 +16,8 @@
     "passwordInvalid": "Incorrect password. Try again.",
     "unlock": "Unlock",
     "metadata": "Info",
-    "replaceText": "Find & Replace"
+    "replaceText": "Find & Replace",
+    "protect": "Protect"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -112,6 +113,20 @@
     "replacing": "Replacing...",
     "cancel": "Cancel",
     "replaceFailed": "Failed to replace text"
+  },
+  "protectDialog": {
+    "title": "Protect PDF with Password",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter a password",
+    "confirmLabel": "Confirm password",
+    "confirmPlaceholder": "Re-enter the password",
+    "securityNote": "Passwords cannot be recovered. Store it securely.",
+    "protect": "Protect",
+    "protecting": "Protecting...",
+    "cancel": "Cancel",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 4 characters",
+    "protectFailed": "Failed to protect PDF"
   },
   "bugReport": {
     "title": "Report a Bug",
