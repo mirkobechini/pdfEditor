@@ -153,6 +153,9 @@ export default function Toolbar({
       <button className="px-3 py-1 text-xs rounded bg-gray-500 text-white hover:bg-gray-600 disabled:opacity-50" onClick={onMetadata}>
         {t("metadata")}
       </button>
+      <button className="px-3 py-1 text-xs rounded bg-purple-500 text-white hover:bg-purple-600 disabled:opacity-50" onClick={onReplaceText}>
+        {t("replaceText")}
+      </button>
     </>
   );
 }

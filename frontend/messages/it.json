@@ -15,7 +15,8 @@
     "passwordPlaceholder": "Inserisci password",
     "passwordInvalid": "Password errata. Riprova.",
     "unlock": "Sblocca",
-    "metadata": "Info"
+    "metadata": "Info",
+    "replaceText": "Trova e Sostituisci"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -99,6 +100,18 @@
     "cancel": "Annulla",
     "loadFailed": "Caricamento metadati fallito",
     "saveFailed": "Salvataggio metadati fallito"
+  },
+  "replaceTextDialog": {
+    "title": "Trova e Sostituisci",
+    "searchLabel": "Testo da trovare",
+    "searchPlaceholder": "Inserisci testo da cercare",
+    "replaceLabel": "Sostituisci con",
+    "replacePlaceholder": "Inserisci testo sostitutivo",
+    "replaceAllLabel": "Sostituisci tutte le occorrenze",
+    "replace": "Sostituisci",
+    "replacing": "Sostituzione in corso...",
+    "cancel": "Annulla",
+    "replaceFailed": "Sostituzione testo fallita"
   },
   "bugReport": {
     "title": "Segnala un Bug",

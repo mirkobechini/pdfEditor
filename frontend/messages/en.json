@@ -15,7 +15,8 @@
     "passwordPlaceholder": "Enter password",
     "passwordInvalid": "Incorrect password. Try again.",
     "unlock": "Unlock",
-    "metadata": "Info"
+    "metadata": "Info",
+    "replaceText": "Find & Replace"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -99,6 +100,18 @@
     "cancel": "Cancel",
     "loadFailed": "Failed to load metadata",
     "saveFailed": "Failed to save metadata"
+  },
+  "replaceTextDialog": {
+    "title": "Find & Replace",
+    "searchLabel": "Find text",
+    "searchPlaceholder": "Enter text to find",
+    "replaceLabel": "Replace with",
+    "replacePlaceholder": "Enter replacement text",
+    "replaceAllLabel": "Replace all occurrences",
+    "replace": "Replace",
+    "replacing": "Replacing...",
+    "cancel": "Cancel",
+    "replaceFailed": "Failed to replace text"
   },
   "bugReport": {
     "title": "Report a Bug",
