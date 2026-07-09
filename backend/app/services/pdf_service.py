@@ -670,3 +670,35 @@ class PdfService:
             user_id=user_id,
         )
         return self.repo.create(new_pdf)
+
+    def protect(self, pdf_id: str, user_id: str, password: str) -> PdfDocument:
+        """Protect a PDF with a password (encryption)."""
+        import fitz
+
+        pdf = self._get_user_pdf(pdf_id, user_id)
+        self._create_snapshot(pdf_id, user_id)
+
+        content = self._read_file_with_password(pdf_id, user_id)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        doc = fitz.open(stream=content, filetype="pdf")
+        try:
+            # Encrypt with AES-256
+            output_bytes = doc.tobytes(encryption=fitz.PDF_ENCRYPT_AES_256, user_pw=password)
+        finally:
+            doc.close()
+
+        file_uuid = save_pdf(output_bytes)
+
+        # Update the existing PDF record with encrypted content
+        pdf.storage_filename = f"{file_uuid}.pdf"
+        pdf.file_size = len(output_bytes)
+        pdf.is_password_protected = True
+
+        # Cache the password in memory
+        _password_cache[pdf_id] = password
+
+        return self.repo.update(pdf)
+
+        return self.repo.create(new_pdf)
