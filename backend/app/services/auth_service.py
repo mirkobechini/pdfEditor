@@ -73,13 +73,13 @@ class AuthService:
         if resp.status_code != 200:
             raise ValueError("Failed to verify Google token")
 
-        # Decode JWT using python-jose + Google certs
-        from jose import jwt, JWTError
+        # Decode JWT using PyJWT + Google certs
+        import jwt
 
         certs = resp.json()
         try:
             header = jwt.get_unverified_header(id_token)
-        except JWTError:
+        except jwt.InvalidTokenError:
             raise ValueError("Invalid or expired Google token")
 
         if header.get("alg") != "RS256":
@@ -105,7 +105,7 @@ class AuthService:
                 algorithms=["RS256"],
                 audience=settings.GOOGLE_CLIENT_ID,
             )
-        except JWTError:
+        except jwt.InvalidTokenError:
             raise ValueError("Invalid or expired Google token")
 
         email = payload.get("email")
