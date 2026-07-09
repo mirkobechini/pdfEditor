@@ -514,7 +514,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
