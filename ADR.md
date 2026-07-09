@@ -133,6 +133,49 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 > 2. Impostare `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local` e `GOOGLE_CLIENT_ID` in `backend/.env`
 > 3. **Branding email:** dopo aver acquistato il dominio su Cloudflare, attivare **Cloudflare Email Routing** (gratuito) per creare `supporto@tuodominio.com` con inoltro automatico alla mail personale. Aggiornare il campo Branding su Google Cloud Console con `supporto@tuodominio.com` per email OAuth professionali.
 
+> **ℹ️ MCP Server — Render (automazione deploy/monitoring):**
+>
+> Configura il Render MCP server per automazione deploy e monitoring direttamente da IDE/CLI:
+>
+> 1. **Installa Render MCP server globalmente** (Go richiesto):
+>
+>    ```bash
+>    # Option A: Clona e compila
+>    git clone https://github.com/render-oss/render-mcp-server
+>    cd render-mcp-server
+>    go build -o render-mcp-server main.go
+>
+>    # Option B: Usa pre-built release
+>    wget https://github.com/render-oss/render-mcp-server/releases/download/v0.1.0/render-mcp-server
+>    chmod +x render-mcp-server
+>    ```
+>
+> 2. **Genera Render API key** su [dashboard.render.com/api-tokens](https://dashboard.render.com/account/api-tokens) — scrivilo in `backend/.env`:
+>    ```env
+>    RENDER_API_KEY=rnd_xxxxx...
+>    ```
+> 3. **Configura MCP in VS Code** — Crea/aggiorna `~/.claude/mcp.json`:
+>    ```json
+>    {
+>      "mcpServers": {
+>        "render": {
+>          "command": "path/to/render-mcp-server",
+>          "env": {
+>            "RENDER_API_KEY": "${RENDER_API_KEY}"
+>          }
+>        }
+>      }
+>    }
+>    ```
+> 4. **Comandi disponibili** (via Claude MCP):
+>    - `render list-services` — elenca tutti i servizi (web, DB, worker, ecc.)
+>    - `render get-service <id>` — dettagli servizio (stato, URL, logs, metriche)
+>    - `render restart-service <id>` — riavvia servizio
+>    - `render get-logs <id>` — ultimi 100 log
+>    - `render deploy <id>` — trigga rebuild da branch attuale
+>
+> **Uso comune in CI/CD:** Aggiungere MCP Render a `.github/workflows/deploy.yml` per automazione.
+
 > **ℹ️ Reset password:** In sviluppo il token viene stampato nella console del backend. In produzione va configurato SMTP in `backend/.env`.
 
 ### In corso 🔄
