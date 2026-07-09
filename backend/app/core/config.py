@@ -43,6 +43,15 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = (BACKEND_DIR / "storage" / "pdfs").as_posix()
     MAX_UPLOAD_SIZE_MB: int = 50
     MAX_PAGE_COUNT: int = 500
+
+    # S3-compatible storage (Cloudflare R2 / AWS S3)
+    # Set STORAGE_BACKEND=s3 to use S3 instead of local filesystem
+    STORAGE_BACKEND: str = "local"  # "local" | "s3"
+    S3_BUCKET: str = ""
+    S3_ENDPOINT: str = ""  # Required for R2 (e.g. https://<id>.r2.cloudflarestorage.com)
+    S3_ACCESS_KEY: str = ""
+    S3_SECRET_KEY: str = ""
+    S3_REGION: str = "auto"  # "auto" for R2, "us-east-1" for AWS
     # Store as comma-separated string in .env for compatibility with Pydantic Settings
     ALLOWED_EXTENSIONS: str = ".pdf"
 
