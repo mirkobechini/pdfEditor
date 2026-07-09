@@ -169,7 +169,6 @@ _nessuno_
 > - ✅ Dipendenze vulnerabili → PyJWT 2.13.0, python-multipart 0.0.31, pytest 9.0.3
 > - ✅ CodeQL path-injection → `_validate_uuid()` in storage.py
 > - ✅ GitHub: 0 Dependabot alert attivi, 0 Code Scanning alert attivi
-> - ✅ MCP Render configurato → `render-oss/render-mcp-server`
 
 > **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email delivery in pausa (attesa dominio custom per SendGrid sender verification).
 
