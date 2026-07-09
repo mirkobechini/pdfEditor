@@ -76,7 +76,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - Deploy cloud / PostgreSQL (Fase 2 — futuro)
 - Cloud sync bidirezionale (Fase 3 — futuro)
 - Mobile React Native (Fase 4 — futuro)
-- Integrazione pagamenti Stripe/Lemon Squeezy (futura)
+- Integrazione pagamenti Stripe (pianificata — vedi `.specs/plans/feature-stripe-mcp-subscriptions.md`)
 - SSO Apple / Samsung (previsto come bonus futuro)
 - react-native-web (valutabile, non deciso)
 - Annotazioni PDF (drawing, highlight, commenti — non menzionati)
@@ -137,9 +137,17 @@ _nessuno_
 
 ### Da risolvere/note ⏳
 
-> **Nota:** Tutte le feature prioritarie Fase 1 completate. **Prossimo passaggio operativo:** migrazione deploy Render da SQLite a PostgreSQL persistente.
+> **⚠️ Security audit 2026-07-09:** Individuate 24 issue non nell'ADR (vedi resoconto chat). Le più critiche: `SECRET_KEY` default permette JWT forgery, `DEBUG=True` default logga SQL in produzione, nessun rate limiting, file system effimero (PDF persi al restart), bug `undo()`/`redo()` corrompe `page_count`, `_read_file_with_password` non usato da merge/split/edit, nessun health check endpoint, test mancanti su protect/undo-redo/forgot-reset-password.
+
+> **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email delivery in pausa (attesa dominio custom per SendGrid sender verification).
 
 > **Nota tecnica:** Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile dal nostro codice. La libreria `httpx2` non esiste ancora, è una futura release di starlette. Ignorare.
+
+> **🔑 MCP Servers disponibili:**
+>
+> - **Stripe:** MCP server ufficiale a `https://mcp.stripe.com` (OAuth). Repo: `stripe/ai`. Per gestire abbonamenti e pagamenti.
+> - **Render:** MCP server ufficiale `render-oss/render-mcp-server` (Go, 144★). Per deploy e gestione servizi Render.
+> - **Railway:** MCP server ufficiale `railwayapp/railway-mcp-server` (JS, 192★, archived). Community: `jason-tan-swe/railway-mcp` (TS, 73★).
 
 ## Feature future pianificate
 
@@ -224,6 +232,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
    - Cookies marcati HttpOnly, Secure, SameSite=Strict
 
 **Cosa NON è implementato (futuro)**:
+
 - Encryption at rest per database (PostgreSQL può avere TDE/encryption plugin)
 - Rate limiting per login attempts (brute-force attack protection)
 - Two-factor authentication (2FA)
@@ -262,6 +271,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
    - Link a checkout Stripe/Lemon Squeezy con tier "Pro" (unlimited emails)
 
 **Implementazione**:
+
 - Vedi piano dettagliato: `.specs/plans/feature-sendgrid-rate-limit-handling.md`
 - Backend: `EmailService.send_password_reset_email()` torna `{"success": false, "error": "rate_limit_exceeded"}`
 - Frontend: Catch 429 status code e mostra alert
@@ -270,16 +280,16 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Recommendation Summary
 
-| Concern | Status | Strategy |
-|---------|--------|----------|
-| Data protection in DB | ✅ Protected | JWT + ORM + bcrypt + user_id filtering |
-| SQL injection | ✅ Protected | SQLAlchemy parameterized queries |
-| Password storage | ✅ Protected | bcrypt hashing, never plain text |
-| Cross-origin attacks | ✅ Protected | CORS + ALLOWED_ORIGINS |
-| Email rate limit | 🟡 Planned | Catch 429, disable button, admin override |
-| Encryption at rest | ❌ Future | PostgreSQL encryption plugin (Phase 3+) |
-| Rate limit login | ❌ Future | Add on Phase 2-3 (brute-force protection) |
-| 2FA support | ❌ Future | Low priority, evaluable in Phase 3+ |
+| Concern               | Status       | Strategy                                  |
+| --------------------- | ------------ | ----------------------------------------- |
+| Data protection in DB | ✅ Protected | JWT + ORM + bcrypt + user_id filtering    |
+| SQL injection         | ✅ Protected | SQLAlchemy parameterized queries          |
+| Password storage      | ✅ Protected | bcrypt hashing, never plain text          |
+| Cross-origin attacks  | ✅ Protected | CORS + ALLOWED_ORIGINS                    |
+| Email rate limit      | 🟡 Planned   | Catch 429, disable button, admin override |
+| Encryption at rest    | ❌ Future    | PostgreSQL encryption plugin (Phase 3+)   |
+| Rate limit login      | ❌ Future    | Add on Phase 2-3 (brute-force protection) |
+| 2FA support           | ❌ Future    | Low priority, evaluable in Phase 3+       |
 
 ### Feature minori da implementare (in ordine)
 
@@ -287,12 +297,15 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [ ] **Invio email reale reset password** — Sostituire il flusso attuale basato su log server con invio SMTP reale, mantenendo risposta neutra anti-enumerazione. Piano: `.specs/plans/feature-reset-password-email-delivery.md`. **[IN PROGRESS - PAUSED]** — SendGrid SMTP integrato, email_service.py implementato, endpoint forgot-password invia email con link reset. In pausa: Sender identity verification posticipata a quando dominio custom sarà disponibile.
 - [ ] **Conferma email account** — Introdurre verifica email post-registrazione con token a scadenza, endpoint di conferma/reinvio e blocco login finche non verificata. Piano: `.specs/plans/feature-email-confirmation.md`.
 - [ ] **Google OAuth account linking** — Permettere al login standard (email/password) di collegare in un secondo momento un account Google, consolidando in un unico User. Piano: `.specs/plans/feature-google-oauth-account-linking.md`.
-- [ ] **Navigazione landing page da app autenticata** — Aggiungere link/bottone per tornare alla landing page da `/app`. Piano: `.specs/plans/feature-authenticated-landing-navigation.md`.
 - [ ] **User dashboard (profilo utente)** — Pagina `/app/profile` per modificare nome, visualizzare abbonamento, gestire account collegati (Google OAuth), future impostazioni. Piano: `.specs/plans/feature-user-dashboard.md`.
 - [ ] **Admin: invia reset password via dashboard** — Permettere agli admin di inviare manualmente link reset password a un utente dalla dashboard admin. Piano: `.specs/plans/feature-admin-send-reset-email.md`.
 - [ ] **Miglioramenti UI/UX webapp** — Refactoring componenti, miglior contrast, responsive mobile, accessibility (a11y), animazioni smooth. Piano: `.specs/plans/feature-ui-ux-improvements.md`.
-- [ ] **PDF naming preservation** — Quando si salvano PDF modificati (merge/split/ecc.), il nome file segue il nome scelto dall'utente, non default ("merged_..."). Piano: `.specs/plans/feature-pdf-naming-preservation.md`.
+- [ ] **PDF naming preservation** — Quando si salvano PDF modificati (merge/split/ecc.), il nome file segue il nome scelto dall'utente, non default ("merged\_..."). Piano: `.specs/plans/feature-pdf-naming-preservation.md`.
 - [ ] **PDF compression** — Endpoint per comprimere PDF riducendo size mantenendo qualità visiva. Piano: `.specs/plans/feature-pdf-compression.md`.
 - [ ] **SendGrid rate limiting handling** — Rilevare limite email SendGrid raggiunto, disabilitare bottone "Forgot Password" o mostrare alert informativo. Piano: `.specs/plans/feature-sendgrid-rate-limit-handling.md`.
+- [ ] **Stripe MCP Server — Abbonamenti e pagamenti** — Integrare Stripe per abbonamenti (free → premium → lifetime) tramite MCP server ufficiale `https://mcp.stripe.com`. Checkout, webhook, customer portal, sync con license_tier. Piano: `.specs/plans/feature-stripe-mcp-subscriptions.md`.
+- [ ] **Landing page footer fix** — Rendere funzionali i link del footer (Features, How it Works, Privacy, Terms). Aggiungere link nascosto al sito personale futuro. Piano: `.specs/plans/feature-landing-footer-links.md`.
+- [ ] **License tier button skin** — Skin visiva per pulsanti toolbar: feature non disponibili appaiono grigie con badge "PRO" e tooltip "Upgrade to Premium". Si attiva quando `DISABLE_LICENSE_ENFORCEMENT=False`. Piano: `.specs/plans/feature-license-tier-button-skin.md`.
+- [ ] **Navigazione landing page da app autenticata** — Logo in AppLayout linka a `/landing`. LandingNavbar mostra "Vai all'App" per utenti autenticati. Piano: `.specs/plans/feature-authenticated-landing-navigation.md`. **[COMPLETATO]** — Implementato 2026-07-09.
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
