@@ -187,8 +187,9 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Feature minori da implementare (in ordine)
 
-- [ ] **Migrazione database Render SQLite → PostgreSQL** — Passare a DB persistente per evitare perdita dati utenti ai redeploy/restart. Piano: `.specs/plans/feature-render-postgres-migration.md`.
-- [ ] **Invio email reale reset password** — Sostituire il flusso attuale basato su log server con invio SMTP reale, mantenendo risposta neutra anti-enumerazione. Piano: `.specs/plans/feature-reset-password-email-delivery.md`.
+- [ ] **Migrazione database Render SQLite → PostgreSQL** — Passare a DB persistente per evitare perdita dati utenti ai redeploy/restart. Piano: `.specs/plans/feature-render-postgres-migration.md`. **[IN PROGRESS]** — PostgreSQL service creato su Render, backend connesso con psycopg v3, migrations applicate automaticamente.
+- [ ] **Invio email reale reset password** — Sostituire il flusso attuale basato su log server con invio SMTP reale, mantenendo risposta neutra anti-enumerazione. Piano: `.specs/plans/feature-reset-password-email-delivery.md`. **[COMPLETATO]** — SendGrid SMTP integrato, email_service.py implementato, endpoint forgot-password invia email con link reset.
 - [ ] **Conferma email account** — Introdurre verifica email post-registrazione con token a scadenza, endpoint di conferma/reinvio e blocco login finche non verificata. Piano: `.specs/plans/feature-email-confirmation.md`.
+- [ ] **Google OAuth account linking** — Permettere al login standard (email/password) di collegare in un secondo momento un account Google, consolidando in un unico User. Piano: `.specs/plans/feature-google-oauth-account-linking.md`.
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
