@@ -24,6 +24,13 @@ def test_secret_key(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def disable_rate_limiting(monkeypatch):
+    """Disable rate limiting during tests."""
+    from app.core.limiter import limiter
+    limiter.enabled = False
+
+
+@pytest.fixture(autouse=True)
 def per_test_db(tmp_path):
     """Each test gets its OWN SQLite file + overrides deps.get_db correctly."""
     global _engine

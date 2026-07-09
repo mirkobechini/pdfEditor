@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.schemas.auth import (
     ForgotPasswordRequest,
     GoogleLoginRequest,
@@ -25,8 +26,10 @@ def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("3/hour")
 def register(
     req: UserRegisterRequest,
+    request: Request,
     service: AuthService = Depends(get_auth_service),
 ) -> UserResponse:
     """Register a new user."""
@@ -46,8 +49,10 @@ def register(
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 def login(
     req: UserLoginRequest,
+    request: Request,
     service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
     """Login and get JWT token."""
@@ -81,8 +86,10 @@ def get_me(
 
 
 @router.post("/google", response_model=TokenResponse)
+@limiter.limit("5/minute")
 def google_login(
     req: GoogleLoginRequest,
+    request: Request,
     service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
     """Login with Google SSO using an id_token."""
@@ -98,8 +105,10 @@ def google_login(
 
 
 @router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit("3/hour")
 def forgot_password(
     req: ForgotPasswordRequest,
+    request: Request,
     service: AuthService = Depends(get_auth_service),
 ):
     """Request a password reset. Always returns 202 to avoid email enumeration."""
