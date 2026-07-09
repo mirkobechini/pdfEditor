@@ -149,7 +149,7 @@ _nessuno_
 > - ✅ CodeQL path-injection → `_validate_uuid()` in storage.py
 > - ✅ GitHub: 0 Dependabot alert attivi, 0 Code Scanning alert attivi
 >
-> **Rimanenti (Fase 2):** file system effimero (S3), `_password_cache` module-global, structured logging, test protect/undo-redo/forgot-reset, DB connection pooling.
+> **Rimanenti (Fase 2):** file system effimero (PDF su disco persi al restart — serve S3), `_password_cache` module-global (non scala con multi-worker, mai svuotata), structured logging (tutti i log usano `print()` invece di `logging`), test mancanti su protect/undo-redo/forgot-reset-password, DB connection pooling non configurato (default SQLAlchemy pool_size=5, no `pool_pre_ping`).
 
 > **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email delivery in pausa (attesa dominio custom per SendGrid sender verification).
 
