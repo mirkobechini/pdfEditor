@@ -137,7 +137,7 @@ _nessuno_
 
 ### Da risolvere/note ⏳
 
-> **⚠️ Security audit 2026-07-09:** Individuate 24 issue non nell'ADR (vedi resoconto chat). Le più critiche: `SECRET_KEY` default permette JWT forgery, `DEBUG=True` default logga SQL in produzione, nessun rate limiting, file system effimero (PDF persi al restart), bug `undo()`/`redo()` corrompe `page_count`, `_read_file_with_password` non usato da merge/split/edit, nessun health check endpoint, test mancanti su protect/undo-redo/forgot-reset-password.
+> **⚠️ Security audit 2026-07-09:** Risolte 8 issue critiche su 24. Rimanenti: file system effimero (PDF persi al restart — serve S3 in Fase 2), `_password_cache` module-global, no structured logging, test mancanti su protect/undo-redo/forgot-reset-password, no DB connection pooling config, `.env.example` ha email reale.
 
 > **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email delivery in pausa (attesa dominio custom per SendGrid sender verification).
 
@@ -280,16 +280,16 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Recommendation Summary
 
-| Concern               | Status       | Strategy                                  |
-| --------------------- | ------------ | ----------------------------------------- |
-| Data protection in DB | ✅ Protected | JWT + ORM + bcrypt + user_id filtering    |
-| SQL injection         | ✅ Protected | SQLAlchemy parameterized queries          |
-| Password storage      | ✅ Protected | bcrypt hashing, never plain text          |
-| Cross-origin attacks  | ✅ Protected | CORS + ALLOWED_ORIGINS                    |
-| Email rate limit      | 🟡 Planned   | Catch 429, disable button, admin override |
-| Encryption at rest    | ❌ Future    | PostgreSQL encryption plugin (Phase 3+)   |
-| Rate limit login      | ❌ Future    | Add on Phase 2-3 (brute-force protection) |
-| 2FA support           | ❌ Future    | Low priority, evaluable in Phase 3+       |
+| Concern               | Status       | Strategy                                                |
+| --------------------- | ------------ | ------------------------------------------------------- |
+| Data protection in DB | ✅ Protected | JWT + ORM + bcrypt + user_id filtering                  |
+| SQL injection         | ✅ Protected | SQLAlchemy parameterized queries                        |
+| Password storage      | ✅ Protected | bcrypt hashing, never plain text                        |
+| Cross-origin attacks  | ✅ Protected | CORS + ALLOWED_ORIGINS                                  |
+| Email rate limit      | 🟡 Planned   | Catch 429, disable button, admin override               |
+| Encryption at rest    | ❌ Future    | PostgreSQL encryption plugin (Phase 3+)                 |
+| Rate limit login      | ✅ Protected | slowapi: 5/min login, 3/h register, 3/h forgot-password |
+| 2FA support           | ❌ Future    | Low priority, evaluable in Phase 3+                     |
 
 ### Feature minori da implementare (in ordine)
 
