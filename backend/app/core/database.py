@@ -11,10 +11,14 @@ sqlite3.register_adapter(datetime.datetime, lambda dt: dt.isoformat())
 
 # Configure engine based on database type
 if "postgresql" in settings.DATABASE_URL:
-    # PostgreSQL with psycopg v3
+    # PostgreSQL with psycopg v3 — connection pooling for production
     engine = create_engine(
         settings.DATABASE_URL,
         echo=settings.DEBUG,
+        pool_size=10,
+        max_overflow=20,
+        pool_pre_ping=True,
+        pool_recycle=3600,
     )
 else:
     # SQLite (local development)
