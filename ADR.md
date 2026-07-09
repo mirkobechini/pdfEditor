@@ -127,7 +127,11 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - [x] **Coverage reporting frontend** — Aggiunto @vitest/coverage-v8, script npm run coverage, config in vitest.config.ts. (commit su dev, issue #144)
 - [x] **Disable license enforcement flag** — Aggiunto `DISABLE_LICENSE_ENFORCEMENT` in config.py/deps.py. Se True, tutte le feature disponibili per tutti. (PR #143, issue #146)
 
-> **ℹ️ Setup richiesto:** Creare un OAuth Client ID su [Google Cloud Console](https://console.cloud.google.com/apis/credentials) e impostarlo in `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local` e `GOOGLE_CLIENT_ID` in `backend/.env`.
+> **ℹ️ Setup Google OAuth:**
+>
+> 1. Creare un OAuth Client ID su [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+> 2. Impostare `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local` e `GOOGLE_CLIENT_ID` in `backend/.env`
+> 3. **Branding email:** dopo aver acquistato il dominio su Cloudflare, attivare **Cloudflare Email Routing** (gratuito) per creare `supporto@tuodominio.com` con inoltro automatico alla mail personale. Aggiornare il campo Branding su Google Cloud Console con `supporto@tuodominio.com` per email OAuth professionali.
 
 > **ℹ️ Reset password:** In sviluppo il token viene stampato nella console del backend. In produzione va configurato SMTP in `backend/.env`.
 
