@@ -33,3 +33,28 @@ def unlock_pdf(
         )
 
     return PdfResponse.model_validate(pdf)
+
+
+@router.post("/{pdf_id}/protect", response_model=PdfResponse)
+def protect_pdf(
+    pdf_id: str,
+    req: UnlockRequest,
+    current_user: User = Depends(get_current_user),
+    service: PdfService = Depends(get_pdf_service),
+) -> PdfResponse:
+    """Protect a PDF with password encryption."""
+    if not req.password.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password cannot be empty",
+        )
+
+    try:
+        pdf = service.protect(pdf_id, current_user.id, req.password)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    return PdfResponse.model_validate(pdf)
