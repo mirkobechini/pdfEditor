@@ -184,25 +184,25 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ### Issue note ma non bloccanti ⏳
 
-| #   | Issue                                                                               | Impatto           | Risoluzione prevista                               |
-| --- | ----------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------- |
-| 1   | **File system effimero** — PDF/snapshot su disco persi al restart Render            | Alto (produzione) | S3/R2 in Fase 2                                    |
-| 2   | **`_password_cache` module-global** — non scala con multi-worker, mai svuotata      | Medio             | Redis o DB in Fase 2                               |
-| 3   | **Structured logging assente** — tutti i log usano `print()`                        | Medio             | Sostituire con `logging` modulo                    |
-| 4   | **DB connection pooling** — default pool_size=5, no `pool_pre_ping`                 | Medio             | Configurare in `database.py`                       |
-| 5   | **Test mancanti** — protect, undo/redo, forgot/reset-password                       | Medio             | Prossima issue                                     |
-| 6   | **`.env.example` ha email reale** — `SUPER_ADMIN_EMAIL=mirkobechini@gmail.com`      | Basso             | Sostituire con placeholder                         |
-| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                       | Basso             | Valutare in Fase 2                                 |
-| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF                  | Basso             | Valutare in Fase 2                                 |
-| 9   | **No password strength validation** — password di 1 char accettata                  | Basso             | Aggiungere validazione                             |
-| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato           | Basso             | Sanitizzare filename                               |
-| 11  | **`_password_cache` mai pulita** — cresce all'infinito                              | Basso             | Aggiungere TTL o cleanup                           |
-| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill                   | Basso             | Aggiungere signal handler                          |
-| 13  | **No request ID middleware** — impossibile tracciare richieste nei log              | Basso             | Aggiungere middleware                              |
-| 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end              | Basso             | Valutare Playwright in futuro                      |
-| 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra      | Alto (UX)         | ✅ Risolto in PR #190                              |
-| 16  | **PDF non appare in sidebar dopo salvataggio** — richiede F5 per vedere nuovo       | Alto (UX)         | ✅ Risolto in PR #192                              |
-| 17  | **Metadata dialog campi vuoti** — i campi non sono pre-popolati con valori correnti | Medio (UX)        | `.specs/plans/bug-metadata-fields-pre-populate.md` |
+| #   | Issue                                                                               | Impatto           | Risoluzione prevista            |
+| --- | ----------------------------------------------------------------------------------- | ----------------- | ------------------------------- |
+| 1   | **File system effimero** — PDF/snapshot su disco persi al restart Render            | Alto (produzione) | S3/R2 in Fase 2                 |
+| 2   | **`_password_cache` module-global** — non scala con multi-worker, mai svuotata      | Medio             | Redis o DB in Fase 2            |
+| 3   | **Structured logging assente** — tutti i log usano `print()`                        | Medio             | Sostituire con `logging` modulo |
+| 4   | **DB connection pooling** — default pool_size=5, no `pool_pre_ping`                 | Medio             | Configurare in `database.py`    |
+| 5   | **Test mancanti** — protect, undo/redo, forgot/reset-password                       | Medio             | Prossima issue                  |
+| 6   | **`.env.example` ha email reale** — `SUPER_ADMIN_EMAIL=mirkobechini@gmail.com`      | Basso             | Sostituire con placeholder      |
+| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                       | Basso             | Valutare in Fase 2              |
+| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF                  | Basso             | Valutare in Fase 2              |
+| 9   | **No password strength validation** — password di 1 char accettata                  | Basso             | Aggiungere validazione          |
+| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato           | Basso             | Sanitizzare filename            |
+| 11  | **`_password_cache` mai pulita** — cresce all'infinito                              | Basso             | Aggiungere TTL o cleanup        |
+| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill                   | Basso             | Aggiungere signal handler       |
+| 13  | **No request ID middleware** — impossibile tracciare richieste nei log              | Basso             | Aggiungere middleware           |
+| 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end              | Basso             | Valutare Playwright in futuro   |
+| 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra      | Alto (UX)         | ✅ Risolto in PR #190           |
+| 16  | **PDF non appare in sidebar dopo salvataggio** — richiede F5 per vedere nuovo       | Alto (UX)         | ✅ Risolto in PR #192           |
+| 17  | **Metadata dialog campi vuoti** — i campi non sono pre-popolati con valori correnti | Medio (UX)        | ✅ Risolto in PR #194           |
 
 ### Da risolvere/note ⏳
 

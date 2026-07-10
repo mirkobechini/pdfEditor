@@ -1,6 +1,6 @@
 # Bug Fix Plan: Metadata Fields Pre-Population
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-10, PR #194)
 **Priority:** ALTA (UX Bug)
 **Severity:** Medium
 **Complexity:** Low
