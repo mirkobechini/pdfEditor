@@ -180,7 +180,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ### In corso 🔄
 
-_nessuno_
+- [ ] **Login infinite loading bug** — Login/register screen sembra carichi indefinitamente; richiede pressione di bottone aggiuntivo (es. link landing page) per sbloccarsi. Causa: probabilmente state non sincronizzato con API o race condition. Issue #189 (da creare). Blocker: impatta UX critica del login.
 
 ### Issue note ma non bloccanti ⏳
 
