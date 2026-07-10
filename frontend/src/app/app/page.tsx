@@ -304,6 +304,22 @@ export default function EditorPage() {
                 open={metadataOpen}
                 onClose={() => setMetadataOpen(false)}
                 pdfId={selectedId}
+                onSuccess={(doc) => {
+                    setSidebarRefreshKey((prev) => prev + 1);
+                    setSelectedId(doc.id);
+                    setSelectedName(doc.original_filename);
+                    if (doc.is_password_protected) {
+                        setRequiresPassword(true);
+                        setFileUrl(null);
+                        return;
+                    }
+                    setRequiresPassword(false);
+                    void api.downloadPdf(doc.id).then((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        if (fileUrl) URL.revokeObjectURL(fileUrl);
+                        setFileUrl(url);
+                    });
+                }}
             />
             <ReplaceTextDialog
                 open={replaceTextOpen}
