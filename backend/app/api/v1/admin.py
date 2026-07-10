@@ -10,6 +10,7 @@ from app.schemas.auth import LicenseFeatureResponse, UpdateAdminRequest, UpdateL
 router = APIRouter(tags=["admin"])
 
 VALID_TIERS = {"free", "pro", "enterprise"}
+ADMIN_ASSIGNABLE_TIERS = {"free", "lifetime"}
 
 
 class UserListResponse(BaseModel):
@@ -48,26 +49,46 @@ def update_user_license(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> UserResponse:
-    """Update a user's license tier (admin only)."""
+    """Update a user's license tier (admin only).
+
+    Restrictions:
+    - Admin can only assign 'lifetime' or 'free' tiers.
+    - Cannot modify Stripe-paid tiers ('pro', 'enterprise').
+    """
     if not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required",
         )
 
-    if req.license_tier not in VALID_TIERS:
+    if req.license_tier not in ADMIN_ASSIGNABLE_TIERS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid tier '{req.license_tier}'. Valid: {', '.join(sorted(VALID_TIERS))}",
+            detail=f"Admin can only assign {', '.join(sorted(ADMIN_ASSIGNABLE_TIERS))} tiers. Got '{req.license_tier}'.",
         )
 
     repo = UserRepository(db)
-    user = repo.update_license_tier(user_id, req.license_tier)
-    if not user:
+    target = repo.get_by_id(user_id)
+    if not target:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
+
+    # Prevent modifying Stripe-paid tiers
+    if target.license_tier_source == "stripe":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Cannot modify Stripe-paid license tier '{target.license_tier}'. "
+                   "User must cancel Stripe subscription first.",
+        )
+
+    user = repo.update_license_tier(user_id, req.license_tier)
+    # Update source to admin since admin assigned it
+    if user:
+        user.license_tier_source = "admin"
+        db.flush()
+        db.refresh(user)
 
     return UserResponse.model_validate(user)
 
