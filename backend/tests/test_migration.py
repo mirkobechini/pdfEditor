@@ -46,14 +46,14 @@ class TestMigrationIntegrity:
 
     def test_upgrade_head_succeeds(self):
         """Running alembic upgrade head from scratch must succeed."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             db_path = os.path.join(tmp, "test.db")
             rc, out, err = _run_migration(db_path, "upgrade head")
             assert rc == 0, f"alembic upgrade head failed:\n{err}\n{out}"
 
     def test_upgrade_head_creates_all_tables(self):
         """After upgrade head, all expected tables must exist."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
@@ -69,7 +69,7 @@ class TestMigrationIntegrity:
 
     def test_upgrade_columns_correct(self):
         """Verify that users table has the expected columns after full upgrade."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
@@ -89,18 +89,18 @@ class TestMigrationIntegrity:
 
     def test_downgrade_single_and_upgrade_again(self):
         """Downgrade one step then upgrade again must work."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
-            # Verify latest column (reset_token) exists on users
+            # Verify latest column (google_id) exists on users
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
             user_cols_before = {c["name"] for c in inspector.get_columns("users")}
-            assert "reset_token" in user_cols_before
+            assert "google_id" in user_cols_before
             _cleanup_engine(engine)
 
-            # Downgrade one step (remove reset_token)
+            # Downgrade one step (remove google_id)
             rc, out, err = _run_migration(db_path, "downgrade -1")
             assert rc == 0, f"alembic downgrade -1 failed:\n{err}\n{out}"
 
@@ -109,7 +109,7 @@ class TestMigrationIntegrity:
             inspector = inspect(engine)
             user_cols_after = {c["name"] for c in inspector.get_columns("users")}
             assert "users" in inspector.get_table_names()
-            assert "reset_token" not in user_cols_after
+            assert "google_id" not in user_cols_after
             _cleanup_engine(engine)
 
             # Upgrade again
@@ -124,7 +124,7 @@ class TestMigrationIntegrity:
 
     def test_downgrade_all_the_way(self):
         """Downgrade to base then upgrade again must work."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 

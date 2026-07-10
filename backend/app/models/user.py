@@ -1,13 +1,17 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, String
+from sqlalchemy import Boolean, Column, DateTime, Index, String
 
 from app.core.database import Base
 
 
 class User(Base):
     __tablename__ = "users"
+
+    __table_args__ = (
+        Index("ix_users_google_id", "google_id", unique=True),
+    )
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(255), unique=True, nullable=False, index=True)
@@ -22,7 +26,7 @@ class User(Base):
         nullable=False,
         comment="admin=assigned by superadmin, stripe=paid via Stripe, free=default",
     )
-    google_id = Column(String(255), nullable=True, unique=True)
+    google_id = Column(String(255), nullable=True)
     reset_token = Column(String(255), nullable=True, index=True)
     reset_token_expires = Column(DateTime, nullable=True)
 
