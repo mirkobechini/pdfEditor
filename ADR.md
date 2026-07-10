@@ -184,24 +184,25 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ### Issue note ma non bloccanti ⏳
 
-| #   | Issue                                                                          | Impatto           | Risoluzione prevista            |
-| --- | ------------------------------------------------------------------------------ | ----------------- | ------------------------------- |
-| 1   | **File system effimero** — PDF/snapshot su disco persi al restart Render       | Alto (produzione) | S3/R2 in Fase 2                 |
-| 2   | **`_password_cache` module-global** — non scala con multi-worker, mai svuotata | Medio             | Redis o DB in Fase 2            |
-| 3   | **Structured logging assente** — tutti i log usano `print()`                   | Medio             | Sostituire con `logging` modulo |
-| 4   | **DB connection pooling** — default pool_size=5, no `pool_pre_ping`            | Medio             | Configurare in `database.py`    |
-| 5   | **Test mancanti** — protect, undo/redo, forgot/reset-password                  | Medio             | Prossima issue                  |
-| 6   | **`.env.example` ha email reale** — `SUPER_ADMIN_EMAIL=mirkobechini@gmail.com` | Basso             | Sostituire con placeholder      |
-| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                  | Basso             | Valutare in Fase 2              |
-| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF             | Basso             | Valutare in Fase 2              |
-| 9   | **No password strength validation** — password di 1 char accettata             | Basso             | Aggiungere validazione          |
-| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato      | Basso             | Sanitizzare filename            |
-| 11  | **`_password_cache` mai pulita** — cresce all'infinito                         | Basso             | Aggiungere TTL o cleanup        |
-| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill              | Basso             | Aggiungere signal handler       |
-| 13  | **No request ID middleware** — impossibile tracciare richieste nei log         | Basso             | Aggiungere middleware           |
-| 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end         | Basso             | Valutare Playwright in futuro   |
-| 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra | Alto (UX)         | ✅ Risolto in PR #190           |
-| 16  | **PDF non appare in sidebar dopo salvataggio** — richiede F5 per vedere nuovo  | Alto (UX)         | ✅ Risolto in PR #192           |
+| #   | Issue                                                                               | Impatto           | Risoluzione prevista                               |
+| --- | ----------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------- |
+| 1   | **File system effimero** — PDF/snapshot su disco persi al restart Render            | Alto (produzione) | S3/R2 in Fase 2                                    |
+| 2   | **`_password_cache` module-global** — non scala con multi-worker, mai svuotata      | Medio             | Redis o DB in Fase 2                               |
+| 3   | **Structured logging assente** — tutti i log usano `print()`                        | Medio             | Sostituire con `logging` modulo                    |
+| 4   | **DB connection pooling** — default pool_size=5, no `pool_pre_ping`                 | Medio             | Configurare in `database.py`                       |
+| 5   | **Test mancanti** — protect, undo/redo, forgot/reset-password                       | Medio             | Prossima issue                                     |
+| 6   | **`.env.example` ha email reale** — `SUPER_ADMIN_EMAIL=mirkobechini@gmail.com`      | Basso             | Sostituire con placeholder                         |
+| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                       | Basso             | Valutare in Fase 2                                 |
+| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF                  | Basso             | Valutare in Fase 2                                 |
+| 9   | **No password strength validation** — password di 1 char accettata                  | Basso             | Aggiungere validazione                             |
+| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato           | Basso             | Sanitizzare filename                               |
+| 11  | **`_password_cache` mai pulita** — cresce all'infinito                              | Basso             | Aggiungere TTL o cleanup                           |
+| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill                   | Basso             | Aggiungere signal handler                          |
+| 13  | **No request ID middleware** — impossibile tracciare richieste nei log              | Basso             | Aggiungere middleware                              |
+| 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end              | Basso             | Valutare Playwright in futuro                      |
+| 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra      | Alto (UX)         | ✅ Risolto in PR #190                              |
+| 16  | **PDF non appare in sidebar dopo salvataggio** — richiede F5 per vedere nuovo       | Alto (UX)         | ✅ Risolto in PR #192                              |
+| 17  | **Metadata dialog campi vuoti** — i campi non sono pre-popolati con valori correnti | Medio (UX)        | `.specs/plans/bug-metadata-fields-pre-populate.md` |
 
 ### Da risolvere/note ⏳
 
@@ -388,5 +389,6 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [ ] **Landing page footer fix** — Rendere funzionali i link del footer (Features, How it Works, Privacy, Terms). Aggiungere link nascosto al sito personale futuro. Piano: `.specs/plans/feature-landing-footer-links.md`.
 - [ ] **License tier button skin** — Skin visiva per pulsanti toolbar: feature non disponibili appaiono grigie con badge "PRO" e tooltip "Upgrade to Premium". Si attiva quando `DISABLE_LICENSE_ENFORCEMENT=False`. Piano: `.specs/plans/feature-license-tier-button-skin.md`.
 - [ ] **Navigazione landing page da app autenticata** — Logo in AppLayout linka a `/landing`. LandingNavbar mostra "Vai all'App" per utenti autenticati. Piano: `.specs/plans/feature-authenticated-landing-navigation.md`. **[COMPLETATO]** — Implementato 2026-07-09.
+- [ ] **Inline text editor (word-like)** — Sostituire il dialog "Find and Replace" con un editor di testo inline WYSIWYG: click-to-edit direttamente sul PDF viewer, modifica multipla, salvataggio batch. Complessità ALTA. Piano: `.specs/plans/feature-inline-text-editor.md`.
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
