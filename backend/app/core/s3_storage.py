@@ -5,6 +5,7 @@ from pathlib import Path
 
 import boto3
 from botocore.config import Config as BotoConfig
+from botocore.exceptions import ClientError
 
 from app.core.config import settings
 
@@ -54,8 +55,10 @@ def s3_download(file_uuid: str) -> bytes | None:
             Key=_s3_key(file_uuid),
         )
         return response["Body"].read()
-    except client.exceptions.NoSuchKey:
-        return None
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "NoSuchKey":
+            return None
+        raise
 
 
 def s3_delete(file_uuid: str) -> bool:
