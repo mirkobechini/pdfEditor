@@ -61,6 +61,12 @@ class UserRepository:
             .first()
         )
 
+    def update(self, user: User) -> User:
+        """Flush and refresh a modified user."""
+        self.db.flush()
+        self.db.refresh(user)
+        return user
+
     def update_password(self, user_id: str, hashed_password: str) -> User | None:
         user = self.get_by_id(user_id)
         if not user:

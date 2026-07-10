@@ -10,6 +10,9 @@ interface User {
   is_active: boolean;
   is_admin: boolean;
   license_tier: string;
+  license_tier_source: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextValue {
@@ -20,6 +23,7 @@ interface AuthContextValue {
   googleLogin: (idToken: string) => Promise<void>;
   logout: () => void;
   token: string | null;
+  setUser: (user: User | null) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -99,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout, token }}>
+    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout, token, setUser }}>
       {children}
     </AuthContext.Provider>
   );

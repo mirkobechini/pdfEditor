@@ -13,9 +13,11 @@ from app.schemas.auth import (
     UserLoginRequest,
     UserRegisterRequest,
     UserResponse,
+    UserUpdateRequest,
 )
 from app.services.auth_service import AuthService
 from app.services.email_service import EmailService
+from app.repositories.user_repo import UserRepository
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()
@@ -81,6 +83,30 @@ def get_me(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
         )
+
+    return UserResponse.model_validate(user)
+
+
+@router.put("/me", response_model=UserResponse)
+def update_me(
+    req: UserUpdateRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db),
+) -> UserResponse:
+    """Update current user profile."""
+    service = AuthService(db)
+    try:
+        user = service.get_current_user(credentials.credentials)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+
+    if req.full_name is not None:
+        user.full_name = req.full_name
+        repo = UserRepository(db)
+        repo.update(user)
 
     return UserResponse.model_validate(user)
 

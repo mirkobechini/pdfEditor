@@ -356,5 +356,24 @@
       },
       "copyright": "Tutti i diritti riservati."
     }
+  },
+  "profile": {
+    "title": "Impostazioni Profilo",
+    "loading": "Caricamento...",
+    "personalInfo": "Informazioni Personali",
+    "email": "Email",
+    "fullName": "Nome Completo",
+    "save": "Salva",
+    "saving": "Salvataggio...",
+    "saved": "Profilo aggiornato!",
+    "error": "Errore nel salvataggio",
+    "accountInfo": "Informazioni Account",
+    "licenseTier": "Tipo Licenza",
+    "licenseSource": "Origine Licenza",
+    "joinedDate": "Data di Iscrizione",
+    "status": "Stato Account",
+    "active": "Attivo",
+    "inactive": "Inattivo",
+    "backToEditor": "Torna all'Editor"
   }
 }
