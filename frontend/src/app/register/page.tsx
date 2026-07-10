@@ -37,7 +37,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(email.trim(), password, fullName.trim());
-      window.location.href = "/";
+      window.location.href = "/app";
     } catch (err) {
       setError(t("registerFailed") + ": " + (err instanceof Error ? err.message : err));
     } finally {

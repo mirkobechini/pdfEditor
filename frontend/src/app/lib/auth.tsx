@@ -53,27 +53,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await api.login(email, password);
-    api.setToken(res.access_token);
-    localStorage.setItem(TOKEN_KEY, res.access_token);
-    setTokenState(res.access_token);
-    const u = await api.getMe();
-    setUser(u);
+    setLoading(true);
+    try {
+      const res = await api.login(email, password);
+      api.setToken(res.access_token);
+      localStorage.setItem(TOKEN_KEY, res.access_token);
+      setTokenState(res.access_token);
+      const u = await api.getMe();
+      setUser(u);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const register = useCallback(async (email: string, password: string, fullName: string) => {
-    await api.register(email, password, fullName);
-    // Auto-login after register
-    await login(email, password);
+    setLoading(true);
+    try {
+      await api.register(email, password, fullName);
+      // Auto-login after register
+      await login(email, password);
+    } finally {
+      setLoading(false);
+    }
   }, [login]);
 
   const googleLogin = useCallback(async (idToken: string) => {
-    const res = await api.googleLogin(idToken);
-    api.setToken(res.access_token);
-    localStorage.setItem(TOKEN_KEY, res.access_token);
-    setTokenState(res.access_token);
-    const u = await api.getMe();
-    setUser(u);
+    setLoading(true);
+    try {
+      const res = await api.googleLogin(idToken);
+      api.setToken(res.access_token);
+      localStorage.setItem(TOKEN_KEY, res.access_token);
+      setTokenState(res.access_token);
+      const u = await api.getMe();
+      setUser(u);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const logout = useCallback(() => {
