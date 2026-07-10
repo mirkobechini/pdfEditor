@@ -356,5 +356,24 @@
       },
       "copyright": "All rights reserved."
     }
+  },
+  "profile": {
+    "title": "Profile Settings",
+    "loading": "Loading...",
+    "personalInfo": "Personal Information",
+    "email": "Email",
+    "fullName": "Full Name",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Profile updated!",
+    "error": "Failed to save profile",
+    "accountInfo": "Account Information",
+    "licenseTier": "License Tier",
+    "licenseSource": "License Source",
+    "joinedDate": "Joined Date",
+    "status": "Account Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "backToEditor": "Back to Editor"
   }
 }

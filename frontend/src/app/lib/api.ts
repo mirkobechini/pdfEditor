@@ -335,9 +335,22 @@ class ApiClient {
     is_active: boolean;
     is_admin: boolean;
     license_tier: string;
+    license_tier_source: string;
+    created_at: string;
+    updated_at: string;
   }> {
     const res = await fetch(`${this.baseUrl}/auth/me`, {
       headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async updateProfile(data: { full_name: string }): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/auth/me`, {
+      method: "PUT",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();

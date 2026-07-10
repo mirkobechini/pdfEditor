@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { useLocaleControl } from "../lib/i18n";
+import { useAuth } from "../lib/auth";
 
 export function ToggleDarkMode() {
   const t = useTranslations("darkMode");
@@ -63,8 +64,18 @@ export function LanguageSelector() {
 }
 
 export default function HeaderControls() {
+  const { user } = useAuth();
   return (
     <div className="flex items-center gap-3">
+      {user && (
+        <a
+          href="/app/profile"
+          className="text-sm text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+          title={user.email}
+        >
+          {user.full_name} ⚙️
+        </a>
+      )}
       <ToggleDarkMode />
       <LanguageSelector />
     </div>
