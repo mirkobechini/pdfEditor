@@ -1,6 +1,6 @@
 # Bug Fix Plan: PDF Not Appearing in Sidebar After Save
 
-**Status:** Planning  
+**Status:** ✅ Completata (2026-07-10, PR #192)  
 **Priority:** ALTA (UX Issue)  
 **Severity:** High (Data appears to be lost)  
 **Complexity:** Medium  
