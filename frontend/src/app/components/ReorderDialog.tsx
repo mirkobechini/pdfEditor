@@ -12,6 +12,7 @@ interface ReorderDialogProps {
   selectedId: string | null;
   selectedName: string;
   totalPages: number;
+  onSuccess?: () => void;
 }
 
 interface PageThumbnail {
@@ -126,6 +127,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
       const result = await api.reorderPages(selectedId, order);
       const blob = await api.downloadPdf(result.id);
       downloadBlob(blob, `reordered_${selectedName}`);
+      onSuccess?.();
       onClose();
     } catch (err) {
       setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
