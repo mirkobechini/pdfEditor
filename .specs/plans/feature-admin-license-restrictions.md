@@ -1,6 +1,6 @@
 # Feature Plan: Admin License Assignment Restrictions
 
-**Status:** Planning  
+**Status:** ✅ Completata (2026-07-10, PR #196)  
 **Priority:** HIGH (Security/Business Logic)  
 **Severity:** Medium (Data integrity)  
 **Complexity:** Low  
