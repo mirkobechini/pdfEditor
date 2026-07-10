@@ -180,29 +180,31 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ### In corso 🔄
 
-- [ ] **Login infinite loading bug** — Login/register screen sembra carichi indefinitamente; richiede pressione di bottone aggiuntivo (es. link landing page) per sbloccarsi. Causa: probabilmente state non sincronizzato con API o race condition. Issue #189 (da creare). Blocker: impatta UX critica del login.
+- [ ] **Backend 100% coverage tests** — `.specs/plans/chore-backend-100-percent-coverage.md`
+- [ ] **Fix 3 test falliti** — `.specs/plans/chore-fix-failing-tests.md`
+- [ ] **Security fixes** — graceful shutdown, password strength, header injection — `.specs/plans/chore-security-improvements.md`
 
 ### Issue note ma non bloccanti ⏳
 
-| #   | Issue                                                                               | Impatto           | Risoluzione prevista            |
-| --- | ----------------------------------------------------------------------------------- | ----------------- | ------------------------------- |
-| 1   | **File system effimero** — PDF/snapshot su disco persi al restart Render            | Alto (produzione) | S3/R2 in Fase 2                 |
-| 2   | **`_password_cache` module-global** — non scala con multi-worker, mai svuotata      | Medio             | Redis o DB in Fase 2            |
-| 3   | **Structured logging assente** — tutti i log usano `print()`                        | Medio             | Sostituire con `logging` modulo |
-| 4   | **DB connection pooling** — default pool_size=5, no `pool_pre_ping`                 | Medio             | Configurare in `database.py`    |
-| 5   | **Test mancanti** — protect, undo/redo, forgot/reset-password                       | Medio             | Prossima issue                  |
-| 6   | **`.env.example` ha email reale** — `SUPER_ADMIN_EMAIL=mirkobechini@gmail.com`      | Basso             | Sostituire con placeholder      |
-| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                       | Basso             | Valutare in Fase 2              |
-| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF                  | Basso             | Valutare in Fase 2              |
-| 9   | **No password strength validation** — password di 1 char accettata                  | Basso             | Aggiungere validazione          |
-| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato           | Basso             | Sanitizzare filename            |
-| 11  | **`_password_cache` mai pulita** — cresce all'infinito                              | Basso             | Aggiungere TTL o cleanup        |
-| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill                   | Basso             | Aggiungere signal handler       |
-| 13  | **No request ID middleware** — impossibile tracciare richieste nei log              | Basso             | Aggiungere middleware           |
-| 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end              | Basso             | Valutare Playwright in futuro   |
-| 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra      | Alto (UX)         | ✅ Risolto in PR #190           |
-| 16  | **PDF non appare in sidebar dopo salvataggio** — richiede F5 per vedere nuovo       | Alto (UX)         | ✅ Risolto in PR #192           |
-| 17  | **Metadata dialog campi vuoti** — i campi non sono pre-popolati con valori correnti | Medio (UX)        | ✅ Risolto in PR #194           |
+| #   | Issue                                                                               | Impatto         | Risoluzione prevista                                 |
+| --- | ----------------------------------------------------------------------------------- | --------------- | ---------------------------------------------------- |
+| 1   | **File system effimero** — PDF/snapshot su disco persi al restart Render            | ✅ Risolto (S3) | S3/R2 via `STORAGE_BACKEND=s3`                       |
+| 2   | **`_password_cache` module-global** — non scala con multi-worker, mai svuotata      | Medio           | Redis o DB in Fase 2                                 |
+| 3   | **Structured logging assente** — tutti i log usano `print()`                        | ✅ Risolto      | `logging` modulo                                     |
+| 4   | **DB connection pooling** — default pool_size=5, no `pool_pre_ping`                 | ✅ Risolto      | pool_size=10, pool_pre_ping                          |
+| 5   | **Test mancanti** — protect, undo/redo, forgot/reset-password                       | 🟡 In corso     | `.specs/plans/chore-backend-100-percent-coverage.md` |
+| 6   | **`.env.example` ha email reale** — `SUPER_ADMIN_EMAIL=mirkobechini@gmail.com`      | 🟡 In corso     | Sostituire con placeholder                           |
+| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                       | Basso           | Fase 2                                               |
+| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF                  | Basso           | Fase 2                                               |
+| 9   | **No password strength validation** — password di 1 char accettata                  | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`        |
+| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato           | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`        |
+| 11  | **`_password_cache` mai pulita** — cresce all'infinito                              | ✅ Risolto      | TTL 30 min                                           |
+| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill                   | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`        |
+| 13  | **No request ID middleware** — impossibile tracciare richieste nei log              | ✅ Risolto      | Middleware aggiunto                                  |
+| 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end              | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`        |
+| 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra      | ✅ Risolto      | PR #190                                              |
+| 16  | **PDF non appare in sidebar dopo salvataggio** — richiede F5 per vedere nuovo       | ✅ Risolto      | PR #192                                              |
+| 17  | **Metadata dialog campi vuoti** — i campi non sono pre-popolati con valori correnti | ✅ Risolto      | PR #194                                              |
 
 ### Da risolvere/note ⏳
 
@@ -390,5 +392,8 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [x] **Admin license tier restrictions** — Il superadmin può assegnare/rimuovere solo il tier "lifetime" (enterprise). Non può modificare tier "pro" o "premium" (pagati via Stripe). **[COMPLETATO]** — Implementato 2026-07-10, PR #196.
 - [x] **Navigazione landing page da app autenticata** — Logo in AppLayout linka a `/landing`. LandingNavbar mostra "Vai all'App" per utenti autenticati. Piano: `.specs/plans/feature-authenticated-landing-navigation.md`. **[COMPLETATO]** — Implementato 2026-07-09.
 - [ ] **Inline text editor (word-like)** — Sostituire il dialog "Find and Replace" con un editor di testo inline WYSIWYG: click-to-edit direttamente sul PDF viewer, modifica multipla, salvataggio batch. Complessità ALTA. Piano: `.specs/plans/feature-inline-text-editor.md`.
+- [ ] **Backend 100% coverage** — Portare copertura test backend da 83% a 100%. Piano: `.specs/plans/chore-backend-100-percent-coverage.md`.
+- [ ] **Fix 3 test falliti** — google_oauth (2) + migration PermissionError (1). Piano: `.specs/plans/chore-fix-failing-tests.md`.
+- [ ] **Security improvements** — Graceful shutdown, password strength, header injection, E2E tests. Piano: `.specs/plans/chore-security-improvements.md`.
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
