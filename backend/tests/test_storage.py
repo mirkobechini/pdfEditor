@@ -108,6 +108,8 @@ class TestSnapshotOperations:
         """Multiple snapshots should be ordered by time."""
         pdf_id = str(uuid.uuid4())
         save_snapshot(pdf_id, b"first")
+        import time
+        time.sleep(0.05)
         save_snapshot(pdf_id, b"second")
         content = get_latest_snapshot(pdf_id)
         assert content == b"second"
