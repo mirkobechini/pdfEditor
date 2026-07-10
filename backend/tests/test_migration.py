@@ -14,6 +14,8 @@ def _run_migration(db_path: str, direction: str):
 
     env = os.environ.copy()
     env["DATABASE_URL"] = f"sqlite:///{db_path}"
+    # Use nullpool to avoid connection lingering on Windows
+    env["SQLALCHEMY_POOL_CLASS"] = "NullPool"
 
     cmd = [sys.executable, "-m", "alembic"] + direction.split()
     if direction == "current":

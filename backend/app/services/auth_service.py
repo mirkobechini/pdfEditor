@@ -125,8 +125,16 @@ class AuthService:
                 email=email,
                 hashed_password=hashed,
                 full_name=name,
+                google_id=payload.get("sub"),
             )
             user = self.repo.create(user)
+        else:
+            # Update google_id if not already linked
+            if not user.google_id:
+                user.google_id = payload.get("sub")
+                self.repo.update(user)
+
+        # Generate JWT token for the user
 
         if not user.is_active:
             raise ValueError("Account is inactive")

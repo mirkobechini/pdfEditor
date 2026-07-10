@@ -22,6 +22,7 @@ class User(Base):
         nullable=False,
         comment="admin=assigned by superadmin, stripe=paid via Stripe, free=default",
     )
+    google_id = Column(String(255), nullable=True, unique=True)
     reset_token = Column(String(255), nullable=True, index=True)
     reset_token_expires = Column(DateTime, nullable=True)
 
