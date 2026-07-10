@@ -282,6 +282,7 @@ export default function EditorPage() {
                 selectedId={selectedId}
                 selectedName={selectedName}
                 totalPages={totalPages}
+                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
             />
             <ReorderDialog
                 open={reorderOpen}
@@ -289,6 +290,7 @@ export default function EditorPage() {
                 selectedId={selectedId}
                 selectedName={selectedName}
                 totalPages={totalPages}
+                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
             />
             <RemoveDialog
                 open={removeOpen}
@@ -296,6 +298,7 @@ export default function EditorPage() {
                 selectedId={selectedId}
                 selectedName={selectedName}
                 totalPages={totalPages}
+                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
             />
             <MetadataDialog
                 open={metadataOpen}

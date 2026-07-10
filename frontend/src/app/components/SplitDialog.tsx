@@ -12,6 +12,7 @@ interface SplitDialogProps {
   selectedId: string | null;
   selectedName: string;
   totalPages: number;
+  onSuccess?: () => void;
 }
 
 interface PageThumbnail {
@@ -142,6 +143,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
         const blob = await api.downloadPdf(docId);
         downloadBlob(blob, `split_${selectedName}`);
       }
+      onSuccess?.();
       onClose();
     } catch (err) {
       setError(t("failed") + ": " + (err instanceof Error ? err.message : err));

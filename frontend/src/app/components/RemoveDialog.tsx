@@ -12,6 +12,7 @@ interface RemoveDialogProps {
   selectedId: string | null;
   selectedName: string;
   totalPages: number;
+  onSuccess?: () => void;
 }
 
 interface PageThumbnail {
@@ -123,6 +124,7 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
       const result = await api.removePages(selectedId, pageNumbers);
       const blob = await api.downloadPdf(result.id);
       downloadBlob(blob, `trimmed_${selectedName}`);
+      onSuccess?.();
       onClose();
     } catch (err) {
       setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
