@@ -53,6 +53,12 @@ class UpdateAdminRequest(BaseModel):
     is_admin: bool
 
 
+class UserUpdateRequest(BaseModel):
+    """Schema for updating user profile."""
+
+    full_name: str | None = None
+
+
 class LicenseFeatureResponse(BaseModel):
     """Schema for a single license feature."""
 
