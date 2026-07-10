@@ -200,7 +200,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill              | Basso             | Aggiungere signal handler                          |
 | 13  | **No request ID middleware** — impossibile tracciare richieste nei log         | Basso             | Aggiungere middleware                              |
 | 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end         | Basso             | Valutare Playwright in futuro                      |
-| 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra | Alto (UX)         | `.specs/plans/bug-login-infinite-loading-fix.md`   |
+| 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra | Alto (UX)         | ✅ Risolto in PR #190                              |
 | 16  | **PDF non appare in sidebar dopo salvataggio** — richiede F5 per vedere nuovo  | Alto (UX)         | `.specs/plans/bug-pdf-not-appearing-in-sidebar.md` |
 
 ### Da risolvere/note ⏳

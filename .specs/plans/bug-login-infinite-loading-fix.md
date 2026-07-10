@@ -1,6 +1,6 @@
 # Bug Fix Plan: Login Infinite Loading
 
-**Status:** Planning  
+**Status:** ✅ Completata (2026-07-10, PR #190)  
 **Priority:** ALTA (Blocker)  
 **Severity:** Critical (UX)  
 **Complexity:** Medium  
