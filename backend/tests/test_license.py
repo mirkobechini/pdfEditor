@@ -104,10 +104,10 @@ class TestAdmin:
         response = client.put(
             f"/admin/users/{target_id}/license",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"license_tier": "pro"},
+            json={"license_tier": "lifetime"},
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json()["license_tier"] == "pro"
+        assert response.json()["license_tier"] == "lifetime"
 
     def test_admin_update_license_invalid_tier(self, client, db_engine):
         """Should reject invalid tier."""
@@ -122,9 +122,10 @@ class TestAdmin:
         response = client.put(
             f"/admin/users/{target_id}/license",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"license_tier": "ultra"},
+            json={"license_tier": "pro"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Admin can only assign" in response.json()["detail"]
 
     def test_admin_update_is_admin(self, client, db_engine):
         """Should promote a user to admin."""

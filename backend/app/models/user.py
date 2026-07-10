@@ -16,6 +16,12 @@ class User(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
     license_tier = Column(String(20), default="free", nullable=False)
+    license_tier_source = Column(
+        String(20),
+        default="admin",
+        nullable=False,
+        comment="admin=assigned by superadmin, stripe=paid via Stripe, free=default",
+    )
     reset_token = Column(String(255), nullable=True, index=True)
     reset_token_expires = Column(DateTime, nullable=True)
 
