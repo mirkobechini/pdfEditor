@@ -4,7 +4,7 @@ import fitz
 from fastapi import status
 
 
-def _make_protected_pdf(password: str = "test123") -> bytes:
+def _make_protected_pdf(password: str = "Test1234") -> bytes:
     """Generate a minimal password-protected PDF using PyMuPDF."""
     doc = fitz.open()
     doc.insert_page(-1, width=612, height=792)
@@ -35,7 +35,7 @@ class TestProtect:
         response = client.post(
             f"/pdfs/{pdf_id}/protect",
             headers=free_headers,
-            json={"password": "newpassword123"},
+            json={"password": "NewPassword123"},
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -51,7 +51,7 @@ class TestProtect:
         response = client.post(
             f"/pdfs/{pdf_id}/protect",
             headers=free_headers,
-            json={"password": "newpass123"},
+            json={"password": "NewPass123"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -72,7 +72,7 @@ class TestProtect:
         response = client.post(
             f"/pdfs/{pdf_id}/protect",
             headers=free_headers,
-            json={"password": "newpass123"},
+            json={"password": "NewPass123"},
         )
         assert response.status_code == status.HTTP_200_OK
 
@@ -91,7 +91,7 @@ class TestProtect:
         """Protect without token should return 401."""
         response = client.post(
             "/pdfs/fake-id/protect",
-            json={"password": "test123"},
+            json={"password": "Test1234"},
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -100,6 +100,6 @@ class TestProtect:
         response = client.post(
             "/pdfs/nonexistent-id/protect",
             headers=free_headers,
-            json={"password": "test123"},
+            json={"password": "Test1234"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST

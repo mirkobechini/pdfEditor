@@ -1,0 +1,131 @@
+> """S3-compatible storage backend."""
+  
+> import uuid
+> from pathlib import Path
+  
+> import boto3
+> from botocore.config import Config as BotoConfig
+> from botocore.exceptions import ClientError
+  
+> from app.core.config import settings
+  
+  
+> def _get_s3_client():
+>     """Create and return a boto3 S3 client."""
+>     return boto3.client(
+>         "s3",
+>         endpoint_url=settings.S3_ENDPOINT or None,
+>         aws_access_key_id=settings.S3_ACCESS_KEY,
+>         aws_secret_access_key=settings.S3_SECRET_KEY,
+>         region_name=settings.S3_REGION,
+>         config=BotoConfig(signature_version="s3v4"),
+>     )
+  
+  
+> def _s3_key(file_uuid: str) -> str:
+>     """Return the S3 object key for a given file UUID."""
+>     return f"pdfs/{file_uuid}.pdf"
+  
+  
+> def _s3_snapshot_key(pdf_id: str, snapshot_id: str) -> str:
+>     """Return the S3 object key for a snapshot."""
+>     safe_id = uuid.UUID(pdf_id)
+>     return f"snapshots/{safe_id}/{snapshot_id}.pdf"
+  
+  
+> def s3_upload(content: bytes) -> str:
+>     """Upload a PDF to S3 and return the storage key (UUID)."""
+>     client = _get_s3_client()
+>     file_uuid = str(uuid.uuid4())
+>     client.put_object(
+>         Bucket=settings.S3_BUCKET,
+>         Key=_s3_key(file_uuid),
+>         Body=content,
+>         ContentType="application/pdf",
+>     )
+>     return file_uuid
+  
+  
+> def s3_download(file_uuid: str) -> bytes | None:
+>     """Download a PDF from S3 by UUID. Returns None if not found."""
+>     client = _get_s3_client()
+>     try:
+>         response = client.get_object(
+>             Bucket=settings.S3_BUCKET,
+>             Key=_s3_key(file_uuid),
+>         )
+>         return response["Body"].read()
+>     except ClientError as e:
+>         if e.response["Error"]["Code"] == "NoSuchKey":
+>             return None
+!         raise
+  
+  
+> def s3_delete(file_uuid: str) -> bool:
+>     """Delete a PDF from S3 by UUID. Returns True if deleted."""
+>     client = _get_s3_client()
+>     try:
+>         client.delete_object(
+>             Bucket=settings.S3_BUCKET,
+>             Key=_s3_key(file_uuid),
+>         )
+>         return True
+>     except Exception:
+>         return False
+  
+  
+> def s3_snapshot_save(pdf_id: str, content: bytes) -> None:
+>     """Save a snapshot to S3."""
+>     client = _get_s3_client()
+>     snapshot_id = str(uuid.uuid4().time_low)
+>     client.put_object(
+>         Bucket=settings.S3_BUCKET,
+>         Key=_s3_snapshot_key(pdf_id, snapshot_id),
+>         Body=content,
+>         ContentType="application/pdf",
+>     )
+  
+      # Prune old snapshots
+>     prefix = f"snapshots/{uuid.UUID(pdf_id)}/"
+>     objects = client.list_objects_v2(Bucket=settings.S3_BUCKET, Prefix=prefix)
+>     if objects.get("Contents"):
+>         sorted_objects = sorted(objects["Contents"], key=lambda o: o["LastModified"])
+>         while len(sorted_objects) > settings.MAX_SNAPSHOTS:
+!             client.delete_object(Bucket=settings.S3_BUCKET, Key=sorted_objects[0]["Key"])
+!             sorted_objects = sorted_objects[1:]
+  
+  
+> def s3_snapshot_latest(pdf_id: str) -> bytes | None:
+>     """Return the most recent snapshot content, or None."""
+>     client = _get_s3_client()
+>     prefix = f"snapshots/{uuid.UUID(pdf_id)}/"
+>     objects = client.list_objects_v2(Bucket=settings.S3_BUCKET, Prefix=prefix)
+>     if not objects.get("Contents"):
+>         return None
+>     latest = max(objects["Contents"], key=lambda o: o["LastModified"])
+>     response = client.get_object(Bucket=settings.S3_BUCKET, Key=latest["Key"])
+>     return response["Body"].read()
+  
+  
+> def s3_snapshot_pop(pdf_id: str) -> bytes | None:
+>     """Return and delete the most recent snapshot."""
+>     client = _get_s3_client()
+>     prefix = f"snapshots/{uuid.UUID(pdf_id)}/"
+>     objects = client.list_objects_v2(Bucket=settings.S3_BUCKET, Prefix=prefix)
+>     if not objects.get("Contents"):
+>         return None
+>     latest = max(objects["Contents"], key=lambda o: o["LastModified"])
+>     response = client.get_object(Bucket=settings.S3_BUCKET, Key=latest["Key"])
+>     content = response["Body"].read()
+>     client.delete_object(Bucket=settings.S3_BUCKET, Key=latest["Key"])
+>     return content
+  
+  
+> def s3_snapshot_clear(pdf_id: str) -> None:
+>     """Delete all snapshots for a given PDF ID."""
+>     client = _get_s3_client()
+>     prefix = f"snapshots/{uuid.UUID(pdf_id)}/"
+>     objects = client.list_objects_v2(Bucket=settings.S3_BUCKET, Prefix=prefix)
+>     if objects.get("Contents"):
+>         for obj in objects["Contents"]:
+>             client.delete_object(Bucket=settings.S3_BUCKET, Key=obj["Key"])

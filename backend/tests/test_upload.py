@@ -117,11 +117,11 @@ class TestGetPdf:
         # Register a second user and try to access the PDF
         client.post(
             "/auth/register",
-            json={"email": "other@test.com", "password": "pass123", "full_name": "Other"},
+            json={"email": "other@test.com", "password": "TestPass123", "full_name": "Other"},
         )
         resp = client.post(
             "/auth/login",
-            json={"email": "other@test.com", "password": "pass123"},
+            json={"email": "other@test.com", "password": "TestPass123"},
         )
         other_headers = {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
@@ -162,11 +162,11 @@ class TestListPdfs:
         # Second user
         client.post(
             "/auth/register",
-            json={"email": "other@test.com", "password": "pass123", "full_name": "Other"},
+            json={"email": "other@test.com", "password": "TestPass123", "full_name": "Other"},
         )
         resp = client.post(
             "/auth/login",
-            json={"email": "other@test.com", "password": "pass123"},
+            json={"email": "other@test.com", "password": "TestPass123"},
         )
         other_headers = {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
@@ -237,11 +237,11 @@ class TestDelete:
 
         client.post(
             "/auth/register",
-            json={"email": "other@test.com", "password": "pass123", "full_name": "Other"},
+            json={"email": "other@test.com", "password": "TestPass123", "full_name": "Other"},
         )
         resp = client.post(
             "/auth/login",
-            json={"email": "other@test.com", "password": "pass123"},
+            json={"email": "other@test.com", "password": "TestPass123"},
         )
         other_headers = {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
