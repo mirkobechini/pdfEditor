@@ -69,16 +69,8 @@ class ApiClient {
     }
   }
 
-  setToken(token: string | null) {
-    this.token = token;
-  }
-
   private getHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {};
-    if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`;
-    }
-    return headers;
+    return {};
   }
 
   // PDF endpoints
@@ -388,6 +380,11 @@ class ApiClient {
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
+  }
+
+  async logout(): Promise<void> {
+    // POST to logout endpoint clears the httpOnly cookie
+    await fetch(`${this.baseUrl}/auth/logout`, { method: "POST" });
   }
 
   // Undo / Redo
