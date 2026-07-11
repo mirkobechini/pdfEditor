@@ -192,8 +192,8 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | 4   | **DB connection pooling** — default pool_size=5, no `pool_pre_ping`                 | ✅ Risolto      | pool_size=10, pool_pre_ping                                                      |
 | 5   | **Test mancanti** — protect, undo/redo, forgot/reset-password                       | ✅ Risolto      | 225 test, 0 failures (PR #202)                                                   |
 | 6   | **`.env.example` ha email reale** — `SUPER_ADMIN_EMAIL=mirkobechini@gmail.com`      | ✅ Risolto      | Sostituito con placeholder                                                       |
-| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                       | Basso           | Fase 2                                                                           |
-| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF                  | Basso           | Fase 2                                                                           |
+| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                       | 🟡 In corso     | `.specs/plans/feature-jwt-httponly-cookie.md` (Fase 2)                           |
+| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF                  | 🟡 In corso     | `.specs/plans/feature-csrf-protection.md` (Fase 2)                               |
 | 9   | **No password strength validation** — password di 1 char accettata                  | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
 | 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato           | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
 | 11  | **`_password_cache` mai pulita** — cresce all'infinito                              | ✅ Risolto      | TTL 30 min                                                                       |
