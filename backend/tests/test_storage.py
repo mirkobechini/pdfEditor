@@ -121,6 +121,8 @@ class TestSnapshotOperations:
         from app.core.config import settings
         max_snaps = settings.MAX_SNAPSHOTS
         for i in range(max_snaps + 5):
+            import time
+            time.sleep(0.05)
             save_snapshot(pdf_id, f"snap {i}".encode())
         content = get_latest_snapshot(pdf_id)
         assert content is not None
