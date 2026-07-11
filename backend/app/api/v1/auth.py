@@ -203,6 +203,14 @@ def google_login(
     return response
 
 
+@router.post("/logout")
+def logout():
+    """Logout — clear the access_token cookie."""
+    response = JSONResponse(content={"message": "Logged out"})
+    _clear_token_cookie(response)
+    return response
+
+
 @router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
 @limiter.limit("3/hour")
 def forgot_password(
