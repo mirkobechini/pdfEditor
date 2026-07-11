@@ -12,7 +12,7 @@ class TestRegister:
         """Should register a new user."""
         response = client.post(
             self.URL,
-            json={"email": "test@example.com", "password": "password123", "full_name": "Test User"},
+            json={"email": "test@example.com", "password": "Password123", "full_name": "Test User"},
         )
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
@@ -26,11 +26,11 @@ class TestRegister:
         """Should reject duplicate email."""
         client.post(
             self.URL,
-            json={"email": "dup@example.com", "password": "password123", "full_name": "User"},
+            json={"email": "dup@example.com", "password": "Password123", "full_name": "User"},
         )
         response = client.post(
             self.URL,
-            json={"email": "dup@example.com", "password": "other123", "full_name": "User2"},
+            json={"email": "dup@example.com", "password": "Other123", "full_name": "User2"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "already registered" in response.json()["detail"]
@@ -39,7 +39,7 @@ class TestRegister:
         """Should reject invalid email."""
         response = client.post(
             self.URL,
-            json={"email": "notanemail", "password": "password123", "full_name": "User"},
+            json={"email": "notanemail", "password": "Password123", "full_name": "User"},
         )
         assert response.status_code == 422
 
@@ -53,12 +53,12 @@ class TestLogin:
         """Should login and return JWT token."""
         client.post(
             "/auth/register",
-            json={"email": "login@example.com", "password": "password123", "full_name": "Login User"},
+            json={"email": "login@example.com", "password": "Password123", "full_name": "Login User"},
         )
 
         response = client.post(
             self.URL,
-            json={"email": "login@example.com", "password": "password123"},
+            json={"email": "login@example.com", "password": "Password123"},
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -69,7 +69,7 @@ class TestLogin:
         """Should reject wrong password."""
         client.post(
             "/auth/register",
-            json={"email": "wrong@example.com", "password": "correct", "full_name": "User"},
+            json={"email": "wrong@example.com", "password": "Correct1", "full_name": "User"},
         )
 
         response = client.post(
@@ -82,7 +82,7 @@ class TestLogin:
         """Should reject non-existent user."""
         response = client.post(
             self.URL,
-            json={"email": "nobody@example.com", "password": "password123"},
+            json={"email": "nobody@example.com", "password": "Password123"},
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -94,11 +94,11 @@ class TestMe:
         """Register a user and return the JWT token."""
         client.post(
             "/auth/register",
-            json={"email": "me@example.com", "password": "password123", "full_name": "Me User"},
+            json={"email": "me@example.com", "password": "Password123", "full_name": "Me User"},
         )
         resp = client.post(
             "/auth/login",
-            json={"email": "me@example.com", "password": "password123"},
+            json={"email": "me@example.com", "password": "Password123"},
         )
         return resp.json()["access_token"]
 
@@ -172,7 +172,7 @@ class TestPasswordReset:
         """Helper: register a user."""
         client.post(
             "/auth/register",
-            json={"email": email, "password": "oldpass123", "full_name": "Reset User"},
+            json={"email": email, "password": "OldPass123", "full_name": "Reset User"},
         )
 
     def test_forgot_password_returns_202(self, client):
@@ -195,7 +195,7 @@ class TestPasswordReset:
 
         self._register_user(client)
 
-        login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "oldpass123"})
+        login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "OldPass123"})
         assert login_resp.status_code == status.HTTP_200_OK
 
         with db_engine.connect() as conn:
@@ -205,19 +205,19 @@ class TestPasswordReset:
             )
             conn.commit()
 
-        response = client.post(self.URL_RESET, json={"token": "test-valid-token", "new_password": "newpass456"})
+        response = client.post(self.URL_RESET, json={"token": "test-valid-token", "new_password": "NewPass456"})
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["email"] == "reset@test.com"
 
-        login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "newpass456"})
+        login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "NewPass456"})
         assert login_resp.status_code == status.HTTP_200_OK
 
-        login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "oldpass123"})
+        login_resp = client.post("/auth/login", json={"email": "reset@test.com", "password": "OldPass123"})
         assert login_resp.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_reset_password_invalid_token(self, client):
         """Should reject invalid token."""
-        response = client.post(self.URL_RESET, json={"token": "invalid-token", "new_password": "newpass456"})
+        response = client.post(self.URL_RESET, json={"token": "invalid-token", "new_password": "NewPass456"})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "Invalid" in response.json()["detail"]
 
@@ -235,6 +235,6 @@ class TestPasswordReset:
             )
             conn.commit()
 
-        response = client.post(self.URL_RESET, json={"token": "expired-token", "new_password": "newpass456"})
+        response = client.post(self.URL_RESET, json={"token": "expired-token", "new_password": "NewPass456"})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "expired" in response.json()["detail"]

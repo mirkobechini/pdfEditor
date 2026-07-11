@@ -158,11 +158,11 @@ def free_token(client):
     """Register + login a free-tier user, return the JWT token string."""
     client.post(
         "/auth/register",
-        json={"email": "free@test.com", "password": "pass123", "full_name": "Free"},
+        json={"email": "free@test.com", "password": "TestPass123", "full_name": "Free"},
     )
     resp = client.post(
         "/auth/login",
-        json={"email": "free@test.com", "password": "pass123"},
+        json={"email": "free@test.com", "password": "TestPass123"},
     )
     return resp.json()["access_token"]
 
@@ -178,11 +178,11 @@ def pro_token(client, db_engine):
     """Register + login a pro-tier user, promote to pro, return the JWT."""
     client.post(
         "/auth/register",
-        json={"email": "pro@test.com", "password": "pro123", "full_name": "Pro"},
+        json={"email": "pro@test.com", "password": "ProPass123", "full_name": "Pro"},
     )
     resp = client.post(
         "/auth/login",
-        json={"email": "pro@test.com", "password": "pro123"},
+        json={"email": "pro@test.com", "password": "ProPass123"},
     )
     token = resp.json()["access_token"]
 

@@ -3,7 +3,7 @@
 from fastapi import status
 
 
-def _login(client, email="bug@test.com", password="pass123"):
+def _login(client, email="bug@test.com", password="TestPass123"):
     """Register and login a test user."""
     client.post(
         "/auth/register",
@@ -17,9 +17,9 @@ def _admin_login(client, db_engine):
     """Create admin and login."""
     client.post(
         "/auth/register",
-        json={"email": "admin@bugs.com", "password": "admin123", "full_name": "Bug Admin"},
+        json={"email": "admin@bugs.com", "password": "Admin1234", "full_name": "Bug Admin"},
     )
-    resp = client.post("/auth/login", json={"email": "admin@bugs.com", "password": "admin123"})
+    resp = client.post("/auth/login", json={"email": "admin@bugs.com", "password": "Admin1234"})
     token = resp.json()["access_token"]
 
     # Promote to admin
@@ -29,7 +29,7 @@ def _admin_login(client, db_engine):
         conn.execute(text("UPDATE users SET is_admin = 1 WHERE id = :uid"), {"uid": me.json()["id"]})
         conn.commit()
 
-    return client.post("/auth/login", json={"email": "admin@bugs.com", "password": "admin123"}).json()["access_token"]
+    return client.post("/auth/login", json={"email": "admin@bugs.com", "password": "Admin1234"}).json()["access_token"]
 
 
 class TestCreateBug:

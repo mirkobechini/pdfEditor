@@ -1,0 +1,36 @@
+> from sqlalchemy.orm import Session
+  
+> from app.models.bug_report import BugReport
+  
+  
+> class BugReportRepository:
+>     """Repository for BugReport database operations."""
+  
+>     def __init__(self, db: Session):
+>         self.db = db
+  
+>     def create(self, report: BugReport) -> BugReport:
+>         self.db.add(report)
+>         self.db.flush()
+>         self.db.refresh(report)
+>         return report
+  
+>     def get_by_id(self, report_id: str) -> BugReport | None:
+>         return self.db.query(BugReport).filter(BugReport.id == report_id).first()
+  
+>     def get_all(
+>         self, status: str | None = None, skip: int = 0, limit: int = 100
+>     ) -> list[BugReport]:
+>         query = self.db.query(BugReport).order_by(BugReport.created_at.desc())
+>         if status:
+!             query = query.filter(BugReport.status == status)
+>         return query.offset(skip).limit(limit).all()
+  
+>     def update_status(self, report_id: str, new_status: str) -> BugReport | None:
+>         report = self.get_by_id(report_id)
+>         if not report:
+!             return None
+>         report.status = new_status
+>         self.db.flush()
+>         self.db.refresh(report)
+>         return report

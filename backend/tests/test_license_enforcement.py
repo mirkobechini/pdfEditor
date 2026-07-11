@@ -15,7 +15,7 @@ def _enable_enforcement():
         yield
 
 
-def _register_and_login(client, email="user@test.com", password="pass123"):
+def _register_and_login(client, email="user@test.com", password="TestPass123"):
     """Helper: register and login a normal user."""
     client.post(
         "/auth/register",
@@ -32,12 +32,12 @@ def _create_admin(client, db_engine):
     """Helper: register a user and promote to admin via the test DB."""
     client.post(
         "/auth/register",
-        json={"email": "admin@test.com", "password": "admin123", "full_name": "Admin"},
+        json={"email": "admin@test.com", "password": "Admin1234", "full_name": "Admin"},
     )
 
     resp = client.post(
         "/auth/login",
-        json={"email": "admin@test.com", "password": "admin123"},
+        json={"email": "admin@test.com", "password": "Admin1234"},
     )
     token = resp.json()["access_token"]
 
@@ -60,12 +60,12 @@ def _create_pro_user(client, db_engine):
     """Helper: register a user and promote to pro tier via the test DB."""
     client.post(
         "/auth/register",
-        json={"email": "pro@test.com", "password": "pro123", "full_name": "Pro User"},
+        json={"email": "pro@test.com", "password": "ProPass123", "full_name": "Pro User"},
     )
 
     resp = client.post(
         "/auth/login",
-        json={"email": "pro@test.com", "password": "pro123"},
+        json={"email": "pro@test.com", "password": "ProPass123"},
     )
     token = resp.json()["access_token"]
 
