@@ -128,6 +128,40 @@ class TestMe:
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_update_profile_success(self, client):
+        """PUT /auth/me should update full_name."""
+        token = self.register_and_login(client)
+
+        response = client.put(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"full_name": "Updated Name"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["full_name"] == "Updated Name"
+        assert data["email"] == "me@example.com"
+
+    def test_update_profile_no_auth(self, client):
+        """PUT /auth/me without token should return 401."""
+        response = client.put(
+            "/auth/me",
+            json={"full_name": "Hacker"},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_update_profile_empty_name(self, client):
+        """PUT /auth/me with null name should not change it."""
+        token = self.register_and_login(client)
+
+        response = client.put(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"full_name": None},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["full_name"] == "Me User"
+
 class TestPasswordReset:
     """Test suite for password reset endpoints."""
 

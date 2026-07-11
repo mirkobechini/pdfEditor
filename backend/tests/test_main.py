@@ -1,7 +1,11 @@
-"""Tests for the health check endpoint and middleware."""
+"""Tests for main.py — lifespan, seed functions, and middleware."""
 
+from unittest.mock import patch
+
+import pytest
 from fastapi.testclient import TestClient
-from app.main import app
+
+from app.main import _seed_license_features, _seed_super_admin, app
 
 client = TestClient(app)
 
@@ -40,3 +44,34 @@ class TestHealthCheck:
         """Health endpoint should be accessible without authentication."""
         response = client.get("/health")
         assert response.status_code == 200
+
+
+class TestSeedFunctions:
+    """Test startup seed functions directly."""
+
+    def test_seed_license_features_runs(self, monkeypatch):
+        """_seed_license_features should run without error."""
+        from unittest.mock import MagicMock
+        mock_session = MagicMock()
+        mock_execute = MagicMock()
+        mock_execute.scalar.return_value = 0  # No features seeded yet
+        mock_session.execute.return_value = mock_execute
+        mock_session.add.return_value = None
+
+        monkeypatch.setattr("app.core.database.SessionLocal", lambda: mock_session)
+
+        # Should not raise
+        _seed_license_features()
+
+    def test_seed_super_admin_runs(self, monkeypatch):
+        """_seed_super_admin should run without error."""
+        from unittest.mock import MagicMock
+        mock_session = MagicMock()
+        mock_query = MagicMock()
+        mock_query.filter.return_value.first.return_value = None  # User not found
+        mock_session.query.return_value = mock_query
+
+        monkeypatch.setattr("app.core.database.SessionLocal", lambda: mock_session)
+
+        # Should not raise
+        _seed_super_admin()

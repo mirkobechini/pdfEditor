@@ -24,6 +24,12 @@ def test_secret_key(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def force_local_storage(monkeypatch):
+    """Force local storage backend for all tests (ignore .env S3 settings)."""
+    monkeypatch.setattr("app.core.config.settings.STORAGE_BACKEND", "local")
+
+
+@pytest.fixture(autouse=True)
 def disable_rate_limiting(monkeypatch):
     """Disable rate limiting during tests."""
     from app.core.limiter import limiter
