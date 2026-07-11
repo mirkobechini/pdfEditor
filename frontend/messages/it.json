@@ -211,7 +211,10 @@
     "tierFree": "Free",
     "tierPro": "Pro",
     "tierEnterprise": "Enterprise",
-    "tierAdmin": "Admin"
+    "tierAdmin": "Admin",
+    "platform": "Piattaforma",
+    "appVersion": "Versione App",
+    "osInfo": "Info OS"
   },
   "deleteModal": {
     "title": "Elimina PDF",

@@ -373,6 +373,9 @@ function BugReportsTable() {
                         <tr className="border-b dark:border-gray-700 text-left">
                             <th className="p-2 font-medium">{t("titleField")}</th>
                             <th className="p-2 font-medium">{t("userId")}</th>
+                            <th className="p-2 font-medium">{t("platform")}</th>
+                            <th className="p-2 font-medium">{t("appVersion")}</th>
+                            <th className="p-2 font-medium">{t("osInfo")}</th>
                             <th className="p-2 font-medium">{t("status")}</th>
                             <th className="p-2 font-medium">{t("createdAt")}</th>
                             <th className="p-2 font-medium">{t("description")}</th>
@@ -389,6 +392,9 @@ function BugReportsTable() {
                                 <td className="p-2 text-gray-500 text-xs">
                                     {b.user_id.slice(0, 8)}...
                                 </td>
+                                <td className="p-2 text-xs">{b.platform || "-"}</td>
+                                <td className="p-2 text-xs">{b.app_version || "-"}</td>
+                                <td className="p-2 text-xs">{b.os_info || "-"}</td>
                                 <td className="p-2">
                                     <span
                                         className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${b.status === "open"
