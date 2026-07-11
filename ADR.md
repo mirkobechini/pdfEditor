@@ -197,7 +197,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | 9   | **No password strength validation** — password di 1 char accettata                  | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
 | 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato           | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
 | 11  | **`_password_cache` mai pulita** — cresce all'infinito                              | ✅ Risolto      | TTL 30 min                                                                       |
-| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill                   | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
+| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill                   | ✅ Risolto      | PR #212                                                                          |
 | 13  | **No request ID middleware** — impossibile tracciare richieste nei log              | ✅ Risolto      | Middleware aggiunto                                                              |
 | 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end              | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
 | 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra      | ✅ Risolto      | PR #190                                                                          |
