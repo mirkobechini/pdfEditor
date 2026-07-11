@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 import time
+from typing import Any
 
 from app.core.config import settings
 from app.core.storage import (
@@ -22,6 +23,20 @@ from app.schemas.pdf import PdfListResponse, PdfResponse
 # Each entry is (password, timestamp); auto-expires after 30 minutes
 _password_cache: dict[str, tuple[str, float]] = {}
 _PASSWORD_CACHE_TTL = 1800  # 30 minutes in seconds
+
+# Track open PyMuPDF handles for graceful shutdown
+_open_pdf_handles: list[Any] = []
+
+
+def _cleanup_all_pdf_handles() -> None:
+    """Close all open PyMuPDF document handles (called on shutdown)."""
+    global _open_pdf_handles
+    for handle in _open_pdf_handles:
+        try:
+            handle.close()
+        except Exception:
+            pass
+    _open_pdf_handles.clear()
 
 
 def _get_cached_password(pdf_id: str) -> str | None:

@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 import logging
+import signal
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -37,6 +38,16 @@ async def lifespan(app: FastAPI):
         # Seed super admin if not exists
         _seed_super_admin()
     yield
+    # Shutdown: cleanup resources
+    logger.info("Shutting down — cleaning up resources...")
+    _cleanup_on_shutdown()
+
+
+def _cleanup_on_shutdown():
+    """Cleanup resources on shutdown — close PyMuPDF handles, release locks."""
+    from app.services.pdf_service import _cleanup_all_pdf_handles
+    _cleanup_all_pdf_handles()
+    logger.info("Cleanup complete.")
 
 
 def _seed_license_features():
