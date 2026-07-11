@@ -19,6 +19,8 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
   const [dragOver, setDragOver] = React.useState(false);
   const [renameId, setRenameId] = React.useState<string | null>(null);
   const [renameValue, setRenameValue] = React.useState("");
+  const [uploadProgress, setUploadProgress] = React.useState<number | null>(null);
+  const [uploading, setUploading] = React.useState(false);
 
   // Load files on mount and when refreshKey changes
   React.useEffect(() => {
@@ -42,13 +44,20 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
       alert(t("uploadOnlyPdf"));
       return;
     }
+    setUploading(true);
+    setUploadProgress(0);
     try {
-      const doc = await api.uploadPdf(file);
+      const doc = await api.uploadPdfWithProgress(file, (progress) => {
+        setUploadProgress(progress);
+      });
       setFiles((prev) => [doc, ...prev]);
       onUpload(doc);
       onSelect(doc.id);
     } catch (err) {
       alert(t("uploadFailed") + ": " + err);
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
     }
   }
 
@@ -85,6 +94,21 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
         />
         <div className="text-2xl mb-1">📄</div>
         <div className="text-gray-500 dark:text-gray-400">{t("dropHere")}</div>
+
+        {/* Upload progress bar */}
+        {uploading && uploadProgress !== null && (
+          <div className="mt-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+              <div
+                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {uploadProgress}%
+            </p>
+          </div>
+        )}
       </div>
 
       {/* File list */}
