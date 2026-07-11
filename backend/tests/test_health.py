@@ -24,3 +24,19 @@ class TestHealthCheck:
         """If client sends X-Request-ID, it should be reflected back."""
         response = client.get("/health", headers={"X-Request-ID": "my-test-id"})
         assert response.headers.get("x-request-id") == "my-test-id"
+
+    def test_cors_headers_with_origin(self):
+        """CORS headers should be present when Origin header is sent."""
+        response = client.get("/health", headers={"Origin": "http://localhost:3000"})
+        assert "access-control-allow-origin" in response.headers
+
+    def test_validation_error_handler(self):
+        """Validation errors should return flattened message."""
+        response = client.post("/auth/register", json={"email": "invalid"})
+        assert response.status_code == 422
+        assert "detail" in response.json()
+
+    def test_health_returns_200_without_auth(self):
+        """Health endpoint should be accessible without authentication."""
+        response = client.get("/health")
+        assert response.status_code == 200
