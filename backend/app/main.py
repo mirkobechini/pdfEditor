@@ -22,6 +22,7 @@ from app.api.v1.unlock import router as unlock_router
 from app.api.v1.upload import router as pdf_router
 from app.api.v1.undo_redo import router as undo_redo_router
 from app.core.config import settings
+from app.core.csrf import CSRFMiddleware
 from app.core.database import Base, engine
 from app.core.limiter import limiter
 
@@ -185,6 +186,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# CSRF protection — must be after CORS middleware
+app.add_middleware(CSRFMiddleware)
 
 # Routers
 app.include_router(auth_router)
