@@ -94,6 +94,40 @@ class ApiClient {
     return res.json();
   }
 
+  async uploadPdfWithProgress(
+    file: File,
+    onProgress?: (progress: number) => void,
+  ): Promise<PdfDocument> {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${this.baseUrl}/pdfs/upload`);
+
+      if (this.token) {
+        xhr.setRequestHeader("Authorization", `Bearer ${this.token}`);
+      }
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          reject(new Error(xhr.statusText));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error("Network error"));
+      xhr.send(formData);
+    });
+  }
+
   async listPdfs(skip = 0, limit = 100): Promise<PdfListResponse> {
     const res = await fetch(
       `${this.baseUrl}/pdfs?skip=${skip}&limit=${limit}`,
