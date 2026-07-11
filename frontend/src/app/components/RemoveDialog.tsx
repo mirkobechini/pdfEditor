@@ -20,7 +20,7 @@ interface PageThumbnail {
   dataUrl: string;
 }
 
-export default function RemoveDialog({ open, onClose, selectedId, selectedName, totalPages }: RemoveDialogProps) {
+export default function RemoveDialog({ open, onClose, selectedId, selectedName, totalPages, onSuccess }: RemoveDialogProps) {
   const t = useTranslations("removeDialog");
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [toRemove, setToRemove] = React.useState<Set<number>>(new Set());

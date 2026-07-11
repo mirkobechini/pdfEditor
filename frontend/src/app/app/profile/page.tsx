@@ -2,9 +2,9 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { useAuth } from "../lib/auth";
-import { api } from "../lib/api";
-import AppLayout from "../components/AppLayout";
+import { useAuth } from "../../lib/auth";
+import { api } from "../../lib/api";
+import AppLayout from "../../components/AppLayout";
 
 export default function ProfilePage() {
     const t = useTranslations("profile");

@@ -20,7 +20,7 @@ interface PageThumbnail {
   dataUrl: string;
 }
 
-export default function ReorderDialog({ open, onClose, selectedId, selectedName, totalPages }: ReorderDialogProps) {
+export default function ReorderDialog({ open, onClose, selectedId, selectedName, totalPages, onSuccess }: ReorderDialogProps) {
   const t = useTranslations("reorderDialog");
   const [order, setOrder] = React.useState<number[]>([]);
   const [thumbnails, setThumbnails] = React.useState<PageThumbnail[]>([]);

@@ -20,7 +20,7 @@ interface PageThumbnail {
   dataUrl: string;
 }
 
-export default function SplitDialog({ open, onClose, selectedId, selectedName, totalPages }: SplitDialogProps) {
+export default function SplitDialog({ open, onClose, selectedId, selectedName, totalPages, onSuccess }: SplitDialogProps) {
   const t = useTranslations("splitDialog");
   const [splitting, setSplitting] = React.useState(false);
   const [error, setError] = React.useState("");

@@ -11,7 +11,7 @@ interface MetadataDialogProps {
     onSuccess?: (doc: PdfDocument) => void;
 }
 
-export default function MetadataDialog({ open, onClose, pdfId }: MetadataDialogProps) {
+export default function MetadataDialog({ open, onClose, pdfId, onSuccess }: MetadataDialogProps) {
     const t = useTranslations("metadata");
     const [metadata, setMetadata] = React.useState<Metadata | null>(null);
     const [title, setTitle] = React.useState("");
