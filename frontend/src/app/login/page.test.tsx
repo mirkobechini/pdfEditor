@@ -30,7 +30,6 @@ beforeEach(() => {
     login: mockLogin,
     register: vi.fn(),
     logout: vi.fn(),
-    token: null,
   });
 
   // Mock window.location.href
@@ -85,7 +84,7 @@ describe("LoginPage", () => {
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith("test@example.com", "password123");
     });
-    expect(window.location.href).toBe("/");
+    expect(window.location.href).toBe("/app");
   });
 
   it("shows error message on failed login", async () => {

@@ -30,7 +30,6 @@ beforeEach(() => {
     login: vi.fn(),
     register: mockRegister,
     logout: vi.fn(),
-    token: null,
   });
 
   // Mock window.location.href
@@ -112,7 +111,7 @@ describe("RegisterPage", () => {
     await waitFor(() => {
       expect(mockRegister).toHaveBeenCalledWith("test@example.com", "password123", "Test User");
     });
-    expect(window.location.href).toBe("/");
+    expect(window.location.href).toBe("/app");
   });
 
   it("shows error message on failed registration", async () => {
