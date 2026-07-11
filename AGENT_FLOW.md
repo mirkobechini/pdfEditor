@@ -69,6 +69,11 @@ While inside the feature branch, implement **one atomic unit at a time**, **comm
 
 An **atomic unit** is a single file or logical change: a component, a utility, a test file, a translation update. Do NOT batch multiple files into one commit.
 
+> ⚠️ **Regola fondamentale: ogni implementazione DEVE avere i suoi test.**
+> Dopo ogni atomic commit di codice (`feat:`, `fix:`, `refactor:`), il commit **successivo** DEVE essere il test corrispondente (`test:`).
+> Esempio: se aggiungi un endpoint, il commit dopo è il test di quell'endpoint.
+> Non si passa al prossimo atomic unit senza che il test del precedente sia scritto E passi.
+
 ```bash
 # Inside the feature branch
 git checkout feature/<issue-number>-<short-description>
@@ -80,14 +85,29 @@ git add <file-A>
 git commit -m "<type>(<scope>): <description of file A>"
 git push origin feature/<issue-number>-<short-description>
 
+# === SUBTASK 1b: Write tests for file A ===
+# Write tests for the code just committed
+git add <test-file-A>
+git commit -m "test(<scope>): <description of test file A>"
+git push origin feature/<issue-number>-<short-description>
+# Run tests to verify they pass
+pytest <test-file-A> -q
+
 # === SUBTASK 2: Write file B ===
-# Write ONE file (e.g. tests for file A)
+# Write ONE file (e.g. a service)
 git add <file-B>
+git commit -m "<type>(<scope>): <description of file B>"
+git push origin feature/<issue-number>-<short-description>
+
+# === SUBTASK 2b: Write tests for file B ===
+git add <test-file-B>
 git commit -m "test(<scope>): <description of test file B>"
 git push origin feature/<issue-number>-<short-description>
+pytest <test-file-B> -q
 
 # === Continue for each atomic unit ===
 # Do NOT batch multiple files into one commit!
+# Do NOT skip tests — a feature without tests is incomplete!
 ```
 
 > ⚠️ **Fundamental rule: feature → tests → merge.** Every feature MUST include its tests in the same PR. Write tests right after the feature code (in a **separate commit**), before creating the PR. A PR without tests cannot be merged.
