@@ -14,6 +14,7 @@ from app.core.storage import (
     pop_latest_snapshot,
     save_pdf,
     save_snapshot,
+    validate_pdf,
 )
 
 
@@ -143,3 +144,25 @@ class TestValidateUuid:
         """Path traversal attempts should raise ValueError."""
         with pytest.raises(ValueError):
             _validate_uuid("../../../etc/passwd")
+
+
+class TestValidatePdf:
+    """Test PDF validation."""
+
+    def test_valid_pdf_content(self):
+        """validate_pdf should return True for valid PDF content."""
+        import fitz
+        doc = fitz.open()
+        doc.new_page()
+        valid = doc.tobytes()
+        doc.close()
+        assert validate_pdf(valid) is True
+
+    def test_invalid_pdf_header(self):
+        """validate_pdf should return False for content without PDF header."""
+        invalid = b"Not a PDF at all"
+        assert validate_pdf(invalid) is False
+
+    def test_empty_content(self):
+        """validate_pdf should return False for empty bytes."""
+        assert validate_pdf(b"") is False
