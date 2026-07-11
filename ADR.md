@@ -184,25 +184,28 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ### Issue note ma non bloccanti ⏳
 
-| #   | Issue                                                                               | Impatto         | Risoluzione prevista                          |
-| --- | ----------------------------------------------------------------------------------- | --------------- | --------------------------------------------- |
-| 1   | **File system effimero** — PDF/snapshot su disco persi al restart Render            | ✅ Risolto (S3) | S3/R2 via `STORAGE_BACKEND=s3`                |
-| 2   | **`_password_cache` module-global** — non scala con multi-worker, mai svuotata      | Medio           | Redis o DB in Fase 2                          |
-| 3   | **Structured logging assente** — tutti i log usano `print()`                        | ✅ Risolto      | `logging` modulo                              |
-| 4   | **DB connection pooling** — default pool_size=5, no `pool_pre_ping`                 | ✅ Risolto      | pool_size=10, pool_pre_ping                   |
-| 5   | **Test mancanti** — protect, undo/redo, forgot/reset-password                       | ✅ Risolto      | 225 test, 0 failures (PR #202)                |
-| 6   | **`.env.example` ha email reale** — `SUPER_ADMIN_EMAIL=mirkobechini@gmail.com`      | ✅ Risolto      | Sostituito con placeholder                    |
-| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                       | Basso           | Fase 2                                        |
-| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF                  | Basso           | Fase 2                                        |
-| 9   | **No password strength validation** — password di 1 char accettata                  | 🟡 In corso     | `.specs/plans/chore-security-improvements.md` |
-| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato           | 🟡 In corso     | `.specs/plans/chore-security-improvements.md` |
-| 11  | **`_password_cache` mai pulita** — cresce all'infinito                              | ✅ Risolto      | TTL 30 min                                    |
-| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill                   | 🟡 In corso     | `.specs/plans/chore-security-improvements.md` |
-| 13  | **No request ID middleware** — impossibile tracciare richieste nei log              | ✅ Risolto      | Middleware aggiunto                           |
-| 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end              | 🟡 In corso     | `.specs/plans/chore-security-improvements.md` |
-| 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra      | ✅ Risolto      | PR #190                                       |
-| 16  | **PDF non appare in sidebar dopo salvataggio** — richiede F5 per vedere nuovo       | ✅ Risolto      | PR #192                                       |
-| 17  | **Metadata dialog campi vuoti** — i campi non sono pre-popolati con valori correnti | ✅ Risolto      | PR #194                                       |
+| #   | Issue                                                                               | Impatto         | Risoluzione prevista                                                             |
+| --- | ----------------------------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------- |
+| 1   | **File system effimero** — PDF/snapshot su disco persi al restart Render            | ✅ Risolto (S3) | S3/R2 via `STORAGE_BACKEND=s3`                                                   |
+| 2   | **`_password_cache` module-global** — non scala con multi-worker, mai svuotata      | Medio           | Redis o DB in Fase 2                                                             |
+| 3   | **Structured logging assente** — tutti i log usano `print()`                        | ✅ Risolto      | `logging` modulo                                                                 |
+| 4   | **DB connection pooling** — default pool_size=5, no `pool_pre_ping`                 | ✅ Risolto      | pool_size=10, pool_pre_ping                                                      |
+| 5   | **Test mancanti** — protect, undo/redo, forgot/reset-password                       | ✅ Risolto      | 225 test, 0 failures (PR #202)                                                   |
+| 6   | **`.env.example` ha email reale** — `SUPER_ADMIN_EMAIL=mirkobechini@gmail.com`      | ✅ Risolto      | Sostituito con placeholder                                                       |
+| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                       | Basso           | Fase 2                                                                           |
+| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF                  | Basso           | Fase 2                                                                           |
+| 9   | **No password strength validation** — password di 1 char accettata                  | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
+| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato           | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
+| 11  | **`_password_cache` mai pulita** — cresce all'infinito                              | ✅ Risolto      | TTL 30 min                                                                       |
+| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill                   | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
+| 13  | **No request ID middleware** — impossibile tracciare richieste nei log              | ✅ Risolto      | Middleware aggiunto                                                              |
+| 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end              | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
+| 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra      | ✅ Risolto      | PR #190                                                                          |
+| 16  | **PDF non appare in sidebar dopo salvataggio** — richiede F5 per vedere nuovo       | ✅ Risolto      | PR #192                                                                          |
+| 17  | **Metadata dialog campi vuoti** — i campi non sono pre-popolati con valori correnti | ✅ Risolto      | PR #194                                                                          |
+| 18  | **Large file upload — nessun progress indicator** — upload freeze senza feedback    | Medio (UX)      | `.specs/plans/bug-large-file-upload-progress.md`                                 |
+| 19  | **Find & Replace non funziona** — replace text non modifica il PDF correttamente    | Medio (UX)      | Sostituire con inline text editor (`.specs/plans/feature-inline-text-editor.md`) |
+| 20  | **Admin bug report — campi mancanti** — platform, app_version, os_info non mostrati | Basso (Admin)   | `.specs/plans/bug-admin-bug-report-display.md`                                   |
 
 ### Da risolvere/note ⏳
 
@@ -230,7 +233,41 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 > - **Render:** MCP server ufficiale `render-oss/render-mcp-server` (Go, 144★). Per deploy e gestione servizi Render.
 > - **Railway:** MCP server ufficiale `railwayapp/railway-mcp-server` (JS, 192★, archived). Community: `jason-tan-swe/railway-mcp` (TS, 73★).
 
-## Feature future pianificate
+## Coverage test backend
+
+### Coverage attuale: 92% (225 test, 0 failures)
+
+| Modulo             | Coverage | Linee scoperte | Difficoltà residua        |
+| ------------------ | -------- | -------------- | ------------------------- |
+| `security.py`      | 100%     | —              | ✅                        |
+| `config.py`        | 100%     | —              | ✅                        |
+| `merge_split.py`   | 100%     | —              | ✅                        |
+| `metadata.py`      | 100%     | —              | ✅                        |
+| `reorder.py`       | 100%     | —              | ✅                        |
+| `text.py`          | 100%     | —              | ✅                        |
+| `unlock.py`        | 100%     | —              | ✅                        |
+| `s3_storage.py`    | 96%      | 3              | 🟡 Facile                 |
+| `database.py`      | 95%      | 1              | 🟡 Facile                 |
+| `user_repo.py`     | 95%      | 3              | 🟡 Facile                 |
+| `email_service.py` | 94%      | 2              | 🟡 Facile                 |
+| `convert.py`       | 94%      | 3              | 🟡 Facile                 |
+| `admin.py`         | 91%      | 5              | 🟡 Facile                 |
+| `main.py`          | 92%      | 8              | 🟡 Facile                 |
+| `deps.py`          | 92%      | 3              | 🟡 Facile                 |
+| `bug_report.py`    | 93%      | 2              | 🟡 Facile                 |
+| `auth.py` (api)    | 90%      | 7              | 🟡 Facile                 |
+| `undo_redo.py`     | 90%      | 2              | 🟡 Facile                 |
+| `auth_service.py`  | 92%      | 9              | 🟡 Facile                 |
+| `storage.py`       | 82%      | 17             | 🟠 Media (S3 path)        |
+| `pdf_service.py`   | 86%      | 55             | 🔴 Difficile (error path) |
+
+**Cosa manca per il 100%:**
+
+- ~49 linee facili (1-2 ore) — error path su endpoint, not found, 403
+- ~17 linee medie (1 ora) — switch S3/local in storage.py
+- ~55 linee difficili (2-3 ore) — pdf_service.py error path (password errata, file non trovato, conversioni fallite)
+
+**Consiglio:** Fermarsi al 92% è accettabile. Le 55 linee di `pdf_service.py` sono `except` e `if not` casi limite già coperti dai test di integrazione esistenti.
 
 Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'ordine di implementazione è definito dalla priorità indicata.
 
@@ -389,9 +426,12 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [ ] **License tier button skin** — Skin visiva per pulsanti toolbar: feature non disponibili appaiono grigie con badge "PRO" e tooltip "Upgrade to Premium". Si attiva quando `DISABLE_LICENSE_ENFORCEMENT=False`. Piano: `.specs/plans/feature-license-tier-button-skin.md`.
 - [x] **Admin license tier restrictions** — Il superadmin può assegnare/rimuovere solo il tier "lifetime" (enterprise). Non può modificare tier "pro" o "premium" (pagati via Stripe). **[COMPLETATO]** — Implementato 2026-07-10, PR #196.
 - [x] **Navigazione landing page da app autenticata** — Logo in AppLayout linka a `/landing`. LandingNavbar mostra "Vai all'App" per utenti autenticati. Piano: `.specs/plans/feature-authenticated-landing-navigation.md`. **[COMPLETATO]** — Implementato 2026-07-09.
-- [ ] **Inline text editor (word-like)** — Sostituire il dialog "Find and Replace" con un editor di testo inline WYSIWYG: click-to-edit direttamente sul PDF viewer, modifica multipla, salvataggio batch. Complessità ALTA. Piano: `.specs/plans/feature-inline-text-editor.md`.
+- [ ] **Inline text editor (word-like)** — Sostituire il dialog "Find and Replace" con un editor di testo inline WYSIWYG: click-to-edit direttamente sul PDF viewer, modifica multipla, salvataggio batch. Complessità ALTA. Piano: `.specs/plans/feature-inline-text-editor.md`. **[SOSTITUISCE Find & Replace rotto]**
+- [x] **Backend 100% coverage** — Portare copertura test backend da 83% a 92% (225 test, 0 failures). **[COMPLETATO]** — 2026-07-11, PR #202.
 - [x] **Backend 100% coverage** — Portare copertura test backend da 83% a 92% (225 test, 0 failures). **[COMPLETATO]** — 2026-07-11, PR #202.
 - [x] **Fix 3 test falliti** — google_oauth (2) + migration PermissionError (1). **[COMPLETATO]** — 2026-07-10, PR #200.
 - [ ] **Security improvements** — Graceful shutdown, password strength, header injection, E2E tests. Piano: `.specs/plans/chore-security-improvements.md`.
+- [ ] **Large file upload progress indicator** — Barra di progresso per upload file grandi. Piano: `.specs/plans/bug-large-file-upload-progress.md`.
+- [ ] **Admin bug report — campi mancanti** — Mostrare platform, app_version, os_info nella tabella bug. Piano: `.specs/plans/bug-admin-bug-report-display.md`.
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
