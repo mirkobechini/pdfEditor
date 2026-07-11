@@ -23,9 +23,9 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - **PDF viewer lato client:** PDF.js (Mozilla)
 - **PDF manipulation lato client:** pdf-lib (per merge/split/riordino offline)
 - **Database offline:** SQLite
-- **Database cloud:** PostgreSQL (previsto per Fase 2-3)
+- **Database cloud:** PostgreSQL (Render)
 - **ORM:** SQLAlchemy 2.0
-- **Auth:** JWT (bcrypt) + SSO Google (PyJWT + requests)
+- **Auth:** JWT (bcrypt) + httpOnly cookie + SSO Google (PyJWT + requests)
 - **i18n:** next-intl (dichiarato, ma attualmente implementato con provider custom)
 - **Migration:** Alembic
 - **Test backend:** pytest
@@ -73,7 +73,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 ## Cosa NON è in scope (per ora)
 
 - Desktop Tauri v2 (Fase 1c — futuro)
-- Deploy cloud / PostgreSQL (Fase 2 — futuro)
+- Deploy cloud / PostgreSQL (Fase 2 — già completata)
 - Cloud sync bidirezionale (Fase 3 — futuro)
 - Mobile React Native (Fase 4 — futuro)
 - Integrazione pagamenti Stripe (pianificata — vedi `.specs/plans/feature-stripe-mcp-subscriptions.md`)
@@ -180,38 +180,26 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ### In corso 🔄
 
-- [ ] **Security fixes** — graceful shutdown, password strength, header injection — `.specs/plans/chore-security-improvements.md`
+- [ ] **Frontend coverage 100%** — Portare copertura test frontend da 35% a 100% — `.specs/plans/chore-frontend-100-percent-coverage.md`
 
 ### Issue note ma non bloccanti ⏳
 
-| #   | Issue                                                                               | Impatto         | Risoluzione prevista                                                             |
-| --- | ----------------------------------------------------------------------------------- | --------------- | -------------------------------------------------------------------------------- |
-| 1   | **File system effimero** — PDF/snapshot su disco persi al restart Render            | ✅ Risolto (S3) | S3/R2 via `STORAGE_BACKEND=s3`                                                   |
-| 2   | **`_password_cache` module-global** — non scala con multi-worker, mai svuotata      | Medio           | Redis o DB in Fase 2                                                             |
-| 3   | **Structured logging assente** — tutti i log usano `print()`                        | ✅ Risolto      | `logging` modulo                                                                 |
-| 4   | **DB connection pooling** — default pool_size=5, no `pool_pre_ping`                 | ✅ Risolto      | pool_size=10, pool_pre_ping                                                      |
-| 5   | **Test mancanti** — protect, undo/redo, forgot/reset-password                       | ✅ Risolto      | 225 test, 0 failures (PR #202)                                                   |
-| 6   | **`.env.example` ha email reale** — `SUPER_ADMIN_EMAIL=mirkobechini@gmail.com`      | ✅ Risolto      | Sostituito con placeholder                                                       |
-| 7   | **JWT in localStorage** — XSS-vulnerabile, no httpOnly cookie                       | ✅ Risolto      | PR #216 (JWT httpOnly cookie)                                                    |
-| 8   | **No CSRF protection** — `allow_credentials=True` senza token CSRF                  | ✅ Risolto      | PR #214 (CSRF middleware)                                                        |
-| 9   | **No password strength validation** — password di 1 char accettata                  | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
-| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato           | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
-| 11  | **`_password_cache` mai pulita** — cresce all'infinito                              | ✅ Risolto      | TTL 30 min                                                                       |
-| 12  | **No graceful shutdown** — file handle PyMuPDF non chiusi al kill                   | ✅ Risolto      | PR #212                                                                          |
-| 13  | **No request ID middleware** — impossibile tracciare richieste nei log              | ✅ Risolto      | Middleware aggiunto                                                              |
-| 14  | **Nessun integration/E2E test** — flussi utente mai testati end-to-end              | 🟡 In corso     | `.specs/plans/chore-security-improvements.md`                                    |
-| 15  | **Login infinite loading** — schermata carica forever, sblocco con click extra      | ✅ Risolto      | PR #190                                                                          |
-| 16  | **PDF non appare in sidebar dopo salvataggio** — richiede F5 per vedere nuovo       | ✅ Risolto      | PR #192                                                                          |
-| 17  | **Metadata dialog campi vuoti** — i campi non sono pre-popolati con valori correnti | ✅ Risolto      | PR #194                                                                          |
-| 18  | **Large file upload — nessun progress indicator** — upload freeze senza feedback    | Medio (UX)      | `.specs/plans/bug-large-file-upload-progress.md`                                 |
-| 19  | **Find & Replace non funziona** — replace text non modifica il PDF correttamente    | Medio (UX)      | Sostituire con inline text editor (`.specs/plans/feature-inline-text-editor.md`) |
-| 20  | **Admin bug report — campi mancanti** — platform, app_version, os_info non mostrati | Basso (Admin)   | `.specs/plans/bug-admin-bug-report-display.md`                                   |
+| #   | Issue                                                                     | Impatto              | Risoluzione prevista                                  |
+| --- | ------------------------------------------------------------------------- | -------------------- | ----------------------------------------------------- |
+| 2   | **`_password_cache` module-global** — non scala con multi-worker          | Medio                | Redis o DB in Fase 2                                  |
+| 9   | **No password strength validation** — password di 1 char accettata        | ✅ Risolto (PR #208) | —                                                     |
+| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato | ✅ Risolto (PR #208) | —                                                     |
+| 14  | **Nessun integration/E2E test**                                           | 🟡 In corso          | Playwright futuro                                     |
+| 18  | **Large file upload — nessun progress indicator**                         | ✅ Risolto (PR #206) | —                                                     |
+| 19  | **Find & Replace non funziona**                                           | Medio (UX)           | Inline text editor                                    |
+| 20  | **Admin bug report — campi mancanti**                                     | ✅ Risolto (PR #204) | —                                                     |
+| 21  | **Frontend coverage 35%** — solo 108 test su ~30 componenti               | Medio                | `.specs/plans/chore-frontend-100-percent-coverage.md` |
 
 ### Da risolvere/note ⏳
 
-> **⚠️ Security audit 2026-07-09 — Risolte 10/24 issue (42%).** Vedi tabella sopra per le rimanenti.
+> **⚠️ Security audit 2026-07-09 — Risolte 20/24 issue (83%).** Vedi tabella sopra per le rimanenti.
 >
-> Riepilogo fix applicati oggi:
+> Riepilogo fix applicati al 2026-07-11:
 >
 > - ✅ `SECRET_KEY` default → vuoto (forza config esplicita)
 > - ✅ `DEBUG` default → `False`
@@ -221,6 +209,11 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 > - ✅ Rate limiting → slowapi (login 5/min, register 3/h, forgot-password 3/h)
 > - ✅ Dipendenze vulnerabili → PyJWT 2.13.0, python-multipart 0.0.31, pytest 9.0.3
 > - ✅ CodeQL path-injection → `_validate_uuid()` in storage.py
+> - ✅ Password strength validation → min 8 char + uppercase + lowercase + digit
+> - ✅ Header injection sanitization → `sanitize_filename()` su Content-Disposition
+> - ✅ Graceful shutdown → cleanup PyMuPDF handles su SIGTERM
+> - ✅ CSRF protection → middleware con cookie token
+> - ✅ JWT httpOnly cookie → addio localStorage XSS
 > - ✅ GitHub: 0 Dependabot alert attivi, 0 Code Scanning alert attivi
 
 > **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email delivery in pausa (attesa dominio custom per SendGrid sender verification).
@@ -430,8 +423,11 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - [x] **Backend 100% coverage** — Portare copertura test backend da 83% a 92% (225 test, 0 failures). **[COMPLETATO]** — 2026-07-11, PR #202.
 - [x] **Backend 100% coverage** — Portare copertura test backend da 83% a 92% (225 test, 0 failures). **[COMPLETATO]** — 2026-07-11, PR #202.
 - [x] **Fix 3 test falliti** — google_oauth (2) + migration PermissionError (1). **[COMPLETATO]** — 2026-07-10, PR #200.
-- [ ] **Security improvements** — Graceful shutdown, password strength, header injection, E2E tests. Piano: `.specs/plans/chore-security-improvements.md`.
-- [ ] **Large file upload progress indicator** — Barra di progresso per upload file grandi. Piano: `.specs/plans/bug-large-file-upload-progress.md`.
-- [ ] **Admin bug report — campi mancanti** — Mostrare platform, app_version, os_info nella tabella bug. Piano: `.specs/plans/bug-admin-bug-report-display.md`.
+- [x] **Security improvements** — Graceful shutdown, password strength, header injection, E2E tests. **[COMPLETATO]** — 2026-07-11, PR #208 + #212.
+- [x] **Large file upload progress indicator** — Barra di progresso per upload file grandi. **[COMPLETATO]** — 2026-07-11, PR #206.
+- [x] **Admin bug report — campi mancanti** — Mostrare platform, app_version, os_info nella tabella bug. **[COMPLETATO]** — 2026-07-11, PR #204.
+- [x] **CSRF protection** — Middleware CSRF token. **[COMPLETATO]** — 2026-07-11, PR #214.
+- [x] **JWT httpOnly cookie** — Eliminata vulnerabilità XSS localStorage. **[COMPLETATO]** — 2026-07-11, PR #216.
+- [ ] **Frontend coverage 100%** — Portare copertura test frontend da 35% a 100%. Piano: `.specs/plans/chore-frontend-100-percent-coverage.md`.
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
