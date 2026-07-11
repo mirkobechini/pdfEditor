@@ -1,11 +1,26 @@
 import os
 import uuid
+import warnings
+
+# Filter warnings from third-party libraries (can't fix in our code)
+# Must be BEFORE importing fastapi.testclient which triggers the warning
+warnings.filterwarnings("ignore", category=UserWarning, message=".*starlette.testclient.*")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="slowapi")
 
 import fitz
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+
+def pytest_configure():
+    """Additional warning filters applied at pytest configure time."""
+    warnings.filterwarnings("ignore", category=UserWarning, message=".*starlette.testclient.*")
+    warnings.filterwarnings("ignore", category=DeprecationWarning, module="slowapi")
+
+
+# Explicitly import models to ensure they are registered with Base
 
 # Explicitly import models to ensure they are registered with Base
 # This MUST come before importing app.main, which imports routers that import models
