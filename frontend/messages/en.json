@@ -211,7 +211,10 @@
     "tierFree": "Free",
     "tierPro": "Pro",
     "tierEnterprise": "Enterprise",
-    "tierAdmin": "Admin"
+    "tierAdmin": "Admin",
+    "platform": "Platform",
+    "appVersion": "App Version",
+    "osInfo": "OS Info"
   },
   "deleteModal": {
     "title": "Delete PDF",
