@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 
 from app.api.deps import get_current_user, get_pdf_service
 from app.core.config import settings
+from app.core.sanitize import sanitize_filename
 from app.models.user import User
 from app.schemas.pdf import PdfListResponse, PdfResponse
 from app.services.pdf_service import PdfService
@@ -117,7 +118,7 @@ def download_pdf(
         iter([content]),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'attachment; filename="{pdf.original_filename}"',
+            "Content-Disposition": f'attachment; filename="{sanitize_filename(pdf.original_filename)}"',
         },
     )
 

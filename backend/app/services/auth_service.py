@@ -7,6 +7,18 @@ from app.repositories.user_repo import UserRepository
 from app.schemas.auth import UserResponse
 
 
+def _validate_password_strength(password: str) -> None:
+    """Validate password meets minimum strength requirements."""
+    if len(password) < 8:
+        raise ValueError("Password must be at least 8 characters long")
+    if not any(c.isupper() for c in password):
+        raise ValueError("Password must contain at least one uppercase letter")
+    if not any(c.islower() for c in password):
+        raise ValueError("Password must contain at least one lowercase letter")
+    if not any(c.isdigit() for c in password):
+        raise ValueError("Password must contain at least one number")
+
+
 class AuthService:
     """Business logic for authentication."""
 
@@ -15,6 +27,9 @@ class AuthService:
 
     def register(self, email: str, password: str, full_name: str) -> User:
         """Register a new user."""
+        # Validate password strength
+        _validate_password_strength(password)
+
         # Check duplicate email
         existing = self.repo.get_by_email(email)
         if existing:
