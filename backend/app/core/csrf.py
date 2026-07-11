@@ -17,7 +17,6 @@ CSRF_EXEMPT_PATHS = {
     "/auth/google",
     "/auth/forgot-password",
     "/auth/reset-password",
-    "/health",
 }
 
 
@@ -27,12 +26,17 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     - GET/HEAD/OPTIONS: set csrf_token cookie if not present
     - POST/PUT/DELETE/PATCH: validate X-CSRF-Token header matches cookie
     - Auth endpoints are exempt (login/register need to work without token)
+    - Disabled when settings.DISABLE_CSRF is True (for tests)
     """
 
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        # Skip CSRF entirely if disabled (e.g., in tests)
+        if getattr(settings, "DISABLE_CSRF", False):
+            return await call_next(request)
+
         # Skip CSRF for exempt paths
         if request.url.path in CSRF_EXEMPT_PATHS:
             return await call_next(request)

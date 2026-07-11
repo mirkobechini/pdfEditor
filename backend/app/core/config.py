@@ -95,6 +95,10 @@ class Settings(BaseSettings):
     # Set to False in production when license system is activated.
     DISABLE_LICENSE_ENFORCEMENT: bool = False
 
+    # CSRF protection
+    # Set to True to disable CSRF (e.g., in tests)
+    DISABLE_CSRF: bool = False
+
     model_config = ConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
