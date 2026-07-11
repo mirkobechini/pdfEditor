@@ -37,6 +37,12 @@ def disable_rate_limiting(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def disable_csrf(monkeypatch):
+    """Disable CSRF middleware during tests (cookie handling is complex in TestClient)."""
+    monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", True)
+
+
+@pytest.fixture(autouse=True)
 def per_test_db(tmp_path):
     """Each test gets its OWN SQLite file + overrides deps.get_db correctly."""
     global _engine
