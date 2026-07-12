@@ -131,7 +131,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Coverage test backend
 
-### Stato attuale: 93% (240 test, 0 failures, 0 warnings)
+### Stato attuale: 93% (253 test, 0 failures, 0 warnings)
 
 | Modulo                                                                                            | Coverage | Note                   |
 | ------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
@@ -155,7 +155,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Coverage test frontend
 
-### Stato attuale: 67.5% (247 test, 50 files, 0 failures)
+### Stato attuale: 67.5% (250 test, 50 files, 0 failures)
 
 | Modulo                         | Coverage | Test             |
 | ------------------------------ | -------- | ---------------- |
