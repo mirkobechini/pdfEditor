@@ -27,8 +27,6 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const TOKEN_KEY = "pdfeditor_token";
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,8 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     // Clear cookie by calling logout endpoint
     api.logout();
-    setUser(null);
-    setTokenState(null);
     setUser(null);
   }, []);
 
