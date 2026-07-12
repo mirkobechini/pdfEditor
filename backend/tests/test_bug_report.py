@@ -190,3 +190,73 @@ class TestMyBugs:
         """Should reject without auth."""
         response = client.get("/bugs/my")
         assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
+
+class TestSearchBugs:
+    """Test suite for GET /bugs/search."""
+
+    def test_search_finds_by_title(self, client):
+        """Should find bugs by title."""
+        token = _login(client, email="search@test.com")
+        client.post(
+            "/bugs",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"title": "Login crash", "description": "Crashes on login"},
+        )
+        response = client.get(
+            "/bugs/search?q=crash",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) >= 1
+        assert "crash" in data[0]["title"].lower()
+
+    def test_search_returns_empty_for_no_match(self, client):
+        """Should return empty list when no match."""
+        token = _login(client, email="nosearch@test.com")
+        response = client.get(
+            "/bugs/search?q=zzzznotfound",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_search_requires_auth(self, client):
+        """Should reject without auth."""
+        response = client.get("/bugs/search?q=test")
+        assert response.status_code in (401, 403)
+
+
+class TestVoteBug:
+    """Test suite for POST /bugs/{id}/vote."""
+
+    def test_vote_increments_count(self, client):
+        """Should increment report_count on vote."""
+        token = _login(client, email="vote@test.com")
+        create_resp = client.post(
+            "/bugs",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"title": "Vote test", "description": "Test voting"},
+        )
+        bug_id = create_resp.json()["id"]
+
+        response = client.post(
+            f"/bugs/{bug_id}/vote",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert response.json()["report_count"] >= 2
+
+    def test_vote_not_found(self, client):
+        """Should return 404 for non-existent bug."""
+        token = _login(client, email="votenf@test.com")
+        response = client.post(
+            "/bugs/fake-id/vote",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 404
+
+    def test_vote_requires_auth(self, client):
+        """Should reject without auth."""
+        response = client.post("/bugs/fake-id/vote")
+        assert response.status_code in (401, 403)

@@ -120,6 +120,7 @@ class BugReportResponse(BaseModel):
     app_version: str | None = None
     os_info: str | None = None
     status: str
+    report_count: int = 1
     created_at: datetime
     updated_at: datetime
 

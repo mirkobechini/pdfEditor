@@ -394,6 +394,26 @@ export class ApiClient {
     return res.json();
   }
 
+  async searchBugReports(query: string): Promise<BugReport[]> {
+    const res = await fetch(
+      `${this.baseUrl}/bugs/search?q=${encodeURIComponent(query)}`,
+      {
+        headers: this.getHeaders(),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async voteBugReport(bugId: string): Promise<BugReport> {
+    const res = await fetch(`${this.baseUrl}/bugs/${bugId}/vote`, {
+      method: "POST",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
   // License
   async getLicenseFeatures(): Promise<
     { id: string; tier: string; feature_key: string; enabled: boolean }[]

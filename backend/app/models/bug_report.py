@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 
 from app.core.database import Base
 
@@ -18,6 +18,7 @@ class BugReport(Base):
     app_version = Column(String(50), nullable=True)
     os_info = Column(String(255), nullable=True)
     status = Column(String(20), nullable=False, default="open", index=True)
+    report_count = Column(Integer, nullable=False, default=1)
 
     created_at = Column(
         DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)

@@ -142,7 +142,17 @@
     "close": "Close",
     "cancel": "Cancel",
     "failed": "Failed to send report",
-    "button": "Report Bug"
+    "button": "Report Bug",
+    "searchPrompt": "Search for existing bugs before reporting a new one:",
+    "searchPlaceholder": "Search by keyword...",
+    "search": "Search",
+    "searching": "Searching...",
+    "searchFailed": "Search failed",
+    "noResults": "No existing bugs found. You can create a new report below.",
+    "meToo": "Me too!",
+    "voteFailed": "Failed to vote",
+    "createNew": "Create New Report",
+    "back": "Back"
   },
   "darkMode": {
     "toggle": "Toggle dark mode"
