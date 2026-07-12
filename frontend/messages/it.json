@@ -376,33 +376,59 @@
   "privacy": {
     "title": "Informativa sulla Privacy",
     "lastUpdated": "Ultimo aggiornamento: 12 luglio 2026",
+    "intro": "Su PdfEditor, accessibile da pdfeditor.app, una delle nostre principali priorità è la privacy dei nostri visitatori. Questo documento di Informativa sulla Privacy contiene i tipi di informazioni che vengono raccolte e registrate da PdfEditor e come le utilizziamo. Se hai domande aggiuntive o desideri maggiori informazioni sulla nostra Informativa sulla Privacy, non esitare a contattarci.",
     "infoWeCollect": {
       "title": "Informazioni che raccogliamo",
-      "description": "Raccogliamo solo le informazioni necessarie per fornire il nostro servizio di editing PDF:",
-      "item1": "Informazioni account: indirizzo email e nome (quando ti registri)",
-      "item2": "File PDF caricati per l'editing (memorizzati temporaneamente e cancellati dopo l'elaborazione)",
-      "item3": "Dati di utilizzo: pagine visitate, funzionalitÃ  utilizzate (anonimizzati)",
-      "item4": "Dati tecnici: tipo di browser, tipo di dispositivo (per compatibilitÃ )"
+      "description": "Le informazioni personali che ti vengono richieste, e le ragioni per cui ti vengono richieste, ti saranno chiarite al momento in cui ti chiediamo di fornire le tue informazioni personali.",
+      "item1": "Informazioni account: indirizzo email e nome completo (quando ti registri)",
+      "item2": "File PDF caricati per l'editing — memorizzati temporaneamente e cancellati automaticamente dopo la sessione",
+      "item3": "Dati di utilizzo: pagine visitate, funzionalità utilizzate (anonimizzati per analisi)",
+      "item4": "Dati tecnici: tipo e versione del browser, tipo di dispositivo, sistema operativo"
     },
     "howWeUse": {
       "title": "Come utilizziamo le tue informazioni",
-      "description": "Le tue informazioni sono utilizzate esclusivamente per:",
-      "item1": "Fornire e migliorare il servizio di editing PDF",
-      "item2": "Supporto tecnico e correzione bug",
-      "item3": "Sicurezza del servizio e prevenzione abusi",
-      "item4": "Non vendiamo mai i tuoi dati personali a terze parti"
+      "description": "Utilizziamo le informazioni raccolte in vari modi, tra cui:",
+      "item1": "Fornire, operare e mantenere il nostro servizio di editing PDF",
+      "item2": "Migliorare, personalizzare ed espandere il nostro servizio",
+      "item3": "Comunicare con te, incluso per assistenza clienti e supporto",
+      "item4": "Rilevare e prevenire frodi, abusi e incidenti di sicurezza"
+    },
+    "legalBasis": {
+      "title": "Base giuridica del trattamento (GDPR)",
+      "description": "Se provieni dallo Spazio Economico Europeo, la nostra base giuridica per la raccolta e l'utilizzo delle informazioni personali descritte in questa Informativa sulla Privacy dipende dalle informazioni che raccogliamo e dal contesto in cui le raccogliamo. Potremmo trattare i tuoi dati personali perché: dobbiamo eseguire un contratto con te, ci hai dato il permesso di farlo, il trattamento è nei nostri legittimi interessi, o dobbiamo rispettare la legge."
+    },
+    "dataRetention": {
+      "title": "Conservazione dei dati",
+      "description": "Conserveremo le tue informazioni personali solo per il tempo necessario agli scopi indicati nella presente Informativa sulla Privacy. I file PDF vengono automaticamente eliminati dopo l'elaborazione o poco dopo la fine della sessione. Le informazioni dell'account vengono conservate fino a quando non richiedi la cancellazione del tuo account."
     },
     "dataSharing": {
-      "title": "Condivisione dei dati",
-      "description": "Non condividiamo i tuoi dati personali con terze parti se non quando richiesto dalla legge o con il tuo esplicito consenso. I file PDF vengono elaborati sui nostri server e non sono accessibili ad altri utenti."
+      "title": "Condivisione e divulgazione dei dati",
+      "description": "Non vendiamo, scambiamo o affittiamo le tue informazioni personali a terze parti. Potremmo condividere le tue informazioni solo quando richiesto dalla legge, per proteggere i nostri diritti, o con il tuo esplicito consenso. I file PDF vengono elaborati sui nostri server cloud Render e non sono accessibili ad altri utenti."
     },
     "dataSecurity": {
       "title": "Sicurezza dei dati",
-      "description": "Implementiamo misure di sicurezza standard del settore, tra cui crittografia in transito (HTTPS), archiviazione crittografata e audit di sicurezza regolari. I tuoi PDF vengono automaticamente eliminati dopo l'elaborazione."
+      "description": "Implementiamo misure di sicurezza standard del settore per proteggere le tue informazioni personali, inclusa la crittografia in transito tramite HTTPS, archiviazione sicura e audit di sicurezza regolari. Tuttavia, nessun metodo di trasmissione su Internet è sicuro al 100% e non possiamo garantire la sicurezza assoluta."
+    },
+    "yourRights": {
+      "title": "I tuoi diritti sulla protezione dei dati (GDPR/CCPA)",
+      "description": "A seconda della tua giurisdizione, potresti avere i seguenti diritti sulla protezione dei dati:",
+      "item1": "Diritto di accesso — richiedere copie dei tuoi dati personali",
+      "item2": "Diritto di rettifica — richiedere la correzione di dati inaccurati",
+      "item3": "Diritto alla cancellazione — richiedere la cancellazione dei tuoi dati personali",
+      "item4": "Diritto di limitazione del trattamento — richiedere la limitazione dell'uso dei tuoi dati",
+      "item5": "Diritto alla portabilità dei dati — richiedere il trasferimento dei tuoi dati ad altra organizzazione"
+    },
+    "cookiesSection": {
+      "title": "Cookie",
+      "description": "Utilizziamo cookie essenziali per scopi di autenticazione e sicurezza. Non utilizziamo cookie di tracciamento o cookie di analisi di terze parti. Utilizzando PdfEditor, acconsenti all'uso dei cookie essenziali necessari per il funzionamento del servizio. Puoi controllare le impostazioni dei cookie attraverso le preferenze del tuo browser."
+    },
+    "changes": {
+      "title": "Modifiche a questa Informativa sulla Privacy",
+      "description": "Potremmo aggiornare la nostra Informativa sulla Privacy di tanto in tanto. Ti informeremo di eventuali modifiche pubblicando la nuova Informativa sulla Privacy su questa pagina e aggiornando la data 'Ultimo aggiornamento'. Ti consigliamo di rivedere periodicamente questa Informativa sulla Privacy per eventuali modifiche."
     },
     "contact": {
-      "title": "Contatti",
-      "description": "Per qualsiasi domanda su questa informativa sulla privacy, contattaci all'indirizzo privacy@pdfeditor.app."
+      "title": "Contattaci",
+      "description": "Se hai domande su questa Informativa sulla Privacy, contattaci all'indirizzo: privacy@pdfeditor.app"
     }
   },
   "profile": {
@@ -428,5 +454,37 @@
     "bugStatusLabel": "Stato",
     "bugCreatedLabel": "Inviata",
     "bugDescriptionLabel": "Descrizione"
+  },
+  "terms": {
+    "title": "Termini di Servizio",
+    "content": "Utilizzando PdfEditor, accetti questi termini. Sei responsabile del contenuto dei PDF che carichi. Ci riserviamo il diritto di sospendere account che violano le leggi applicabili. Questo servizio è fornito 'così com'è' senza garanzie di alcun tipo."
+  },
+  "cookies": {
+    "title": "Cookie Policy",
+    "content": "Utilizziamo cookie essenziali per autenticazione e sicurezza. Non utilizziamo cookie di tracciamento o analytics di terze parti. Utilizzando PdfEditor, acconsenti all'uso dei cookie essenziali necessari per il funzionamento del servizio."
+  },
+  "status": {
+    "title": "Stato del Servizio",
+    "content": "Tutti i sistemi operativi. Per aggiornamenti in tempo reale, controlla il nostro repository GitHub o contatta il supporto."
+  },
+  "docs": {
+    "title": "Documentazione",
+    "content": "La documentazione è disponibile sul nostro repository GitHub. Visita github.com/mirkobechini/pdfEditor per guide di configurazione, riferimenti API e linee guida per contribuire."
+  },
+  "guide": {
+    "title": "Guida Utente",
+    "content": "Carica un PDF, seleziona un'operazione (unisci, dividi, riordina, modifica testo) e scarica il risultato. Per istruzioni dettagliate, visita il nostro repository GitHub."
+  },
+  "faq": {
+    "title": "Domande Frequenti",
+    "content": "D: I miei dati sono sicuri? R: Sì, tutti i file sono crittografati in transito e automaticamente eliminati dopo l'elaborazione. D: Quali formati sono supportati? R: PDF, importazione TXT ed esportazione in PDF, PNG, JPG, TXT. D: C'è un limite di dimensione? R: Fino a 50MB per file."
+  },
+  "api": {
+    "title": "Riferimenti API",
+    "content": "L'API PdfEditor è disponibile per accesso programmatico. Visita il nostro repository GitHub per documentazione API, endpoint e dettagli di autenticazione."
+  },
+  "roadmap": {
+    "title": "Roadmap",
+    "content": "Le prossime funzionalità includono: compressione PDF, editor di testo inline, app desktop (Tauri v2), sync cloud, app mobile ed editing PDF basato su AI. Vedi il nostro repository GitHub per la roadmap completa."
   }
 }

@@ -376,33 +376,59 @@
   "privacy": {
     "title": "Privacy Policy",
     "lastUpdated": "Last updated: July 12, 2026",
+    "intro": "At PdfEditor, accessible from pdfeditor.app, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by PdfEditor and how we use it. If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us.",
     "infoWeCollect": {
       "title": "Information We Collect",
-      "description": "We collect only the information necessary to provide our PDF editing service:",
-      "item1": "Account information: email address and name (when you register)",
-      "item2": "PDF files you upload for editing (temporarily stored and deleted after editing)",
-      "item3": "Usage data: page views, features used (anonymized)",
-      "item4": "Technical data: browser type, device type (for compatibility)"
+      "description": "The personal information that you are asked to provide, and the reasons why you are asked to provide it, will be made clear to you at the point we ask you to provide your personal information.",
+      "item1": "Account information: email address and full name (when you register)",
+      "item2": "PDF files you upload for editing — stored temporarily and automatically deleted after your session",
+      "item3": "Usage data: pages visited, features used (anonymized for analytics)",
+      "item4": "Technical data: browser type and version, device type, operating system"
     },
     "howWeUse": {
       "title": "How We Use Your Information",
-      "description": "Your information is used exclusively for:",
-      "item1": "Providing and improving the PDF editing service",
-      "item2": "Technical support and bug fixing",
-      "item3": "Service security and abuse prevention",
-      "item4": "We never sell your personal data to third parties"
+      "description": "We use the information we collect in various ways, including to:",
+      "item1": "Provide, operate, and maintain our PDF editing service",
+      "item2": "Improve, personalize, and expand our service",
+      "item3": "Communicate with you, including for customer service and support",
+      "item4": "Find and prevent fraud, abuse, and security incidents"
+    },
+    "legalBasis": {
+      "title": "Legal Basis for Processing (GDPR)",
+      "description": "If you are from the European Economic Area, our legal basis for collecting and using the personal information described in this Privacy Policy depends on the information we collect and the context in which we collect it. We may process your personal data because: we need to perform a contract with you, you have given us permission to do so, the processing is in our legitimate interests, or we need to comply with the law."
+    },
+    "dataRetention": {
+      "title": "Data Retention",
+      "description": "We will retain your personal information only for as long as is necessary for the purposes set out in this Privacy Policy. PDF files are automatically deleted after processing or shortly after your session ends. Account information is retained until you request deletion of your account."
     },
     "dataSharing": {
-      "title": "Data Sharing",
-      "description": "We do not share your personal data with third parties except when required by law or with your explicit consent. PDF files are processed on our servers and are not accessible to other users."
+      "title": "Data Sharing and Disclosure",
+      "description": "We do not sell, trade, or rent your personal information to third parties. We may share your information only when required by law, to protect our rights, or with your explicit consent. PDF files are processed on our Render cloud servers and are not accessible to other users."
     },
     "dataSecurity": {
       "title": "Data Security",
-      "description": "We implement industry-standard security measures including encryption in transit (HTTPS), encrypted storage, and regular security audits. Your PDFs are automatically deleted after processing."
+      "description": "We implement industry-standard security measures to protect your personal information, including encryption in transit via HTTPS, secure storage, and regular security audits. However, no method of transmission over the Internet is 100% secure, and we cannot guarantee absolute security."
+    },
+    "yourRights": {
+      "title": "Your Data Protection Rights (GDPR/CCPA)",
+      "description": "Depending on your jurisdiction, you may have the following data protection rights:",
+      "item1": "The right to access — request copies of your personal data",
+      "item2": "The right to rectification — request correction of inaccurate data",
+      "item3": "The right to erasure — request deletion of your personal data",
+      "item4": "The right to restrict processing — request limitation of how we use your data",
+      "item5": "The right to data portability — request transfer of your data to another organization"
+    },
+    "cookiesSection": {
+      "title": "Cookies",
+      "description": "We use essential cookies for authentication and security purposes. We do not use tracking cookies or third-party analytics cookies. By using PdfEditor, you consent to the use of essential cookies necessary for the service to function. You can control cookie settings through your browser preferences."
+    },
+    "changes": {
+      "title": "Changes to This Privacy Policy",
+      "description": "We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the 'Last updated' date. You are advised to review this Privacy Policy periodically for any changes."
     },
     "contact": {
-      "title": "Contact",
-      "description": "For any questions regarding this privacy policy, please contact us at privacy@pdfeditor.app."
+      "title": "Contact Us",
+      "description": "If you have any questions about this Privacy Policy, please contact us at: privacy@pdfeditor.app"
     }
   },
   "profile": {
@@ -428,5 +454,37 @@
     "bugStatusLabel": "Status",
     "bugCreatedLabel": "Submitted",
     "bugDescriptionLabel": "Description"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "content": "By using PdfEditor, you agree to these terms. You are responsible for the content of the PDFs you upload. We reserve the right to suspend accounts that violate applicable laws. This service is provided 'as is' without warranties of any kind."
+  },
+  "cookies": {
+    "title": "Cookie Policy",
+    "content": "We use essential cookies for authentication and security. We do not use tracking cookies or third-party analytics. By using PdfEditor, you consent to the use of essential cookies necessary for the service to function."
+  },
+  "status": {
+    "title": "Service Status",
+    "content": "All systems operational. For real-time status updates, check our GitHub repository or contact support."
+  },
+  "docs": {
+    "title": "Documentation",
+    "content": "Documentation is available on our GitHub repository. Visit github.com/mirkobechini/pdfEditor for setup guides, API references, and contribution guidelines."
+  },
+  "guide": {
+    "title": "User Guide",
+    "content": "Upload a PDF, select an operation (merge, split, reorder, edit text), and download the result. For detailed instructions, visit our GitHub repository."
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "content": "Q: Is my data secure? A: Yes, all files are encrypted in transit and automatically deleted after processing. Q: What formats are supported? A: PDF, TXT import, and export to PDF, PNG, JPG, TXT. Q: Is there a file size limit? A: Up to 50MB per file."
+  },
+  "api": {
+    "title": "API Reference",
+    "content": "The PdfEditor API is available for programmatic access. Visit our GitHub repository for API documentation, endpoints, and authentication details."
+  },
+  "roadmap": {
+    "title": "Roadmap",
+    "content": "Upcoming features include: PDF compression, inline text editor, desktop app (Tauri v2), cloud sync, mobile app, and AI-powered PDF editing. See our GitHub repository for the full roadmap."
   }
 }
