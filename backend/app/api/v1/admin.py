@@ -6,6 +6,8 @@ from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.repositories.user_repo import UserRepository
 from app.schemas.auth import LicenseFeatureResponse, UpdateAdminRequest, UpdateLicenseRequest, UserResponse
+from app.services.auth_service import AuthService
+from app.services.email_service import EmailService
 
 router = APIRouter(tags=["admin"])
 
@@ -132,3 +134,45 @@ def get_license_features(
     repo = UserRepository(db)
     features = repo.get_features_for_tier(current_user.license_tier)
     return [LicenseFeatureResponse.model_validate(f) for f in features]
+
+
+class SendResetResponse(BaseModel):
+    message: str
+
+
+@router.post("/admin/users/{user_id}/send-reset", response_model=SendResetResponse)
+def admin_send_reset(
+    user_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SendResetResponse:
+    """Send a password reset email to a user (admin only)."""
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+
+    repo = UserRepository(db)
+    target = repo.get_by_id(user_id)
+    if not target:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    service = AuthService(db)
+    token = service.request_password_reset(target.email)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate reset token",
+        )
+
+    sent = EmailService.send_password_reset_email(target.email, token)
+    if sent:
+        return SendResetResponse(message=f"Reset email sent to {target.email}")
+    else:
+        return SendResetResponse(
+            message=f"Dev mode: reset token generated for {target.email}. SMTP not configured."
+        )

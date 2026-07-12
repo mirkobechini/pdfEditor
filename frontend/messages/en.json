@@ -214,7 +214,9 @@
     "tierAdmin": "Admin",
     "platform": "Platform",
     "appVersion": "App Version",
-    "osInfo": "OS Info"
+    "osInfo": "OS Info",
+    "sendReset": "Send Reset Email",
+    "sendResetSent": "Reset email sent!"
   },
   "deleteModal": {
     "title": "Delete PDF",

@@ -65,4 +65,35 @@ describe("ApiClient", () => {
       await expect(api.listMyBugReports()).rejects.toThrow("Error");
     });
   });
+
+  describe("adminSendReset", () => {
+    it("sends POST request and returns message", async () => {
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ message: "Reset email sent!" }), {
+            status: 200,
+          }),
+        );
+      const result = await api.adminSendReset("user-123");
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/admin/users/user-123/send-reset"),
+        expect.objectContaining({ method: "POST" }),
+      );
+      expect(result.message).toBe("Reset email sent!");
+    });
+
+    it("throws on error response", async () => {
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ detail: "User not found" }), {
+            status: 404,
+          }),
+        );
+      await expect(api.adminSendReset("bad-id")).rejects.toThrow(
+        "User not found",
+      );
+    });
+  });
 });

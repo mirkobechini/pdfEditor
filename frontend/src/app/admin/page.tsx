@@ -98,6 +98,7 @@ function UsersTable() {
     const [tierFilter, setTierFilter] = React.useState("");
     const [dateFrom, setDateFrom] = React.useState("");
     const [dateTo, setDateTo] = React.useState("");
+    const [resetMsg, setResetMsg] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         loadUsers();
@@ -126,6 +127,16 @@ function UsersTable() {
             setEditingId(null);
         } catch (err) {
             alert("Failed to update license: " + err);
+        }
+    }
+
+    async function handleSendReset(userId: string) {
+        try {
+            const resp = await api.adminSendReset(userId);
+            setResetMsg(resp.message);
+            setTimeout(() => setResetMsg(null), 4000);
+        } catch (err) {
+            alert("Failed to send reset: " + err);
         }
     }
 
@@ -209,89 +220,96 @@ function UsersTable() {
             {filtered.length === 0 ? (
                 <p className="text-sm text-gray-400">{t("noUsers")}</p>
             ) : (
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
-                        <thead>
-                            <tr className="border-b dark:border-gray-700 text-left">
-                                <th className="p-2 font-medium">{t("email")}</th>
-                                <th className="p-2 font-medium">{t("fullName")}</th>
-                                <th className="p-2 font-medium">{t("licenseTier")}</th>
-                                <th className="p-2 font-medium">{t("isAdmin")}</th>
-                                <th className="p-2 font-medium">{t("createdAt")}</th>
-                                <th className="p-2 font-medium">{t("actions")}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map((u) => (
-                                <tr
-                                    key={u.id}
-                                    className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                                >
-                                    <td className="p-2">{u.email}</td>
-                                    <td className="p-2">{u.full_name}</td>
-                                    <td className="p-2">
-                                        {editingId === u.id ? (
-                                            <select
-                                                value={editTier}
-                                                onChange={(e) => setEditTier(e.target.value)}
-                                                className="bg-transparent border border-blue-500 rounded px-1 text-sm"
-                                                autoFocus
-                                            >
-                                                {LICENSE_TIERS.map((tier) => (
-                                                    <option key={tier} value={tier}>
-                                                        {t(
-                                                            `tier${tier.charAt(0).toUpperCase() + tier.slice(1)}`,
-                                                        )}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            <span>
-                                                {t(
-                                                    `tier${u.license_tier.charAt(0).toUpperCase() + u.license_tier.slice(1)}`,
-                                                )}
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="p-2">{u.is_admin ? "✓" : "—"}</td>
-                                    <td className="p-2 text-gray-500">
-                                        {new Date(u.created_at).toLocaleDateString()}
-                                    </td>
-                                    <td className="p-2">
-                                        {editingId === u.id ? (
-                                            <div className="flex gap-1">
+                <div>
+                    {resetMsg && (
+                        <div className="mb-3 p-2 text-sm text-green-700 bg-green-100 dark:bg-green-900/30 rounded">
+                            {resetMsg}
+                        </div>
+                    )}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm border-collapse">
+                            <thead>
+                                <tr className="border-b dark:border-gray-700 text-left">
+                                    <th className="p-2 font-medium">{t("email")}</th>
+                                    <th className="p-2 font-medium">{t("fullName")}</th>
+                                    <th className="p-2 font-medium">{t("licenseTier")}</th>
+                                    <th className="p-2 font-medium">{t("isAdmin")}</th>
+                                    <th className="p-2 font-medium">{t("createdAt")}</th>
+                                    <th className="p-2 font-medium">{t("actions")}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map((u) => (
+                                    <tr
+                                        key={u.id}
+                                        className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    >
+                                        <td className="p-2">{u.email}</td>
+                                        <td className="p-2">{u.full_name}</td>
+                                        <td className="p-2">
+                                            {editingId === u.id ? (
+                                                <select
+                                                    value={editTier}
+                                                    onChange={(e) => setEditTier(e.target.value)}
+                                                    className="bg-transparent border border-blue-500 rounded px-1 text-sm"
+                                                    autoFocus
+                                                >
+                                                    {LICENSE_TIERS.map((tier) => (
+                                                        <option key={tier} value={tier}>
+                                                            {t(
+                                                                `tier${tier.charAt(0).toUpperCase() + tier.slice(1)}`,
+                                                            )}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <span>
+                                                    {t(
+                                                        `tier${u.license_tier.charAt(0).toUpperCase() + u.license_tier.slice(1)}`,
+                                                    )}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="p-2">{u.is_admin ? "✓" : "—"}</td>
+                                        <td className="p-2 text-gray-500">
+                                            {new Date(u.created_at).toLocaleDateString()}
+                                        </td>
+                                        <td className="p-2">
+                                            {editingId === u.id ? (
+                                                <div className="flex gap-1">
+                                                    <button
+                                                        className="text-xs px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
+                                                        onClick={() => handleSaveLicense(u.id)}
+                                                    >
+                                                        {t("save")}
+                                                    </button>
+                                                    <button
+                                                        className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                                        onClick={() => setEditingId(null)}
+                                                    >
+                                                        {t("cancel")}
+                                                    </button>
+                                                </div>
+                                            ) : (
                                                 <button
-                                                    className="text-xs px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
-                                                    onClick={() => handleSaveLicense(u.id)}
+                                                    className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                                    onClick={() => {
+                                                        setEditingId(u.id);
+                                                        setEditTier(u.license_tier);
+                                                    }}
                                                 >
                                                     {t("save")}
                                                 </button>
-                                                <button
-                                                    className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-                                                    onClick={() => setEditingId(null)}
-                                                >
-                                                    {t("cancel")}
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <button
-                                                className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-                                                onClick={() => {
-                                                    setEditingId(u.id);
-                                                    setEditTier(u.license_tier);
-                                                }}
-                                            >
-                                                {t("save")}
-                                            </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <p className="text-xs text-gray-400 mt-2">
-                        Mostrati {filtered.length} di {users.length} utenti
-                    </p>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <p className="text-xs text-gray-400 mt-2">
+                            Mostrati {filtered.length} di {users.length} utenti
+                        </p>
+                    </div>
                 </div>
             )}
         </div>
