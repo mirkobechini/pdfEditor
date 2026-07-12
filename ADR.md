@@ -131,41 +131,55 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Coverage test backend
 
-### Coverage attuale: 92% (225 test, 0 failures)
+### Stato attuale: 92% (228 test, 0 failures, 0 warnings)
 
-| Modulo             | Coverage | Linee scoperte | Difficoltà residua        |
-| ------------------ | -------- | -------------- | ------------------------- |
-| `security.py`      | 100%     | —              | ✅                        |
-| `config.py`        | 100%     | —              | ✅                        |
-| `merge_split.py`   | 100%     | —              | ✅                        |
-| `metadata.py`      | 100%     | —              | ✅                        |
-| `reorder.py`       | 100%     | —              | ✅                        |
-| `text.py`          | 100%     | —              | ✅                        |
-| `unlock.py`        | 100%     | —              | ✅                        |
-| `s3_storage.py`    | 96%      | 3              | 🟡 Facile                 |
-| `database.py`      | 95%      | 1              | 🟡 Facile                 |
-| `user_repo.py`     | 95%      | 3              | 🟡 Facile                 |
-| `email_service.py` | 94%      | 2              | 🟡 Facile                 |
-| `convert.py`       | 94%      | 3              | 🟡 Facile                 |
-| `admin.py`         | 91%      | 5              | 🟡 Facile                 |
-| `main.py`          | 92%      | 8              | 🟡 Facile                 |
-| `deps.py`          | 92%      | 3              | 🟡 Facile                 |
-| `bug_report.py`    | 93%      | 2              | 🟡 Facile                 |
-| `auth.py` (api)    | 90%      | 7              | 🟡 Facile                 |
-| `undo_redo.py`     | 90%      | 2              | 🟡 Facile                 |
-| `auth_service.py`  | 92%      | 9              | 🟡 Facile                 |
-| `storage.py`       | 82%      | 17             | 🟠 Media (S3 path)        |
-| `pdf_service.py`   | 86%      | 55             | 🔴 Difficile (error path) |
+| Modulo                                                                                            | Coverage | Note                   |
+| ------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
+| `security.py`, `config.py`, `merge_split.py`, `metadata.py`, `reorder.py`, `text.py`, `unlock.py` | 100%     | ✅                     |
+| `s3_storage.py`                                                                                   | 96%      | Mock boto3             |
+| `database.py`, `user_repo.py`                                                                     | 95%      | 🟡                     |
+| `email_service.py`, `convert.py`                                                                  | 94%      | 🟡                     |
+| `main.py`, `auth.py`, `admin.py`, `deps.py`, `undo_redo.py`                                       | 90-93%   | 🟡                     |
+| `auth_service.py`                                                                                 | 92%      | 🟡                     |
+| `storage.py`                                                                                      | 82%      | 🟠 S3 path             |
+| `pdf_service.py`                                                                                  | 86%      | 🔴 55 linee error path |
+| **TOTALE**                                                                                        | **92%**  |                        |
 
-**Cosa manca per il 100%:**
+### Cosa manca per il 100%
 
-- ~49 linee facili (1-2 ore) — error path su endpoint, not found, 403
-- ~17 linee medie (1 ora) — switch S3/local in storage.py
-- ~55 linee difficili (2-3 ore) — pdf_service.py error path (password errata, file non trovato, conversioni fallite)
+- ~49 linee facili (error path endpoint, 403, 404) — 1-2h
+- ~17 linee medie (S3/local switch) — 1h
+- ~55 linee difficili (pdf_service.py error path) — 2-3h
 
-**Consiglio:** Fermarsi al 92% è accettabile. Le 55 linee di `pdf_service.py` sono `except` e `if not` casi limite già coperti dai test di integrazione esistenti.
+## Coverage test frontend
 
-Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'ordine di implementazione è definito dalla priorità indicata.
+### Stato attuale: 47% (156 test, 36 files, 0 failures)
+
+| Modulo                        | Coverage | Test             |
+| ----------------------------- | -------- | ---------------- |
+| `login/page.tsx`              | 100%     | ✅               |
+| `register/page.tsx`           | 93%      | ✅               |
+| `landing/*` components        | 100%     | ✅               |
+| `profile/page.tsx`            | 96%      | ✅               |
+| `lib/auth.tsx`                | 69%      | 🟡               |
+| `lib/pdfPreview.ts`           | 90%      | ✅               |
+| `components/Sidebar.tsx`      | 63%      | 🟡               |
+| `components/AppLayout.tsx`    | 58%      | 🟡               |
+| `components/Toolbar.tsx`      | 42%      | 🟡               |
+| `components/PdfViewer.tsx`    | 51%      | 🔴 (mock PDF.js) |
+| `components/DeleteModal.tsx`  | 86%      | ✅               |
+| `components/PdfThumbnail.tsx` | 96%      | ✅               |
+| `admin/page.tsx`              | 40%      | 🟡               |
+| `app/page.tsx` (editor)       | 0%       | ❌               |
+| `forgot-password/page.tsx`    | 0%       | ❌               |
+| `reset-password/page.tsx`     | 0%       | ❌               |
+| `lib/api.ts`                  | 0%       | ❌               |
+| `lib/i18n.ts`                 | 0%       | ❌               |
+| **TOTALE**                    | **47%**  |                  |
+
+### Obiettivo: 60-70%
+
+Servono ancora test per: AdminPage (bugs tab), ForgotPassword, ResetPassword, api.ts, i18n.ts, app/page.tsx (editor).
 
 ### Fasi successive (macro)
 
@@ -284,48 +298,45 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 > 📋 **Completate:** Vedi [`CHANGELOG.md`](./CHANGELOG.md)
 
+#### 🔴 Priorità ALTA
+
 - ⬜ **Invio email reale reset password** — Attesa dominio Cloudflare per SendGrid sender verification.
 - ⬜ **Admin: invia reset password via dashboard** — Piano: `.specs/plans/feature-admin-send-reset-email.md`.
-- ⬜ **Frontend coverage 100%** — Da 40% a 100%. Piano: `.specs/plans/chore-frontend-100-percent-coverage.md`.
+- ⬜ **Frontend coverage 60-70%** — Piano: `.specs/plans/chore-frontend-100-percent-coverage.md`.
 - ⬜ **User bug report status in dashboard** — Piano: `.specs/plans/feature-user-bug-report-status.md`.
+
+#### 🟡 Priorità MEDIA
+
 - ⬜ **Miglioramenti UI/UX webapp** — Piano: `.specs/plans/feature-ui-ux-improvements.md`.
 - ⬜ **PDF naming preservation** — Piano: `.specs/plans/feature-pdf-naming-preservation.md`.
 - ⬜ **PDF compression** — Piano: `.specs/plans/feature-pdf-compression.md`.
 - ⬜ **SendGrid rate limiting handling** — Piano: `.specs/plans/feature-sendgrid-rate-limit-handling.md`.
 - ⬜ **Landing page footer fix** — Piano: `.specs/plans/feature-landing-footer-links.md`.
 - ⬜ **License tier button skin** — Piano: `.specs/plans/feature-license-tier-button-skin.md`.
-- ⬜ **Inline text editor** (sostituisce Find&Replace) — Piano: `.specs/plans/feature-inline-text-editor.md`.
 - ⬜ **Privacy Policy page** — Piano: `.specs/plans/feature-privacy-policy.md`.
+- ⬜ **CI/CD GitHub Actions** — Backend + frontend test, deploy su Render via main. Piano: `.specs/plans/chore-cicd-pipeline.md`.
+
+#### 🔵 Priorità BASSA / Future
+
+- ⬜ **Inline text editor** (sostituisce Find&Replace) — Piano: `.specs/plans/feature-inline-text-editor.md`.
 - ⬜ **Stripe MCP Subscriptions** — Piano: `.specs/plans/feature-stripe-mcp-subscriptions.md`.
 - ⬜ **AI PDF editing service** — Piano: `.specs/plans/feature-ai-pdf-editing.md`.
 - ⬜ **Conferma email account** — Piano: `.specs/plans/feature-email-confirmation.md`.
-- ⬜ **Landing page footer fix** — Rendere funzionali i link del footer (Features, How it Works, Privacy, Terms). Aggiungere link nascosto al sito personale futuro. Piano: `.specs/plans/feature-landing-footer-links.md`.
-- ⬜ **License tier button skin** — Skin visiva per pulsanti toolbar: feature non disponibili appaiono grigie con badge "PRO" e tooltip "Upgrade to Premium". Si attiva quando `DISABLE_LICENSE_ENFORCEMENT=False`. Piano: `.specs/plans/feature-license-tier-button-skin.md`.
-- ✅ **Admin license tier restrictions** — Il superadmin può assegnare/rimuovere solo il tier "lifetime" (enterprise). Non può modificare tier "pro" o "premium" (pagati via Stripe). **[COMPLETATO]** — Implementato 2026-07-10, PR #196.
-- ✅ **Navigazione landing page da app autenticata** — Logo in AppLayout linka a `/landing`. LandingNavbar mostra "Vai all'App" per utenti autenticati. Piano: `.specs/plans/feature-authenticated-landing-navigation.md`. **[COMPLETATO]** — Implementato 2026-07-09.
-- ⬜ **Inline text editor (word-like)** — Sostituire il dialog "Find and Replace" con un editor di testo inline WYSIWYG: click-to-edit direttamente sul PDF viewer, modifica multipla, salvataggio batch. Complessità ALTA. Piano: `.specs/plans/feature-inline-text-editor.md`. **[SOSTITUISCE Find & Replace rotto]**
-- ✅ **Backend 100% coverage** — Portare copertura test backend da 83% a 92% (225 test, 0 failures). **[COMPLETATO]** — 2026-07-11, PR #202.
-- ✅ **Fix 3 test falliti** — google_oauth (2) + migration PermissionError (1). **[COMPLETATO]** — 2026-07-10, PR #200.
-- ✅ **Security improvements** — Graceful shutdown, password strength, header injection, E2E tests. **[COMPLETATO]** — 2026-07-11, PR #208 + #212.
-- ✅ **Large file upload progress indicator** — Barra di progresso per upload file grandi. **[COMPLETATO]** — 2026-07-11, PR #206.
-- ✅ **Admin bug report — campi mancanti** — Mostrare platform, app_version, os_info nella tabella bug. **[COMPLETATO]** — 2026-07-11, PR #204.
-- ✅ **CSRF protection** — Middleware CSRF token. **[COMPLETATO]** — 2026-07-11, PR #214.
-- ✅ **JWT httpOnly cookie** — Eliminata vulnerabilità XSS localStorage. **[COMPLETATO]** — 2026-07-11, PR #216.
-- ⬜ **Frontend coverage 100%** — Portare copertura test frontend da 35% a 100%. Piano: `.specs/plans/chore-frontend-100-percent-coverage.md`.
-- ⬜ **User bug report status in dashboard** — Mostrare stato segnalazioni bug nella pagina profilo. Piano: `.specs/plans/feature-user-bug-report-status.md`.
-- ⬜ **AI PDF editing service** — Servizio AI per modifiche PDF via linguaggio naturale (BYOK + cloud). Piano: `.specs/plans/feature-ai-pdf-editing.md`.
-- ⬜ **Privacy Policy page** — Pagina privacy policy accessibile dal footer. Piano: `.specs/plans/feature-privacy-policy.md`.
+- ⬜ **E2E Playwright tests** — Piano: `.specs/plans/chore-security-improvements.md`.
+- ⬜ **Tauri v2 desktop** — Fase 1c.
+- ⬜ **Cloud sync SQLite↔PostgreSQL** — Fase 3.
+- ⬜ **Mobile React Native** — Fase 4.
 
-### Code Review — Issue identificate
+### Code Review — Issue identificate e risolte
 
-| #   | Issue                                                               | Tipo           | Priorità | Fix                                              |
-| --- | ------------------------------------------------------------------- | -------------- | -------- | ------------------------------------------------ |
-| 1   | **Password strength non validata su reset password**                | Bug            | 🔴 Alta  | `.specs/plans/bug-password-strength-on-reset.md` |
-| 2   | **License features seed duplicato** (main.py + conftest.py)         | Duplicazione   | 🟢 Bassa | `.specs/plans/chore-license-seed-extract.md`     |
-| 3   | **PDF.js loading duplicato in 3 dialoghi** (Split/Reorder/Remove)   | Duplicazione   | 🟡 Media | `.specs/plans/chore-extract-usePdfJs-hook.md`    |
-| 4   | **ADR.md troppo lungo** (~430 linee) — Bug tracker storico è rumore | Documentazione | 🟢 Bassa | `.specs/plans/chore-changelog-adr-slim.md`       |
-| 5   | **`pdf_service.py` 406 linee** — troppe responsabilità              | Refactoring    | 🟢 Bassa | Valutare suddivisione futura                     |
-| 6   | **`api.ts` frontend 400+ linee** — tutti i metodi in un file        | Refactoring    | 🟢 Bassa | Valutare suddivisione futura                     |
-| 7   | **`Sidebar.tsx` — nessun feedback errore su loadFiles fallito**     | UX             | 🟢 Bassa | Aggiungere toast/alert                           |
+| #   | Issue                                                           | Tipo           | Risoluzione                |
+| --- | --------------------------------------------------------------- | -------------- | -------------------------- |
+| 1   | **Password strength non validata su reset password**            | Bug            | ✅ PR #218                 |
+| 2   | **License features seed duplicato** (main.py + conftest.py)     | Duplicazione   | ✅ PR #222                 |
+| 3   | **PDF.js loading duplicato in 3 dialoghi**                      | Duplicazione   | ✅ PR #220 (usePdfJs hook) |
+| 4   | **ADR.md troppo lungo** — Bug tracker storico era rumore        | Documentazione | ✅ PR #224 (CHANGELOG.md)  |
+| 5   | **`pdf_service.py` 406 linee** — troppe responsabilità          | Refactoring    | 🟡 Valutare suddivisione   |
+| 6   | **`api.ts` frontend 400+ linee** — tutti i metodi in un file    | Refactoring    | 🟡 Valutare suddivisione   |
+| 7   | **`Sidebar.tsx` — nessun feedback errore su loadFiles fallito** | UX             | 🟢 Bassa priorità          |
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
