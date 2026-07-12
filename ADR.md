@@ -299,7 +299,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 | SQL injection         | ✅ Protected | SQLAlchemy parameterized queries                        |
 | Password storage      | ✅ Protected | bcrypt hashing, never plain text                        |
 | Cross-origin attacks  | ✅ Protected | CORS + ALLOWED_ORIGINS                                  |
-| Email rate limit      | 🟡 Planned   | Catch 429, disable button, admin override               |
+| Email rate limit      | ✅ Protected | Catch 429, disable button, admin override               |
 | Encryption at rest    | ❌ Future    | PostgreSQL encryption plugin (Phase 3+)                 |
 | Rate limit login      | ✅ Protected | slowapi: 5/min login, 3/h register, 3/h forgot-password |
 | 2FA support           | ❌ Future    | Low priority, evaluable in Phase 3+                     |
@@ -307,26 +307,6 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 ### Feature pianificate (in ordine di priorità)
 
 > 📋 **Completate:** Vedi [`CHANGELOG.md`](./CHANGELOG.md)
-
-#### 🔴 Priorità ALTA
-
-- ✅ **Invio email reale reset password** — SendGrid/Cloudflare configurati e attivi.
-- ✅ **Admin: invia reset password via dashboard** — Piano: `.specs/plans/feature-admin-send-reset-email.md`.
-- ✅ **User bug report status in dashboard** — Piano: `.specs/plans/feature-user-bug-report-status.md`.
-
-#### 🟡 Priorità MEDIA
-
-- ⬜ **Frontend coverage 80-100%** — Attuale 67.5%. Piano: `.specs/plans/chore-frontend-100-percent-coverage.md`.
-- ✅ **Bug report de-duplication & voting** — Piano: `.specs/plans/feature-bug-report-dedup-vote.md`.
-
-- ⬜ **Miglioramenti UI/UX webapp** — Piano: `.specs/plans/feature-ui-ux-improvements.md`.
-- ⬜ **PDF naming preservation** — Piano: `.specs/plans/feature-pdf-naming-preservation.md`.
-- ⬜ **PDF compression** — Piano: `.specs/plans/feature-pdf-compression.md`.
-- ⬜ **SendGrid rate limiting handling** — Piano: `.specs/plans/feature-sendgrid-rate-limit-handling.md`.
-- ⬜ **Landing page footer fix** — Piano: `.specs/plans/feature-landing-footer-links.md`.
-- ⬜ **License tier button skin** — Piano: `.specs/plans/feature-license-tier-button-skin.md`.
-- ⬜ **Privacy Policy page** — Piano: `.specs/plans/feature-privacy-policy.md`.
-- ✅ **CI/CD GitHub Actions** — Backend + frontend test, deploy su Render via main. Piano: `.specs/plans/chore-cicd-pipeline.md`.
 
 #### 🔵 Priorità BASSA / Future
 
@@ -339,16 +319,6 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - ⬜ **Cloud sync SQLite↔PostgreSQL** — Fase 3.
 - ⬜ **Mobile React Native** — Fase 4.
 
-### Code Review — Issue identificate e risolte
-
-| #   | Issue                                                           | Tipo           | Risoluzione                       |
-| --- | --------------------------------------------------------------- | -------------- | --------------------------------- |
-| 1   | **Password strength non validata su reset password**            | Bug            | ✅ PR #218                        |
-| 2   | **License features seed duplicato** (main.py + conftest.py)     | Duplicazione   | ✅ PR #222                        |
-| 3   | **PDF.js loading duplicato in 3 dialoghi**                      | Duplicazione   | ✅ PR #220 (usePdfJs hook)        |
-| 4   | **ADR.md troppo lungo** — Bug tracker storico era rumore        | Documentazione | ✅ PR #224 (CHANGELOG.md)         |
-| 5   | **`pdf_service.py` 406 linee** — troppe responsabilità          | Refactoring    | ✅ PR #241 (PdfMergeSplitService) |
-| 6   | **`api.ts` frontend 400+ linee** — tutti i metodi in un file    | Refactoring    | ✅ PR #244 (api-types.ts)         |
-| 7   | **`Sidebar.tsx` — nessun feedback errore su loadFiles fallito** | UX             | ✅ PR #245                        |
+<!-- Code Review completata — vedi CHANGELOG.md per dettagli -->
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->

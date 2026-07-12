@@ -2,12 +2,34 @@
 
 ## 2026-07-12
 
+- ✅ **Bug report de-duplication & voting** — Ricerca bug esistenti, voto, report_count (PR #252)
+- ✅ **Backend coverage 93%** — csrf 100%, storage 100% (PR #249, #250)
+- ✅ **Starlette status constants fix** — Raw integers per compatibilità cross-version (PR #247)
+- ✅ **CI/CD pipeline** — test.yml unificato, Node 22, Force Node24, PYTHONPATH fix
+- ✅ **Privacy Policy page** — GDPR/CCPA compliant, 10 sezioni (PR #256)
+- ✅ **Terms of Service page** — 7 sezioni legali (PR #256)
+- ✅ **Cookie Policy page** — 4 sezioni (PR #256)
+- ✅ **Landing footer pages** — Status, Docs, Guide, FAQ, API, Roadmap (PR #256)
+- ✅ **Landing footer links** — Tutti i link ora puntano a pagine reali (PR #256)
+- ✅ **Admin send reset email** — Pulsante nella dashboard admin (PR #237)
+- ✅ **User bug report status** — Sezione bug reports nel profilo (PR #235)
+- ✅ **ADR aggiornato** — Coverage, test counts, feature completate
+- ✅ **pdf_service.py refactor** — Estratto PdfMergeSplitService (PR #241)
+- ✅ **api.ts refactor** — Tipi in api-types.ts (PR #244)
+- ✅ **Sidebar UX error feedback** — Messaggio errore su loadFiles fallito (PR #245)
 - ✅ **Password strength validation on reset** — Aggiunta validazione password in reset_password() (PR #218)
 - ✅ **usePdfJs hook extract** — Rimosso codice duplicato PDF.js in Split/Reorder/Remove dialogs (PR #220)
 - ✅ **License seed extract** — Dati seed condivisi tra main.py e conftest.py (PR #222)
 - ✅ **Password strength** — Validazione backend (PR #208)
 - ✅ **Header injection** — Sanitize Content-Disposition (PR #208)
 - ✅ **Frontend tests Phase 1** — Sidebar, Toolbar, PdfViewer tests (131 total, 40% coverage)
+- ✅ **Code Review #1** — Password strength su reset password (PR #218)
+- ✅ **Code Review #2** — License features seed duplicato rimosso (PR #222)
+- ✅ **Code Review #3** — PDF.js loading duplicato → usePdfJs hook (PR #220)
+- ✅ **Code Review #4** — ADR slim 50% + CHANGELOG.md creato (PR #224)
+- ✅ **Code Review #5** — pdf_service.py split → PdfMergeSplitService (PR #241)
+- ✅ **Code Review #6** — api.ts types → api-types.ts (PR #244)
+- ✅ **Code Review #7** — Sidebar error feedback UX (PR #245)
 
 ## 2026-07-11
 
