@@ -214,7 +214,9 @@
     "tierAdmin": "Admin",
     "platform": "Piattaforma",
     "appVersion": "Versione App",
-    "osInfo": "Info OS"
+    "osInfo": "Info OS",
+    "sendReset": "Invia Email Reset",
+    "sendResetSent": "Email di reset inviata!"
   },
   "deleteModal": {
     "title": "Elimina PDF",
