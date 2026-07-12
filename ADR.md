@@ -96,7 +96,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | 18  | **Large file upload — nessun progress indicator**                         | ✅ Risolto (PR #206) | —                                                     |
 | 19  | **Find & Replace non funziona**                                           | Medio (UX)           | Inline text editor                                    |
 | 20  | **Admin bug report — campi mancanti**                                     | ✅ Risolto (PR #204) | —                                                     |
-| 21  | **Frontend coverage 63%** — 202 test su 47 file                           | Medio                | `.specs/plans/chore-frontend-100-percent-coverage.md` |
+| 21  | **Frontend coverage 70%** — 247 test su 50 file                           | ✅ Risolto (PR #233) | `.specs/plans/chore-frontend-100-percent-coverage.md` |
 
 ### Da risolvere/note ⏳
 
@@ -153,33 +153,35 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Coverage test frontend
 
-### Stato attuale: 63% (202 test, 47 files, 0 failures)
+### Stato attuale: 70% (247 test, 50 files, 0 failures)
 
-| Modulo                        | Coverage | Test             |
-| ----------------------------- | -------- | ---------------- |
-| `login/page.tsx`              | 100%     | ✅               |
-| `register/page.tsx`           | 93%      | ✅               |
-| `landing/*` components        | 100%     | ✅               |
-| `profile/page.tsx`            | 96%      | ✅               |
-| `lib/auth.tsx`                | 67%      | 🟡               |
-| `lib/pdfPreview.ts`           | 90%      | ✅               |
-| `components/Sidebar.tsx`      | 63%      | 🟡               |
-| `components/AppLayout.tsx`    | 58%      | 🟡               |
-| `components/Toolbar.tsx`      | 42%      | 🟡               |
-| `components/PdfViewer.tsx`    | 85%      | ✅ (mock PDF.js) |
-| `components/DeleteModal.tsx`  | 86%      | ✅               |
-| `components/PdfThumbnail.tsx` | 96%      | ✅               |
-| `admin/page.tsx`              | 70%      | 🟡               |
-| `app/page.tsx` (editor)       | ~90%     | ✅ (mock)        |
-| `forgot-password/page.tsx`    | 95%      | ✅               |
-| `reset-password/page.tsx`     | 41%      | 🔴               |
-| `BuggatiDialog/ReorderDialog` | ~30%     | 🔴               |
+| Modulo                         | Coverage | Test             |
+| ------------------------------ | -------- | ---------------- |
+| `login/page.tsx`               | 100%     | ✅               |
+| `register/page.tsx`            | 93%      | ✅               |
+| `landing/*` components         | 100%     | ✅               |
+| `profile/page.tsx`             | 96%      | ✅               |
+| `lib/auth.tsx`                 | 67%      | 🟡               |
+| `lib/pdfPreview.ts`            | 90%      | ✅               |
+| `lib/usePdfJs.ts`              | 88%      | ✅               |
+| `components/Sidebar.tsx`       | 63%      | 🟡               |
+| `components/AppLayout.tsx`     | 85%      | ✅               |
+| `components/Toolbar.tsx`       | 68%      | 🟡               |
+| `components/PdfViewer.tsx`     | 85%      | ✅ (mock PDF.js) |
+| `components/ProtectDialog.tsx` | 97%      | ✅               |
+| `components/ReplaceTextDialog` | 96%      | ✅               |
+| `components/DeleteModal.tsx`   | 86%      | ✅               |
+| `components/PdfThumbnail.tsx`  | 96%      | ✅               |
+| `admin/page.tsx`               | 70%      | 🟡               |
+| `app/page.tsx` (editor)        | ~90%     | ✅ (mock)        |
+| `forgot-password/page.tsx`     | 95%      | ✅               |
+| `reset-password/page.tsx`      | 94%      | ✅               |
+| `MergeDialog/ReorderDialog`    | ~30-67%  | 🔴               |
 
-### Cosa manca per il 70-80%
+### Cosa manca per il 100%
 
-- `reset-password/page.tsx` (41%) — test error states
-- Dialoghi complessi (MergeDialog 68%, ReorderDialog 30%)
-- Componenti minori (ProtectDialog 31%, ReplaceTextDialog 38%)
+- Dialoghi complessi (ReorderDialog 30%, SplitDialog 37%, MergeDialog 67%)
+- Componenti minori (RemoveDialog 44%, GoogleLoginButton 48%)
   | `lib/api.ts` | 0% | ❌ |
   | `lib/i18n.ts` | 0% | ❌ |
   | **TOTALE** | **47%** | |
@@ -309,8 +311,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 - ⬜ **Invio email reale reset password** — Attesa dominio Cloudflare per SendGrid sender verification.
 - ⬜ **Admin: invia reset password via dashboard** — Piano: `.specs/plans/feature-admin-send-reset-email.md`.
-- ⬜ **Frontend coverage 70-80%** — Attuale 63%. Piano: `.specs/plans/chore-frontend-100-percent-coverage.md`.
-- ⬜ **Frontend coverage 100%** — Obiettivo finale.
+- ⬜ **Frontend coverage 80-100%** — Attuale 70%. Piano: `.specs/plans/chore-frontend-100-percent-coverage.md`.
 - ⬜ **User bug report status in dashboard** — Piano: `.specs/plans/feature-user-bug-report-status.md`.
 
 #### 🟡 Priorità MEDIA
