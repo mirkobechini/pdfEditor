@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { api } from "../lib/api";
+import { api, BugReport } from "../lib/api";
 
 interface BugReportDialogProps {
   open: boolean;
@@ -11,33 +11,60 @@ interface BugReportDialogProps {
 
 export default function BugReportDialog({ open, onClose }: BugReportDialogProps) {
   const t = useTranslations("bugReport");
+  const [step, setStep] = React.useState<"search" | "create" | "done">("search");
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [results, setResults] = React.useState<BugReport[]>([]);
+  const [searching, setSearching] = React.useState(false);
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [sending, setSending] = React.useState(false);
-  const [done, setDone] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (open) {
+      setStep("search");
+      setSearchQuery("");
+      setResults([]);
       setTitle("");
       setDescription("");
       setSending(false);
-      setDone(false);
       setError(null);
     }
   }, [open]);
 
   if (!open) return null;
 
+  async function handleSearch() {
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    setError(null);
+    try {
+      const res = await api.searchBugReports(searchQuery.trim());
+      setResults(res);
+    } catch (err) {
+      setError(t("searchFailed") + ": " + (err instanceof Error ? err.message : err));
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  async function handleVote(bugId: string) {
+    try {
+      await api.voteBugReport(bugId);
+      setStep("done");
+    } catch (err) {
+      setError(t("voteFailed") + ": " + (err instanceof Error ? err.message : err));
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
-
     setSending(true);
     setError(null);
     try {
       await api.createBugReport(title.trim(), description.trim());
-      setDone(true);
+      setStep("done");
     } catch (err) {
       setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
     } finally {
@@ -51,7 +78,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
         className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        {done ? (
+        {step === "done" ? (
           <>
             <h2 className="text-lg font-bold mb-2">{t("sentTitle")}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
@@ -63,6 +90,78 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
                 onClick={onClose}
               >
                 {t("close")}
+              </button>
+            </div>
+          </>
+        ) : step === "search" ? (
+          <>
+            <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+              {t("searchPrompt")}
+            </p>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+                className="flex-1 px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={t("searchPlaceholder")}
+                autoFocus
+              />
+              <button
+                className="px-3 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                onClick={handleSearch}
+                disabled={searching || !searchQuery.trim()}
+              >
+                {searching ? t("searching") : t("search")}
+              </button>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">
+                {error}
+              </div>
+            )}
+
+            {results.length > 0 && (
+              <div className="mb-4 space-y-2 max-h-60 overflow-y-auto">
+                {results.map((bug) => (
+                  <div key={bug.id} className="border dark:border-gray-700 rounded p-3">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-medium text-sm">{bug.title}</span>
+                      <span className="text-xs text-gray-400">
+                        {bug.report_count || 1}×
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-2 line-clamp-2">{bug.description}</p>
+                    <button
+                      className="text-xs px-2 py-1 rounded bg-orange-500 text-white hover:bg-orange-600"
+                      onClick={() => handleVote(bug.id)}
+                    >
+                      {t("meToo")}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!searching && searchQuery.trim() && results.length === 0 && !error && (
+              <p className="text-sm text-gray-400 mb-4">{t("noResults")}</p>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-3 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+                onClick={onClose}
+              >
+                {t("cancel")}
+              </button>
+              <button
+                className="px-3 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600"
+                onClick={() => setStep("create")}
+              >
+                {t("createNew")}
               </button>
             </div>
           </>
@@ -108,10 +207,10 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
               <button
                 type="button"
                 className="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-                onClick={onClose}
+                onClick={() => setStep("search")}
                 disabled={sending}
               >
-                {t("cancel")}
+                {t("back")}
               </button>
               <button
                 type="submit"

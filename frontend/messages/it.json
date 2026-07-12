@@ -142,7 +142,17 @@
     "close": "Chiudi",
     "cancel": "Annulla",
     "failed": "Invio segnalazione fallito",
-    "button": "Segnala Bug"
+    "button": "Segnala Bug",
+    "searchPrompt": "Cerca bug esistenti prima di segnalarne uno nuovo:",
+    "searchPlaceholder": "Cerca per parola chiave...",
+    "search": "Cerca",
+    "searching": "Ricerca in corso...",
+    "searchFailed": "Ricerca fallita",
+    "noResults": "Nessun bug esistente trovato. Puoi creare una nuova segnalazione qui sotto.",
+    "meToo": "Anche io!",
+    "voteFailed": "Votazione fallita",
+    "createNew": "Crea Nuova Segnalazione",
+    "back": "Indietro"
   },
   "darkMode": {
     "toggle": "Attiva/disattiva modalità scura"
