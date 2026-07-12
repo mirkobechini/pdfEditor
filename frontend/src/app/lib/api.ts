@@ -482,6 +482,18 @@ export class ApiClient {
     return res.json();
   }
 
+  async adminSendReset(userId: string): Promise<{ message: string }> {
+    const res = await fetch(
+      `${this.baseUrl}/admin/users/${userId}/send-reset`,
+      {
+        method: "POST",
+        headers: this.getHeaders(),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
   async listBugReports(
     skip = 0,
     limit = 100,
