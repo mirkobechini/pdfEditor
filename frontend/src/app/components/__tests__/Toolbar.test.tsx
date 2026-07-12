@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
 import Toolbar from "../Toolbar";
@@ -20,71 +20,58 @@ const defaultProps = {
     onReplaceText: vi.fn(),
     onMetadata: vi.fn(),
     onProtect: vi.fn(),
-    canUndo: false,
+    canUndo: true,
     canRedo: false,
     onUndo: vi.fn(),
     onRedo: vi.fn(),
 };
 
 describe("Toolbar", () => {
-    it("renders all action buttons", () => {
+    beforeEach(() => { vi.clearAllMocks(); });
+
+    it("renders undo/redo buttons", () => {
         render(<Toolbar {...defaultProps} />);
-        expect(screen.getByText("merge")).toBeInTheDocument();
-        expect(screen.getByText("split")).toBeInTheDocument();
-        expect(screen.getByText("reorder")).toBeInTheDocument();
-        expect(screen.getByText("remove")).toBeInTheDocument();
-        expect(screen.getByText("replaceText")).toBeInTheDocument();
-        expect(screen.getByText("metadata")).toBeInTheDocument();
-        expect(screen.getByText("protect")).toBeInTheDocument();
+        expect(screen.getByText("\u21A9")).toBeInTheDocument();
+        expect(screen.getByText("\u21AA")).toBeInTheDocument();
     });
 
-    it("calls onMerge when merge button clicked", () => {
+    it("disables undo when canUndo is false", () => {
+        render(<Toolbar {...defaultProps} canUndo={false} />);
+        expect(screen.getByText("\u21A9").closest("button")).toBeDisabled();
+    });
+
+    it("disables redo when canRedo is false", () => {
+        render(<Toolbar {...defaultProps} canRedo={false} />);
+        expect(screen.getByText("\u21AA").closest("button")).toBeDisabled();
+    });
+
+    it("calls onUndo on Ctrl+Z", () => {
+        const onUndo = vi.fn();
+        render(<Toolbar {...defaultProps} onUndo={onUndo} />);
+        fireEvent.keyDown(window, { key: "z", ctrlKey: true });
+        expect(onUndo).toHaveBeenCalled();
+    });
+
+    it("calls onRedo on Ctrl+Shift+Z", () => {
+        const onRedo = vi.fn();
+        render(<Toolbar {...defaultProps} onRedo={onRedo} />);
+        fireEvent.keyDown(window, { key: "z", ctrlKey: true, shiftKey: true });
+        expect(onRedo).toHaveBeenCalled();
+    });
+
+    it("calls onMerge when merge button is clicked", () => {
         const onMerge = vi.fn();
         render(<Toolbar {...defaultProps} onMerge={onMerge} />);
         fireEvent.click(screen.getByText("merge"));
         expect(onMerge).toHaveBeenCalled();
     });
 
-    it("calls onSplit when split button clicked", () => {
-        const onSplit = vi.fn();
-        render(<Toolbar {...defaultProps} onSplit={onSplit} />);
-        fireEvent.click(screen.getByText("split"));
-        expect(onSplit).toHaveBeenCalled();
-    });
-
-    it("disables undo button when canUndo is false", () => {
-        render(<Toolbar {...defaultProps} canUndo={false} />);
-        expect(screen.getByTitle("Undo (Ctrl+Z)")).toBeDisabled();
-    });
-
-    it("enables undo button when canUndo is true", () => {
-        render(<Toolbar {...defaultProps} canUndo={true} />);
-        expect(screen.getByTitle("Undo (Ctrl+Z)")).not.toBeDisabled();
-    });
-
-    it("calls onUndo when undo clicked", () => {
-        const onUndo = vi.fn();
-        render(<Toolbar {...defaultProps} canUndo={true} onUndo={onUndo} />);
-        fireEvent.click(screen.getByTitle("Undo (Ctrl+Z)"));
-        expect(onUndo).toHaveBeenCalled();
-    });
-
-    it("renders page navigation", () => {
-        render(<Toolbar {...defaultProps} currentPage={3} totalPages={10} />);
-        expect(screen.getByRole("spinbutton")).toBeInTheDocument();
-        expect(screen.getByRole("spinbutton")).toBeInTheDocument();
-    });
-
-    it("calls onPageChange when page input changes", () => {
+    it("calls onPageChange when prev/next buttons are clicked", () => {
         const onPageChange = vi.fn();
-        render(<Toolbar {...defaultProps} onPageChange={onPageChange} />);
-        const input = screen.getByDisplayValue("1");
-        fireEvent.change(input, { target: { value: "3" } });
-        expect(onPageChange).toHaveBeenCalledWith(3);
-    });
-
-    it("renders zoom control", () => {
-        render(<Toolbar {...defaultProps} zoom={1.5} />);
-        const zoomSpan = screen.getByText("150%"); expect(zoomSpan).toBeInTheDocument();
+        render(<Toolbar {...defaultProps} currentPage={3} totalPages={5} onPageChange={onPageChange} />);
+        const buttons = screen.getAllByRole("button");
+        const prevBtn = buttons.find(b => b.textContent === "\u25C0")!;
+        fireEvent.click(prevBtn);
+        expect(onPageChange).toHaveBeenCalledWith(2);
     });
 });

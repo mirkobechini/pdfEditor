@@ -3,19 +3,21 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 import GoogleLoginButton from "../GoogleLoginButton";
 
-vi.mock("../../lib/auth", () => ({
-    useAuth: () => ({ googleLogin: vi.fn() }),
-}));
-
 vi.mock("next-intl", () => ({
     useTranslations: () => (key: string) => key,
+}));
+
+const mockGoogleLogin = vi.fn();
+vi.mock("../../lib/auth", () => ({
+    useAuth: () => ({ googleLogin: mockGoogleLogin }),
 }));
 
 describe("GoogleLoginButton", () => {
     beforeEach(() => { vi.clearAllMocks(); });
 
-    it("renders placeholder before mount", () => {
+    it("renders skeleton placeholder (Google not loaded)", () => {
         render(<GoogleLoginButton />);
-        expect(document.querySelector(".animate-pulse")).toBeInTheDocument();
+        const skeleton = document.querySelector(".animate-pulse");
+        expect(skeleton).toBeInTheDocument();
     });
 });
