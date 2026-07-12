@@ -88,9 +88,9 @@ export default function LandingFooter() {
                     </h4>
                     <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
                         <li>
-                            <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <Link href="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("legal.privacy")}
-                            </a>
+                            </Link>
                         </li>
                         <li>
                             <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
