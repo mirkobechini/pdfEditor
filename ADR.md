@@ -142,8 +142,9 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | `main.py`, `auth.py`, `admin.py`, `deps.py`, `undo_redo.py`                                       | 90-93%   | 🟡                     |
 | `auth_service.py`                                                                                 | 92%      | 🟡                     |
 | `storage.py`                                                                                      | 82%      | 🟠 S3 path             |
-| `pdf_service.py`                                                                                  | 86%      | 🔴 55 linee error path |
-| **TOTALE**                                                                                        | **92%**  |                        |
+| `pdf_service.py`                                                                                  | 85%      | 🔴 55 linee error path |
+| `pdf_merge_split_service.py`                                                                      | 92%      | ✅ (nuovo)             |
+| **TOTALE**                                                                                        | **91%**  |                        |
 
 ### Cosa manca per il 100%
 
@@ -153,7 +154,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Coverage test frontend
 
-### Stato attuale: 67.5% (242 test, 50 files, 0 failures)
+### Stato attuale: 67.5% (243 test, 50 files, 0 failures)
 
 | Modulo                         | Coverage | Test             |
 | ------------------------------ | -------- | ---------------- |
@@ -314,6 +315,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 #### 🟡 Priorità MEDIA
 
 - ⬜ **Frontend coverage 80-100%** — Attuale 67.5%. Piano: `.specs/plans/chore-frontend-100-percent-coverage.md`.
+- ⬜ **Bug report de-duplication & voting** — Piano: `.specs/plans/feature-bug-report-dedup-vote.md`.
 
 - ⬜ **Miglioramenti UI/UX webapp** — Piano: `.specs/plans/feature-ui-ux-improvements.md`.
 - ⬜ **PDF naming preservation** — Piano: `.specs/plans/feature-pdf-naming-preservation.md`.
@@ -322,7 +324,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - ⬜ **Landing page footer fix** — Piano: `.specs/plans/feature-landing-footer-links.md`.
 - ⬜ **License tier button skin** — Piano: `.specs/plans/feature-license-tier-button-skin.md`.
 - ⬜ **Privacy Policy page** — Piano: `.specs/plans/feature-privacy-policy.md`.
-- ⬜ **CI/CD GitHub Actions** — Backend + frontend test, deploy su Render via main. Piano: `.specs/plans/chore-cicd-pipeline.md`.
+- ✅ **CI/CD GitHub Actions** — Backend + frontend test, deploy su Render via main. Piano: `.specs/plans/chore-cicd-pipeline.md`.
 
 #### 🔵 Priorità BASSA / Future
 
@@ -337,14 +339,14 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Code Review — Issue identificate e risolte
 
-| #   | Issue                                                           | Tipo           | Risoluzione                |
-| --- | --------------------------------------------------------------- | -------------- | -------------------------- |
-| 1   | **Password strength non validata su reset password**            | Bug            | ✅ PR #218                 |
-| 2   | **License features seed duplicato** (main.py + conftest.py)     | Duplicazione   | ✅ PR #222                 |
-| 3   | **PDF.js loading duplicato in 3 dialoghi**                      | Duplicazione   | ✅ PR #220 (usePdfJs hook) |
-| 4   | **ADR.md troppo lungo** — Bug tracker storico era rumore        | Documentazione | ✅ PR #224 (CHANGELOG.md)  |
-| 5   | **`pdf_service.py` 406 linee** — troppe responsabilità          | Refactoring    | 🟡 Valutare suddivisione   |
-| 6   | **`api.ts` frontend 400+ linee** — tutti i metodi in un file    | Refactoring    | 🟡 Valutare suddivisione   |
-| 7   | **`Sidebar.tsx` — nessun feedback errore su loadFiles fallito** | UX             | 🟢 Bassa priorità          |
+| #   | Issue                                                           | Tipo           | Risoluzione                       |
+| --- | --------------------------------------------------------------- | -------------- | --------------------------------- |
+| 1   | **Password strength non validata su reset password**            | Bug            | ✅ PR #218                        |
+| 2   | **License features seed duplicato** (main.py + conftest.py)     | Duplicazione   | ✅ PR #222                        |
+| 3   | **PDF.js loading duplicato in 3 dialoghi**                      | Duplicazione   | ✅ PR #220 (usePdfJs hook)        |
+| 4   | **ADR.md troppo lungo** — Bug tracker storico era rumore        | Documentazione | ✅ PR #224 (CHANGELOG.md)         |
+| 5   | **`pdf_service.py` 406 linee** — troppe responsabilità          | Refactoring    | ✅ PR #241 (PdfMergeSplitService) |
+| 6   | **`api.ts` frontend 400+ linee** — tutti i metodi in un file    | Refactoring    | ✅ PR #244 (api-types.ts)         |
+| 7   | **`Sidebar.tsx` — nessun feedback errore su loadFiles fallito** | UX             | ✅ PR #245                        |
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
