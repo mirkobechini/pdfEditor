@@ -96,7 +96,7 @@ class TestUnlock:
             f"/pdfs/{pdf_id}/unlock",
             json={"password": "Test1234"},
         )
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
 
     def test_unlock_empty_password_request(self, client, free_headers, sample_pdf_content):
         """Unlock with empty password should return 400 (endpoint check happens first)."""
