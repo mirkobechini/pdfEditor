@@ -301,12 +301,6 @@ function UsersTable() {
                                                     {t("save")}
                                                 </button>
                                             )}
-                                            <button
-                                                className="text-xs px-2 py-1 rounded bg-purple-500 text-white hover:bg-purple-600"
-                                                onClick={() => handleSendReset(u.id)}
-                                            >
-                                                {t("sendReset")}
-                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -316,146 +310,147 @@ function UsersTable() {
                             Mostrati {filtered.length} di {users.length} utenti
                         </p>
                     </div>
-            )}
                 </div>
-            );
+            )}
+        </div>
+    );
 }
 
-            function BugReportsTable() {
+function BugReportsTable() {
     const t = useTranslations("admin");
-            const [bugs, setBugs] = React.useState<BugReport[]>([]);
-            const [loading, setLoading] = React.useState(true);
-            const [statusFilter, setStatusFilter] = React.useState<string>("");
+    const [bugs, setBugs] = React.useState<BugReport[]>([]);
+    const [loading, setLoading] = React.useState(true);
+    const [statusFilter, setStatusFilter] = React.useState<string>("");
 
-                async function loadBugs() {
-                    setLoading(true);
-                try {
+    async function loadBugs() {
+        setLoading(true);
+        try {
             const res = await api.listBugReports(0, 100, statusFilter || undefined);
-                setBugs(res.items);
+            setBugs(res.items);
         } catch (err) {
-                    console.error("Failed to load bugs:", err);
+            console.error("Failed to load bugs:", err);
         } finally {
-                    setLoading(false);
+            setLoading(false);
         }
     }
 
-                async function handleFilterChange(newFilter: string) {
-                    setStatusFilter(newFilter);
+    async function handleFilterChange(newFilter: string) {
+        setStatusFilter(newFilter);
     }
 
     // Load bugs on mount
     React.useEffect(() => {
-                    loadBugs();
+        loadBugs();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-                async function handleStatusChange(bugId: string, newStatus: string) {
+    async function handleStatusChange(bugId: string, newStatus: string) {
         try {
-                    await api.updateBugReportStatus(bugId, newStatus);
+            await api.updateBugReportStatus(bugId, newStatus);
             setBugs((prev) =>
-                prev.map((b) => (b.id === bugId ? {...b, status: newStatus } : b)),
-                );
+                prev.map((b) => (b.id === bugId ? { ...b, status: newStatus } : b)),
+            );
         } catch (err) {
-                    alert("Failed to update status: " + err);
+            alert("Failed to update status: " + err);
         }
     }
 
-                if (loading)
-                return <p className="text-sm text-gray-400">{t("loading")}</p>;
-                if (bugs.length === 0)
-                return <p className="text-sm text-gray-400">{t("noBugs")}</p>;
+    if (loading)
+        return <p className="text-sm text-gray-400">{t("loading")}</p>;
+    if (bugs.length === 0)
+        return <p className="text-sm text-gray-400">{t("noBugs")}</p>;
 
-                return (
-                <div>
-                    {/* Filter */}
-                    <div className="mb-4 flex items-center gap-2">
-                        <label className="text-sm text-gray-500">
-                            {t("filterStatus")}:
-                        </label>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => {
-                                handleFilterChange(e.target.value);
-                                loadBugs();
-                            }}
-                            className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
-                        >
-                            <option value="">{t("all")}</option>
-                            {BUG_STATUSES.map((s) => (
-                                <option key={s} value={s}>
-                                    {t(BUG_STATUS_KEYS[s])}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+    return (
+        <div>
+            {/* Filter */}
+            <div className="mb-4 flex items-center gap-2">
+                <label className="text-sm text-gray-500">
+                    {t("filterStatus")}:
+                </label>
+                <select
+                    value={statusFilter}
+                    onChange={(e) => {
+                        handleFilterChange(e.target.value);
+                        loadBugs();
+                    }}
+                    className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
+                >
+                    <option value="">{t("all")}</option>
+                    {BUG_STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                            {t(BUG_STATUS_KEYS[s])}
+                        </option>
+                    ))}
+                </select>
+            </div>
 
-                    {/* Table */}
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm border-collapse">
-                            <thead>
-                                <tr className="border-b dark:border-gray-700 text-left">
-                                    <th className="p-2 font-medium">{t("titleField")}</th>
-                                    <th className="p-2 font-medium">{t("userId")}</th>
-                                    <th className="p-2 font-medium">{t("platform")}</th>
-                                    <th className="p-2 font-medium">{t("appVersion")}</th>
-                                    <th className="p-2 font-medium">{t("osInfo")}</th>
-                                    <th className="p-2 font-medium">{t("status")}</th>
-                                    <th className="p-2 font-medium">{t("createdAt")}</th>
-                                    <th className="p-2 font-medium">{t("description")}</th>
-                                    <th className="p-2 font-medium">{t("actions")}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {bugs.map((b) => (
-                                    <tr
-                                        key={b.id}
-                                        className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+            {/* Table */}
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                    <thead>
+                        <tr className="border-b dark:border-gray-700 text-left">
+                            <th className="p-2 font-medium">{t("titleField")}</th>
+                            <th className="p-2 font-medium">{t("userId")}</th>
+                            <th className="p-2 font-medium">{t("platform")}</th>
+                            <th className="p-2 font-medium">{t("appVersion")}</th>
+                            <th className="p-2 font-medium">{t("osInfo")}</th>
+                            <th className="p-2 font-medium">{t("status")}</th>
+                            <th className="p-2 font-medium">{t("createdAt")}</th>
+                            <th className="p-2 font-medium">{t("description")}</th>
+                            <th className="p-2 font-medium">{t("actions")}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {bugs.map((b) => (
+                            <tr
+                                key={b.id}
+                                className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                            >
+                                <td className="p-2 font-medium">{b.title}</td>
+                                <td className="p-2 text-gray-500 text-xs">
+                                    {b.user_id.slice(0, 8)}...
+                                </td>
+                                <td className="p-2 text-xs">{b.platform || "-"}</td>
+                                <td className="p-2 text-xs">{b.app_version || "-"}</td>
+                                <td className="p-2 text-xs">{b.os_info || "-"}</td>
+                                <td className="p-2">
+                                    <span
+                                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${b.status === "open"
+                                            ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                                            : b.status === "in_progress"
+                                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                                                : b.status === "resolved"
+                                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                                    : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                                            }`}
                                     >
-                                        <td className="p-2 font-medium">{b.title}</td>
-                                        <td className="p-2 text-gray-500 text-xs">
-                                            {b.user_id.slice(0, 8)}...
-                                        </td>
-                                        <td className="p-2 text-xs">{b.platform || "-"}</td>
-                                        <td className="p-2 text-xs">{b.app_version || "-"}</td>
-                                        <td className="p-2 text-xs">{b.os_info || "-"}</td>
-                                        <td className="p-2">
-                                            <span
-                                                className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${b.status === "open"
-                                                    ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                                    : b.status === "in_progress"
-                                                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
-                                                        : b.status === "resolved"
-                                                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                                                            : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
-                                                    }`}
-                                            >
-                                                {t(`admin.${b.status}`)}
-                                            </span>
-                                        </td>
-                                        <td className="p-2 text-gray-500">
-                                            {new Date(b.created_at).toLocaleDateString()}
-                                        </td>
-                                        <td className="p-2 text-gray-600 dark:text-gray-400 max-w-xs truncate">
-                                            {b.description}
-                                        </td>
-                                        <td className="p-2">
-                                            <select
-                                                value={b.status}
-                                                onChange={(e) => handleStatusChange(b.id, e.target.value)}
-                                                className="text-xs bg-transparent border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5"
-                                            >
-                                                {BUG_STATUSES.map((s) => (
-                                                    <option key={s} value={s}>
-                                                        {t(`admin.${s}`)}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                );
+                                        {t(`admin.${b.status}`)}
+                                    </span>
+                                </td>
+                                <td className="p-2 text-gray-500">
+                                    {new Date(b.created_at).toLocaleDateString()}
+                                </td>
+                                <td className="p-2 text-gray-600 dark:text-gray-400 max-w-xs truncate">
+                                    {b.description}
+                                </td>
+                                <td className="p-2">
+                                    <select
+                                        value={b.status}
+                                        onChange={(e) => handleStatusChange(b.id, e.target.value)}
+                                        className="text-xs bg-transparent border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5"
+                                    >
+                                        {BUG_STATUSES.map((s) => (
+                                            <option key={s} value={s}>
+                                                {t(`admin.${s}`)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
 }
