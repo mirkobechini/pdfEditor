@@ -82,26 +82,11 @@ def per_test_db(tmp_path):
     database_module.engine = engine
 
     # Seed license features for this test DB
+    from app.core.license_seed import DEFAULT_LICENSE_FEATURES
     from app.models.license import LicenseFeature
-    _seed = [
-        ("free", "upload_pdf"), ("free", "download_pdf"), ("free", "extract_text"),
-        ("pro", "upload_pdf"), ("pro", "download_pdf"), ("pro", "extract_text"),
-        ("pro", "merge_pdf"), ("pro", "split_pdf"), ("pro", "reorder_pages"),
-        ("pro", "remove_pages"), ("pro", "replace_text"), ("pro", "edit_metadata"),
-        ("pro", "export_txt"), ("pro", "export_png"), ("pro", "export_jpg"),
-        ("pro", "import_txt"), ("pro", "max_file_size_50mb"),
-        ("enterprise", "upload_pdf"), ("enterprise", "download_pdf"),
-        ("enterprise", "extract_text"), ("enterprise", "merge_pdf"),
-        ("enterprise", "split_pdf"), ("enterprise", "reorder_pages"),
-        ("enterprise", "remove_pages"), ("enterprise", "replace_text"),
-        ("enterprise", "edit_metadata"), ("enterprise", "export_txt"),
-        ("enterprise", "export_png"), ("enterprise", "export_jpg"),
-        ("enterprise", "export_svg"), ("enterprise", "import_txt"),
-        ("enterprise", "import_images"), ("enterprise", "max_file_size_100mb"),
-    ]
     SessionTest = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     s = SessionTest()
-    for tier, key in _seed:
+    for tier, key in DEFAULT_LICENSE_FEATURES:
         s.add(LicenseFeature(id=str(uuid.uuid4()), tier=tier, feature_key=key, enabled=True))
     s.commit()
     s.close()
