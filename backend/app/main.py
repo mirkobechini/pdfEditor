@@ -56,6 +56,7 @@ def _seed_license_features():
     from sqlalchemy import text
 
     from app.core.database import SessionLocal
+    from app.core.license_seed import DEFAULT_LICENSE_FEATURES
     from app.models.license import LicenseFeature
 
     db = SessionLocal()
@@ -67,27 +68,7 @@ def _seed_license_features():
         import uuid
         from datetime import datetime, timezone
 
-        features = [
-            # Free
-            ("free", "upload_pdf"), ("free", "download_pdf"), ("free", "extract_text"),
-            # Pro — all free + advanced
-            ("pro", "upload_pdf"), ("pro", "download_pdf"), ("pro", "extract_text"),
-            ("pro", "merge_pdf"), ("pro", "split_pdf"), ("pro", "reorder_pages"),
-            ("pro", "remove_pages"), ("pro", "replace_text"), ("pro", "edit_metadata"),
-            ("pro", "export_txt"), ("pro", "export_png"), ("pro", "export_jpg"),
-            ("pro", "import_txt"), ("pro", "max_file_size_50mb"),
-            # Enterprise — all
-            ("enterprise", "upload_pdf"), ("enterprise", "download_pdf"),
-            ("enterprise", "extract_text"), ("enterprise", "merge_pdf"),
-            ("enterprise", "split_pdf"), ("enterprise", "reorder_pages"),
-            ("enterprise", "remove_pages"), ("enterprise", "replace_text"),
-            ("enterprise", "edit_metadata"), ("enterprise", "export_txt"),
-            ("enterprise", "export_png"), ("enterprise", "export_jpg"),
-            ("enterprise", "export_svg"), ("enterprise", "import_txt"),
-            ("enterprise", "import_images"), ("enterprise", "max_file_size_100mb"),
-        ]
-
-        for tier, key in features:
+        for tier, key in DEFAULT_LICENSE_FEATURES:
             lf = LicenseFeature(
                 id=str(uuid.uuid4()),
                 tier=tier,
