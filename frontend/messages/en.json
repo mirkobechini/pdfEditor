@@ -457,66 +457,162 @@
   },
   "terms": {
     "title": "Terms of Service",
-    "intro": "Welcome to PdfEditor. By accessing or using our service, you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you may not use our service.",
-    "account": {
+    "intro": "Welcome to PdfEditor. By accessing or using our service, you agree to be bound by these Terms of Service.",
+    "s1": {
       "title": "Account Registration",
-      "content": "When you create an account, you must provide accurate and complete information. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You must notify us immediately of any unauthorized use of your account."
+      "content": "When you create an account, you must provide accurate and complete information. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account."
     },
-    "use": {
+    "s2": {
       "title": "Acceptable Use",
-      "content": "You agree to use PdfEditor only for lawful purposes and in accordance with these terms. You may not use the service to upload, process, or distribute content that violates any applicable law or infringes upon the rights of others."
+      "content": "You agree to use PdfEditor only for lawful purposes. You may not use the service to upload, process, or distribute content that violates any applicable law or infringes upon the rights of others."
     },
-    "intellectual": {
+    "s3": {
       "title": "Intellectual Property",
-      "content": "The service and its original content, features, and functionality are owned by PdfEditor and are protected by international copyright, trademark, and other intellectual property laws. You retain all rights to the PDF files you upload and process."
+      "content": "The service and its original content are owned by PdfEditor. You retain all rights to the PDF files you upload and process."
     },
-    "disclaimer": {
+    "s4": {
       "title": "Disclaimer",
-      "content": "The service is provided on an 'as is' and 'as available' basis without warranties of any kind, either express or implied. PdfEditor does not warrant that the service will be uninterrupted, timely, secure, or error-free."
-    },
-    "limitation": {
-      "title": "Limitation of Liability",
-      "content": "In no event shall PdfEditor be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or relating to your use of the service."
-    },
-    "termination": {
-      "title": "Termination",
-      "content": "We reserve the right to terminate or suspend your account at any time, without prior notice, for conduct that we believe violates these Terms or is harmful to other users, us, or third parties."
-    },
-    "changes": {
-      "title": "Changes to Terms",
-      "content": "We reserve the right to modify these terms at any time. Changes will be effective immediately upon posting. Your continued use of the service after changes constitutes acceptance of the new terms."
-    },
-    "contact": {
-      "title": "Contact",
-      "content": "For questions about these Terms, please contact us at: legal@pdfeditor.app"
+      "content": "The service is provided on an 'as is' basis without warranties. PdfEditor is not liable for any damages arising from your use of the service."
     }
   },
   "cookies": {
     "title": "Cookie Policy",
-    "content": "We use essential cookies for authentication and security. We do not use tracking cookies or third-party analytics. By using PdfEditor, you consent to the use of essential cookies necessary for the service to function."
+    "intro": "This Cookie Policy explains how PdfEditor uses cookies and similar technologies.",
+    "s1": {
+      "title": "What Are Cookies",
+      "content": "Cookies are small text files stored on your device by your web browser. They help us provide and secure our service."
+    },
+    "s2": {
+      "title": "How We Use Cookies",
+      "content": "We use only essential cookies for authentication and security purposes. We do not use tracking cookies, advertising cookies, or third-party analytics cookies."
+    },
+    "s3": {
+      "title": "Managing Cookies",
+      "content": "You can control and manage cookies through your browser settings. Note that disabling essential cookies may affect the functionality of the service."
+    },
+    "s4": {
+      "title": "Changes",
+      "content": "We may update this Cookie Policy from time to time. Changes will be posted on this page."
+    }
   },
   "status": {
     "title": "Service Status",
-    "content": "All systems operational. For real-time status updates, check our GitHub repository or contact support."
+    "intro": "Check the current operational status of PdfEditor services.",
+    "s1": {
+      "title": "Current Status",
+      "content": "All systems are operational. The service is running normally."
+    },
+    "s2": {
+      "title": "Recent Incidents",
+      "content": "No recent incidents reported."
+    },
+    "s3": {
+      "title": "Scheduled Maintenance",
+      "content": "There is no scheduled maintenance at this time."
+    },
+    "s4": {
+      "title": "Contact",
+      "content": "For issues, please contact support@pdfeditor.app or check our GitHub repository."
+    }
   },
   "docs": {
     "title": "Documentation",
-    "content": "Documentation is available on our GitHub repository. Visit github.com/mirkobechini/pdfEditor for setup guides, API references, and contribution guidelines."
+    "intro": "Welcome to PdfEditor documentation.",
+    "s1": {
+      "title": "Getting Started",
+      "content": "Upload a PDF file using the upload area in the sidebar. Once uploaded, you can select it and perform various operations."
+    },
+    "s2": {
+      "title": "Features",
+      "content": "PdfEditor supports: merge, split, reorder, remove pages, edit text, update metadata, protect/unlock PDFs, and format conversion."
+    },
+    "s3": {
+      "title": "API Reference",
+      "content": "For programmatic access, visit our GitHub repository for API documentation and authentication details."
+    },
+    "s4": {
+      "title": "Support",
+      "content": "For help, open an issue on GitHub or contact support@pdfeditor.app."
+    }
   },
   "guide": {
     "title": "User Guide",
-    "content": "Upload a PDF, select an operation (merge, split, reorder, edit text), and download the result. For detailed instructions, visit our GitHub repository."
+    "intro": "Learn how to use PdfEditor effectively.",
+    "s1": {
+      "title": "Uploading PDFs",
+      "content": "Click the upload area or drag and drop a PDF file. You can upload multiple files."
+    },
+    "s2": {
+      "title": "Editing Operations",
+      "content": "Select a file from the sidebar, then use the toolbar to merge, split, reorder, remove pages, or edit text."
+    },
+    "s3": {
+      "title": "Exporting",
+      "content": "Download your edited PDF or export to other formats (PNG, JPG, TXT)."
+    },
+    "s4": {
+      "title": "Keyboard Shortcuts",
+      "content": "Ctrl+Z to undo, Ctrl+Shift+Z to redo."
+    }
   },
   "faq": {
     "title": "Frequently Asked Questions",
-    "content": "Q: Is my data secure? A: Yes, all files are encrypted in transit and automatically deleted after processing. Q: What formats are supported? A: PDF, TXT import, and export to PDF, PNG, JPG, TXT. Q: Is there a file size limit? A: Up to 50MB per file."
+    "intro": "Common questions about PdfEditor.",
+    "s1": {
+      "title": "Is my data secure?",
+      "content": "Yes. All files are encrypted in transit via HTTPS and automatically deleted after processing. We do not share your files with third parties."
+    },
+    "s2": {
+      "title": "What formats are supported?",
+      "content": "We support PDF upload and download. Export formats include PDF, PNG, JPG, and TXT. Import formats include PDF and TXT."
+    },
+    "s3": {
+      "title": "Is there a file size limit?",
+      "content": "Yes, the maximum file size is 50MB per file. Premium users have higher limits."
+    },
+    "s4": {
+      "title": "Is PdfEditor free?",
+      "content": "Yes, the basic features are free. Premium features require a subscription."
+    }
   },
   "api": {
     "title": "API Reference",
-    "content": "The PdfEditor API is available for programmatic access. Visit our GitHub repository for API documentation, endpoints, and authentication details."
+    "intro": "PdfEditor provides a REST API for programmatic PDF processing.",
+    "s1": {
+      "title": "Authentication",
+      "content": "All API requests require a valid JWT token obtained via the /auth/login endpoint."
+    },
+    "s2": {
+      "title": "Endpoints",
+      "content": "Full API documentation is available on our GitHub repository, including all endpoints, request/response schemas, and examples."
+    },
+    "s3": {
+      "title": "Rate Limits",
+      "content": "API requests are rate-limited. Login: 5/min, Register: 3/h, Forgot Password: 3/h."
+    },
+    "s4": {
+      "title": "SDKs",
+      "content": "Currently we provide a JavaScript/TypeScript client. More SDKs coming soon."
+    }
   },
   "roadmap": {
     "title": "Roadmap",
-    "content": "Upcoming features include: PDF compression, inline text editor, desktop app (Tauri v2), cloud sync, mobile app, and AI-powered PDF editing. See our GitHub repository for the full roadmap."
+    "intro": "Upcoming features and improvements for PdfEditor.",
+    "s1": {
+      "title": "Short Term",
+      "content": "PDF compression, inline text editor, UI/UX improvements, landing page footer links."
+    },
+    "s2": {
+      "title": "Medium Term",
+      "content": "Desktop app (Tauri v2), cloud sync (SQLite to PostgreSQL), Stripe subscriptions."
+    },
+    "s3": {
+      "title": "Long Term",
+      "content": "Mobile app (React Native), AI-powered PDF editing, email confirmation, E2E Playwright tests."
+    },
+    "s4": {
+      "title": "Get Involved",
+      "content": "Check our GitHub repository for open issues and contribution guidelines."
+    }
   }
 }
