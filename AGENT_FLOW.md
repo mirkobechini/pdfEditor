@@ -197,3 +197,24 @@ git checkout dev
 git pull origin dev
 git branch -d hotfix/<issue-number>-<short-description>
 ```
+
+## CI/CD Maintenance
+
+When GitHub Actions runners deprecate a Node.js version (e.g. Node.js 20 → Node.js 24), the agent **must** update all workflow files (`.github/workflows/*.yml`) to use action versions that target the new runtime natively.
+
+### How to fix Node.js deprecation warnings
+
+1. **Remove** any `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` env variable (once Node 24 is the default, it's unnecessary).
+2. **Update** each action to its latest major version that uses `node24` as runtime:
+
+| Action                  | Old (Node 20) | New (Node 24)        |
+| ----------------------- | ------------- | -------------------- |
+| `actions/checkout`      | `@v4`         | `@v5`                |
+| `actions/setup-node`    | `@v4`         | `@v5`                |
+| `actions/github-script` | `@v7`         | `@v9`                |
+| `actions/setup-python`  | `@v4`         | `@v5` (if available) |
+
+3. **Verify** the new version's `action.yml` contains `runs.using: node24`.
+4. **Commit** with message: `chore(ci): update actions to Node 24 runtime`.
+
+> ⚠️ Always check the latest available version on the GitHub Marketplace before updating — versions listed above may be outdated.
