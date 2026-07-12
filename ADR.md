@@ -119,7 +119,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 > - ✅ JWT httpOnly cookie → addio localStorage XSS
 > - ✅ GitHub: 0 Dependabot alert attivi, 0 Code Scanning alert attivi
 
-> **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email delivery in pausa (attesa dominio custom per SendGrid sender verification).
+> **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email via SendGrid/Cloudflare attiva (dominio verificato). Admin send reset via dashboard implementato. User bug report status visibile in profilo.
 
 > **Nota tecnica:** Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile dal nostro codice. La libreria `httpx2` non esiste ancora, è una futura release di starlette. Ignorare.
 
@@ -131,7 +131,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Coverage test backend
 
-### Stato attuale: 92% (228 test, 0 failures, 0 warnings)
+### Stato attuale: 92% (234 test, 0 failures, 0 warnings)
 
 | Modulo                                                                                            | Coverage | Note                   |
 | ------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
@@ -153,7 +153,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Coverage test frontend
 
-### Stato attuale: 70% (247 test, 50 files, 0 failures)
+### Stato attuale: 67.5% (242 test, 50 files, 0 failures)
 
 | Modulo                         | Coverage | Test             |
 | ------------------------------ | -------- | ---------------- |
@@ -172,23 +172,21 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | `components/ReplaceTextDialog` | 96%      | ✅               |
 | `components/DeleteModal.tsx`   | 86%      | ✅               |
 | `components/PdfThumbnail.tsx`  | 96%      | ✅               |
+| `components/GoogleLoginButton` | 48%      | 🔴               |
 | `admin/page.tsx`               | 70%      | 🟡               |
 | `app/page.tsx` (editor)        | ~90%     | ✅ (mock)        |
 | `forgot-password/page.tsx`     | 95%      | ✅               |
 | `reset-password/page.tsx`      | 94%      | ✅               |
 | `MergeDialog/ReorderDialog`    | ~30-67%  | 🔴               |
+| `RemoveDialog`                 | 44%      | 🔴               |
+| **Backend**                    | **91%**  |                  |
 
 ### Cosa manca per il 100%
 
 - Dialoghi complessi (ReorderDialog 30%, SplitDialog 37%, MergeDialog 67%)
 - Componenti minori (RemoveDialog 44%, GoogleLoginButton 48%)
-  | `lib/api.ts` | 0% | ❌ |
-  | `lib/i18n.ts` | 0% | ❌ |
-  | **TOTALE** | **47%** | |
 
-### Obiettivo: 60-70%
-
-Servono ancora test per: AdminPage (bugs tab), ForgotPassword, ResetPassword, api.ts, i18n.ts, app/page.tsx (editor).
+### Obiettivo: 80-100%
 
 ### Fasi successive (macro)
 
@@ -309,12 +307,13 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 #### 🔴 Priorità ALTA
 
-- ⬜ **Invio email reale reset password** — Attesa dominio Cloudflare per SendGrid sender verification.
-- ⬜ **Admin: invia reset password via dashboard** — Piano: `.specs/plans/feature-admin-send-reset-email.md`.
-- ⬜ **Frontend coverage 80-100%** — Attuale 70%. Piano: `.specs/plans/chore-frontend-100-percent-coverage.md`.
-- ⬜ **User bug report status in dashboard** — Piano: `.specs/plans/feature-user-bug-report-status.md`.
+- ✅ **Invio email reale reset password** — SendGrid/Cloudflare configurati e attivi.
+- ✅ **Admin: invia reset password via dashboard** — Piano: `.specs/plans/feature-admin-send-reset-email.md`.
+- ✅ **User bug report status in dashboard** — Piano: `.specs/plans/feature-user-bug-report-status.md`.
 
 #### 🟡 Priorità MEDIA
+
+- ⬜ **Frontend coverage 80-100%** — Attuale 67.5%. Piano: `.specs/plans/chore-frontend-100-percent-coverage.md`.
 
 - ⬜ **Miglioramenti UI/UX webapp** — Piano: `.specs/plans/feature-ui-ux-improvements.md`.
 - ⬜ **PDF naming preservation** — Piano: `.specs/plans/feature-pdf-naming-preservation.md`.
