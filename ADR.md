@@ -131,7 +131,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Coverage test backend
 
-### Stato attuale: 92% (234 test, 0 failures, 0 warnings)
+### Stato attuale: 93% (240 test, 0 failures, 0 warnings)
 
 | Modulo                                                                                            | Coverage | Note                   |
 | ------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
@@ -139,22 +139,23 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | `s3_storage.py`                                                                                   | 96%      | Mock boto3             |
 | `database.py`, `user_repo.py`                                                                     | 95%      | 🟡                     |
 | `email_service.py`, `convert.py`                                                                  | 94%      | 🟡                     |
-| `main.py`, `auth.py`, `admin.py`, `deps.py`, `undo_redo.py`                                       | 90-93%   | 🟡                     |
+| `main.py`, `auth.py`, `admin.py`, `deps.py`, `undo_redo.py`, `bug_report.py`                      | 90-94%   | 🟡                     |
 | `auth_service.py`                                                                                 | 92%      | 🟡                     |
-| `storage.py`                                                                                      | 82%      | 🟠 S3 path             |
+| `csrf.py`                                                                                         | 100%     | ✅                     |
+| `storage.py`                                                                                      | 100%     | ✅                     |
 | `pdf_service.py`                                                                                  | 85%      | 🔴 55 linee error path |
 | `pdf_merge_split_service.py`                                                                      | 92%      | ✅ (nuovo)             |
-| **TOTALE**                                                                                        | **91%**  |                        |
+| **TOTALE**                                                                                        | **93%**  |                        |
 
 ### Cosa manca per il 100%
 
 - ~49 linee facili (error path endpoint, 403, 404) — 1-2h
-- ~17 linee medie (S3/local switch) — 1h
+- ~17 linee medie (S3/local switch) — 0h ✅ completato
 - ~55 linee difficili (pdf_service.py error path) — 2-3h
 
 ## Coverage test frontend
 
-### Stato attuale: 67.5% (243 test, 50 files, 0 failures)
+### Stato attuale: 67.5% (247 test, 50 files, 0 failures)
 
 | Modulo                         | Coverage | Test             |
 | ------------------------------ | -------- | ---------------- |
@@ -173,6 +174,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | `components/ReplaceTextDialog` | 96%      | ✅               |
 | `components/DeleteModal.tsx`   | 86%      | ✅               |
 | `components/PdfThumbnail.tsx`  | 96%      | ✅               |
+| `components/BugReportDialog`   | ~70%     | 🟡               |
 | `components/GoogleLoginButton` | 48%      | 🔴               |
 | `admin/page.tsx`               | 70%      | 🟡               |
 | `app/page.tsx` (editor)        | ~90%     | ✅ (mock)        |
@@ -180,7 +182,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | `reset-password/page.tsx`      | 94%      | ✅               |
 | `MergeDialog/ReorderDialog`    | ~30-67%  | 🔴               |
 | `RemoveDialog`                 | 44%      | 🔴               |
-| **Backend**                    | **91%**  |                  |
+| **Backend**                    | **93%**  |                  |
 
 ### Cosa manca per il 100%
 
@@ -315,7 +317,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 #### 🟡 Priorità MEDIA
 
 - ⬜ **Frontend coverage 80-100%** — Attuale 67.5%. Piano: `.specs/plans/chore-frontend-100-percent-coverage.md`.
-- ⬜ **Bug report de-duplication & voting** — Piano: `.specs/plans/feature-bug-report-dedup-vote.md`.
+- ✅ **Bug report de-duplication & voting** — Piano: `.specs/plans/feature-bug-report-dedup-vote.md`.
 
 - ⬜ **Miglioramenti UI/UX webapp** — Piano: `.specs/plans/feature-ui-ux-improvements.md`.
 - ⬜ **PDF naming preservation** — Piano: `.specs/plans/feature-pdf-naming-preservation.md`.
