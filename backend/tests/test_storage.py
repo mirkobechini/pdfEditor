@@ -233,3 +233,6 @@ class TestValidatePdf:
     def test_empty_content(self):
         """validate_pdf should return False for empty bytes."""
         assert validate_pdf(b"") is False
+    def test_corrupt_pdf_content(self):
+        """validate_pdf should return False for corrupt PDF with valid header."""
+        assert validate_pdf(b"%PDF-1.4 corrupt\x00\x00\x00") is False
