@@ -117,4 +117,12 @@ describe("Sidebar", () => {
             expect(screen.getByText("50%")).toBeInTheDocument();
         });
     });
+
+    it("shows error message when loadFiles fails", async () => {
+        (api.listPdfs as any).mockRejectedValue(new Error("Network error"));
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("loadFailed")).toBeInTheDocument();
+        });
+    });
 });
