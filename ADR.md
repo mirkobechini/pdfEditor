@@ -432,4 +432,16 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - ⬜ **AI PDF editing service** — Servizio AI per modifiche PDF via linguaggio naturale (BYOK + cloud). Piano: `.specs/plans/feature-ai-pdf-editing.md`.
 - ⬜ **Privacy Policy page** — Pagina privacy policy accessibile dal footer. Piano: `.specs/plans/feature-privacy-policy.md`.
 
+### Code Review — Issue identificate
+
+| # | Issue | Tipo | Priorità | Fix |
+|---|-------|------|----------|-----|
+| 1 | **Password strength non validata su reset password** | Bug | 🔴 Alta | `.specs/plans/bug-password-strength-on-reset.md` |
+| 2 | **License features seed duplicato** (main.py + conftest.py) | Duplicazione | 🟢 Bassa | `.specs/plans/chore-license-seed-extract.md` |
+| 3 | **PDF.js loading duplicato in 3 dialoghi** (Split/Reorder/Remove) | Duplicazione | 🟡 Media | `.specs/plans/chore-extract-usePdfJs-hook.md` |
+| 4 | **ADR.md troppo lungo** (~430 linee) — Bug tracker storico è rumore | Documentazione | 🟢 Bassa | `.specs/plans/chore-changelog-adr-slim.md` |
+| 5 | **`pdf_service.py` 406 linee** — troppe responsabilità | Refactoring | 🟢 Bassa | Valutare suddivisione futura |
+| 6 | **`api.ts` frontend 400+ linee** — tutti i metodi in un file | Refactoring | 🟢 Bassa | Valutare suddivisione futura |
+| 7 | **`Sidebar.tsx` — nessun feedback errore su loadFiles fallito** | UX | 🟢 Bassa | Aggiungere toast/alert |
+
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
