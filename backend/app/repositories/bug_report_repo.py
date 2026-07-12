@@ -1,3 +1,4 @@
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models.bug_report import BugReport
@@ -25,6 +26,32 @@ class BugReportRepository:
             .order_by(BugReport.created_at.desc())
             .all()
         )
+
+    def search_by_text(self, query: str) -> list[BugReport]:
+        """Search open bug reports by title or description."""
+        return (
+            self.db.query(BugReport)
+            .filter(
+                BugReport.status.in_(["open", "in_progress"]),
+                or_(
+                    BugReport.title.ilike(f"%{query}%"),
+                    BugReport.description.ilike(f"%{query}%"),
+                ),
+            )
+            .order_by(BugReport.report_count.desc(), BugReport.created_at.desc())
+            .limit(10)
+            .all()
+        )
+
+    def increment_vote(self, report_id: str) -> BugReport | None:
+        """Increment report_count for a bug report."""
+        report = self.get_by_id(report_id)
+        if not report:
+            return None
+        report.report_count = (report.report_count or 1) + 1
+        self.db.flush()
+        self.db.refresh(report)
+        return report
 
     def get_all(
         self, status: str | None = None, skip: int = 0, limit: int = 100
