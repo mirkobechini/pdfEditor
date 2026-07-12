@@ -40,14 +40,14 @@ export default function LandingFooter() {
                             </a>
                         </li>
                         <li>
-                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <Link href="/api" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("product.api")}
-                            </a>
+                            </Link>
                         </li>
                         <li>
-                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <Link href="/roadmap" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("product.roadmap")}
-                            </a>
+                            </Link>
                         </li>
                     </ul>
                 </div>
@@ -59,24 +59,24 @@ export default function LandingFooter() {
                     </h4>
                     <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
                         <li>
-                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <Link href="/docs" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("resources.docs")}
-                            </a>
+                            </Link>
                         </li>
                         <li>
-                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <Link href="/guide" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("resources.guide")}
-                            </a>
+                            </Link>
                         </li>
                         <li>
-                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <Link href="/faq" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("resources.faq")}
-                            </a>
+                            </Link>
                         </li>
                         <li>
-                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <Link href="/status" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("resources.status")}
-                            </a>
+                            </Link>
                         </li>
                     </ul>
                 </div>
@@ -93,14 +93,14 @@ export default function LandingFooter() {
                             </Link>
                         </li>
                         <li>
-                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <Link href="/terms" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("legal.terms")}
-                            </a>
+                            </Link>
                         </li>
                         <li>
-                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <Link href="/cookies" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("legal.cookies")}
-                            </a>
+                            </Link>
                         </li>
                     </ul>
                 </div>
