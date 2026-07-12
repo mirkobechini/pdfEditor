@@ -182,6 +182,9 @@ class AuthService:
 
     def reset_password(self, token: str, new_password: str) -> User:
         """Reset the user's password using a valid reset token."""
+        # Validate password strength
+        _validate_password_strength(new_password)
+
         from datetime import datetime, timezone
 
         user = self.repo.get_by_reset_token(token)
