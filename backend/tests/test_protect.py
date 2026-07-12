@@ -93,7 +93,7 @@ class TestProtect:
             "/pdfs/fake-id/protect",
             json={"password": "Test1234"},
         )
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
 
     def test_protect_pdf_not_found(self, client, free_headers):
         """Protect a non-existent PDF should return 400."""

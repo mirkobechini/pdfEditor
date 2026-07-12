@@ -147,5 +147,5 @@ class TestImport:
             headers=pro_headers,
             files={"file": ("large.txt", large_content, "text/plain")},
         )
-        assert response.status_code == status.HTTP_413_CONTENT_TOO_LARGE
+        assert response.status_code == 413
         assert "File too large" in response.text

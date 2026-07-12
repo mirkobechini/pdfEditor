@@ -8,13 +8,13 @@ jobs:
   deploy-backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Deploy Backend
         run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
 
   deploy-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Deploy Frontend
         run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}"
