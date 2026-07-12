@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
+import { usePdfJs } from "../lib/usePdfJs";
 
 interface ReorderDialogProps {
   open: boolean;
@@ -29,30 +30,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
   const [error, setError] = React.useState("");
   const [dragIndex, setDragIndex] = React.useState<number | null>(null);
   const [dropIndex, setDropIndex] = React.useState<number | null>(null);
-  const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
-
-  // Load PDF.js on mount
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    if ((window as any).pdfjsLib) {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      setPdfJsLoaded(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-    script.async = true;
-    script.onload = () => {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      setPdfJsLoaded(true);
-    };
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
+  const pdfJsLoaded = usePdfJs();
 
   // Initialize order and load thumbnails when dialog opens
   React.useEffect(() => {

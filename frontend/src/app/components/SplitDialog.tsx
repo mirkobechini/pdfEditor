@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
+import { usePdfJs } from "../lib/usePdfJs";
 
 interface SplitDialogProps {
   open: boolean;
@@ -27,30 +28,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
   const [thumbnails, setThumbnails] = React.useState<PageThumbnail[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [cuts, setCuts] = React.useState<Set<number>>(new Set());
-  const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
-
-  // Load PDF.js on mount
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    if ((window as any).pdfjsLib) {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      setPdfJsLoaded(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-    script.async = true;
-    script.onload = () => {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      setPdfJsLoaded(true);
-    };
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
+  const pdfJsLoaded = usePdfJs();
 
   // Initialize when dialog opens
   React.useEffect(() => {
