@@ -49,7 +49,7 @@ export interface AdminUser {
   updated_at: string;
 }
 
-class ApiClient {
+export class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
 
