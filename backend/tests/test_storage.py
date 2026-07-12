@@ -148,6 +148,71 @@ class TestValidateUuid:
             _validate_uuid("../../../etc/passwd")
 
 
+class TestS3Paths:
+    """Test S3 storage paths (delegation to s3_storage)."""
+
+    @pytest.fixture(autouse=True)
+    def _force_s3_storage(self, monkeypatch):
+        monkeypatch.setattr("app.core.storage.settings.STORAGE_BACKEND", "s3")
+        monkeypatch.setattr("app.core.storage.settings.S3_BUCKET", "test-bucket")
+
+    def test_save_pdf_s3(self, monkeypatch):
+        """save_pdf should delegate to s3_upload when S3 is enabled."""
+        import app.core.s3_storage as s3
+        monkeypatch.setattr(s3, "s3_upload", lambda c: "s3-uuid")
+        result = save_pdf(b"%PDF content")
+        assert result == "s3-uuid"
+
+    def test_get_pdf_path_s3_returns_none(self):
+        """get_pdf_path should return None when S3 is enabled."""
+        result = get_pdf_path("any-uuid")
+        assert result is None
+
+    def test_get_file_content_s3(self, monkeypatch):
+        """get_file_content should delegate to s3_download when S3 is enabled."""
+        import app.core.s3_storage as s3
+        monkeypatch.setattr(s3, "s3_download", lambda u: b"s3 content")
+        result = get_file_content("any-uuid")
+        assert result == b"s3 content"
+
+    def test_delete_pdf_s3(self, monkeypatch):
+        """delete_pdf should delegate to s3_delete when S3 is enabled."""
+        import app.core.s3_storage as s3
+        monkeypatch.setattr(s3, "s3_delete", lambda u: True)
+        result = delete_pdf("any-uuid")
+        assert result is True
+
+    def test_save_snapshot_s3(self, monkeypatch):
+        """save_snapshot should delegate to s3_snapshot_save when S3 is enabled."""
+        import app.core.s3_storage as s3
+        called = []
+        monkeypatch.setattr(s3, "s3_snapshot_save", lambda pid, c: called.append((pid, c)))
+        save_snapshot("pdf-1", b"snap")
+        assert len(called) == 1
+
+    def test_get_latest_snapshot_s3(self, monkeypatch):
+        """get_latest_snapshot should delegate to s3_snapshot_latest."""
+        import app.core.s3_storage as s3
+        monkeypatch.setattr(s3, "s3_snapshot_latest", lambda u: b"s3 snap")
+        result = get_latest_snapshot("pdf-1")
+        assert result == b"s3 snap"
+
+    def test_pop_latest_snapshot_s3(self, monkeypatch):
+        """pop_latest_snapshot should delegate to s3_snapshot_pop."""
+        import app.core.s3_storage as s3
+        monkeypatch.setattr(s3, "s3_snapshot_pop", lambda u: b"popped")
+        result = pop_latest_snapshot("pdf-1")
+        assert result == b"popped"
+
+    def test_clear_snapshots_s3(self, monkeypatch):
+        """clear_snapshots should delegate to s3_snapshot_clear."""
+        import app.core.s3_storage as s3
+        called = []
+        monkeypatch.setattr(s3, "s3_snapshot_clear", lambda u: called.append(u))
+        clear_snapshots("pdf-1")
+        assert len(called) == 1
+
+
 class TestValidatePdf:
     """Test PDF validation."""
 
