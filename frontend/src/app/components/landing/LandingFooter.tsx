@@ -40,12 +40,12 @@ export default function LandingFooter() {
                             </a>
                         </li>
                         <li>
-                            <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("product.api")}
                             </a>
                         </li>
                         <li>
-                            <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("product.roadmap")}
                             </a>
                         </li>
@@ -59,22 +59,22 @@ export default function LandingFooter() {
                     </h4>
                     <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
                         <li>
-                            <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("resources.docs")}
                             </a>
                         </li>
                         <li>
-                            <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("resources.guide")}
                             </a>
                         </li>
                         <li>
-                            <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("resources.faq")}
                             </a>
                         </li>
                         <li>
-                            <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("resources.status")}
                             </a>
                         </li>
@@ -93,12 +93,12 @@ export default function LandingFooter() {
                             </Link>
                         </li>
                         <li>
-                            <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("legal.terms")}
                             </a>
                         </li>
                         <li>
-                            <a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                            <a href="https://github.com/mirkobechini/pdfEditor" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                 {t("legal.cookies")}
                             </a>
                         </li>
