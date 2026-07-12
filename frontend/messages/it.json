@@ -457,7 +457,39 @@
   },
   "terms": {
     "title": "Termini di Servizio",
-    "content": "Utilizzando PdfEditor, accetti questi termini. Sei responsabile del contenuto dei PDF che carichi. Ci riserviamo il diritto di sospendere account che violano le leggi applicabili. Questo servizio è fornito 'così com'è' senza garanzie di alcun tipo."
+    "intro": "Benvenuto su PdfEditor. Accedendo o utilizzando il nostro servizio, accetti di essere vincolato da questi Termini di Servizio. Se non accetti una qualsiasi parte di questi termini, non puoi utilizzare il nostro servizio.",
+    "account": {
+      "title": "Registrazione dell'account",
+      "content": "Quando crei un account, devi fornire informazioni accurate e complete. Sei responsabile della riservatezza delle tue credenziali di accesso e di tutte le attività che si verificano sotto il tuo account. Devi comunicarci immediatamente qualsiasi uso non autorizzato del tuo account."
+    },
+    "use": {
+      "title": "Utilizzo consentito",
+      "content": "Accetti di utilizzare PdfEditor solo per scopi leciti e in conformità con questi termini. Non puoi utilizzare il servizio per caricare, elaborare o distribuire contenuti che violano qualsiasi legge applicabile o che violano i diritti di terzi."
+    },
+    "intellectual": {
+      "title": "Proprietà intellettuale",
+      "content": "Il servizio e i suoi contenuti originali, funzionalità e caratteristiche sono di proprietà di PdfEditor e sono protetti dalle leggi internazionali sul diritto d'autore, marchi commerciali e altre leggi sulla proprietà intellettuale. Mantieni tutti i diritti sui file PDF che carichi ed elabori."
+    },
+    "disclaimer": {
+      "title": "Disclaimer",
+      "content": "Il servizio è fornito 'così com'è' e 'come disponibile' senza garanzie di alcun tipo, espresse o implicite. PdfEditor non garantisce che il servizio sarà ininterrotto, tempestivo, sicuro o privo di errori."
+    },
+    "limitation": {
+      "title": "Limitazione di responsabilità",
+      "content": "In nessun caso PdfEditor sarà responsabile per danni indiretti, incidentali, speciali, consequenziali o punitivi derivanti da o relativi all'utilizzo del servizio."
+    },
+    "termination": {
+      "title": "Risoluzione",
+      "content": "Ci riserviamo il diritto di risolvere o sospendere il tuo account in qualsiasi momento, senza preavviso, per comportamenti che riteniamo violino questi Termini o siano dannosi per altri utenti, per noi o per terze parti."
+    },
+    "changes": {
+      "title": "Modifiche ai Termini",
+      "content": "Ci riserviamo il diritto di modificare questi termini in qualsiasi momento. Le modifiche saranno efficaci immediatamente dopo la pubblicazione. L'uso continuato del servizio dopo le modifiche costituisce accettazione dei nuovi termini."
+    },
+    "contact": {
+      "title": "Contatti",
+      "content": "Per domande su questi Termini, contattaci all'indirizzo: legal@pdfeditor.app"
+    }
   },
   "cookies": {
     "title": "Cookie Policy",
