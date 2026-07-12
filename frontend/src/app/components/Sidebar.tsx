@@ -21,6 +21,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
   const [renameValue, setRenameValue] = React.useState("");
   const [uploadProgress, setUploadProgress] = React.useState<number | null>(null);
   const [uploading, setUploading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   // Load files on mount and when refreshKey changes
   React.useEffect(() => {
@@ -29,10 +30,12 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
 
   async function loadFiles() {
     setLoading(true);
+    setError(null);
     try {
       const res = await api.listPdfs();
       setFiles(res.items);
     } catch {
+      setError(t("loadFailed"));
       console.error("Failed to load files");
     } finally {
       setLoading(false);
@@ -114,7 +117,12 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
       {/* File list */}
       <div className="flex-1 overflow-y-auto px-3 pb-3">
         {loading && <div className="text-center text-sm text-gray-400">{t("loading")}</div>}
-        {!loading && files.length === 0 && (
+        {error && (
+          <div className="mx-2 p-2 text-sm text-red-700 bg-red-100 dark:bg-red-900/30 rounded">
+            {error}
+          </div>
+        )}
+        {!loading && !error && files.length === 0 && (
           <div className="text-center text-sm text-gray-400 mt-8">{t("noPdfs")}</div>
         )}
         {files.map((file) => (
