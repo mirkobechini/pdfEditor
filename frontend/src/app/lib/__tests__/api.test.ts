@@ -68,13 +68,11 @@ describe("ApiClient", () => {
 
   describe("adminSendReset", () => {
     it("sends POST request and returns message", async () => {
-      globalThis.fetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ message: "Reset email sent!" }), {
-            status: 200,
-          }),
-        );
+      globalThis.fetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ message: "Reset email sent!" }), {
+          status: 200,
+        }),
+      );
       const result = await api.adminSendReset("user-123");
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining("/admin/users/user-123/send-reset"),
@@ -84,16 +82,70 @@ describe("ApiClient", () => {
     });
 
     it("throws on error response", async () => {
-      globalThis.fetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ detail: "User not found" }), {
-            status: 404,
-          }),
-        );
+      globalThis.fetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ detail: "User not found" }), {
+          status: 404,
+        }),
+      );
       await expect(api.adminSendReset("bad-id")).rejects.toThrow(
         "User not found",
       );
+    });
+  });
+
+  describe("searchBugReports", () => {
+    it("calls /bugs/search with query", async () => {
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify([{ id: "b1", title: "Bug" }]), {
+            status: 200,
+          }),
+        );
+      const result = await api.searchBugReports("crash");
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/bugs/search?q=crash"),
+        expect.any(Object),
+      );
+      expect(result).toHaveLength(1);
+    });
+
+    it("throws on error", async () => {
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ detail: "Error" }), { status: 400 }),
+        );
+      await expect(api.searchBugReports("x")).rejects.toThrow("Error");
+    });
+  });
+
+  describe("voteBugReport", () => {
+    it("calls POST /bugs/{id}/vote", async () => {
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ id: "b1", report_count: 2 }), {
+            status: 200,
+          }),
+        );
+      const result = await api.voteBugReport("b1");
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/bugs/b1/vote"),
+        expect.objectContaining({ method: "POST" }),
+      );
+      expect(result.report_count).toBe(2);
+    });
+
+    it("throws on error", async () => {
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ detail: "Not found" }), {
+            status: 404,
+          }),
+        );
+      await expect(api.voteBugReport("bad")).rejects.toThrow("Not found");
     });
   });
 });
