@@ -377,6 +377,11 @@
     "status": "Stato Account",
     "active": "Attivo",
     "inactive": "Inattivo",
-    "backToEditor": "Torna all'Editor"
+    "backToEditor": "Torna all'Editor",
+    "myBugReports": "Le Mie Segnalazioni",
+    "noBugs": "Nessuna segnalazione inviata ancora.",
+    "bugStatusLabel": "Stato",
+    "bugCreatedLabel": "Inviata",
+    "bugDescriptionLabel": "Descrizione"
   }
 }

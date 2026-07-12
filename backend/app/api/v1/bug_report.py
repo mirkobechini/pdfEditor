@@ -83,3 +83,13 @@ def update_bug_report_status(
         )
 
     return BugReportResponse.model_validate(report)
+
+
+@router.get("/bugs/my", response_model=list[BugReportResponse])
+def get_my_bug_reports(
+    current_user: User = Depends(get_current_user),
+    service: BugReportService = Depends(get_bug_service),
+) -> list[BugReportResponse]:
+    """Get bug reports submitted by the current user."""
+    reports = service.get_by_user_id(current_user.id)
+    return [BugReportResponse.model_validate(r) for r in reports]

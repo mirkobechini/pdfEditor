@@ -377,6 +377,11 @@
     "status": "Account Status",
     "active": "Active",
     "inactive": "Inactive",
-    "backToEditor": "Back to Editor"
+    "backToEditor": "Back to Editor",
+    "myBugReports": "My Bug Reports",
+    "noBugs": "No bug reports submitted yet.",
+    "bugStatusLabel": "Status",
+    "bugCreatedLabel": "Submitted",
+    "bugDescriptionLabel": "Description"
   }
 }

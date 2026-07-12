@@ -36,6 +36,9 @@ class BugReportService:
     def get_all(self, status: str | None = None, skip: int = 0, limit: int = 100) -> list[BugReport]:
         return self.repo.get_all(status=status, skip=skip, limit=limit)
 
+    def get_by_user_id(self, user_id: str) -> list[BugReport]:
+        return self.repo.get_by_user_id(user_id)
+
     def update_status(self, report_id: str, new_status: str) -> BugReport | None:
         if new_status not in self.VALID_STATUSES:
             raise ValueError(f"Invalid status '{new_status}'. Valid: {', '.join(sorted(self.VALID_STATUSES))}")

@@ -39,4 +39,30 @@ describe("ApiClient", () => {
       expect(error).toBe("{}");
     });
   });
+
+  describe("listMyBugReports", () => {
+    it("calls /bugs/my and returns bug reports", async () => {
+      const mockBugs = [{ id: "b1", title: "Bug" }];
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify(mockBugs), { status: 200 }),
+        );
+      const result = await api.listMyBugReports();
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/bugs/my"),
+        expect.any(Object),
+      );
+      expect(result).toEqual(mockBugs);
+    });
+
+    it("throws on error response", async () => {
+      globalThis.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ detail: "Error" }), { status: 400 }),
+        );
+      await expect(api.listMyBugReports()).rejects.toThrow("Error");
+    });
+  });
 });

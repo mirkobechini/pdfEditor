@@ -3,7 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../../lib/auth";
-import { api } from "../../lib/api";
+import { api, BugReport } from "../../lib/api";
 import AppLayout from "../../components/AppLayout";
 
 export default function ProfilePage() {
@@ -12,12 +12,23 @@ export default function ProfilePage() {
     const [editName, setEditName] = React.useState(user?.full_name || "");
     const [saving, setSaving] = React.useState(false);
     const [message, setMessage] = React.useState<string | null>(null);
+    const [bugs, setBugs] = React.useState<BugReport[]>([]);
+    const [bugsLoading, setBugsLoading] = React.useState(true);
 
     React.useEffect(() => {
         if (!loading && !user) {
             window.location.href = "/login";
         }
     }, [loading, user]);
+
+    React.useEffect(() => {
+        if (user) {
+            api.listMyBugReports()
+                .then(setBugs)
+                .catch(() => { })
+                .finally(() => setBugsLoading(false));
+        }
+    }, [user]);
 
     const handleSaveName = async () => {
         if (!editName.trim() || editName === user?.full_name) return;
@@ -108,6 +119,31 @@ export default function ProfilePage() {
                             </dd>
                         </div>
                     </dl>
+                </section>
+
+                {/* Bug Reports */}
+                <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">{t("myBugReports")}</h2>
+                    {bugsLoading ? (
+                        <p className="text-sm text-gray-400">{t("loading")}</p>
+                    ) : bugs.length === 0 ? (
+                        <p className="text-sm text-gray-400">{t("noBugs")}</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {bugs.map((bug) => (
+                                <div key={bug.id} className="border dark:border-gray-700 rounded p-3">
+                                    <div className="flex justify-between items-start mb-1">
+                                        <span className="font-medium text-sm">{bug.title}</span>
+                                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${bug.status === "open" ? "bg-red-100 text-red-700" : bug.status === "resolved" ? "bg-green-100 text-green-700" : bug.status === "in_progress" ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-700"}`}>
+                                            {bug.status}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mb-1">{bug.description}</p>
+                                    <p className="text-xs text-gray-400">{new Date(bug.created_at).toLocaleDateString()}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </section>
 
                 {/* Back to Editor */}
