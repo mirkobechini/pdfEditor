@@ -10,11 +10,11 @@ BACKEND_DIR = Path(__file__).parent.parent.parent
 class Settings(BaseSettings):
     APP_NAME: str = "PdfEditor API"
     VERSION: str = "0.1.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # Security — JWT_SECRET_KEY is required in production (via .env or env variable)
-    # Falls back to default only for local development
-    SECRET_KEY: str = "dev-secret-key-change-in-production"
+    # SECRET_KEY empty by default; must be set explicitly in .env for production
+    SECRET_KEY: str = ""
     # Alternative env var name for Render/Docker deployments
     JWT_SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
@@ -43,6 +43,15 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = (BACKEND_DIR / "storage" / "pdfs").as_posix()
     MAX_UPLOAD_SIZE_MB: int = 50
     MAX_PAGE_COUNT: int = 500
+
+    # S3-compatible storage (Cloudflare R2 / AWS S3)
+    # Set STORAGE_BACKEND=s3 to use S3 instead of local filesystem
+    STORAGE_BACKEND: str = "local"  # "local" | "s3"
+    S3_BUCKET: str = ""
+    S3_ENDPOINT: str = ""  # Required for R2 (e.g. https://<id>.r2.cloudflarestorage.com)
+    S3_ACCESS_KEY: str = ""
+    S3_SECRET_KEY: str = ""
+    S3_REGION: str = "auto"  # "auto" for R2, "us-east-1" for AWS
     # Store as comma-separated string in .env for compatibility with Pydantic Settings
     ALLOWED_EXTENSIONS: str = ".pdf"
 
@@ -85,6 +94,10 @@ class Settings(BaseSettings):
     # When True, all features are available to all users regardless of tier.
     # Set to False in production when license system is activated.
     DISABLE_LICENSE_ENFORCEMENT: bool = False
+
+    # CSRF protection
+    # Set to True to disable CSRF (e.g., in tests)
+    DISABLE_CSRF: bool = False
 
     model_config = ConfigDict(
         env_file=".env",

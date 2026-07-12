@@ -1,9 +1,6 @@
 # Feature Plan: User Dashboard (Profilo Utente)
 
-**Status:** Planning  
-**Priority:** High  
-**Complexity:** Medium  
-**Estimated Time:** 2-3 days
+**Status:** ✅ Completata (2026-07-10, PR #198)
 
 ---
 

@@ -9,6 +9,7 @@ from app.core.database import get_db as _get_db
 from app.models.user import User
 from app.repositories.user_repo import UserRepository
 from app.services.auth_service import AuthService
+from app.services.pdf_merge_split_service import PdfMergeSplitService
 from app.services.pdf_service import PdfService
 
 security = HTTPBearer()
@@ -20,6 +21,10 @@ def get_db() -> Generator[Session, None, None]:
 
 def get_pdf_service(db: Session = Depends(get_db)) -> PdfService:
     return PdfService(db)
+
+
+def get_merge_split_service(db: Session = Depends(get_db)) -> PdfMergeSplitService:
+    return PdfMergeSplitService(db)
 
 
 def get_current_user(

@@ -1,0 +1,100 @@
+> from sqlalchemy.orm import Session
+  
+> from app.core.config import settings
+> from app.models.license import LicenseFeature
+> from app.models.user import User
+  
+  
+> class UserRepository:
+>     """Repository for User database operations."""
+  
+>     def __init__(self, db: Session):
+>         self.db = db
+  
+>     def create(self, user: User) -> User:
+>         self.db.add(user)
+>         self.db.flush()
+>         self.db.refresh(user)
+>         return user
+  
+>     def get_by_email(self, email: str) -> User | None:
+>         return self.db.query(User).filter(User.email == email).first()
+  
+>     def get_by_id(self, user_id: str) -> User | None:
+>         return self.db.query(User).filter(User.id == user_id).first()
+  
+>     def get_all_users(self, skip: int = 0, limit: int = 100) -> list[User]:
+>         return self.db.query(User).offset(skip).limit(limit).all()
+  
+>     def update_license_tier(self, user_id: str, tier: str) -> User | None:
+>         user = self.get_by_id(user_id)
+>         if not user:
+!             return None
+>         user.license_tier = tier
+>         self.db.flush()
+>         self.db.refresh(user)
+>         return user
+  
+>     def update_is_admin(self, user_id: str, is_admin: bool) -> User | None:
+>         user = self.get_by_id(user_id)
+>         if not user:
+>             return None
+          # Super admin cannot be demoted
+>         if user.email == settings.SUPER_ADMIN_EMAIL and not is_admin:
+!             raise ValueError("Cannot revoke super admin privileges")
+>         user.is_admin = is_admin
+>         self.db.flush()
+>         self.db.refresh(user)
+>         return user
+  
+>     def get_features_for_tier(self, tier: str) -> list[LicenseFeature]:
+>         return (
+>             self.db.query(LicenseFeature)
+>             .filter(LicenseFeature.tier == tier)
+>             .all()
+>         )
+  
+>     def get_by_reset_token(self, token: str) -> User | None:
+>         return (
+>             self.db.query(User)
+>             .filter(User.reset_token == token)
+>             .first()
+>         )
+  
+>     def update(self, user: User) -> User:
+>         """Flush and refresh a modified user."""
+>         self.db.flush()
+>         self.db.refresh(user)
+>         return user
+  
+>     def update_password(self, user_id: str, hashed_password: str) -> User | None:
+>         user = self.get_by_id(user_id)
+>         if not user:
+!             return None
+>         user.hashed_password = hashed_password
+>         user.reset_token = None
+>         user.reset_token_expires = None
+>         self.db.flush()
+>         self.db.refresh(user)
+>         return user
+  
+>     def delete_expired_tokens(self) -> int:
+>         """Delete all expired reset tokens. Returns the number of rows affected."""
+>         from datetime import datetime, timezone
+  
+>         result = (
+>             self.db.query(User)
+>             .filter(
+>                 User.reset_token_expires.isnot(None),
+>                 User.reset_token_expires < datetime.now(timezone.utc),
+>             )
+>             .update(
+>                 {
+>                     User.reset_token: None,
+>                     User.reset_token_expires: None,
+>                 },
+>                 synchronize_session=False,
+>             )
+>         )
+>         self.db.flush()
+>         return result

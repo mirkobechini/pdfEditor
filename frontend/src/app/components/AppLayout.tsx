@@ -34,7 +34,7 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
           >
             {sidebarOpen ? "✕" : "☰"}
           </button>
-          <Link href="/" className="flex items-center gap-2 hover:opacity-75">
+          <Link href="/landing" className="flex items-center gap-2 hover:opacity-75">
             <Image src="/orange-monkey_logo.png" alt="PdfEditor Logo" width={32} height={32} />
             <span className="text-lg font-bold">PdfEditor</span>
           </Link>

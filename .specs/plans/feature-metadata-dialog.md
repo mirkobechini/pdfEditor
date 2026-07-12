@@ -48,6 +48,10 @@ Aggiungere UI frontend per visualizzare e modificare i metadati dei PDF (titolo,
 
 ## Status
 
+[x] Completata
+**Completata il:** 2026-07-02
+**Note:** MetadataDialog.tsx creato con form (title, author, subject, keywords), pulsante "Info" in Toolbar, handler in page.tsx, chiavi i18n metadata in en.json/it.json.
+
 - [ ] Non iniziata
 - [ ] In progress
 - [ ] In review

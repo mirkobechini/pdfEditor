@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.schemas.auth import (
     ForgotPasswordRequest,
     GoogleLoginRequest,
@@ -12,24 +14,67 @@ from app.schemas.auth import (
     UserLoginRequest,
     UserRegisterRequest,
     UserResponse,
+    UserUpdateRequest,
 )
 from app.services.auth_service import AuthService
 from app.services.email_service import EmailService
+from app.repositories.user_repo import UserRepository
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()
+
+
+def _set_token_cookie(response: Response, token: str) -> None:
+    """Set JWT token as httpOnly cookie."""
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=not settings.DEBUG,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+    )
+
+
+def _clear_token_cookie(response: Response) -> None:
+    """Clear JWT cookie on logout."""
+    response.set_cookie(
+        key="access_token",
+        value="",
+        httponly=True,
+        samesite="lax",
+        secure=not settings.DEBUG,
+        max_age=0,
+        path="/",
+    )
 
 
 def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
     return AuthService(db)
 
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def _get_token(request: Request) -> str | None:
+    """Extract JWT token from cookie or Authorization header (backward compat)."""
+    # Try cookie first
+    token = request.cookies.get("access_token")
+    if token:
+        return token
+    # Fall back to Authorization header
+    auth = request.headers.get("Authorization")
+    if auth and auth.startswith("Bearer "):
+        return auth[7:]
+    return None
+
+
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+@limiter.limit("3/hour")
 def register(
     req: UserRegisterRequest,
+    request: Request,
     service: AuthService = Depends(get_auth_service),
 ) -> UserResponse:
-    """Register a new user."""
+    """Register a new user. Auto-login sets httpOnly cookie."""
     try:
         user = service.register(
             email=req.email,
@@ -42,15 +87,24 @@ def register(
             detail=str(e),
         )
 
-    return UserResponse.model_validate(user)
+    # Auto-login after registration
+    token = service.login(email=req.email, password=req.password)
+    response = JSONResponse(
+        content=UserResponse.model_validate(user).model_dump(mode="json"),
+        status_code=status.HTTP_201_CREATED,
+    )
+    _set_token_cookie(response, token)
+    return response
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 def login(
     req: UserLoginRequest,
+    request: Request,
     service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
-    """Login and get JWT token."""
+    """Login and get JWT token. Sets httpOnly cookie."""
     try:
         token = service.login(email=req.email, password=req.password)
     except ValueError as e:
@@ -59,18 +113,29 @@ def login(
             detail=str(e),
         )
 
-    return TokenResponse(access_token=token)
+    response = JSONResponse(
+        content=TokenResponse(access_token=token).model_dump(mode="json"),
+    )
+    _set_token_cookie(response, token)
+    return response
 
 
 @router.get("/me", response_model=UserResponse)
 def get_me(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
     db: Session = Depends(get_db),
 ) -> UserResponse:
-    """Get current user profile from JWT token."""
+    """Get current user profile from JWT token (cookie or header)."""
+    token = _get_token(request)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+
     service = AuthService(db)
     try:
-        user = service.get_current_user(credentials.credentials)
+        user = service.get_current_user(token)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -80,12 +145,49 @@ def get_me(
     return UserResponse.model_validate(user)
 
 
+@router.put("/me", response_model=UserResponse)
+def update_me(
+    req: UserUpdateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> UserResponse:
+    """Update current user profile."""
+    token = _get_token(request)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+
+    service = AuthService(db)
+    try:
+        user = service.get_current_user(token)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+
+    if req.full_name is not None:
+        user.full_name = req.full_name
+        repo = UserRepository(db)
+        repo.update(user)
+
+    return UserResponse.model_validate(user)
+
+
 @router.post("/google", response_model=TokenResponse)
+@limiter.limit("5/minute")
 def google_login(
     req: GoogleLoginRequest,
+    request: Request,
     service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
-    """Login with Google SSO using an id_token."""
+    """Login with Google SSO using an id_token. Sets httpOnly cookie."""
     try:
         user, token = service.google_login(req.id_token)
     except ValueError as e:
@@ -94,12 +196,26 @@ def google_login(
             detail=str(e),
         )
 
-    return TokenResponse(access_token=token)
+    response = JSONResponse(
+        content=TokenResponse(access_token=token).model_dump(mode="json"),
+    )
+    _set_token_cookie(response, token)
+    return response
+
+
+@router.post("/logout")
+def logout():
+    """Logout — clear the access_token cookie."""
+    response = JSONResponse(content={"message": "Logged out"})
+    _clear_token_cookie(response)
+    return response
 
 
 @router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit("3/hour")
 def forgot_password(
     req: ForgotPasswordRequest,
+    request: Request,
     service: AuthService = Depends(get_auth_service),
 ):
     """Request a password reset. Always returns 202 to avoid email enumeration."""

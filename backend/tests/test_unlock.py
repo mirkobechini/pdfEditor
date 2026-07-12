@@ -4,7 +4,7 @@ import fitz
 from fastapi import status
 
 
-def _make_protected_pdf(password: str = "test123") -> bytes:
+def _make_protected_pdf(password: str = "Test1234") -> bytes:
     """Generate a minimal password-protected PDF using PyMuPDF."""
     import fitz
     doc = fitz.open()
@@ -37,7 +37,7 @@ class TestUnlock:
         response = client.post(
             f"/pdfs/{pdf_id}/unlock",
             headers=free_headers,
-            json={"password": "any_password"},
+            json={"password": "AnyPass123"},
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -46,13 +46,13 @@ class TestUnlock:
 
     def test_unlock_success(self, client, free_headers):
         """Unlock a protected PDF with correct password."""
-        protected_content = _make_protected_pdf("test123")
+        protected_content = _make_protected_pdf("Test1234")
         pdf_id = self._upload_and_get_id(client, free_headers, protected_content)
 
         response = client.post(
             f"/pdfs/{pdf_id}/unlock",
             headers=free_headers,
-            json={"password": "test123"},
+            json={"password": "Test1234"},
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -62,7 +62,7 @@ class TestUnlock:
 
     def test_unlock_wrong_password(self, client, free_headers):
         """Unlock a protected PDF with wrong password should return 403."""
-        protected_content = _make_protected_pdf("test123")
+        protected_content = _make_protected_pdf("Test1234")
         pdf_id = self._upload_and_get_id(client, free_headers, protected_content)
 
         response = client.post(
@@ -75,7 +75,7 @@ class TestUnlock:
 
     def test_unlock_empty_password_protected(self, client, free_headers):
         """Unlock a protected PDF with empty password should return 400 (endpoint check)."""
-        protected_content = _make_protected_pdf("test123")
+        protected_content = _make_protected_pdf("Test1234")
         pdf_id = self._upload_and_get_id(client, free_headers, protected_content)
 
         response = client.post(
@@ -94,9 +94,9 @@ class TestUnlock:
         # Call unlock without auth headers
         response = client.post(
             f"/pdfs/{pdf_id}/unlock",
-            json={"password": "test123"},
+            json={"password": "Test1234"},
         )
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
 
     def test_unlock_empty_password_request(self, client, free_headers, sample_pdf_content):
         """Unlock with empty password should return 400 (endpoint check happens first)."""

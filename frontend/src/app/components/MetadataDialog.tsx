@@ -2,15 +2,16 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { api, Metadata } from "../lib/api";
+import { api, Metadata, PdfDocument } from "../lib/api";
 
 interface MetadataDialogProps {
     open: boolean;
     onClose: () => void;
     pdfId: string | null;
+    onSuccess?: (doc: PdfDocument) => void;
 }
 
-export default function MetadataDialog({ open, onClose, pdfId }: MetadataDialogProps) {
+export default function MetadataDialog({ open, onClose, pdfId, onSuccess }: MetadataDialogProps) {
     const t = useTranslations("metadata");
     const [metadata, setMetadata] = React.useState<Metadata | null>(null);
     const [title, setTitle] = React.useState("");
@@ -57,6 +58,7 @@ export default function MetadataDialog({ open, onClose, pdfId }: MetadataDialogP
                 keywords,
             });
             setMetadata(updated);
+            onSuccess?.(updated);
             onClose();
         } catch (err) {
             setError(t("saveFailed") + ": " + (err instanceof Error ? err.message : err));

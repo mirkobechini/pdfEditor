@@ -1,55 +1,16 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export interface PdfDocument {
-  id: string;
-  original_filename: string;
-  file_size: number;
-  page_count: number;
-  title?: string | null;
-  author?: string | null;
-  is_password_protected?: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import type {
+  PdfDocument,
+  PdfListResponse,
+  Metadata,
+  BugReport,
+  AdminUser,
+} from "./api-types";
 
-export interface PdfListResponse {
-  items: PdfDocument[];
-  total: number;
-}
+export type { PdfDocument, PdfListResponse, Metadata, BugReport, AdminUser };
 
-export interface Metadata {
-  title?: string | null;
-  author?: string | null;
-  subject?: string | null;
-  keywords?: string | null;
-}
-
-export interface BugReport {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string;
-  page_url?: string | null;
-  platform?: string | null;
-  app_version?: string | null;
-  os_info?: string | null;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface AdminUser {
-  id: string;
-  email: string;
-  full_name: string;
-  is_active: boolean;
-  is_admin: boolean;
-  license_tier: string;
-  created_at: string;
-  updated_at: string;
-}
-
-class ApiClient {
+export class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
 
@@ -69,16 +30,8 @@ class ApiClient {
     }
   }
 
-  setToken(token: string | null) {
-    this.token = token;
-  }
-
   private getHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {};
-    if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`;
-    }
-    return headers;
+    return {};
   }
 
   // PDF endpoints
@@ -92,6 +45,40 @@ class ApiClient {
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
+  }
+
+  async uploadPdfWithProgress(
+    file: File,
+    onProgress?: (progress: number) => void,
+  ): Promise<PdfDocument> {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${this.baseUrl}/pdfs/upload`);
+
+      if (this.token) {
+        xhr.setRequestHeader("Authorization", `Bearer ${this.token}`);
+      }
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          reject(new Error(xhr.statusText));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error("Network error"));
+      xhr.send(formData);
+    });
   }
 
   async listPdfs(skip = 0, limit = 100): Promise<PdfListResponse> {
@@ -335,12 +322,30 @@ class ApiClient {
     is_active: boolean;
     is_admin: boolean;
     license_tier: string;
+    license_tier_source: string;
+    created_at: string;
+    updated_at: string;
   }> {
     const res = await fetch(`${this.baseUrl}/auth/me`, {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
+  }
+
+  async updateProfile(data: { full_name: string }): Promise<any> {
+    const res = await fetch(`${this.baseUrl}/auth/me`, {
+      method: "PUT",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async logout(): Promise<void> {
+    // POST to logout endpoint clears the httpOnly cookie
+    await fetch(`${this.baseUrl}/auth/logout`, { method: "POST" });
   }
 
   // Undo / Redo
@@ -376,6 +381,34 @@ class ApiClient {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async listMyBugReports(): Promise<BugReport[]> {
+    const res = await fetch(`${this.baseUrl}/bugs/my`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async searchBugReports(query: string): Promise<BugReport[]> {
+    const res = await fetch(
+      `${this.baseUrl}/bugs/search?q=${encodeURIComponent(query)}`,
+      {
+        headers: this.getHeaders(),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async voteBugReport(bugId: string): Promise<BugReport> {
+    const res = await fetch(`${this.baseUrl}/bugs/${bugId}/vote`, {
+      method: "POST",
+      headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
@@ -426,6 +459,18 @@ class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ is_admin: isAdmin }),
     });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async adminSendReset(userId: string): Promise<{ message: string }> {
+    const res = await fetch(
+      `${this.baseUrl}/admin/users/${userId}/send-reset`,
+      {
+        method: "POST",
+        headers: this.getHeaders(),
+      },
+    );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }

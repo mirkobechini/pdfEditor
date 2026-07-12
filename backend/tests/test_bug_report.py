@@ -3,7 +3,7 @@
 from fastapi import status
 
 
-def _login(client, email="bug@test.com", password="pass123"):
+def _login(client, email="bug@test.com", password="TestPass123"):
     """Register and login a test user."""
     client.post(
         "/auth/register",
@@ -17,9 +17,9 @@ def _admin_login(client, db_engine):
     """Create admin and login."""
     client.post(
         "/auth/register",
-        json={"email": "admin@bugs.com", "password": "admin123", "full_name": "Bug Admin"},
+        json={"email": "admin@bugs.com", "password": "Admin1234", "full_name": "Bug Admin"},
     )
-    resp = client.post("/auth/login", json={"email": "admin@bugs.com", "password": "admin123"})
+    resp = client.post("/auth/login", json={"email": "admin@bugs.com", "password": "Admin1234"})
     token = resp.json()["access_token"]
 
     # Promote to admin
@@ -29,7 +29,7 @@ def _admin_login(client, db_engine):
         conn.execute(text("UPDATE users SET is_admin = 1 WHERE id = :uid"), {"uid": me.json()["id"]})
         conn.commit()
 
-    return client.post("/auth/login", json={"email": "admin@bugs.com", "password": "admin123"}).json()["access_token"]
+    return client.post("/auth/login", json={"email": "admin@bugs.com", "password": "Admin1234"}).json()["access_token"]
 
 
 class TestCreateBug:
@@ -145,3 +145,118 @@ class TestAdminBugs:
             json={"status": "invalid"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+class TestMyBugs:
+    """Test suite for GET /bugs/my."""
+
+    def test_my_bugs_empty(self, client):
+        """Should return empty list when no bugs."""
+        token = _login(client, email="empty@test.com")
+        response = client.get(
+            "/bugs/my",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
+    def test_my_bugs_returns_own_bugs(self, client):
+        """Should return only current user's bugs."""
+        token = _login(client, email="owner@test.com")
+        # Create a bug
+        client.post(
+            "/bugs",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"title": "My bug", "description": "Fix this"},
+        )
+        # Another user creates a bug
+        other_token = _login(client, email="other@test.com")
+        client.post(
+            "/bugs",
+            headers={"Authorization": f"Bearer {other_token}"},
+            json={"title": "Other bug", "description": "Not mine"},
+        )
+        # Check my bugs
+        response = client.get(
+            "/bugs/my",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["title"] == "My bug"
+
+    def test_my_bugs_unauthorized(self, client):
+        """Should reject without auth."""
+        response = client.get("/bugs/my")
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
+
+class TestSearchBugs:
+    """Test suite for GET /bugs/search."""
+
+    def test_search_finds_by_title(self, client):
+        """Should find bugs by title."""
+        token = _login(client, email="search@test.com")
+        client.post(
+            "/bugs",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"title": "Login crash", "description": "Crashes on login"},
+        )
+        response = client.get(
+            "/bugs/search?q=crash",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) >= 1
+        assert "crash" in data[0]["title"].lower()
+
+    def test_search_returns_empty_for_no_match(self, client):
+        """Should return empty list when no match."""
+        token = _login(client, email="nosearch@test.com")
+        response = client.get(
+            "/bugs/search?q=zzzznotfound",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_search_requires_auth(self, client):
+        """Should reject without auth."""
+        response = client.get("/bugs/search?q=test")
+        assert response.status_code in (401, 403)
+
+
+class TestVoteBug:
+    """Test suite for POST /bugs/{id}/vote."""
+
+    def test_vote_increments_count(self, client):
+        """Should increment report_count on vote."""
+        token = _login(client, email="vote@test.com")
+        create_resp = client.post(
+            "/bugs",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"title": "Vote test", "description": "Test voting"},
+        )
+        bug_id = create_resp.json()["id"]
+
+        response = client.post(
+            f"/bugs/{bug_id}/vote",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200
+        assert response.json()["report_count"] >= 2
+
+    def test_vote_not_found(self, client):
+        """Should return 404 for non-existent bug."""
+        token = _login(client, email="votenf@test.com")
+        response = client.post(
+            "/bugs/fake-id/vote",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 404
+
+    def test_vote_requires_auth(self, client):
+        """Should reject without auth."""
+        response = client.post("/bugs/fake-id/vote")
+        assert response.status_code in (401, 403)

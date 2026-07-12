@@ -1,10 +1,20 @@
 """Test migration integrity — verify alembic upgrades and downgrades cleanly."""
 
+import gc
 import os
 import tempfile
+import time
 
 import pytest
 from sqlalchemy import create_engine, inspect
+
+
+def _cleanup_engine(engine):
+    """Dispose engine and force garbage collection for Windows file lock."""
+    engine.dispose()
+    del engine
+    gc.collect()
+    time.sleep(0.05)
 
 
 def _run_migration(db_path: str, direction: str):
@@ -14,6 +24,8 @@ def _run_migration(db_path: str, direction: str):
 
     env = os.environ.copy()
     env["DATABASE_URL"] = f"sqlite:///{db_path}"
+    # Use nullpool to avoid connection lingering on Windows
+    env["SQLALCHEMY_POOL_CLASS"] = "NullPool"
 
     cmd = [sys.executable, "-m", "alembic"] + direction.split()
     if direction == "current":
@@ -34,14 +46,14 @@ class TestMigrationIntegrity:
 
     def test_upgrade_head_succeeds(self):
         """Running alembic upgrade head from scratch must succeed."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             db_path = os.path.join(tmp, "test.db")
             rc, out, err = _run_migration(db_path, "upgrade head")
             assert rc == 0, f"alembic upgrade head failed:\n{err}\n{out}"
 
     def test_upgrade_head_creates_all_tables(self):
         """After upgrade head, all expected tables must exist."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
@@ -53,11 +65,11 @@ class TestMigrationIntegrity:
             for tbl in expected_tables:
                 assert tbl in tables, f"Expected table '{tbl}' not found after upgrade"
 
-            engine.dispose()
+            _cleanup_engine(engine)
 
     def test_upgrade_columns_correct(self):
         """Verify that users table has the expected columns after full upgrade."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
@@ -73,22 +85,22 @@ class TestMigrationIntegrity:
             col_names = [c["name"] for c in inspector.get_columns("users")]
             assert len(col_names) == len(set(col_names)), "Duplicate columns detected in users table"
 
-            engine.dispose()
+            _cleanup_engine(engine)
 
     def test_downgrade_single_and_upgrade_again(self):
         """Downgrade one step then upgrade again must work."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
-            # Verify latest column (reset_token) exists on users
+            # Verify latest column (google_id) exists on users
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
             user_cols_before = {c["name"] for c in inspector.get_columns("users")}
-            assert "reset_token" in user_cols_before
-            engine.dispose()
+            assert "google_id" in user_cols_before
+            _cleanup_engine(engine)
 
-            # Downgrade one step (remove reset_token)
+            # Downgrade one step (remove google_id)
             rc, out, err = _run_migration(db_path, "downgrade -1")
             assert rc == 0, f"alembic downgrade -1 failed:\n{err}\n{out}"
 
@@ -97,8 +109,8 @@ class TestMigrationIntegrity:
             inspector = inspect(engine)
             user_cols_after = {c["name"] for c in inspector.get_columns("users")}
             assert "users" in inspector.get_table_names()
-            assert "reset_token" not in user_cols_after
-            engine.dispose()
+            assert "google_id" not in user_cols_after
+            _cleanup_engine(engine)
 
             # Upgrade again
             rc, out, err = _run_migration(db_path, "upgrade head")
@@ -108,11 +120,11 @@ class TestMigrationIntegrity:
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
             assert "users" in inspector.get_table_names()
-            engine.dispose()
+            _cleanup_engine(engine)
 
     def test_downgrade_all_the_way(self):
         """Downgrade to base then upgrade again must work."""
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
@@ -126,7 +138,7 @@ class TestMigrationIntegrity:
             tables = inspector.get_table_names()
             assert tables == ["alembic_version"] or tables == [], \
                 f"Expected no user tables after downgrade base, got: {tables}"
-            engine.dispose()
+            _cleanup_engine(engine)
 
             # Re-upgrade
             rc, out, err = _run_migration(db_path, "upgrade head")

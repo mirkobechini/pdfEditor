@@ -1,10 +1,13 @@
 from sqlalchemy.orm import Session
+import time
+from typing import Any
 
 from app.core.config import settings
 from app.core.storage import (
     save_pdf,
     validate_pdf,
     get_pdf_path,
+    get_file_content,
     delete_pdf,
     save_snapshot,
     get_latest_snapshot,
@@ -12,13 +15,47 @@ from app.core.storage import (
     clear_snapshots,
 )
 from app.models.pdf import PdfDocument
-from app.models.pdf import PdfDocument
 from app.repositories.pdf_repo import PdfRepository
 from app.schemas.pdf import PdfListResponse, PdfResponse
 
 
 # In-memory password cache for password-protected PDFs (never persisted to disk)
-_password_cache: dict[str, str] = {}
+# Each entry is (password, timestamp); auto-expires after 30 minutes
+_password_cache: dict[str, tuple[str, float]] = {}
+_PASSWORD_CACHE_TTL = 1800  # 30 minutes in seconds
+
+# Track open PyMuPDF handles for graceful shutdown
+_open_pdf_handles: list[Any] = []
+
+
+def _cleanup_all_pdf_handles() -> None:
+    """Close all open PyMuPDF document handles (called on shutdown)."""
+    global _open_pdf_handles
+    for handle in _open_pdf_handles:
+        try:
+            handle.close()
+        except Exception:
+            pass
+    _open_pdf_handles.clear()
+
+
+def _get_cached_password(pdf_id: str) -> str | None:
+    """Return cached password if not expired, cleaning up expired entries."""
+    if pdf_id in _password_cache:
+        password, timestamp = _password_cache[pdf_id]
+        if time.time() - timestamp < _PASSWORD_CACHE_TTL:
+            return password
+        del _password_cache[pdf_id]
+    return None
+
+
+def _cache_password(pdf_id: str, password: str) -> None:
+    """Cache a password with current timestamp."""
+    # Cleanup expired entries on every cache write (lazy cleanup)
+    expired = [k for k, (_, ts) in _password_cache.items() if time.time() - ts >= _PASSWORD_CACHE_TTL]
+    for k in expired:
+        del _password_cache[k]
+    _password_cache[pdf_id] = (password, time.time())
 
 
 class PdfService:
@@ -39,7 +76,7 @@ class PdfService:
         import fitz
 
         pdf = self._get_user_pdf(pdf_id, user_id)
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if content:
             save_snapshot(pdf_id, content)
 
@@ -53,7 +90,7 @@ class PdfService:
             import fitz
             doc = fitz.open(stream=content, filetype="pdf")
             if doc.needs_pass:
-                doc.authenticate(_password_cache[pdf_id])
+                doc.authenticate(_get_cached_password(pdf_id))
                 content = doc.tobytes()
             doc.close()
         return content
@@ -122,141 +159,6 @@ class PdfService:
         delete_pdf(file_uuid)
         return True
 
-    def merge(self, pdf_ids: list[str], user_id: str) -> PdfDocument:
-        """Merge multiple PDFs into one. Returns the new PDF document."""
-        import fitz
-
-        if len(pdf_ids) < 2:
-            raise ValueError("At least 2 PDFs are required to merge")
-
-        # Load all source PDFs and collect page counts for the record
-        source_docs: list[fitz.Document] = []
-        total_pages = 0
-        source_names: list[str] = []
-
-        for pid in pdf_ids:
-            pdf = self._get_user_pdf(pid, user_id)
-
-            content = self.get_file_content(pdf)
-            if not content:
-                for d in source_docs:
-                    d.close()
-                raise ValueError(f"PDF {pid} file not found on disk")
-
-            doc = fitz.open(stream=content, filetype="pdf")
-            source_docs.append(doc)
-            total_pages += doc.page_count
-            source_names.append(pdf.original_filename)
-
-        # Create output document and insert all pages
-        output = fitz.open()
-        for doc in source_docs:
-            output.insert_pdf(doc)
-
-        output_bytes = output.tobytes()
-        output.close()
-
-        for d in source_docs:
-            d.close()
-
-        # Save merged file
-        file_uuid = save_pdf(output_bytes)
-        merge_name = f"merged_{'_'.join(n.replace('.pdf', '') for n in source_names)}.pdf"
-
-        pdf = PdfDocument(
-            original_filename=merge_name,
-            storage_filename=f"{file_uuid}.pdf",
-            file_size=len(output_bytes),
-            page_count=total_pages,
-            user_id=user_id,
-        )
-        return self.repo.create(pdf)
-
-    def split_by_ranges(self, pdf_id: str, user_id: str, ranges: list[str]) -> list[PdfDocument]:
-        """Split a PDF by page ranges (e.g. ['1-3', '5-7'])."""
-        self._create_snapshot(pdf_id, user_id)
-        import fitz
-
-        pdf = self._get_user_pdf(pdf_id, user_id)
-
-        content = self.get_file_content(pdf)
-        if not content:
-            raise ValueError(f"PDF {pdf_id} file not found on disk")
-
-        source = fitz.open(stream=content, filetype="pdf")
-        results: list[PdfDocument] = []
-
-        try:
-            for r in ranges:
-                parts = r.split("-")
-                if len(parts) != 2:
-                    raise ValueError(f"Invalid range: {r}. Use format 'start-end'")
-                start = int(parts[0]) - 1  # Convert to 0-based
-                end = int(parts[1])  # end is exclusive in insert_pdf
-
-                if start < 0 or end > source.page_count or start >= end:
-                    raise ValueError(
-                        f"Invalid range {r}: PDF has {source.page_count} pages"
-                    )
-
-                output = fitz.open()
-                output.insert_pdf(source, from_page=start, to_page=end - 1)
-                out_bytes = output.tobytes()
-                output.close()
-
-                file_uuid = save_pdf(out_bytes)
-                range_name = f"{pdf.original_filename.replace('.pdf', '')}_pages_{r}.pdf"
-
-                new_pdf = PdfDocument(
-                    original_filename=range_name,
-                    storage_filename=f"{file_uuid}.pdf",
-                    file_size=len(out_bytes),
-                    page_count=end - start,
-                    user_id=user_id,
-                )
-                results.append(self.repo.create(new_pdf))
-        finally:
-            source.close()
-
-        return results
-
-    def split_every_page(self, pdf_id: str, user_id: str) -> list[PdfDocument]:
-        """Split a PDF into one file per page."""
-        self._create_snapshot(pdf_id, user_id)
-        import fitz
-
-        pdf = self._get_user_pdf(pdf_id, user_id)
-
-        content = self.get_file_content(pdf)
-        if not content:
-            raise ValueError(f"PDF {pdf_id} file not found on disk")
-
-        source = fitz.open(stream=content, filetype="pdf")
-        results: list[PdfDocument] = []
-
-        try:
-            for page_num in range(source.page_count):
-                output = fitz.open()
-                output.insert_pdf(source, from_page=page_num, to_page=page_num)
-                out_bytes = output.tobytes()
-                output.close()
-
-                file_uuid = save_pdf(out_bytes)
-                page_name = f"{pdf.original_filename.replace('.pdf', '')}_page_{page_num + 1}.pdf"
-
-                new_pdf = PdfDocument(
-                    original_filename=page_name,
-                    storage_filename=f"{file_uuid}.pdf",
-                    file_size=len(out_bytes),
-                    page_count=1,
-                    user_id=user_id,
-                )
-                results.append(self.repo.create(new_pdf))
-        finally:
-            source.close()
-
-        return results
-
     def reorder(self, pdf_id: str, user_id: str, page_order: list[int]) -> PdfDocument:
         """Reorder pages of a PDF. page_order is 1-based."""
         self._create_snapshot(pdf_id, user_id)
@@ -264,7 +166,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -309,7 +211,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -364,7 +266,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -423,7 +325,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -452,7 +354,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -477,7 +379,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -514,7 +416,7 @@ class PdfService:
 
         pdf = self._get_user_pdf(pdf_id, user_id)
 
-        content = self.get_file_content(pdf)
+        content = self._read_file_with_password(pdf_id, user_id)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
 
@@ -620,7 +522,7 @@ class PdfService:
             doc.close()
 
         # Cache the password in memory
-        _password_cache[pdf_id] = password
+        _cache_password(pdf_id, password)
         return pdf
 
     def undo(self, pdf_id: str, user_id: str) -> PdfDocument:
@@ -639,11 +541,14 @@ class PdfService:
         file_uuid = save_pdf(content)
         new_name = f"{pdf.original_filename.replace('.pdf', '')}_restored.pdf"
 
+        # Count actual pages with fitz instead of using len(content) (bytes)
+        page_count = fitz.open(stream=content, filetype="pdf").page_count
+
         new_pdf = PdfDocument(
             original_filename=new_name,
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(content),
-            page_count=len(content),
+            page_count=page_count,
             user_id=user_id,
         )
         return self.repo.create(new_pdf)
@@ -662,11 +567,14 @@ class PdfService:
         file_uuid = save_pdf(content)
         new_name = f"{pdf.original_filename.replace('.pdf', '')}_restored.pdf"
 
+        # Count actual pages with fitz instead of using len(content) (bytes)
+        page_count = fitz.open(stream=content, filetype="pdf").page_count
+
         new_pdf = PdfDocument(
             original_filename=new_name,
             storage_filename=f"{file_uuid}.pdf",
             file_size=len(content),
-            page_count=len(content),
+            page_count=page_count,
             user_id=user_id,
         )
         return self.repo.create(new_pdf)
@@ -697,8 +605,6 @@ class PdfService:
         pdf.is_password_protected = True
 
         # Cache the password in memory
-        _password_cache[pdf_id] = password
+        _cache_password(pdf_id, password)
 
         return self.repo.update(pdf)
-
-        return self.repo.create(new_pdf)

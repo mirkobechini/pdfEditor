@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 
 from app.api.deps import get_current_user, get_pdf_service
 from app.core.config import settings
+from app.core.sanitize import sanitize_filename
 from app.models.user import User
 from app.schemas.pdf import PdfListResponse, PdfResponse
 from app.services.pdf_service import PdfService
@@ -46,7 +47,7 @@ def upload_pdf(
     max_bytes = _get_max_upload_bytes()
     if file.size is not None and file.size >= max_bytes:
         raise HTTPException(
-            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            status_code=413,
             detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB",
         )
 
@@ -55,7 +56,7 @@ def upload_pdf(
     # Also check after reading (covers cases where Content-Length header is missing)
     if len(content) >= max_bytes:
         raise HTTPException(
-            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            status_code=413,
             detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB",
         )
 
@@ -117,7 +118,7 @@ def download_pdf(
         iter([content]),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'attachment; filename="{pdf.original_filename}"',
+            "Content-Disposition": f'attachment; filename="{sanitize_filename(pdf.original_filename)}"',
         },
     )
 

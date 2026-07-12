@@ -27,7 +27,9 @@ Migrare il backend deployato su Render da SQLite (ephemeral) a PostgreSQL persis
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+**Completata il:** 2026-07-01
+**Note:** PostgreSQL service creato su Render, backend connesso con psycopg v3, migrations applicate automaticamente, persistenza confermata. La migration è stata applicata come parte del deploy su Render — il backend ora usa `DATABASE_URL` Postgres in produzione.
 
 ## Implementazione proposta (step by step)
 

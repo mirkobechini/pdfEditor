@@ -30,7 +30,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(email.trim(), password);
-      window.location.href = "/";
+      window.location.href = "/app";
     } catch (err) {
       setError(t("loginFailed") + ": " + (err instanceof Error ? err.message : err));
     } finally {

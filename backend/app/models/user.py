@@ -1,13 +1,17 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, String
+from sqlalchemy import Boolean, Column, DateTime, Index, String
 
 from app.core.database import Base
 
 
 class User(Base):
     __tablename__ = "users"
+
+    __table_args__ = (
+        Index("ix_users_google_id", "google_id", unique=True),
+    )
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(255), unique=True, nullable=False, index=True)
@@ -16,6 +20,13 @@ class User(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
     license_tier = Column(String(20), default="free", nullable=False)
+    license_tier_source = Column(
+        String(20),
+        default="admin",
+        nullable=False,
+        comment="admin=assigned by superadmin, stripe=paid via Stripe, free=default",
+    )
+    google_id = Column(String(255), nullable=True)
     reset_token = Column(String(255), nullable=True, index=True)
     reset_token_expires = Column(DateTime, nullable=True)
 

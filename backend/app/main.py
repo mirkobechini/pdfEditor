@@ -1,9 +1,14 @@
 from contextlib import asynccontextmanager
+import logging
+import signal
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.api.v1.admin import router as admin_router
 from app.api.v1.auth import router as auth_router
@@ -17,7 +22,11 @@ from app.api.v1.unlock import router as unlock_router
 from app.api.v1.upload import router as pdf_router
 from app.api.v1.undo_redo import router as undo_redo_router
 from app.core.config import settings
+from app.core.csrf import CSRFMiddleware
 from app.core.database import Base, engine
+from app.core.limiter import limiter
+
+logger = logging.getLogger("pdfeditor")
 
 
 @asynccontextmanager
@@ -30,6 +39,16 @@ async def lifespan(app: FastAPI):
         # Seed super admin if not exists
         _seed_super_admin()
     yield
+    # Shutdown: cleanup resources
+    logger.info("Shutting down — cleaning up resources...")
+    _cleanup_on_shutdown()
+
+
+def _cleanup_on_shutdown():
+    """Cleanup resources on shutdown — close PyMuPDF handles, release locks."""
+    from app.services.pdf_service import _cleanup_all_pdf_handles
+    _cleanup_all_pdf_handles()
+    logger.info("Cleanup complete.")
 
 
 def _seed_license_features():
@@ -37,6 +56,7 @@ def _seed_license_features():
     from sqlalchemy import text
 
     from app.core.database import SessionLocal
+    from app.core.license_seed import DEFAULT_LICENSE_FEATURES
     from app.models.license import LicenseFeature
 
     db = SessionLocal()
@@ -48,27 +68,7 @@ def _seed_license_features():
         import uuid
         from datetime import datetime, timezone
 
-        features = [
-            # Free
-            ("free", "upload_pdf"), ("free", "download_pdf"), ("free", "extract_text"),
-            # Pro — all free + advanced
-            ("pro", "upload_pdf"), ("pro", "download_pdf"), ("pro", "extract_text"),
-            ("pro", "merge_pdf"), ("pro", "split_pdf"), ("pro", "reorder_pages"),
-            ("pro", "remove_pages"), ("pro", "replace_text"), ("pro", "edit_metadata"),
-            ("pro", "export_txt"), ("pro", "export_png"), ("pro", "export_jpg"),
-            ("pro", "import_txt"), ("pro", "max_file_size_50mb"),
-            # Enterprise — all
-            ("enterprise", "upload_pdf"), ("enterprise", "download_pdf"),
-            ("enterprise", "extract_text"), ("enterprise", "merge_pdf"),
-            ("enterprise", "split_pdf"), ("enterprise", "reorder_pages"),
-            ("enterprise", "remove_pages"), ("enterprise", "replace_text"),
-            ("enterprise", "edit_metadata"), ("enterprise", "export_txt"),
-            ("enterprise", "export_png"), ("enterprise", "export_jpg"),
-            ("enterprise", "export_svg"), ("enterprise", "import_txt"),
-            ("enterprise", "import_images"), ("enterprise", "max_file_size_100mb"),
-        ]
-
-        for tier, key in features:
+        for tier, key in DEFAULT_LICENSE_FEATURES:
             lf = LicenseFeature(
                 id=str(uuid.uuid4()),
                 tier=tier,
@@ -96,7 +96,7 @@ def _seed_super_admin():
             user.is_admin = True
             db.flush()
             db.commit()
-            print(f"🔐 Super admin '{settings.SUPER_ADMIN_EMAIL}' promoted on startup.")
+            logger.info("Super admin '%s' promoted on startup.", settings.SUPER_ADMIN_EMAIL)
     finally:
         db.close()
 
@@ -106,6 +106,37 @@ app = FastAPI(
     version=settings.VERSION,
     lifespan=lifespan,
 )
+
+# ---------------------------------------------------------------------------
+# Rate limiter — registered on app state
+# ---------------------------------------------------------------------------
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+# ---------------------------------------------------------------------------
+# Health check — required by Render/Railway for zero-downtime deploys
+# ---------------------------------------------------------------------------
+
+@app.get("/health", tags=["system"])
+def health_check():
+    """Return 200 if the application is running."""
+    return {"status": "ok"}
+
+
+# ---------------------------------------------------------------------------
+# Request ID middleware
+# ---------------------------------------------------------------------------
+
+@app.middleware("http")
+async def add_request_id(request: Request, call_next):
+    import uuid
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+    request.state.request_id = request_id
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = request_id
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -121,7 +152,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     if msg.startswith("Value error, "):
         msg = msg[len("Value error, "):]
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        status_code=422,
         content={"detail": msg},
     )
 
@@ -136,6 +167,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# CSRF protection — must be after CORS middleware
+app.add_middleware(CSRFMiddleware)
 
 # Routers
 app.include_router(auth_router)

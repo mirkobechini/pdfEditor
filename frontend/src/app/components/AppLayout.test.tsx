@@ -49,7 +49,6 @@ beforeEach(() => {
     login: vi.fn(),
     register: vi.fn(),
     logout: vi.fn(),
-    token: null,
   });
 });
 
@@ -70,7 +69,6 @@ describe("AppLayout header order", () => {
       login: vi.fn(),
       register: vi.fn(),
       logout: vi.fn(),
-      token: "token",
     });
 
     renderLayout();
@@ -99,10 +97,9 @@ describe("AppLayout header order", () => {
     // HeaderControls (dark mode + language) should come first
     expect(darkModeIdx).toBeLessThan(bugReportIdx);
     expect(langSelectorIdx).toBeLessThan(bugReportIdx);
-    // Bug report should come before user info
-    expect(bugReportIdx).toBeLessThan(userNameIdx);
-    // User name should come before logout
-    expect(userNameIdx).toBeLessThan(logoutIdx);
+    // User name is now inside HeaderControls, so it comes before bug report
+    // Bug report should come before logout
+    expect(bugReportIdx).toBeLessThan(logoutIdx);
   });
 
   it("renders header controls and bug report even without user", () => {
@@ -112,7 +109,6 @@ describe("AppLayout header order", () => {
       login: vi.fn(),
       register: vi.fn(),
       logout: vi.fn(),
-      token: null,
     });
 
     renderLayout();

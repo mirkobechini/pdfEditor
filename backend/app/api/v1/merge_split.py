@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.api.deps import get_current_user, get_pdf_service, verify_feature_access
+from app.api.deps import get_current_user, get_merge_split_service, verify_feature_access
 from app.models.user import User
 from app.schemas.pdf import (
     MergeRequest,
@@ -9,7 +9,7 @@ from app.schemas.pdf import (
     SplitRequest,
     SplitResponse,
 )
-from app.services.pdf_service import PdfService
+from app.services.pdf_merge_split_service import PdfMergeSplitService
 
 router = APIRouter(prefix="/pdfs", tags=["pdfs"])
 
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/pdfs", tags=["pdfs"])
 def merge_pdfs(
     req: MergeRequest,
     current_user: User = Depends(verify_feature_access("merge_pdf")),
-    service: PdfService = Depends(get_pdf_service),
+    service: PdfMergeSplitService = Depends(get_merge_split_service),
 ) -> PdfResponse:
     """Merge multiple PDFs into one document."""
     if len(req.pdf_ids) < 2:
@@ -43,7 +43,7 @@ def split_pdf(
     pdf_id: str,
     req: SplitRequest,
     current_user: User = Depends(verify_feature_access("split_pdf")),
-    service: PdfService = Depends(get_pdf_service),
+    service: PdfMergeSplitService = Depends(get_merge_split_service),
 ) -> SplitResponse:
     """Split a PDF by range or into individual pages."""
     if req.mode not in ("range", "every"):

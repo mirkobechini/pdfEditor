@@ -23,9 +23,9 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - **PDF viewer lato client:** PDF.js (Mozilla)
 - **PDF manipulation lato client:** pdf-lib (per merge/split/riordino offline)
 - **Database offline:** SQLite
-- **Database cloud:** PostgreSQL (previsto per Fase 2-3)
+- **Database cloud:** PostgreSQL (Render)
 - **ORM:** SQLAlchemy 2.0
-- **Auth:** JWT (bcrypt) + SSO Google (PyJWT + requests)
+- **Auth:** JWT (bcrypt) + httpOnly cookie + SSO Google (PyJWT + requests)
 - **i18n:** next-intl (dichiarato, ma attualmente implementato con provider custom)
 - **Migration:** Alembic
 - **Test backend:** pytest
@@ -73,117 +73,138 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 ## Cosa NON è in scope (per ora)
 
 - Desktop Tauri v2 (Fase 1c — futuro)
-- Deploy cloud / PostgreSQL (Fase 2 — futuro)
+- Deploy cloud / PostgreSQL (Fase 2 — già completata)
 - Cloud sync bidirezionale (Fase 3 — futuro)
 - Mobile React Native (Fase 4 — futuro)
-- Integrazione pagamenti Stripe/Lemon Squeezy (futura)
+- Integrazione pagamenti Stripe (pianificata — vedi `.specs/plans/feature-stripe-mcp-subscriptions.md`)
 - SSO Apple / Samsung (previsto come bonus futuro)
 - react-native-web (valutabile, non deciso)
 - Annotazioni PDF (drawing, highlight, commenti — non menzionati)
 
 ## Bug tracker
 
-### Risolti ✅
+> 📋 **Storico completo dei fix:** Vedi [`CHANGELOG.md`](./CHANGELOG.md)
 
-- [x] **Dark text illegibile in dark mode su login/register** — Aggiunte classi `dark:text-*` a h1, label, input. (PR #66, issue #65)
-- [x] **Errori validazione Pydantic in inglese e raw JSON** — Custom exception handler backend + `ApiClient.extractError()` frontend. (PR #68, issue #67)
-- [x] **Dark mode toggle + language selector non accessibili su login/register** — Estratto `HeaderControls` condiviso, aggiunto header a login/register. (PR #70, issue #69)
-- [x] **Limite dimensione upload non enforceato** — Enforceato `MAX_UPLOAD_SIZE_MB=50` prima di leggere in RAM. (PR #86, issue #85)
-- [x] **Lettura in memoria senza limiti** — Controllo dimensione prima di `file.file.read()`. (PR #86, issue #85)
-- [x] **Limite pagine** — Aggiunto `MAX_PAGE_COUNT=500` enforceato in `PdfService.upload()`. (PR #86, issue #85)
-- [x] **DeleteModal: chiavi i18n mancanti** — Aggiunta sezione `deleteModal` a `en.json` e `it.json`. (PR #102, issue #101)
-- [x] **MISSING_MESSAGE: splitDialog.splitDialog.pageThumbnail** — Corretta chiave annidata in SplitDialog. (PR #102, issue #101)
-- [x] **MISSING_MESSAGE: reorderDialog.reorderDialog.pageThumbnail** — Corretta chiave annidata in ReorderDialog. (PR #102, issue #101)
-- [x] **MISSING_MESSAGE: removeDialog.removeDialog.pageThumbnail** — Corretta chiave annidata in RemoveDialog. (PR #102, issue #101)
-- [x] **DeleteModal: sidebar.deleteFailed reference** — Corretto riferimento a chiave sbagliata. (PR #102, issue #101)
-- [x] **DeleteModal posizionato nella sidebar invece che al centro** — Spostato DeleteModal da Sidebar a page.tsx (root level). (PR #104, issue #103)
-- [x] **Cancellazione PDF fallita** — Aggiunto `refreshKey` alla Sidebar per ricaricare la lista dopo eliminazione. (PR #106, issue #105)
-- [x] **Come impostare un account come admin** — Aggiunto endpoint `PUT /admin/users/{id}/admin` + toggle UI nella dashboard admin. (PR #108, issue #107)
-- [x] **Messaggi errore non formattati** — Corretto doppio prefisso `"Error: "` e migliorato stile error container in Split/Merge/Reorder/Remove dialog. (PR #110, issue #109)
-- [x] **Sostituire `<img>` con `<Image />` di next/image** — Sostituiti tutti i tag `<img>` con `<Image>` da `next/image` (con `unoptimized` per data URL) in DeleteModal, SplitDialog, ReorderDialog, RemoveDialog. (PR #112, issue #111)
-- [x] **Split: linee di separazione tra pagine** — Ridisegnato SplitDialog con linee di separazione cliccabili tra le pagine invece di checkbox. (PR #114, issue #113)
-- [x] **Super admin protetto da revoca** — Aggiunto `SUPER_ADMIN_EMAIL` in config, protetto repository/endpoint/CLI. Seed automatico allo startup. CLI tool `backend/cli.py`. (PR #116, issue #115)
-- [x] **Bottone SSO Google in login/register** — Installato `@react-oauth/google`, aggiunto bottone Google a login e register pages, `GoogleLoginButton` componente condiviso. (PR #118, issue #117)
-- [x] **Reset password con token temporaneo** — Aggiunti campi `reset_token`/`reset_token_expires` a User, endpoint `POST /auth/forgot-password` e `POST /auth/reset-password`, pagine `/forgot-password` e `/reset-password` frontend, test. (PR #120, issue #119)
-- [x] **Test migration fix: test_downgrade_single_and_upgrade_again** — Fixato per controllare colonna `reset_token` anziché `is_password_protected`, dispose engine per evitare PermissionError Windows. (PR #122, issue #121)
-- [x] **timeZone non configurata** — Aggiunto `timeZone: 'Europe/Rome'` a `NextIntlClientProvider` in `i18n.tsx`. (PR #124, issue #123)
-- [x] **Admin bugfix: admin/users e admin/bugs wrapping** — Backend ora restituisce `{ items, total }` per admin/users e admin/bugs. Rimosso toggle admin button dalla UI. (PR #126, #128, #131)
-- [x] **CLI per pulizia PDF orfani** — Aggiunto `cleanup-orphans` a `backend/cli.py`. (PR #130, issue #129)
-- [x] **"Nothing to redo / Nothing to undo" — messaggi raw in console** — Gestiti silenziosamente i casi normali (nessun snapshot disponibile) in handleUndo/handleRedo. Test aggiunti. (PR #134, issue #133)
-- [x] **PDF not found fallback nei dialoghi** — Creato PdfThumbnail.tsx con error handling graceful, refactoring DeleteModal → PdfThumbnail, error handling in SplitDialog/RemoveDialog/ReorderDialog. (PR #135, issue #136)
-- [x] **DeleteModal: chiamata API duplicata** — `api.deletePdf()` chiamato 2 volte (DeleteModal + page.tsx). Rimosso duplicato. Fixato overflow modale. (PR #135, issue #136)
-- [x] **Script tag in React component (layout.tsx)** — Sostituito `<script>` inline con `next/script` (strategy="beforeInteractive"). (commit su dev)
-- [x] **Hydration mismatch GoogleLoginButton** — Dynamic import con `ssr: false` + mount solo client-side via useEffect. (commit su dev)
-- [x] **Admin email hardcoded in config.py** — Spostato `SUPER_ADMIN_EMAIL` da hardcoded a `.env` via Pydantic Settings. Creato `.env.example`. (PR #136, issue #139)
-- [x] **pdfPreview.ts senza test** — 7 unit test per renderFirstPageToDataUrl() con mock di PDF.js e Canvas. (PR #137, issue #137)
-- [x] **Import file validation (/pdfs/import)** — Aggiunto size check (413) e MIME type validation per estensione. 16 test parametrizzati. (PR #140, issue #138)
-- [x] **DeleteModal test obsoleti (PdfThumbnail)** — Aggiornati 3 test DeleteModal per match con PdfThumbnail (skeleton, alt text, fallback). (commit su dev)
-- [x] **MAX_SNAPSHOTS hardcoded** — Spostato da costante in storage.py a `settings.MAX_SNAPSHOTS` (.env configurabile). (PR #138, issue #140)
-- [x] **Expired reset token cleanup** — Lazy cleanup in `request_password_reset()`, nuovo metodo `delete_expired_tokens()` in user_repo.py. (PR #139, issue #141)
-- [x] **Admin test broken (wrapped response)** — 5 test fixati per `{items, total}` response model. (PR #141, issue #145)
-- [x] **Deprecation warnings (6→1)** — Fixati: Pydantic ConfigDict, Starlette HTTP status codes (413/422), SQLite datetime adapter. (PR #141, issue #145)
-- [x] **Test Google SSO success paths** — 3 test: nuovo utente, utente esistente, utente inattivo. Mock di requests.get + jose.jwt.decode. (PR #142, issue #142)
-- [x] **Test unlock PDF endpoint** — 6 test per POST /pdfs/{id}/unlock: non protetto, success, wrong password, empty password, unauthorized. (commit su dev, issue #143)
-- [x] **Coverage reporting frontend** — Aggiunto @vitest/coverage-v8, script npm run coverage, config in vitest.config.ts. (commit su dev, issue #144)
-- [x] **Disable license enforcement flag** — Aggiunto `DISABLE_LICENSE_ENFORCEMENT` in config.py/deps.py. Se True, tutte le feature disponibili per tutti. (PR #143, issue #146)
+### Issue note ma non bloccanti ⏳
 
-> **ℹ️ Setup richiesto:** Creare un OAuth Client ID su [Google Cloud Console](https://console.cloud.google.com/apis/credentials) e impostarlo in `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local` e `GOOGLE_CLIENT_ID` in `backend/.env`.
-
-> **ℹ️ Reset password:** In sviluppo il token viene stampato nella console del backend. In produzione va configurato SMTP in `backend/.env`.
-
-### In corso 🔄
-
-_nessuno_
+| #   | Issue                                                                     | Impatto              | Risoluzione prevista                                  |
+| --- | ------------------------------------------------------------------------- | -------------------- | ----------------------------------------------------- |
+| 2   | **`_password_cache` module-global** — non scala con multi-worker          | Medio                | Redis o DB in Fase 2                                  |
+| 9   | **No password strength validation** — password di 1 char accettata        | ✅ Risolto (PR #208) | —                                                     |
+| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato | ✅ Risolto (PR #208) | —                                                     |
+| 14  | **Nessun integration/E2E test**                                           | 🟡 In corso          | Playwright futuro                                     |
+| 18  | **Large file upload — nessun progress indicator**                         | ✅ Risolto (PR #206) | —                                                     |
+| 19  | **Find & Replace non funziona**                                           | Medio (UX)           | Inline text editor                                    |
+| 20  | **Admin bug report — campi mancanti**                                     | ✅ Risolto (PR #204) | —                                                     |
+| 21  | **Frontend coverage 70%** — 247 test su 50 file                           | ✅ Risolto (PR #233) | `.specs/plans/chore-frontend-100-percent-coverage.md` |
 
 ### Da risolvere/note ⏳
 
-> **Nota:** Tutte le feature prioritarie Fase 1 completate. **Prossimo passaggio operativo:** migrazione deploy Render da SQLite a PostgreSQL persistente.
+> **⚠️ Security audit 2026-07-09 — Risolte 20/24 issue (83%).** Vedi tabella sopra per le rimanenti.
+>
+> Riepilogo fix applicati al 2026-07-11:
+>
+> - ✅ `SECRET_KEY` default → vuoto (forza config esplicita)
+> - ✅ `DEBUG` default → `False`
+> - ✅ Health check `GET /health`
+> - ✅ `undo()`/`redo()` page_count → `fitz.open().page_count`
+> - ✅ `_read_file_with_password` → tutte le operazioni PDF
+> - ✅ Rate limiting → slowapi (login 5/min, register 3/h, forgot-password 3/h)
+> - ✅ Dipendenze vulnerabili → PyJWT 2.13.0, python-multipart 0.0.31, pytest 9.0.3
+> - ✅ CodeQL path-injection → `_validate_uuid()` in storage.py
+> - ✅ Password strength validation → min 8 char + uppercase + lowercase + digit
+> - ✅ Header injection sanitization → `sanitize_filename()` su Content-Disposition
+> - ✅ Graceful shutdown → cleanup PyMuPDF handles su SIGTERM
+> - ✅ CSRF protection → middleware con cookie token
+> - ✅ JWT httpOnly cookie → addio localStorage XSS
+> - ✅ GitHub: 0 Dependabot alert attivi, 0 Code Scanning alert attivi
+
+> **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email via SendGrid/Cloudflare attiva (dominio verificato). Admin send reset via dashboard implementato. User bug report status visibile in profilo.
 
 > **Nota tecnica:** Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile dal nostro codice. La libreria `httpx2` non esiste ancora, è una futura release di starlette. Ignorare.
 
-## Feature future pianificate
+> **🔑 MCP Servers disponibili:**
+>
+> - **Stripe:** MCP server ufficiale a `https://mcp.stripe.com` (OAuth). Repo: `stripe/ai`. Per gestire abbonamenti e pagamenti.
+> - **Render:** MCP server ufficiale `render-oss/render-mcp-server` (Go, 144★). Per deploy e gestione servizi Render.
+> - **Railway:** MCP server ufficiale `railwayapp/railway-mcp-server` (JS, 192★, archived). Community: `jason-tan-swe/railway-mcp` (TS, 73★).
 
-Le seguenti feature sono state pianificate e documentate in `.specs/plans/`. L'ordine di implementazione è definito dalla priorità indicata.
+## Coverage test backend
+
+### Stato attuale: 93% (253 test, 0 failures, 0 warnings)
+
+| Modulo                                                                                            | Coverage | Note                   |
+| ------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
+| `security.py`, `config.py`, `merge_split.py`, `metadata.py`, `reorder.py`, `text.py`, `unlock.py` | 100%     | ✅                     |
+| `s3_storage.py`                                                                                   | 96%      | Mock boto3             |
+| `database.py`, `user_repo.py`                                                                     | 95%      | 🟡                     |
+| `email_service.py`, `convert.py`                                                                  | 94%      | 🟡                     |
+| `main.py`, `auth.py`, `admin.py`, `deps.py`, `undo_redo.py`, `bug_report.py`                      | 90-94%   | 🟡                     |
+| `auth_service.py`                                                                                 | 92%      | 🟡                     |
+| `csrf.py`                                                                                         | 100%     | ✅                     |
+| `storage.py`                                                                                      | 100%     | ✅                     |
+| `pdf_service.py`                                                                                  | 85%      | 🔴 55 linee error path |
+| `pdf_merge_split_service.py`                                                                      | 92%      | ✅ (nuovo)             |
+| **TOTALE**                                                                                        | **93%**  |                        |
+
+### Cosa manca per il 100%
+
+- ~49 linee facili (error path endpoint, 403, 404) — 1-2h
+- ~17 linee medie (S3/local switch) — 0h ✅ completato
+- ~55 linee difficili (pdf_service.py error path) — 2-3h
+
+## Coverage test frontend
+
+### Stato attuale: 67.5% (250 test, 50 files, 0 failures)
+
+| Modulo                         | Coverage | Test             |
+| ------------------------------ | -------- | ---------------- |
+| `login/page.tsx`               | 100%     | ✅               |
+| `register/page.tsx`            | 93%      | ✅               |
+| `landing/*` components         | 100%     | ✅               |
+| `profile/page.tsx`             | 96%      | ✅               |
+| `lib/auth.tsx`                 | 67%      | 🟡               |
+| `lib/pdfPreview.ts`            | 90%      | ✅               |
+| `lib/usePdfJs.ts`              | 88%      | ✅               |
+| `components/Sidebar.tsx`       | 63%      | 🟡               |
+| `components/AppLayout.tsx`     | 85%      | ✅               |
+| `components/Toolbar.tsx`       | 68%      | 🟡               |
+| `components/PdfViewer.tsx`     | 85%      | ✅ (mock PDF.js) |
+| `components/ProtectDialog.tsx` | 97%      | ✅               |
+| `components/ReplaceTextDialog` | 96%      | ✅               |
+| `components/DeleteModal.tsx`   | 86%      | ✅               |
+| `components/PdfThumbnail.tsx`  | 96%      | ✅               |
+| `components/BugReportDialog`   | ~70%     | 🟡               |
+| `components/GoogleLoginButton` | 48%      | 🔴               |
+| `admin/page.tsx`               | 70%      | 🟡               |
+| `app/page.tsx` (editor)        | ~90%     | ✅ (mock)        |
+| `forgot-password/page.tsx`     | 95%      | ✅               |
+| `reset-password/page.tsx`      | 94%      | ✅               |
+| `MergeDialog/ReorderDialog`    | ~30-67%  | 🔴               |
+| `RemoveDialog`                 | 44%      | 🔴               |
+| **Backend**                    | **93%**  |                  |
+
+### Cosa manca per il 100%
+
+- Dialoghi complessi (ReorderDialog 30%, SplitDialog 37%, MergeDialog 67%)
+- Componenti minori (RemoveDialog 44%, GoogleLoginButton 48%)
+
+### Obiettivo: 80-100%
 
 ### Fasi successive (macro)
 
 Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue con le seguenti macro-fasi:
 
-- [ ] **Fase 1c — Desktop app (Tauri v2)** — Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI in eseguibile. Sidecar: avvio FastAPI locale all'avvio. SQLite locale per dati offline. Installer per Windows (primario), macOS/Linux (secondario).
-- [ ] **Fase 2 — Web app su cloud** — Deploy FastAPI su Railway/Render/Fly.io. Deploy Next.js su Vercel. PostgreSQL cloud. Upload file su S3.
-- [ ] **Fase 3 — Cloud sync** — Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti (lock ottimistico). Modalità offline/online seamless.
-- [ ] **Fase 4 — Mobile app (React Native)** — Setup React Native (Expo bare workflow). Logica React condivisa (API client, hooks auth, utility PDF). UI nativa. Viewer PDF.js via WebView. SSO Google login. Store deployment (Google Play / Apple).
+- ⬜ **Fase 1c — Desktop app (Tauri v2)** — Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI in eseguibile. Sidecar: avvio FastAPI locale all'avvio. SQLite locale per dati offline. Installer per Windows (primario), macOS/Linux (secondario).
+- ✅ **Fase 2 — Web app su cloud** — Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export. **[COMPLETATA]** — 2026-07-10.
+- ⬜ **Fase 3 — Cloud sync** — Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti (lock ottimistico). Modalità offline/online seamless.
+- ⬜ **Fase 4 — Mobile app (React Native)** — Setup React Native (Expo bare workflow). Logica React condivisa (API client, hooks auth, utility PDF). UI nativa. Viewer PDF.js via WebView. SSO Google login. Store deployment (Google Play / Apple).
 
-### Feature minori completate
+### Feature minori
 
-- [x] **Bug report button (frontend)** — Pulsante "Segnala bug" nell'header con dialog modale. Completata (PR #56, issue #55)
-- [x] **UI autenticazione (login/register)** — Pagine `/login` e `/register` con form, AuthContext JWT, route protection, logout in header. Completata (PR #58, issue #57)
-- [x] **Persistenza dark mode (localStorage)** — localStorage + system preference fallback + flash prevention. Completata (PR #60, issue #59)
-- [x] **Enforcement licenze (backend)** — `verify_feature_access()` dependency per bloccare operazioni non consentite per tier. Completata (PR #62, issue #61)
-- [x] **Allineamento modello BugReport al brief** — Aggiunti `platform`, `app_version`, `os_info`. Refactoring con repository pattern. Completata (PR #64, issue #63)
-- [x] **Header controls su login/register** — `HeaderControls` condiviso con dark mode toggle e language selector sempre visibili. Completata (PR #70, issue #69)
-- [x] **Header button order** — Riordinato header: `[☀️] [IT/EN] [Segnala Bug] [Nome] [Esci]`. Completata (PR #76, issue #75)
-- [x] **Refactor dialoghi merge/split/reorder/remove** — Operano sul PDF corrente, usano API backend, scaricano il risultato come file nuovo. Completata (PR #72, issue #71)
-- [x] **DeleteModal con anteprima PDF** — Modal di conferma eliminazione con anteprima prima pagina via PDF.js. Completata (PR #74, issue #73)
-- [x] **Reorder miniature + drag & drop** — ReorderDialog con miniature PDF, drag & drop, pulsanti ▲/▼. Completata (PR #78, issue #77)
-- [x] **Split miniature + selezione visuale** — SplitDialog con griglia miniature cliccabili + text input. Completata (PR #80, issue #79)
-- [x] **Remove miniature + conferma** — RemoveDialog con miniature PDF, selezione visuale, modale conferma. Completata (PR #82, issue #81)
-- [x] **Drag & drop viewer centrale** — PdfViewer accetta drop di PDF nello stato vuoto e overlay quando occupato. Completata (PR #84, issue #83)
-- [x] **Enforce MAX_UPLOAD_SIZE_MB e MAX_PAGE_COUNT** — Limite 50MB e 500 pagine enforceati in upload. Completata (PR #86, issue #85)
-- [x] **Dashboard admin** — Pagina `/admin` per gestione utenti, licenze e bug report. Completata (PR #88, issue #87)
-- [x] **Auth endpoint PDF** — Aggiunto `user_id` a `PdfDocument`, protetti tutti gli endpoint `/pdfs/*` con JWT, filtro per utente corrente. Completata (PR #91, issue #89)
-- [x] **Uniform license checking** — Estratta `check_feature_access()` condivisa in `deps.py`, rimossa duplicata `_check_license_for_format()` in `convert.py`. Completata (PR #92, issue #90)
-- [x] **Sostituzione I18nProvider custom con next-intl** — Rimosso provider i18n custom, sostituito con `NextIntlClientProvider`. Tutti i componenti migrati a `useTranslations()`. Completata (PR #94, issue #93)
-- [x] **PDF protetti da password** — Rilevamento automatico all'upload via PyMuPDF, endpoint `/pdfs/{id}/unlock`, cache password in memoria, modale UI in PdfViewer. Completata (PR #96, issue #95)
-- [x] **Undo/Redo per modifiche PDF** — Snapshot prima di ogni modifica, max 10 per PDF, stack undo/redo separati, pulsanti ↩↪ con Ctrl+Z/Ctrl+Shift+Z. Completata (PR #98, issue #97)
-- [x] **Dashboard admin: filtri e funzionalità** — Aggiunti filtro per tipo licenza, filtro per data creazione (da/a), ricerca per email, cambio licenza inline. Fix chiavi i18n bug report filter. (PR #132, issue #131)
-- [x] **PDF not found fallback nei dialoghi** — `PdfThumbnail` componente riutilizzabile + fallback placeholder. (PR #135, issue #136)
-- [x] **Unit test pdfPreview.ts** — 7 test per `renderFirstPageToDataUrl()` con mock PDF.js + Canvas. (PR #137, issue #137)
-- [x] **Validazione /pdfs/import** — File size + MIME type validation. (PR #140, issue #138)
-- [x] **Admin email in .env** — `SUPER_ADMIN_EMAIL` parametrizzato. (PR #136, issue #139)
-- [x] **MAX_SNAPSHOTS configurabile** — Da hardcoded a settings (.env). (PR #138, issue #140)
-- [x] **Expired token cleanup** — Lazy cleanup all'uso. (PR #139, issue #141)
-- [x] **Google SSO al primo posto login** — Pulsante Google prima del form email/password. (commit su dev)
+> 📋 **Storico completo:** Vedi [`CHANGELOG.md`](./CHANGELOG.md)
+
+### Feature pianificate (in ordine di priorità)
 
 ## Architectural Guidance
 
@@ -224,6 +245,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
    - Cookies marcati HttpOnly, Secure, SameSite=Strict
 
 **Cosa NON è implementato (futuro)**:
+
 - Encryption at rest per database (PostgreSQL può avere TDE/encryption plugin)
 - Rate limiting per login attempts (brute-force attack protection)
 - Two-factor authentication (2FA)
@@ -262,6 +284,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
    - Link a checkout Stripe/Lemon Squeezy con tier "Pro" (unlimited emails)
 
 **Implementazione**:
+
 - Vedi piano dettagliato: `.specs/plans/feature-sendgrid-rate-limit-handling.md`
 - Backend: `EmailService.send_password_reset_email()` torna `{"success": false, "error": "rate_limit_exceeded"}`
 - Frontend: Catch 429 status code e mostra alert
@@ -270,29 +293,32 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Recommendation Summary
 
-| Concern | Status | Strategy |
-|---------|--------|----------|
-| Data protection in DB | ✅ Protected | JWT + ORM + bcrypt + user_id filtering |
-| SQL injection | ✅ Protected | SQLAlchemy parameterized queries |
-| Password storage | ✅ Protected | bcrypt hashing, never plain text |
-| Cross-origin attacks | ✅ Protected | CORS + ALLOWED_ORIGINS |
-| Email rate limit | 🟡 Planned | Catch 429, disable button, admin override |
-| Encryption at rest | ❌ Future | PostgreSQL encryption plugin (Phase 3+) |
-| Rate limit login | ❌ Future | Add on Phase 2-3 (brute-force protection) |
-| 2FA support | ❌ Future | Low priority, evaluable in Phase 3+ |
+| Concern               | Status       | Strategy                                                |
+| --------------------- | ------------ | ------------------------------------------------------- |
+| Data protection in DB | ✅ Protected | JWT + ORM + bcrypt + user_id filtering                  |
+| SQL injection         | ✅ Protected | SQLAlchemy parameterized queries                        |
+| Password storage      | ✅ Protected | bcrypt hashing, never plain text                        |
+| Cross-origin attacks  | ✅ Protected | CORS + ALLOWED_ORIGINS                                  |
+| Email rate limit      | ✅ Protected | Catch 429, disable button, admin override               |
+| Encryption at rest    | ❌ Future    | PostgreSQL encryption plugin (Phase 3+)                 |
+| Rate limit login      | ✅ Protected | slowapi: 5/min login, 3/h register, 3/h forgot-password |
+| 2FA support           | ❌ Future    | Low priority, evaluable in Phase 3+                     |
 
-### Feature minori da implementare (in ordine)
+### Feature pianificate (in ordine di priorità)
 
-- [ ] **Migrazione database Render SQLite → PostgreSQL** — Passare a DB persistente per evitare perdita dati utenti ai redeploy/restart. Piano: `.specs/plans/feature-render-postgres-migration.md`. **[COMPLETATO]** — PostgreSQL service creato su Render, backend connesso con psycopg v3, migrations applicate automaticamente, persistenza confermata.
-- [ ] **Invio email reale reset password** — Sostituire il flusso attuale basato su log server con invio SMTP reale, mantenendo risposta neutra anti-enumerazione. Piano: `.specs/plans/feature-reset-password-email-delivery.md`. **[IN PROGRESS - PAUSED]** — SendGrid SMTP integrato, email_service.py implementato, endpoint forgot-password invia email con link reset. In pausa: Sender identity verification posticipata a quando dominio custom sarà disponibile.
-- [ ] **Conferma email account** — Introdurre verifica email post-registrazione con token a scadenza, endpoint di conferma/reinvio e blocco login finche non verificata. Piano: `.specs/plans/feature-email-confirmation.md`.
-- [ ] **Google OAuth account linking** — Permettere al login standard (email/password) di collegare in un secondo momento un account Google, consolidando in un unico User. Piano: `.specs/plans/feature-google-oauth-account-linking.md`.
-- [ ] **Navigazione landing page da app autenticata** — Aggiungere link/bottone per tornare alla landing page da `/app`. Piano: `.specs/plans/feature-authenticated-landing-navigation.md`.
-- [ ] **User dashboard (profilo utente)** — Pagina `/app/profile` per modificare nome, visualizzare abbonamento, gestire account collegati (Google OAuth), future impostazioni. Piano: `.specs/plans/feature-user-dashboard.md`.
-- [ ] **Admin: invia reset password via dashboard** — Permettere agli admin di inviare manualmente link reset password a un utente dalla dashboard admin. Piano: `.specs/plans/feature-admin-send-reset-email.md`.
-- [ ] **Miglioramenti UI/UX webapp** — Refactoring componenti, miglior contrast, responsive mobile, accessibility (a11y), animazioni smooth. Piano: `.specs/plans/feature-ui-ux-improvements.md`.
-- [ ] **PDF naming preservation** — Quando si salvano PDF modificati (merge/split/ecc.), il nome file segue il nome scelto dall'utente, non default ("merged_..."). Piano: `.specs/plans/feature-pdf-naming-preservation.md`.
-- [ ] **PDF compression** — Endpoint per comprimere PDF riducendo size mantenendo qualità visiva. Piano: `.specs/plans/feature-pdf-compression.md`.
-- [ ] **SendGrid rate limiting handling** — Rilevare limite email SendGrid raggiunto, disabilitare bottone "Forgot Password" o mostrare alert informativo. Piano: `.specs/plans/feature-sendgrid-rate-limit-handling.md`.
+> 📋 **Completate:** Vedi [`CHANGELOG.md`](./CHANGELOG.md)
+
+#### 🔵 Priorità BASSA / Future
+
+- ⬜ **Inline text editor** (sostituisce Find&Replace) — Piano: `.specs/plans/feature-inline-text-editor.md`.
+- ⬜ **Stripe MCP Subscriptions** — Piano: `.specs/plans/feature-stripe-mcp-subscriptions.md`.
+- ⬜ **AI PDF editing service** — Piano: `.specs/plans/feature-ai-pdf-editing.md`.
+- ⬜ **Conferma email account** — Piano: `.specs/plans/feature-email-confirmation.md`.
+- ⬜ **E2E Playwright tests** — Piano: `.specs/plans/chore-security-improvements.md`.
+- ⬜ **Tauri v2 desktop** — Fase 1c.
+- ⬜ **Cloud sync SQLite↔PostgreSQL** — Fase 3.
+- ⬜ **Mobile React Native** — Fase 4.
+
+<!-- Code Review completata — vedi CHANGELOG.md per dettagli -->
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->

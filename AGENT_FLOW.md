@@ -69,6 +69,11 @@ While inside the feature branch, implement **one atomic unit at a time**, **comm
 
 An **atomic unit** is a single file or logical change: a component, a utility, a test file, a translation update. Do NOT batch multiple files into one commit.
 
+> ⚠️ **Regola fondamentale: ogni implementazione DEVE avere i suoi test.**
+> Dopo ogni atomic commit di codice (`feat:`, `fix:`, `refactor:`), il commit **successivo** DEVE essere il test corrispondente (`test:`).
+> Esempio: se aggiungi un endpoint, il commit dopo è il test di quell'endpoint.
+> Non si passa al prossimo atomic unit senza che il test del precedente sia scritto E passi.
+
 ```bash
 # Inside the feature branch
 git checkout feature/<issue-number>-<short-description>
@@ -80,14 +85,29 @@ git add <file-A>
 git commit -m "<type>(<scope>): <description of file A>"
 git push origin feature/<issue-number>-<short-description>
 
+# === SUBTASK 1b: Write tests for file A ===
+# Write tests for the code just committed
+git add <test-file-A>
+git commit -m "test(<scope>): <description of test file A>"
+git push origin feature/<issue-number>-<short-description>
+# Run tests to verify they pass
+pytest <test-file-A> -q
+
 # === SUBTASK 2: Write file B ===
-# Write ONE file (e.g. tests for file A)
+# Write ONE file (e.g. a service)
 git add <file-B>
+git commit -m "<type>(<scope>): <description of file B>"
+git push origin feature/<issue-number>-<short-description>
+
+# === SUBTASK 2b: Write tests for file B ===
+git add <test-file-B>
 git commit -m "test(<scope>): <description of test file B>"
 git push origin feature/<issue-number>-<short-description>
+pytest <test-file-B> -q
 
 # === Continue for each atomic unit ===
 # Do NOT batch multiple files into one commit!
+# Do NOT skip tests — a feature without tests is incomplete!
 ```
 
 > ⚠️ **Fundamental rule: feature → tests → merge.** Every feature MUST include its tests in the same PR. Write tests right after the feature code (in a **separate commit**), before creating the PR. A PR without tests cannot be merged.
@@ -177,3 +197,24 @@ git checkout dev
 git pull origin dev
 git branch -d hotfix/<issue-number>-<short-description>
 ```
+
+## CI/CD Maintenance
+
+When GitHub Actions runners deprecate a Node.js version (e.g. Node.js 20 → Node.js 24), the agent **must** update all workflow files (`.github/workflows/*.yml`) to use action versions that target the new runtime natively.
+
+### How to fix Node.js deprecation warnings
+
+1. **Remove** any `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` env variable (once Node 24 is the default, it's unnecessary).
+2. **Update** each action to its latest major version that uses `node24` as runtime:
+
+| Action                  | Old (Node 20) | New (Node 24)        |
+| ----------------------- | ------------- | -------------------- |
+| `actions/checkout`      | `@v4`         | `@v5`                |
+| `actions/setup-node`    | `@v4`         | `@v5`                |
+| `actions/github-script` | `@v7`         | `@v9`                |
+| `actions/setup-python`  | `@v4`         | `@v5` (if available) |
+
+3. **Verify** the new version's `action.yml` contains `runs.using: node24`.
+4. **Commit** with message: `chore(ci): update actions to Node 24 runtime`.
+
+> ⚠️ Always check the latest available version on the GitHub Marketplace before updating — versions listed above may be outdated.

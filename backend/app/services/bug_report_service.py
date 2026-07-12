@@ -36,6 +36,20 @@ class BugReportService:
     def get_all(self, status: str | None = None, skip: int = 0, limit: int = 100) -> list[BugReport]:
         return self.repo.get_all(status=status, skip=skip, limit=limit)
 
+    def get_by_user_id(self, user_id: str) -> list[BugReport]:
+        return self.repo.get_by_user_id(user_id)
+
+    def search(self, query: str) -> list[BugReport]:
+        """Search open bug reports by text."""
+        return self.repo.search_by_text(query)
+
+    def vote(self, report_id: str, user_id: str) -> BugReport | None:
+        """Increment vote count for a bug report."""
+        report = self.repo.get_by_id(report_id)
+        if not report:
+            return None
+        return self.repo.increment_vote(report_id)
+
     def update_status(self, report_id: str, new_status: str) -> BugReport | None:
         if new_status not in self.VALID_STATUSES:
             raise ValueError(f"Invalid status '{new_status}'. Valid: {', '.join(sorted(self.VALID_STATUSES))}")

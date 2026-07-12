@@ -3,7 +3,7 @@
 from fastapi import status
 
 
-def _register_and_login(client, email="user@test.com", password="pass123"):
+def _register_and_login(client, email="user@test.com", password="TestPass123"):
     """Helper: register and login a normal user."""
     client.post(
         "/auth/register",
@@ -20,12 +20,12 @@ def _create_admin(client, db_engine):
     """Helper: register a user and promote to admin via the test DB."""
     client.post(
         "/auth/register",
-        json={"email": "admin@test.com", "password": "admin123", "full_name": "Admin"},
+        json={"email": "admin@test.com", "password": "Admin1234", "full_name": "Admin"},
     )
 
     resp = client.post(
         "/auth/login",
-        json={"email": "admin@test.com", "password": "admin123"},
+        json={"email": "admin@test.com", "password": "Admin1234"},
     )
     token = resp.json()["access_token"]
 
@@ -104,10 +104,10 @@ class TestAdmin:
         response = client.put(
             f"/admin/users/{target_id}/license",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"license_tier": "pro"},
+            json={"license_tier": "lifetime"},
         )
         assert response.status_code == status.HTTP_200_OK
-        assert response.json()["license_tier"] == "pro"
+        assert response.json()["license_tier"] == "lifetime"
 
     def test_admin_update_license_invalid_tier(self, client, db_engine):
         """Should reject invalid tier."""
@@ -122,9 +122,10 @@ class TestAdmin:
         response = client.put(
             f"/admin/users/{target_id}/license",
             headers={"Authorization": f"Bearer {admin_token}"},
-            json={"license_tier": "ultra"},
+            json={"license_tier": "pro"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Admin can only assign" in response.json()["detail"]
 
     def test_admin_update_is_admin(self, client, db_engine):
         """Should promote a user to admin."""

@@ -13,7 +13,7 @@ class TestValidationErrors:
         """Should return clean error for invalid email."""
         response = client.post(
             self.REGISTER_URL,
-            json={"email": "invalid", "password": "pass123", "full_name": "Test"},
+            json={"email": "invalid", "password": "TestPass123", "full_name": "Test"},
         )
         assert response.status_code == 422
         data = response.json()
@@ -25,7 +25,7 @@ class TestValidationErrors:
         """Should return clean error for missing email."""
         response = client.post(
             self.REGISTER_URL,
-            json={"password": "pass123", "full_name": "Test"},
+            json={"password": "TestPass123", "full_name": "Test"},
         )
         assert response.status_code == 422
         data = response.json()

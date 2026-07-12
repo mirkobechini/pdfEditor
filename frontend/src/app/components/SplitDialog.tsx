@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
+import { usePdfJs } from "../lib/usePdfJs";
 
 interface SplitDialogProps {
   open: boolean;
@@ -12,6 +13,7 @@ interface SplitDialogProps {
   selectedId: string | null;
   selectedName: string;
   totalPages: number;
+  onSuccess?: () => void;
 }
 
 interface PageThumbnail {
@@ -19,37 +21,14 @@ interface PageThumbnail {
   dataUrl: string;
 }
 
-export default function SplitDialog({ open, onClose, selectedId, selectedName, totalPages }: SplitDialogProps) {
+export default function SplitDialog({ open, onClose, selectedId, selectedName, totalPages, onSuccess }: SplitDialogProps) {
   const t = useTranslations("splitDialog");
   const [splitting, setSplitting] = React.useState(false);
   const [error, setError] = React.useState("");
   const [thumbnails, setThumbnails] = React.useState<PageThumbnail[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [cuts, setCuts] = React.useState<Set<number>>(new Set());
-  const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
-
-  // Load PDF.js on mount
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    if ((window as any).pdfjsLib) {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      setPdfJsLoaded(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-    script.async = true;
-    script.onload = () => {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      setPdfJsLoaded(true);
-    };
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
+  const pdfJsLoaded = usePdfJs();
 
   // Initialize when dialog opens
   React.useEffect(() => {
@@ -142,6 +121,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
         const blob = await api.downloadPdf(docId);
         downloadBlob(blob, `split_${selectedName}`);
       }
+      onSuccess?.();
       onClose();
     } catch (err) {
       setError(t("failed") + ": " + (err instanceof Error ? err.message : err));

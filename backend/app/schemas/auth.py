@@ -36,12 +36,13 @@ class UserResponse(BaseModel):
     is_active: bool
     is_admin: bool
     license_tier: str
+    license_tier_source: str
     created_at: datetime
     updated_at: datetime
 
 
 class UpdateLicenseRequest(BaseModel):
-    """Schema for updating a user's license tier."""
+    """Schema for updating a user's license tier (admin only)."""
 
     license_tier: str
 
@@ -50,6 +51,12 @@ class UpdateAdminRequest(BaseModel):
     """Schema for promoting/demoting a user to/from admin."""
 
     is_admin: bool
+
+
+class UserUpdateRequest(BaseModel):
+    """Schema for updating user profile."""
+
+    full_name: str | None = None
 
 
 class LicenseFeatureResponse(BaseModel):

@@ -2,6 +2,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import HeaderControls, { ToggleDarkMode, LanguageSelector } from "./HeaderControls";
 
+// Mock i18n
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
+// Mock useAuth
+vi.mock("../lib/auth", () => ({
+  useAuth: () => ({ user: null }),
+}));
+
+// Mock useLocaleControl
+vi.mock("../lib/i18n", () => ({
+  useLocaleControl: () => ({ locale: "en", setLocale: vi.fn() }),
+}));
+
 // Mock matchMedia
 Object.defineProperty(window, "matchMedia", {
   writable: true,

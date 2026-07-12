@@ -1,9 +1,22 @@
+"""PDF file storage — supports local filesystem and S3 backends."""
+
 import uuid
 from pathlib import Path
 
 import fitz  # PyMuPDF
 
 from app.core.config import settings
+
+
+def _use_s3() -> bool:
+    """Check if S3 storage backend should be used."""
+    return settings.STORAGE_BACKEND == "s3" and settings.S3_BUCKET
+
+
+def _validate_uuid(value: str) -> str:
+    """Validate that a string is a valid UUID to prevent path traversal."""
+    uuid.UUID(value)
+    return value
 
 
 def get_storage_path() -> Path:
@@ -14,10 +27,8 @@ def get_storage_path() -> Path:
 
 def validate_pdf(content: bytes) -> bool:
     """Validate that the content is a valid PDF using magic bytes + PyMuPDF."""
-    # Check PDF magic bytes: %PDF
     if not content.startswith(b"%PDF"):
         return False
-    # Try opening with PyMuPDF for deeper validation
     try:
         doc = fitz.open(stream=content, filetype="pdf")
         doc.close()
@@ -26,8 +37,17 @@ def validate_pdf(content: bytes) -> bool:
         return False
 
 
+# ---------------------------------------------------------------------------
+# Public API — delegates to local or S3 backend
+# ---------------------------------------------------------------------------
+
+
 def save_pdf(content: bytes) -> str:
     """Save a PDF file to storage and return the UUID filename."""
+    if _use_s3():
+        from app.core.s3_storage import s3_upload
+        return s3_upload(content)
+
     storage_path = get_storage_path()
     file_uuid = str(uuid.uuid4())
     file_path = storage_path / f"{file_uuid}.pdf"
@@ -36,14 +56,38 @@ def save_pdf(content: bytes) -> str:
 
 
 def get_pdf_path(file_uuid: str) -> Path | None:
-    """Return the full path to a stored PDF or None if not found."""
+    """Return the full path to a stored PDF or None if not found.
+    
+    Note: When using S3, this returns None (path-based access unsupported).
+    Use get_file_content() instead for cross-backend compatibility.
+    """
+    if _use_s3():
+        return None  # S3 objects don't have local paths
+
     storage_path = get_storage_path()
     file_path = storage_path / f"{file_uuid}.pdf"
     return file_path if file_path.exists() else None
 
 
+def get_file_content(file_uuid: str) -> bytes | None:
+    """Return file content from storage, or None if not found.
+    
+    Works with both local and S3 backends.
+    """
+    if _use_s3():
+        from app.core.s3_storage import s3_download
+        return s3_download(file_uuid)
+
+    path = get_pdf_path(file_uuid)
+    return path.read_bytes() if path else None
+
+
 def delete_pdf(file_uuid: str) -> bool:
     """Delete a PDF file from storage. Returns True if deleted."""
+    if _use_s3():
+        from app.core.s3_storage import s3_delete
+        return s3_delete(file_uuid)
+
     path = get_pdf_path(file_uuid)
     if path:
         path.unlink()
@@ -57,19 +101,23 @@ def delete_pdf(file_uuid: str) -> bool:
 
 
 def get_snapshot_dir(pdf_id: str) -> Path:
-    """Return the snapshot directory for a given PDF ID, creating it if needed."""
-    snap_dir = get_storage_path().parent / "snapshots" / pdf_id
+    """Return the snapshot directory (local only — S3 uses keys)."""
+    safe_id = _validate_uuid(pdf_id)
+    snap_dir = get_storage_path().parent / "snapshots" / safe_id
     snap_dir.mkdir(parents=True, exist_ok=True)
     return snap_dir
 
 
 def save_snapshot(pdf_id: str, content: bytes) -> None:
-    """Save a snapshot of the PDF before a modification. Keeps at most settings.MAX_SNAPSHOTS."""
+    """Save a snapshot of the PDF before a modification."""
+    if _use_s3():
+        from app.core.s3_storage import s3_snapshot_save
+        return s3_snapshot_save(pdf_id, content)
+
     snap_dir = get_snapshot_dir(pdf_id)
-    timestamp = int(uuid.uuid4().time_low)  # monotonic-ish timestamp
+    timestamp = int(uuid.uuid4().time_low)
     (snap_dir / f"{timestamp}.pdf").write_bytes(content)
 
-    # Prune old snapshots
     files = sorted(snap_dir.glob("*.pdf"), key=lambda f: f.stat().st_mtime)
     while len(files) > settings.MAX_SNAPSHOTS:
         files[0].unlink()
@@ -78,15 +126,21 @@ def save_snapshot(pdf_id: str, content: bytes) -> None:
 
 def get_latest_snapshot(pdf_id: str) -> bytes | None:
     """Return the most recent snapshot content, or None."""
+    if _use_s3():
+        from app.core.s3_storage import s3_snapshot_latest
+        return s3_snapshot_latest(pdf_id)
+
     snap_dir = get_snapshot_dir(pdf_id)
     files = sorted(snap_dir.glob("*.pdf"), key=lambda f: f.stat().st_mtime, reverse=True)
-    if not files:
-        return None
-    return files[0].read_bytes()
+    return files[0].read_bytes() if files else None
 
 
 def pop_latest_snapshot(pdf_id: str) -> bytes | None:
-    """Return the most recent snapshot and delete it from disk. Returns None if no snapshots."""
+    """Return the most recent snapshot and delete it from storage."""
+    if _use_s3():
+        from app.core.s3_storage import s3_snapshot_pop
+        return s3_snapshot_pop(pdf_id)
+
     snap_dir = get_snapshot_dir(pdf_id)
     files = sorted(snap_dir.glob("*.pdf"), key=lambda f: f.stat().st_mtime, reverse=True)
     if not files:
@@ -98,6 +152,10 @@ def pop_latest_snapshot(pdf_id: str) -> bytes | None:
 
 def clear_snapshots(pdf_id: str) -> None:
     """Delete all snapshots for a given PDF ID."""
+    if _use_s3():
+        from app.core.s3_storage import s3_snapshot_clear
+        return s3_snapshot_clear(pdf_id)
+
     snap_dir = get_snapshot_dir(pdf_id)
     for f in snap_dir.glob("*.pdf"):
         f.unlink()
