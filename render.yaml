@@ -26,3 +26,6 @@ services:
     rootDir: frontend
     buildCommand: npm install && npm run build
     publishPath: out
+    envVars:
+      - key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+        sync: false
