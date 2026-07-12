@@ -373,6 +373,38 @@
       "copyright": "All rights reserved."
     }
   },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: July 12, 2026",
+    "infoWeCollect": {
+      "title": "Information We Collect",
+      "description": "We collect only the information necessary to provide our PDF editing service:",
+      "item1": "Account information: email address and name (when you register)",
+      "item2": "PDF files you upload for editing (temporarily stored and deleted after editing)",
+      "item3": "Usage data: page views, features used (anonymized)",
+      "item4": "Technical data: browser type, device type (for compatibility)"
+    },
+    "howWeUse": {
+      "title": "How We Use Your Information",
+      "description": "Your information is used exclusively for:",
+      "item1": "Providing and improving the PDF editing service",
+      "item2": "Technical support and bug fixing",
+      "item3": "Service security and abuse prevention",
+      "item4": "We never sell your personal data to third parties"
+    },
+    "dataSharing": {
+      "title": "Data Sharing",
+      "description": "We do not share your personal data with third parties except when required by law or with your explicit consent. PDF files are processed on our servers and are not accessible to other users."
+    },
+    "dataSecurity": {
+      "title": "Data Security",
+      "description": "We implement industry-standard security measures including encryption in transit (HTTPS), encrypted storage, and regular security audits. Your PDFs are automatically deleted after processing."
+    },
+    "contact": {
+      "title": "Contact",
+      "description": "For any questions regarding this privacy policy, please contact us at privacy@pdfeditor.app."
+    }
+  },
   "profile": {
     "title": "Profile Settings",
     "loading": "Loading...",
