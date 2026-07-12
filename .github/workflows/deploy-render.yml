@@ -5,16 +5,16 @@ on:
     branches: [main]
 
 jobs:
-  deploy:
+  deploy-backend:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
+      - name: Deploy Backend
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
 
-      - name: Deploy Backend to Render
-        run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
-
-      - name: Deploy Frontend to Render
-        run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}"
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Frontend
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}"
