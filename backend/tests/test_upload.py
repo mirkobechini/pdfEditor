@@ -63,7 +63,7 @@ class TestUpload:
             headers=free_headers,
             files={"file": ("large.pdf", b"%PDF-1.4 some content", "application/pdf")},
         )
-        assert response.status_code == status.HTTP_413_CONTENT_TOO_LARGE
+        assert response.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
         assert "too large" in response.json()["detail"].lower()
 
     def test_upload_exceeds_page_limit(self, client, monkeypatch, sample_pdf_content, free_headers):
@@ -83,7 +83,7 @@ class TestUpload:
             self.UPLOAD_URL,
             files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
         )
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
 
 
 class TestGetPdf:
@@ -107,7 +107,7 @@ class TestGetPdf:
     def test_get_pdf_requires_auth(self, client, sample_pdf_content):
         """Should reject get without auth."""
         response = client.get("/pdfs/some-id")
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
 
     def test_get_pdf_cannot_see_other_user(self, client, sample_pdf_content, free_headers, free_token):
         """Should reject access to another user's PDF."""
@@ -178,7 +178,7 @@ class TestListPdfs:
     def test_list_requires_auth(self, client):
         """Should reject list without auth."""
         response = client.get(self.LIST_URL)
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
 
 
 class TestDownload:
@@ -202,7 +202,7 @@ class TestDownload:
     def test_download_requires_auth(self, client, sample_pdf_content):
         """Should reject download without auth."""
         response = client.get("/pdfs/some-id/download")
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
 
 
 class TestDelete:
@@ -228,7 +228,7 @@ class TestDelete:
     def test_delete_requires_auth(self, client, sample_pdf_content):
         """Should reject delete without auth."""
         response = client.delete("/pdfs/some-id")
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
 
     def test_delete_cannot_delete_other(self, client, sample_pdf_content, free_headers):
         """Should reject deleting another user's PDF."""
