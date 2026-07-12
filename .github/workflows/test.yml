@@ -25,7 +25,7 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v5
         with:
-          file: backend/coverage.xml
+          files: backend/coverage.xml
           flags: backend
 
   frontend:
@@ -49,5 +49,5 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v5
         with:
-          file: frontend/coverage/lcov.info
+          files: frontend/coverage/lcov.info
           flags: frontend
