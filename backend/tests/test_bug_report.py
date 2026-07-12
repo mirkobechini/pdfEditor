@@ -145,3 +145,48 @@ class TestAdminBugs:
             json={"status": "invalid"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+class TestMyBugs:
+    """Test suite for GET /bugs/my."""
+
+    def test_my_bugs_empty(self, client):
+        """Should return empty list when no bugs."""
+        token = _login(client, email="empty@test.com")
+        response = client.get(
+            "/bugs/my",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
+    def test_my_bugs_returns_own_bugs(self, client):
+        """Should return only current user's bugs."""
+        token = _login(client, email="owner@test.com")
+        # Create a bug
+        client.post(
+            "/bugs",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"title": "My bug", "description": "Fix this"},
+        )
+        # Another user creates a bug
+        other_token = _login(client, email="other@test.com")
+        client.post(
+            "/bugs",
+            headers={"Authorization": f"Bearer {other_token}"},
+            json={"title": "Other bug", "description": "Not mine"},
+        )
+        # Check my bugs
+        response = client.get(
+            "/bugs/my",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["title"] == "My bug"
+
+    def test_my_bugs_unauthorized(self, client):
+        """Should reject without auth."""
+        response = client.get("/bugs/my")
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)

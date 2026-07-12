@@ -18,6 +18,14 @@ class BugReportRepository:
     def get_by_id(self, report_id: str) -> BugReport | None:
         return self.db.query(BugReport).filter(BugReport.id == report_id).first()
 
+    def get_by_user_id(self, user_id: str) -> list[BugReport]:
+        return (
+            self.db.query(BugReport)
+            .filter(BugReport.user_id == user_id)
+            .order_by(BugReport.created_at.desc())
+            .all()
+        )
+
     def get_all(
         self, status: str | None = None, skip: int = 0, limit: int = 100
     ) -> list[BugReport]:
