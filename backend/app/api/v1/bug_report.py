@@ -93,3 +93,30 @@ def get_my_bug_reports(
     """Get bug reports submitted by the current user."""
     reports = service.get_by_user_id(current_user.id)
     return [BugReportResponse.model_validate(r) for r in reports]
+
+
+@router.get("/bugs/search", response_model=list[BugReportResponse])
+def search_bug_reports(
+    q: str = Query(..., min_length=2, description="Search query"),
+    current_user: User = Depends(get_current_user),
+    service: BugReportService = Depends(get_bug_service),
+) -> list[BugReportResponse]:
+    """Search open bug reports by title or description."""
+    reports = service.search(q)
+    return [BugReportResponse.model_validate(r) for r in reports]
+
+
+@router.post("/bugs/{bug_id}/vote", response_model=BugReportResponse)
+def vote_bug_report(
+    bug_id: str,
+    current_user: User = Depends(get_current_user),
+    service: BugReportService = Depends(get_bug_service),
+) -> BugReportResponse:
+    """Increment vote count for a bug report."""
+    report = service.vote(bug_id, current_user.id)
+    if not report:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Bug report not found",
+        )
+    return BugReportResponse.model_validate(report)
