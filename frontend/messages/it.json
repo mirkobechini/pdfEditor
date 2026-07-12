@@ -26,6 +26,7 @@
     "uploadOnlyPdf": "Solo file PDF consentiti",
     "uploadFailed": "Caricamento fallito",
     "deleteFailed": "Cancellazione fallita",
+    "loadFailed": "Caricamento PDF fallito",
     "rename": "Rinomina",
     "delete": "Elimina",
     "confirmDelete": "Conferma eliminazione"

@@ -26,6 +26,7 @@
     "uploadOnlyPdf": "Only PDF files are allowed",
     "uploadFailed": "Upload failed",
     "deleteFailed": "Delete failed",
+    "loadFailed": "Failed to load PDF list",
     "rename": "Rename",
     "delete": "Delete",
     "confirmDelete": "Confirm delete"
