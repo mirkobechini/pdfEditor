@@ -43,15 +43,23 @@ def _add_missing_columns():
     try:
         inspector = inspect(engine)
         existing_cols = {c["name"] for c in inspector.get_columns("users")}
+        missing = []
         if "license_tier_source" not in existing_cols:
+            missing.append("license_tier_source VARCHAR(20) NOT NULL DEFAULT 'admin'")
+        if "google_id" not in existing_cols:
+            missing.append("google_id VARCHAR(255)")
+        if "reset_token" not in existing_cols:
+            missing.append("reset_token VARCHAR(255)")
+        if "reset_token_expires" not in existing_cols:
+            missing.append("reset_token_expires TIMESTAMP")
+        for col_def in missing:
             with engine.connect() as conn:
-                conn.execute(text(
-                    "ALTER TABLE users ADD COLUMN license_tier_source VARCHAR(20) NOT NULL DEFAULT 'admin'"
-                ))
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_def}"))
                 conn.commit()
-                logger.info("Added missing column 'license_tier_source' to users table")
+        if missing:
+            logger.info("Added missing columns to users table: %s", ", ".join(m.split()[0] for m in missing))
     except Exception:
-        pass  # Column already exists or table doesn't exist yet
+        pass  # Table doesn't exist yet
 
 
 @asynccontextmanager
