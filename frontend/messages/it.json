@@ -10,7 +10,7 @@
     "reorder": "Riordina",
     "remove": "Rimuovi",
     "currentFile": "(corrente)",
-    "passwordRequired": "Questo PDF √® protetto da password",
+    "passwordRequired": "Questo PDF \u00c3\u00a8 protetto da password",
     "passwordPrompt": "Inserisci la password per visualizzare questo PDF",
     "passwordPlaceholder": "Inserisci password",
     "passwordInvalid": "Password errata. Riprova.",
@@ -64,7 +64,7 @@
     "page": "Pagina",
     "pageThumbnail": "Pagina {page}",
     "moveUp": "Sposta su",
-    "moveDown": "Sposta gi√π",
+    "moveDown": "Sposta gi\u00c3\u00b9",
     "noPreview": "Anteprima non disponibile",
     "cancel": "Annulla",
     "reorder": "Riordina",
@@ -83,8 +83,8 @@
     "remove": "Rimuovi",
     "removing": "Rimozione in corso...",
     "failed": "Rimozione fallita",
-    "confirmDelete": "S√¨, Elimina",
-    "confirmMessage": "Sei sicuro di voler rimuovere le pagine selezionate? Verr√† creato un nuovo file PDF."
+    "confirmDelete": "S\u00c3\u00ac, Elimina",
+    "confirmMessage": "Sei sicuro di voler rimuovere le pagine selezionate? Verr\u00c3\u00a0 creato un nuovo file PDF."
   },
   "metadata": {
     "title": "Metadati PDF",
@@ -134,11 +134,11 @@
     "fieldTitle": "Titolo",
     "titlePlaceholder": "Breve riepilogo del problema",
     "fieldDescription": "Descrizione",
-    "descriptionPlaceholder": "Descrivi cosa √® successo e come riprodurlo",
+    "descriptionPlaceholder": "Descrivi cosa \u00c3\u00a8 successo e come riprodurlo",
     "submit": "Invia Segnalazione",
     "sending": "Invio in corso...",
     "sentTitle": "Grazie!",
-    "sentDescription": "La tua segnalazione √® stata inviata con successo.",
+    "sentDescription": "La tua segnalazione \u00c3\u00a8 stata inviata con successo.",
     "close": "Chiudi",
     "cancel": "Annulla",
     "failed": "Invio segnalazione fallito",
@@ -155,7 +155,7 @@
     "back": "Indietro"
   },
   "darkMode": {
-    "toggle": "Attiva/disattiva modalit√† scura"
+    "toggle": "Attiva/disattiva modalit\u00c3\u00a0 scura"
   },
   "auth": {
     "loginTitle": "Accedi",
@@ -173,7 +173,7 @@
     "passwordMismatch": "Le password non coincidono",
     "passwordTooShort": "La password deve essere almeno 6 caratteri",
     "noAccount": "Non hai un account?",
-    "hasAccount": "Hai gi√† un account?",
+    "hasAccount": "Hai gi\u00c3\u00a0 un account?",
     "registerLink": "Registrati",
     "loginLink": "Accedi",
     "logout": "Esci",
@@ -182,7 +182,7 @@
     "forgotTitle": "Password Dimenticata",
     "forgotDescription": "Inserisci la tua email e ti invieremo un link per reimpostare la password.",
     "sendResetLink": "Invia Link di Reset",
-    "resetSent": "Se l'email esiste, la richiesta di reset √® stata ricevuta.",
+    "resetSent": "Se l'email esiste, la richiesta di reset \u00c3\u00a8 stata ricevuta.",
     "backToLogin": "Torna al Login",
     "backToHome": "Torna alla Home",
     "resetTitle": "Reimposta Password",
@@ -236,7 +236,7 @@
     "pageCount": "{count} pagine",
     "preview": "Anteprima",
     "previewAlt": "Anteprima di {filename}",
-    "warning": "Questa azione non pu√≤ essere annullata. Il file verr√† eliminato permanentemente.",
+    "warning": "Questa azione non pu\u00c3\u00b2 essere annullata. Il file verr\u00c3\u00a0 eliminato permanentemente.",
     "cancel": "Annulla",
     "deleting": "Eliminazione in corso...",
     "confirm": "Elimina",
@@ -244,7 +244,7 @@
   },
   "landing": {
     "navbar": {
-      "features": "Funzionalit√†",
+      "features": "Funzionalit\u00c3\u00a0",
       "howItWorks": "Come funziona",
       "pricing": "Prezzi",
       "login": "Accedi",
@@ -255,9 +255,9 @@
       "badge": "Nuovo: Modifica testo nei PDF",
       "title": "Il tuo editor PDF",
       "subtitle": "semplice, veloce, offline",
-      "description": "Unisci, dividi, riordina e modifica i tuoi PDF direttamente dal browser. Gratuito, sicuro e senza pubblicit√†.",
+      "description": "Unisci, dividi, riordina e modifica i tuoi PDF direttamente dal browser. Gratuito, sicuro e senza pubblicit\u00c3\u00a0.",
       "ctaPrimary": "Inizia gratis",
-      "ctaSecondary": "Scopri di pi√π",
+      "ctaSecondary": "Scopri di pi\u00c3\u00b9",
       "mockupTitle": "Modifica PDF",
       "mockupText": "Anteprima live del tuo PDF"
     },
@@ -266,11 +266,11 @@
       "description": "Strumenti professionali per gestire i tuoi PDF, senza installare nulla.",
       "merge": {
         "title": "Unisci PDF",
-        "description": "Combina pi√π documenti in un unico file. Trascina e rilascia nell'ordine che preferisci."
+        "description": "Combina pi\u00c3\u00b9 documenti in un unico file. Trascina e rilascia nell'ordine che preferisci."
       },
       "split": {
         "title": "Dividi PDF",
-        "description": "Estrai pagine specifiche o intervalli. Creane uno nuovo con solo ci√≤ che ti serve."
+        "description": "Estrai pagine specifiche o intervalli. Creane uno nuovo con solo ci\u00c3\u00b2 che ti serve."
       },
       "reorder": {
         "title": "Riordina Pagine",
@@ -307,12 +307,12 @@
     },
     "pricing": {
       "title": "Piani semplici e trasparenti",
-      "description": "Inizia gratis, passa a Premium quando ti serve di pi√π.",
-      "mostPopular": "PI√ô SCELTO",
+      "description": "Inizia gratis, passa a Premium quando ti serve di pi\u00c3\u00b9.",
+      "mostPopular": "PI\u00c3\u2122 SCELTO",
       "free": {
         "title": "Gratis",
         "description": "Per utilizzo occasionale",
-        "price": "‚Ç¨0",
+        "price": "\u00e2\u201a\u00ac0",
         "feature1": "Fino a 50 pagine",
         "feature2": "Merge, Split, Riordino",
         "feature3": "5 PDF al giorno",
@@ -323,9 +323,9 @@
       "premium": {
         "title": "Premium",
         "description": "Per uso professionale",
-        "price": "‚Ç¨9",
+        "price": "\u00e2\u201a\u00ac9",
         "feature1": "Pagine illimitate",
-        "feature2": "Tutte le funzionalit√†",
+        "feature2": "Tutte le funzionalit\u00c3\u00a0",
         "feature3": "PDF illimitati",
         "feature4": "Modifica testo",
         "feature5": "Supporto priority",
@@ -334,7 +334,7 @@
       "enterprise": {
         "title": "Enterprise",
         "description": "Per team e aziende",
-        "price": "‚Ç¨29",
+        "price": "\u00e2\u201a\u00ac29",
         "feature1": "Tutto del piano Premium",
         "feature2": "Utenti illimitati",
         "feature3": "API dedicata",
@@ -352,7 +352,7 @@
       "brand": "Modifica i tuoi PDF in modo semplice, veloce e sicuro. Direttamente dal browser.",
       "product": {
         "title": "Prodotto",
-        "features": "Funzionalit√†",
+        "features": "Funzionalit\u00c3\u00a0",
         "pricing": "Prezzi",
         "api": "API",
         "roadmap": "Roadmap"
@@ -376,13 +376,13 @@
   "privacy": {
     "title": "Informativa sulla Privacy",
     "lastUpdated": "Ultimo aggiornamento: 12 luglio 2026",
-    "intro": "Su PdfEditor, accessibile da pdfeditor.app, una delle nostre principali priorit‡ Ë la privacy dei nostri visitatori. Questo documento di Informativa sulla Privacy contiene i tipi di informazioni che vengono raccolte e registrate da PdfEditor e come le utilizziamo. Se hai domande aggiuntive o desideri maggiori informazioni sulla nostra Informativa sulla Privacy, non esitare a contattarci.",
+    "intro": "Su PdfEditor, accessibile da pdfeditor.app, una delle nostre principali priorit\u00e0 \u00e8 la privacy dei nostri visitatori. Questo documento di Informativa sulla Privacy contiene i tipi di informazioni che vengono raccolte e registrate da PdfEditor e come le utilizziamo. Se hai domande aggiuntive o desideri maggiori informazioni sulla nostra Informativa sulla Privacy, non esitare a contattarci.",
     "infoWeCollect": {
       "title": "Informazioni che raccogliamo",
       "description": "Le informazioni personali che ti vengono richieste, e le ragioni per cui ti vengono richieste, ti saranno chiarite al momento in cui ti chiediamo di fornire le tue informazioni personali.",
       "item1": "Informazioni account: indirizzo email e nome completo (quando ti registri)",
-      "item2": "File PDF caricati per l'editing ó memorizzati temporaneamente e cancellati automaticamente dopo la sessione",
-      "item3": "Dati di utilizzo: pagine visitate, funzionalit‡ utilizzate (anonimizzati per analisi)",
+      "item2": "File PDF caricati per l'editing \u2014 memorizzati temporaneamente e cancellati automaticamente dopo la sessione",
+      "item3": "Dati di utilizzo: pagine visitate, funzionalit\u00e0 utilizzate (anonimizzati per analisi)",
       "item4": "Dati tecnici: tipo e versione del browser, tipo di dispositivo, sistema operativo"
     },
     "howWeUse": {
@@ -395,7 +395,7 @@
     },
     "legalBasis": {
       "title": "Base giuridica del trattamento (GDPR)",
-      "description": "Se provieni dallo Spazio Economico Europeo, la nostra base giuridica per la raccolta e l'utilizzo delle informazioni personali descritte in questa Informativa sulla Privacy dipende dalle informazioni che raccogliamo e dal contesto in cui le raccogliamo. Potremmo trattare i tuoi dati personali perchÈ: dobbiamo eseguire un contratto con te, ci hai dato il permesso di farlo, il trattamento Ë nei nostri legittimi interessi, o dobbiamo rispettare la legge."
+      "description": "Se provieni dallo Spazio Economico Europeo, la nostra base giuridica per la raccolta e l'utilizzo delle informazioni personali descritte in questa Informativa sulla Privacy dipende dalle informazioni che raccogliamo e dal contesto in cui le raccogliamo. Potremmo trattare i tuoi dati personali perch\u00e9: dobbiamo eseguire un contratto con te, ci hai dato il permesso di farlo, il trattamento \u00e8 nei nostri legittimi interessi, o dobbiamo rispettare la legge."
     },
     "dataRetention": {
       "title": "Conservazione dei dati",
@@ -407,16 +407,16 @@
     },
     "dataSecurity": {
       "title": "Sicurezza dei dati",
-      "description": "Implementiamo misure di sicurezza standard del settore per proteggere le tue informazioni personali, inclusa la crittografia in transito tramite HTTPS, archiviazione sicura e audit di sicurezza regolari. Tuttavia, nessun metodo di trasmissione su Internet Ë sicuro al 100% e non possiamo garantire la sicurezza assoluta."
+      "description": "Implementiamo misure di sicurezza standard del settore per proteggere le tue informazioni personali, inclusa la crittografia in transito tramite HTTPS, archiviazione sicura e audit di sicurezza regolari. Tuttavia, nessun metodo di trasmissione su Internet \u00e8 sicuro al 100% e non possiamo garantire la sicurezza assoluta."
     },
     "yourRights": {
       "title": "I tuoi diritti sulla protezione dei dati (GDPR/CCPA)",
       "description": "A seconda della tua giurisdizione, potresti avere i seguenti diritti sulla protezione dei dati:",
-      "item1": "Diritto di accesso ó richiedere copie dei tuoi dati personali",
-      "item2": "Diritto di rettifica ó richiedere la correzione di dati inaccurati",
-      "item3": "Diritto alla cancellazione ó richiedere la cancellazione dei tuoi dati personali",
-      "item4": "Diritto di limitazione del trattamento ó richiedere la limitazione dell'uso dei tuoi dati",
-      "item5": "Diritto alla portabilit‡ dei dati ó richiedere il trasferimento dei tuoi dati ad altra organizzazione"
+      "item1": "Diritto di accesso \u2014 richiedere copie dei tuoi dati personali",
+      "item2": "Diritto di rettifica \u2014 richiedere la correzione di dati inaccurati",
+      "item3": "Diritto alla cancellazione \u2014 richiedere la cancellazione dei tuoi dati personali",
+      "item4": "Diritto di limitazione del trattamento \u2014 richiedere la limitazione dell'uso dei tuoi dati",
+      "item5": "Diritto alla portabilit\u00e0 dei dati \u2014 richiedere il trasferimento dei tuoi dati ad altra organizzazione"
     },
     "cookiesSection": {
       "title": "Cookie",
@@ -467,12 +467,12 @@
       "content": "Accetti di utilizzare PdfEditor solo per scopi leciti. Non puoi utilizzare il servizio per caricare o distribuire contenuti illegali."
     },
     "s3": {
-      "title": "Propriet‡ Intellettuale",
-      "content": "Il servizio e i suoi contenuti sono di propriet‡ di PdfEditor. Mantieni tutti i diritti sui tuoi file PDF."
+      "title": "Propriet\u00e0 Intellettuale",
+      "content": "Il servizio e i suoi contenuti sono di propriet\u00e0 di PdfEditor. Mantieni tutti i diritti sui tuoi file PDF."
     },
     "s4": {
       "title": "Disclaimer",
-      "content": "Il servizio Ë fornito 'cosÏ com'Ë' senza garanzie. PdfEditor non Ë responsabile per danni derivanti dall'uso del servizio."
+      "content": "Il servizio \u00e8 fornito 'cos\u00ec com'\u00e8' senza garanzie. PdfEditor non \u00e8 responsabile per danni derivanti dall'uso del servizio."
     }
   },
   "cookies": {
@@ -523,7 +523,7 @@
       "content": "Carica un PDF usando l'area di upload nella sidebar. Una volta caricato, puoi selezionarlo ed eseguire varie operazioni."
     },
     "s2": {
-      "title": "Funzionalit‡",
+      "title": "Funzionalit\u00e0",
       "content": "PdfEditor supporta: unisci, dividi, riordina, rimuovi pagine, modifica testo, metadati, proteggi/sblocca PDF e conversione formato."
     },
     "s3": {
@@ -560,19 +560,19 @@
     "intro": "Domande comuni su PdfEditor.",
     "s1": {
       "title": "I miei dati sono sicuri?",
-      "content": "SÏ. Tutti i file sono crittografati in transito via HTTPS e cancellati dopo l'elaborazione."
+      "content": "S\u00ec. Tutti i file sono crittografati in transito via HTTPS e cancellati dopo l'elaborazione."
     },
     "s2": {
       "title": "Quali formati sono supportati?",
       "content": "Supportiamo upload/download PDF. Esportazione in PDF, PNG, JPG, TXT."
     },
     "s3": {
-      "title": "C'Ë un limite di dimensione?",
-      "content": "SÏ, massimo 50MB per file. Gli utenti Premium hanno limiti pi˘ alti."
+      "title": "C'\u00e8 un limite di dimensione?",
+      "content": "S\u00ec, massimo 50MB per file. Gli utenti Premium hanno limiti pi\u00f9 alti."
     },
     "s4": {
-      "title": "PdfEditor Ë gratuito?",
-      "content": "SÏ, le funzionalit‡ base sono gratuite. Le funzionalit‡ Premium richiedono un abbonamento."
+      "title": "PdfEditor \u00e8 gratuito?",
+      "content": "S\u00ec, le funzionalit\u00e0 base sono gratuite. Le funzionalit\u00e0 Premium richiedono un abbonamento."
     }
   },
   "api": {
@@ -584,7 +584,7 @@
     },
     "s2": {
       "title": "Endpoint",
-      "content": "La documentazione completa dell'API Ë disponibile sul nostro repository GitHub."
+      "content": "La documentazione completa dell'API \u00e8 disponibile sul nostro repository GitHub."
     },
     "s3": {
       "title": "Limiti",
@@ -597,7 +597,7 @@
   },
   "roadmap": {
     "title": "Roadmap",
-    "intro": "Prossime funzionalit‡ e miglioramenti per PdfEditor.",
+    "intro": "Prossime funzionalit\u00e0 e miglioramenti per PdfEditor.",
     "s1": {
       "title": "Breve Termine",
       "content": "Compressione PDF, editor di testo inline, miglioramenti UI/UX."

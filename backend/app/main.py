@@ -29,11 +29,21 @@ from app.core.limiter import limiter
 logger = logging.getLogger("pdfeditor")
 
 
+def _run_migrations():
+    """Run Alembic migrations to ensure DB schema is up to date."""
+    from alembic.config import Config
+    from alembic import command
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: create tables (skip if running in test mode)
     if not getattr(app.state, "testing", False):
         Base.metadata.create_all(bind=engine)
+        # Run pending Alembic migrations (adds missing columns to existing DB)
+        _run_migrations()
         # Seed license features
         _seed_license_features()
         # Seed super admin if not exists
