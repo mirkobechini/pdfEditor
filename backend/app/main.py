@@ -30,20 +30,38 @@ logger = logging.getLogger("pdfeditor")
 
 
 def _run_migrations():
-    """Run Alembic migrations to ensure DB schema is up to date."""
-    from alembic.config import Config
-    from alembic import command
-    alembic_cfg = Config("alembic.ini")
-    command.upgrade(alembic_cfg, "head")
+    """Ensure DB schema is up to date.
+    Uses create_all for new tables, then adds missing columns to existing tables."""
+    Base.metadata.create_all(bind=engine)
+    # Add missing columns to existing tables (create_all doesn't alter existing tables)
+    _add_missing_columns()
+
+
+def _add_missing_columns():
+    """Add columns that may be missing from existing database tables."""
+    from sqlalchemy import text, inspect
+    try:
+        inspector = inspect(engine)
+        existing_cols = {c["name"] for c in inspector.get_columns("users")}
+        if "license_tier_source" not in existing_cols:
+            with engine.connect() as conn:
+                conn.execute(text(
+                    "ALTER TABLE users ADD COLUMN license_tier_source VARCHAR(20) NOT NULL DEFAULT 'admin'"
+                ))
+                conn.commit()
+                logger.info("Added missing column 'license_tier_source' to users table")
+    except Exception:
+        pass  # Column already exists or table doesn't exist yet
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: create tables (skip if running in test mode)
     if not getattr(app.state, "testing", False):
-        Base.metadata.create_all(bind=engine)
-        # Run pending Alembic migrations (adds missing columns to existing DB)
+        # Run migrations FIRST (handles existing DB schema changes)
         _run_migrations()
+        # Then create any missing tables (idempotent)
+        Base.metadata.create_all(bind=engine)
         # Seed license features
         _seed_license_features()
         # Seed super admin if not exists
