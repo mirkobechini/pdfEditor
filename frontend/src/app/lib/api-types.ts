@@ -32,6 +32,7 @@ export interface BugReport {
   app_version?: string | null;
   os_info?: string | null;
   status: string;
+  report_count?: number;
   created_at: string;
   updated_at: string;
 }
