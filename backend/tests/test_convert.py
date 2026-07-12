@@ -103,11 +103,11 @@ class TestImport:
         ("hello.txt", b"Hello World", "text/plain"),
         ("hello2.txt", b"Another text", "text/plain"),
     ])
-    def test_import_parametrized(self, client, free_headers, filename, content, content_type):
+    def test_import_parametrized(self, client, pro_headers, filename, content, content_type):
         """Should import TXT files without license blocking."""
         response = client.post(
             "/pdfs/import",
-            headers=free_headers,
+            headers=pro_headers,
             files={"file": (filename, content, content_type)},
         )
         assert response.status_code == status.HTTP_201_CREATED, f"Failed for {filename}: {response.text}"
