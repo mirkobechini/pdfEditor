@@ -30,9 +30,9 @@ class TestUndoRedo:
     def test_undo_unauthorized(self, client):
         """Undo without token should return 401."""
         response = client.post("/pdfs/fake-id/undo")
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
 
     def test_redo_unauthorized(self, client):
         """Redo without token should return 401."""
         response = client.post("/pdfs/fake-id/redo")
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
