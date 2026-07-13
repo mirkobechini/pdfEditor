@@ -319,6 +319,15 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - ⬜ **Cloud sync SQLite↔PostgreSQL** — Fase 3.
 - ⬜ **Mobile React Native** — Fase 4.
 
+### Bug aperti su Render (deploy 2026-07-12)
+
+| Bug                                              | Issue | Piano                                           |
+| ------------------------------------------------ | ----- | ----------------------------------------------- |
+| Google OAuth `origin_mismatch` / `Invalid token` | —     | `.specs/plans/bug-google-oauth-token.md`        |
+| Login normale non funzionante                    | —     | `.specs/plans/bug-login-after-deploy.md`        |
+| Reset password email non arriva                  | —     | `.specs/plans/bug-reset-email-not-delivered.md` |
+| Immagine monkey logo mancante                    | #257  | `.specs/plans/bug-missing-monkey-logo.md`       |
+
 <!-- Code Review completata — vedi CHANGELOG.md per dettagli -->
 
 <!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
