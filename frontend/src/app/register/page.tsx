@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
 import HeaderControls from "../components/HeaderControls";
+import PasswordInput from "../components/PasswordInput";
 import GoogleLoginButton from "../components/GoogleLoginButton";
 
 export default function RegisterPage() {
@@ -93,24 +94,19 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("password")}</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                onChange={setPassword}
                 placeholder="••••••••"
                 required
-                minLength={6}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("confirmPassword")}</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                onChange={setConfirmPassword}
                 placeholder="••••••••"
                 required
               />
