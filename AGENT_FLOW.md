@@ -38,6 +38,7 @@ This document defines the **git workflow** that the AI agent must follow for eve
 - **Never skip asking when in doubt.** If unsure about any decision (architecture, implementation, naming, rule interpretation), ask the user BEFORE proceeding. After the user answers, immediately update this file with the outcome.
 - **Never ask the user what to do next.** The sequential order is defined in the project's task list — follow it without asking. Do not propose skipping or reordering.
 - **Always ask for approval before starting a new issue.** After completing an issue (tests passing, PR merged, issue closed), briefly describe what was done and ask _"May I proceed with the next issue?"_ — do NOT start the next issue without user confirmation.
+- **Wait for CI after PR creation before merging to dev.** If CI fails: fix the failure, push, wait for CI again, only then merge.
 
 ---
 
@@ -63,7 +64,16 @@ git checkout -b feature/<issue-number>-<short-description>
 git push origin feature/<issue-number>-<short-description>
 ```
 
-### 3. Implementation & commit loop
+### 3. Subtask decomposition
+
+Every issue MUST be broken down into **subtasks** listed in the issue body. Each subtask is ONE atomic unit:
+
+- **New file**: Implementation (write file) → Update existing tests → Write new tests if needed → Verify tests pass → Commit
+- **Modify file**: Read current file → Make change → Update existing tests → Verify tests pass → Commit
+
+A subtask is NOT complete until its tests pass. If tests fail, fix and retry before moving to the next subtask.
+
+### 4. Implementation & commit loop
 
 While inside the feature branch, implement **one atomic unit at a time**, **commit immediately**, then move to the next unit.
 
@@ -85,8 +95,9 @@ git add <file-A>
 git commit -m "<type>(<scope>): <description of file A>"
 git push origin feature/<issue-number>-<short-description>
 
-# === SUBTASK 1b: Write tests for file A ===
-# Write tests for the code just committed
+# === SUBTASK 1b: Write or update tests for file A ===
+# If file A is NEW: write tests for the code just committed
+# If file A is MODIFIED: update existing tests to match the change
 git add <test-file-A>
 git commit -m "test(<scope>): <description of test file A>"
 git push origin feature/<issue-number>-<short-description>
@@ -114,14 +125,22 @@ pytest <test-file-B> -q
 >
 > **Tests go in separate commits.** Do not bundle tests into the same commit as the feature code.
 
-Valid commit sequence example for one issue:
+Valid commit sequence examples for one issue:
+
+**New file example:**
 
 ```
 feat(api): add User model
+test(api): add User model tests
 feat(api): add POST /auth/register endpoint
-feat(api): add POST /auth/login endpoint
-feat(api): add JWT middleware
-test(api): add auth tests
+test(api): add auth register tests
+```
+
+**Modified file example:**
+
+```
+fix(ui): add category select to BugReportDialog
+test(ui): update BugReportDialog tests for new category
 ```
 
 Commit message format:
@@ -135,9 +154,17 @@ Scope: api, ui, cli, core, ci, docs, deps
 
 Always put `closes #<issue-number>` in the **PR body** (not the commit message), so the issue auto-closes on merge.
 
-### 4. PR, Merge & cleanup
+### 5. End-of-task validation
 
-Once **ALL atomic units** (code + tests) are committed and pushed:
+After ALL subtasks are committed:
+
+1. **Run the full test suite** (backend + frontend) to verify nothing is broken
+2. If tests fail: fix the subtask that broke them, commit, re-run full suite
+3. Only proceed when full suite passes locally
+
+### 6. PR, CI & Merge
+
+Once ALL subtasks are complete and the full test suite passes:
 
 > 💡 **Keep your branch in sync**: during development, periodically rebase on `dev` to avoid large conflicts later. Prefer small, frequent rebases over a single painful one.
 
@@ -151,7 +178,11 @@ git push origin feature/<issue-number>-<short-description> --force-with-lease
 # Create Pull Request
 gh pr create --base dev --title "<type>(<scope>): <feature description>" --body "closes #<issue-number>"
 
-# Wait for CI to pass, then merge (preserves atomic commits)
+# ⚠️ WAIT for CI to pass on GitHub before proceeding
+# Check: gh run list --limit 3 --workflow=test
+# If CI fails: fix the issue, push, wait for CI again
+# Only merge when CI is green
+
 gh pr merge --merge --delete-branch
 
 # Verify issue auto-closed (GitHub sometimes misses the body reference)
@@ -169,7 +200,14 @@ git branch -d feature/<issue-number>-<short-description>
 
 > ⚠️ Use `--merge` (not `--squash`) to preserve atomic commit history on `dev`. GitHub should auto-close the issue because the PR body contains `closes #N`. However, this occasionally fails. **Always verify** with `gh issue list` after merge. If still open, close manually with `gh issue close <number>`.
 
-### 5. After merge — update progress & close issue
+> ⚠️ **CRITICO — CI prima del merge**: Non mergiare MAI una PR su `dev` senza che CI sia passata. Se CI fallisce:
+>
+> 1. Leggi il log dell'errore
+> 2. Fixa, committa, push sul branch feature corrente
+> 3. Aspetta che CI ripassi
+> 4. Solo quando CI è verde, procedi con il merge
+
+### 7. After merge — update progress & close issue
 
 After the PR is merged:
 
@@ -179,6 +217,24 @@ After the PR is merged:
 4. **Close the issue**: `gh issue close <number> --comment "Risolto da PR #<pr-number>."`
 5. **Verify**: `gh issue list --limit 3 | grep "#<number>"` — se ancora aperta, chiudere manualmente
 6. **Ask for approval**: briefly describe what was done and ask _"May I proceed with the next issue?"_ — do NOT start the next issue without user confirmation.
+
+## Hotfix workflow
+
+For urgent fixes directly on `dev` or `main`:
+
+```bash
+git checkout dev
+git checkout -b hotfix/<issue-number>-<short-description>
+# fix + commit + push
+git commit -m "fix(scope): short description"
+git push origin hotfix/<issue-number>-<short-description>
+gh pr create --base dev --title "fix(scope): short description" --body "closes #N"
+# wait for CI, then merge
+gh pr merge --merge --delete-branch
+git checkout dev
+git pull origin dev
+git branch -d hotfix/<issue-number>-<short-description>
+```
 
 ## Hotfix workflow
 
