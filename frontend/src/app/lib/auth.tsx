@@ -21,7 +21,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   googleLogin: (idToken: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setUser: (user: User | null) => void;
 }
 
@@ -78,9 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     // Clear cookie by calling logout endpoint
-    api.logout();
+    await api.logout();
     setUser(null);
   }, []);
 
