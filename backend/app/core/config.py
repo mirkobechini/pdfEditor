@@ -74,9 +74,12 @@ class Settings(BaseSettings):
     # Super admin email (cannot be revoked) — read from .env or use default
     SUPER_ADMIN_EMAIL: str = "admin@pdfeditor.local"
 
-    # SMTP (for password reset emails)
-    SMTP_SERVER: str = "localhost"
-    SMTP_PORT: int = 587
+    # SMTP / SendGrid (for password reset emails)
+    # Uses SendGrid HTTP API (not SMTP) because Render free tier blocks port 587.
+    # SMTP_PASSWORD should be the SendGrid API key.
+    # SMTP_FROM_EMAIL should be a verified sender in SendGrid.
+    SMTP_SERVER: str = "smtp.sendgrid.net"  # Not used directly (HTTP API fallback)
+    SMTP_PORT: int = 587  # Not used directly (HTTP API fallback)
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "noreply@mirkobechini.com"
