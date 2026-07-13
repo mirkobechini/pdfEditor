@@ -25,12 +25,17 @@ security = HTTPBearer()
 
 
 def _set_token_cookie(response: Response, token: str) -> None:
-    """Set JWT token as httpOnly cookie."""
+    """Set JWT token as httpOnly cookie.
+    
+    Uses samesite='none' + secure=True in production so the cookie
+    is sent on cross-origin requests (Cloudflare -> Render).
+    Falls back to samesite='lax' in local dev (no HTTPS).
+    """
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        samesite="lax",
+        samesite="none" if not settings.DEBUG else "lax",
         secure=not settings.DEBUG,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
@@ -43,7 +48,7 @@ def _clear_token_cookie(response: Response) -> None:
         key="access_token",
         value="",
         httponly=True,
-        samesite="lax",
+        samesite="none" if not settings.DEBUG else "lax",
         secure=not settings.DEBUG,
         max_age=0,
         path="/",
@@ -218,12 +223,16 @@ def forgot_password(
     request: Request,
     service: AuthService = Depends(get_auth_service),
 ):
-    """Request a password reset. Always returns 202 to avoid email enumeration."""
+    """Request a password reset. Returns 404 if email not found."""
     token = service.request_password_reset(req.email)
-    if token:
-        # Send reset email
-        EmailService.send_password_reset_email(req.email, token)
-    return {"message": "If the email exists, the reset request has been received."}
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No account found with this email address.",
+        )
+    # Send reset email
+    EmailService.send_password_reset_email(req.email, token)
+    return {"message": "Password reset email sent. Check your inbox."}
 
 
 @router.post("/reset-password", response_model=UserResponse)

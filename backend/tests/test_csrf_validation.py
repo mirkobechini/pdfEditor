@@ -7,9 +7,10 @@ class TestCSRFValidation:
     """Test CSRF validation with CSRF enabled."""
 
     def test_post_without_csrf_fails(self, client, monkeypatch):
-        """Should reject POST without CSRF token."""
+        """Should reject POST without CSRF token on non-exempt endpoint."""
         monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
-        response = client.post("/auth/logout")
+        # POST to a non-exempt endpoint (e.g., /pdfs/upload) without CSRF
+        response = client.post("/pdfs/upload")
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     def test_delete_without_csrf_fails(self, client, monkeypatch):
@@ -28,16 +29,18 @@ class TestCSRFValidation:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_post_with_valid_csrf_succeeds(self, client, monkeypatch):
-        """Should accept POST with valid CSRF token."""
+        """Should accept POST with valid CSRF token on non-exempt endpoint."""
         monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
         # GET to obtain CSRF cookie
         get_resp = client.get("/health")
         csrf_token = get_resp.cookies.get("csrf_token")
         assert csrf_token is not None
-        # POST with valid CSRF
+        # POST with valid CSRF to a non-exempt endpoint
+        # Use /pdfs/upload — will fail with 401 (no auth) but NOT 403 (CSRF)
         response = client.post(
-            "/auth/logout",
+            "/pdfs/upload",
             cookies={"csrf_token": csrf_token},
             headers={"X-CSRF-Token": csrf_token},
         )
-        assert response.status_code == status.HTTP_200_OK
+        # Should NOT be 403 (CSRF passed), should be 401 (no auth) or 422 (no file)
+        assert response.status_code != status.HTTP_403_FORBIDDEN

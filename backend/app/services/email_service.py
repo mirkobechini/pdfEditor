@@ -27,9 +27,11 @@ class EmailService:
 
             # Create email message
             msg = MIMEMultipart("alternative")
-            msg["Subject"] = "Password Reset Request"
-            msg["From"] = settings.SMTP_FROM_EMAIL
+            msg["Subject"] = "Password Reset Request - PDF Editor"
+            msg["From"] = f"PDF Editor <{settings.SMTP_FROM_EMAIL}>"
             msg["To"] = email
+            msg["X-Mailer"] = "PDFEditor/1.0"
+            msg["X-Priority"] = "3"
 
             # Plain text version
             text = f"""
@@ -72,12 +74,16 @@ PDF Editor Team
                 server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
                 server.sendmail(settings.SMTP_FROM_EMAIL, email, msg.as_string())
 
-            logger.info("Password reset email sent to %s", email)
+            logger.info("Password reset email sent successfully to %s", email)
             return True
 
         except smtplib.SMTPException as e:
-            logger.error("SMTP Error: %s", e)
+            logger.error(
+                "SMTP Error sending password reset to %s: %s. "
+                "Check that SMTP_FROM_EMAIL=%s is a verified sender in SendGrid.",
+                email, e, settings.SMTP_FROM_EMAIL,
+            )
             return False
         except Exception as e:
-            logger.error("Email Error: %s", e)
+            logger.error("Email Error sending password reset to %s: %s", email, e)
             return False
