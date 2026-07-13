@@ -62,7 +62,7 @@ describe("AuthProvider", () => {
     fireEvent.click(screen.getByTestId("btn-login"));
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("a@b.com"));
     fireEvent.click(screen.getByTestId("btn-logout"));
-    expect(screen.getByTestId("user").textContent).toBe("null");
+    await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("null"));
     expect(api.logout).toHaveBeenCalled();
   });
 });
