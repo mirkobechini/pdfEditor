@@ -259,7 +259,7 @@ class TestPasswordReset:
         )
 
     def test_forgot_password_returns_202(self, client):
-        """Should always return 202."""
+        """Should return 202 for existing user."""
         self._register_user(client)
         response = client.post(self.URL_FORGOT, json={"email": "reset@test.com"})
         assert response.status_code == status.HTTP_202_ACCEPTED
@@ -267,9 +267,10 @@ class TestPasswordReset:
         assert "message" in data
 
     def test_forgot_password_unknown_email(self, client):
-        """Should return 202 even for unknown email (no enumeration)."""
+        """Should return 404 for unknown email."""
         response = client.post(self.URL_FORGOT, json={"email": "unknown@test.com"})
-        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert "No account found" in response.json()["detail"]
 
     def test_reset_password_success(self, client, db_engine):
         """Should reset password with valid token."""
