@@ -35,15 +35,14 @@ class TestCSRFValidation:
         get_resp = client.get("/health")
         csrf_token = get_resp.cookies.get("csrf_token")
         assert csrf_token is not None, "No CSRF cookie in response"
-        # Create a fresh TestClient with EMPTY cookie jar and preset
-        # Cookie header. httpx only merges Cookie header with jar when
-        # the jar is non-empty; with an empty jar, the explicit header
-        # is used as-is. This avoids httpx 0.27.0 jar persistence bugs.
+        # Create a fresh TestClient and set the CSRF cookie on the
+        # client instance. httpx treats the Cookie header specially
+        # and may drop it in favor of the internal cookie jar.
         from fastapi.testclient import TestClient
         from app.main import app
         c2 = TestClient(app)
         c2.app.state.testing = True
-        c2.headers["Cookie"] = f"csrf_token={csrf_token}"
+        c2.cookies.set("csrf_token", csrf_token)
         response = c2.post(
             "/pdfs/upload",
             headers={"X-CSRF-Token": csrf_token},
