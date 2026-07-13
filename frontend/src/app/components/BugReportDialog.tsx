@@ -4,6 +4,15 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api, BugReport } from "../lib/api";
 
+const BUG_CATEGORIES = [
+  "UI",
+  "PDF Processing",
+  "Auth / Login",
+  "Upload / Download",
+  "Dark Mode",
+  "Other",
+] as const;
+
 interface BugReportDialogProps {
   open: boolean;
   onClose: () => void;
@@ -13,6 +22,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
   const t = useTranslations("bugReport");
   const [step, setStep] = React.useState<"search" | "create" | "done">("search");
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [category, setCategory] = React.useState<string>("");
   const [results, setResults] = React.useState<BugReport[]>([]);
   const [searching, setSearching] = React.useState(false);
   const [title, setTitle] = React.useState("");
@@ -24,6 +34,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
     if (open) {
       setStep("search");
       setSearchQuery("");
+      setCategory("");
       setResults([]);
       setTitle("");
       setDescription("");
@@ -59,11 +70,11 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !description.trim()) return;
+    if (!title.trim() || !description.trim() || !category) return;
     setSending(true);
     setError(null);
     try {
-      await api.createBugReport(title.trim(), description.trim());
+      await api.createBugReport(`[${category}] ${title.trim()}`, description.trim());
       setStep("done");
     } catch (err) {
       setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
@@ -197,6 +208,25 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
               />
             </div>
 
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">
+                {t("category")} <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="" disabled>{t("selectCategory")}</option>
+                {BUG_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat} className="dark:bg-gray-800 dark:text-gray-100">
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {error && (
               <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">
                 {error}
@@ -215,7 +245,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
               <button
                 type="submit"
                 className="px-4 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
-                disabled={sending || !title.trim() || !description.trim()}
+                disabled={sending || !title.trim() || !description.trim() || !category}
               >
                 {sending ? t("sending") : t("submit")}
               </button>

@@ -135,6 +135,8 @@
     "titlePlaceholder": "Breve riepilogo del problema",
     "fieldDescription": "Descrizione",
     "descriptionPlaceholder": "Descrivi cosa è successo e come riprodurlo",
+    "category": "Categoria",
+    "selectCategory": "Seleziona una categoria...",
     "submit": "Invia Segnalazione",
     "sending": "Invio in corso...",
     "sentTitle": "Grazie!",
