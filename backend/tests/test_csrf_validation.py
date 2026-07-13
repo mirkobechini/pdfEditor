@@ -34,14 +34,17 @@ class TestCSRFValidation:
         # GET to obtain CSRF cookie
         get_resp = client.get("/health")
         csrf_token = get_resp.cookies.get("csrf_token")
-        assert csrf_token is not None
-        # Set cookie on client instance (per-request cookies= is deprecated)
-        client.cookies.set("csrf_token", csrf_token)
-        # POST with valid CSRF to a non-exempt endpoint
-        # Use /pdfs/upload — will fail with 401 (no auth) but NOT 403 (CSRF)
+        assert csrf_token is not None, "No CSRF cookie in response"
+        # Set cookie via client.headers (bypass httpx cookie jar which is
+        # unreliable across versions in CI). This forces the Cookie header
+        # on every subsequent request from this client.
+        client.headers["Cookie"] = f"csrf_token={csrf_token}"
+        # POST with valid CSRF
         response = client.post(
             "/pdfs/upload",
             headers={"X-CSRF-Token": csrf_token},
         )
+        # Clean up to avoid affecting other tests
+        del client.headers["Cookie"]
         # Should NOT be 403 (CSRF passed), should be 401 (no auth) or 422 (no file)
         assert response.status_code != status.HTTP_403_FORBIDDEN
