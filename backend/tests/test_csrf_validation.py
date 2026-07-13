@@ -35,11 +35,12 @@ class TestCSRFValidation:
         get_resp = client.get("/health")
         csrf_token = get_resp.cookies.get("csrf_token")
         assert csrf_token is not None
+        # Set cookie on client instance (per-request cookies= is deprecated)
+        client.cookies.set("csrf_token", csrf_token)
         # POST with valid CSRF to a non-exempt endpoint
         # Use /pdfs/upload — will fail with 401 (no auth) but NOT 403 (CSRF)
         response = client.post(
             "/pdfs/upload",
-            cookies={"csrf_token": csrf_token},
             headers={"X-CSRF-Token": csrf_token},
         )
         # Should NOT be 403 (CSRF passed), should be 401 (no auth) or 422 (no file)
