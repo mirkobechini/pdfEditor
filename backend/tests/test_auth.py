@@ -24,11 +24,8 @@ class TestRegister:
         )
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
-        assert data["email"] == "test@example.com"
-        assert data["full_name"] == "Test User"
-        assert data["is_active"] is True
-        assert "password" not in data
-        assert "id" in data
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
 
         # PRODUCTION CHECK: httpOnly cookie must be set on register (auto-login)
         cookies = client.cookies

@@ -78,8 +78,8 @@ def register(
     req: UserRegisterRequest,
     request: Request,
     service: AuthService = Depends(get_auth_service),
-) -> UserResponse:
-    """Register a new user. Auto-login sets httpOnly cookie."""
+) -> TokenResponse:
+    """Register a new user. Auto-login sets httpOnly cookie and returns JWT."""
     try:
         user = service.register(
             email=req.email,
@@ -95,7 +95,7 @@ def register(
     # Auto-login after registration
     token = service.login(email=req.email, password=req.password)
     response = JSONResponse(
-        content=UserResponse.model_validate(user).model_dump(mode="json"),
+        content=TokenResponse(access_token=token).model_dump(mode="json"),
         status_code=status.HTTP_201_CREATED,
     )
     _set_token_cookie(response, token)

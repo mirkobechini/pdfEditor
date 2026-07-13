@@ -32,12 +32,20 @@ export class ApiClient {
 
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {};
+    // Include Bearer token if available (used in local dev where cookie is cross-origin)
+    if (this.token) {
+      headers["Authorization"] = `Bearer ${this.token}`;
+    }
     // Include CSRF token for state-changing requests (double-submit pattern)
     const csrfToken = this._getCsrfToken();
     if (csrfToken) {
       headers["X-CSRF-Token"] = csrfToken;
     }
     return headers;
+  }
+
+  setToken(token: string | null) {
+    this.token = token;
   }
 
   private _getCsrfToken(): string | null {
@@ -291,7 +299,7 @@ export class ApiClient {
     email: string,
     password: string,
     fullName: string,
-  ): Promise<{ id: string; email: string; full_name: string }> {
+  ): Promise<{ access_token: string; token_type: string }> {
     const res = await this._fetch(`${this.baseUrl}/auth/register`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
