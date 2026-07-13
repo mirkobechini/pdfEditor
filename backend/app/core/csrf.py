@@ -15,8 +15,10 @@ CSRF_EXEMPT_PATHS = {
     "/auth/login",
     "/auth/register",
     "/auth/google",
+    "/auth/logout",
     "/auth/forgot-password",
     "/auth/reset-password",
+    "/health",
 }
 
 
@@ -49,8 +51,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 response.set_cookie(
                     key="csrf_token",
                     value=token,
-                    httponly=True,
-                    samesite="lax",
+                    httponly=False,  # Must be readable by JS for double-submit pattern
+                    samesite="none" if not settings.DEBUG else "lax",
                     secure=not settings.DEBUG,
                     max_age=3600,  # 1 hour
                     path="/",

@@ -25,12 +25,17 @@ security = HTTPBearer()
 
 
 def _set_token_cookie(response: Response, token: str) -> None:
-    """Set JWT token as httpOnly cookie."""
+    """Set JWT token as httpOnly cookie.
+    
+    Uses samesite='none' + secure=True in production so the cookie
+    is sent on cross-origin requests (Cloudflare -> Render).
+    Falls back to samesite='lax' in local dev (no HTTPS).
+    """
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        samesite="lax",
+        samesite="none" if not settings.DEBUG else "lax",
         secure=not settings.DEBUG,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
@@ -43,7 +48,7 @@ def _clear_token_cookie(response: Response) -> None:
         key="access_token",
         value="",
         httponly=True,
-        samesite="lax",
+        samesite="none" if not settings.DEBUG else "lax",
         secure=not settings.DEBUG,
         max_age=0,
         path="/",
