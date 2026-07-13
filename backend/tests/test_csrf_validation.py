@@ -31,18 +31,21 @@ class TestCSRFValidation:
     def test_post_with_valid_csrf_succeeds(self, client, monkeypatch):
         """Should accept POST with valid CSRF token on non-exempt endpoint."""
         monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
-        # GET to obtain CSRF cookie
+        # GET to obtain CSRF cookie — parse from Set-Cookie header directly
+        # to bypass httpx cookie jar (unreliable in CI on HTTP connections)
         get_resp = client.get("/health")
-        csrf_token = get_resp.cookies.get("csrf_token")
-        assert csrf_token is not None, "No CSRF cookie in response"
-        # Set cookie on client jar WITHOUT domain/path restrictions so it
-        # matches any URL (TestClient uses 'testserver' as default domain)
-        client.cookies.clear()
-        client.cookies.set("csrf_token", csrf_token)
-        # POST with valid CSRF — client jar sends the cookie automatically
+        set_cookie = get_resp.headers.get("set-cookie", "")
+        assert "csrf_token=" in set_cookie, f"No csrf_token in Set-Cookie: {set_cookie}"
+        csrf_token = set_cookie.split("csrf_token=")[1].split(";")[0]
+        assert csrf_token, "CSRF token is empty"
+        # POST with valid CSRF — pass cookie explicitly via Cookie header
+        # (no reliance on client.cookies jar)
         response = client.post(
             "/pdfs/upload",
-            headers={"X-CSRF-Token": csrf_token},
+            headers={
+                "X-CSRF-Token": csrf_token,
+                "Cookie": f"csrf_token={csrf_token}",
+            },
         )
         # Should NOT be 403 (CSRF passed), should be 401 (no auth) or 422 (no file)
         assert response.status_code != status.HTTP_403_FORBIDDEN
