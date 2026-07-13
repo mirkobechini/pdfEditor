@@ -364,15 +364,24 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Bug aperti (post-deploy 2026-07-13)
 
-| Bug                                                    | Issue | Piano                                                | Priorità |
-| ------------------------------------------------------ | ----- | ---------------------------------------------------- | -------- |
-| Sidebar "Caricamento PDF fallito"                      | —     | `.specs/plans/bug-sidebar-pdf-load-upload.md`        | 🟥 HIGH  |
-| Upload PDF "Network error" + XHR senza withCredentials | —     | `.specs/plans/bug-upload-pdf-network-error.md`       | 🟥 HIGH  |
-| Admin panel mostra "Nessun utente"                     | —     | `.specs/plans/bug-admin-no-users.md`                 | 🟥 HIGH  |
-| Navbar doppio nome utente                              | —     | `.specs/plans/bug-navbar-double-name.md`             | 🟧 MED   |
-| Dashboard profilo senza navbar/logo                    | —     | `.specs/plans/bug-user-dashboard-navbar-logo.md`     | 🟧 MED   |
-| Dark mode dropdown illeggibili (testo bianco)          | —     | `.specs/plans/bug-dark-mode-dropdowns.md`            | 🟧 MED   |
-| Bug report: select categoria invece di testo libero    | —     | `.specs/plans/feature-bug-report-category-select.md` | 🟩 LOW   |
+| Bug                                                    | Issue | Piano                                            | Priorità |
+| ------------------------------------------------------ | ----- | ------------------------------------------------ | -------- |
+| Sidebar "Caricamento PDF fallito"                      | —     | `.specs/plans/bug-sidebar-pdf-load-upload.md`    | 🟥 HIGH  |
+| Upload PDF "Network error" + XHR senza withCredentials | —     | `.specs/plans/bug-upload-pdf-network-error.md`   | 🟥 HIGH  |
+| Admin panel mostra "Nessun utente"                     | —     | `.specs/plans/bug-admin-no-users.md`             | 🟥 HIGH  |
+| Navbar doppio nome utente                              | —     | `.specs/plans/bug-navbar-double-name.md`         | 🟧 MED   |
+| Dashboard profilo senza navbar/logo                    | —     | `.specs/plans/bug-user-dashboard-navbar-logo.md` | 🟧 MED   |
+| Dark mode dropdown illeggibili (testo bianco)          | #266  | ✅ Risolto — CSS globale in globals.css          | ✅       |
+| Bug report: select categoria invece di testo libero    | #264  | ✅ Risolto (PR #265)                             | ✅       |
+
+### Bug risolti (2026-07-13)
+
+| Bug                                              | Issue | Risoluzione                                  |
+| ------------------------------------------------ | ----- | -------------------------------------------- |
+| Google OAuth `origin_mismatch` / `Invalid token` | —     | 🟡 Serve `GOOGLE_CLIENT_ID` in env su Render |
+| Login normale non funzionante                    | #260  | ✅ Risolto (PR #261) — cookie cross-origin   |
+| Reset password email non arriva                  | #262  | ✅ Risolto (PR #263) — SendGrid HTTP API     |
+| Immagine monkey logo mancante                    | #257  | 🟡 File esiste — probabile cache Cloudflare  |
 
 <!-- Code Review completata — vedi CHANGELOG.md per dettagli -->
 
