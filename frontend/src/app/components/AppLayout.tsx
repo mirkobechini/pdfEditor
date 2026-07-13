@@ -60,7 +60,7 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
           {user && (
             <button
               className="px-2 py-1 text-xs rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-              onClick={() => { logout(); window.location.href = "/login"; }}
+              onClick={async () => { await logout(); window.location.href = "/login"; }}
               title={authT("logout")}
             >
               {authT("logout")}

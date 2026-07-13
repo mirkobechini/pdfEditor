@@ -1,6 +1,6 @@
 from collections.abc import Generator
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -12,7 +12,7 @@ from app.services.auth_service import AuthService
 from app.services.pdf_merge_split_service import PdfMergeSplitService
 from app.services.pdf_service import PdfService
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -27,14 +27,31 @@ def get_merge_split_service(db: Session = Depends(get_db)) -> PdfMergeSplitServi
     return PdfMergeSplitService(db)
 
 
+def _extract_token(request: Request, credentials: HTTPAuthorizationCredentials | None) -> str | None:
+    """Extract JWT from Bearer header or cookie (backward compat)."""
+    if credentials is not None:
+        return credentials.credentials
+    token = request.cookies.get("access_token")
+    if token:
+        return token
+    return None
+
+
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ):
-    """Dependency: validate JWT and return current user."""
+    """Dependency: validate JWT from Bearer header or httpOnly cookie."""
+    token = _extract_token(request, credentials)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
     service = AuthService(db)
     try:
-        return service.get_current_user(credentials.credentials)
+        return service.get_current_user(token)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
