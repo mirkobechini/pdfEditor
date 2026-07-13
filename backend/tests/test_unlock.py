@@ -91,12 +91,13 @@ class TestUnlock:
         # Upload first with auth
         pdf_id = self._upload_and_get_id(client, free_headers, sample_pdf_content)
 
-        # Call unlock without auth headers
+        # Call unlock without auth (override cookie with invalid Bearer token)
         response = client.post(
             f"/pdfs/{pdf_id}/unlock",
+            headers={"Authorization": "Bearer invalid"},
             json={"password": "Test1234"},
         )
-        assert response.status_code in (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_unlock_empty_password_request(self, client, free_headers, sample_pdf_content):
         """Unlock with empty password should return 400 (endpoint check happens first)."""
