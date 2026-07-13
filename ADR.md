@@ -126,8 +126,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 > 1. **Cookie cross-origin non inviati** — Il frontend (`api.ts`) non passava `credentials: 'include'`, quindi il cookie httpOnly `access_token` non veniva mai inviato al backend su domini diversi. ❌ I test usavano `Authorization: Bearer` header invece del flusso cookie-based reale.
 > 2. **`SameSite=Lax` in produzione** — Il cookie era impostato con `samesite="lax"` che blocca i cookie cross-origin. Fixato con `samesite="none"` quando `DEBUG=False`.
 > 3. **CSRF bloccava `/auth/logout`** — Endpoint non exempt. Fixato aggiungendolo a `CSRF_EXEMPT_PATHS`.
-> 4. **Email droppata da SendGrid** — `noreply@pdfeditor.app` non verificato come sender su SendGrid.
-> 5. **DB PostgreSQL vuoto** — Gli utenti su SQLite locale non esistono su Render.
+> 4. **Email droppata da SendGrid** — `noreply@pdfeditor.app` non verificato come sender su SendGrid. Fix: cambiato default a `noreply@mirkobechini.com`.
 >
 > **Conseguenza strutturale: i test non rilevavano questi bug perché:**
 >
@@ -136,7 +135,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 > - Test usavano Bearer header invece del flusso cookie-based
 > - Mock totale di `jwt.decode` in test Google OAuth
 >
-> **Rimedio:** Riscritti i test auth per verificare il flusso cookie-based reale. Aggiunto script `scripts/seed_users_from_sqlite.py` per migrare dati SQLite → PostgreSQL.
+> **Rimedio:** Riscritti i test auth per verificare il flusso cookie-based reale. Aggiunto script `scripts/seed_users_from_sqlite.py` per migrare dati SQLite → PostgreSQL (non necessario — utenti già presenti su Render).
 
 > **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email via SendGrid/Cloudflare attiva (dominio verificato). Admin send reset via dashboard implementato. User bug report status visibile in profilo.
 
@@ -155,6 +154,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 > Bug critici sono arrivati in produzione nonostante 256 test passassero. Causa: i test mockavano/bypassavano il comportamento reale invece di testarlo.
 >
 > **Regole per test futuri:**
+>
 > 1. Il flusso cookie-based deve essere testato con cookie, non con Bearer header
 > 2. CSRF/rate limiting non possono essere semplicemente disabilitati — vanno testati separatamente
 > 3. I mock di librerie esterne (jwt.decode, Google certs) vanno verificati contro il comportamento reale
@@ -353,12 +353,12 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Bug aperti su Render (deploy 2026-07-12)
 
-| Bug                                              | Issue | Risoluzione                                    |
-| ------------------------------------------------ | ----- | ---------------------------------------------- |
-| Google OAuth `origin_mismatch` / `Invalid token` | —     | ✅ Serve `GOOGLE_CLIENT_ID` in env su Render   |
-| Login normale non funzionante                    | #260  | ✅ Fixato — cookie cross-origin + credentials  |
-| Reset password email non arriva                  | —     | ✅ SendGrid: verificare `noreply@pdfeditor.app` |
-| Immagine monkey logo mancante                    | #257  | 🟡 File esiste — probabile cache Cloudflare    |
+| Bug                                              | Issue | Risoluzione                                  |
+| ------------------------------------------------ | ----- | -------------------------------------------- |
+| Google OAuth `origin_mismatch` / `Invalid token` | —     | 🟡 Serve `GOOGLE_CLIENT_ID` in env su Render |
+| Login normale non funzionante                    | #260  | ✅ Risolto (PR #261) — cookie cross-origin   |
+| Reset password email non arriva                  | —     | ✅ Fixato — sender verificato su SendGrid    |
+| Immagine monkey logo mancante                    | #257  | 🟡 File esiste — probabile cache Cloudflare  |
 
 <!-- Code Review completata — vedi CHANGELOG.md per dettagli -->
 
