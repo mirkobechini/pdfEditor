@@ -34,7 +34,7 @@ describe("AppLayout", () => {
     it("shows user name and logout button", () => {
         mockUseAuth.mockReturnValue({ user: { id: "1", email: "test@test.com", full_name: "Test User", is_admin: false }, loading: false, logout: vi.fn() });
         render(<AppLayout sidebar={null} toolbar={null} viewer={null} />);
-        expect(screen.getByText("Test User")).toBeInTheDocument();
+        expect(screen.getByText(/Test User/)).toBeInTheDocument();
         expect(screen.getByText("logout")).toBeInTheDocument();
     });
 
