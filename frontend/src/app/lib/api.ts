@@ -31,14 +31,42 @@ export class ApiClient {
   }
 
   private getHeaders(): Record<string, string> {
-    return {};
+    const headers: Record<string, string> = {};
+    // Include CSRF token for state-changing requests (double-submit pattern)
+    const csrfToken = this._getCsrfToken();
+    if (csrfToken) {
+      headers["X-CSRF-Token"] = csrfToken;
+    }
+    return headers;
+  }
+
+  private _getCsrfToken(): string | null {
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+    return match ? match[1] : null;
+  }
+
+  private async _fetch(
+    url: string,
+    options: RequestInit = {},
+  ): Promise<Response> {
+    const headers = {
+      ...this.getHeaders(),
+      ...((options.headers as Record<string, string>) || {}),
+    };
+    // _fetch internal call — NOT replaced, uses raw fetch
+    return fetch(url, {
+      ...options,
+      credentials: "include",
+      headers,
+    });
   }
 
   // PDF endpoints
   async uploadPdf(file: File): Promise<PdfDocument> {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch(`${this.baseUrl}/pdfs/upload`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/upload`, {
       method: "POST",
       headers: this.getHeaders(),
       body: formData,
@@ -82,7 +110,7 @@ export class ApiClient {
   }
 
   async listPdfs(skip = 0, limit = 100): Promise<PdfListResponse> {
-    const res = await fetch(
+    const res = await this._fetch(
       `${this.baseUrl}/pdfs?skip=${skip}&limit=${limit}`,
       {
         headers: this.getHeaders(),
@@ -93,7 +121,7 @@ export class ApiClient {
   }
 
   async getPdf(id: string): Promise<PdfDocument> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}`, {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
@@ -101,7 +129,7 @@ export class ApiClient {
   }
 
   async deletePdf(id: string): Promise<void> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}`, {
       method: "DELETE",
       headers: this.getHeaders(),
     });
@@ -109,7 +137,7 @@ export class ApiClient {
   }
 
   async downloadPdf(id: string): Promise<Blob> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/download`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/download`, {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
@@ -118,7 +146,7 @@ export class ApiClient {
 
   // Merge / Split
   async mergePdfs(pdfIds: string[]): Promise<PdfDocument> {
-    const res = await fetch(`${this.baseUrl}/pdfs/merge`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/merge`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ pdf_ids: pdfIds }),
@@ -130,7 +158,7 @@ export class ApiClient {
   async splitPdf(id: string, mode: "every" | "range", ranges?: string[]) {
     const body: Record<string, unknown> = { mode };
     if (ranges) body.ranges = ranges;
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/split`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/split`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -141,7 +169,7 @@ export class ApiClient {
 
   // Reorder / Remove pages
   async reorderPages(id: string, pageOrder: number[]): Promise<PdfDocument> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/reorder`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/reorder`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ page_order: pageOrder }),
@@ -151,7 +179,7 @@ export class ApiClient {
   }
 
   async removePages(id: string, pageNumbers: number[]): Promise<PdfDocument> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/remove-pages`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/remove-pages`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ page_numbers: pageNumbers }),
@@ -169,7 +197,7 @@ export class ApiClient {
   ): Promise<PdfDocument> {
     const body: Record<string, unknown> = { search, replace };
     if (occurrence !== undefined) body.occurrence = occurrence;
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/replace-text`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/replace-text`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -183,7 +211,7 @@ export class ApiClient {
     page?: number,
   ): Promise<{ text: string; pages: number }> {
     const params = page ? `?page=${page}` : "";
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/text${params}`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/text${params}`, {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
@@ -192,7 +220,7 @@ export class ApiClient {
 
   // Metadata
   async getMetadata(id: string): Promise<Metadata> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
@@ -201,7 +229,7 @@ export class ApiClient {
 
   // Password-protected PDFs
   async unlockPdf(id: string, password: string): Promise<PdfDocument> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/unlock`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/unlock`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
@@ -211,7 +239,7 @@ export class ApiClient {
   }
 
   async protectPdf(id: string, password: string): Promise<PdfDocument> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/protect`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/protect`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
@@ -224,7 +252,7 @@ export class ApiClient {
     id: string,
     metadata: Partial<Metadata>,
   ): Promise<PdfDocument> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
       method: "PUT",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(metadata),
@@ -235,10 +263,13 @@ export class ApiClient {
 
   // Export / Import
   async exportPdf(id: string, format: string): Promise<Blob> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/export?fmt=${format}`, {
-      method: "POST",
-      headers: this.getHeaders(),
-    });
+    const res = await this._fetch(
+      `${this.baseUrl}/pdfs/${id}/export?fmt=${format}`,
+      {
+        method: "POST",
+        headers: this.getHeaders(),
+      },
+    );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.blob();
   }
@@ -246,7 +277,7 @@ export class ApiClient {
   async importFile(file: File): Promise<PdfDocument> {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch(`${this.baseUrl}/pdfs/import`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/import`, {
       method: "POST",
       headers: this.getHeaders(),
       body: formData,
@@ -261,7 +292,7 @@ export class ApiClient {
     password: string,
     fullName: string,
   ): Promise<{ id: string; email: string; full_name: string }> {
-    const res = await fetch(`${this.baseUrl}/auth/register`, {
+    const res = await this._fetch(`${this.baseUrl}/auth/register`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, full_name: fullName }),
@@ -274,7 +305,7 @@ export class ApiClient {
     email: string,
     password: string,
   ): Promise<{ access_token: string; token_type: string }> {
-    const res = await fetch(`${this.baseUrl}/auth/login`, {
+    const res = await this._fetch(`${this.baseUrl}/auth/login`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -286,7 +317,7 @@ export class ApiClient {
   async googleLogin(
     idToken: string,
   ): Promise<{ access_token: string; token_type: string }> {
-    const res = await fetch(`${this.baseUrl}/auth/google`, {
+    const res = await this._fetch(`${this.baseUrl}/auth/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_token: idToken }),
@@ -296,7 +327,7 @@ export class ApiClient {
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
-    const res = await fetch(`${this.baseUrl}/auth/forgot-password`, {
+    const res = await this._fetch(`${this.baseUrl}/auth/forgot-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
@@ -306,7 +337,7 @@ export class ApiClient {
   }
 
   async resetPassword(token: string, newPassword: string): Promise<any> {
-    const res = await fetch(`${this.baseUrl}/auth/reset-password`, {
+    const res = await this._fetch(`${this.baseUrl}/auth/reset-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, new_password: newPassword }),
@@ -326,7 +357,7 @@ export class ApiClient {
     created_at: string;
     updated_at: string;
   }> {
-    const res = await fetch(`${this.baseUrl}/auth/me`, {
+    const res = await this._fetch(`${this.baseUrl}/auth/me`, {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
@@ -334,7 +365,7 @@ export class ApiClient {
   }
 
   async updateProfile(data: { full_name: string }): Promise<any> {
-    const res = await fetch(`${this.baseUrl}/auth/me`, {
+    const res = await this._fetch(`${this.baseUrl}/auth/me`, {
       method: "PUT",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -345,12 +376,12 @@ export class ApiClient {
 
   async logout(): Promise<void> {
     // POST to logout endpoint clears the httpOnly cookie
-    await fetch(`${this.baseUrl}/auth/logout`, { method: "POST" });
+    await this._fetch(`${this.baseUrl}/auth/logout`, { method: "POST" });
   }
 
   // Undo / Redo
   async undoPdf(id: string): Promise<PdfDocument> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/undo`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/undo`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: "{}",
@@ -360,7 +391,7 @@ export class ApiClient {
   }
 
   async redoPdf(id: string): Promise<PdfDocument> {
-    const res = await fetch(`${this.baseUrl}/pdfs/${id}/redo`, {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/redo`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: "{}",
@@ -377,7 +408,7 @@ export class ApiClient {
   ): Promise<BugReport> {
     const body: Record<string, unknown> = { title, description };
     if (pageUrl) body.page_url = pageUrl;
-    const res = await fetch(`${this.baseUrl}/bugs`, {
+    const res = await this._fetch(`${this.baseUrl}/bugs`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -387,7 +418,7 @@ export class ApiClient {
   }
 
   async listMyBugReports(): Promise<BugReport[]> {
-    const res = await fetch(`${this.baseUrl}/bugs/my`, {
+    const res = await this._fetch(`${this.baseUrl}/bugs/my`, {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
@@ -395,7 +426,7 @@ export class ApiClient {
   }
 
   async searchBugReports(query: string): Promise<BugReport[]> {
-    const res = await fetch(
+    const res = await this._fetch(
       `${this.baseUrl}/bugs/search?q=${encodeURIComponent(query)}`,
       {
         headers: this.getHeaders(),
@@ -406,7 +437,7 @@ export class ApiClient {
   }
 
   async voteBugReport(bugId: string): Promise<BugReport> {
-    const res = await fetch(`${this.baseUrl}/bugs/${bugId}/vote`, {
+    const res = await this._fetch(`${this.baseUrl}/bugs/${bugId}/vote`, {
       method: "POST",
       headers: this.getHeaders(),
     });
@@ -418,7 +449,7 @@ export class ApiClient {
   async getLicenseFeatures(): Promise<
     { id: string; tier: string; feature_key: string; enabled: boolean }[]
   > {
-    const res = await fetch(`${this.baseUrl}/licenses/features`, {
+    const res = await this._fetch(`${this.baseUrl}/licenses/features`, {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
@@ -430,7 +461,7 @@ export class ApiClient {
     skip = 0,
     limit = 100,
   ): Promise<{ items: AdminUser[]; total: number }> {
-    const res = await fetch(
+    const res = await this._fetch(
       `${this.baseUrl}/admin/users?skip=${skip}&limit=${limit}`,
       {
         headers: this.getHeaders(),
@@ -444,27 +475,33 @@ export class ApiClient {
     userId: string,
     licenseTier: string,
   ): Promise<AdminUser> {
-    const res = await fetch(`${this.baseUrl}/admin/users/${userId}/license`, {
-      method: "PUT",
-      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ license_tier: licenseTier }),
-    });
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users/${userId}/license`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ license_tier: licenseTier }),
+      },
+    );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
   async updateUserAdmin(userId: string, isAdmin: boolean): Promise<AdminUser> {
-    const res = await fetch(`${this.baseUrl}/admin/users/${userId}/admin`, {
-      method: "PUT",
-      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ is_admin: isAdmin }),
-    });
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users/${userId}/admin`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ is_admin: isAdmin }),
+      },
+    );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
   async adminSendReset(userId: string): Promise<{ message: string }> {
-    const res = await fetch(
+    const res = await this._fetch(
       `${this.baseUrl}/admin/users/${userId}/send-reset`,
       {
         method: "POST",
@@ -485,7 +522,7 @@ export class ApiClient {
       limit: String(limit),
     });
     if (status) params.set("status", status);
-    const res = await fetch(`${this.baseUrl}/admin/bugs?${params}`, {
+    const res = await this._fetch(`${this.baseUrl}/admin/bugs?${params}`, {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
@@ -496,11 +533,14 @@ export class ApiClient {
     bugId: string,
     status: string,
   ): Promise<BugReport> {
-    const res = await fetch(`${this.baseUrl}/admin/bugs/${bugId}/status`, {
-      method: "PUT",
-      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/bugs/${bugId}/status`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      },
+    );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }

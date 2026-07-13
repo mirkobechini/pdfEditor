@@ -15,8 +15,10 @@ CSRF_EXEMPT_PATHS = {
     "/auth/login",
     "/auth/register",
     "/auth/google",
+    "/auth/logout",
     "/auth/forgot-password",
     "/auth/reset-password",
+    "/health",
 }
 
 
@@ -37,27 +39,28 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         if getattr(settings, "DISABLE_CSRF", False):
             return await call_next(request)
 
-        # Skip CSRF for exempt paths
-        if request.url.path in CSRF_EXEMPT_PATHS:
-            return await call_next(request)
-
+        # For safe methods: always set csrf cookie if missing (even on exempt paths,
+        # so the cookie is available for subsequent state-changing requests)
         if request.method in ("GET", "HEAD", "OPTIONS"):
             response = await call_next(request)
-            # Set CSRF cookie if not present
             if "csrf_token" not in request.cookies:
                 token = secrets.token_hex(32)
                 response.set_cookie(
                     key="csrf_token",
                     value=token,
-                    httponly=True,
-                    samesite="lax",
+                    httponly=False,  # Must be readable by JS for double-submit pattern
+                    samesite="none" if not settings.DEBUG else "lax",
                     secure=not settings.DEBUG,
                     max_age=3600,  # 1 hour
                     path="/",
                 )
             return response
 
-        # State-changing methods: validate CSRF
+        # Skip CSRF validation for exempt paths (auth endpoints, health)
+        if request.url.path in CSRF_EXEMPT_PATHS:
+            return await call_next(request)
+
+        # State-changing methods on non-exempt paths: validate CSRF
         if request.method in ("POST", "PUT", "DELETE", "PATCH"):
             csrf_cookie = request.cookies.get("csrf_token")
             csrf_header = request.headers.get("X-CSRF-Token", "")

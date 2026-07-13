@@ -39,6 +39,14 @@ def test_secret_key(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def test_debug_mode(monkeypatch):
+    """Force DEBUG=True so cookies use secure=False + samesite=lax.
+    In CI, DEBUG defaults to False, which sets secure=True on cookies,
+    causing TestClient (HTTP) to drop them."""
+    monkeypatch.setattr("app.core.config.settings.DEBUG", True)
+
+
+@pytest.fixture(autouse=True)
 def force_local_storage(monkeypatch):
     """Force local storage backend for all tests (ignore .env S3 settings)."""
     monkeypatch.setattr("app.core.config.settings.STORAGE_BACKEND", "local")

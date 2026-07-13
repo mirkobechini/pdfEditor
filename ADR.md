@@ -119,6 +119,24 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 > - ✅ JWT httpOnly cookie → addio localStorage XSS
 > - ✅ GitHub: 0 Dependabot alert attivi, 0 Code Scanning alert attivi
 
+> **🔴 Lezione appresa (2026-07-13) — Bug post-deploy su Render:**
+>
+> Dopo il deploy su Render, 4 bug hanno bloccato l'uso dell'applicazione nonostante tutti i test passassero in sviluppo (256 test, 0 failure). Cause identificate:
+>
+> 1. **Cookie cross-origin non inviati** — Il frontend (`api.ts`) non passava `credentials: 'include'`, quindi il cookie httpOnly `access_token` non veniva mai inviato al backend su domini diversi. ❌ I test usavano `Authorization: Bearer` header invece del flusso cookie-based reale.
+> 2. **`SameSite=Lax` in produzione** — Il cookie era impostato con `samesite="lax"` che blocca i cookie cross-origin. Fixato con `samesite="none"` quando `DEBUG=False`.
+> 3. **CSRF bloccava `/auth/logout`** — Endpoint non exempt. Fixato aggiungendolo a `CSRF_EXEMPT_PATHS`.
+> 4. **Email droppata da SendGrid** — `noreply@pdfeditor.app` non verificato come sender su SendGrid. Fix: cambiato default a `noreply@mirkobechini.com`.
+>
+> **Conseguenza strutturale: i test non rilevavano questi bug perché:**
+>
+> - CSRF e rate limiting disabilitati nei test (necessario per TestClient)
+> - TestClient simula stesso-origin (non cross-origin)
+> - Test usavano Bearer header invece del flusso cookie-based
+> - Mock totale di `jwt.decode` in test Google OAuth
+>
+> **Rimedio:** Riscritti i test auth per verificare il flusso cookie-based reale. Aggiunto script `scripts/seed_users_from_sqlite.py` per migrare dati SQLite → PostgreSQL (non necessario — utenti già presenti su Render).
+
 > **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email via SendGrid/Cloudflare attiva (dominio verificato). Admin send reset via dashboard implementato. User bug report status visibile in profilo.
 
 > **Nota tecnica:** Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile dal nostro codice. La libreria `httpx2` non esiste ancora, è una futura release di starlette. Ignorare.
@@ -129,9 +147,23 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 > - **Render:** MCP server ufficiale `render-oss/render-mcp-server` (Go, 144★). Per deploy e gestione servizi Render.
 > - **Railway:** MCP server ufficiale `railwayapp/railway-mcp-server` (JS, 192★, archived). Community: `jason-tan-swe/railway-mcp` (TS, 73★).
 
+## Quality assurance — test che non mentono
+
+> **⚠️ Lezione appresa (2026-07-13): I test devono copiARE il flusso reale, non simularlo.**
+>
+> Bug critici sono arrivati in produzione nonostante 256 test passassero. Causa: i test mockavano/bypassavano il comportamento reale invece di testarlo.
+>
+> **Regole per test futuri:**
+>
+> 1. Il flusso cookie-based deve essere testato con cookie, non con Bearer header
+> 2. CSRF/rate limiting non possono essere semplicemente disabilitati — vanno testati separatamente
+> 3. I mock di librerie esterne (jwt.decode, Google certs) vanno verificati contro il comportamento reale
+> 4. Ogni nuova feature deve includere test che simulano lo scenario di produzione (dominio diverso, cookie cross-origin, ecc.)
+> 5. `TestClient` ha limitazioni intrinseche (stesso-origin) — i test E2E con Playwright sono necessari per la vera validazione cross-origin
+
 ## Coverage test backend
 
-### Stato attuale: 93% (253 test, 0 failures, 0 warnings)
+### Stato attuale: 93% (256 test, 0 failures, 0 warnings)
 
 | Modulo                                                                                            | Coverage | Note                   |
 | ------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
@@ -318,6 +350,15 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - ⬜ **Tauri v2 desktop** — Fase 1c.
 - ⬜ **Cloud sync SQLite↔PostgreSQL** — Fase 3.
 - ⬜ **Mobile React Native** — Fase 4.
+
+### Bug aperti su Render (deploy 2026-07-12)
+
+| Bug                                              | Issue | Risoluzione                                  |
+| ------------------------------------------------ | ----- | -------------------------------------------- |
+| Google OAuth `origin_mismatch` / `Invalid token` | —     | 🟡 Serve `GOOGLE_CLIENT_ID` in env su Render |
+| Login normale non funzionante                    | #260  | ✅ Risolto (PR #261) — cookie cross-origin   |
+| Reset password email non arriva                  | —     | ✅ Fixato — sender verificato su SendGrid    |
+| Immagine monkey logo mancante                    | #257  | 🟡 File esiste — probabile cache Cloudflare  |
 
 <!-- Code Review completata — vedi CHANGELOG.md per dettagli -->
 
