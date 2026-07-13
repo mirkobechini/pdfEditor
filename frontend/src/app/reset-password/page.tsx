@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import HeaderControls from "../components/HeaderControls";
+import PasswordInput from "../components/PasswordInput";
 
 function ResetPasswordContent() {
     const t = useTranslations("auth");
@@ -80,15 +81,12 @@ function ResetPasswordContent() {
                             <label className="block text-sm font-medium mb-1 dark:text-gray-300">
                                 {t("newPassword")}
                             </label>
-                            <input
-                                type="password"
+                            <PasswordInput
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onChange={setPassword}
                                 placeholder="••••••••"
-                                required
-                                minLength={6}
                                 autoFocus
+                                required
                             />
                         </div>
 
@@ -96,11 +94,9 @@ function ResetPasswordContent() {
                             <label className="block text-sm font-medium mb-1 dark:text-gray-300">
                                 {t("confirmPassword")}
                             </label>
-                            <input
-                                type="password"
+                            <PasswordInput
                                 value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onChange={setConfirmPassword}
                                 placeholder="••••••••"
                                 required
                             />
