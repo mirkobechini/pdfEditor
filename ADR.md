@@ -28,6 +28,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - **Auth:** JWT (bcrypt) + httpOnly cookie + SSO Google (PyJWT + requests)
 - **i18n:** next-intl (dichiarato, ma attualmente implementato con provider custom)
 - **Migration:** Alembic
+- **Email:** SendGrid v3 Mail Send API (HTTP) — `requests` diretto, no libreria SendGrid SDK
 - **Test backend:** pytest
 - **Test frontend:** vitest + jsdom + @testing-library/react
 
@@ -56,6 +57,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | FastAPI sidecar con PyInstaller                     | Backend remoto sempre      | Funzionamento offline desktop (Fase 1c)                                                                                                                                                                                  |
 | pdf-lib lato client per merge/split                 | Solo API server            | Sostituito da API backend — refactoring PR #72                                                                                                                                                                           |
 | Tagged PDF in output                                | PDF non strutturati        | Accessibilità screen reader (obbligo AGPL indiretto)                                                                                                                                                                     |
+| SendGrid API HTTP invece di SMTP                    | SMTP via libreria SendGrid | Render free tier blocca la porta 587 in uscita. Usata API HTTP v3 direttamente con `requests` — nessuna dipendenza extra.                                                                                                |
 
 ## Vincoli
 
