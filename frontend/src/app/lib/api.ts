@@ -31,7 +31,19 @@ export class ApiClient {
   }
 
   private getHeaders(): Record<string, string> {
-    return {};
+    const headers: Record<string, string> = {};
+    // Include CSRF token for state-changing requests (double-submit pattern)
+    const csrfToken = this._getCsrfToken();
+    if (csrfToken) {
+      headers["X-CSRF-Token"] = csrfToken;
+    }
+    return headers;
+  }
+
+  private _getCsrfToken(): string | null {
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+    return match ? match[1] : null;
   }
 
   private async _fetch(
@@ -251,10 +263,13 @@ export class ApiClient {
 
   // Export / Import
   async exportPdf(id: string, format: string): Promise<Blob> {
-    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/export?fmt=${format}`, {
-      method: "POST",
-      headers: this.getHeaders(),
-    });
+    const res = await this._fetch(
+      `${this.baseUrl}/pdfs/${id}/export?fmt=${format}`,
+      {
+        method: "POST",
+        headers: this.getHeaders(),
+      },
+    );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.blob();
   }
@@ -460,21 +475,27 @@ export class ApiClient {
     userId: string,
     licenseTier: string,
   ): Promise<AdminUser> {
-    const res = await this._fetch(`${this.baseUrl}/admin/users/${userId}/license`, {
-      method: "PUT",
-      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ license_tier: licenseTier }),
-    });
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users/${userId}/license`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ license_tier: licenseTier }),
+      },
+    );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
   async updateUserAdmin(userId: string, isAdmin: boolean): Promise<AdminUser> {
-    const res = await this._fetch(`${this.baseUrl}/admin/users/${userId}/admin`, {
-      method: "PUT",
-      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ is_admin: isAdmin }),
-    });
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users/${userId}/admin`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ is_admin: isAdmin }),
+      },
+    );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
@@ -512,11 +533,14 @@ export class ApiClient {
     bugId: string,
     status: string,
   ): Promise<BugReport> {
-    const res = await this._fetch(`${this.baseUrl}/admin/bugs/${bugId}/status`, {
-      method: "PUT",
-      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/bugs/${bugId}/status`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      },
+    );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
