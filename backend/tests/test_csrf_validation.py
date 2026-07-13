@@ -31,19 +31,13 @@ class TestCSRFValidation:
     def test_post_with_valid_csrf_succeeds(self, client, monkeypatch):
         """Should accept POST with valid CSRF token on non-exempt endpoint."""
         monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
-        # GET to obtain CSRF cookie
+        # GET /health sets the csrf_token cookie in the client's jar.
+        # httpx persists it and sends it on subsequent requests automatically.
         get_resp = client.get("/health")
         csrf_token = get_resp.cookies.get("csrf_token")
         assert csrf_token is not None, "No CSRF cookie in response"
-        # Create a fresh TestClient and set the CSRF cookie on the
-        # client instance. httpx treats the Cookie header specially
-        # and may drop it in favor of the internal cookie jar.
-        from fastapi.testclient import TestClient
-        from app.main import app
-        c2 = TestClient(app)
-        c2.app.state.testing = True
-        c2.cookies.set("csrf_token", csrf_token)
-        response = c2.post(
+        # Reuse the same client — the cookie jar already has the token.
+        response = client.post(
             "/pdfs/upload",
             headers={"X-CSRF-Token": csrf_token},
         )
