@@ -1,17 +1,13 @@
 # Bug B14: Cleanup script tag PdfViewer rompe multi-instanza
 
-**Status:** [ ] Non iniziata
+**Status:** [x] Completata (2026-07-14, PR #314)
 **Priority:** HIGH
 **Complexity:** Low
 
 ## Problema
 
-In `frontend/src/app/components/PdfViewer.tsx`, il cleanup effect rimuove il tag `<script>` di PDF.js dal DOM quando il componente smonta. Se DUE PdfViewer sono montati, il primo che smonta rimuove lo script necessario al secondo.
+Il cleanup effect rimuoveva il tag script PDF.js dal DOM — se due PdfViewer erano montati, il primo che smontava rompeva il secondo.
 
 ## Soluzione
 
-Non rimuovere il tag script dal DOM nel cleanup — come già fa `usePdfJs.ts`. Il CDN è cached dal browser, un secondo script non viene ricaricato ma è comunque safe non rimuoverlo.
-
-## File da modificare
-
-- `frontend/src/app/components/PdfViewer.tsx`
+Rimosso il cleanup che rimuoveva lo script (come gia fa usePdfJs.ts).

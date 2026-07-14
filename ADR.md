@@ -421,7 +421,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 | B11 | `frontend/src/app/lib/auth.tsx`             | 72    | ✅ Risolto (PR #308) — try/finally in `logout()` pulisce sempre stato  |
 | B12 | `backend/app/api/v1/convert.py`             | 114   | ✅ Risolto (PR #310) — uniformato a `>=` come `upload.py`              |
 | B13 | `frontend/src/app/lib/auth.tsx`             | 35    | ✅ Risolto (PR #312) — `_pendingAuthRef` evita race condition          |
-| B14 | `frontend/src/app/components/PdfViewer.tsx` | 63    | Cleanup script tag rompe multi-instanza PdfViewer                      |
+| B14 | `frontend/src/app/components/PdfViewer.tsx` | 63    | ✅ Risolto (PR #314) — non rimuove piu script condiviso                |
 
 ### 🟡 Medi
 
