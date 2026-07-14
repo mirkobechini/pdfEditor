@@ -81,9 +81,7 @@ async def lifespan(app: FastAPI):
 
 
 def _cleanup_on_shutdown():
-    """Cleanup resources on shutdown — close PyMuPDF handles, release locks."""
-    from app.services.pdf_service import _cleanup_all_pdf_handles
-    _cleanup_all_pdf_handles()
+    """Cleanup resources on shutdown."""
     logger.info("Cleanup complete.")
 
 
