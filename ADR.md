@@ -413,7 +413,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 
 | ID  | File                                        | Riga  | Problema                                                                |
 | --- | ------------------------------------------- | ----- | ----------------------------------------------------------------------- |
-| B6  | `backend/app/core/config.py`                | 13-14 | `SECRET_KEY` vuoto di default — token trivially forgeable               |
+| B6  | `backend/app/core/config.py`                | 13-14 | ✅ Risolto (PR #298) — validazione `SECRET_KEY` non vuota in startup    |
 | B7  | `backend/app/main.py`                       | 72-76 | `_run_migrations()` chiamato 2 volte (ridondante)                       |
 | B8  | `backend/app/main.py`                       | 61    | `_add_missing_columns()` silenzia TUTTE le eccezioni                    |
 | B9  | `backend/app/core/config.py`                | 74-78 | `SUPER_ADMIN_EMAIL` default pericoloso (`admin@pdfeditor.local`)        |

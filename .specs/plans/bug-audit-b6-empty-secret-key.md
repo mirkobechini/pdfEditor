@@ -1,17 +1,13 @@
 # Bug B6: `SECRET_KEY` vuoto di default — token trivially forgeable
 
-**Status:** [ ] Non iniziata
+**Status:** [x] Completata (2026-07-14, PR #298)
 **Priority:** HIGH
 **Complexity:** Low
 
 ## Problema
 
-In `backend/app/core/config.py`, `SECRET_KEY` e `JWT_SECRET_KEY` defaultano a `""`. Se nessuna delle due è impostata in `.env`, `effective_secret_key` restituisce stringa vuota, e PyJWT firma token con chiave vuota — token trivially forgeable.
+SECRET_KEY e JWT_SECRET_KEY defaultavano a "". effective_secret_key restituiva stringa vuota, e PyJWT firmava token con chiave vuota — trivially forgeable.
 
 ## Soluzione
 
-Aggiungere validazione in `Settings` che lanci errore se `effective_secret_key` è vuota. Usare `@field_validator('JWT_SECRET_KEY', mode='after')` per crashare a startup se non configurato.
-
-## File da modificare
-
-- `backend/app/core/config.py`
+Aggiunta funzione \_validate_settings() in main.py, chiamata in lifespan. Valida che effective_secret_key non sia vuota. La validazione forte e solo all'avvio (non all'import), cosi Settings puo ancora essere istanziato senza .env per test.
