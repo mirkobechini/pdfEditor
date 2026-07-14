@@ -80,7 +80,6 @@ export class ApiClient {
     formData.append("file", file);
     const res = await this._fetch(`${this.baseUrl}/pdfs/upload`, {
       method: "POST",
-      headers: this.getHeaders(),
       body: formData,
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
