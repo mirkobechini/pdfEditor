@@ -94,6 +94,11 @@ def _validate_settings():
             "SECRET_KEY or JWT_SECRET_KEY must be set in .env. "
             "Without a secret key, JWT tokens can be forged."
         )
+    if not settings.DEBUG and settings.SUPER_ADMIN_EMAIL == "admin@pdfeditor.local":
+        raise RuntimeError(
+            "SUPER_ADMIN_EMAIL is still set to the default 'admin@pdfeditor.local'. "
+            "Change it in .env to prevent unauthorized admin access."
+        )
 
 
 def _seed_license_features():
