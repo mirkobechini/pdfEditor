@@ -172,10 +172,6 @@ def update_me(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
         )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
 
     if req.full_name is not None:
         user.full_name = req.full_name
