@@ -95,13 +95,11 @@ describe("ApiClient", () => {
 
   describe("searchBugReports", () => {
     it("calls /bugs/search with query", async () => {
-      globalThis.fetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify([{ id: "b1", title: "Bug" }]), {
-            status: 200,
-          }),
-        );
+      globalThis.fetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify([{ id: "b1", title: "Bug" }]), {
+          status: 200,
+        }),
+      );
       const result = await api.searchBugReports("crash");
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining("/bugs/search?q=crash"),
@@ -122,13 +120,11 @@ describe("ApiClient", () => {
 
   describe("voteBugReport", () => {
     it("calls POST /bugs/{id}/vote", async () => {
-      globalThis.fetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ id: "b1", report_count: 2 }), {
-            status: 200,
-          }),
-        );
+      globalThis.fetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ id: "b1", report_count: 2 }), {
+          status: 200,
+        }),
+      );
       const result = await api.voteBugReport("b1");
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining("/bugs/b1/vote"),
@@ -138,14 +134,96 @@ describe("ApiClient", () => {
     });
 
     it("throws on error", async () => {
-      globalThis.fetch = vi
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ detail: "Not found" }), {
-            status: 404,
-          }),
-        );
+      globalThis.fetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ detail: "Not found" }), {
+          status: 404,
+        }),
+      );
       await expect(api.voteBugReport("bad")).rejects.toThrow("Not found");
+    });
+  });
+
+  describe("uploadPdfWithProgress", () => {
+    it("sets withCredentials=true on XHR", async () => {
+      let capturedXHR: any = null;
+
+      const OriginalXHR = globalThis.XMLHttpRequest;
+      globalThis.XMLHttpRequest = class MockXHR {
+        withCredentials = false;
+        upload = { onprogress: null };
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        status = 200;
+        responseText = JSON.stringify({
+          id: "pdf1",
+          original_filename: "test.pdf",
+        });
+        open = vi.fn();
+        setRequestHeader = vi.fn();
+        send = vi.fn();
+        constructor() {
+          capturedXHR = this;
+        }
+      } as any;
+
+      const file = new File(["pdf content"], "test.pdf", {
+        type: "application/pdf",
+      });
+
+      const uploadPromise = api.uploadPdfWithProgress(file);
+
+      // Trigger onload on the captured instance
+      capturedXHR.onload();
+
+      await uploadPromise;
+
+      expect(capturedXHR.withCredentials).toBe(true);
+
+      globalThis.XMLHttpRequest = OriginalXHR;
+    });
+
+    it("includes CSRF token in XHR headers when cookie present", async () => {
+      // Set a fake CSRF cookie
+      Object.defineProperty(document, "cookie", {
+        writable: true,
+        value: "csrf_token=test-csrf-token",
+      });
+
+      let capturedXHR: any = null;
+
+      const OriginalXHR = globalThis.XMLHttpRequest;
+      globalThis.XMLHttpRequest = class MockXHR {
+        withCredentials = false;
+        upload = { onprogress: null };
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        status = 200;
+        responseText = JSON.stringify({
+          id: "pdf1",
+          original_filename: "test.pdf",
+        });
+        open = vi.fn();
+        setRequestHeader = vi.fn();
+        send = vi.fn();
+        constructor() {
+          capturedXHR = this;
+        }
+      } as any;
+
+      const file = new File(["pdf content"], "test.pdf", {
+        type: "application/pdf",
+      });
+
+      const uploadPromise = api.uploadPdfWithProgress(file);
+      capturedXHR.onload();
+      await uploadPromise;
+
+      expect(capturedXHR.setRequestHeader).toHaveBeenCalledWith(
+        "X-CSRF-Token",
+        "test-csrf-token",
+      );
+
+      globalThis.XMLHttpRequest = OriginalXHR;
     });
   });
 });

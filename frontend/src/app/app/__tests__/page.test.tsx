@@ -18,6 +18,7 @@ const mockSplitPdf = vi.fn();
 const mockReorderPages = vi.fn();
 const mockRemovePages = vi.fn();
 const mockUpdateMetadata = vi.fn();
+const mockUploadPdfWithProgress = vi.fn();
 vi.mock("../../lib/api", () => ({
     api: {
         getPdf: (...args: any[]) => mockGetPdf(...args),
@@ -29,6 +30,7 @@ vi.mock("../../lib/api", () => ({
         reorderPages: (...args: any[]) => mockReorderPages(...args),
         removePages: (...args: any[]) => mockRemovePages(...args),
         updateMetadata: (...args: any[]) => mockUpdateMetadata(...args),
+        uploadPdfWithProgress: (...args: any[]) => mockUploadPdfWithProgress(...args),
     },
 }));
 
@@ -401,5 +403,57 @@ describe("EditorPage", () => {
         // Simulate total pages change from viewer
         fireEvent.click(screen.getByTestId("viewer-total-change"));
         expect(screen.getByTestId("toolbar-page").textContent).toBe("1/10");
+    });
+
+    it("shows drag-drop overlay on dragOver", () => {
+        render(<EditorPage />);
+        const container = screen.getByTestId("app-layout").parentElement!;
+        fireEvent.dragOver(container);
+        expect(screen.getByText("📄 Drop PDF here")).toBeInTheDocument();
+    });
+
+    it("hides drag-drop overlay on dragLeave", () => {
+        render(<EditorPage />);
+        const container = screen.getByTestId("app-layout").parentElement!;
+        fireEvent.dragOver(container);
+        expect(screen.getByText("📄 Drop PDF here")).toBeInTheDocument();
+        fireEvent.dragLeave(container);
+        expect(screen.queryByText("📄 Drop PDF here")).not.toBeInTheDocument();
+    });
+
+    it("uploads PDF files on drop", async () => {
+        mockUploadPdfWithProgress.mockResolvedValue({ id: "uploaded-1", original_filename: "dropped.pdf" });
+        render(<EditorPage />);
+        const container = screen.getByTestId("app-layout").parentElement!;
+
+        const file = new File(["pdf content"], "test.pdf", { type: "application/pdf" });
+        const dataTransfer = {
+            files: [file],
+            items: [],
+            types: [],
+        };
+
+        fireEvent.drop(container, { dataTransfer });
+
+        await waitFor(() => {
+            expect(mockUploadPdfWithProgress).toHaveBeenCalledWith(file);
+        });
+    });
+
+    it("ignores non-PDF files on drop", async () => {
+        render(<EditorPage />);
+        const container = screen.getByTestId("app-layout").parentElement!;
+
+        const file = new File(["text"], "readme.txt", { type: "text/plain" });
+        const dataTransfer = {
+            files: [file],
+            items: [],
+            types: [],
+        };
+
+        fireEvent.drop(container, { dataTransfer });
+
+        // Should not call upload for non-PDF
+        expect(mockUploadPdfWithProgress).not.toHaveBeenCalled();
     });
 });
