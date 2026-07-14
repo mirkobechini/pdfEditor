@@ -416,7 +416,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 | B6  | `backend/app/core/config.py`                | 13-14 | ✅ Risolto (PR #298) — validazione `SECRET_KEY` non vuota in startup    |
 | B7  | `backend/app/main.py`                       | 72-76 | ✅ Risolto (PR #300) — rimosso `Base.metadata.create_all` duplicato     |
 | B8  | `backend/app/main.py`                       | 61    | ✅ Risolto (PR #302) — cattura solo `OperationalError`, logga le altre  |
-| B9  | `backend/app/core/config.py`                | 74-78 | `SUPER_ADMIN_EMAIL` default pericoloso (`admin@pdfeditor.local`)        |
+| B9  | `backend/app/core/config.py`                | 74-78 | ✅ Risolto (PR #304) — startup bloccato se default in produzione        |
 | B10 | `frontend/src/app/lib/auth.tsx`             | 40-48 | `login()` fallisce silenziosamente — token settato ma UI non aggiornata |
 | B11 | `frontend/src/app/lib/auth.tsx`             | 72    | `logout()` non gestisce errori — eccezione blocca setToken/setUser      |
 | B12 | `backend/app/api/v1/convert.py`             | 114   | Check dimensione file inconsistente (`>` vs `>=`)                       |
