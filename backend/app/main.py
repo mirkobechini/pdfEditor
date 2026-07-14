@@ -67,10 +67,8 @@ async def lifespan(app: FastAPI):
     # Startup: validate critical configuration
     _validate_settings()
     if not getattr(app.state, "testing", False):
-        # Run migrations FIRST (handles existing DB schema changes)
+        # Run migrations (handles both new tables and missing columns)
         _run_migrations()
-        # Then create any missing tables (idempotent)
-        Base.metadata.create_all(bind=engine)
         # Seed license features
         _seed_license_features()
         # Seed super admin if not exists
