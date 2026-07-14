@@ -64,7 +64,8 @@ def _add_missing_columns():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: create tables (skip if running in test mode)
+    # Startup: validate critical configuration
+    _validate_settings()
     if not getattr(app.state, "testing", False):
         # Run migrations FIRST (handles existing DB schema changes)
         _run_migrations()
@@ -83,6 +84,15 @@ async def lifespan(app: FastAPI):
 def _cleanup_on_shutdown():
     """Cleanup resources on shutdown."""
     logger.info("Cleanup complete.")
+
+
+def _validate_settings():
+    """Validate critical configuration at startup."""
+    if not settings.effective_secret_key:
+        raise RuntimeError(
+            "SECRET_KEY or JWT_SECRET_KEY must be set in .env. "
+            "Without a secret key, JWT tokens can be forged."
+        )
 
 
 def _seed_license_features():

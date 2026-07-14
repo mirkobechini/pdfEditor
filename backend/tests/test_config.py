@@ -20,7 +20,7 @@ class TestSettingsValidation:
     """Test Settings class validation and properties."""
 
     def test_secret_key_empty_by_default(self):
-        """SECRET_KEY should be empty by default."""
+        """SECRET_KEY should be empty by default (validation is at startup)."""
         s = Settings(_env_file=None)
         assert s.SECRET_KEY == ""
 
