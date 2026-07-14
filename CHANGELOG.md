@@ -12,6 +12,7 @@
 - ✅ **Bug B8: \_add_missing_columns silenziava tutte le eccezioni** — Ora cattura solo OperationalError (PR #302, issue #301)
 - ✅ **Bug B9: SUPER_ADMIN_EMAIL default pericoloso** — Startup bloccato se default in produzione (PR #304, issue #303)
 - ✅ **Bug B10: login falliva silenziosamente se getMe falliva** — Redirect a / invece di lasciare utente in limbo (PR #306, issue #305)
+- ✅ **Bug B11: logout non puliva stato su errore** — try/finally per pulire sempre stato (PR #308, issue #307)
 - ✅ **ADR audit** — Aggiunta sezione con 21 bug trovati nel codice + 10 miglioramenti
 - ✅ **21 bug-audit plans** — Creati `.specs/plans/bug-audit-*.md` per ogni bug
 
