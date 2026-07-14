@@ -98,9 +98,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     // Clear cookie by calling logout endpoint
-    await api.logout();
-    api.setToken(null);
-    setUser(null);
+    try {
+      await api.logout();
+    } finally {
+      api.setToken(null);
+      setUser(null);
+    }
   }, []);
 
   return (
