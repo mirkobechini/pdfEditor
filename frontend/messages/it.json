@@ -171,6 +171,8 @@
     "loggingIn": "Accesso in corso...",
     "registering": "Creazione account in corso...",
     "loginFailed": "Accesso fallito",
+    "invalidCredentials": "Email o password non validi",
+    "rateLimitExceeded": "Troppi tentativi. Riprova tra un minuto.",
     "registerFailed": "Registrazione fallita",
     "passwordMismatch": "Le password non coincidono",
     "passwordTooShort": "La password deve essere almeno 6 caratteri",

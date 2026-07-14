@@ -171,6 +171,8 @@
     "loggingIn": "Signing in...",
     "registering": "Creating account...",
     "loginFailed": "Login failed",
+    "invalidCredentials": "Invalid email or password",
+    "rateLimitExceeded": "Too many attempts. Please try again in a minute.",
     "registerFailed": "Registration failed",
     "passwordMismatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 6 characters",
