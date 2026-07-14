@@ -1,6 +1,6 @@
 # Bug Fix Plan: Password Strength Validation on Reset Password
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-12, PR #218)
 **Priority:** ALTA (Security)
 **Complexity:** Trivial (1 riga)
 **Estimated Time:** 5 min

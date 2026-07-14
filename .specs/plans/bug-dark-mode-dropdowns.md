@@ -1,6 +1,6 @@
 # Bug: Dark mode — testo bianco su sfondo bianco nei select/dropdown
 
-**Status:** Open
+**Status:** ✅ Completata (2026-07-13, issue #266)
 **Priority:** MEDIUM
 **Complexity:** Low
 
