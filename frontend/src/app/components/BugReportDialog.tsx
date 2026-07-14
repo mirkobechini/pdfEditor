@@ -91,7 +91,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
       >
         {step === "done" ? (
           <>
-            <h2 className="text-lg font-bold mb-2">{t("sentTitle")}</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{t("sentTitle")}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               {t("sentDescription")}
             </p>
@@ -106,7 +106,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
           </>
         ) : step === "search" ? (
           <>
-            <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
               {t("searchPrompt")}
             </p>
@@ -140,7 +140,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
                 {results.map((bug) => (
                   <div key={bug.id} className="border dark:border-gray-700 rounded p-3">
                     <div className="flex justify-between items-start mb-1">
-                      <span className="font-medium text-sm">{bug.title}</span>
+                      <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{bug.title}</span>
                       <span className="text-xs text-gray-400">
                         {bug.report_count || 1}×
                       </span>
@@ -178,7 +178,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
           </>
         ) : (
           <form onSubmit={handleSubmit}>
-            <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
 
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">
