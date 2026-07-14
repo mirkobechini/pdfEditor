@@ -43,7 +43,7 @@ export default function ReplaceTextDialog({ open, onClose, pdfId }: ReplaceTextD
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
 
                 <div className="space-y-4">
                     <div>

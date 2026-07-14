@@ -153,7 +153,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
         className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
 
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           {selectedName} ({totalPages} {t("pages")})
@@ -223,7 +223,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
         )}
 
         {!loading && thumbnails.length === 0 && !error && (
-          <div className="text-center py-8 text-gray-400">
+          <div className="text-center py-8 text-gray-400 dark:text-gray-500">
             <span className="text-4xl">📄</span>
             <p className="text-sm mt-2">{t("noPreview")}</p>
           </div>
