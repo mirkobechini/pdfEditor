@@ -49,8 +49,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Save token in memory for Bearer header (works cross-origin in local dev)
       api.setToken(res.access_token);
       // Also cookie-based — works on same-origin production
-      const u = await api.getMe();
-      setUser(u);
+      try {
+        const u = await api.getMe();
+        setUser(u);
+      } catch {
+        // getMe failed (e.g. network blip) — redirect will re-trigger on mount
+        window.location.href = "/";
+        return;
+      }
     } finally {
       setLoading(false);
     }
@@ -61,8 +67,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.register(email, password, fullName);
       api.setToken(res.access_token);
-      const u = await api.getMe();
-      setUser(u);
+      try {
+        const u = await api.getMe();
+        setUser(u);
+      } catch {
+        window.location.href = "/";
+        return;
+      }
     } finally {
       setLoading(false);
     }
@@ -73,8 +84,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await api.googleLogin(idToken);
       api.setToken(res.access_token);
-      const u = await api.getMe();
-      setUser(u);
+      try {
+        const u = await api.getMe();
+        setUser(u);
+      } catch {
+        window.location.href = "/";
+        return;
+      }
     } finally {
       setLoading(false);
     }
