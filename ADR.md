@@ -393,6 +393,65 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - ✅ Creato `.specs/plans/bug-s3-download-storage-backend.md` (PR #284)
 - ✅ Creato `.specs/plans/chore-error-messages-standardization.md` (Planning)
 
-<!-- Code Review completata — vedi CHANGELOG.md per dettagli -->
+---
 
-<!-- Qui finisce Fase 1. Prossime fasi in "Fasi successive (macro)" sopra -->
+## Audit 2026-07-14 — Nuovi bug trovati nel codice
+
+Durante una revisione approfondita del codice (2026-07-14), sono stati identificati 21 bug/addirittura criticità non ancora documentati, più 10 opportunità di miglioramento. Vedi `.specs/plans/bug-audit-*.md` per ogni fix.
+
+### 🚨 Critici (da fixare subito)
+
+| ID  | File                                  | Riga    | Problema                                                                   |
+| --- | ------------------------------------- | ------- | -------------------------------------------------------------------------- |
+| B1  | `backend/app/api/v1/auth.py`          | 129-134 | Duplicate `raise HTTPException` — secondo blocco dead code                 |
+| B2  | `backend/app/services/pdf_service.py` | 28-35   | `_cleanup_all_pdf_handles` non fa nulla — `_open_pdf_handles` mai popolato |
+| B3  | `backend/app/services/pdf_service.py` | 68-75   | Password-protected PDF senza cache restituisce bytes cifrati               |
+| B4  | `frontend/src/app/lib/api.ts`         | 80      | Header duplicati in `uploadPdf()` può rompere boundary multipart           |
+| B5  | `frontend/src/app/app/page.tsx`       | 189-200 | `handleDelete` non chiama `api.deletePdf` — desync UI/DB                   |
+
+### ⚠️ Alti
+
+| ID  | File                                        | Riga  | Problema                                                                |
+| --- | ------------------------------------------- | ----- | ----------------------------------------------------------------------- |
+| B6  | `backend/app/core/config.py`                | 13-14 | `SECRET_KEY` vuoto di default — token trivially forgeable               |
+| B7  | `backend/app/main.py`                       | 72-76 | `_run_migrations()` chiamato 2 volte (ridondante)                       |
+| B8  | `backend/app/main.py`                       | 61    | `_add_missing_columns()` silenzia TUTTE le eccezioni                    |
+| B9  | `backend/app/core/config.py`                | 74-78 | `SUPER_ADMIN_EMAIL` default pericoloso (`admin@pdfeditor.local`)        |
+| B10 | `frontend/src/app/lib/auth.tsx`             | 40-48 | `login()` fallisce silenziosamente — token settato ma UI non aggiornata |
+| B11 | `frontend/src/app/lib/auth.tsx`             | 72    | `logout()` non gestisce errori — eccezione blocca setToken/setUser      |
+| B12 | `backend/app/api/v1/convert.py`             | 114   | Check dimensione file inconsistente (`>` vs `>=`)                       |
+| B13 | `frontend/src/app/lib/auth.tsx`             | 35    | Race condition `getMe()` iniziale — flash "logged out"                  |
+| B14 | `frontend/src/app/components/PdfViewer.tsx` | 63    | Cleanup script tag rompe multi-instanza PdfViewer                       |
+
+### 🟡 Medi
+
+| ID  | File                                              | Riga    | Problema                                                            |
+| --- | ------------------------------------------------- | ------- | ------------------------------------------------------------------- |
+| B15 | `frontend/src/app/lib/api.ts`                     | 110     | `uploadPdfWithProgress` ignora JSON error body                      |
+| B16 | `frontend/src/app/components/Sidebar.tsx`         | 28      | `useEffect` missing `loadFiles` in dependency array                 |
+| B17 | `backend/app/services/auth_service.py`            | 95-108  | Google OAuth certs lookup — dead code `if` block                    |
+| B18 | `backend/app/services/pdf_service.py`             | 18      | `_password_cache` globale non pulita su shutdown                    |
+| B19 | `backend/app/services/pdf_merge_split_service.py` | 48-56   | Resource leak in `merge()` su eccezione                             |
+| B20 | `backend/app/api/v1/admin.py`                     | 32      | Tipo di ritorno errato (`list[UserResponse]` vs `UserListResponse`) |
+| B21 | `frontend/src/app/app/page.tsx`                   | 168-177 | `handleEditText` dead code — mai chiamata                           |
+
+### 🛠 Opportunità di miglioramento (leggibilità/performance)
+
+| ID  | File                                                | Problema                                                           |
+| --- | --------------------------------------------------- | ------------------------------------------------------------------ |
+| R1  | `PdfViewer.tsx`, `pdfPreview.ts`, `usePdfJs.ts`     | URL PDF.js hardcoded in 3 file (versione 3.11.174)                 |
+| R2  | `PdfViewer.tsx`                                     | `(window as any).pdfjsLib` usato 6+ volte                          |
+| R3  | `PdfViewer.tsx`                                     | `useRef<any>` per `pdfDocRef` e `renderTaskRef`                    |
+| R4  | `backend/app/api/v1/upload.py:83`                   | Import dentro funzione (`PdfRepository`)                           |
+| R5  | `backend/app/services/email_service.py:85`          | `except Exception` silenzioso — perdita stack trace                |
+| R6  | `frontend/src/app/lib/api.ts`                       | `resetPassword()` e `updateProfile()` restituiscono `Promise<any>` |
+| R7  | `frontend/src/app/components/GoogleLoginButton.tsx` | `require()` dinamico in Next.js                                    |
+| R8  | `backend/app/api/v1/metadata.py:28`                 | `MetadataResponse(**meta)` vs `.model_validate()`                  |
+| R9  | `frontend/src/app/lib/api.ts`                       | CDN versioni duplicate in 3 file                                   |
+| R10 | `backend/app/core/config.py`                        | `ALLOWED_ORIGINS` comma-separated fragile                          |
+
+### Priorità fix bug
+
+```
+B1-B5 (critici) → B6-B14 (alti) → B15-B21 (medi) → R1-R10 (miglioramenti)
+```
