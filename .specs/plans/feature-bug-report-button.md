@@ -1,5 +1,7 @@
 # Feature: Pulsante segnalazione bug
 
+**Status:** ✅ Completata (2026-07-01)
+
 ## Obiettivo
 
 Aggiungere il pulsante di segnalazione bug nell'interfaccia, collegato all'API backend `/bug-reports/`.

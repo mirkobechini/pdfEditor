@@ -1,6 +1,6 @@
 # Feature Plan: JWT httpOnly Cookie Migration
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-11, PR #216)
 **Priority:** ALTA (Security)
 **Complexity:** HIGH
 **Estimated Time:** 4-6 ore

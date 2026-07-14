@@ -1,5 +1,7 @@
 # Feature: Migrazione database Render da SQLite a PostgreSQL
 
+**Status:** ✅ Completata (2026-07-08)
+
 ## Obiettivo
 
 Migrare il backend deployato su Render da SQLite (ephemeral) a PostgreSQL persistente per evitare perdita utenti/dati ai redeploy.

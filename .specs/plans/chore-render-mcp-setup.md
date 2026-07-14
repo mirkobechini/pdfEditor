@@ -1,6 +1,6 @@
 # Chore: Render MCP Server Setup
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-08)
 **Priority:** MEDIA (Infrastructure)
 **Complexity:** Low
 **Estimated Time:** 30 min

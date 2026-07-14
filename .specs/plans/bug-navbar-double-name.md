@@ -1,6 +1,6 @@
 # Bug: Navbar — doppio nome + layout rotto
 
-**Status:** Open
+**Status:** ✅ Completata (2026-07-13)
 **Priority:** MEDIUM
 **Complexity:** Low
 

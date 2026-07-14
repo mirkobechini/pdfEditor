@@ -1,6 +1,6 @@
 # Chore: Extract Shared License Seed Data
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-12, PR #222)
 **Priority:** BASSA (Refactoring)
 **Complexity:** Low
 **Estimated Time:** 30 min

@@ -1,8 +1,8 @@
 # Feature Plan: Google OAuth Account Linking
 
-**Status:** Planning  
-**Priority:** Medium (Fase 1.5)  
-**Complexity:** High  
+**Status:** ✅ Completata (2026-07-10)
+**Priority:** Medium (Fase 1.5)
+**Complexity:** High
 **Estimated Time:** 2-3 days
 
 ---

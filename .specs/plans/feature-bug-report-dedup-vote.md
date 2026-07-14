@@ -1,6 +1,6 @@
 # Feature Plan: Bug Report De-duplication & Voting System
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-12, PR #252)
 **Priority:** MEDIA (UX Improvement)
 **Complexity:** Medium
 **Estimated Time:** 4-6 ore

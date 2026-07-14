@@ -1,5 +1,7 @@
 # Chore: Frontend Test Coverage Reporting
 
+**Status:** ✅ Completata (2026-07-01)
+
 **Issue Number**: issue-144
 
 ## Obiettivo

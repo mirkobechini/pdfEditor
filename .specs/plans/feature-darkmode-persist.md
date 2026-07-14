@@ -1,5 +1,7 @@
 # Feature: Persistenza dark mode (localStorage)
 
+**Status:** ✅ Completata (2026-07-01)
+
 ## Obiettivo
 
 Rendere persistente la preferenza dark mode dell'utente utilizzando localStorage, invece di perdere l'impostazione al refresh della pagina.

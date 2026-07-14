@@ -1,5 +1,7 @@
 # Feature: Replace Text Dialog for PDF Find & Replace
 
+**Status:** ✅ Completata (2026-07-02)
+
 **Issue Number**: issue-149
 
 ## Obiettivo

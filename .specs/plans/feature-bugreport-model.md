@@ -1,5 +1,7 @@
 # Feature: Allineamento modello BugReport al brief
 
+**Status:** ✅ Completata (2026-07-01)
+
 ## Obiettivo
 
 Aggiornare il modello BugReport e il relativo service per corrispondere esattamente al brief: aggiungere campi `platform`, `app_version`, `os_info` e sistema di deduplica.

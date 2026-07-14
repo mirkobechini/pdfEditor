@@ -1,6 +1,6 @@
 # Feature: Migliorare il Bug Report dialog
 
-**Status:** Open
+**Status:** ✅ Completata (2026-07-13, PR #265)
 **Priority:** LOW
 **Complexity:** Low
 

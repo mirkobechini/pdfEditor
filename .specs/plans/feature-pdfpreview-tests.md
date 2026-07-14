@@ -1,5 +1,7 @@
 # Feature: Unit Tests for pdfPreview.ts
 
+**Status:** ✅ Completata (2026-07-12)
+
 **Issue Number**: issue-137
 
 ## Obiettivo

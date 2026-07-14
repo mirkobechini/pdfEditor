@@ -1,5 +1,7 @@
 # Feature: Disable License Enforcement (Tutto Aperto per Fase Web)
 
+**Status:** ✅ Completata (2026-07-01)
+
 **Issue Number**: issue-146
 
 ## Obiettivo

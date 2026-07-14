@@ -1,5 +1,7 @@
 # Feature: API upload protette da autenticazione
 
+**Status:** ✅ Completata (2026-07-01)
+
 ## Obiettivo
 
 Decidere e implementare la protezione degli endpoint PDF (upload, merge, split, reorder, text, metadata, convert) con autenticazione JWT.

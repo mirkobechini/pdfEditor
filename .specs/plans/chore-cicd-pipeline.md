@@ -1,6 +1,6 @@
 # Chore: CI/CD Pipeline — GitHub Actions per test automatici e deploy
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-12)
 **Priority:** MEDIA (Infrastructure)
 **Complexity:** Medium
 **Estimated Time:** 2-3 ore
