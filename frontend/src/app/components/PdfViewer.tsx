@@ -61,9 +61,7 @@ export default function PdfViewer({
       setPdfJsLoaded(true);
     };
     document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
+    // Don't remove script on unmount — other PdfViewer instances may need it
   }, []);
 
   // Load PDF document when fileUrl changes (or when pdfjsLib finishes loading)
@@ -182,11 +180,10 @@ export default function PdfViewer({
   if (!fileUrl) {
     return (
       <div
-        className={`flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed rounded-lg transition-colors ${
-          dragOver
+        className={`flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed rounded-lg transition-colors ${dragOver
             ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
             : "border-gray-300 dark:border-gray-600"
-        }`}
+          }`}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => {
