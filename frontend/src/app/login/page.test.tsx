@@ -87,8 +87,8 @@ describe("LoginPage", () => {
     expect(window.location.href).toBe("/app");
   });
 
-  it("shows error message on failed login", async () => {
-    mockLogin.mockRejectedValue(new Error("Invalid credentials"));
+  it("shows invalid credentials message on wrong password", async () => {
+    mockLogin.mockRejectedValue(new Error("Invalid email or password"));
 
     render(<LoginPage />);
 
@@ -102,7 +102,45 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByText("loginButton"));
 
     await waitFor(() => {
-      expect(screen.getByText(/loginFailed/)).toBeTruthy();
+      expect(screen.getByText("invalidCredentials")).toBeTruthy();
+    });
+  });
+
+  it("shows rate limit message on 429", async () => {
+    mockLogin.mockRejectedValue(new Error("RATE_LIMIT"));
+
+    render(<LoginPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("email@example.com"), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("••••••••"), {
+      target: { value: "wrong" },
+    });
+
+    fireEvent.click(screen.getByText("loginButton"));
+
+    await waitFor(() => {
+      expect(screen.getByText("rateLimitExceeded")).toBeTruthy();
+    });
+  });
+
+  it("shows generic error on unknown failure", async () => {
+    mockLogin.mockRejectedValue(new Error("Something else"));
+
+    render(<LoginPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("email@example.com"), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("••••••••"), {
+      target: { value: "wrong" },
+    });
+
+    fireEvent.click(screen.getByText("loginButton"));
+
+    await waitFor(() => {
+      expect(screen.getByText("loginFailed")).toBeTruthy();
     });
   });
 

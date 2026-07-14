@@ -33,7 +33,14 @@ export default function LoginPage() {
       await login(email.trim(), password);
       window.location.href = "/app";
     } catch (err) {
-      setError(t("loginFailed") + ": " + (err instanceof Error ? err.message : err));
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "RATE_LIMIT") {
+        setError(t("rateLimitExceeded"));
+      } else if (msg === "Invalid email or password") {
+        setError(t("invalidCredentials"));
+      } else {
+        setError(t("loginFailed"));
+      }
     } finally {
       setLoading(false);
     }

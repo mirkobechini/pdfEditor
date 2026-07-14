@@ -38,6 +38,15 @@ describe("ApiClient", () => {
       const error = await ApiClient.extractError(res);
       expect(error).toBe("{}");
     });
+
+    it("returns RATE_LIMIT for 429 status", async () => {
+      const res = new Response(
+        JSON.stringify({ detail: "Rate limit exceeded: 5 per 1 minute" }),
+        { status: 429 },
+      );
+      const error = await ApiClient.extractError(res);
+      expect(error).toBe("RATE_LIMIT");
+    });
   });
 
   describe("listMyBugReports", () => {
