@@ -49,7 +49,6 @@ describe("DeleteModal", () => {
 
   it("shows loading skeleton while loading preview", async () => {
     (api.downloadPdf as any).mockImplementation(() => new Promise(() => { })); // Never resolves
-    (api.deletePdf as any).mockResolvedValue(undefined);
 
     render(
       <DeleteModal open={true} onClose={() => { }} file={mockFile} onConfirm={() => { }} />
@@ -64,7 +63,6 @@ describe("DeleteModal", () => {
   it("shows preview image when loaded", async () => {
     const mockBlob = new Blob(["test"], { type: "application/pdf" });
     (api.downloadPdf as any).mockResolvedValue(mockBlob);
-    (api.deletePdf as any).mockResolvedValue(undefined);
     const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
     (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
 
@@ -81,7 +79,6 @@ describe("DeleteModal", () => {
 
   it("shows fallback when preview fails", async () => {
     (api.downloadPdf as any).mockRejectedValue(new Error("Failed"));
-    (api.deletePdf as any).mockResolvedValue(undefined);
 
     render(
       <DeleteModal open={true} onClose={() => { }} file={mockFile} onConfirm={() => { }} />
@@ -95,7 +92,6 @@ describe("DeleteModal", () => {
   it("calls onConfirm when confirm button is clicked", async () => {
     const mockBlob = new Blob(["test"], { type: "application/pdf" });
     (api.downloadPdf as any).mockResolvedValue(mockBlob);
-    (api.deletePdf as any).mockResolvedValue(undefined);
     const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
     (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
 
@@ -113,7 +109,6 @@ describe("DeleteModal", () => {
     });
 
     await waitFor(() => {
-      expect(api.deletePdf).toHaveBeenCalledWith("1");
       expect(onConfirm).toHaveBeenCalled();
     });
   });
@@ -121,7 +116,6 @@ describe("DeleteModal", () => {
   it("calls onClose when cancel button is clicked", async () => {
     const mockBlob = new Blob(["test"], { type: "application/pdf" });
     (api.downloadPdf as any).mockResolvedValue(mockBlob);
-    (api.deletePdf as any).mockResolvedValue(undefined);
     const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
     (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
 
@@ -143,7 +137,6 @@ describe("DeleteModal", () => {
   it("calls onClose when backdrop is clicked", async () => {
     const mockBlob = new Blob(["test"], { type: "application/pdf" });
     (api.downloadPdf as any).mockResolvedValue(mockBlob);
-    (api.deletePdf as any).mockResolvedValue(undefined);
     const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
     (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
 
@@ -167,12 +160,14 @@ describe("DeleteModal", () => {
   it("shows deleting state while deleting", async () => {
     const mockBlob = new Blob(["test"], { type: "application/pdf" });
     (api.downloadPdf as any).mockResolvedValue(mockBlob);
-    (api.deletePdf as any).mockImplementation(() => new Promise(() => { })); // Never resolves
     const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
     (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
 
+    // onConfirm never resolves to keep deleting state visible
+    const onConfirm = vi.fn().mockImplementation(() => new Promise(() => { }));
+
     render(
-      <DeleteModal open={true} onClose={() => { }} file={mockFile} onConfirm={() => { }} />
+      <DeleteModal open={true} onClose={() => { }} file={mockFile} onConfirm={onConfirm} />
     );
 
     await waitFor(() => {
@@ -191,7 +186,6 @@ describe("DeleteModal", () => {
   it("shows warning message", async () => {
     const mockBlob = new Blob(["test"], { type: "application/pdf" });
     (api.downloadPdf as any).mockResolvedValue(mockBlob);
-    (api.deletePdf as any).mockResolvedValue(undefined);
     const { renderFirstPageToDataUrl } = await import("../lib/pdfPreview");
     (renderFirstPageToDataUrl as any).mockResolvedValue("data:image/png;base64,test");
 

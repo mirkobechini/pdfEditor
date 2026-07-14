@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { api, PdfDocument } from "../lib/api";
+import { PdfDocument } from "../lib/api";
 import PdfThumbnail from "./PdfThumbnail";
 
 interface DeleteModalProps {
@@ -20,10 +20,8 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
     if (!file) return;
     setDeleting(true);
     try {
-      await api.deletePdf(file.id);
-      onConfirm();
-    } catch (err) {
-      console.error("Delete failed:", err);
+      await onConfirm();
+    } catch {
       alert(t("deleteFailed"));
     } finally {
       setDeleting(false);

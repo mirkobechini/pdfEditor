@@ -18,6 +18,7 @@ const mockSplitPdf = vi.fn();
 const mockReorderPages = vi.fn();
 const mockRemovePages = vi.fn();
 const mockUpdateMetadata = vi.fn();
+const mockDeletePdf = vi.fn();
 vi.mock("../../lib/api", () => ({
     api: {
         getPdf: (...args: any[]) => mockGetPdf(...args),
@@ -29,6 +30,7 @@ vi.mock("../../lib/api", () => ({
         reorderPages: (...args: any[]) => mockReorderPages(...args),
         removePages: (...args: any[]) => mockRemovePages(...args),
         updateMetadata: (...args: any[]) => mockUpdateMetadata(...args),
+        deletePdf: (...args: any[]) => mockDeletePdf(...args),
     },
 }));
 
@@ -383,12 +385,15 @@ describe("EditorPage", () => {
 
     it("Delete flow opens modal, confirm deletes, refreshes sidebar", async () => {
         mockGetPdf.mockResolvedValue(mockPdf);
+        mockDeletePdf.mockResolvedValue(undefined);
         render(<EditorPage />);
         // Click delete to open modal
         fireEvent.click(screen.getByTestId("sidebar-delete-click"));
         expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
         // Confirm delete
-        fireEvent.click(screen.getByTestId("delete-confirm"));
+        await waitFor(() => {
+            fireEvent.click(screen.getByTestId("delete-confirm"));
+        });
         const sidebar = screen.getByTestId("sidebar");
         expect(sidebar.getAttribute("data-refresh-key")).toBe("1");
         expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();

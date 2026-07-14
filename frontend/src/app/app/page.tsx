@@ -187,17 +187,14 @@ export default function EditorPage() {
     }
 
     async function handleDelete(doc: PdfDocument) {
-        try {
-            if (selectedId === doc.id) {
-                setSelectedId(null);
-                setFileUrl(null);
-            }
-            setSidebarRefreshKey((prev) => prev + 1);
-            setDeleteModalOpen(false);
-            setFileToDelete(null);
-        } catch (err) {
-            console.error("Delete failed:", err);
+        await api.deletePdf(doc.id);
+        if (selectedId === doc.id) {
+            setSelectedId(null);
+            setFileUrl(null);
         }
+        setSidebarRefreshKey((prev) => prev + 1);
+        setDeleteModalOpen(false);
+        setFileToDelete(null);
     }
 
     return (
