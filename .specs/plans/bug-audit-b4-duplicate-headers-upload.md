@@ -1,17 +1,17 @@
 # Bug B4: Header duplicati in `uploadPdf()` — può rompere boundary multipart
 
-**Status:** [ ] Non iniziata
+**Status:** [x] Completata (2026-07-14, PR #294)
 **Priority:** CRITICAL
 **Complexity:** Low
 
 ## Problema
 
-In `frontend/src/app/lib/api.ts`, `uploadPdf()` passa `this.getHeaders()` sia in `headers` dell'options che dentro `_fetch` (che già merge `this.getHeaders()`). Per `FormData`, il browser imposta automaticamente `Content-Type: multipart/form-data; boundary=...`. Forzare headers espliciti può far perdere il boundary parameter, rompendo l'upload.
+In `frontend/src/app/lib/api.ts`, `uploadPdf()` passava `headers: this.getHeaders()` a `_fetch()`, ma `_fetch()` già merge `this.getHeaders()` internamente. Per `FormData`, headers espliciti possono far perdere il boundary multipart.
 
 ## Soluzione
 
-Rimuovere `headers: this.getHeaders()` dalla chiamata `_fetch` per `uploadPdf()` — lasciare che `_fetch` gestisca gli headers automaticamente.
+Rimossa la riga `headers: this.getHeaders()` — `_fetch` lo gestisce già.
 
-## File da modificare
+## File modificati
 
 - `frontend/src/app/lib/api.ts`
