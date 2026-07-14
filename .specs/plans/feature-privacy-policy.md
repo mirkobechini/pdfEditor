@@ -1,6 +1,6 @@
 # Feature Plan: Privacy Policy Page
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-12, PR #256)
 **Priority:** BASSA (Legal/Compliance)
 **Complexity:** Low
 **Estimated Time:** 2-3 hours

@@ -1,5 +1,7 @@
 # Feature: File Validation for /pdfs/import Endpoint
 
+**Status:** ✅ Completata (2026-07-01)
+
 **Issue Number**: issue-138
 
 ## Obiettivo

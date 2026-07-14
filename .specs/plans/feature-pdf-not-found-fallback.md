@@ -1,5 +1,7 @@
 # Feature: PDF Not Found Fallback (Thumbnail Load Error)
 
+**Status:** ✅ Completata (2026-07-02)
+
 **Issue Number**: issue-136
 
 ## Obiettivo

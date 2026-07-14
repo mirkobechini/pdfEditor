@@ -1,5 +1,7 @@
 # Feature: PDF protetti da password (rilevamento + UI)
 
+**Status:** ✅ Completata (2026-07-01)
+
 ## Obiettivo
 
 Implementare rilevamento automatico di PDF criptati all'upload, modale per richiesta password, e gestione password di sessione.

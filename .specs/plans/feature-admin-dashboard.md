@@ -1,5 +1,7 @@
 # Feature: Dashboard admin
 
+**Status:** ✅ Completata (2026-07-02)
+
 ## Obiettivo
 
 Creare una dashboard admin per gestione utenti, licenze e bug report.

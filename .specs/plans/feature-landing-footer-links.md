@@ -1,6 +1,6 @@
 # Feature Plan: Landing Page Footer Fix — Link Funzionali
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-12, PR #256)
 **Priority:** Low
 **Complexity:** Low
 **Estimated Time:** 1-2 ore

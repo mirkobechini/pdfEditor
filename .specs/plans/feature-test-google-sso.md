@@ -1,5 +1,7 @@
 # Feature: Google SSO Login Tests
 
+**Status:** ✅ Completata (2026-07-01)
+
 **Issue Number**: issue-142
 
 ## Obiettivo
