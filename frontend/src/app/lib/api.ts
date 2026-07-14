@@ -19,6 +19,10 @@ export class ApiClient {
   }
 
   static async extractError(res: Response): Promise<string> {
+    // Rate limit — user-friendly message
+    if (res.status === 429) {
+      return "RATE_LIMIT";
+    }
     try {
       const body = await res.json();
       if (typeof body.detail === "string") return body.detail;
