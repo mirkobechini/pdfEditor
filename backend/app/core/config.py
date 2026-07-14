@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import ConfigDict, field_validator
+from pydantic import ConfigDict, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 # Backend root = 3 levels up from app/core/config.py
@@ -38,6 +38,16 @@ class Settings(BaseSettings):
             # Convert postgresql:// to postgresql+psycopg://
             return v.replace("postgresql://", "postgresql+psycopg://", 1)
         return v
+
+    @model_validator(mode="after")
+    def _validate_secret_key(self) -> "Settings":
+        """Ensure either SECRET_KEY or JWT_SECRET_KEY is set in production."""
+        if not self.effective_secret_key:
+            raise ValueError(
+                "SECRET_KEY or JWT_SECRET_KEY must be set in .env. "
+                "Without a secret key, JWT tokens can be forged."
+            )
+        return self
 
     # Storage — absolute path to backend/storage/pdfs
     UPLOAD_DIR: str = (BACKEND_DIR / "storage" / "pdfs").as_posix()
