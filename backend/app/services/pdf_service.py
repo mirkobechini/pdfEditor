@@ -70,7 +70,9 @@ class PdfService:
         content = self.get_file_content(pdf)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
-        if pdf.is_password_protected and pdf_id in _password_cache:
+        if pdf.is_password_protected:
+            if pdf_id not in _password_cache:
+                raise ValueError("PDF is password protected. Please unlock it first.")
             import fitz
             doc = fitz.open(stream=content, filetype="pdf")
             if doc.needs_pass:
