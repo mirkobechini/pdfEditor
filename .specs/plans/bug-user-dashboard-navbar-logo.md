@@ -1,6 +1,6 @@
 # Feature: Migliorare la User Dashboard (profilo)
 
-**Status:** Open
+**Status:** ✅ Completata (2026-07-14)
 **Priority:** MEDIUM
 **Complexity:** Low
 
