@@ -19,10 +19,10 @@ def _clear_env(monkeypatch):
 class TestSettingsValidation:
     """Test Settings class validation and properties."""
 
-    def test_secret_key_empty_raises(self):
-        """Settings should raise if SECRET_KEY is empty."""
-        with pytest.raises(ValueError, match="SECRET_KEY or JWT_SECRET_KEY"):
-            Settings(_env_file=None)
+    def test_secret_key_empty_by_default(self):
+        """SECRET_KEY should be empty by default (validation is at startup)."""
+        s = Settings(_env_file=None)
+        assert s.SECRET_KEY == ""
 
     def test_effective_secret_key_fallback(self):
         """effective_secret_key should fall back to SECRET_KEY."""
