@@ -14,6 +14,7 @@
 - ✅ **Bug B10: login falliva silenziosamente se getMe falliva** — Redirect a / invece di lasciare utente in limbo (PR #306, issue #305)
 - ✅ **Bug B11: logout non puliva stato su errore** — try/finally per pulire sempre stato (PR #308, issue #307)
 - ✅ **Bug B12: check dimensione file inconsistente** — Uniformato `>` a `>=` in convert.py (PR #310, issue #309)
+- ✅ **Bug B13: race condition mount getMe vs login** — `_pendingAuthRef` per evitare flash logged out (PR #312, issue #311)
 - ✅ **ADR audit** — Aggiunta sezione con 21 bug trovati nel codice + 10 miglioramenti
 - ✅ **21 bug-audit plans** — Creati `.specs/plans/bug-audit-*.md` per ogni bug
 

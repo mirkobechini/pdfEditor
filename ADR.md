@@ -420,7 +420,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 | B10 | `frontend/src/app/lib/auth.tsx`             | 40-48 | ✅ Risolto (PR #306) — redirect a `/` se `getMe()` fallisce            |
 | B11 | `frontend/src/app/lib/auth.tsx`             | 72    | ✅ Risolto (PR #308) — try/finally in `logout()` pulisce sempre stato  |
 | B12 | `backend/app/api/v1/convert.py`             | 114   | ✅ Risolto (PR #310) — uniformato a `>=` come `upload.py`              |
-| B13 | `frontend/src/app/lib/auth.tsx`             | 35    | Race condition `getMe()` iniziale — flash "logged out"                 |
+| B13 | `frontend/src/app/lib/auth.tsx`             | 35    | ✅ Risolto (PR #312) — `_pendingAuthRef` evita race condition          |
 | B14 | `frontend/src/app/components/PdfViewer.tsx` | 63    | Cleanup script tag rompe multi-instanza PdfViewer                      |
 
 ### 🟡 Medi
