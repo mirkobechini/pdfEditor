@@ -40,6 +40,7 @@ def _run_migrations():
 def _add_missing_columns():
     """Add columns that may be missing from existing database tables."""
     from sqlalchemy import text, inspect
+    from sqlalchemy.exc import OperationalError, SQLAlchemyError
     try:
         inspector = inspect(engine)
         existing_cols = {c["name"] for c in inspector.get_columns("users")}
@@ -58,8 +59,10 @@ def _add_missing_columns():
                 conn.commit()
         if missing:
             logger.info("Added missing columns to users table: %s", ", ".join(m.split()[0] for m in missing))
-    except Exception:
-        pass  # Table doesn't exist yet
+    except OperationalError:
+        pass  # Table doesn't exist yet — will be created via migration
+    except SQLAlchemyError as e:
+        logger.warning("Could not check/add missing columns: %s", e)
 
 
 @asynccontextmanager
