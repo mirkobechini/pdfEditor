@@ -1,5 +1,7 @@
 # Feature: Undo/Redo per modifiche PDF
 
+**Status:** ✅ Completata (2026-07-01)
+
 ## Obiettivo
 
 Implementare cronologia undo/redo lato server con snapshot del PDF prima di ogni operazione di modifica, e pulsanti Undo/Redo nella toolbar lato client.

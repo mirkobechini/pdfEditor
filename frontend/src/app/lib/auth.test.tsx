@@ -8,7 +8,9 @@ vi.mock("./api", () => ({
     getMe: vi.fn(),
     login: vi.fn(),
     register: vi.fn(),
+    googleLogin: vi.fn(),
     logout: vi.fn(),
+    setToken: vi.fn(),
   },
 }));
 
@@ -62,7 +64,7 @@ describe("AuthProvider", () => {
     fireEvent.click(screen.getByTestId("btn-login"));
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("a@b.com"));
     fireEvent.click(screen.getByTestId("btn-logout"));
-    expect(screen.getByTestId("user").textContent).toBe("null");
+    await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("null"));
     expect(api.logout).toHaveBeenCalled();
   });
 });

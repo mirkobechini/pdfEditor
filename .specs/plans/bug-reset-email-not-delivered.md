@@ -1,6 +1,6 @@
 # Bug: Reset password email not delivered
 
-**Status:** Open
+**Status:** ✅ Completata (2026-07-13, PR #263)
 **Priority:** HIGH
 **Complexity:** Medium
 

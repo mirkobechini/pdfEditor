@@ -1,8 +1,8 @@
 # Feature Plan: Admin Send Reset Password Email
 
-**Status:** Planning  
-**Priority:** Medium  
-**Complexity:** Medium  
+**Status:** ✅ Completata (2026-07-12, PR #237)
+**Priority:** Medium
+**Complexity:** Medium
 **Estimated Time:** 1 day
 
 ---

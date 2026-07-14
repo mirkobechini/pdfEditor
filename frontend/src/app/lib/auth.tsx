@@ -21,7 +21,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   googleLogin: (idToken: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setUser: (user: User | null) => void;
 }
 
@@ -46,7 +46,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const res = await api.login(email, password);
-      // Token is now set as httpOnly cookie by the backend
+      // Save token in memory for Bearer header (works cross-origin in local dev)
+      api.setToken(res.access_token);
+      // Also cookie-based — works on same-origin production
       const u = await api.getMe();
       setUser(u);
     } finally {
@@ -57,8 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = useCallback(async (email: string, password: string, fullName: string) => {
     setLoading(true);
     try {
-      await api.register(email, password, fullName);
-      // Auto-login after register — cookie set by backend
+      const res = await api.register(email, password, fullName);
+      api.setToken(res.access_token);
       const u = await api.getMe();
       setUser(u);
     } finally {
@@ -70,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const res = await api.googleLogin(idToken);
-      // Token is now set as httpOnly cookie by the backend
+      api.setToken(res.access_token);
       const u = await api.getMe();
       setUser(u);
     } finally {
@@ -78,9 +80,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     // Clear cookie by calling logout endpoint
-    api.logout();
+    await api.logout();
+    api.setToken(null);
     setUser(null);
   }, []);
 

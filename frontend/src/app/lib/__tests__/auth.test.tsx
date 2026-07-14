@@ -10,6 +10,7 @@ vi.mock("../api", () => ({
     register: vi.fn(),
     googleLogin: vi.fn(),
     logout: vi.fn(),
+    setToken: vi.fn(),
   },
 }));
 
@@ -59,7 +60,7 @@ describe("AuthProvider", () => {
     (api.getMe as any).mockRejectedValue(new Error("Not authenticated"));
     render(<AuthProvider><TestConsumer /></AuthProvider>);
     await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
-    (api.register as any).mockResolvedValue({});
+    (api.register as any).mockResolvedValue({ access_token: "token" });
     (api.getMe as any).mockResolvedValue({ id: "1", email: "a@b.com", full_name: "A B", is_active: true, is_admin: false, license_tier: "free", license_tier_source: "admin", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" });
     fireEvent.click(screen.getByTestId("btn-register"));
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("a@b.com"));
@@ -84,7 +85,7 @@ describe("AuthProvider", () => {
     fireEvent.click(screen.getByTestId("btn-login"));
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("a@b.com"));
     fireEvent.click(screen.getByTestId("btn-logout"));
-    expect(screen.getByTestId("user").textContent).toBe("null");
+    await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("null"));
     expect(api.logout).toHaveBeenCalled();
   });
 });

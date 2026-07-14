@@ -1,6 +1,6 @@
 # Feature Plan: User Bug Report Status in Dashboard
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-12, PR #235)
 **Priority:** MEDIA (UX Improvement)
 **Complexity:** Low
 **Estimated Time:** 2-3 hours

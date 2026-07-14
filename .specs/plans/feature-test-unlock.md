@@ -1,5 +1,7 @@
 # Feature: Tests for PDF Unlock Endpoint
 
+**Status:** ✅ Completata (2026-07-12)
+
 **Issue Number**: issue-143
 
 ## Obiettivo

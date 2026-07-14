@@ -1,6 +1,6 @@
 # Feature Plan: CSRF Protection
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-11, PR #214)
 **Priority:** MEDIA (Security)
 **Complexity:** Medium
 **Estimated Time:** 2-3 ore

@@ -1,6 +1,6 @@
 # Chore: Fix 3 Failing Backend Tests
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-10, PR #200)
 **Complexity:** Low
 **Estimated Time:** 1-2 ore
 

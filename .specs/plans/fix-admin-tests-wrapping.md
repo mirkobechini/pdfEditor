@@ -1,5 +1,7 @@
 # Fix: Broken Admin Tests After UserListResponse Wrapping + Deprecation Warnings
 
+**Status:** ✅ Completata (2026-07-13)
+
 **Issue Number**: issue-145
 
 ## Obiettivo

@@ -1,5 +1,7 @@
 # Feature: Sostituzione I18nProvider custom con next-intl
 
+**Status:** ✅ Completata (2026-07-01)
+
 ## Obiettivo
 
 Sostituire l'attuale provider i18n custom con `next-intl` (già in `package.json`), seguendo la configurazione nativa per Next.js app router. Le traduzioni già presenti in `messages/en.json` e `messages/it.json` possono essere riutilizzate.

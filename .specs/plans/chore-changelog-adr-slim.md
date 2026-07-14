@@ -1,6 +1,6 @@
 # Chore: Create CHANGELOG.md and Slim Down ADR
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-12, PR #224)
 **Priority:** BASSA (Documentation)
 **Complexity:** Low
 **Estimated Time:** 30 min

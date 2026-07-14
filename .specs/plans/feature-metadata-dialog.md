@@ -1,5 +1,7 @@
 # Feature: Metadata Dialog UI for PDF Metadata
 
+**Status:** ✅ Completata (2026-07-10, PR #194)
+
 **Issue Number**: issue-148
 
 ## Obiettivo

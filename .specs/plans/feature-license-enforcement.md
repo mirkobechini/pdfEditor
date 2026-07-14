@@ -1,5 +1,7 @@
 # Feature: Enforcement licenze
 
+**Status:** ✅ Completata (2026-07-01)
+
 ## Obiettivo
 
 Aggiungere middleware/dependency injection che blocchi le operazioni non consentite in base al `license_tier` dell'utente, utilizzando i dati di `LicenseFeature`.

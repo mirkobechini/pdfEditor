@@ -135,6 +135,8 @@
     "titlePlaceholder": "Brief summary of the issue",
     "fieldDescription": "Description",
     "descriptionPlaceholder": "Describe what happened and how to reproduce it",
+    "category": "Category",
+    "selectCategory": "Select a category...",
     "submit": "Send Report",
     "sending": "Sending...",
     "sentTitle": "Thank you!",

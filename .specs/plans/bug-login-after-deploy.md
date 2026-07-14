@@ -1,6 +1,6 @@
 # Bug: User cannot login after deploy - password not recognized
 
-**Status:** Open
+**Status:** ✅ Completata (2026-07-13, PR #261)
 **Priority:** HIGH
 **Complexity:** Medium
 

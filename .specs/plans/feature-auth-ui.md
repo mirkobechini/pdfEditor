@@ -1,5 +1,7 @@
 # Feature: Autenticazione UI (Login/Register)
 
+**Status:** ✅ Completata (2026-07-01)
+
 ## Obiettivo
 
 Aggiungere i componenti React per login, registrazione e gestione sessione utente. I metodi API in `api.ts` esistono già — mancano le pagine e i flussi UI.

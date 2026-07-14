@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-13
+
+- ✅ **Bug fix: cookie cross-origin login** — `api.ts` ora passa `credentials: 'include'`, `samesite='none'` in produzione (PR #261, issue #260)
+- ✅ **CI/CD: 256 test verdi** — Fix `DEBUG=True` in conftest + CSRF test con httpx fresh client
+- ✅ **Forgot-password: 404 se email non trovata** — Messaggio chiaro invece di 202 generico
+- ✅ **Email: SMTP → SendGrid HTTP API** — Render blocca porta 587, ora usa API HTTP (PR #263, issue #262)
+- ✅ **Test auth riscritti per flusso cookie-based** — Coprono il flusso reale di produzione
+- ✅ **Bug report: select categoria** — Aggiunto campo Category (UI, PDF Processing, Auth, ecc.) (PR #265, issue #264)
+- ✅ **Dark mode dropdown fix** — CSS globale per option leggibili in dark mode (issue #266)
+- ✅ **CI: CodeQL permissions fix** — Aggiunto `permissions: contents: read` al workflow
+- ✅ **AGENT_FLOW aggiornato** — Subtask decomposition, CI-first merge, end-of-task validation
+- ✅ **ADR aggiornato** — Lezioni apprese post-deploy + regole qualità test
+
 ## 2026-07-12
 
 - ✅ **Bug report de-duplication & voting** — Ricerca bug esistenti, voto, report_count (PR #252)

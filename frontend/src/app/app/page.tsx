@@ -36,6 +36,8 @@ export default function EditorPage() {
     const [sidebarRefreshKey, setSidebarRefreshKey] = React.useState(0);
     const [requiresPassword, setRequiresPassword] = React.useState(false);
     const [passwordError, setPasswordError] = React.useState<string | null>(null);
+    const [dragOver, setDragOver] = React.useState(false);
+    const [uploading, setUploading] = React.useState(false);
 
     React.useEffect(() => {
         if (!loading && !user) {
@@ -200,8 +202,71 @@ export default function EditorPage() {
         }
     }
 
+    function handleDragOver(e: React.DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOver(true);
+    }
+
+    function handleDragLeave(e: React.DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOver(false);
+    }
+
+    async function handleDrop(e: React.DragEvent) {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOver(false);
+
+        const files = Array.from(e.dataTransfer.files);
+        const pdfFiles = files.filter((f) =>
+            f.name.toLowerCase().endsWith(".pdf"),
+        );
+
+        if (pdfFiles.length === 0) return;
+
+        setUploading(true);
+        try {
+            for (const file of pdfFiles) {
+                await api.uploadPdfWithProgress(file);
+            }
+            setSidebarRefreshKey((prev) => prev + 1);
+        } catch (err) {
+            console.error("Upload failed:", err);
+        } finally {
+            setUploading(false);
+        }
+    }
+
     return (
-        <>
+        <div
+            className="relative h-screen w-screen"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            {/* Drag-drop overlay */}
+            {dragOver && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-orange-500/20 border-4 border-dashed border-orange-500 pointer-events-none">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl px-8 py-6 shadow-2xl text-center">
+                        <p className="text-2xl font-bold text-orange-500 mb-2">
+                            📄 Drop PDF here
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Release to upload
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {/* Uploading indicator */}
+            {uploading && (
+                <div className="absolute top-4 right-4 z-50 bg-orange-500 text-white px-4 py-2 rounded-lg shadow-lg">
+                    Uploading...
+                </div>
+            )}
+
             <AppLayout
                 sidebar={
                     <Sidebar
@@ -340,6 +405,6 @@ export default function EditorPage() {
                     void handleDelete(fileToDelete);
                 }}
             />
-        </>
+        </div>
     );
 }

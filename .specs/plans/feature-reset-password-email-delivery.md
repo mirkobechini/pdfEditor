@@ -1,5 +1,7 @@
 # Feature: Invio email reale per reset password
 
+**Status:** ✅ Completata (2026-07-13, PR #263)
+
 ## Obiettivo
 
 Inviare realmente via SMTP il link di reset password, eliminando la dipendenza dal log server in produzione.

@@ -58,18 +58,13 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
             {bugT("button")}
           </button>
           {user && (
-            <>
-              <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">
-                {user.full_name}
-              </span>
-              <button
-                className="px-2 py-1 text-xs rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-                onClick={() => { logout(); window.location.href = "/login"; }}
-                title={authT("logout")}
-              >
-                {authT("logout")}
-              </button>
-            </>
+            <button
+              className="px-2 py-1 text-xs rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
+              onClick={async () => { await logout(); window.location.href = "/login"; }}
+              title={authT("logout")}
+            >
+              {authT("logout")}
+            </button>
           )}
         </div>
       </header>

@@ -1,5 +1,7 @@
 # Feature: Fix migrazioni Alembic
 
+**Status:** ✅ Completata (2026-07-10, PR #200)
+
 ## Obiettivo
 
 Risolvere la migrazione `01fd6e2d14bc` che duplica colonne (`is_admin`, `license_tier`) già aggiunte in `7ffbd97b3386`, permettendo ad `alembic upgrade head` di eseguire senza errori.

@@ -50,6 +50,8 @@ describe("BugReportDialog", () => {
     fireEvent.click(screen.getByText("createNew"));
     fireEvent.change(screen.getByPlaceholderText("titlePlaceholder"), { target: { value: "Test" } });
     fireEvent.change(screen.getByPlaceholderText("descriptionPlaceholder"), { target: { value: "Desc" } });
+    // Select a category (the only combobox in the dialog)
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "UI" } });
     expect(screen.getByText("submit")).toBeEnabled();
   });
 
@@ -59,9 +61,10 @@ describe("BugReportDialog", () => {
     fireEvent.click(screen.getByText("createNew"));
     fireEvent.change(screen.getByPlaceholderText("titlePlaceholder"), { target: { value: "Test" } });
     fireEvent.change(screen.getByPlaceholderText("descriptionPlaceholder"), { target: { value: "Desc" } });
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "UI" } });
     fireEvent.click(screen.getByText("submit"));
     await waitFor(() => {
-      expect(api.createBugReport).toHaveBeenCalledWith("Test", "Desc");
+      expect(api.createBugReport).toHaveBeenCalledWith("[UI] Test", "Desc");
     });
     expect(screen.getByText("sentTitle")).toBeTruthy();
   });
@@ -72,6 +75,7 @@ describe("BugReportDialog", () => {
     fireEvent.click(screen.getByText("createNew"));
     fireEvent.change(screen.getByPlaceholderText("titlePlaceholder"), { target: { value: "Test" } });
     fireEvent.change(screen.getByPlaceholderText("descriptionPlaceholder"), { target: { value: "Desc" } });
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "UI" } });
     fireEvent.click(screen.getByText("submit"));
     await waitFor(() => {
       expect(screen.getByText(/failed/)).toBeTruthy();
