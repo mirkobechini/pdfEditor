@@ -403,7 +403,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 
 | ID  | File                                  | Riga    | Problema                                                                   |
 | --- | ------------------------------------- | ------- | -------------------------------------------------------------------------- |
-| B1  | `backend/app/api/v1/auth.py`          | 129-134 | Duplicate `raise HTTPException` — secondo blocco dead code                 |
+| B1  | `backend/app/api/v1/auth.py`          | 129-134 | ✅ Risolto (PR #288) — rimosso secondo blocco dead code                    |
 | B2  | `backend/app/services/pdf_service.py` | 28-35   | `_cleanup_all_pdf_handles` non fa nulla — `_open_pdf_handles` mai popolato |
 | B3  | `backend/app/services/pdf_service.py` | 68-75   | Password-protected PDF senza cache restituisce bytes cifrati               |
 | B4  | `frontend/src/app/lib/api.ts`         | 80      | Header duplicati in `uploadPdf()` può rompere boundary multipart           |

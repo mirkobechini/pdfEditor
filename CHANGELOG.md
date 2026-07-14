@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-14
+
+- ✅ **Bug B1: Duplicate HTTPException in auth.py** — Rimosso dead code in `update_me()` (PR #288, issue #287)
+- ✅ **ADR audit** — Aggiunta sezione con 21 bug trovati nel codice + 10 miglioramenti
+- ✅ **21 bug-audit plans** — Creati `.specs/plans/bug-audit-*.md` per ogni bug
+
 ## 2026-07-13
 
 - ✅ **Bug fix: cookie cross-origin login** — `api.ts` ora passa `credentials: 'include'`, `samesite='none'` in produzione (PR #261, issue #260)

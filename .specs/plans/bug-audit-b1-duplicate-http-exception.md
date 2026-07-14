@@ -1,6 +1,6 @@
 # Bug B1: Duplicate `raise HTTPException` in auth.py
 
-**Status:** [ ] Non iniziata
+**Status:** [x] Completata (2026-07-14, PR #288)
 **Priority:** CRITICAL
 **Complexity:** Low
 
@@ -10,9 +10,8 @@ Alla riga 129-134 di `backend/app/api/v1/auth.py`, il secondo blocco `raise HTTP
 
 ## Soluzione
 
-Rimuovere il secondo blocco `raise HTTPException` duplicato.
+Rimosso il secondo blocco `raise HTTPException` duplicato.
 
-## File da modificare
+## File modificati
 
-- `backend/app/api/v1/auth.py` — rimuovere righe 130-134
-- `backend/app/api/v1/auth.py` — verificare che il `try/except` sia corretto
+- `backend/app/api/v1/auth.py` — rimosse righe duplicate
