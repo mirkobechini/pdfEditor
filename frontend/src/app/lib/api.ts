@@ -94,8 +94,17 @@ export class ApiClient {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", `${this.baseUrl}/pdfs/upload`);
 
+      // Send httpOnly cookie (JWT) with cross-origin requests
+      xhr.withCredentials = true;
+
       if (this.token) {
         xhr.setRequestHeader("Authorization", `Bearer ${this.token}`);
+      }
+
+      // Include CSRF token for state-changing requests
+      const csrfToken = this._getCsrfToken();
+      if (csrfToken) {
+        xhr.setRequestHeader("X-CSRF-Token", csrfToken);
       }
 
       xhr.upload.onprogress = (e) => {
