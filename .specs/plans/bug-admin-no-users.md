@@ -1,6 +1,6 @@
 # Bug: Admin panel mostra "Nessun utente"
 
-**Status:** Open
+**Status:** ✅ Completata (2026-07-14, PR #277)
 **Priority:** HIGH
 **Complexity:** Medium
 

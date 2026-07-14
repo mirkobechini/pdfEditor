@@ -1,6 +1,6 @@
 # Bug: Upload PDF — Network error + drag-drop non funziona
 
-**Status:** Open
+**Status:** ✅ Completata (2026-07-14, PR #277)
 **Priority:** HIGH
 **Complexity:** Medium
 
