@@ -369,6 +369,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 | Google OAuth `origin_mismatch` / `Invalid token`    | —     | `.specs/plans/bug-google-oauth-token.md` | 🟥 HIGH  |
 | Dark mode dropdown illeggibili (testo bianco)       | #266  | ✅ Risolto — CSS globale in globals.css  | ✅       |
 | Bug report: select categoria invece di testo libero | #264  | ✅ Risolto (PR #265)                     | ✅       |
+| Contrasto testo dialog in dark mode                 | —     | ✅ Risolto (PR #286)                     | ✅       |
 
 ### Bug risolti (2026-07-13)
 
@@ -384,6 +385,13 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 | Doppia area drag-drop                            | —     | ✅ Risolto (PR #280) — solo drop area viewer  |
 | Messaggi errore login misti IT/EN                | —     | ✅ Risolto (PR #282) — mapping + i18n         |
 | Download PDF con backend S3                      | —     | ✅ Risolto (PR #284) — storage cross-backend  |
+| Contrasto testo dialog in dark mode              | —     | ✅ Risolto (PR #286) — classi dark text       |
+
+### Piani aggiornati (2026-07-14)
+
+- ✅ Creato `.specs/plans/bug-dark-mode-dialog-text-contrast.md` (PR #286)
+- ✅ Creato `.specs/plans/bug-s3-download-storage-backend.md` (PR #284)
+- ✅ Creato `.specs/plans/chore-error-messages-standardization.md` (Planning)
 
 <!-- Code Review completata — vedi CHANGELOG.md per dettagli -->
 
