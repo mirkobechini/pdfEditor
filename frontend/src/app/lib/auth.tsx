@@ -30,6 +30,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const _pendingAuthRef = React.useRef(false);
 
   // On mount: restore session from httpOnly cookie (browser sends it automatically)
   useEffect(() => {
@@ -39,10 +40,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {
         // Not authenticated — user is null
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!_pendingAuthRef.current) {
+          setLoading(false);
+        }
+      });
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    _pendingAuthRef.current = true;
     setLoading(true);
     try {
       const res = await api.login(email, password);
@@ -59,10 +65,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } finally {
       setLoading(false);
+      _pendingAuthRef.current = false;
     }
   }, []);
 
   const register = useCallback(async (email: string, password: string, fullName: string) => {
+    _pendingAuthRef.current = true;
     setLoading(true);
     try {
       const res = await api.register(email, password, fullName);
@@ -76,10 +84,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } finally {
       setLoading(false);
+      _pendingAuthRef.current = false;
     }
   }, []);
 
   const googleLogin = useCallback(async (idToken: string) => {
+    _pendingAuthRef.current = true;
     setLoading(true);
     try {
       const res = await api.googleLogin(idToken);
@@ -93,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } finally {
       setLoading(false);
+      _pendingAuthRef.current = false;
     }
   }, []);
 
