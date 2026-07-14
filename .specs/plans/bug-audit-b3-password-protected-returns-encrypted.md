@@ -1,17 +1,17 @@
 # Bug B3: Password-protected PDF senza cache restituisce bytes cifrati
 
-**Status:** [ ] Non iniziata
+**Status:** [x] Completata (2026-07-14, PR #292)
 **Priority:** CRITICAL
-**Complexity:** Medium
+**Complexity:** Low
 
 ## Problema
 
-In `backend/app/services/pdf_service.py`, `_read_file_with_password()`: se `pdf.is_password_protected` è True ma `pdf_id not in _password_cache`, la funzione non tenta decryption e restituisce i bytes cifrati al chiamante. Questo causa errori downstream quando il chiamante prova a elaborare un PDF cifrato.
+Alla riga 68-75 di `backend/app/services/pdf_service.py`, `_read_file_with_password()`: se `pdf.is_password_protected` è True ma `pdf_id not in _password_cache`, la funzione restituiva bytes cifrati.
 
 ## Soluzione
 
-Se `pdf.is_password_protected` è True e non c'è password in cache, lanciare un'eccezione chiara invece di restituire bytes cifrati. Oppure reindirizzare il flusso per richiedere la password all'utente.
+Aggiunto check esplicito: se PDF è password-protetto e non c'è password in cache, lancia `ValueError("PDF is password protected. Please unlock it first.")`.
 
-## File da modificare
+## File modificati
 
 - `backend/app/services/pdf_service.py`

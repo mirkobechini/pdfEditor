@@ -3,8 +3,7 @@
 ## 2026-07-14
 
 - ✅ **Bug B1: Duplicate HTTPException in auth.py** — Rimosso dead code in `update_me()` (PR #288, issue #287)
-- ✅ **Bug B2: \_cleanup_all_pdf_handles non funzionante** — Rimossi `_open_pdf_handles` (mai popolato) e relativa funzione (PR #290, issue #289)
-- ✅ **ADR audit** — Aggiunta sezione con 21 bug trovati nel codice + 10 miglioramenti
+- ✅ **Bug B2: \_cleanup_all_pdf_handles non funzionante** — Rimossi `_open_pdf_handles` (mai popolato) e relativa funzione (PR #290, issue #289)- ✅ **Bug B3: PDF protetto senza cache restituiva bytes cifrati** — Ora lancia ValueError con messaggio chiaro (PR #292, issue #291)- ✅ **ADR audit** — Aggiunta sezione con 21 bug trovati nel codice + 10 miglioramenti
 - ✅ **21 bug-audit plans** — Creati `.specs/plans/bug-audit-*.md` per ogni bug
 
 ## 2026-07-13
