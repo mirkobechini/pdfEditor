@@ -6,7 +6,6 @@ from app.core.config import settings
 from app.core.storage import (
     save_pdf,
     validate_pdf,
-    get_pdf_path,
     get_file_content,
     delete_pdf,
     save_snapshot,
@@ -141,11 +140,10 @@ class PdfService:
         )
 
     def get_file_content(self, pdf: PdfDocument) -> bytes | None:
-        """Read the PDF file from disk."""
-        # storage_filename is "{uuid}.pdf", get_pdf_path expects the UUID
+        """Read the PDF file from storage (local or S3)."""
+        # storage_filename is "{uuid}.pdf" — storage API expects UUID only
         file_uuid = pdf.storage_filename.replace(".pdf", "")
-        path = get_pdf_path(file_uuid)
-        return path.read_bytes() if path else None
+        return get_file_content(file_uuid)
 
     def delete(self, pdf_id: str, user_id: str) -> bool:
         """Delete a PDF from DB and disk. Returns True if deleted."""

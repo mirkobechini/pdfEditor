@@ -199,6 +199,24 @@ class TestDownload:
         response = client.get("/pdfs/non-existent-id/download", headers=free_headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+    def test_download_pdf_s3_backend(self, client, sample_pdf_content, free_headers, monkeypatch):
+        """Should download a PDF when storage backend is S3."""
+        from tests.conftest import upload_pdf
+
+        # Upload with local backend (tests enforce local in conftest)
+        pdf_id = upload_pdf(client, free_headers, sample_pdf_content)
+
+        # Simulate service reading through storage abstraction (S3 path)
+        monkeypatch.setattr(
+            "app.services.pdf_service.get_file_content",
+            lambda _uuid: sample_pdf_content,
+        )
+
+        response = client.get(f"/pdfs/{pdf_id}/download", headers=free_headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers["content-type"] == "application/pdf"
+        assert response.content == sample_pdf_content
+
     def test_download_requires_auth(self, client, sample_pdf_content):
         """Should reject download without auth."""
         response = client.get("/pdfs/some-id/download")
