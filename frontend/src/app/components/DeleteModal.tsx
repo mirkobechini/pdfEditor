@@ -20,9 +20,8 @@ export default function DeleteModal({ open, onClose, file, onConfirm }: DeleteMo
     if (!file) return;
     setDeleting(true);
     try {
-      onConfirm();
-    } catch (err) {
-      console.error("Delete failed:", err);
+      await onConfirm();
+    } catch {
       alert(t("deleteFailed"));
     } finally {
       setDeleting(false);
