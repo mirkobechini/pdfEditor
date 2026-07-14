@@ -1,5 +1,7 @@
 # Chore: Make MAX_SNAPSHOTS Configurable via .env
 
+**Status:** ✅ Completata (2026-07-02)
+
 **Issue Number**: issue-140
 
 ## Obiettivo

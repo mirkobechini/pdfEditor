@@ -1,6 +1,6 @@
 # Chore: Extract Shared usePdfJs Hook
 
-**Status:** Planning
+**Status:** ✅ Completata (2026-07-12, PR #220)
 **Priority:** MEDIA (Refactoring)
 **Complexity:** Low
 **Estimated Time:** 1 hour
