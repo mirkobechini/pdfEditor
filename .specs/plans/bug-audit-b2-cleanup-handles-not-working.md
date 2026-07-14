@@ -1,6 +1,6 @@
 # Bug B2: `_cleanup_all_pdf_handles` non funziona
 
-**Status:** [ ] Non iniziata
+**Status:** [x] Completata (2026-07-14, PR #290)
 **Priority:** CRITICAL
 **Complexity:** Medium
 
