@@ -407,7 +407,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 | B2  | `backend/app/services/pdf_service.py` | 28-35   | ✅ Risolto (PR #290) — rimosso codice morto (`_open_pdf_handles` mai popolato) |
 | B3  | `backend/app/services/pdf_service.py` | 68-75   | ✅ Risolto (PR #292) — `_read_file_with_password()` lancia ValueError          |
 | B4  | `frontend/src/app/lib/api.ts`         | 80      | ✅ Risolto (PR #294) — rimosso `headers` duplicato in `uploadPdf()`            |
-| B5  | `frontend/src/app/app/page.tsx`       | 189-200 | `handleDelete` non chiama `api.deletePdf` — desync UI/DB                       |
+| B5  | `frontend/src/app/app/page.tsx`       | 189-200 | ✅ Risolto (PR #296) — `handleDelete` ora chiama `api.deletePdf`               |
 
 ### ⚠️ Alti
 
