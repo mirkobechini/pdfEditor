@@ -8,8 +8,7 @@
 - ✅ **Bug B4: Header duplicati in uploadPdf()** — Rimosso `headers: this.getHeaders()` da uploadPdf() (PR #294, issue #293)
 - ✅ **Bug B5: handleDelete non chiamava api.deletePdf** — Centralizzata logica delete in page.tsx (PR #296, issue #295)
 - ✅ **Bug B6: SECRET_KEY vuoto — token forgeable** — Validazione all'avvio in main.py (PR #298, issue #297)
-- ✅ **Bug B7: \_run_migrations chiamato 2 volte** — Rimosso create_all duplicato in lifespan (PR #300, issue #299)
-- ✅ **ADR audit** — Aggiunta sezione con 21 bug trovati nel codice + 10 miglioramenti
+- ✅ **Bug B7: \_run_migrations chiamato 2 volte** — Rimosso create_all duplicato in lifespan (PR #300, issue #299)- ✅ **Bug B8: \_add_missing_columns silenziava tutte le eccezioni** — Ora cattura solo OperationalError (PR #302, issue #301)- ✅ **ADR audit** — Aggiunta sezione con 21 bug trovati nel codice + 10 miglioramenti
 - ✅ **21 bug-audit plans** — Creati `.specs/plans/bug-audit-*.md` per ogni bug
 
 ## 2026-07-13
