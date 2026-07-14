@@ -364,24 +364,26 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### Bug aperti (post-deploy 2026-07-13)
 
-| Bug                                                    | Issue | Piano                                            | Priorità |
-| ------------------------------------------------------ | ----- | ------------------------------------------------ | -------- |
-| Sidebar "Caricamento PDF fallito"                      | —     | `.specs/plans/bug-sidebar-pdf-load-upload.md`    | 🟥 HIGH  |
-| Upload PDF "Network error" + XHR senza withCredentials | —     | `.specs/plans/bug-upload-pdf-network-error.md`   | 🟥 HIGH  |
-| Admin panel mostra "Nessun utente"                     | —     | `.specs/plans/bug-admin-no-users.md`             | 🟥 HIGH  |
-| Navbar doppio nome utente                              | —     | `.specs/plans/bug-navbar-double-name.md`         | 🟧 MED   |
-| Dashboard profilo senza navbar/logo                    | —     | `.specs/plans/bug-user-dashboard-navbar-logo.md` | 🟧 MED   |
-| Dark mode dropdown illeggibili (testo bianco)          | #266  | ✅ Risolto — CSS globale in globals.css          | ✅       |
-| Bug report: select categoria invece di testo libero    | #264  | ✅ Risolto (PR #265)                             | ✅       |
+| Bug                                                 | Issue | Piano                                    | Priorità |
+| --------------------------------------------------- | ----- | ---------------------------------------- | -------- |
+| Google OAuth `origin_mismatch` / `Invalid token`    | —     | `.specs/plans/bug-google-oauth-token.md` | 🟥 HIGH  |
+| Dark mode dropdown illeggibili (testo bianco)       | #266  | ✅ Risolto — CSS globale in globals.css  | ✅       |
+| Bug report: select categoria invece di testo libero | #264  | ✅ Risolto (PR #265)                     | ✅       |
 
 ### Bug risolti (2026-07-13)
 
-| Bug                                              | Issue | Risoluzione                                  |
-| ------------------------------------------------ | ----- | -------------------------------------------- |
-| Google OAuth `origin_mismatch` / `Invalid token` | —     | 🟡 Serve `GOOGLE_CLIENT_ID` in env su Render |
-| Login normale non funzionante                    | #260  | ✅ Risolto (PR #261) — cookie cross-origin   |
-| Reset password email non arriva                  | #262  | ✅ Risolto (PR #263) — SendGrid HTTP API     |
-| Immagine monkey logo mancante                    | #257  | 🟡 File esiste — probabile cache Cloudflare  |
+| Bug                                              | Issue | Risoluzione                                   |
+| ------------------------------------------------ | ----- | --------------------------------------------- |
+| Google OAuth `origin_mismatch` / `Invalid token` | —     | 🟡 Serve `GOOGLE_CLIENT_ID` in env su Render  |
+| Login normale non funzionante                    | #260  | ✅ Risolto (PR #261) — cookie cross-origin    |
+| Reset password email non arriva                  | #262  | ✅ Risolto (PR #263) — SendGrid HTTP API      |
+| Immagine monkey logo mancante                    | #257  | 🟡 File esiste — probabile cache Cloudflare   |
+| Sidebar `Caricamento PDF fallito`                | —     | ✅ Risolto (PR #277) — cookie/XHR credentials |
+| Upload PDF `Network error`                       | —     | ✅ Risolto (PR #277) — `xhr.withCredentials`  |
+| Admin panel `Nessun utente`                      | —     | ✅ Risolto (PR #277) — cookie auth coerente   |
+| Doppia area drag-drop                            | —     | ✅ Risolto (PR #280) — solo drop area viewer  |
+| Messaggi errore login misti IT/EN                | —     | ✅ Risolto (PR #282) — mapping + i18n         |
+| Download PDF con backend S3                      | —     | ✅ Risolto (PR #284) — storage cross-backend  |
 
 <!-- Code Review completata — vedi CHANGELOG.md per dettagli -->
 
