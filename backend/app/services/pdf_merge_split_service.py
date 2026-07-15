@@ -34,25 +34,25 @@ class PdfMergeSplitService:
         total_pages = 0
         source_names: list[str] = []
 
-        for pid in pdf_ids:
-            pdf = self._get_user_pdf(pid, user_id)
-            content = self._get_file_content(pdf)
-            if not content:
-                for d in source_docs:
-                    d.close()
-                raise ValueError(f"PDF {pid} file not found on disk")
-            doc = fitz.open(stream=content, filetype="pdf")
-            source_docs.append(doc)
-            total_pages += doc.page_count
-            source_names.append(pdf.original_filename)
+        try:
+            for pid in pdf_ids:
+                pdf = self._get_user_pdf(pid, user_id)
+                content = self._get_file_content(pdf)
+                if not content:
+                    raise ValueError(f"PDF {pid} file not found on disk")
+                doc = fitz.open(stream=content, filetype="pdf")
+                source_docs.append(doc)
+                total_pages += doc.page_count
+                source_names.append(pdf.original_filename)
 
-        output = fitz.open()
-        for doc in source_docs:
-            output.insert_pdf(doc)
-        output_bytes = output.tobytes()
-        output.close()
-        for d in source_docs:
-            d.close()
+            output = fitz.open()
+            for doc in source_docs:
+                output.insert_pdf(doc)
+            output_bytes = output.tobytes()
+            output.close()
+        finally:
+            for d in source_docs:
+                d.close()
 
         file_uuid = save_pdf(output_bytes)
         merge_name = f"merged_{'_'.join(n.replace('.pdf', '') for n in source_names)}.pdf"
