@@ -85,69 +85,33 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Bug tracker
 
-> 📋 **Storico completo dei fix:** Vedi [`CHANGELOG.md`](./CHANGELOG.md)
+> 📋 **Storico completo dei fix:** Vedi [`CHANGELOG.md`](./CHANGELOG.md) per l'elenco di tutte le PR e issue.
 
 ### Issue note ma non bloccanti ⏳
 
-| #   | Issue                                                                     | Impatto              | Risoluzione prevista                                  |
-| --- | ------------------------------------------------------------------------- | -------------------- | ----------------------------------------------------- |
-| 2   | **`_password_cache` module-global** — non scala con multi-worker          | Medio                | Redis o DB in Fase 2                                  |
-| 9   | **No password strength validation** — password di 1 char accettata        | ✅ Risolto (PR #208) | —                                                     |
-| 10  | **Header injection via filename** — `Content-Disposition` non sanitizzato | ✅ Risolto (PR #208) | —                                                     |
-| 14  | **Nessun integration/E2E test**                                           | 🟡 In corso          | Playwright futuro                                     |
-| 18  | **Large file upload — nessun progress indicator**                         | ✅ Risolto (PR #206) | —                                                     |
-| 19  | **Find & Replace non funziona**                                           | Medio (UX)           | Inline text editor                                    |
-| 20  | **Admin bug report — campi mancanti**                                     | ✅ Risolto (PR #204) | —                                                     |
-| 21  | **Frontend coverage 70%** — 247 test su 50 file                           | ✅ Risolto (PR #233) | `.specs/plans/chore-frontend-100-percent-coverage.md` |
+| #   | Issue                                                            | Impatto              | Risoluzione prevista                                  |
+| --- | ---------------------------------------------------------------- | -------------------- | ----------------------------------------------------- |
+| 2   | **`_password_cache` module-global** — non scala con multi-worker | Medio                | Redis o DB in Fase 2 (✅ B18: cleanup su shutdown)    |
+| 14  | **Nessun integration/E2E test**                                  | Medio                | ⬜ Playwright futuro (T7)                             |
+| 19  | **Find & Replace non funziona**                                  | Medio                | ⬜ Inline text editor (feature #11)                   |
+| 21  | **Frontend coverage 70%** — 247 test su 50 file                  | ✅ Risolto (PR #233) | `.specs/plans/chore-frontend-100-percent-coverage.md` |
 
-### Da risolvere/note ⏳
+### Security audit 2026-07-09
 
-> **⚠️ Security audit 2026-07-09 — Risolte 20/24 issue (83%).** Vedi tabella sopra per le rimanenti.
->
-> Riepilogo fix applicati al 2026-07-11:
->
-> - ✅ `SECRET_KEY` default → vuoto (forza config esplicita)
-> - ✅ `DEBUG` default → `False`
-> - ✅ Health check `GET /health`
-> - ✅ `undo()`/`redo()` page_count → `fitz.open().page_count`
-> - ✅ `_read_file_with_password` → tutte le operazioni PDF
-> - ✅ Rate limiting → slowapi (login 5/min, register 3/h, forgot-password 3/h)
-> - ✅ Dipendenze vulnerabili → PyJWT 2.13.0, python-multipart 0.0.31, pytest 9.0.3
-> - ✅ CodeQL path-injection → `_validate_uuid()` in storage.py
-> - ✅ Password strength validation → min 8 char + uppercase + lowercase + digit
-> - ✅ Header injection sanitization → `sanitize_filename()` su Content-Disposition
-> - ✅ Graceful shutdown → cleanup PyMuPDF handles su SIGTERM
-> - ✅ CSRF protection → middleware con cookie token
-> - ✅ JWT httpOnly cookie → addio localStorage XSS
-> - ✅ GitHub: 0 Dependabot alert attivi, 0 Code Scanning alert attivi
+> 🔒 **Security audit completato — 20/24 issue risolte (83%).**  
+> Tutte le vulnerabilità critiche e alte sono state corrette.  
+> Vedi [`CHANGELOG.md`](./CHANGELOG.md) per l'elenco completo.
 
-> **🔴 Lezione appresa (2026-07-13) — Bug post-deploy su Render:**
->
-> Dopo il deploy su Render, 4 bug hanno bloccato l'uso dell'applicazione nonostante tutti i test passassero in sviluppo (256 test, 0 failure). Cause identificate:
->
-> 1. **Cookie cross-origin non inviati** — Il frontend (`api.ts`) non passava `credentials: 'include'`, quindi il cookie httpOnly `access_token` non veniva mai inviato al backend su domini diversi. ❌ I test usavano `Authorization: Bearer` header invece del flusso cookie-based reale.
-> 2. **`SameSite=Lax` in produzione** — Il cookie era impostato con `samesite="lax"` che blocca i cookie cross-origin. Fixato con `samesite="none"` quando `DEBUG=False`.
-> 3. **CSRF bloccava `/auth/logout`** — Endpoint non exempt. Fixato aggiungendolo a `CSRF_EXEMPT_PATHS`.
-> 4. **Email droppata da SendGrid** — `noreply@pdfeditor.app` non verificato come sender su SendGrid. Fix: cambiato default a `noreply@mirkobechini.com`.
->
-> **Conseguenza strutturale: i test non rilevavano questi bug perché:**
->
-> - CSRF e rate limiting disabilitati nei test (necessario per TestClient)
-> - TestClient simula stesso-origin (non cross-origin)
-> - Test usavano Bearer header invece del flusso cookie-based
-> - Mock totale di `jwt.decode` in test Google OAuth
->
-> **Rimedio:** Riscritti i test auth per verificare il flusso cookie-based reale. Aggiunto script `scripts/seed_users_from_sqlite.py` per migrare dati SQLite → PostgreSQL (non necessario — utenti già presenti su Render).
+> **⚠️ Lezione appresa (2026-07-13) — Bug post-deploy su Render:**  
+> 4 bug critici hanno superato 256 test perché i test non coprivano il flusso cross-origin reale.  
+> **Rimedio:** Test riscritti per flusso cookie-based. Per i dettagli, vedi le regole in "Quality assurance" sotto.
 
-> **Nota:** Tutte le feature prioritarie Fase 1 completate. PostgreSQL migration completata su Render. Reset password email via SendGrid/Cloudflare attiva (dominio verificato). Admin send reset via dashboard implementato. User bug report status visibile in profilo.
+> **⚠️ Lezione appresa (2026-07-15):** I bug vanno cercati nel codice, non aspettare che emergano in produzione.  
+> Audit manuale ha trovato 21 bug + 10 miglioramenti, tutti fixati con PR e CI.
 
-> **Nota tecnica:** Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile dal nostro codice. La libreria `httpx2` non esiste ancora, è una futura release di starlette. Ignorare.
+> **Nota tecnica:** Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile — `httpx2` non esiste ancora.
 
-> **🔑 MCP Servers disponibili:**
->
-> - **Stripe:** MCP server ufficiale a `https://mcp.stripe.com` (OAuth). Repo: `stripe/ai`. Per gestire abbonamenti e pagamenti.
-> - **Render:** MCP server ufficiale `render-oss/render-mcp-server` (Go, 144★). Per deploy e gestione servizi Render.
-> - **Railway:** MCP server ufficiale `railwayapp/railway-mcp-server` (JS, 192★, archived). Community: `jason-tan-swe/railway-mcp` (TS, 73★).
+> **🔑 MCP Servers:** Stripe (OAuth), Render (`render-oss/render-mcp-server`), Railway (community).
 
 ## Quality assurance — test che non mentono
 
@@ -353,106 +317,75 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 - ⬜ **Cloud sync SQLite↔PostgreSQL** — Fase 3.
 - ⬜ **Mobile React Native** — Fase 4.
 
-### Bug aperti su Render (deploy 2026-07-12)
-
-| Bug                                              | Issue | Risoluzione                                  |
-| ------------------------------------------------ | ----- | -------------------------------------------- |
-| Google OAuth `origin_mismatch` / `Invalid token` | —     | 🟡 Serve `GOOGLE_CLIENT_ID` in env su Render |
-| Login normale non funzionante                    | #260  | ✅ Risolto (PR #261) — cookie cross-origin   |
-| Reset password email non arriva                  | —     | ✅ Fixato (PR #263) — SendGrid HTTP API      |
-| Immagine monkey logo mancante                    | #257  | 🟡 File esiste — probabile cache Cloudflare  |
-
-### Bug aperti (post-deploy 2026-07-13)
-
-| Bug                                                 | Issue | Piano                                    | Priorità |
-| --------------------------------------------------- | ----- | ---------------------------------------- | -------- |
-| Google OAuth `origin_mismatch` / `Invalid token`    | —     | `.specs/plans/bug-google-oauth-token.md` | 🟥 HIGH  |
-| Dark mode dropdown illeggibili (testo bianco)       | #266  | ✅ Risolto — CSS globale in globals.css  | ✅       |
-| Bug report: select categoria invece di testo libero | #264  | ✅ Risolto (PR #265)                     | ✅       |
-| Contrasto testo dialog in dark mode                 | —     | ✅ Risolto (PR #286)                     | ✅       |
-
-### Bug risolti (2026-07-13)
-
-| Bug                                              | Issue | Risoluzione                                   |
-| ------------------------------------------------ | ----- | --------------------------------------------- |
-| Google OAuth `origin_mismatch` / `Invalid token` | —     | 🟡 Serve `GOOGLE_CLIENT_ID` in env su Render  |
-| Login normale non funzionante                    | #260  | ✅ Risolto (PR #261) — cookie cross-origin    |
-| Reset password email non arriva                  | #262  | ✅ Risolto (PR #263) — SendGrid HTTP API      |
-| Immagine monkey logo mancante                    | #257  | 🟡 File esiste — probabile cache Cloudflare   |
-| Sidebar `Caricamento PDF fallito`                | —     | ✅ Risolto (PR #277) — cookie/XHR credentials |
-| Upload PDF `Network error`                       | —     | ✅ Risolto (PR #277) — `xhr.withCredentials`  |
-| Admin panel `Nessun utente`                      | —     | ✅ Risolto (PR #277) — cookie auth coerente   |
-| Doppia area drag-drop                            | —     | ✅ Risolto (PR #280) — solo drop area viewer  |
-| Messaggi errore login misti IT/EN                | —     | ✅ Risolto (PR #282) — mapping + i18n         |
-| Download PDF con backend S3                      | —     | ✅ Risolto (PR #284) — storage cross-backend  |
-| Contrasto testo dialog in dark mode              | —     | ✅ Risolto (PR #286) — classi dark text       |
-
-### Piani aggiornati (2026-07-14)
-
-- ✅ Creato `.specs/plans/bug-dark-mode-dialog-text-contrast.md` (PR #286)
-- ✅ Creato `.specs/plans/bug-s3-download-storage-backend.md` (PR #284)
-- ✅ Creato `.specs/plans/chore-error-messages-standardization.md` (Planning)
-
 ---
 
-## Audit 2026-07-14 — Nuovi bug trovati nel codice
+## 📋 Stato attuale (2026-07-15)
 
-Durante una revisione approfondita del codice (2026-07-14), sono stati identificati 21 bug/addirittura criticità non ancora documentati, più 10 opportunità di miglioramento. Vedi `.specs/plans/bug-audit-*.md` per ogni fix.
+### ✅ Completati — 21 bug + 10 miglioramenti
 
-### 🚨 Critici (da fixare subito)
+> Vedi [`CHANGELOG.md`](./CHANGELOG.md) per l'elenco dettagliato con PR e issue.
 
-| ID  | File                                  | Riga    | Problema                                                                       |
-| --- | ------------------------------------- | ------- | ------------------------------------------------------------------------------ |
-| B1  | `backend/app/api/v1/auth.py`          | 129-134 | ✅ Risolto (PR #288) — rimosso secondo blocco dead code                        |
-| B2  | `backend/app/services/pdf_service.py` | 28-35   | ✅ Risolto (PR #290) — rimosso codice morto (`_open_pdf_handles` mai popolato) |
-| B3  | `backend/app/services/pdf_service.py` | 68-75   | ✅ Risolto (PR #292) — `_read_file_with_password()` lancia ValueError          |
-| B4  | `frontend/src/app/lib/api.ts`         | 80      | ✅ Risolto (PR #294) — rimosso `headers` duplicato in `uploadPdf()`            |
-| B5  | `frontend/src/app/app/page.tsx`       | 189-200 | ✅ Risolto (PR #296) — `handleDelete` ora chiama `api.deletePdf`               |
+| Categoria              | Quantità | PR                                                   |
+| ---------------------- | -------- | ---------------------------------------------------- |
+| B1-B5 (critici)        | 5 bug    | #288, #290, #292, #294, #296                         |
+| B6-B14 (alti)          | 9 bug    | #298, #300, #302, #304, #306, #308, #310, #312, #314 |
+| B15-B21 (medi)         | 7 bug    | #316, #318, #320, #322, #324, #326, #328             |
+| R1-R10 (miglioramenti) | 10 tasks | #330, #332, #334, #336, #338, #341, #343, #345       |
 
-### ⚠️ Alti
+### 🔴 Ancora da fare — Ordinato per priorità
 
-| ID  | File                                        | Riga  | Problema                                                               |
-| --- | ------------------------------------------- | ----- | ---------------------------------------------------------------------- |
-| B6  | `backend/app/core/config.py`                | 13-14 | ✅ Risolto (PR #298) — validazione `SECRET_KEY` non vuota in startup   |
-| B7  | `backend/app/main.py`                       | 72-76 | ✅ Risolto (PR #300) — rimosso `Base.metadata.create_all` duplicato    |
-| B8  | `backend/app/main.py`                       | 61    | ✅ Risolto (PR #302) — cattura solo `OperationalError`, logga le altre |
-| B9  | `backend/app/core/config.py`                | 74-78 | ✅ Risolto (PR #304) — startup bloccato se default in produzione       |
-| B10 | `frontend/src/app/lib/auth.tsx`             | 40-48 | ✅ Risolto (PR #306) — redirect a `/` se `getMe()` fallisce            |
-| B11 | `frontend/src/app/lib/auth.tsx`             | 72    | ✅ Risolto (PR #308) — try/finally in `logout()` pulisce sempre stato  |
-| B12 | `backend/app/api/v1/convert.py`             | 114   | ✅ Risolto (PR #310) — uniformato a `>=` come `upload.py`              |
-| B13 | `frontend/src/app/lib/auth.tsx`             | 35    | ✅ Risolto (PR #312) — `_pendingAuthRef` evita race condition          |
-| B14 | `frontend/src/app/components/PdfViewer.tsx` | 63    | ✅ Risolto (PR #314) — non rimuove piu script condiviso                |
+#### 🟥 ALTA
 
-### 🟡 Medi
+| #   | Task                                               | Tipo     | Piano                                     |
+| --- | -------------------------------------------------- | -------- | ----------------------------------------- |
+| 1   | **Bug Google OAuth `origin_mismatch`** — su Render | 🐛 Bug   | `bug-google-oauth-token.md`               |
+| 2   | **Backend coverage 100%** — attuale 93%            | 🧹 Chore | `chore-backend-100-percent-coverage.md`   |
+| 3   | **Frontend coverage 100%** — attuale 67.5%         | 🧹 Chore | `chore-frontend-100-percent-coverage.md`  |
+| 4   | **Standardizzazione messaggi errore** IT/EN        | 🧹 Chore | `chore-error-messages-standardization.md` |
 
-| ID  | File                                              | Riga    | Problema                                                                |
-| --- | ------------------------------------------------- | ------- | ----------------------------------------------------------------------- |
-| B15 | `frontend/src/app/lib/api.ts`                     | 110     | ✅ Risolto (PR #316) — parsato JSON error body in uploadPdfWithProgress |
-| B16 | `frontend/src/app/components/Sidebar.tsx`         | 28      | ✅ Risolto (PR #318) — `loadFiles` spostato dentro `useEffect`          |
-| B17 | `backend/app/services/auth_service.py`            | 95-108  | ✅ Risolto (PR #320) — rimosso `if` dead code nel lookup Google certs   |
-| B18 | `backend/app/services/pdf_service.py`             | 18      | ✅ Risolto (PR #322) — cache password pulita su shutdown                |
-| B19 | `backend/app/services/pdf_merge_split_service.py` | 48-56   | ✅ Risolto (PR #324) — try/finally in merge() previene leak             |
-| B20 | `backend/app/api/v1/admin.py`                     | 32      | ✅ Risolto (PR #326) — annotazione corretta a `UserListResponse`        |
-| B21 | `frontend/src/app/app/page.tsx`                   | 168-177 | ✅ Risolto (PR #328) — rimosso `handleEditText` dead code               |
+#### 🟡 MEDIA
 
-### 🛠 Opportunità di miglioramento (leggibilità/performance)
+| #   | Task                         | Piano                                     |
+| --- | ---------------------------- | ----------------------------------------- |
+| 5   | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md` |
+| 6   | Password visibility toggle   | `feature-password-visibility-toggle.md`   |
+| 7   | PDF compression              | `feature-pdf-compression.md`              |
+| 8   | PDF naming preservation      | `feature-pdf-naming-preservation.md`      |
+| 9   | License tier button skin     | `feature-license-tier-button-skin.md`     |
+| 10  | UI/UX improvements           | `feature-ui-ux-improvements.md`           |
+| 11  | Inline text editor           | `feature-inline-text-editor.md`           |
 
-| ID  | File                                                | Problema                                                                     |
-| --- | --------------------------------------------------- | ---------------------------------------------------------------------------- | --- |
-| R1  | `PdfViewer.tsx`, `pdfPreview.ts`, `usePdfJs.ts`     | ✅ Risolto (PR #330) — URL PDF.js centralizzati in `pdfjs-config.ts`         |
-| R2  | `PdfViewer.tsx`                                     | ✅ Risolto (PR #332) — `window.pdfjsLib` tipizzato via `pdfjs-types.d.ts`    |
-| R3  | `PdfViewer.tsx`                                     | ✅ Risolto (PR #332) — `pdfDocRef` e `renderTaskRef` tipizzati correttamente |
-| R4  | `backend/app/api/v1/upload.py:83`                   | ✅ Risolto (PR #334) — import rimosso (era inutilizzato)                     |
-| R5  | `backend/app/services/email_service.py:85`          | ✅ Risolto (PR #336) — ora usa `logger.exception` con stack trace            |
-| R6  | `frontend/src/app/lib/api.ts`                       | ✅ Risolto (PR #338) — `UserResponse` type per resetPassword e updateProfile |
-| R7  | `frontend/src/app/components/GoogleLoginButton.tsx` | ✅ Risolto (PR #341) — `require()` → `await import()` dinamico               |
-| R8  | `backend/app/api/v1/metadata.py:28`                 | ✅ Risolto (PR #343) — ora usa `model_validate()`                            |     |
-| R9  | `frontend/src/app/lib/api.ts`                       | ✅ Risolto (PR #330) — stesso fix di R1, URL in `pdfjs-config.ts`            |
-| R10 | `backend/app/core/config.py`                        | ✅ Risolto (PR #345) — `field_validator` normalizza spazi in ALLOWED_ORIGINS |
+#### Performance (P1-P6)
 
-### Priorità fix bug
+| #   | Problema                                                     | Impatto  |
+| --- | ------------------------------------------------------------ | -------- |
+| P1  | `upload.py:60` — File letto interamente in RAM (fino a 50MB) | RAM      |
+| P2  | `PdfViewer.tsx` — Race condition zoom+pagina                 | UX       |
+| P3  | `main.py` — `create_all` chiamato 2 volte (~100ms startup)   | Startup  |
+| P4  | `PdfViewer.tsx` — Blob URL non revocati su unmount           | Memoria  |
+| P5  | `pdf_service.py` — Password cache mai invalidata             | Security |
+| P6  | `Toolbar.tsx` — Keyboard listener rimosso/riaggiunto         | UX       |
 
-```
-✅ B1-B5 (critici) — ✅ B6-B14 (alti) — ✅ B15-B21 (medi)
-TUTTI I 21 BUG RISOLTI
-```
+#### Test mancanti (T1-T7)
+
+| #   | Area                        | Coverage |
+| --- | --------------------------- | -------- |
+| T1  | `ReorderDialog`             | 30%      |
+| T2  | `SplitDialog`               | 37%      |
+| T3  | `RemoveDialog`              | 44%      |
+| T4  | `MergeDialog`               | 67%      |
+| T5  | `GoogleLoginButton`         | 48%      |
+| T6  | `pdf_service.py` error path | 85%      |
+| T7  | E2E Playwright tests        | 0%       |
+
+#### 🔵 BASSA / Future
+
+| #   | Task                                  | Piano                                 |
+| --- | ------------------------------------- | ------------------------------------- |
+| 12  | Stripe MCP Subscriptions              | `feature-stripe-mcp-subscriptions.md` |
+| 13  | AI PDF editing                        | `feature-ai-pdf-editing.md`           |
+| 14  | Tauri v2 Desktop (Fase 1c)            | —                                     |
+| 15  | Cloud sync SQLite↔PostgreSQL (Fase 3) | —                                     |
+| 16  | Mobile React Native (Fase 4)          | —                                     |
+
+<!-- Fine Fase 1 — si prosegue con la roadmap sopra -->
