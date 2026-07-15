@@ -28,7 +28,7 @@ def list_users(
     limit: int = Query(100, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> list[UserResponse]:
+) -> UserListResponse:
     """List all users (admin only)."""
     if not current_user.is_admin:
         raise HTTPException(
