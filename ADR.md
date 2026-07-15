@@ -445,7 +445,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 | R4  | `backend/app/api/v1/upload.py:83`                   | ✅ Risolto (PR #334) — import rimosso (era inutilizzato)                     |
 | R5  | `backend/app/services/email_service.py:85`          | ✅ Risolto (PR #336) — ora usa `logger.exception` con stack trace            |
 | R6  | `frontend/src/app/lib/api.ts`                       | ✅ Risolto (PR #338) — `UserResponse` type per resetPassword e updateProfile |
-| R7  | `frontend/src/app/components/GoogleLoginButton.tsx` | `require()` dinamico in Next.js                                              |
+| R7  | `frontend/src/app/components/GoogleLoginButton.tsx` | ✅ Risolto (PR #341) — `require()` → `await import()` dinamico               |
 | R8  | `backend/app/api/v1/metadata.py:28`                 | `MetadataResponse(**meta)` vs `.model_validate()`                            |
 | R9  | `frontend/src/app/lib/api.ts`                       | ✅ Risolto (PR #330) — stesso fix di R1, URL in `pdfjs-config.ts`            |
 | R10 | `backend/app/core/config.py`                        | `ALLOWED_ORIGINS` comma-separated fragile                                    |
