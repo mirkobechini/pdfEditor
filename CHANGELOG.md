@@ -19,6 +19,7 @@
 - ✅ **Bug B15: uploadPdfWithProgress ignorava JSON error body** — Ora parsato come extractError (PR #316, issue #315)
 - ✅ **Bug B16: Sidebar useEffect missing deps** — loadFiles spostato dentro l'effect (PR #318, issue #317)
 - ✅ **Bug B17: Google OAuth dead code** — Rimosso if/else morto nel lookup certs (PR #320, issue #319)
+- ✅ **Bug B18: password cache non pulita su shutdown** — Aggiunta \_clear_password_cache() (PR #322, issue #321)
 - ✅ **ADR audit** — Aggiunta sezione con 21 bug trovati nel codice + 10 miglioramenti
 - ✅ **21 bug-audit plans** — Creati `.specs/plans/bug-audit-*.md` per ogni bug
 
