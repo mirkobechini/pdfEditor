@@ -101,6 +101,10 @@ def _validate_settings():
             "SUPER_ADMIN_EMAIL is still set to the default 'admin@pdfeditor.local'. "
             "Change it in .env to prevent unauthorized admin access."
         )
+    if not settings.GOOGLE_CLIENT_ID:
+        raise RuntimeError(
+            "GOOGLE_CLIENT_ID must be set in .env for Google OAuth to work."
+        )
 
 
 def _seed_license_features():

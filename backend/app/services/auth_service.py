@@ -84,9 +84,14 @@ class AuthService:
         import requests
 
         # Verify the id_token by downloading Google's public keys
+        import logging
+        logger = logging.getLogger("pdfeditor")
+        logger.debug("Validating Google token (first 30 chars): %s...", id_token[:30])
         resp = requests.get("https://www.googleapis.com/oauth2/v3/certs", timeout=10)
         if resp.status_code != 200:
+            logger.warning("Failed to fetch Google certs: HTTP %s", resp.status_code)
             raise ValueError("Failed to verify Google token")
+        logger.debug("Google certs fetched successfully, %d keys available", len(resp.json().get("keys", [])))
 
         # Decode JWT using PyJWT + Google certs
         import jwt
