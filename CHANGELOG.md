@@ -8,6 +8,7 @@
 - ✅ **R5: logger.exception in email_service** — Stack trace preservato su errori email (PR #336, issue #335)
 - ✅ **R6: Typed api.ts return values** — UserResponse per resetPassword e updateProfile (PR #338, issue #337)
 - ✅ **R7: require → dynamic import in GoogleLoginButton** — Rimosso antipattern Next.js (PR #341, issue #340)
+- ✅ **R8: model_validate in metadata.py** — Consistenza con resto del codice (PR #343, issue #342)
 
 ## 2026-07-14
 

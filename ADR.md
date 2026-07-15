@@ -438,7 +438,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 ### 🛠 Opportunità di miglioramento (leggibilità/performance)
 
 | ID  | File                                                | Problema                                                                     |
-| --- | --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| --- | --------------------------------------------------- | ---------------------------------------------------------------------------- | --- |
 | R1  | `PdfViewer.tsx`, `pdfPreview.ts`, `usePdfJs.ts`     | ✅ Risolto (PR #330) — URL PDF.js centralizzati in `pdfjs-config.ts`         |
 | R2  | `PdfViewer.tsx`                                     | ✅ Risolto (PR #332) — `window.pdfjsLib` tipizzato via `pdfjs-types.d.ts`    |
 | R3  | `PdfViewer.tsx`                                     | ✅ Risolto (PR #332) — `pdfDocRef` e `renderTaskRef` tipizzati correttamente |
@@ -446,7 +446,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 | R5  | `backend/app/services/email_service.py:85`          | ✅ Risolto (PR #336) — ora usa `logger.exception` con stack trace            |
 | R6  | `frontend/src/app/lib/api.ts`                       | ✅ Risolto (PR #338) — `UserResponse` type per resetPassword e updateProfile |
 | R7  | `frontend/src/app/components/GoogleLoginButton.tsx` | ✅ Risolto (PR #341) — `require()` → `await import()` dinamico               |
-| R8  | `backend/app/api/v1/metadata.py:28`                 | `MetadataResponse(**meta)` vs `.model_validate()`                            |
+| R8  | `backend/app/api/v1/metadata.py:28`                 | ✅ Risolto (PR #343) — ora usa `model_validate()`                            |     |
 | R9  | `frontend/src/app/lib/api.ts`                       | ✅ Risolto (PR #330) — stesso fix di R1, URL in `pdfjs-config.ts`            |
 | R10 | `backend/app/core/config.py`                        | `ALLOWED_ORIGINS` comma-separated fragile                                    |
 
