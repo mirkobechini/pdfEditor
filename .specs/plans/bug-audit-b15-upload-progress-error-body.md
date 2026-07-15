@@ -1,17 +1,13 @@
 # Bug B15: `uploadPdfWithProgress` ignora JSON error body
 
-**Status:** [ ] Non iniziata
+**Status:** [x] Completata (2026-07-15, PR #316)
 **Priority:** MEDIUM
 **Complexity:** Low
 
 ## Problema
 
-In `frontend/src/app/lib/api.ts`, `uploadPdfWithProgress` usa `xhr.statusText` per gli errori invece di parsare il JSON body `{"detail": "..."}`. L'utente vede "Internal Server Error" invece del messaggio specifico.
+`uploadPdfWithProgress` usava `xhr.statusText` per gli errori, perdendo il JSON body `{"detail": "..."}`.
 
 ## Soluzione
 
-Parsare `xhr.responseText` come JSON e usare `detail` field, come fa `ApiClient.extractError`.
-
-## File da modificare
-
-- `frontend/src/app/lib/api.ts`
+Ora tenta di parsare il JSON body per estrarre `detail`, come `ApiClient.extractError`.
