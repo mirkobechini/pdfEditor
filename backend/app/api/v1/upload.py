@@ -51,14 +51,20 @@ def upload_pdf(
             detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB",
         )
 
-    content = file.file.read()
-
-    # Also check after reading (covers cases where Content-Length header is missing)
-    if len(content) >= max_bytes:
-        raise HTTPException(
-            status_code=413,
-            detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB",
-        )
+    # Read file in chunks to avoid loading the entire file into RAM
+    # (e.g. a 50MB file would allocate 50MB even if later rejected)
+    content = bytearray()
+    chunk_size = 1024 * 1024  # 1MB chunks
+    while True:
+        chunk = file.file.read(chunk_size)
+        if not chunk:
+            break
+        content.extend(chunk)
+        if len(content) >= max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB",
+            )
 
     try:
         pdf = service.upload(
