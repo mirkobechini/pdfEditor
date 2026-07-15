@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
+import { PDFJS_URL, PDFJS_WORKER_URL } from "../lib/pdfjs-config";
 
 interface PdfViewerProps {
   fileUrl: string | null;
@@ -46,18 +47,16 @@ export default function PdfViewer({
   React.useEffect(() => {
     // If already loaded (e.g., by another instance), skip
     if ((window as any).pdfjsLib) {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       setPdfJsLoaded(true);
       return;
     }
 
     const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    script.src = PDFJS_URL;
     script.async = true;
     script.onload = () => {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       setPdfJsLoaded(true);
     };
     document.body.appendChild(script);
@@ -181,8 +180,8 @@ export default function PdfViewer({
     return (
       <div
         className={`flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed rounded-lg transition-colors ${dragOver
-            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-            : "border-gray-300 dark:border-gray-600"
+          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+          : "border-gray-300 dark:border-gray-600"
           }`}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}

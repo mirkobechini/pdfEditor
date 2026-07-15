@@ -3,7 +3,11 @@
  * This is used for generating thumbnails/previews in the DeleteModal
  */
 
-export async function renderFirstPageToDataUrl(pdfUrl: string): Promise<string> {
+import { PDFJS_URL, PDFJS_WORKER_URL } from "./pdfjs-config";
+
+export async function renderFirstPageToDataUrl(
+  pdfUrl: string,
+): Promise<string> {
   // Ensure PDF.js is loaded
   if (!(window as any).pdfjsLib) {
     await loadPdfJs();
@@ -45,18 +49,16 @@ async function loadPdfJs(): Promise<void> {
   return new Promise((resolve, reject) => {
     // If already loaded, resolve immediately
     if ((window as any).pdfjsLib) {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       resolve();
       return;
     }
 
     const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    script.src = PDFJS_URL;
     script.async = true;
     script.onload = () => {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       resolve();
     };
     script.onerror = () => reject(new Error("Failed to load PDF.js"));
