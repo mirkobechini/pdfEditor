@@ -11,6 +11,7 @@
 - ✅ **R8: model_validate in metadata.py** — Consistenza con resto del codice (PR #343, issue #342)
 - ✅ **R10: ALLOWED_ORIGINS normalized** — field_validator per spazi in config (PR #345, issue #344)
 - ✅ **Bug Google OAuth: validazione startup + debug logging** — GOOGLE_CLIENT_ID obbligatorio in produzione (PR #347, issue #346)
+- ✅ **P1: Stream file upload** — Lettura a chunk 1MB invece di intero file in RAM (PR #349, issue #348)
 
 ## 2026-07-14
 

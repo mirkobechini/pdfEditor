@@ -357,14 +357,14 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 #### Performance (P1-P6)
 
-| #   | Problema                                                     | Impatto  |
-| --- | ------------------------------------------------------------ | -------- |
-| P1  | `upload.py:60` — File letto interamente in RAM (fino a 50MB) | RAM      |
-| P2  | `PdfViewer.tsx` — Race condition zoom+pagina                 | UX       |
-| P3  | `main.py` — `create_all` chiamato 2 volte (~100ms startup)   | Startup  |
-| P4  | `PdfViewer.tsx` — Blob URL non revocati su unmount           | Memoria  |
-| P5  | `pdf_service.py` — Password cache mai invalidata             | Security |
-| P6  | `Toolbar.tsx` — Keyboard listener rimosso/riaggiunto         | UX       |
+| #   | Problema                                                     | Impatto                                    |
+| --- | ------------------------------------------------------------ | ------------------------------------------ |
+| P1  | `upload.py:60` — File letto interamente in RAM (fino a 50MB) | ✅ Risolto (PR #349) — lettura a chunk 1MB |
+| P2  | `PdfViewer.tsx` — Race condition zoom+pagina                 | UX                                         |
+| P3  | `main.py` — `create_all` chiamato 2 volte (~100ms startup)   | ✅ Risolto (PR #300)                       |
+| P4  | `PdfViewer.tsx` — Blob URL non revocati su unmount           | Memoria                                    |
+| P5  | `pdf_service.py` — Password cache mai invalidata             | ✅ Risolto (PR #322)                       |
+| P6  | `Toolbar.tsx` — Keyboard listener rimosso/riaggiunto         | UX                                         |
 
 #### Test mancanti (T1-T7)
 
