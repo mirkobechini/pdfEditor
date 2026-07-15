@@ -23,7 +23,7 @@ def get_pdf_metadata(
             detail=str(e),
         )
 
-    return MetadataResponse(**meta)
+    return MetadataResponse.model_validate(meta)
 
 
 @router.put("/{pdf_id}/metadata", response_model=PdfResponse)
