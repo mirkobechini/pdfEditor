@@ -448,7 +448,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 | R7  | `frontend/src/app/components/GoogleLoginButton.tsx` | ✅ Risolto (PR #341) — `require()` → `await import()` dinamico               |
 | R8  | `backend/app/api/v1/metadata.py:28`                 | ✅ Risolto (PR #343) — ora usa `model_validate()`                            |     |
 | R9  | `frontend/src/app/lib/api.ts`                       | ✅ Risolto (PR #330) — stesso fix di R1, URL in `pdfjs-config.ts`            |
-| R10 | `backend/app/core/config.py`                        | `ALLOWED_ORIGINS` comma-separated fragile                                    |
+| R10 | `backend/app/core/config.py`                        | ✅ Risolto (PR #345) — `field_validator` normalizza spazi in ALLOWED_ORIGINS |
 
 ### Priorità fix bug
 
