@@ -42,6 +42,7 @@ export default function PdfViewer({
   const [unlocking, setUnlocking] = React.useState(false);
   const pdfDocRef = React.useRef<PdfJsDoc | null>(null);
   const renderTaskRef = React.useRef<{ cancel: () => void } | null>(null);
+  const renderKeyRef = React.useRef(0);
 
   // Load PDF.js on mount
   React.useEffect(() => {
@@ -94,6 +95,7 @@ export default function PdfViewer({
   React.useEffect(() => {
     if (!pdfDocRef.current || !canvasRef.current) return;
 
+    const key = ++renderKeyRef.current;
     const renderPage = async () => {
       setRendering(true);
       if (renderTaskRef.current) {
@@ -102,6 +104,9 @@ export default function PdfViewer({
 
       try {
         const page = await pdfDocRef.current.getPage(currentPage);
+        // If a newer render was requested while we waited, skip this one
+        if (key !== renderKeyRef.current) return;
+
         const viewport = page.getViewport({ scale: zoom });
         const canvas = canvasRef.current!;
 
