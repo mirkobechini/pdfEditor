@@ -120,7 +120,17 @@ export class ApiClient {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(JSON.parse(xhr.responseText));
         } else {
-          reject(new Error(xhr.statusText));
+          // Try to parse JSON error body like extractError does
+          let message = xhr.statusText;
+          try {
+            const body = JSON.parse(xhr.responseText);
+            if (typeof body.detail === "string") message = body.detail;
+            else if (Array.isArray(body.detail) && body.detail[0]?.msg)
+              message = body.detail[0].msg;
+          } catch {
+            // Non-JSON response — use statusText
+          }
+          reject(new Error(message));
         }
       };
 
