@@ -17,6 +17,7 @@
 - ✅ **Bug B13: race condition mount getMe vs login** — `_pendingAuthRef` per evitare flash logged out (PR #312, issue #311)
 - ✅ **Bug B14: PdfViewer script cleanup rompeva multi-instanza** — Non rimuove piu script CDN condiviso (PR #314, issue #313)
 - ✅ **Bug B15: uploadPdfWithProgress ignorava JSON error body** — Ora parsato come extractError (PR #316, issue #315)
+- ✅ **Bug B16: Sidebar useEffect missing deps** — loadFiles spostato dentro l'effect (PR #318, issue #317)
 - ✅ **ADR audit** — Aggiunta sezione con 21 bug trovati nel codice + 10 miglioramenti
 - ✅ **21 bug-audit plans** — Creati `.specs/plans/bug-audit-*.md` per ogni bug
 

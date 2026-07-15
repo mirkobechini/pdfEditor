@@ -428,7 +428,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 | ID  | File                                              | Riga    | Problema                                                                |
 | --- | ------------------------------------------------- | ------- | ----------------------------------------------------------------------- |
 | B15 | `frontend/src/app/lib/api.ts`                     | 110     | ✅ Risolto (PR #316) — parsato JSON error body in uploadPdfWithProgress |
-| B16 | `frontend/src/app/components/Sidebar.tsx`         | 28      | `useEffect` missing `loadFiles` in dependency array                     |
+| B16 | `frontend/src/app/components/Sidebar.tsx`         | 28      | ✅ Risolto (PR #318) — `loadFiles` spostato dentro `useEffect`          |
 | B17 | `backend/app/services/auth_service.py`            | 95-108  | Google OAuth certs lookup — dead code `if` block                        |
 | B18 | `backend/app/services/pdf_service.py`             | 18      | `_password_cache` globale non pulita su shutdown                        |
 | B19 | `backend/app/services/pdf_merge_split_service.py` | 48-56   | Resource leak in `merge()` su eccezione                                 |
