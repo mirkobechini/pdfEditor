@@ -101,17 +101,17 @@ class AuthService:
             raise ValueError("Invalid token algorithm")
 
         kid = header.get("kid")
-        if not kid or kid not in certs.get("keys", {}):
-            # certs is {"keys": [...]}, we need to find by kid
-            key = None
-            for k in certs.get("keys", []):
-                if k.get("kid") == kid:
-                    key = k
-                    break
-            if not key:
-                raise ValueError("Invalid token key ID")
-        else:
-            key = certs[kid]
+        if not kid:
+            raise ValueError("Invalid token key ID")
+
+        # Find the matching key by kid in Google's certs list
+        key = None
+        for k in certs.get("keys", []):
+            if k.get("kid") == kid:
+                key = k
+                break
+        if not key:
+            raise ValueError("Invalid token key ID")
 
         try:
             payload = jwt.decode(
