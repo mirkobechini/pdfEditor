@@ -336,12 +336,12 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 #### 🟥 ALTA
 
-| #   | Task                                               | Tipo     | Piano                                     |
-| --- | -------------------------------------------------- | -------- | ----------------------------------------- |
-| 1   | **Bug Google OAuth** — ✅ Risolto (PR #347)         | 🐛 Bug   | ✅ `bug-google-oauth-token.md`             |
-| 2   | **Backend coverage 100%** — attuale 93%            | 🧹 Chore | `chore-backend-100-percent-coverage.md`   |
-| 3   | **Frontend coverage 100%** — attuale 67.5%         | 🧹 Chore | `chore-frontend-100-percent-coverage.md`  |
-| 4   | **Standardizzazione messaggi errore** IT/EN        | 🧹 Chore | `chore-error-messages-standardization.md` |
+| #   | Task                                        | Tipo     | Piano                                     |
+| --- | ------------------------------------------- | -------- | ----------------------------------------- |
+| 1   | **Bug Google OAuth** — ✅ Risolto (PR #347) | 🐛 Bug   | ✅ `bug-google-oauth-token.md`            |
+| 2   | **Backend coverage 100%** — attuale 93%     | 🧹 Chore | `chore-backend-100-percent-coverage.md`   |
+| 3   | **Frontend coverage 100%** — attuale 67.5%  | 🧹 Chore | `chore-frontend-100-percent-coverage.md`  |
+| 4   | **Standardizzazione messaggi errore** IT/EN | 🧹 Chore | `chore-error-messages-standardization.md` |
 
 #### 🟡 MEDIA
 
