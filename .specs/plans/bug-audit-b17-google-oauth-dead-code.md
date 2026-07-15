@@ -1,17 +1,13 @@
 # Bug B17: Google OAuth certs lookup — dead code `if` block
 
-**Status:** [ ] Non iniziata
+**Status:** [x] Completata (2026-07-15, PR #320)
 **Priority:** MEDIUM
 **Complexity:** Low
 
 ## Problema
 
-In `backend/app/services/auth_service.py`, il controllo `if kid not in certs.get("keys", {})` non funziona perché `keys` è una lista, non un dict. Il `in` check su una lista non trova mai il `kid`. Il codice cade sempre nel loop manuale che funziona, ma il primo `if` è dead code fuorviante.
+Il controllo `if kid not in certs.get("keys", {})` non funzionava — `keys` e una lista, non un dict. Dead code.
 
 ## Soluzione
 
-Rimuovere il `if dead code` e mantenere solo il loop manuale di ricerca.
-
-## File da modificare
-
-- `backend/app/services/auth_service.py`
+Rimosso il `if/else` morto, mantenuto solo il loop manuale.
