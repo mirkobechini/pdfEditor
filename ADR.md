@@ -431,7 +431,7 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 | B16 | `frontend/src/app/components/Sidebar.tsx`         | 28      | ✅ Risolto (PR #318) — `loadFiles` spostato dentro `useEffect`          |
 | B17 | `backend/app/services/auth_service.py`            | 95-108  | ✅ Risolto (PR #320) — rimosso `if` dead code nel lookup Google certs   |
 | B18 | `backend/app/services/pdf_service.py`             | 18      | ✅ Risolto (PR #322) — cache password pulita su shutdown                |
-| B19 | `backend/app/services/pdf_merge_split_service.py` | 48-56   | Resource leak in `merge()` su eccezione                                 |
+| B19 | `backend/app/services/pdf_merge_split_service.py` | 48-56   | ✅ Risolto (PR #324) — try/finally in merge() previene leak |
 | B20 | `backend/app/api/v1/admin.py`                     | 32      | Tipo di ritorno errato (`list[UserResponse]` vs `UserListResponse`)     |
 | B21 | `frontend/src/app/app/page.tsx`                   | 168-177 | `handleEditText` dead code — mai chiamata                               |
 
