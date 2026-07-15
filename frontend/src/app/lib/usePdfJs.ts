@@ -13,8 +13,8 @@ export function usePdfJs(): boolean {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if ((window as any).pdfjsLib) {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_URL;
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_URL;
       setLoaded(true);
       return;
     }
@@ -23,7 +23,7 @@ export function usePdfJs(): boolean {
     script.src = PDFJS_URL;
     script.async = true;
     script.onload = () => {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_URL;
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_URL;
       setLoaded(true);
     };
     document.body.appendChild(script);
