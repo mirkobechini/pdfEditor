@@ -432,8 +432,8 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 | B17 | `backend/app/services/auth_service.py`            | 95-108  | ✅ Risolto (PR #320) — rimosso `if` dead code nel lookup Google certs   |
 | B18 | `backend/app/services/pdf_service.py`             | 18      | ✅ Risolto (PR #322) — cache password pulita su shutdown                |
 | B19 | `backend/app/services/pdf_merge_split_service.py` | 48-56   | ✅ Risolto (PR #324) — try/finally in merge() previene leak             |
-| B20 | `backend/app/api/v1/admin.py`                      | 32      | ✅ Risolto (PR #326) — annotazione corretta a `UserListResponse` |
-| B21 | `frontend/src/app/app/page.tsx`                   | 168-177 | `handleEditText` dead code — mai chiamata                               |
+| B20 | `backend/app/api/v1/admin.py`                     | 32      | ✅ Risolto (PR #326) — annotazione corretta a `UserListResponse`        |
+| B21 | `frontend/src/app/app/page.tsx`                   | 168-177 | ✅ Risolto (PR #328) — rimosso `handleEditText` dead code |
 
 ### 🛠 Opportunità di miglioramento (leggibilità/performance)
 
@@ -453,5 +453,6 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 ### Priorità fix bug
 
 ```
-B1-B5 (critici) → B6-B14 (alti) → B15-B21 (medi) → R1-R10 (miglioramenti)
+✅ B1-B5 (critici) — ✅ B6-B14 (alti) — ✅ B15-B21 (medi)
+TUTTI I 21 BUG RISOLTI
 ```

@@ -1,17 +1,13 @@
 # Bug B21: `handleEditText` dead code — mai chiamata
 
-**Status:** [ ] Non iniziata
+**Status:** [x] Completata (2026-07-15, PR #328)
 **Priority:** MEDIUM
 **Complexity:** Low
 
 ## Problema
 
-In `frontend/src/app/app/page.tsx`, `handleEditText` esiste con un TODO comment e non è mai chiamata da nessun componente.
+`handleEditText` era una funzione con TODO, mai chiamata, che scaricava il PDF senza modificarlo.
 
 ## Soluzione
 
-Rimuovere la funzione dead code.
-
-## File da modificare
-
-- `frontend/src/app/app/page.tsx`
+Rimossa la funzione.
