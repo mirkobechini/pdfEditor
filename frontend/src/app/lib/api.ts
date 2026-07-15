@@ -6,6 +6,7 @@ import type {
   Metadata,
   BugReport,
   AdminUser,
+  UserResponse,
 } from "./api-types";
 
 export type { PdfDocument, PdfListResponse, Metadata, BugReport, AdminUser };
@@ -366,7 +367,10 @@ export class ApiClient {
     return res.json();
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<any> {
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<UserResponse> {
     const res = await this._fetch(`${this.baseUrl}/auth/reset-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -376,17 +380,7 @@ export class ApiClient {
     return res.json();
   }
 
-  async getMe(): Promise<{
-    id: string;
-    email: string;
-    full_name: string;
-    is_active: boolean;
-    is_admin: boolean;
-    license_tier: string;
-    license_tier_source: string;
-    created_at: string;
-    updated_at: string;
-  }> {
+  async getMe(): Promise<UserResponse> {
     const res = await this._fetch(`${this.baseUrl}/auth/me`, {
       headers: this.getHeaders(),
     });
@@ -394,7 +388,7 @@ export class ApiClient {
     return res.json();
   }
 
-  async updateProfile(data: { full_name: string }): Promise<any> {
+  async updateProfile(data: { full_name: string }): Promise<UserResponse> {
     const res = await this._fetch(`${this.baseUrl}/auth/me`, {
       method: "PUT",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
