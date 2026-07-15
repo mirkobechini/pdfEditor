@@ -82,8 +82,6 @@ def get_pdf(
     service: PdfService = Depends(get_pdf_service),
 ) -> PdfResponse:
     """Get PDF metadata by ID (must be owned by current user)."""
-    from app.repositories.pdf_repo import PdfRepository
-
     pdf = service.get_by_id(pdf_id)
     if not pdf or pdf.user_id != current_user.id:
         raise HTTPException(
