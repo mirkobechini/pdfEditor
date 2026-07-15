@@ -14,15 +14,17 @@ export default function GoogleLoginButton() {
     React.useEffect(() => {
         // Only run on client side
         setMounted(true);
-        try {
-            const hasClientId = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-            if (hasClientId) {
-                const mod = require("@react-oauth/google");
-                setGoogleLogin(() => mod.GoogleLogin);
+        (async () => {
+            try {
+                const hasClientId = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+                if (hasClientId) {
+                    const mod = await import("@react-oauth/google");
+                    setGoogleLogin(() => mod.GoogleLogin);
+                }
+            } catch (err) {
+                console.debug("Google OAuth not available:", err);
             }
-        } catch (err) {
-            console.debug("Google OAuth not available:", err);
-        }
+        })();
     }, []);
 
     if (!mounted || !GoogleLogin) {
