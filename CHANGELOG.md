@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-07-15
+
+- ✅ **R1+R9: Centralized PDF.js CDN URLs** — Creato `pdfjs-config.ts` con URL condivisi (PR #330, issue #329)
+
 ## 2026-07-14
 
 - ✅ **Bug B1: Duplicate HTTPException in auth.py** — Rimosso dead code in `update_me()` (PR #288, issue #287)
