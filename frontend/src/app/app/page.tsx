@@ -165,19 +165,6 @@ export default function EditorPage() {
         }
     }
 
-    async function handleEditText(id: string, updates: Record<string, string>) {
-        try {
-            // TODO: implement editText endpoint
-            // await api.editText(id, updates);
-            const blob = await api.downloadPdf(id);
-            const url = URL.createObjectURL(blob);
-            if (fileUrl) URL.revokeObjectURL(fileUrl);
-            setFileUrl(url);
-        } catch (err) {
-            console.error("Edit failed:", err);
-        }
-    }
-
     async function handleMetadata(id: string, data: Record<string, string>) {
         try {
             await api.updateMetadata(id, data);
