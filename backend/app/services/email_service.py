@@ -87,8 +87,8 @@ class EmailService:
                 return False
 
         except requests.RequestException as e:
-            logger.error("SendGrid HTTP error for %s: %s", email, e)
+            logger.exception("SendGrid HTTP error for %s", email)
             return False
         except Exception as e:
-            logger.error("Email Error for %s: %s", email, e)
+            logger.exception("Email Error for %s", email)
             return False
