@@ -4,6 +4,7 @@
 
 - ✅ **R1+R9: Centralized PDF.js CDN URLs** — Creato `pdfjs-config.ts` con URL condivisi (PR #330, issue #329)
 - ✅ **R2+R3: Typed pdfjsLib and PdfViewer refs** — Aggiunto `Window` augmentation + rif tipizzati (PR #332, issue #331)
+- ✅ **R4: Removed unused lazy import** — Rimosso import inutilizzato in upload.py (PR #334, issue #333)
 
 ## 2026-07-14
 
