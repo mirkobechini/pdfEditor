@@ -42,6 +42,11 @@ def _cache_password(pdf_id: str, password: str) -> None:
     _password_cache[pdf_id] = (password, time.time())
 
 
+def _clear_password_cache() -> None:
+    """Clear all cached passwords (called on shutdown for security)."""
+    _password_cache.clear()
+
+
 class PdfService:
     """Business logic for PDF operations."""
 
