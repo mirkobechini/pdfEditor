@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-const PDFJS_URL =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-const WORKER_URL =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+import { PDFJS_URL, PDFJS_WORKER_URL as WORKER_URL } from "./pdfjs-config";
 
 /**
  * Hook to load PDF.js dynamically and track its loading state.
