@@ -84,6 +84,8 @@ async def lifespan(app: FastAPI):
 
 def _cleanup_on_shutdown():
     """Cleanup resources on shutdown."""
+    from app.services.pdf_service import _clear_password_cache
+    _clear_password_cache()
     logger.info("Cleanup complete.")
 
 
