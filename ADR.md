@@ -440,8 +440,8 @@ Durante una revisione approfondita del codice (2026-07-14), sono stati identific
 | ID  | File                                                | Problema                                                             |
 | --- | --------------------------------------------------- | -------------------------------------------------------------------- |
 | R1  | `PdfViewer.tsx`, `pdfPreview.ts`, `usePdfJs.ts`     | ✅ Risolto (PR #330) — URL PDF.js centralizzati in `pdfjs-config.ts` |
-| R2  | `PdfViewer.tsx`                                     | `(window as any).pdfjsLib` usato 6+ volte                            |
-| R3  | `PdfViewer.tsx`                                     | `useRef<any>` per `pdfDocRef` e `renderTaskRef`                      |
+| R2  | `PdfViewer.tsx`                                     | ✅ Risolto (PR #332) — `window.pdfjsLib` tipizzato via `pdfjs-types.d.ts` |
+| R3  | `PdfViewer.tsx`                                     | ✅ Risolto (PR #332) — `pdfDocRef` e `renderTaskRef` tipizzati correttamente |
 | R4  | `backend/app/api/v1/upload.py:83`                   | Import dentro funzione (`PdfRepository`)                             |
 | R5  | `backend/app/services/email_service.py:85`          | `except Exception` silenzioso — perdita stack trace                  |
 | R6  | `frontend/src/app/lib/api.ts`                       | `resetPassword()` e `updateProfile()` restituiscono `Promise<any>`   |
