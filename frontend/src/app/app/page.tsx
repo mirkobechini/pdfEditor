@@ -36,12 +36,25 @@ export default function EditorPage() {
     const [sidebarRefreshKey, setSidebarRefreshKey] = React.useState(0);
     const [requiresPassword, setRequiresPassword] = React.useState(false);
     const [passwordError, setPasswordError] = React.useState<string | null>(null);
+    const fileUrlRef = React.useRef<string | null>(null);
 
     React.useEffect(() => {
         if (!loading && !user) {
             window.location.href = "/login";
         }
     }, [loading, user]);
+
+    // Keep ref in sync with fileUrl for cleanup on unmount
+    React.useEffect(() => {
+        fileUrlRef.current = fileUrl;
+    }, [fileUrl]);
+
+    // Revoke blob URL on unmount to prevent memory leak
+    React.useEffect(() => {
+        return () => {
+            if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
+        };
+    }, []);
 
     if (loading || !user) {
         return (
