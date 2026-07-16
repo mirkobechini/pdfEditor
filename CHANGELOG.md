@@ -14,6 +14,7 @@
 - ✅ **P1: Stream file upload** — Lettura a chunk 1MB invece di intero file in RAM (PR #349, issue #348)
 - ✅ **P2: Race condition PdfViewer render** — renderKeyRef per evitare render stale (PR #351, issue #350)
 - ✅ **P4: Blob URL leak on unmount** — Revoca blob URL su smount di EditorPage (PR #353, issue #352)
+- ✅ **P6: Toolbar keyboard listener instabile** — Refs per callback stabili (PR #355, issue #354)
 
 ## 2026-07-14
 
