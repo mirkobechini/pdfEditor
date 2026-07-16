@@ -265,3 +265,21 @@ class TestDelete:
 
         response = client.delete(f"/pdfs/{pdf_id}", headers=other_headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND
+    def test_upload_file_without_content_length(self, client, sample_pdf_content, free_headers):
+        """Upload should work when Content-Length header is missing."""
+        response = client.post(
+            "/pdfs/upload",
+            headers=free_headers,
+            files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
+        )
+        assert response.status_code == 201
+
+    def test_upload_too_large_chunked(self, client, free_headers):
+        """Upload larger than max should be rejected."""
+        big = b"x" * (settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024 + 1)
+        response = client.post(
+            "/pdfs/upload",
+            headers=free_headers,
+            files={"file": ("big.pdf", big, "application/pdf")},
+        )
+        assert response.status_code == 413
