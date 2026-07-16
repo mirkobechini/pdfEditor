@@ -362,7 +362,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 | P1  | `upload.py:60` — File letto interamente in RAM (fino a 50MB) | ✅ Risolto (PR #349) — lettura a chunk 1MB      |
 | P2  | `PdfViewer.tsx` — Race condition zoom+pagina                 | ✅ Risolto (PR #351) — contatore `renderKeyRef` |
 | P3  | `main.py` — `create_all` chiamato 2 volte (~100ms startup)   | ✅ Risolto (PR #300)                            |
-| P4  | `PdfViewer.tsx` — Blob URL non revocati su unmount           | ✅ Risolto (PR #353) — cleanup effect con ref |
+| P4  | `PdfViewer.tsx` — Blob URL non revocati su unmount           | ✅ Risolto (PR #353) — cleanup effect con ref   |
 | P5  | `pdf_service.py` — Password cache mai invalidata             | ✅ Risolto (PR #322)                            |
 | P6  | `Toolbar.tsx` — Keyboard listener rimosso/riaggiunto         | UX                                              |
 
