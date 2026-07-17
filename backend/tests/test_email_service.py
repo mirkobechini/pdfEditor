@@ -55,6 +55,15 @@ class TestEmailService:
 
         assert result is False
 
+    def test_send_generic_exception_returns_false(self, monkeypatch):
+        """When an unexpected exception occurs, should return False."""
+        monkeypatch.setattr(settings, "SMTP_PASSWORD", "sendgrid-api-key")
+
+        with patch("requests.post", side_effect=Exception("Unexpected error")):
+            result = EmailService.send_password_reset_email("test@test.com", "abc123")
+
+        assert result is False
+
     def test_email_body_contains_reset_link(self, monkeypatch):
         """Email body should contain reset link with token."""
         monkeypatch.setattr(settings, "SMTP_PASSWORD", "sendgrid-api-key")
