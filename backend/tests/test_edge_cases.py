@@ -16,6 +16,7 @@ from sqlalchemy import create_engine, inspect
 from app.core.config import settings
 from app.models.user import User
 from app.repositories.user_repo import UserRepository
+from app.main import app as fastapi_app
 
 
 class TestDatabaseEdgeCases:
@@ -503,3 +504,96 @@ class TestAuthEdgeCasesAPI:
             json={"full_name": "Hacker"},
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class TestAdminEdgeCasesAPIAdvanced:
+    """Test admin.py edge cases not yet covered."""
+
+    def test_admin_send_reset_dev_mode(self, client, db_engine, monkeypatch):
+        """Should return dev mode message when SMTP not configured."""
+        from tests.test_bug_report import _admin_login
+        monkeypatch.setattr(settings, "SMTP_PASSWORD", "")
+
+        admin_token = _admin_login(client, db_engine)
+
+        # Register a target user
+        client.post(
+            "/auth/register",
+            json={"email": "devmode_target@test.com", "password": "Target1234", "full_name": "Target"},
+        )
+        resp = client.post("/auth/login", json={"email": "devmode_target@test.com", "password": "Target1234"})
+        me = client.get("/auth/me", headers={"Authorization": f"Bearer {resp.json()['access_token']}"})
+        target_id = me.json()["id"]
+
+        response = client.post(
+            f"/admin/users/{target_id}/send-reset",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert "SMTP not configured" in response.json()["message"] or "Dev mode" in response.json()["message"]
+
+
+class TestMainStartupAdvanced:
+    """Test main.py startup — _cleanup_on_shutdown and _add_missing_columns."""
+
+    def test_cleanup_on_shutdown(self, monkeypatch):
+        """_cleanup_on_shutdown should run without error."""
+        from app.main import _cleanup_on_shutdown
+        from app.services.pdf_service import _clear_password_cache
+
+        # Mock _clear_password_cache to verify it's called
+        called = False
+        original = _clear_password_cache
+        def mock_clear():
+            nonlocal called
+            called = True
+            original()
+
+        monkeypatch.setattr("app.services.pdf_service._clear_password_cache", mock_clear)
+        _cleanup_on_shutdown()
+        assert called, "_clear_password_cache should have been called"
+
+    def test_run_migrations(self):
+        """_run_migrations should run without error."""
+        from app.main import _run_migrations
+        _run_migrations()
+
+    def test_seed_super_admin(self, monkeypatch, db_session):
+        """_seed_super_admin should run without error (no user = no promotion)."""
+        from app.main import _seed_super_admin
+        _seed_super_admin()
+
+    def test_seed_license_features(self):
+        """_seed_license_features should run without error."""
+        from app.main import _seed_license_features
+        _seed_license_features()
+
+
+class TestGoogleLoginEndpoint:
+    """Test POST /auth/google edge cases."""
+
+    def test_google_login_via_dependency_override(self, client, monkeypatch):
+        """POST /auth/google with mocked Google login should work."""
+        from unittest.mock import MagicMock
+        from app.services.auth_service import AuthService
+
+        mock_service = MagicMock(spec=AuthService)
+        mock_service.google_login.return_value = (
+            MagicMock(id="user-id", is_active=True),
+            "fake-jwt-token"
+        )
+
+        from app.api.v1.auth import get_auth_service
+        fastapi_app.dependency_overrides[get_auth_service] = lambda: mock_service
+
+        try:
+            response = client.post(
+                "/auth/google",
+                json={"id_token": "valid-mock-token"},
+            )
+            assert response.status_code == status.HTTP_200_OK
+            data = response.json()
+            assert "access_token" in data
+            assert data["access_token"] == "fake-jwt-token"
+        finally:
+            fastapi_app.dependency_overrides.clear()
