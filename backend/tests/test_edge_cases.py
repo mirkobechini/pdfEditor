@@ -597,3 +597,16 @@ class TestGoogleLoginEndpoint:
             assert data["access_token"] == "fake-jwt-token"
         finally:
             fastapi_app.dependency_overrides.clear()
+
+
+class TestPdfServiceAdvanced:
+    """Test pdf_service.py advanced error paths."""
+
+    def test_export_svg_format(self, client, pro_headers, sample_pdf_content):
+        """Should export PDF to SVG format."""
+        from tests.conftest import upload_pdf
+        pdf_id = upload_pdf(client, pro_headers, sample_pdf_content)
+
+        response = client.post(f"/pdfs/{pdf_id}/export?fmt=svg", headers=pro_headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert "image/svg+xml" in response.headers["content-type"]
