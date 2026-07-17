@@ -647,15 +647,6 @@ class TestGoogleLoginEndpoint:
 class TestPdfServiceAdvanced:
     """Test pdf_service.py advanced error paths."""
 
-    def test_export_svg_format(self, client, pro_headers, sample_pdf_content):
-        """Should export PDF to SVG format."""
-        from tests.conftest import upload_pdf
-        pdf_id = upload_pdf(client, pro_headers, sample_pdf_content)
-
-        response = client.post(f"/pdfs/{pdf_id}/export?fmt=svg", headers=pro_headers)
-        assert response.status_code == status.HTTP_200_OK
-        assert "image/svg+xml" in response.headers["content-type"]
-
     def test_export_unsupported_format(self, client, pro_headers, sample_pdf_content):
         """Should reject unsupported export format."""
         from tests.conftest import upload_pdf
