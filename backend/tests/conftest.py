@@ -53,6 +53,12 @@ def force_local_storage(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def disable_sendgrid(monkeypatch):
+    """Force SMTP_PASSWORD to empty so tests never send real emails via SendGrid."""
+    monkeypatch.setattr("app.core.config.settings.SMTP_PASSWORD", "")
+
+
+@pytest.fixture(autouse=True)
 def disable_rate_limiting(monkeypatch):
     """Disable rate limiting during tests."""
     from app.core.limiter import limiter
