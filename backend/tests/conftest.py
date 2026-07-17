@@ -127,6 +127,18 @@ def db_engine():
 
 
 @pytest.fixture()
+def db_session(db_engine):
+    """Provide a SQLAlchemy session for direct DB testing."""
+    from sqlalchemy.orm import sessionmaker
+    Session = sessionmaker(bind=db_engine)
+    session = Session()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@pytest.fixture()
 def client():
     app.state.testing = True
     with TestClient(app) as c:
