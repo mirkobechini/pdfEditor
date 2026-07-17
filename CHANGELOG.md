@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-07-17
+
+- ✅ **Backend coverage 92% → 94%** — 49 nuovi test (305 totali, 0 failures). Modelli, repositories, email_service al 100%. auth_service 98%, admin 94%. (PR #357, issue #356)
+
 ## 2026-07-15
 
 - ✅ **R1+R9: Centralized PDF.js CDN URLs** — Creato `pdfjs-config.ts` con URL condivisi (PR #330, issue #329)
