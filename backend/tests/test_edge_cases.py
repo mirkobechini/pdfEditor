@@ -393,6 +393,30 @@ class TestPdfMergeSplitEdgeCases:
         with pytest.raises(ValueError, match="At least 2 PDFs"):
             service.merge(["single-id"], "user-id")
 
+    def test_split_invalid_range_format(self, client, pro_headers, sample_pdf_content):
+        """split_by_ranges should raise for invalid range format."""
+        from tests.conftest import upload_pdf
+        pdf_id = upload_pdf(client, pro_headers, sample_pdf_content)
+
+        response = client.post(
+            f"/pdfs/{pdf_id}/split",
+            headers=pro_headers,
+            json={"mode": "range", "ranges": ["invalid"]},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_split_range_out_of_bounds(self, client, pro_headers, sample_pdf_content):
+        """split_by_ranges should raise for out of bounds range."""
+        from tests.conftest import upload_pdf
+        pdf_id = upload_pdf(client, pro_headers, sample_pdf_content)
+
+        response = client.post(
+            f"/pdfs/{pdf_id}/split",
+            headers=pro_headers,
+            json={"mode": "range", "ranges": ["1-999"]},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
 
 class TestMainStartup:
     """Test main.py startup functions."""
