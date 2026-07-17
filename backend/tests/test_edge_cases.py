@@ -312,6 +312,75 @@ class TestAuthServiceEdgeCases:
             with pytest.raises(ValueError, match="Failed to update password"):
                 service.reset_password("valid-token", "NewPass123")
 
+    def test_google_login_inactive_user(self, db_session):
+        """google_login should fail for inactive user.
+        Mocks the full Google certs fetch + JWT decode flow to return a known payload.
+        """
+        import uuid
+        from unittest.mock import patch, MagicMock
+        from app.core.security import get_password_hash
+
+        user = User(
+            id=str(uuid.uuid4()),
+            email="google_inactive@test.com",
+            hashed_password=get_password_hash("dummy"),
+            full_name="Google Inactive",
+            google_id="google-123",
+            is_active=False,
+        )
+        db_session.add(user)
+        db_session.flush()
+
+        # Mock the external requests.get and jwt.decode at module level
+        with patch("requests.get") as mock_get:
+            mock_get.return_value.status_code = 200
+            mock_get.return_value.json.return_value = {"keys": [{"kid": "test-kid", "n": "test", "e": "AQAB", "kty": "RSA"}]}
+
+            with patch("jwt.get_unverified_header", return_value={"alg": "RS256", "kid": "test-kid"}):
+                with patch("jwt.decode", return_value={"email": "google_inactive@test.com", "sub": "google-123"}):
+
+                    from app.services.auth_service import AuthService
+                    service = AuthService(db_session)
+
+                    with pytest.raises(ValueError, match="Account is inactive"):
+                        service.google_login("fake-id-token")
+
+    def test_password_cache_expired(self):
+        """Test that expired password cache entries are cleaned up."""
+        from app.services.pdf_service import _cache_password, _get_cached_password, _clear_password_cache
+        _clear_password_cache()
+
+        # Cache a password with a manipulated timestamp
+        import time
+        from app.services.pdf_service import _password_cache, _PASSWORD_CACHE_TTL
+        old_time = time.time() - _PASSWORD_CACHE_TTL - 10
+        _password_cache["expired-pdf"] = ("oldpass", old_time)
+
+        # Getting expired password should return None and clean up
+        result = _get_cached_password("expired-pdf")
+        assert result is None
+        assert "expired-pdf" not in _password_cache
+
+        _clear_password_cache()
+
+    def test_password_cache_lazy_cleanup(self):
+        """Test lazy cleanup on cache write."""
+        from app.services.pdf_service import _cache_password, _get_cached_password, _clear_password_cache, _password_cache, _PASSWORD_CACHE_TTL
+        _clear_password_cache()
+
+        import time
+        # Add an expired entry
+        old_time = time.time() - _PASSWORD_CACHE_TTL - 10
+        _password_cache["lazy-expired"] = ("oldpass", old_time)
+
+        # Writing a new cache entry should trigger cleanup of expired entries
+        _cache_password("new-pdf", "newpass")
+
+        assert "lazy-expired" not in _password_cache
+        assert "new-pdf" in _password_cache
+
+        _clear_password_cache()
+
 
 class TestPdfMergeSplitEdgeCases:
     """Test pdf_merge_split_service.py edge cases."""
