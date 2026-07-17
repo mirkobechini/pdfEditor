@@ -52,7 +52,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | UUID come PK                                        | autoincrement integer      | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti                                                                                                                                                                   |
 | PyMuPDF                                             | pdf-lib, pikepdf           | Supporto nativo modifica testo, metadati, tagging accessibilità                                                                                                                                                          |
 | Autenticazione obbligatoria per ogni operazione PDF | Endpoint /pdfs/\* pubblici | Ogni PDF è associato a un utente (user_id). Anche le operazioni base (upload/list/download/delete) richiedono login, perché senza user_id non esiste ownership. Il free tier è un utente registrato a tutti gli effetti. |
-| python-jose[cryptography] + requests per SSO Google | Authlib                    | Scelta implementativa che si discosta dallo stack dichiarato                                                                                                                                                             |
+| PyJWT + requests per SSO Google                     | Authlib, python-jose       | Scelta implementativa diretta: `import jwt` (PyJWT) invece di python-jose[cryptography]. Nessuna dipendenza extra.                                                                                                       |
 | Provider i18n custom → next-intl client-side        | next-intl con middleware   | next-intl già installato ma inutilizzato. Rifattorizzato in PR #94: NextIntlClientProvider client-side (compatibile con output: 'export').                                                                               |
 | FastAPI sidecar con PyInstaller                     | Backend remoto sempre      | Funzionamento offline desktop (Fase 1c)                                                                                                                                                                                  |
 | pdf-lib lato client per merge/split                 | Solo API server            | Sostituito da API backend — refactoring PR #72                                                                                                                                                                           |
@@ -136,11 +136,10 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | `security.py`, `config.py`, `merge_split.py`, `metadata.py`, `reorder.py`, `text.py`, `unlock.py` | 100%     | ✅                   |
 | `auth.py`, `csrf.py`, `storage.py`                                                                | 100%     | ✅                   |
 | `s3_storage.py`                                                                                   | 99%      | 1 linea (def)        |
-| `auth_service.py`                                                                                 | 98%      | 3 linee Google login |
+| `auth_service.py`                                                                                 | 99%      | 1 linea Google login |
 | `convert.py`                                                                                      | 98%      | 1 linea (def)        |
 | `database.py`, `user_repo.py`                                                                     | 95-98%   | 🟡                   |
 | `admin.py`                                                                                        | 97%      | 🟡                   |
-| `auth_service.py`                                                                                 | 99%      | 1 linea Google login |
 | `main.py`                                                                                         | 87%      | 🟡 startup code      |
 | `pdf_service.py`                                                                                  | 86%      | 🔴 error path        |
 | `pdf_merge_split_service.py`                                                                      | 97%      | 🟡                   |
@@ -188,7 +187,7 @@ Le rimanenti ~79 linee non coperte sono suddivise in tre categorie, nessuna dell
 | `reset-password/page.tsx`      | 94%      | ✅               |
 | `MergeDialog/ReorderDialog`    | ~30-67%  | 🔴               |
 | `RemoveDialog`                 | 44%      | 🔴               |
-| **Backend**                    | **93%**  |                  |
+| **Backend**                    | **97%**  |                  |
 
 ### Cosa manca per il 100%
 
@@ -209,8 +208,6 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 ### Feature minori
 
 > 📋 **Storico completo:** Vedi [`CHANGELOG.md`](./CHANGELOG.md)
-
-### Feature pianificate (in ordine di priorità)
 
 ## Architectural Guidance
 
@@ -327,7 +324,7 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ---
 
-## 📋 Stato attuale (2026-07-15)
+## 📋 Stato attuale (2026-07-17)
 
 ### ✅ Completati — 21 bug + 10 miglioramenti
 
@@ -346,10 +343,9 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 | #   | Task                                        | Tipo     | Piano                                     |
 | --- | ------------------------------------------- | -------- | ----------------------------------------- |
-| 1   | **Bug Google OAuth** — ✅ Risolto (PR #347) | 🐛 Bug   | ✅ `bug-google-oauth-token.md`            |
-| 2   | **Backend coverage 100%** — attuale 93%     | 🧹 Chore | `chore-backend-100-percent-coverage.md`   |
-| 3   | **Frontend coverage 100%** — attuale 67.5%  | 🧹 Chore | `chore-frontend-100-percent-coverage.md`  |
-| 4   | **Standardizzazione messaggi errore** IT/EN | 🧹 Chore | `chore-error-messages-standardization.md` |
+| 1   | **Frontend coverage 100%** — attuale 67.5%  | 🧹 Chore | `chore-frontend-100-percent-coverage.md`  |
+| 2   | **Backend coverage 100%** — attuale 97%     | 🧹 Chore | `chore-backend-100-percent-coverage.md`   |
+| 3   | **Standardizzazione messaggi errore** IT/EN | 🧹 Chore | `chore-error-messages-standardization.md` |
 
 #### 🟡 MEDIA
 
