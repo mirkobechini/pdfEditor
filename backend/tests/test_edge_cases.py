@@ -714,3 +714,93 @@ class TestConvertEdgeCases:
             assert "Conversion failed" in response.json()["detail"]
         finally:
             fastapi_app.dependency_overrides.clear()
+
+
+class TestFinalCoverage:
+    """Final batch of tests targeting remaining uncovered lines across modules."""
+
+    def test_deps_get_current_user_value_error(self, client, monkeypatch):
+        """get_current_user should return 401 when AuthService raises ValueError."""
+        # Test via actual API with invalid token
+        response = client.get(
+            "/auth/me",
+            headers={"Authorization": "Bearer invalid-token"},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_admin_update_user_admin_value_error(self, client, db_engine, monkeypatch):
+        """PUT /admin/users/{id}/admin should return 400 when ValueError raised."""
+        from tests.test_bug_report import _admin_login
+        from sqlalchemy import text
+
+        admin_token = _admin_login(client, db_engine)
+
+        # Get admin user info
+        me = client.get("/auth/me", headers={"Authorization": f"Bearer {admin_token}"})
+        admin_id = me.json()["id"]
+
+        # Make this user match SUPER_ADMIN_EMAIL to trigger ValueError on demote
+        monkeypatch.setattr(settings, "SUPER_ADMIN_EMAIL", me.json()["email"])
+
+        response = client.put(
+            f"/admin/users/{admin_id}/admin",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"is_admin": False},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_admin_update_user_admin_not_found(self, client, db_engine):
+        """PUT /admin/users/{id}/admin should return 404 for non-existent user."""
+        from tests.test_bug_report import _admin_login
+        admin_token = _admin_login(client, db_engine)
+
+        response = client.put(
+            "/admin/users/non-existent-id/admin",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"is_admin": True},
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_auth_service_google_login_google_id_update(self, db_session, monkeypatch):
+        """google_login should update google_id for existing user without one."""
+        import uuid
+        from unittest.mock import patch
+        from app.core.security import get_password_hash
+
+        user = User(
+            id=str(uuid.uuid4()),
+            email="google_noid@test.com",
+            hashed_password=get_password_hash("dummy"),
+            full_name="Google No ID",
+            google_id=None,  # No google_id yet
+            is_active=True,
+        )
+        db_session.add(user)
+        db_session.flush()
+
+        with patch("requests.get") as mock_get:
+            mock_get.return_value.status_code = 200
+            mock_get.return_value.json.return_value = {"keys": [{"kid": "test-kid", "n": "test", "e": "AQAB", "kty": "RSA"}]}
+
+            with patch("jwt.get_unverified_header", return_value={"alg": "RS256", "kid": "test-kid"}):
+                with patch("jwt.decode", return_value={"email": "google_noid@test.com", "sub": "new-google-sub"}):
+
+                    from app.services.auth_service import AuthService
+                    service = AuthService(db_session)
+                    user_result, token = service.google_login("fake-id-token")
+
+                    assert user_result.google_id == "new-google-sub"
+
+    def test_main_seed_license_features_already_seeded(self):
+        """_seed_license_features should not raise when already seeded."""
+        from app.main import _seed_license_features
+        _seed_license_features()  # Should succeed (already seeded from test setup)
+
+    def test_export_txt_format(self, client, pro_headers, sample_pdf_content):
+        """Should export PDF to TXT format."""
+        from tests.conftest import upload_pdf
+        pdf_id = upload_pdf(client, pro_headers, sample_pdf_content)
+
+        response = client.post(f"/pdfs/{pdf_id}/export?fmt=txt", headers=pro_headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert "text/plain" in response.headers["content-type"]
