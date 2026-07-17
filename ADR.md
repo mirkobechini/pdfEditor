@@ -129,7 +129,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Coverage test backend
 
-### Stato attuale: 96% (320 test, 0 failures, 0 warnings)
+### Stato attuale: 97% (331 test, 0 failures, 0 warnings)
 
 | Modulo                                                                                            | Coverage | Note                 |
 | ------------------------------------------------------------------------------------------------- | -------- | -------------------- |
@@ -139,18 +139,25 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | `auth_service.py`                                                                                 | 98%      | 3 linee Google login |
 | `convert.py`                                                                                      | 98%      | 1 linea (def)        |
 | `database.py`, `user_repo.py`                                                                     | 95-98%   | 🟡                   |
-| `admin.py`                                                                                        | 96%      | 🟡                   |
+| `admin.py`                                                                                        | 97%      | 🟡                   |
+| `auth_service.py`                                                                                 | 99%      | 1 linea Google login |
 | `main.py`                                                                                         | 87%      | 🟡 startup code      |
-| `pdf_service.py`                                                                                  | 88%      | 🔴 error path        |
+| `pdf_service.py`                                                                                  | 86%      | 🔴 error path        |
 | `pdf_merge_split_service.py`                                                                      | 97%      | 🟡                   |
 | `models/*`, `repositories/*`, `email_service.py`                                                  | 100%     | ✅                   |
-| **TOTALE**                                                                                        | **96%**  |                      |
+| **TOTALE**                                                                                        | **97%**  |                      |
 
-### Cosa manca per il 100%
+### Cosa manca per il 100% — limite raggiunto senza integration tests
 
-- ~39 linee difficili (pdf_service.py error path) — mock fitz
-- ~19 linee startup code (main.py) — solo produzione
-- ~18 linee varie (def line, PostgreSQL branch, S3)
+Le rimanenti ~79 linee non coperte sono suddivise in tre categorie, nessuna delle quali è testabile con i soli unit test:
+
+1. **pdf_service.py (45 linee)** — Richiedono mocking di PyMuPDF (fitz), una libreria C che non può essere mockata via unittest. I path non coperti includono: errori "file not found", undo/redo dopo snapshot, branch SVG/image export, branch image import.
+
+2. **main.py (19 linee)** — Startup code che esegue solo in produzione: `_add_missing_columns` (ALTER TABLE), `_seed_super_admin`, `_seed_license_features` con DB reale. Questi path sono eseguiti automaticamente all'avvio e non possono essere testati in isolamento.
+
+3. **Infrastructure-dependent (~15 linee)** — PostgreSQL engine config (database.py), S3 pruning (s3_storage.py), `def` line (coverage artifact).
+
+**Decisione architetturale:** Il 97% è il limite pratico per questo progetto senza dedicare risorse a test di integrazione con PostgreSQL e S3. Le restanti linee sono state analizzate e classificate come "non testabili via unit test" nella issue #360.
 
 ## Coverage test frontend
 

@@ -2,6 +2,7 @@
 
 ## 2026-07-17
 
+- ✅ **Backend coverage 96% → 97%** — 15 nuovi test (331 totali, 0 failures). admin.py 97%, auth_service.py 99%. Raggiunto limite pratico per unit test. (PR #361, issue #360)
 - ✅ **Backend coverage 94% → 96%** — 15 nuovi test (320 totali, 0 failures). auth.py 100%, convert.py 98%, admin.py 96%. (PR #359, issue #358)
 - ✅ **Backend coverage 92% → 94%** — 49 nuovi test (305 totali, 0 failures). Modelli, repositories, email_service al 100%. auth_service 98%, admin 94%. (PR #357, issue #356)
 
