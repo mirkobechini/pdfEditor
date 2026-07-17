@@ -165,3 +165,160 @@ class TestBugReportEdgeCases:
             json={"status": "closed"},
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+class TestAdminEdgeCases:
+    """Test admin.py edge cases."""
+
+    def test_update_license_user_not_found(self, client, db_engine):
+        """Should return 404 when updating license for non-existent user."""
+        from tests.test_bug_report import _admin_login
+        admin_token = _admin_login(client, db_engine)
+
+        response = client.put(
+            "/admin/users/non-existent-id/license",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"license_tier": "lifetime"},
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_admin_send_reset_fails_gracefully(self, client, db_engine):
+        """Should handle failed token generation gracefully."""
+        from tests.test_bug_report import _admin_login
+        admin_token = _admin_login(client, db_engine)
+
+        # Register a target user
+        client.post(
+            "/auth/register",
+            json={"email": "reset_target@test.com", "password": "Target1234", "full_name": "Target"},
+        )
+        target_resp = client.post("/auth/login", json={"email": "reset_target@test.com", "password": "Target1234"})
+        me = client.get("/auth/me", headers={"Authorization": f"Bearer {target_resp.json()['access_token']}"})
+        target_id = me.json()["id"]
+
+        response = client.post(
+            f"/admin/users/{target_id}/send-reset",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        # Should succeed (SMTP not configured = dev mode)
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_list_license_features(self, client, free_headers):
+        """Should list license features for current user."""
+        response = client.get("/licenses/features", headers=free_headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert isinstance(response.json(), list)
+
+
+class TestAuthServiceEdgeCases:
+    """Test auth_service.py edge cases."""
+
+    def test_login_inactive_user(self, client, db_session):
+        """Login should fail for inactive user."""
+        import uuid
+        from app.core.security import get_password_hash
+        user = User(
+            id=str(uuid.uuid4()),
+            email="inactive@test.com",
+            hashed_password=get_password_hash("TestPass123"),
+            full_name="Inactive User",
+            is_active=False,
+        )
+        db_session.add(user)
+        db_session.flush()
+
+        from app.services.auth_service import AuthService
+        service = AuthService(db_session)
+        with pytest.raises(ValueError, match="Account is inactive"):
+            service.login("inactive@test.com", "TestPass123")
+
+    def test_get_current_user_inactive(self, client, db_session):
+        """get_current_user should fail for inactive user."""
+        import uuid
+        from app.core.security import get_password_hash, create_access_token
+        user = User(
+            id=str(uuid.uuid4()),
+            email="inactive_get@test.com",
+            hashed_password=get_password_hash("TestPass123"),
+            full_name="Inactive User",
+            is_active=False,
+        )
+        db_session.add(user)
+        db_session.flush()
+
+        token = create_access_token(data={"sub": user.id})
+        from app.services.auth_service import AuthService
+        service = AuthService(db_session)
+        with pytest.raises(ValueError, match="Account is inactive"):
+            service.get_current_user(token)
+
+    def test_get_current_user_not_found(self, db_session):
+        """get_current_user should fail for non-existent user."""
+        from app.core.security import create_access_token
+        import uuid
+        token = create_access_token(data={"sub": str(uuid.uuid4())})
+        from app.services.auth_service import AuthService
+        service = AuthService(db_session)
+        with pytest.raises(ValueError, match="User not found"):
+            service.get_current_user(token)
+
+    def test_get_current_user_no_user_id(self, db_session):
+        """get_current_user should fail if token has no sub."""
+        from app.core.security import create_access_token
+        token = create_access_token(data={"other": "value"})
+        from app.services.auth_service import AuthService
+        service = AuthService(db_session)
+        with pytest.raises(ValueError, match="Invalid token payload"):
+            service.get_current_user(token)
+
+    def test_validate_password_strength_all_checks(self):
+        """Each password strength check should raise ValueError."""
+        from app.services.auth_service import _validate_password_strength
+
+        with pytest.raises(ValueError, match="at least 8 characters"):
+            _validate_password_strength("Ab1")
+        with pytest.raises(ValueError, match="uppercase"):
+            _validate_password_strength("abcdefgh1")
+        with pytest.raises(ValueError, match="lowercase"):
+            _validate_password_strength("ABCDEFG1")
+        with pytest.raises(ValueError, match="number"):
+            _validate_password_strength("Abcdefgh")
+        # Valid password should not raise
+        _validate_password_strength("ValidPass1")
+
+    def test_reset_password_update_fails(self, db_session, monkeypatch):
+        """reset_password should raise if update_password returns None."""
+        import uuid
+        from datetime import datetime, timedelta, timezone
+        from app.core.security import get_password_hash
+
+        user = User(
+            id=str(uuid.uuid4()),
+            email="reset_fail@test.com",
+            hashed_password=get_password_hash("OldPass123"),
+            full_name="Reset Fail",
+            reset_token="valid-token",
+            reset_token_expires=datetime.now(timezone.utc) + timedelta(hours=1),
+        )
+        db_session.add(user)
+        db_session.flush()
+
+        from app.services.auth_service import AuthService
+        service = AuthService(db_session)
+
+        # Mock update_password to return None
+        from unittest.mock import patch
+        with patch.object(service.repo, "update_password", return_value=None):
+            with pytest.raises(ValueError, match="Failed to update password"):
+                service.reset_password("valid-token", "NewPass123")
+
+
+class TestPdfMergeSplitEdgeCases:
+    """Test pdf_merge_split_service.py edge cases."""
+
+    def test_merge_requires_at_least_two(self, db_session):
+        """merge should raise if less than 2 PDFs."""
+        from app.services.pdf_merge_split_service import PdfMergeSplitService
+        service = PdfMergeSplitService(db_session)
+        with pytest.raises(ValueError, match="At least 2 PDFs"):
+            service.merge(["single-id"], "user-id")
