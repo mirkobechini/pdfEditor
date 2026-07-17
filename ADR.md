@@ -129,29 +129,28 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Coverage test backend
 
-### Stato attuale: 94% (305 test, 0 failures, 0 warnings)
+### Stato attuale: 96% (320 test, 0 failures, 0 warnings)
 
-| Modulo                                                                                            | Coverage | Note                   |
-| ------------------------------------------------------------------------------------------------- | -------- | ---------------------- |
-| `security.py`, `config.py`, `merge_split.py`, `metadata.py`, `reorder.py`, `text.py`, `unlock.py` | 100%     | ✅                     |
-| `s3_storage.py`                                                                                   | 99%      | 1 linea (def)          |
-| `auth_service.py`                                                                                 | 98%      | 3 linee Google login   |
-| `database.py`, `user_repo.py`                                                                     | 95-98%   | 🟡                     |
-| `email_service.py`, `convert.py`                                                                  | 94%      | 🟡                     |
-| `main.py`, `auth.py`, `admin.py`, `deps.py`, `undo_redo.py`, `bug_report.py`                      | 76-94%   | 🟡                     |
-| `csrf.py`                                                                                         | 100%     | ✅                     |
-| `storage.py`                                                                                      | 100%     | ✅                     |
-| `pdf_service.py`                                                                                  | 86%      | 🔴 45 linee error path |
-| `pdf_merge_split_service.py`                                                                      | 96%      | 🟡                     |
-| `models/*`, `repositories/*`, `email_service.py`                                                  | 100%     | ✅                     |
-| **TOTALE**                                                                                        | **94%**  |                        |
+| Modulo                                                                                            | Coverage | Note                 |
+| ------------------------------------------------------------------------------------------------- | -------- | -------------------- |
+| `security.py`, `config.py`, `merge_split.py`, `metadata.py`, `reorder.py`, `text.py`, `unlock.py` | 100%     | ✅                   |
+| `auth.py`, `csrf.py`, `storage.py`                                                                | 100%     | ✅                   |
+| `s3_storage.py`                                                                                   | 99%      | 1 linea (def)        |
+| `auth_service.py`                                                                                 | 98%      | 3 linee Google login |
+| `convert.py`                                                                                      | 98%      | 1 linea (def)        |
+| `database.py`, `user_repo.py`                                                                     | 95-98%   | 🟡                   |
+| `admin.py`                                                                                        | 96%      | 🟡                   |
+| `main.py`                                                                                         | 87%      | 🟡 startup code      |
+| `pdf_service.py`                                                                                  | 88%      | 🔴 error path        |
+| `pdf_merge_split_service.py`                                                                      | 97%      | 🟡                   |
+| `models/*`, `repositories/*`, `email_service.py`                                                  | 100%     | ✅                   |
+| **TOTALE**                                                                                        | **96%**  |                      |
 
 ### Cosa manca per il 100%
 
-- ~45 linee difficili (pdf_service.py error path) — 2-3h
-- ~34 linee startup code (main.py) — 1-2h
-- ~7 linee Google login endpoint (auth.py) — 1h
-- ~22 linee varie (def line, PostgreSQL branch, S3) — 1h
+- ~39 linee difficili (pdf_service.py error path) — mock fitz
+- ~19 linee startup code (main.py) — solo produzione
+- ~18 linee varie (def line, PostgreSQL branch, S3)
 
 ## Coverage test frontend
 
