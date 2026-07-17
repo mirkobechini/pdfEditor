@@ -83,3 +83,8 @@ class TestSettingsValidation:
         """DEBUG should be settable to True."""
         s = Settings(_env_file=None, DEBUG=True, SECRET_KEY="test")
         assert s.DEBUG is True
+
+    def test_parse_allowed_origins_non_string(self):
+        """parse_allowed_origins should return value unchanged if not a string."""
+        s = Settings(_env_file=None, ALLOWED_ORIGINS="http://localhost:3000", SECRET_KEY="test")
+        assert s.ALLOWED_ORIGINS == "http://localhost:3000"

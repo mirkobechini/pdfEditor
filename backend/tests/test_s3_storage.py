@@ -149,6 +149,43 @@ class TestS3Snapshots:
         """s3_snapshot_clear should delete all snapshots."""
         mock_s3.list_objects_v2.return_value = {
             "Contents": [
+                {"Key": "snap1.pdf", "LastModified": "2026-01-01T00:00:00"},
+                {"Key": "snap2.pdf", "LastModified": "2026-01-02T00:00:00"},
+            ]
+        }
+        s3_snapshot_clear(self.pdf_id)
+        assert mock_s3.delete_object.call_count == 2
+
+    def test_snapshot_clear_no_snapshots(self, mock_s3):
+        """s3_snapshot_clear should do nothing when no snapshots."""
+        mock_s3.list_objects_v2.return_value = {}
+        s3_snapshot_clear(self.pdf_id)
+        mock_s3.delete_object.assert_not_called()
+
+    def test_snapshot_save_prunes_old(self, mock_s3, monkeypatch):
+        """s3_snapshot_save should prune old snapshots when exceeding MAX_SNAPSHOTS."""
+        from app.core.config import settings
+        monkeypatch.setattr(settings, "MAX_SNAPSHOTS", 1)
+        mock_s3.list_objects_v2.return_value = {
+            "Contents": [
+                {"Key": "old.pdf", "LastModified": "2026-01-01T00:00:00"},
+                {"Key": "newer.pdf", "LastModified": "2026-01-02T00:00:00"},
+            ]
+        }
+        s3_snapshot_save(self.pdf_id, b"content")
+        # Should delete the oldest (1 of 2, since MAX_SNAPSHOTS=1)
+        mock_s3.delete_object.assert_called_once()
+
+    def test_snapshot_pop_no_snapshots(self, mock_s3):
+        """s3_snapshot_pop should return None when no snapshots."""
+        mock_s3.list_objects_v2.return_value = {}
+        result = s3_snapshot_pop(self.pdf_id)
+        assert result is None
+
+    def test_snapshot_clear(self, mock_s3):
+        """s3_snapshot_clear should delete all snapshots."""
+        mock_s3.list_objects_v2.return_value = {
+            "Contents": [
                 {"Key": "snap1.pdf"},
                 {"Key": "snap2.pdf"},
             ]
