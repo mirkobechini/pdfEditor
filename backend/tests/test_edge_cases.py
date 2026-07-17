@@ -622,6 +622,27 @@ class TestGoogleLoginEndpoint:
         finally:
             fastapi_app.dependency_overrides.clear()
 
+    def test_google_login_value_error(self, client, monkeypatch):
+        """POST /auth/google should return 401 when Google login raises ValueError."""
+        from unittest.mock import MagicMock
+        from app.services.auth_service import AuthService
+
+        mock_service = MagicMock(spec=AuthService)
+        mock_service.google_login.side_effect = ValueError("Invalid or expired Google token")
+
+        from app.api.v1.auth import get_auth_service
+        fastapi_app.dependency_overrides[get_auth_service] = lambda: mock_service
+
+        try:
+            response = client.post(
+                "/auth/google",
+                json={"id_token": "bad-token"},
+            )
+            assert response.status_code == status.HTTP_401_UNAUTHORIZED
+            assert "Invalid" in response.json()["detail"]
+        finally:
+            fastapi_app.dependency_overrides.clear()
+
 
 class TestPdfServiceAdvanced:
     """Test pdf_service.py advanced error paths."""
@@ -634,3 +655,51 @@ class TestPdfServiceAdvanced:
         response = client.post(f"/pdfs/{pdf_id}/export?fmt=svg", headers=pro_headers)
         assert response.status_code == status.HTTP_200_OK
         assert "image/svg+xml" in response.headers["content-type"]
+
+    def test_export_unsupported_format(self, client, pro_headers, sample_pdf_content):
+        """Should reject unsupported export format."""
+        from tests.conftest import upload_pdf
+        pdf_id = upload_pdf(client, pro_headers, sample_pdf_content)
+
+        response = client.post(f"/pdfs/{pdf_id}/export?fmt=docx", headers=pro_headers)
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+class TestConvertEdgeCases:
+    """Test convert.py edge cases."""
+
+    def test_import_no_filename(self, client, pro_headers):
+        """POST /pdfs/import with empty filename should return 400."""
+        response = client.post(
+            "/pdfs/import",
+            headers=pro_headers,
+            files={"file": ("", b"content", "text/plain")},
+        )
+        assert response.status_code in (status.HTTP_400_BAD_REQUEST, 422)
+
+    def test_import_value_error(self, client, pro_headers, monkeypatch):
+        """POST /pdfs/import when service raises ValueError should return 400."""
+        from app.services.pdf_service import PdfService
+        from unittest.mock import MagicMock
+        from app.api.v1 import convert as convert_module
+
+        # Use dependency override to make import_file_to_pdf raise ValueError
+        from app.main import app as fastapi_app
+        from app.api.deps import get_pdf_service
+
+        mock_service = MagicMock(spec=PdfService)
+        mock_service.import_file_to_pdf.side_effect = ValueError("Conversion failed")
+
+        # Override get_pdf_service for this test
+        fastapi_app.dependency_overrides[get_pdf_service] = lambda: mock_service
+
+        try:
+            response = client.post(
+                "/pdfs/import",
+                headers=pro_headers,
+                files={"file": ("test.txt", b"Hello World", "text/plain")},
+            )
+            assert response.status_code == status.HTTP_400_BAD_REQUEST
+            assert "Conversion failed" in response.json()["detail"]
+        finally:
+            fastapi_app.dependency_overrides.clear()
