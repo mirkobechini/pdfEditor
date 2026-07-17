@@ -352,12 +352,11 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 | #   | Task                         | Piano                                     |
 | --- | ---------------------------- | ----------------------------------------- |
 | 5   | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md` |
-| 6   | Password visibility toggle   | `feature-password-visibility-toggle.md`   |
-| 7   | PDF compression              | `feature-pdf-compression.md`              |
-| 8   | PDF naming preservation      | `feature-pdf-naming-preservation.md`      |
-| 9   | License tier button skin     | `feature-license-tier-button-skin.md`     |
-| 10  | UI/UX improvements           | `feature-ui-ux-improvements.md`           |
-| 11  | Inline text editor           | `feature-inline-text-editor.md`           |
+| 6   | PDF compression              | `feature-pdf-compression.md`              |
+| 7   | PDF naming preservation      | `feature-pdf-naming-preservation.md`      |
+| 8   | License tier button skin     | `feature-license-tier-button-skin.md`     |
+| 9   | UI/UX improvements           | `feature-ui-ux-improvements.md`           |
+| 10  | Inline text editor           | `feature-inline-text-editor.md`           |
 
 #### Performance (P1-P6)
 
