@@ -361,3 +361,76 @@ class TestMainStartup:
         monkeypatch.setattr(settings, "GOOGLE_CLIENT_ID", "test-id")
         from app.main import _validate_settings
         _validate_settings()  # Should not raise
+
+
+class TestAdminEdgeCasesAPI:
+    """Test admin.py edge cases via API."""
+
+    def test_update_license_denied_non_admin(self, client):
+        """PUT /admin/users/{id}/license should deny non-admin users."""
+        from tests.test_bug_report import _login
+        token = _login(client, email="nonadmin_lic@test.com")
+
+        response = client.put(
+            "/admin/users/some-id/license",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"license_tier": "lifetime"},
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_update_admin_denied_non_admin(self, client):
+        """PUT /admin/users/{id}/admin should deny non-admin users."""
+        from tests.test_bug_report import _login
+        token = _login(client, email="nonadmin_adm@test.com")
+
+        response = client.put(
+            "/admin/users/some-id/admin",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"is_admin": True},
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_update_license_stripe_user_denied(self, client, db_engine):
+        """Should deny modifying Stripe-paid license."""
+        from tests.test_bug_report import _admin_login
+        from sqlalchemy import text
+
+        admin_token = _admin_login(client, db_engine)
+
+        # Register a target user with stripe source
+        client.post(
+            "/auth/register",
+            json={"email": "stripe_user@test.com", "password": "Stripe1234", "full_name": "Stripe User"},
+        )
+        resp = client.post("/auth/login", json={"email": "stripe_user@test.com", "password": "Stripe1234"})
+        me = client.get("/auth/me", headers={"Authorization": f"Bearer {resp.json()['access_token']}"})
+        target_id = me.json()["id"]
+
+        # Set license_tier_source to stripe
+        with db_engine.connect() as conn:
+            conn.execute(
+                text("UPDATE users SET license_tier_source = 'stripe' WHERE id = :uid"),
+                {"uid": target_id},
+            )
+            conn.commit()
+
+        response = client.put(
+            f"/admin/users/{target_id}/license",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"license_tier": "lifetime"},
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert "Stripe" in response.json()["detail"]
+
+
+class TestAuthEdgeCasesAPI:
+    """Test auth.py edge cases via API."""
+
+    def test_update_me_invalid_token(self, client):
+        """PUT /auth/me with invalid token should return 401."""
+        response = client.put(
+            "/auth/me",
+            headers={"Authorization": "Bearer invalid-token"},
+            json={"full_name": "Hacker"},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
