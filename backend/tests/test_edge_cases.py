@@ -664,6 +664,26 @@ class TestPdfServiceAdvanced:
         response = client.post(f"/pdfs/{pdf_id}/export?fmt=docx", headers=pro_headers)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_reorder_invalid_page_count(self, client, pro_headers, sample_pdf_content):
+        """Should reject reorder with wrong number of pages."""
+        from tests.conftest import upload_pdf
+        pdf_id = upload_pdf(client, pro_headers, sample_pdf_content)
+
+        response = client.post(
+            f"/pdfs/{pdf_id}/reorder",
+            headers=pro_headers,
+            json={"page_order": [1, 2, 3, 4, 5]},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_remove_pdf_not_found(self, client, pro_headers):
+        """Should return 404 when deleting non-existent PDF."""
+        response = client.delete(
+            "/pdfs/non-existent-id",
+            headers=pro_headers,
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
 
 class TestConvertEdgeCases:
     """Test convert.py edge cases."""
