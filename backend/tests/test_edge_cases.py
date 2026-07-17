@@ -322,3 +322,42 @@ class TestPdfMergeSplitEdgeCases:
         service = PdfMergeSplitService(db_session)
         with pytest.raises(ValueError, match="At least 2 PDFs"):
             service.merge(["single-id"], "user-id")
+
+
+class TestMainStartup:
+    """Test main.py startup functions."""
+
+    def test_validate_settings_missing_secret_key(self, monkeypatch):
+        """_validate_settings should raise RuntimeError when SECRET_KEY is empty."""
+        monkeypatch.setattr(settings, "SECRET_KEY", "")
+        monkeypatch.setattr(settings, "JWT_SECRET_KEY", "")
+        from app.main import _validate_settings
+        with pytest.raises(RuntimeError, match="SECRET_KEY"):
+            _validate_settings()
+
+    def test_validate_settings_default_super_admin_in_production(self, monkeypatch):
+        """_validate_settings should raise when SUPER_ADMIN_EMAIL is default in production."""
+        monkeypatch.setattr(settings, "DEBUG", False)
+        monkeypatch.setattr(settings, "SUPER_ADMIN_EMAIL", "admin@pdfeditor.local")
+        monkeypatch.setattr(settings, "SECRET_KEY", "test-key")
+        from app.main import _validate_settings
+        with pytest.raises(RuntimeError, match="SUPER_ADMIN_EMAIL"):
+            _validate_settings()
+
+    def test_validate_settings_missing_google_client_id(self, monkeypatch):
+        """_validate_settings should raise when GOOGLE_CLIENT_ID missing in production."""
+        monkeypatch.setattr(settings, "DEBUG", False)
+        monkeypatch.setattr(settings, "SUPER_ADMIN_EMAIL", "admin@example.com")
+        monkeypatch.setattr(settings, "SECRET_KEY", "test-key")
+        monkeypatch.setattr(settings, "GOOGLE_CLIENT_ID", "")
+        from app.main import _validate_settings
+        with pytest.raises(RuntimeError, match="GOOGLE_CLIENT_ID"):
+            _validate_settings()
+
+    def test_validate_settings_passes_with_valid_config(self, monkeypatch):
+        """_validate_settings should pass with valid configuration."""
+        monkeypatch.setattr(settings, "SECRET_KEY", "test-key")
+        monkeypatch.setattr(settings, "SUPER_ADMIN_EMAIL", "admin@example.com")
+        monkeypatch.setattr(settings, "GOOGLE_CLIENT_ID", "test-id")
+        from app.main import _validate_settings
+        _validate_settings()  # Should not raise
