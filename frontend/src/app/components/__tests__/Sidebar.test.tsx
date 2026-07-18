@@ -125,4 +125,59 @@ describe("Sidebar", () => {
             expect(screen.getByText("loadFailed")).toBeInTheDocument();
         });
     });
+
+    it("shows drag-over highlight on dragOver event", () => {
+        render(<Sidebar {...defaultProps} />);
+        const dropZone = screen.getByText("dropHere").closest("div[class*='border-dashed']")!;
+        fireEvent.dragOver(dropZone);
+        expect(dropZone.className).toContain("border-blue-500");
+    });
+
+    it("removes drag-over highlight on dragLeave", () => {
+        render(<Sidebar {...defaultProps} />);
+        const dropZone = screen.getByText("dropHere").closest("div[class*='border-dashed']")!;
+        const beforeClass = dropZone.className;
+        fireEvent.dragOver(dropZone);
+        fireEvent.dragLeave(dropZone);
+        // After dragLeave should not have the blue-500 class
+        expect(dropZone.className).not.toContain("bg-blue-50");
+    });
+
+    it("shows rename input when rename button is clicked", async () => {
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+        });
+        const renameBtns = screen.getAllByTitle("rename");
+        fireEvent.click(renameBtns[0]);
+        // Rename input should appear with the file name
+        const renameInput = document.querySelector("input[class*='border-blue']") as HTMLInputElement;
+        expect(renameInput).toBeTruthy();
+        expect(renameInput.value).toBe("doc1.pdf");
+    });
+
+    it("closes rename on blur", async () => {
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+        });
+        const renameBtns = screen.getAllByTitle("rename");
+        fireEvent.click(renameBtns[0]);
+        const renameInput = document.querySelector("input[class*='border-blue']") as HTMLInputElement;
+        expect(renameInput).toBeTruthy();
+        fireEvent.blur(renameInput);
+        // Should go back to showing the filename
+        expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+    });
+
+    it("calls onDeleteClick when delete button is clicked", async () => {
+        const onDeleteClick = vi.fn();
+        render(<Sidebar {...defaultProps} onDeleteClick={onDeleteClick} />);
+        await waitFor(() => {
+            expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+        });
+        const deleteBtns = screen.getAllByTitle("delete");
+        fireEvent.click(deleteBtns[0]);
+        expect(onDeleteClick).toHaveBeenCalledWith(mockFiles.items[0]);
+    });
 });

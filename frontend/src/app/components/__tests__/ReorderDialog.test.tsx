@@ -1,13 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
-import SplitDialog from "../SplitDialog";
+import ReorderDialog from "../ReorderDialog";
 
 vi.mock("../../lib/api", () => ({
     api: {
-        listPdfs: vi.fn(),
-        splitPdf: vi.fn(),
         downloadPdf: vi.fn(),
+        reorderPages: vi.fn(),
     },
 }));
 
@@ -22,44 +21,44 @@ const defaultProps = {
     onClose: vi.fn(),
     selectedId: "pdf-123",
     selectedName: "test.pdf",
-    totalPages: 5,
+    totalPages: 3,
     onSuccess: vi.fn(),
 };
 
-describe("SplitDialog", () => {
-    beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => { vi.clearAllMocks(); });
 
+describe("ReorderDialog", () => {
     it("renders when open", () => {
-        render(<SplitDialog {...defaultProps} />);
+        render(<ReorderDialog {...defaultProps} />);
         expect(screen.getByText("title")).toBeInTheDocument();
     });
 
     it("does not render when closed", () => {
-        const { container } = render(<SplitDialog {...defaultProps} open={false} />);
+        const { container } = render(<ReorderDialog {...defaultProps} open={false} />);
         expect(container).toBeEmptyDOMElement();
     });
 
     it("shows file info", () => {
-        render(<SplitDialog {...defaultProps} />);
+        render(<ReorderDialog {...defaultProps} />);
         expect(screen.getByText(/test.pdf/)).toBeInTheDocument();
-        expect(screen.getByText(/5/)).toBeInTheDocument();
+        expect(screen.getByText(/3/)).toBeInTheDocument();
     });
 
     it("shows loading spinner while thumbnails load", () => {
         (api.downloadPdf as any).mockImplementation(() => new Promise(() => { }));
-        render(<SplitDialog {...defaultProps} />);
+        render(<ReorderDialog {...defaultProps} />);
         expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
     });
 
     it("shows error message when thumbnails fail to load", async () => {
         (api.downloadPdf as any).mockRejectedValue(new Error("Load failed"));
-        render(<SplitDialog {...defaultProps} />);
+        render(<ReorderDialog {...defaultProps} />);
         expect(await screen.findByText(/failed/)).toBeInTheDocument();
     });
 
     it("calls onClose when overlay clicked", () => {
         const onClose = vi.fn();
-        render(<SplitDialog {...defaultProps} onClose={onClose} />);
+        render(<ReorderDialog {...defaultProps} onClose={onClose} />);
         fireEvent.click(screen.getByText("title").closest(".fixed")!);
         expect(onClose).toHaveBeenCalled();
     });
