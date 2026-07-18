@@ -399,6 +399,34 @@ describe("EditorPage", () => {
         expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
     });
 
+    it("canUndo is false when no PDF selected", () => {
+        render(<EditorPage />);
+        const toolbar = screen.getByTestId("toolbar");
+        expect(toolbar.getAttribute("data-can-undo")).toBe("false");
+    });
+
+    it("canUndo becomes true after PDF selected", async () => {
+        mockGetPdf.mockResolvedValue(mockPdf);
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("sidebar-select"));
+        await waitFor(() => {
+            const toolbar = screen.getByTestId("toolbar");
+            expect(toolbar.getAttribute("data-can-undo")).toBe("true");
+        });
+    });
+
+    it("handleSelect skips re-selecting same PDF", async () => {
+        mockGetPdf.mockResolvedValue(mockPdf);
+        render(<EditorPage />);
+        // Select once
+        fireEvent.click(screen.getByTestId("sidebar-select"));
+        await waitFor(() => expect(mockGetPdf).toHaveBeenCalledTimes(1));
+        // Select same PDF again (onSelect callback with "pdf-1")
+        fireEvent.click(screen.getByTestId("sidebar-select"));
+        // Should NOT call getPdf again since selectedId is already "pdf-1"
+        expect(mockGetPdf).toHaveBeenCalledTimes(1);
+    });
+
     it("passes page/zoom info to viewer and toolbar", () => {
         mockGetPdf.mockResolvedValue(mockPdf);
         render(<EditorPage />);
