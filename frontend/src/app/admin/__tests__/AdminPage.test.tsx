@@ -139,4 +139,19 @@ describe("AdminPage", () => {
         const saveButtons = screen.getAllByText("save");
         fireEvent.click(saveButtons[0]);
     });
+
+    it("shows bug status change options", async () => {
+        (api.listBugReports as any).mockResolvedValue(mockBugs);
+        render(<AdminPage />);
+        await vi.waitFor(() => {
+            expect(screen.getByText("bugReports")).toBeInTheDocument();
+        }, { timeout: 5000 });
+        fireEvent.click(screen.getByText("bugReports"));
+        await vi.waitFor(() => {
+            expect(screen.getByText("Bug 1")).toBeInTheDocument();
+        }, { timeout: 5000 });
+        // There should be action selects (one per bug row)
+        const actionSelects = screen.getAllByRole("combobox");
+        expect(actionSelects.length).toBeGreaterThanOrEqual(1);
+    });
 });
