@@ -31,10 +31,8 @@ describe("GoogleLoginButton", () => {
 
     it("renders skeleton initially then GoogleLogin button when loaded", async () => {
         render(<GoogleLoginButton />);
-        // Initially skeleton should show
         const skeleton = document.querySelector(".animate-pulse");
         expect(skeleton).toBeInTheDocument();
-        // After useEffect runs, GoogleLogin should render
         expect(await screen.findByTestId("google-btn")).toBeInTheDocument();
     });
 
