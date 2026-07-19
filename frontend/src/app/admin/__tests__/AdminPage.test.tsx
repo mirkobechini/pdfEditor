@@ -175,4 +175,27 @@ describe("AdminPage", () => {
             expect(api.updateBugReportStatus).toHaveBeenCalledWith("b1", "in_progress");
         });
     });
+
+    it("shows alert on bug status change failure", async () => {
+        (api.listBugReports as any).mockResolvedValue(mockBugs);
+        (api.updateBugReportStatus as any).mockRejectedValue(new Error("API Error"));
+        const alertMock = vi.fn();
+        vi.stubGlobal("alert", alertMock);
+
+        render(<AdminPage />);
+        await vi.waitFor(() => {
+            expect(screen.getByText("bugReports")).toBeInTheDocument();
+        }, { timeout: 5000 });
+        fireEvent.click(screen.getByText("bugReports"));
+        await vi.waitFor(() => {
+            expect(screen.getByText("Bug 1")).toBeInTheDocument();
+        }, { timeout: 5000 });
+
+        const allSelects = screen.getAllByRole("combobox");
+        const bugStatusSelect = allSelects[allSelects.length - 1];
+        fireEvent.change(bugStatusSelect, { target: { value: "in_progress" } });
+        await vi.waitFor(() => {
+            expect(alertMock).toHaveBeenCalled();
+        });
+    });
 });
