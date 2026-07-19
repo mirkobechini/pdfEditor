@@ -154,4 +154,25 @@ describe("AdminPage", () => {
         const actionSelects = screen.getAllByRole("combobox");
         expect(actionSelects.length).toBeGreaterThanOrEqual(1);
     });
+
+    it("changes bug status via select", async () => {
+        (api.listBugReports as any).mockResolvedValue(mockBugs);
+        (api.updateBugReportStatus as any).mockResolvedValue({});
+        render(<AdminPage />);
+        await vi.waitFor(() => {
+            expect(screen.getByText("bugReports")).toBeInTheDocument();
+        }, { timeout: 5000 });
+        fireEvent.click(screen.getByText("bugReports"));
+        await vi.waitFor(() => {
+            expect(screen.getByText("Bug 1")).toBeInTheDocument();
+        }, { timeout: 5000 });
+
+        // Find the bug status select (last combobox after the filter)
+        const allSelects = screen.getAllByRole("combobox");
+        const bugStatusSelect = allSelects[allSelects.length - 1];
+        fireEvent.change(bugStatusSelect, { target: { value: "in_progress" } });
+        await vi.waitFor(() => {
+            expect(api.updateBugReportStatus).toHaveBeenCalledWith("b1", "in_progress");
+        });
+    });
 });
