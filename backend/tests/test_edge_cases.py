@@ -122,7 +122,7 @@ class TestUploadEdgeCases:
             files={"file": ("test.pdf", b"%PDF-1.4 content", "application/pdf")},
         )
         assert response.status_code == 413
-        assert "too large" in response.json()["detail"].lower()
+        assert "too large" in response.json()["detail"]["detail"].lower()
 
     def test_download_file_not_on_disk(self, client, free_headers, sample_pdf_content, monkeypatch):
         """Should return 404 when PDF record exists but file is missing on disk."""
@@ -514,7 +514,8 @@ class TestAdminEdgeCasesAPI:
             json={"license_tier": "lifetime"},
         )
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert "Stripe" in response.json()["detail"]
+        detail = response.json()["detail"]
+        assert detail["code"] == "STRIPE_LICENSE_LOCKED"
 
 
 class TestAuthEdgeCasesAPI:

@@ -107,7 +107,7 @@ class TestLicenseEnforcement:
             json={"pdf_ids": ["a", "b"]},
         )
         assert resp.status_code == status.HTTP_403_FORBIDDEN
-        assert "merge_pdf" in resp.json()["detail"]
+        assert "merge_pdf" in resp.json()["detail"]["detail"]
 
     def test_free_user_blocked_from_split(self, client, sample_pdf_content):
         """Free user should get 403 on split."""
@@ -120,7 +120,7 @@ class TestLicenseEnforcement:
             json={"mode": "every"},
         )
         assert resp.status_code == status.HTTP_403_FORBIDDEN
-        assert "split_pdf" in resp.json()["detail"]
+        assert "split_pdf" in resp.json()["detail"]["detail"]
 
     def test_free_user_blocked_from_reorder(self, client, sample_pdf_content):
         """Free user should get 403 on reorder."""
@@ -133,7 +133,7 @@ class TestLicenseEnforcement:
             json={"page_order": [1]},
         )
         assert resp.status_code == status.HTTP_403_FORBIDDEN
-        assert "reorder_pages" in resp.json()["detail"]
+        assert "reorder_pages" in resp.json()["detail"]["detail"]
 
     def test_free_user_blocked_from_remove_pages(self, client, sample_pdf_content):
         """Free user should get 403 on remove-pages."""
@@ -146,7 +146,7 @@ class TestLicenseEnforcement:
             json={"page_numbers": [1]},
         )
         assert resp.status_code == status.HTTP_403_FORBIDDEN
-        assert "remove_pages" in resp.json()["detail"]
+        assert "remove_pages" in resp.json()["detail"]["detail"]
 
     def test_free_user_blocked_from_replace_text(self, client, sample_pdf_content):
         """Free user should get 403 on replace-text."""
@@ -159,7 +159,7 @@ class TestLicenseEnforcement:
             json={"search": "x", "replace": "y"},
         )
         assert resp.status_code == status.HTTP_403_FORBIDDEN
-        assert "replace_text" in resp.json()["detail"]
+        assert "replace_text" in resp.json()["detail"]["detail"]
 
     def test_free_user_blocked_from_edit_metadata(self, client, sample_pdf_content):
         """Free user should get 403 on metadata update."""
@@ -172,7 +172,7 @@ class TestLicenseEnforcement:
             json={"title": "New Title"},
         )
         assert resp.status_code == status.HTTP_403_FORBIDDEN
-        assert "edit_metadata" in resp.json()["detail"]
+        assert "edit_metadata" in resp.json()["detail"]["detail"]
 
     def test_free_user_allowed_extract_text(self, client, sample_pdf_content):
         """Free user should be allowed to extract text (free feature)."""
@@ -197,7 +197,7 @@ class TestLicenseEnforcement:
             params={"fmt": "txt"},
         )
         assert resp.status_code == status.HTTP_403_FORBIDDEN
-        assert "export_txt" in resp.json()["detail"]
+        assert "export_txt" in resp.json()["detail"]["detail"]
 
     def test_pro_user_allowed_merge(self, client, db_engine, sample_pdf_content):
         """Pro user should be allowed to merge."""

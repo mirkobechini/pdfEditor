@@ -3,6 +3,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import check_feature_access, get_current_user, get_db, get_pdf_service
+from app.core.errors import error_response, ErrorCode
 from app.core.config import settings
 from app.core.sanitize import sanitize_filename
 from app.models.user import User
