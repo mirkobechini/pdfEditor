@@ -324,70 +324,53 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 | Rate limit login      | ✅ Protected | slowapi: 5/min login, 3/h register, 3/h forgot-password |
 | 2FA support           | ❌ Future    | Low priority, evaluable in Phase 3+                     |
 
-### Feature pianificate (in ordine di priorità)
-
-> 📋 **Completate:** Vedi [`CHANGELOG.md`](./CHANGELOG.md)
-
-#### 🔵 Priorità BASSA / Future
-
-- ⬜ **Inline text editor** (sostituisce Find&Replace) — Piano: `.specs/plans/feature-inline-text-editor.md`.
-- ⬜ **Stripe MCP Subscriptions** — Piano: `.specs/plans/feature-stripe-mcp-subscriptions.md`.
-- ⬜ **AI PDF editing service** — Piano: `.specs/plans/feature-ai-pdf-editing.md`.
-- ⬜ **Conferma email account** — Piano: `.specs/plans/feature-email-confirmation.md`.
-- ⬜ **E2E Playwright tests** — Piano: `.specs/plans/chore-security-improvements.md`.
-- ⬜ **Tauri v2 desktop** — Fase 1c.
-- ⬜ **Cloud sync SQLite↔PostgreSQL** — Fase 3.
-- ⬜ **Mobile React Native** — Fase 4.
-
----
 
 ## 📋 Stato attuale (2026-07-20)
 
 ### ✅ Completati — 21 bug + 10 miglioramenti + 3 coverage sprint + error handling
 
-| Categoria               | Quantità | PR                                                      |
-| ----------------------- | -------- | ------------------------------------------------------- |
-| B1-B5 (critici)         | 5 bug    | #288, #290, #292, #294, #296                            |
-| B6-B14 (alti)           | 9 bug    | #298, #300, #302, #304, #306, #308, #310, #312, #314    |
-| B15-B21 (medi)          | 7 bug    | #316, #318, #320, #322, #324, #326, #328                |
-| R1-R10 (miglioramenti)  | 10 tasks | #330, #332, #334, #336, #338, #341, #343, #345          |
-| Coverage backend        | 92→97%   | #357, #359, #361                                        |
-| Coverage frontend       | 68→76%   | #363, #364, #365                                        |
-| Error handling infra    | #366     | errors.py, error-map.ts, i18n keys                      |
-| Error handling frontend | #367     | 14 file catch block migrati a mapError()                |
-| Error handling backend  | #368     | deps, admin, upload, convert migrati a error_response() |
+| Categoria               | Quantità | PR                                                                              |
+| ----------------------- | -------- | ------------------------------------------------------------------------------- |
+| B1-B5 (critici)         | 5 bug    | #288, #290, #292, #294, #296                                                    |
+| B6-B14 (alti)           | 9 bug    | #298, #300, #302, #304, #306, #308, #310, #312, #314                            |
+| B15-B21 (medi)          | 7 bug    | #316, #318, #320, #322, #324, #326, #328                                        |
+| R1-R10 (miglioramenti)  | 10 tasks | #330, #332, #334, #336, #338, #341, #343, #345                                  |
+| Coverage backend        | 92→97%   | #357, #359, #361                                                                |
+| Coverage frontend       | 68→76%   | #363, #364, #365                                                                |
+| Error handling infra    | #366     | errors.py, error-map.ts, i18n keys                                              |
+| Error handling frontend | #367     | 14 file catch block migrati a mapError()                                        |
+| Error handling backend  | #368     | deps, admin, upload, convert migrati a error_response()                         |
+| Error handling backend  | #369     | merge_split, reorder, metadata, text, unlock, undo_redo, bug_report, admin page |
 
-### 🔴 Ancora da fare — Ordinato per priorità
+### 🟡 MEDIA (feature)
 
-#### 🟥 ALTA (error handling — completamento)
+| # | Task                         | Piano                                     |
+|---|----------------------------- | ----------------------------------------- |
+| 1 | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md` |
+| 2 | PDF compression              | `feature-pdf-compression.md`              |
+| 3 | PDF naming preservation      | `feature-pdf-naming-preservation.md`      |
+| 4 | UI/UX improvements           | `feature-ui-ux-improvements.md`           |
+| 5 | Inline text editor           | `feature-inline-text-editor.md`           |
+| 6 | Conferma email account       | `feature-email-confirmation.md`           |
 
-| #   | Task                                                                                             | Tempo st. |
-| --- | ------------------------------------------------------------------------------------------------ | --------- |
-| 1   | **Backend route restanti** (merge_split, reorder, metadata, text, unlock, undo_redo, bug_report) | 20 min    |
-| 2   | **Frontend admin page** (3 alert + catch da migrare)                                             | 10 min    |
-| 3   | **Frontend sidebar + PdfViewer + app page** (catch block)                                        | 10 min    |
+#### 🔵 BASSA / Future
 
-#### 🟡 MEDIA (feature)
+| #  | Task                                  | Piano |
+|----|---------------------------------------|-------|
+| 7  | Stripe MCP Subscriptions              | `.specs/plans/feature-stripe-mcp-subscriptions.md` |
+| 8  | AI PDF editing                        | `.specs/plans/feature-ai-pdf-editing.md` |
+| 9  | E2E Playwright tests                  | `.specs/plans/chore-security-improvements.md` |
+| 10 | Tauri v2 Desktop (Fase 1c)            | — |
+| 11 | Cloud sync SQLite↔PostgreSQL (Fase 3) | — |
+| 12 | Mobile React Native (Fase 4)          | — |
 
-| #   | Task                         | Piano                                     |
-| --- | ---------------------------- | ----------------------------------------- |
-| 4   | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md` |
-| 5   | PDF compression              | `feature-pdf-compression.md`              |
-| 6   | PDF naming preservation      | `feature-pdf-naming-preservation.md`      |
-| 7   | UI/UX improvements           | `feature-ui-ux-improvements.md`           |
-| 2   | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md` |
-| 3   | PDF compression              | `feature-pdf-compression.md`              |
-| 4   | PDF naming preservation      | `feature-pdf-naming-preservation.md`      |
-| 5   | License tier button skin     | `feature-license-tier-button-skin.md`     |
-| 6   | UI/UX improvements           | `feature-ui-ux-improvements.md`           |
-| 7   | Inline text editor           | `feature-inline-text-editor.md`           |
-
-#### Test coverage (limite raggiunto)
+### Test coverage (limite raggiunto)
 
 | Area                      | Coverage | Note                                                      |
 | ------------------------- | -------- | --------------------------------------------------------- |
 | Backend                   | **97%**  | Limite pratico raggiunto (fitz, startup code, PostgreSQL) |
 | Frontend unit test        | **76%**  | Limite pratico raggiunto (PDF.js canvas, dynamic import)  |
+| Frontend E2E (Playwright) | **0%**   | Necessario per superare l'80% — T7                        |
 | Frontend E2E (Playwright) | **0%**   | Necessario per superare l'80% — T7                        |
 
 #### 🔵 BASSA / Future
