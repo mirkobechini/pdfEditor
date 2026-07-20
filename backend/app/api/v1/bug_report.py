@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status as http_status
+from fastapi import APIRouter, Depends, Query, status as http_status
 from sqlalchemy.orm import Session
 
+from app.core.errors import error_response, ErrorCode
 from app.api.deps import get_current_user, get_db
 from app.models.user import User
 from app.schemas.pdf import BugReportRequest, BugReportResponse, BugReportStatusUpdate
@@ -42,10 +43,7 @@ def list_bug_reports(
 ) -> dict:
     """List bug reports (admin only)."""
     if not current_user.is_admin:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
+        raise error_response(ErrorCode.FORBIDDEN, "Admin access required", status_code=http_status.HTTP_403_FORBIDDEN)
 
     reports = service.get_all(status=status_filter, skip=skip, limit=limit)
     return {
@@ -63,24 +61,15 @@ def update_bug_report_status(
 ) -> BugReportResponse:
     """Update bug report status (admin only)."""
     if not current_user.is_admin:
-        raise HTTPException(
-            status_code=http_status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
+        raise error_response(ErrorCode.FORBIDDEN, "Admin access required", status_code=http_status.HTTP_403_FORBIDDEN)
 
     try:
         report = service.update_status(bug_id, req.status)
     except ValueError as e:
-        raise HTTPException(
-            status_code=http_status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, str(e), status_code=http_status.HTTP_400_BAD_REQUEST)
 
     if not report:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Bug report not found",
-        )
+        raise error_response(ErrorCode.BUG_NOT_FOUND, "Bug report not found", status_code=http_status.HTTP_404_NOT_FOUND)
 
     return BugReportResponse.model_validate(report)
 
@@ -115,8 +104,5 @@ def vote_bug_report(
     """Increment vote count for a bug report."""
     report = service.vote(bug_id, current_user.id)
     if not report:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="Bug report not found",
-        )
+        raise error_response(ErrorCode.BUG_VOTE_NOT_FOUND, "Bug report not found", status_code=http_status.HTTP_404_NOT_FOUND)
     return BugReportResponse.model_validate(report)

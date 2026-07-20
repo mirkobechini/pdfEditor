@@ -1,7 +1,8 @@
 """Endpoint for unlocking password-protected PDFs."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
+from app.core.errors import error_response, ErrorCode
 from app.api.deps import get_current_user, get_pdf_service
 from app.models.user import User
 from app.schemas.pdf import PdfResponse, UnlockRequest
@@ -19,18 +20,12 @@ def unlock_pdf(
 ) -> PdfResponse:
     """Unlock a password-protected PDF. If successful, returns PDF metadata."""
     if not req.password.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password cannot be empty",
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, "Password cannot be empty", status_code=status.HTTP_400_BAD_REQUEST)
 
     try:
         pdf = service.unlock(pdf_id, current_user.id, req.password)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=str(e),
-        )
+        raise error_response(ErrorCode.INVALID_CREDENTIALS, str(e), status_code=status.HTTP_403_FORBIDDEN)
 
     return PdfResponse.model_validate(pdf)
 
@@ -44,17 +39,11 @@ def protect_pdf(
 ) -> PdfResponse:
     """Protect a PDF with password encryption."""
     if not req.password.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password cannot be empty",
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, "Password cannot be empty", status_code=status.HTTP_400_BAD_REQUEST)
 
     try:
         pdf = service.protect(pdf_id, current_user.id, req.password)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, str(e), status_code=status.HTTP_400_BAD_REQUEST)
 
     return PdfResponse.model_validate(pdf)

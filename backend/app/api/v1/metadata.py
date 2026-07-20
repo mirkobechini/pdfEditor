@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
+from app.core.errors import error_response, ErrorCode
 from app.api.deps import get_current_user, get_pdf_service, verify_feature_access
 from app.models.user import User
 from app.schemas.pdf import MetadataResponse, PdfResponse, UpdateMetadataRequest
@@ -18,10 +19,7 @@ def get_pdf_metadata(
     try:
         meta = service.get_metadata(pdf_id, current_user.id)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, str(e), status_code=status.HTTP_400_BAD_REQUEST)
 
     return MetadataResponse.model_validate(meta)
 
@@ -36,17 +34,11 @@ def update_pdf_metadata(
     """Update PDF metadata. Only provided fields are changed."""
     updates = req.model_dump(exclude_none=True)
     if not updates:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="At least one metadata field must be provided",
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, "At least one metadata field must be provided", status_code=status.HTTP_400_BAD_REQUEST)
 
     try:
         pdf = service.update_metadata(pdf_id, current_user.id, updates)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, str(e), status_code=status.HTTP_400_BAD_REQUEST)
 
     return PdfResponse.model_validate(pdf)
