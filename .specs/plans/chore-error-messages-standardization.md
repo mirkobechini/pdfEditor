@@ -1,12 +1,26 @@
 # Chore: Standardizzazione completa messaggi errore (UX produzione)
 
-**Status:** Planning
+**Status:** ✅ Completata in 3 PR (#366, #367, #368)
 **Priority:** HIGH
 **Complexity:** Medium
 
-## Obiettivo
+## Risultato
 
-Uniformare tutti i messaggi di errore dell'app (frontend + backend) per eliminare mix IT/EN, dettagli tecnici in UI e comportamenti incoerenti tra pagine.
+- **Backend**: `app/core/errors.py` — 25 codici errore stabili + helper `error_response()`
+- **Frontend**: `lib/error-map.ts` — mappa errori → chiavi i18n
+- **i18n**: sezioni `common.*` e `pdf.*` in en.json e it.json
+- **Backend migrati**: deps.py, auth.py, admin.py, upload.py, convert.py
+- **Frontend migrati**: 14 file (tutti i dialoghi, login, register, forgot-password, reset-password, GoogleLoginButton)
+
+## Cosa rimane (PR #369)
+
+### Backend route restanti
+
+- merge_split.py, reorder.py, metadata.py, text.py, unlock.py, undo_redo.py, bug_report.py
+
+### Frontend catch block
+
+- admin/page.tsx (3 alert), Sidebar.tsx, PdfViewer.tsx, app/page.tsx
 
 ## Problema attuale
 

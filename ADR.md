@@ -341,33 +341,40 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ---
 
-## 📋 Stato attuale (2026-07-19)
+## 📋 Stato attuale (2026-07-20)
 
-### ✅ Completati — 21 bug + 10 miglioramenti + 3 coverage sprint
+### ✅ Completati — 21 bug + 10 miglioramenti + 3 coverage sprint + error handling
 
-> Vedi [`CHANGELOG.md`](./CHANGELOG.md) per l'elenco dettagliato con PR e issue.
-
-| Categoria              | Quantità | PR                                                   |
-| ---------------------- | -------- | ---------------------------------------------------- |
-| B1-B5 (critici)        | 5 bug    | #288, #290, #292, #294, #296                         |
-| B6-B14 (alti)          | 9 bug    | #298, #300, #302, #304, #306, #308, #310, #312, #314 |
-| B15-B21 (medi)         | 7 bug    | #316, #318, #320, #322, #324, #326, #328             |
-| R1-R10 (miglioramenti) | 10 tasks | #330, #332, #334, #336, #338, #341, #343, #345       |
-| Coverage backend       | 92→97%   | #357, #359, #361                                     |
-| Coverage frontend      | 68→76%   | #363, #364, #365                                     |
+| Categoria               | Quantità | PR                                                      |
+| ----------------------- | -------- | ------------------------------------------------------- |
+| B1-B5 (critici)         | 5 bug    | #288, #290, #292, #294, #296                            |
+| B6-B14 (alti)           | 9 bug    | #298, #300, #302, #304, #306, #308, #310, #312, #314    |
+| B15-B21 (medi)          | 7 bug    | #316, #318, #320, #322, #324, #326, #328                |
+| R1-R10 (miglioramenti)  | 10 tasks | #330, #332, #334, #336, #338, #341, #343, #345          |
+| Coverage backend        | 92→97%   | #357, #359, #361                                        |
+| Coverage frontend       | 68→76%   | #363, #364, #365                                        |
+| Error handling infra    | #366     | errors.py, error-map.ts, i18n keys                      |
+| Error handling frontend | #367     | 14 file catch block migrati a mapError()                |
+| Error handling backend  | #368     | deps, admin, upload, convert migrati a error_response() |
 
 ### 🔴 Ancora da fare — Ordinato per priorità
 
-#### 🟥 ALTA
+#### 🟥 ALTA (error handling — completamento)
 
-| #   | Task                                        | Tipo     | Piano                                     |
-| --- | ------------------------------------------- | -------- | ----------------------------------------- |
-| 1   | **Standardizzazione messaggi errore** IT/EN | 🧹 Chore | `chore-error-messages-standardization.md` |
+| #   | Task                                                                                             | Tempo st. |
+| --- | ------------------------------------------------------------------------------------------------ | --------- |
+| 1   | **Backend route restanti** (merge_split, reorder, metadata, text, unlock, undo_redo, bug_report) | 20 min    |
+| 2   | **Frontend admin page** (3 alert + catch da migrare)                                             | 10 min    |
+| 3   | **Frontend sidebar + PdfViewer + app page** (catch block)                                        | 10 min    |
 
-#### 🟡 MEDIA
+#### 🟡 MEDIA (feature)
 
 | #   | Task                         | Piano                                     |
 | --- | ---------------------------- | ----------------------------------------- |
+| 4   | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md` |
+| 5   | PDF compression              | `feature-pdf-compression.md`              |
+| 6   | PDF naming preservation      | `feature-pdf-naming-preservation.md`      |
+| 7   | UI/UX improvements           | `feature-ui-ux-improvements.md`           |
 | 2   | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md` |
 | 3   | PDF compression              | `feature-pdf-compression.md`              |
 | 4   | PDF naming preservation      | `feature-pdf-naming-preservation.md`      |
