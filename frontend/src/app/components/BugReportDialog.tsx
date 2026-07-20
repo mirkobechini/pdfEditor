@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { api, BugReport } from "../lib/api";
+import { mapError } from "../lib/error-map";
 
 const BUG_CATEGORIES = [
   "UI",
@@ -53,7 +54,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
       const res = await api.searchBugReports(searchQuery.trim());
       setResults(res);
     } catch (err) {
-      setError(t("searchFailed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("searchFailed") + ": " + mapError(err));
     } finally {
       setSearching(false);
     }
@@ -64,7 +65,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
       await api.voteBugReport(bugId);
       setStep("done");
     } catch (err) {
-      setError(t("voteFailed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("voteFailed") + ": " + mapError(err));
     }
   }
 
@@ -77,7 +78,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
       await api.createBugReport(`[${category}] ${title.trim()}`, description.trim());
       setStep("done");
     } catch (err) {
-      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("failed") + ": " + mapError(err));
     } finally {
       setSending(false);
     }

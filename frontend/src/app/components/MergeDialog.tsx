@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
 import { downloadBlob } from "../lib/download";
+import { mapError } from "../lib/error-map";
 
 interface MergeDialogProps {
   open: boolean;
@@ -59,7 +60,7 @@ export default function MergeDialog({ open, onClose, selectedId, onMergeComplete
       onMergeComplete(result);
       onClose();
     } catch (err) {
-      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("failed") + ": " + mapError(err));
     } finally {
       setMerging(false);
     }

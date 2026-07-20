@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
+import { mapError } from "../lib/error-map";
 import HeaderControls from "../components/HeaderControls";
 import PasswordInput from "../components/PasswordInput";
 import GoogleLoginButton from "../components/GoogleLoginButton";
@@ -40,7 +41,7 @@ export default function RegisterPage() {
       await register(email.trim(), password, fullName.trim());
       window.location.href = "/app";
     } catch (err) {
-      setError(t("registerFailed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("registerFailed") + ": " + mapError(err));
     } finally {
       setLoading(false);
     }

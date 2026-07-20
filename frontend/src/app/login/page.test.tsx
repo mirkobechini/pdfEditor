@@ -102,7 +102,7 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByText("loginButton"));
 
     await waitFor(() => {
-      expect(screen.getByText("invalidCredentials")).toBeTruthy();
+      expect(screen.getByText("auth.invalidCredentials")).toBeTruthy();
     });
   });
 
@@ -121,7 +121,7 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByText("loginButton"));
 
     await waitFor(() => {
-      expect(screen.getByText("rateLimitExceeded")).toBeTruthy();
+      expect(screen.getByText("common.rateLimitExceeded")).toBeTruthy();
     });
   });
 
@@ -140,7 +140,7 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByText("loginButton"));
 
     await waitFor(() => {
-      expect(screen.getByText("loginFailed")).toBeTruthy();
+      expect(screen.getByText("common.unknownError")).toBeTruthy();
     });
   });
 

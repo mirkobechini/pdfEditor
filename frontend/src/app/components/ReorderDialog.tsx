@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
 import { usePdfJs } from "../lib/usePdfJs";
+import { mapError } from "../lib/error-map";
 
 interface ReorderDialogProps {
   open: boolean;
@@ -71,7 +72,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
       URL.revokeObjectURL(url);
     } catch (err) {
       console.debug("Failed to load thumbnails:", err);
-      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("failed") + ": " + mapError(err));
     } finally {
       setLoading(false);
     }
@@ -108,7 +109,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
       onSuccess?.();
       onClose();
     } catch (err) {
-      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("failed") + ": " + mapError(err));
     } finally {
       setReordering(false);
     }
