@@ -371,14 +371,3 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 | Backend                   | **97%**  | Limite pratico raggiunto (fitz, startup code, PostgreSQL) |
 | Frontend unit test        | **76%**  | Limite pratico raggiunto (PDF.js canvas, dynamic import)  |
 | Frontend E2E (Playwright) | **0%**   | Necessario per superare l'80% — T7                        |
-| Frontend E2E (Playwright) | **0%**   | Necessario per superare l'80% — T7                        |
-
-#### 🔵 BASSA / Future
-
-| #   | Task                                  | Piano                                 |
-| --- | ------------------------------------- | ------------------------------------- |
-| 8   | Stripe MCP Subscriptions              | `feature-stripe-mcp-subscriptions.md` |
-| 9   | AI PDF editing                        | `feature-ai-pdf-editing.md`           |
-| 10  | Tauri v2 Desktop (Fase 1c)            | —                                     |
-| 11  | Cloud sync SQLite↔PostgreSQL (Fase 3) | —                                     |
-| 12  | Mobile React Native (Fase 4)          | —                                     |
