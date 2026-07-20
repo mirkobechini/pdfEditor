@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
+import { mapError } from "../lib/error-map";
 
 interface SidebarProps {
   selectedId: string | null;
@@ -56,7 +57,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
       onUpload(doc);
       onSelect(doc.id);
     } catch (err) {
-      alert(t("uploadFailed") + ": " + err);
+      alert(t("uploadFailed") + ": " + mapError(err));
     } finally {
       setUploading(false);
       setUploadProgress(null);

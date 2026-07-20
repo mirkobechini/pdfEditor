@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
 import { api, AdminUser, BugReport } from "../lib/api";
+import { mapError } from "../lib/error-map";
 import HeaderControls from "../components/HeaderControls";
 
 type Tab = "users" | "bugs";
@@ -126,7 +127,7 @@ function UsersTable() {
             );
             setEditingId(null);
         } catch (err) {
-            alert("Failed to update license: " + err);
+            alert("Failed to update license: " + mapError(err));
         }
     }
 
@@ -136,7 +137,7 @@ function UsersTable() {
             setResetMsg(resp.message);
             setTimeout(() => setResetMsg(null), 4000);
         } catch (err) {
-            alert("Failed to send reset: " + err);
+            alert("Failed to send reset: " + mapError(err));
         }
     }
 
@@ -351,7 +352,7 @@ function BugReportsTable() {
                 prev.map((b) => (b.id === bugId ? { ...b, status: newStatus } : b)),
             );
         } catch (err) {
-            alert("Failed to update status: " + err);
+            alert("Failed to update status: " + mapError(err));
         }
     }
 
