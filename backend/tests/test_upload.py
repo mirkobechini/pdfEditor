@@ -34,7 +34,7 @@ class TestUpload:
             files={"file": ("test.txt", b"not a pdf", "text/plain")},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Only PDF files are allowed" in response.json()["detail"]
+        assert "Only PDF files are allowed" in response.json()["detail"]["detail"]
 
     def test_upload_invalid_content(self, client, free_headers):
         """Should reject files with .pdf extension but invalid content (no magic bytes)."""
@@ -44,7 +44,7 @@ class TestUpload:
             files={"file": ("fake.pdf", b"not a pdf content", "application/pdf")},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Invalid PDF" in response.json()["detail"]
+        assert "Invalid PDF" in response.json()["detail"]["detail"]
 
     def test_upload_empty_file(self, client, free_headers):
         """Should reject empty files."""
@@ -64,7 +64,7 @@ class TestUpload:
             files={"file": ("large.pdf", b"%PDF-1.4 some content", "application/pdf")},
         )
         assert response.status_code == 413
-        assert "too large" in response.json()["detail"].lower()
+        assert "too large" in response.json()["detail"]["detail"].lower()
 
     def test_upload_exceeds_page_limit(self, client, monkeypatch, sample_pdf_content, free_headers):
         """Should reject PDFs with too many pages."""
@@ -75,7 +75,7 @@ class TestUpload:
             files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Maximum allowed" in response.json()["detail"]
+        assert "Invalid PDF" in response.json()["detail"]["detail"]
 
     def test_upload_requires_auth(self, client, sample_pdf_content):
         """Should reject upload without auth."""

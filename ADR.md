@@ -46,18 +46,19 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Decisioni architetturali
 
-| Scelta                                              | Alternativa implicita      | Motivo                                                                                                                                                                                                                   |
-| --------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Next.js con `output: 'export'`                      | SSR/API Routes             | Compatibilità Tauri (static export), API tutte su FastAPI                                                                                                                                                                |
-| UUID come PK                                        | autoincrement integer      | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti                                                                                                                                                                   |
-| PyMuPDF                                             | pdf-lib, pikepdf           | Supporto nativo modifica testo, metadati, tagging accessibilità                                                                                                                                                          |
-| Autenticazione obbligatoria per ogni operazione PDF | Endpoint /pdfs/\* pubblici | Ogni PDF è associato a un utente (user_id). Anche le operazioni base (upload/list/download/delete) richiedono login, perché senza user_id non esiste ownership. Il free tier è un utente registrato a tutti gli effetti. |
-| PyJWT + requests per SSO Google                     | Authlib, python-jose       | Scelta implementativa diretta: `import jwt` (PyJWT) invece di python-jose[cryptography]. Nessuna dipendenza extra.                                                                                                       |
-| Provider i18n custom → next-intl client-side        | next-intl con middleware   | next-intl già installato ma inutilizzato. Rifattorizzato in PR #94: NextIntlClientProvider client-side (compatibile con output: 'export').                                                                               |
-| FastAPI sidecar con PyInstaller                     | Backend remoto sempre      | Funzionamento offline desktop (Fase 1c)                                                                                                                                                                                  |
-| pdf-lib lato client per merge/split                 | Solo API server            | Sostituito da API backend — refactoring PR #72                                                                                                                                                                           |
-| Tagged PDF in output                                | PDF non strutturati        | Accessibilità screen reader (obbligo AGPL indiretto)                                                                                                                                                                     |
-| SendGrid API HTTP invece di SMTP                    | SMTP via libreria SendGrid | Render free tier blocca la porta 587 in uscita. Usata API HTTP v3 direttamente con `requests` — nessuna dipendenza extra.                                                                                                |
+| Scelta                                              | Alternativa implicita      | Motivo                                                                                                                                                                                                                                                                            |
+| --------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Next.js con `output: 'export'`                      | SSR/API Routes             | Compatibilità Tauri (static export), API tutte su FastAPI                                                                                                                                                                                                                         |
+| UUID come PK                                        | autoincrement integer      | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti                                                                                                                                                                                                                            |
+| PyMuPDF                                             | pdf-lib, pikepdf           | Supporto nativo modifica testo, metadati, tagging accessibilità                                                                                                                                                                                                                   |
+| Autenticazione obbligatoria per ogni operazione PDF | Endpoint /pdfs/\* pubblici | Ogni PDF è associato a un utente (user_id). Anche le operazioni base (upload/list/download/delete) richiedono login, perché senza user_id non esiste ownership. Il free tier è un utente registrato a tutti gli effetti.                                                          |
+| PyJWT + requests per SSO Google                     | Authlib, python-jose       | Scelta implementativa diretta: `import jwt` (PyJWT) invece di python-jose[cryptography]. Nessuna dipendenza extra.                                                                                                                                                                |
+| Provider i18n custom → next-intl client-side        | next-intl con middleware   | next-intl già installato ma inutilizzato. Rifattorizzato in PR #94: NextIntlClientProvider client-side (compatibile con output: 'export').                                                                                                                                        |
+| FastAPI sidecar con PyInstaller                     | Backend remoto sempre      | Funzionamento offline desktop (Fase 1c)                                                                                                                                                                                                                                           |
+| pdf-lib lato client per merge/split                 | Solo API server            | Sostituito da API backend — refactoring PR #72                                                                                                                                                                                                                                    |
+| Tagged PDF in output                                | PDF non strutturati        | Accessibilità screen reader (obbligo AGPL indiretto)                                                                                                                                                                                                                              |
+| SendGrid API HTTP invece di SMTP                    | SMTP via libreria SendGrid | Render free tier blocca la porta 587 in uscita. Usata API HTTP v3 direttamente con `requests` — nessuna dipendenza extra.                                                                                                                                                         |
+| Standard error codes API (codice + dettaglio)       | Solo `str(e)` plain        | Ogni HTTPException backend usa `error_response(code, detail)` con codice stabile (es. `INVALID_CREDENTIALS`). Il frontend mappa ogni codice in una chiave i18n tramite `mapError()`, eliminando `err.message` raw in UI. Motivo: UX produzione, supporto IT/EN, debug facilitato. |
 
 ## Vincoli
 
@@ -376,11 +377,11 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 #### Test coverage (limite raggiunto)
 
-| Area                        | Coverage | Note |
-| --------------------------- | -------- | ---- |
-| Backend                     | **97%**  | Limite pratico raggiunto (fitz, startup code, PostgreSQL) |
-| Frontend unit test          | **76%**  | Limite pratico raggiunto (PDF.js canvas, dynamic import) |
-| Frontend E2E (Playwright)   | **0%**   | Necessario per superare l'80% — T7 |
+| Area                      | Coverage | Note                                                      |
+| ------------------------- | -------- | --------------------------------------------------------- |
+| Backend                   | **97%**  | Limite pratico raggiunto (fitz, startup code, PostgreSQL) |
+| Frontend unit test        | **76%**  | Limite pratico raggiunto (PDF.js canvas, dynamic import)  |
+| Frontend E2E (Playwright) | **0%**   | Necessario per superare l'80% — T7                        |
 
 #### 🔵 BASSA / Future
 
