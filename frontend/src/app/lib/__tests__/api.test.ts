@@ -45,7 +45,7 @@ describe("ApiClient", () => {
         { status: 429 },
       );
       const error = await ApiClient.extractError(res);
-      expect(error).toBe("RATE_LIMIT");
+      expect(error).toContain("RATE_LIMIT");
     });
   });
 

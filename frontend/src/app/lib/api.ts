@@ -22,10 +22,17 @@ export class ApiClient {
   static async extractError(res: Response): Promise<string> {
     // Rate limit — user-friendly message
     if (res.status === 429) {
-      return "RATE_LIMIT";
+      return JSON.stringify({
+        code: "RATE_LIMIT",
+        detail: "Too many requests",
+      });
     }
     try {
       const body = await res.json();
+      // New format: {code, detail} from backend error_response helper
+      if (body && typeof body === "object" && body.code && body.detail) {
+        return JSON.stringify(body);
+      }
       if (typeof body.detail === "string") return body.detail;
       if (Array.isArray(body.detail))
         return body.detail[0]?.msg || res.statusText;
