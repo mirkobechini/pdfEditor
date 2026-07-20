@@ -19,6 +19,7 @@ from app.schemas.auth import (
 from app.services.auth_service import AuthService
 from app.services.email_service import EmailService
 from app.repositories.user_repo import UserRepository
+from app.core.errors import error_response, ErrorCode
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()

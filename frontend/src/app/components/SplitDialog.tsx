@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
 import { usePdfJs } from "../lib/usePdfJs";
+import { mapError } from "../lib/error-map";
 
 interface SplitDialogProps {
   open: boolean;
@@ -124,7 +125,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
       onSuccess?.();
       onClose();
     } catch (err) {
-      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("failed") + ": " + mapError(err));
     } finally {
       setSplitting(false);
     }

@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
+import { mapError } from "../lib/error-map";
 
 interface ReplaceTextDialogProps {
     open: boolean;
@@ -29,7 +30,7 @@ export default function ReplaceTextDialog({ open, onClose, pdfId }: ReplaceTextD
             setReplaceWith("");
             onClose();
         } catch (err) {
-            setError(t("replaceFailed") + ": " + (err instanceof Error ? err.message : err));
+            setError(t("replaceFailed") + ": " + mapError(err));
         } finally {
             setReplacing(false);
         }
