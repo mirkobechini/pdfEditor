@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
+from app.core.errors import error_response, ErrorCode
 from app.api.deps import get_current_user, get_merge_split_service, verify_feature_access
 from app.models.user import User
 from app.schemas.pdf import (
@@ -22,18 +23,12 @@ def merge_pdfs(
 ) -> PdfResponse:
     """Merge multiple PDFs into one document."""
     if len(req.pdf_ids) < 2:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="At least 2 PDF IDs are required to merge",
-        )
+        raise error_response(ErrorCode.MERGE_TOO_FEW, "At least 2 PDF IDs are required to merge")
 
     try:
         pdf = service.merge(req.pdf_ids, current_user.id)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+    except ValueError:
+        raise error_response(ErrorCode.MERGE_TOO_FEW, "At least 2 PDFs are required to merge")
 
     return PdfResponse.model_validate(pdf)
 
@@ -47,32 +42,20 @@ def split_pdf(
 ) -> SplitResponse:
     """Split a PDF by range or into individual pages."""
     if req.mode not in ("range", "every"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Mode must be 'range' or 'every'",
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, "Mode must be 'range' or 'every'")
 
     if req.mode == "range":
         if not req.ranges or len(req.ranges) == 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ranges are required when mode is 'range'",
-            )
+            raise error_response(ErrorCode.SPLIT_INVALID_RANGE, "Ranges are required when mode is 'range'")
         try:
             results = service.split_by_ranges(pdf_id, current_user.id, req.ranges)
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(e),
-            )
+        except ValueError:
+            raise error_response(ErrorCode.SPLIT_INVALID_RANGE, "Invalid page range specified")
     else:
         try:
             results = service.split_every_page(pdf_id, current_user.id)
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(e),
-            )
+        except ValueError:
+            raise error_response(ErrorCode.SPLIT_INVALID_RANGE, "Invalid page range specified")
 
     return SplitResponse(
         items=[PdfResponse.model_validate(p) for p in results]

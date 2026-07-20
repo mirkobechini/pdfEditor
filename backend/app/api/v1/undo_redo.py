@@ -1,7 +1,8 @@
 """API endpoints for undo/redo operations on PDFs."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
+from app.core.errors import error_response, ErrorCode
 from app.api.deps import get_current_user, get_pdf_service
 from app.models.user import User
 from app.schemas.pdf import PdfResponse
@@ -20,10 +21,7 @@ def undo_pdf(
     try:
         pdf = service.undo(pdf_id, current_user.id)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, str(e), status_code=status.HTTP_400_BAD_REQUEST)
     return PdfResponse.model_validate(pdf)
 
 
@@ -37,8 +35,5 @@ def redo_pdf(
     try:
         pdf = service.redo(pdf_id, current_user.id)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, str(e), status_code=status.HTTP_400_BAD_REQUEST)
     return PdfResponse.model_validate(pdf)
