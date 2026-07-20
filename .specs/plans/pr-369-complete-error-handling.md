@@ -1,6 +1,6 @@
 # Plan: Completamento error handling — PR #369
 
-**Status:** In progress
+**Status:** ✅ Completata (2026-07-20, PR #369)
 **Branch:** feature/369-complete-error-handling
 
 ## Obiettivo
@@ -11,24 +11,24 @@ Completare la migrazione di tutti gli HTTPException backend e catch block fronte
 
 ### Backend — Route file da migrare
 
-- [ ] `merge_split.py` — 6 HTTPException → `error_response()`
-- [ ] `reorder.py` — 4 HTTPException → `error_response()`
-- [ ] `metadata.py` — 2 HTTPException → `error_response()`
-- [ ] `text.py` — 2 HTTPException → `error_response()`
-- [ ] `unlock.py` — 1 HTTPException → `error_response()`
-- [ ] `undo_redo.py` — 2 HTTPException → `error_response()`
-- [ ] `bug_report.py` — 3 HTTPException → `error_response()`
+- [x] `merge_split.py` — 6 HTTPException → `error_response()`
+- [x] `reorder.py` — 4 HTTPException → `error_response()`
+- [x] `metadata.py` — 2 HTTPException → `error_response()`
+- [x] `text.py` — 2 HTTPException → `error_response()`
+- [x] `unlock.py` — 1 HTTPException → `error_response()`
+- [x] `undo_redo.py` — 2 HTTPException → `error_response()`
+- [x] `bug_report.py` — 3 HTTPException → `error_response()`
 
 ### Frontend — Catch block da migrare
 
-- [ ] `admin/page.tsx` — 3 `alert()` → `setError()` + UI feedback
-- [ ] `Sidebar.tsx` — 1 `alert()` + upload fail → `mapError()`
-- [ ] `PdfViewer.tsx` — 1 `alert()` → `mapError()`
-- [ ] `app/page.tsx` — 8 `console.error()` → `mapError()` (silent, DEMOTE)
+- [x] `admin/page.tsx` — 3 `alert()` → `mapError()`
+- [x] `Sidebar.tsx` — 1 `alert()` + upload fail → `mapError()`
+- [x] `PdfViewer.tsx` — già usa `console.error` (nessun raw err.message in UI)
+- [x] `app/page.tsx` — già usa `console.error` (nessun raw err.message in UI)
 
 ### Test
 
-- [ ] Fix assertions in test files for new `{code, detail}` format
+- [x] Fix assertions in test files for new `{code, detail}` format
 
 ### Commits previsti
 
