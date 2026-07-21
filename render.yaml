@@ -1,10 +1,4 @@
 services:
-  - type: pserv
-    name: pdeditor-postgres
-    plan: free
-    region: frankfurt
-    ipAllowList: []
-
   - type: web
     name: pdeditor-backend
     runtime: python
@@ -17,9 +11,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.8
       - key: DATABASE_URL
-        fromDatabase:
-          name: pdeditor-postgres
-          property: connectionString
+        sync: false  # Imposta manualmente con la connection string di Neon
 
   - type: static_site
     name: pdeditor-frontend

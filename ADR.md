@@ -23,7 +23,8 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - **PDF viewer lato client:** PDF.js (Mozilla)
 - **PDF manipulation lato client:** pdf-lib (per merge/split/riordino offline)
 - **Database offline:** SQLite
-- **Database cloud:** PostgreSQL (Render)
+- **Database cloud:** PostgreSQL (Neon)
+- **File storage cloud:** Cloudflare R2
 - **ORM:** SQLAlchemy 2.0
 - **Auth:** JWT (bcrypt) + httpOnly cookie + SSO Google (PyJWT + requests)
 - **i18n:** next-intl (dichiarato, ma attualmente implementato con provider custom)
@@ -59,6 +60,8 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | Tagged PDF in output                                | PDF non strutturati        | Accessibilità screen reader (obbligo AGPL indiretto)                                                                                                                                                                                                                              |
 | SendGrid API HTTP invece di SMTP                    | SMTP via libreria SendGrid | Render free tier blocca la porta 587 in uscita. Usata API HTTP v3 direttamente con `requests` — nessuna dipendenza extra.                                                                                                                                                         |
 | Standard error codes API (codice + dettaglio)       | Solo `str(e)` plain        | Ogni HTTPException backend usa `error_response(code, detail)` con codice stabile (es. `INVALID_CREDENTIALS`). Il frontend mappa ogni codice in una chiave i18n tramite `mapError()`, eliminando `err.message` raw in UI. Motivo: UX produzione, supporto IT/EN, debug facilitato. |
+| Neon PostgreSQL (serverless)                        | Render PostgreSQL free      | Render ha discontinuato il free tier PostgreSQL. Neon offre PostgreSQL serverless con free tier permanente (0.5GB storage, 100h compute/mese con auto-suspend). Connection pooling built-in, stesso driver psycopg.                                                              |
+| Cloudflare R2 per storage PDF                       | Disco locale Render         | Già implementato in `s3_storage.py` + `storage.py`. Gratis 10GB storage, zero egress cost. Configurato con `STORAGE_BACKEND=s3`.                                                                                                                                                 |
 
 ## Vincoli
 
@@ -76,7 +79,6 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 ## Cosa NON è in scope (per ora)
 
 - Desktop Tauri v2 (Fase 1c — futuro)
-- Deploy cloud / PostgreSQL (Fase 2 — già completata)
 - Cloud sync bidirezionale (Fase 3 — futuro)
 - Mobile React Native (Fase 4 — futuro)
 - Integrazione pagamenti Stripe (pianificata — vedi `.specs/plans/feature-stripe-mcp-subscriptions.md`)
@@ -96,6 +98,36 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | 14  | **Nessun integration/E2E test**                                  | Medio                | ⬜ Playwright futuro (T7)                             |
 | 19  | **Find & Replace non funziona**                                  | Medio                | ⬜ Inline text editor (feature #11)                   |
 | 21  | **Frontend coverage 70%** — 247 test su 50 file                  | ✅ Risolto (PR #233) | `.specs/plans/chore-frontend-100-percent-coverage.md` |
+
+## Migrazioni infrastrutturali
+
+### 2026-07-21 — Migrazione Database: Render PostgreSQL → Neon
+
+**Motivazione:** Render ha discontinuato il free tier PostgreSQL. Il database sarebbe stato cancellato.
+
+**Decisione:**
+
+| Componente | Prima | Dopo | Costo |
+|---|---|---|---|
+| Database PostgreSQL | Render PostgreSQL (free, in chiusura) | Neon (neon.tech) — serverless PostgreSQL | Gratis (0.5GB storage, 100h compute/mese) |
+| File storage PDF | Cloudflare R2 | Cloudflare R2 (confermato, già attivo) | Gratis (10GB) |
+
+**Vantaggi Neon:**
+- Free tier **senza expiry** (non come Render che ha chiuso)
+- Auto-suspend dopo 5 minuti di inattività → consumo ore reale molto basso
+- Connection pooling built-in (PgBouncer integrato)
+- Compatibile con SQLAlchemy 2.0 + psycopg v3 (stesso stack già in uso)
+- Branching del database per preview/development
+- Si connette da Render senza problemi
+
+**Dettaglio consumo compute ore:**
+- Sempre attivo 24/7: 720h/mese ❌
+- Uso normale (qualche richiesta/giorno): ~5-10h/mese ✅
+- Uso intenso (decine di richieste/ora): ~30-50h/mese ✅
+
+In caso di superamento, Neon sospende il database (non cancella i dati) fino al mese successivo.
+
+**Per i dettagli operativi, vedi:** [`MIGRAZIONE_NEON.md`](./MIGRAZIONE_NEON.md)
 
 ### Security audit 2026-07-09
 
