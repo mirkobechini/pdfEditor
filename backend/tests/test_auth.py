@@ -32,6 +32,10 @@ class TestRegister:
         assert "access_token" in cookies
         assert cookies["access_token"] != ""
 
+        # PRODUCTION CHECK: csrf_token cookie must be set for subsequent POSTs
+        assert "csrf_token" in cookies
+        assert cookies["csrf_token"] != ""
+
         # PRODUCTION CHECK: cookie must work for subsequent authenticated requests
         # (simulates browser sending cookie via credentials: 'include')
         me_resp = client.get("/auth/me")  # TestClient sends cookies automatically
@@ -86,6 +90,10 @@ class TestLogin:
         # PRODUCTION CHECK: cookie must be set
         assert "access_token" in client.cookies
         assert client.cookies["access_token"] != ""
+
+        # PRODUCTION CHECK: csrf_token cookie must be set for subsequent POSTs
+        assert "csrf_token" in client.cookies
+        assert client.cookies["csrf_token"] != ""
 
         # PRODUCTION CHECK: cookie-based auth works for GET /auth/me
         me_resp = client.get("/auth/me")
