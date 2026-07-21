@@ -213,6 +213,39 @@ def google_login(
     return response
 
 
+@router.get("/csrf")
+def get_csrf_token(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Return a fresh CSRF token in the response body.
+
+    Cross-origin production: after page refresh the in-memory csrf_token
+    is lost and document.cookie is unreadable. This endpoint lets the
+    frontend re-sync the token on mount (called after getMe succeeds).
+    """
+    # Require authentication — no point refreshing CSRF for anonymous users
+    token = _get_token(request)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+    service = AuthService(db)
+    try:
+        service.get_current_user(token)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+
+    csrf_token = generate_csrf_token()
+    response = JSONResponse(content={"csrf_token": csrf_token})
+    set_csrf_cookie(response, csrf_token)
+    return response
+
+
 @router.post("/logout")
 def logout():
     """Logout — clear the access_token cookie."""
