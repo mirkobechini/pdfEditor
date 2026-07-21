@@ -27,6 +27,10 @@ class TestRegister:
         assert "access_token" in data
         assert data["token_type"] == "bearer"
 
+        # PRODUCTION CHECK: csrf_token in response body (needed for cross-origin)
+        assert "csrf_token" in data
+        assert len(data["csrf_token"]) == 64
+
         # PRODUCTION CHECK: httpOnly cookie must be set on register (auto-login)
         cookies = client.cookies
         assert "access_token" in cookies
@@ -87,6 +91,10 @@ class TestLogin:
         assert "access_token" in data
         assert data["token_type"] == "bearer"
 
+        # PRODUCTION CHECK: csrf_token in response body (needed for cross-origin)
+        assert "csrf_token" in data
+        assert len(data["csrf_token"]) == 64
+
         # PRODUCTION CHECK: cookie must be set
         assert "access_token" in client.cookies
         assert client.cookies["access_token"] != ""
@@ -99,6 +107,24 @@ class TestLogin:
         me_resp = client.get("/auth/me")
         assert me_resp.status_code == status.HTTP_200_OK
         assert me_resp.json()["email"] == "login@example.com"
+
+    def test_login_csrf_token_in_body(self, client):
+        """Login response body should include csrf_token for cross-origin frontend."""
+        client.post(
+            "/auth/register",
+            json={"email": "login-csrf@test.com", "password": "Password123", "full_name": "CSRF Body"},
+        )
+        client.cookies.clear()
+
+        response = client.post(
+            "/auth/login",
+            json={"email": "login-csrf@test.com", "password": "Password123"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "csrf_token" in data
+        assert len(data["csrf_token"]) == 64
+        assert data["csrf_token"] == client.cookies.get("csrf_token")
 
     def test_login_wrong_password(self, client):
         """Should reject wrong password."""
