@@ -21,7 +21,6 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - **Backend:** FastAPI (Python) — Auth, elaborazione PDF, cloud sync
 - **PDF processing:** PyMuPDF (fitz) — modifica testo, merge/split, metadati
 - **PDF viewer lato client:** PDF.js (Mozilla)
-- **PDF manipulation lato client:** pdf-lib (per merge/split/riordino offline)
 - **Database offline:** SQLite
 - **Database cloud:** PostgreSQL (Neon)
 - **File storage cloud:** Cloudflare R2
@@ -56,7 +55,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | PyJWT + requests per SSO Google                     | Authlib, python-jose       | Scelta implementativa diretta: `import jwt` (PyJWT) invece di python-jose[cryptography]. Nessuna dipendenza extra.                                                                                                                                                                |
 | Provider i18n custom → next-intl client-side        | next-intl con middleware   | next-intl già installato ma inutilizzato. Rifattorizzato in PR #94: NextIntlClientProvider client-side (compatibile con output: 'export').                                                                                                                                        |
 | FastAPI sidecar con PyInstaller                     | Backend remoto sempre      | Funzionamento offline desktop (Fase 1c)                                                                                                                                                                                                                                           |
-| pdf-lib lato client per merge/split                 | Solo API server            | Sostituito da API backend — refactoring PR #72                                                                                                                                                                                                                                    |
+| API backend per merge/split/riordino                | pdf-lib lato client        | pdf-lib sostituito da API backend per affidabilità — refactoring PR #72. PyMuPDF server-side.                                                                                                                                                                                     |
 | Tagged PDF in output                                | PDF non strutturati        | Accessibilità screen reader (obbligo AGPL indiretto)                                                                                                                                                                                                                              |
 | SendGrid API HTTP invece di SMTP                    | SMTP via libreria SendGrid | Render free tier blocca la porta 587 in uscita. Usata API HTTP v3 direttamente con `requests` — nessuna dipendenza extra.                                                                                                                                                         |
 | Standard error codes API (codice + dettaglio)       | Solo `str(e)` plain        | Ogni HTTPException backend usa `error_response(code, detail)` con codice stabile (es. `INVALID_CREDENTIALS`). Il frontend mappa ogni codice in una chiave i18n tramite `mapError()`, eliminando `err.message` raw in UI. Motivo: UX produzione, supporto IT/EN, debug facilitato. |
@@ -84,7 +83,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - Integrazione pagamenti Stripe (pianificata — vedi `.specs/plans/feature-stripe-mcp-subscriptions.md`)
 - SSO Apple / Samsung (previsto come bonus futuro)
 - react-native-web (valutabile, non deciso)
-- Annotazioni PDF (drawing, highlight, commenti — non menzionati)
+- **Annotazioni PDF** (drawing, highlight, commenti) — non implementate
 
 ## Bug tracker
 
@@ -106,12 +105,11 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ### Issue note ma non bloccanti ⏳
 
-| #   | Issue                                                            | Impatto              | Risoluzione prevista                                  |
-| --- | ---------------------------------------------------------------- | -------------------- | ----------------------------------------------------- |
-| 2   | **`_password_cache` module-global** — non scala con multi-worker | Medio                | Redis o DB in Fase 2 (✅ B18: cleanup su shutdown)    |
-| 14  | **Nessun integration/E2E test**                                  | Medio                | ⬜ Playwright futuro (T7)                             |
-| 19  | **Find & Replace non funziona**                                  | Medio                | ⬜ Inline text editor (feature #11)                   |
-| 21  | **Frontend coverage 70%** — 247 test su 50 file                  | ✅ Risolto (PR #233) | `.specs/plans/chore-frontend-100-percent-coverage.md` |
+| #   | Issue                                                            | Impatto | Risoluzione prevista                               |
+| --- | ---------------------------------------------------------------- | ------- | -------------------------------------------------- |
+| 2   | **`_password_cache` module-global** — non scala con multi-worker | Medio   | Redis o DB in Fase 2 (✅ B18: cleanup su shutdown) |
+| 14  | **Nessun integration/E2E test**                                  | Medio   | ⬜ Playwright futuro (T7)                          |
+| 19  | **Find & Replace non funziona**                                  | Medio   | ⬜ Inline text editor (feature #11)                |
 
 ## Migrazioni infrastrutturali
 
@@ -171,53 +169,12 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 >
 > **Fix (PR #380):** CORSMiddleware ora è l'ultimo middleware registrato (outermost), CSRFMiddleware è registrato prima (inner). La risposta 403 del CSRF risale attraverso CORSMiddleware che aggiunge `Access-Control-Allow-Origin`.
 > **Regola per il futuro:** `add_middleware(CORSMiddleware)` deve essere SEMPRE l'ultimo middleware registrato nell'app FastAPI, per intercettare tutte le risposte (inclusi errori da middleware interni).
-> Il merge massivo (145 commit) ha introdotto gran parte dell'infrastruttura di error handling standardizzato, ma non ha completato la migrazione in modo uniforme su tutti i file.
-
-**Gap verificati nel codice (presenti anche nel merge `d84befd`):**
-
-- Backend: eccezioni raw ancora presenti in `backend/app/api/v1/auth.py`, `backend/app/api/v1/convert.py`, `backend/app/api/v1/upload.py`
-- Frontend: alcuni catch mostrano ancora `err.message` raw in `MetadataDialog`, `SplitDialog` (un ramo), `reset-password/page.tsx`
-
-**Impatto:** UX incoerente (fallback `common.unknownError`), diagnosi più difficile, regressioni percepite anche quando il fix backend esiste.
-
-### ✅ Checklist operativa di stabilizzazione (ordine consigliato)
-
-1. **Backend hardening error codes**
-   - Migrare tutte le `raise HTTPException(...)` residue nelle route a `error_response(...)`
-   - Aggiungere `ErrorCode` mancanti solo dove necessario
-
-2. **Frontend hardening mapError**
-   - Eliminare i catch con `err.message` raw
-   - Usare `mapError(err)` in tutti i flussi utente
-
-3. **Contratto API errori (test)**
-   - Aggiungere test backend che validano formato errori `{code, detail}` per endpoint critici
-   - Aggiungere test frontend su mapping codici (`GOOGLE_AUTH_FAILED`, `UPLOAD_TOO_LARGE`, `VALIDATION_ERROR`)
-
-4. **Smoke test post-merge prima di chiudere issue**
-   - Login email/password
-   - Google SSO fail path (messaggio localizzato corretto)
-   - Upload/import fail path (messaggio localizzato corretto)
-
-5. **E2E minimo cross-origin (Playwright, T7)**
-   - Validare cookie httpOnly + `credentials: include` su dominio frontend/backend separato
-   - Usare come gate per merge futuri su fix auth/error handling
-
-**Regola operativa:** dopo ogni merge massivo su `main`, eseguire sempre smoke test funzionale sui 3 flussi critici (auth, upload, error rendering) prima di considerare il merge “stabile”.
-
-**Piano operativo dedicato:** vedi `.specs/plans/hotfix-post-merge-d84befd-stabilization.md`.
-
-**Aggiornamento stato (issue #374):** fixata la regressione i18n nella pagina admin bug reports (`admin.admin.*`), con mapping status allineato a `BUG_STATUS_KEYS` in `frontend/src/app/admin/page.tsx`.
 
 ### Security audit 2026-07-09
 
 > 🔒 **Security audit completato — 20/24 issue risolte (83%).**  
 > Tutte le vulnerabilità critiche e alte sono state corrette.  
 > Vedi [`CHANGELOG.md`](./CHANGELOG.md) per l'elenco completo.
-
-> **⚠️ Lezione appresa (2026-07-13) — Bug post-deploy su Render:**  
-> 4 bug critici hanno superato 256 test perché i test non coprivano il flusso cross-origin reale.  
-> **Rimedio:** Test riscritti per flusso cookie-based. Per i dettagli, vedi le regole in "Quality assurance" sotto.
 
 > **⚠️ Lezione appresa (2026-07-15):** I bug vanno cercati nel codice, non aspettare che emergano in produzione.  
 > Audit manuale ha trovato 21 bug + 10 miglioramenti, tutti fixati con PR e CI.
@@ -228,9 +185,9 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 
 ## Quality assurance — test che non mentono
 
-> **⚠️ Lezione appresa (2026-07-13): I test devono copiARE il flusso reale, non simularlo.**
+> **⚠️ Lezione appresa (2026-07-13): I test devono copiare il flusso reale, non simularlo.**
 >
-> Bug critici sono arrivati in produzione nonostante 256 test passassero. Causa: i test mockavano/bypassavano il comportamento reale invece di testarlo.
+> 4 bug critici sono arrivati in produzione nonostante 256 test passassero. Causa: i test mockavano/bypassavano il comportamento reale invece di testarlo.
 >
 > **Regole per test futuri:**
 >
@@ -325,160 +282,27 @@ Le rimanenti ~79 linee non coperte sono suddivise in tre categorie, nessuna dell
 
 ### Obiettivo: 80%+ (con Playwright) — 76% (solo unit test, limite raggiunto)
 
+## Roadmap
+
 ### Fasi successive (macro)
 
-Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue con le seguenti macro-fasi:
+| Fase                                   | Descrizione                                                                                                                                                                                                             | Stato                      |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| **Fase 1c — Desktop app (Tauri v2)**   | Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI in eseguibile. Sidecar: avvio FastAPI locale all'avvio. SQLite locale per dati offline. Installer per Windows (primario), macOS/Linux (secondario). | ⬜ Futuro                  |
+| **Fase 2 — Web app su cloud**          | Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export.                                                                                                                   | ✅ Completata (2026-07-10) |
+| **Fase 3 — Cloud sync**                | Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti (lock ottimistico). Modalità offline/online seamless.                                                                                  | ⬜ Futuro                  |
+| **Fase 4 — Mobile app (React Native)** | Setup React Native (Expo bare workflow). Logica React condivisa (API client, hooks auth, utility PDF). UI nativa. Viewer PDF.js via WebView. SSO Google login. Store deployment (Google Play / Apple).                  | ⬜ Futuro                  |
 
-- ⬜ **Fase 1c — Desktop app (Tauri v2)** — Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI in eseguibile. Sidecar: avvio FastAPI locale all'avvio. SQLite locale per dati offline. Installer per Windows (primario), macOS/Linux (secondario).
-- ✅ **Fase 2 — Web app su cloud** — Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export. **[COMPLETATA]** — 2026-07-10.
-- ⬜ **Fase 3 — Cloud sync** — Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti (lock ottimistico). Modalità offline/online seamless.
-- ⬜ **Fase 4 — Mobile app (React Native)** — Setup React Native (Expo bare workflow). Logica React condivisa (API client, hooks auth, utility PDF). UI nativa. Viewer PDF.js via WebView. SSO Google login. Store deployment (Google Play / Apple).
+### Feature short-term
 
-### Feature minori
-
-> 📋 **Storico completo:** Vedi [`CHANGELOG.md`](./CHANGELOG.md)
-
-## Architectural Guidance
-
-### Q1: Nel database i dati sono protetti?
-
-**Sì, i dati sono protetti a più livelli:**
-
-1. **Autenticazione & Authorization**
-   - Ogni utente deve autenticarsi via JWT (email/password) o Google OAuth
-   - Token ha expiry di 60 minuti
-   - Ogni endpoint richiede token valido; request senza token riceve 401 Unauthorized
-
-2. **SQL Injection Prevention**
-   - SQLAlchemy ORM con parameterized queries (zero risk)
-   - Nessuna concatenazione di SQL, solo ORM methods (`query.filter()`, `query.get()`, ecc.)
-
-3. **Password Hashing**
-   - bcrypt con salt casuale (12 rounds)
-   - Impossibile invertire hash → rainbow tables inutili
-   - Field `password` in DB è sempre hash, mai plain text
-
-4. **User Isolation**
-   - Ogni PDF ha `user_id` (FK a User)
-   - Ogni endpoint filtra `WHERE pdf.user_id = current_user.id`
-   - Utente A non può accedere PDF di Utente B
-
-5. **CORS Handling**
-   - Backend specifica `ALLOWED_ORIGINS` (only frontend domain)
-   - Richieste cross-origin non autorizzate ricevono 403 CORS Forbidden
-   - Credentials sempre required
-
-6. **Sensitive Data in Logs**
-   - Password, token, email mai loggati in plain text
-   - Environment variables per secrets (DATABASE_URL, JWT_SECRET_KEY, SENDGRID_API_KEY)
-
-7. **HTTPS in Production**
-   - Render auto-applica TLS su deployed URL
-   - Cookies marcati HttpOnly, Secure, SameSite=Strict
-
-**Cosa NON è implementato (futuro)**:
-
-- Encryption at rest per database (PostgreSQL può avere TDE/encryption plugin)
-- Rate limiting per login attempts (brute-force attack protection)
-- Two-factor authentication (2FA)
-- Audit log per accessi utente
-- Field-level encryption per dati sensibili
-
----
-
-### Q2: SendGrid ha un massimo di mail, si può gestire? Quale strategia consigliata?
-
-**Sì, SendGrid free tier ha limite ~100 email/mese. Strategia consigliata:**
-
-1. **Rilevamento limite raggiunto**
-   - Backend catchesHTTP 429 (Too Many Requests) da SendGrid API
-   - Al limite → endpoint risponde con 429 al client
-   - Frontend mostra messaggio: "Monthly email limit reached. Try again next month."
-   - Bottone "Send Reset Email" disabilitato con tooltip
-
-2. **User Experience**
-   - Toast notification top-right: "⚠️ Email limit reached this month. Please try again next month."
-   - Bottone diventa gray + cursor:not-allowed
-   - Messaggio consigliato: "Admin can manually send reset email if urgent"
-
-3. **Admin Fallback**
-   - Admin dashboard (`/admin`) consente inviare reset email manualmente senza quota
-   - Endpoint `POST /admin/users/{user_id}/send-reset-email` ignora limiti SendGrid
-   - Utile per support team se utente ha emergenza
-
-4. **Monitoring & Alerts**
-   - Log ogni tentativo di invio al limite
-   - (Futuro) Dashboard admin mostra quota email corrente
-   - (Futuro) Alert email quando 80% quota raggiunta
-
-5. **Upgrade Path (Future)**
-   - Messaggio: "Reach email limit frequently? Upgrade account for unlimited emails"
-   - Link a checkout Stripe/Lemon Squeezy con tier "Pro" (unlimited emails)
-
-**Implementazione**:
-
-- Vedi piano dettagliato: `.specs/plans/feature-sendgrid-rate-limit-handling.md`
-- Backend: `EmailService.send_password_reset_email()` torna `{"success": false, "error": "rate_limit_exceeded"}`
-- Frontend: Catch 429 status code e mostra alert
-
----
-
-### Recommendation Summary
-
-| Concern               | Status       | Strategy                                                |
-| --------------------- | ------------ | ------------------------------------------------------- |
-| Data protection in DB | ✅ Protected | JWT + ORM + bcrypt + user_id filtering                  |
-| SQL injection         | ✅ Protected | SQLAlchemy parameterized queries                        |
-| Password storage      | ✅ Protected | bcrypt hashing, never plain text                        |
-| Cross-origin attacks  | ✅ Protected | CORS + ALLOWED_ORIGINS                                  |
-| Email rate limit      | ✅ Protected | Catch 429, disable button, admin override               |
-| Encryption at rest    | ❌ Future    | PostgreSQL encryption plugin (Phase 3+)                 |
-| Rate limit login      | ✅ Protected | slowapi: 5/min login, 3/h register, 3/h forgot-password |
-| 2FA support           | ❌ Future    | Low priority, evaluable in Phase 3+                     |
-
-## 📋 Stato attuale (2026-07-20)
-
-### ✅ Completati — 21 bug + 10 miglioramenti + 3 coverage sprint + error handling
-
-| Categoria               | Quantità | PR                                                                              |
-| ----------------------- | -------- | ------------------------------------------------------------------------------- |
-| B1-B5 (critici)         | 5 bug    | #288, #290, #292, #294, #296                                                    |
-| B6-B14 (alti)           | 9 bug    | #298, #300, #302, #304, #306, #308, #310, #312, #314                            |
-| B15-B21 (medi)          | 7 bug    | #316, #318, #320, #322, #324, #326, #328                                        |
-| R1-R10 (miglioramenti)  | 10 tasks | #330, #332, #334, #336, #338, #341, #343, #345                                  |
-| Coverage backend        | 92→97%   | #357, #359, #361                                                                |
-| Coverage frontend       | 68→76%   | #363, #364, #365                                                                |
-| Error handling infra    | #366     | errors.py, error-map.ts, i18n keys                                              |
-| Error handling frontend | #367     | 14 file catch block migrati a mapError()                                        |
-| Error handling backend  | #368     | deps, admin, upload, convert migrati a error_response()                         |
-| Error handling backend  | #369     | merge_split, reorder, metadata, text, unlock, undo_redo, bug_report, admin page |
-
-### 🟡 MEDIA (feature)
-
-| #   | Task                         | Piano                                     |
-| --- | ---------------------------- | ----------------------------------------- |
-| 1   | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md` |
-| 2   | PDF compression              | `feature-pdf-compression.md`              |
-| 3   | PDF naming preservation      | `feature-pdf-naming-preservation.md`      |
-| 4   | UI/UX improvements           | `feature-ui-ux-improvements.md`           |
-| 5   | Inline text editor           | `feature-inline-text-editor.md`           |
-| 6   | Conferma email account       | `feature-email-confirmation.md`           |
-
-#### 🔵 BASSA / Future
-
-| #   | Task                                  | Piano                                              |
-| --- | ------------------------------------- | -------------------------------------------------- |
-| 7   | Stripe MCP Subscriptions              | `.specs/plans/feature-stripe-mcp-subscriptions.md` |
-| 8   | AI PDF editing                        | `.specs/plans/feature-ai-pdf-editing.md`           |
-| 9   | E2E Playwright tests                  | `.specs/plans/chore-security-improvements.md`      |
-| 10  | Tauri v2 Desktop (Fase 1c)            | —                                                  |
-| 11  | Cloud sync SQLite↔PostgreSQL (Fase 3) | —                                                  |
-| 12  | Mobile React Native (Fase 4)          | —                                                  |
-
-### Test coverage (limite raggiunto)
-
-| Area                      | Coverage | Note                                                      |
-| ------------------------- | -------- | --------------------------------------------------------- |
-| Backend                   | **97%**  | Limite pratico raggiunto (fitz, startup code, PostgreSQL) |
-| Frontend unit test        | **76%**  | Limite pratico raggiunto (PDF.js canvas, dynamic import)  |
-| Frontend E2E (Playwright) | **0%**   | Necessario per superare l'80% — T7                        |
+| Priorità | Task                         | Piano                                              |
+| -------- | ---------------------------- | -------------------------------------------------- |
+| 🟡 MEDIA | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md`          |
+| 🟡 MEDIA | PDF compression              | `feature-pdf-compression.md`                       |
+| 🟡 MEDIA | PDF naming preservation      | `feature-pdf-naming-preservation.md`               |
+| 🟡 MEDIA | UI/UX improvements           | `feature-ui-ux-improvements.md`                    |
+| 🟡 MEDIA | Inline text editor           | `feature-inline-text-editor.md`                    |
+| 🟡 MEDIA | Conferma email account       | `feature-email-confirmation.md`                    |
+| 🔵 BASSA | Stripe MCP Subscriptions     | `.specs/plans/feature-stripe-mcp-subscriptions.md` |
+| 🔵 BASSA | AI PDF editing               | `.specs/plans/feature-ai-pdf-editing.md`           |
+| 🔵 BASSA | E2E Playwright tests         | `.specs/plans/chore-security-improvements.md`      |
