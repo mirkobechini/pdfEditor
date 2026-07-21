@@ -52,7 +52,7 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
     try {
       const blob = await api.downloadPdf(selectedId);
       const url = URL.createObjectURL(blob);
-      const pdfjsLib = window.pdfjsLib;
+      const pdfjsLib = (window as any).pdfjsLib;
       const pdf = await pdfjsLib.getDocument(url).promise;
 
       const results: PageThumbnail[] = [];
