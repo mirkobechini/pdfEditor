@@ -193,9 +193,10 @@ def google_login(
     try:
         user, token = service.google_login(req.id_token)
     except ValueError as e:
-        raise HTTPException(
+        raise error_response(
+            ErrorCode.GOOGLE_AUTH_FAILED,
+            str(e),
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
         )
 
     response = JSONResponse(
