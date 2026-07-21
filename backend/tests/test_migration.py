@@ -93,23 +93,23 @@ class TestMigrationIntegrity:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
-            # Verify latest column (google_id) exists on users
+            # Verify latest column (report_count) exists on bug_reports
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            user_cols_before = {c["name"] for c in inspector.get_columns("users")}
-            assert "google_id" in user_cols_before
+            bug_cols_before = {c["name"] for c in inspector.get_columns("bug_reports")}
+            assert "report_count" in bug_cols_before
             _cleanup_engine(engine)
 
-            # Downgrade one step (remove google_id)
+            # Downgrade one step (remove report_count)
             rc, out, err = _run_migration(db_path, "downgrade -1")
             assert rc == 0, f"alembic downgrade -1 failed:\n{err}\n{out}"
 
             # Verify column is gone, but table still exists
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            user_cols_after = {c["name"] for c in inspector.get_columns("users")}
-            assert "users" in inspector.get_table_names()
-            assert "google_id" not in user_cols_after
+            bug_cols_after = {c["name"] for c in inspector.get_columns("bug_reports")}
+            assert "bug_reports" in inspector.get_table_names()
+            assert "report_count" not in bug_cols_after
             _cleanup_engine(engine)
 
             # Upgrade again
@@ -119,7 +119,7 @@ class TestMigrationIntegrity:
             # Verify column is restored
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            assert "users" in inspector.get_table_names()
+            assert "bug_reports" in inspector.get_table_names()
             _cleanup_engine(engine)
 
     def test_downgrade_all_the_way(self):
