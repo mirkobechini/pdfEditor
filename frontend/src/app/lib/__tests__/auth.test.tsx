@@ -11,6 +11,7 @@ vi.mock("../api", () => ({
     googleLogin: vi.fn(),
     logout: vi.fn(),
     setToken: vi.fn(),
+    setCsrfToken: vi.fn(),
   },
 }));
 
