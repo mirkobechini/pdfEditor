@@ -323,10 +323,10 @@ function BugReportsTable() {
     const [loading, setLoading] = React.useState(true);
     const [statusFilter, setStatusFilter] = React.useState<string>("");
 
-    async function loadBugs() {
+    async function loadBugs(filterValue: string = statusFilter) {
         setLoading(true);
         try {
-            const res = await api.listBugReports(0, 100, statusFilter || undefined);
+            const res = await api.listBugReports(0, 100, filterValue || undefined);
             setBugs(res.items);
         } catch (err) {
             console.error("Failed to load bugs:", err);
@@ -337,6 +337,7 @@ function BugReportsTable() {
 
     async function handleFilterChange(newFilter: string) {
         setStatusFilter(newFilter);
+        await loadBugs(newFilter);
     }
 
     // Load bugs on mount
@@ -372,7 +373,6 @@ function BugReportsTable() {
                     value={statusFilter}
                     onChange={(e) => {
                         handleFilterChange(e.target.value);
-                        loadBugs();
                     }}
                     className="text-sm bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
                 >
@@ -425,7 +425,7 @@ function BugReportsTable() {
                                                     : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
                                             }`}
                                     >
-                                        {t(`admin.${b.status}`)}
+                                        {t(BUG_STATUS_KEYS[b.status] || "open")}
                                     </span>
                                 </td>
                                 <td className="p-2 text-gray-500">
@@ -442,7 +442,7 @@ function BugReportsTable() {
                                     >
                                         {BUG_STATUSES.map((s) => (
                                             <option key={s} value={s}>
-                                                {t(`admin.${s}`)}
+                                                {t(BUG_STATUS_KEYS[s])}
                                             </option>
                                         ))}
                                     </select>

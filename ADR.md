@@ -139,6 +139,55 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 > **Rimedio:** Creata migrazione Alembic `6b1f5a3e8c9d` per aggiungere `report_count` a `bug_reports`.  
 > **Regola per il futuro:** Ogni colonna nel modello DEVE avere una migrazione Alembic corrispondente. `_add_missing_columns()` in `main.py` è un workaround, non una soluzione — le migrazioni sono l'unico source of truth per lo schema.
 
+> **⚠️ Lezione appresa (2026-07-21) — Google SSO usava HTTPException raw invece di error_response:**  
+> Il `google_login()` in `auth.py` usava `HTTPException(status_code=401, detail=str(e))` invece di `error_response(ErrorCode.GOOGLE_AUTH_FAILED, ...)`. Il frontend non trovava un codice mappabile e mostrava `common.unknownError` invece di `auth.googleAuthFailed`.
+>
+> **Rimedio:** Sostituita raw HTTPException con `error_response()` nel google_login handler (PR #373, issue #372).  
+> **Regola per il futuro:** Ogni endpoint DEVE usare `error_response()` con un codice `ErrorCode` stabile — mai `HTTPException` raw.
+
+> **⚠️ Lezione appresa (2026-07-21) — Upload cross-origin blocca senza handshake CSRF iniziale:**  
+> Il middleware `CSRFMiddleware` imposta il cookie `csrf_token` solo dopo una richiesta "safe" (GET/HEAD/OPTIONS). Se l'utente esegue il primo POST (upload) subito dopo il login, la richiesta viene respinta con `403` e il browser la segnala come errore CORS perché gli header sono generati prima del middleware CORS.
+>
+> **Fix applicato (hotfix #376):** Il cookie `csrf_token` viene ora emesso contestualmente al login/register/google tramite `set_csrf_cookie(response)` in `auth.py`. Il frontend non necessita più di una GET preliminare — il primo POST dopo login funziona immediatamente.
+> **Regola per il futuro:** Ogni flusso che effettua POST cross-origin deve assicurarsi che il cookie CSRF sia già stato emesso. Se un nuovo endpoint auth viene aggiunto, deve chiamare `set_csrf_cookie(response)` dopo aver impostato il cookie JWT.
+> Il merge massivo (145 commit) ha introdotto gran parte dell'infrastruttura di error handling standardizzato, ma non ha completato la migrazione in modo uniforme su tutti i file.
+
+**Gap verificati nel codice (presenti anche nel merge `d84befd`):**
+
+- Backend: eccezioni raw ancora presenti in `backend/app/api/v1/auth.py`, `backend/app/api/v1/convert.py`, `backend/app/api/v1/upload.py`
+- Frontend: alcuni catch mostrano ancora `err.message` raw in `MetadataDialog`, `SplitDialog` (un ramo), `reset-password/page.tsx`
+
+**Impatto:** UX incoerente (fallback `common.unknownError`), diagnosi più difficile, regressioni percepite anche quando il fix backend esiste.
+
+### ✅ Checklist operativa di stabilizzazione (ordine consigliato)
+
+1. **Backend hardening error codes**
+   - Migrare tutte le `raise HTTPException(...)` residue nelle route a `error_response(...)`
+   - Aggiungere `ErrorCode` mancanti solo dove necessario
+
+2. **Frontend hardening mapError**
+   - Eliminare i catch con `err.message` raw
+   - Usare `mapError(err)` in tutti i flussi utente
+
+3. **Contratto API errori (test)**
+   - Aggiungere test backend che validano formato errori `{code, detail}` per endpoint critici
+   - Aggiungere test frontend su mapping codici (`GOOGLE_AUTH_FAILED`, `UPLOAD_TOO_LARGE`, `VALIDATION_ERROR`)
+
+4. **Smoke test post-merge prima di chiudere issue**
+   - Login email/password
+   - Google SSO fail path (messaggio localizzato corretto)
+   - Upload/import fail path (messaggio localizzato corretto)
+
+5. **E2E minimo cross-origin (Playwright, T7)**
+   - Validare cookie httpOnly + `credentials: include` su dominio frontend/backend separato
+   - Usare come gate per merge futuri su fix auth/error handling
+
+**Regola operativa:** dopo ogni merge massivo su `main`, eseguire sempre smoke test funzionale sui 3 flussi critici (auth, upload, error rendering) prima di considerare il merge “stabile”.
+
+**Piano operativo dedicato:** vedi `.specs/plans/hotfix-post-merge-d84befd-stabilization.md`.
+
+**Aggiornamento stato (issue #374):** fixata la regressione i18n nella pagina admin bug reports (`admin.admin.*`), con mapping status allineato a `BUG_STATUS_KEYS` in `frontend/src/app/admin/page.tsx`.
+
 ### Security audit 2026-07-09
 
 > 🔒 **Security audit completato — 20/24 issue risolte (83%).**  

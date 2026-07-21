@@ -20,6 +20,7 @@ from app.services.auth_service import AuthService
 from app.services.email_service import EmailService
 from app.repositories.user_repo import UserRepository
 from app.core.errors import error_response, ErrorCode
+from app.core.csrf import set_csrf_cookie
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()
@@ -100,6 +101,7 @@ def register(
         status_code=status.HTTP_201_CREATED,
     )
     _set_token_cookie(response, token)
+    set_csrf_cookie(response)
     return response
 
 
@@ -123,6 +125,7 @@ def login(
         content=TokenResponse(access_token=token).model_dump(mode="json"),
     )
     _set_token_cookie(response, token)
+    set_csrf_cookie(response)
     return response
 
 
@@ -203,6 +206,7 @@ def google_login(
         content=TokenResponse(access_token=token).model_dump(mode="json"),
     )
     _set_token_cookie(response, token)
+    set_csrf_cookie(response)
     return response
 
 
