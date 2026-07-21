@@ -145,6 +145,12 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 > **Rimedio:** Sostituita raw HTTPException con `error_response()` nel google_login handler (PR #373, issue #372).  
 > **Regola per il futuro:** Ogni endpoint DEVE usare `error_response()` con un codice `ErrorCode` stabile — mai `HTTPException` raw.
 
+> **⚠️ Lezione appresa (2026-07-21) — Upload cross-origin blocca senza handshake CSRF iniziale:**  
+> Il middleware `CSRFMiddleware` imposta il cookie `csrf_token` solo dopo una richiesta "safe" (GET/HEAD/OPTIONS). Se l'utente esegue il primo POST (upload) subito dopo il login, la richiesta viene respinta con `403` e il browser la segnala come errore CORS perché gli header sono generati prima del middleware CORS.
+>
+> **Rimedio:** Documentato il flusso: dopo il login il frontend deve effettuare almeno una GET autenticata (es. lista PDF) per ricevere `csrf_token` e rimandarlo via header `X-CSRF-Token` nei POST successivi. In caso contrario il primo upload fallisce.  
+> **Regola per il futuro:** Ogni flusso che effettua POST cross-origin deve assicurarsi di aver ottenuto il cookie CSRF con una richiesta "safe" precedente oppure modificare il backend per emettere il cookie durante il login.
+
 ### ⚠️ Stato post-merge `dev -> main` (2026-07-21, merge `d84befd`)
 
 Il merge massivo (145 commit) ha introdotto gran parte dell'infrastruttura di error handling standardizzato, ma non ha completato la migrazione in modo uniforme su tutti i file.
