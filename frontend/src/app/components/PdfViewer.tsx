@@ -68,9 +68,11 @@ export default function PdfViewer({
   React.useEffect(() => {
     if (!fileUrl || !pdfJsLoaded) return;
 
+    let cancelled = false;
     const loadPdf = async () => {
       try {
         const pdf = await (window as any).pdfjsLib.getDocument(fileUrl).promise;
+        if (cancelled) return;
         pdfDocRef.current = pdf;
         onTotalPagesChange(pdf.numPages);
         onPageChange(1);
@@ -84,6 +86,7 @@ export default function PdfViewer({
     loadPdf();
 
     return () => {
+      cancelled = true;
       pdfDocRef.current = null;
       if (renderTaskRef.current) {
         renderTaskRef.current.cancel();
@@ -110,6 +113,9 @@ export default function PdfViewer({
         // If a newer render was requested while we waited, skip this one
         if (key !== renderKeyRef.current) return;
 
+        // Guard: canvas must still be in the DOM (PDF.js throws "Node cannot be found" otherwise)
+        if (!canvasRef.current?.isConnected) return;
+
         const viewport = page.getViewport({ scale: zoom });
         const canvas = canvasRef.current!;
 
@@ -130,6 +136,9 @@ export default function PdfViewer({
         await renderTask.promise;
       } catch (err: any) {
         if (err?.name !== "RenderingCancelledException") {
+          // Ignore "Node cannot be found" — harmless PDF.js internal error
+          // when canvas is removed from DOM during render (e.g., unmount, navigation)
+          if (err?.message?.includes("Node cannot be found")) return;
           console.error("Render error:", err);
         }
       } finally {

@@ -150,6 +150,12 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 >
 > **Fix applicato (hotfix #376):** Il cookie `csrf_token` viene ora emesso contestualmente al login/register/google tramite `set_csrf_cookie(response)` in `auth.py`. Il frontend non necessita più di una GET preliminare — il primo POST dopo login funziona immediatamente.
 > **Regola per il futuro:** Ogni flusso che effettua POST cross-origin deve assicurarsi che il cookie CSRF sia già stato emesso. Se un nuovo endpoint auth viene aggiunto, deve chiamare `set_csrf_cookie(response)` dopo aver impostato il cookie JWT.
+>
+> **⚠️ Lezione appresa (2026-07-21) — Ordine middleware CSRF/CORS in Starlette:**
+> In Starlette, l'**ultimo** middleware registrato con `add_middleware()` è il **più esterno** (quello che avvolge tutti gli altri). Se CSRFMiddleware è registrato dopo CORSMiddleware, le risposte 403 del CSRF bypassano il CORS e il browser le vede come errori CORS.
+>
+> **Fix (PR #380):** CORSMiddleware ora è l'ultimo middleware registrato (outermost), CSRFMiddleware è registrato prima (inner). La risposta 403 del CSRF risale attraverso CORSMiddleware che aggiunge `Access-Control-Allow-Origin`.
+> **Regola per il futuro:** `add_middleware(CORSMiddleware)` deve essere SEMPRE l'ultimo middleware registrato nell'app FastAPI, per intercettare tutte le risposte (inclusi errori da middleware interni).
 > Il merge massivo (145 commit) ha introdotto gran parte dell'infrastruttura di error handling standardizzato, ma non ha completato la migrazione in modo uniforme su tutti i file.
 
 **Gap verificati nel codice (presenti anche nel merge `d84befd`):**
