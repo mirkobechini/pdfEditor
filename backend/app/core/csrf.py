@@ -22,6 +22,31 @@ CSRF_EXEMPT_PATHS = {
 }
 
 
+def generate_csrf_token() -> str:
+    """Generate a cryptographically secure CSRF token."""
+    return secrets.token_hex(32)
+
+
+def set_csrf_cookie(response: Response, token: str | None = None) -> str:
+    """Set the csrf_token cookie on a response.
+
+    If no token is provided, a new one is generated.
+    Returns the token value (useful for testing).
+    """
+    if token is None:
+        token = generate_csrf_token()
+    response.set_cookie(
+        key="csrf_token",
+        value=token,
+        httponly=False,  # Must be readable by JS for double-submit pattern
+        samesite="none" if not settings.DEBUG else "lax",
+        secure=not settings.DEBUG,
+        max_age=3600,  # 1 hour
+        path="/",
+    )
+    return token
+
+
 class CSRFMiddleware(BaseHTTPMiddleware):
     """CSRF protection middleware.
 
@@ -44,16 +69,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         if request.method in ("GET", "HEAD", "OPTIONS"):
             response = await call_next(request)
             if "csrf_token" not in request.cookies:
-                token = secrets.token_hex(32)
-                response.set_cookie(
-                    key="csrf_token",
-                    value=token,
-                    httponly=False,  # Must be readable by JS for double-submit pattern
-                    samesite="none" if not settings.DEBUG else "lax",
-                    secure=not settings.DEBUG,
-                    max_age=3600,  # 1 hour
-                    path="/",
-                )
+                set_csrf_cookie(response)
             return response
 
         # Skip CSRF validation for exempt paths (auth endpoints, health)
