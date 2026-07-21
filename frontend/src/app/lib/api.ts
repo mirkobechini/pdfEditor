@@ -372,9 +372,7 @@ export class ApiClient {
     return data;
   }
 
-  async googleLogin(
-    idToken: string,
-  ): Promise<{
+  async googleLogin(idToken: string): Promise<{
     access_token: string;
     token_type: string;
     csrf_token?: string;
@@ -419,6 +417,21 @@ export class ApiClient {
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
+  }
+
+  async refreshCsrf(): Promise<void> {
+    try {
+      const res = await this._fetch(`${this.baseUrl}/auth/csrf`, {
+        headers: this.getHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+      }
+    } catch {
+      // Non-critical — the next state-changing request will fail and
+      // the user can retry. A GET /auth/csrf on mount is enough for most cases.
+    }
   }
 
   async updateProfile(data: { full_name: string }): Promise<UserResponse> {
