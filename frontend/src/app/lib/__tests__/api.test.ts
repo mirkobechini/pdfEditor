@@ -234,5 +234,53 @@ describe("ApiClient", () => {
 
       globalThis.XMLHttpRequest = OriginalXHR;
     });
+
+    it("uses in-memory csrf_token over cookie when set via setCsrfToken", async () => {
+      // Set cookie with a different value
+      Object.defineProperty(document, "cookie", {
+        writable: true,
+        value: "csrf_token=cookie-token",
+      });
+
+      // Set in-memory token (higher priority)
+      api.setCsrfToken("memory-token");
+
+      let capturedXHR: any = null;
+
+      const OriginalXHR = globalThis.XMLHttpRequest;
+      globalThis.XMLHttpRequest = class MockXHR {
+        withCredentials = false;
+        upload = { onprogress: null };
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        status = 200;
+        responseText = JSON.stringify({
+          id: "pdf1",
+          original_filename: "test.pdf",
+        });
+        open = vi.fn();
+        setRequestHeader = vi.fn();
+        send = vi.fn();
+        constructor() {
+          capturedXHR = this;
+        }
+      } as any;
+
+      const file = new File(["pdf content"], "test.pdf", {
+        type: "application/pdf",
+      });
+      const uploadPromise = api.uploadPdfWithProgress(file);
+      capturedXHR.onload();
+      await uploadPromise;
+
+      // Should use in-memory token, not cookie
+      expect(capturedXHR.setRequestHeader).toHaveBeenCalledWith(
+        "X-CSRF-Token",
+        "memory-token",
+      );
+
+      globalThis.XMLHttpRequest = OriginalXHR;
+      api.setCsrfToken(null);
+    });
   });
 });

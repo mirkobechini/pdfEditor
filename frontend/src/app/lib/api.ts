@@ -14,6 +14,7 @@ export type { PdfDocument, PdfListResponse, Metadata, BugReport, AdminUser };
 export class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
+  private _csrfToken: string | null = null;
 
   constructor(baseUrl: string = API_BASE) {
     this.baseUrl = baseUrl;
@@ -60,7 +61,14 @@ export class ApiClient {
     this.token = token;
   }
 
+  setCsrfToken(token: string | null) {
+    this._csrfToken = token;
+  }
+
   private _getCsrfToken(): string | null {
+    // Try in-memory first (works cross-origin where document.cookie is unreadable)
+    if (this._csrfToken) return this._csrfToken;
+    // Fallback to cookie (same-origin)
     if (typeof document === "undefined") return null;
     const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
     return match ? match[1] : null;
@@ -329,39 +337,57 @@ export class ApiClient {
     email: string,
     password: string,
     fullName: string,
-  ): Promise<{ access_token: string; token_type: string }> {
+  ): Promise<{
+    access_token: string;
+    token_type: string;
+    csrf_token?: string;
+  }> {
     const res = await this._fetch(`${this.baseUrl}/auth/register`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, full_name: fullName }),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
-    return res.json();
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
   }
 
   async login(
     email: string,
     password: string,
-  ): Promise<{ access_token: string; token_type: string }> {
+  ): Promise<{
+    access_token: string;
+    token_type: string;
+    csrf_token?: string;
+  }> {
     const res = await this._fetch(`${this.baseUrl}/auth/login`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
-    return res.json();
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
   }
 
   async googleLogin(
     idToken: string,
-  ): Promise<{ access_token: string; token_type: string }> {
+  ): Promise<{
+    access_token: string;
+    token_type: string;
+    csrf_token?: string;
+  }> {
     const res = await this._fetch(`${this.baseUrl}/auth/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_token: idToken }),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
-    return res.json();
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {

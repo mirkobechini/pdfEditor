@@ -20,7 +20,7 @@ from app.services.auth_service import AuthService
 from app.services.email_service import EmailService
 from app.repositories.user_repo import UserRepository
 from app.core.errors import error_response, ErrorCode
-from app.core.csrf import set_csrf_cookie
+from app.core.csrf import generate_csrf_token, set_csrf_cookie
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()
@@ -96,12 +96,13 @@ def register(
 
     # Auto-login after registration
     token = service.login(email=req.email, password=req.password)
+    csrf_token = generate_csrf_token()
     response = JSONResponse(
-        content=TokenResponse(access_token=token).model_dump(mode="json"),
+        content=TokenResponse(access_token=token, csrf_token=csrf_token).model_dump(mode="json"),
         status_code=status.HTTP_201_CREATED,
     )
     _set_token_cookie(response, token)
-    set_csrf_cookie(response)
+    set_csrf_cookie(response, csrf_token)
     return response
 
 
@@ -121,11 +122,12 @@ def login(
             detail=str(e),
         )
 
+    csrf_token = generate_csrf_token()
     response = JSONResponse(
-        content=TokenResponse(access_token=token).model_dump(mode="json"),
+        content=TokenResponse(access_token=token, csrf_token=csrf_token).model_dump(mode="json"),
     )
     _set_token_cookie(response, token)
-    set_csrf_cookie(response)
+    set_csrf_cookie(response, csrf_token)
     return response
 
 
@@ -202,11 +204,12 @@ def google_login(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
+    csrf_token = generate_csrf_token()
     response = JSONResponse(
-        content=TokenResponse(access_token=token).model_dump(mode="json"),
+        content=TokenResponse(access_token=token, csrf_token=csrf_token).model_dump(mode="json"),
     )
     _set_token_cookie(response, token)
-    set_csrf_cookie(response)
+    set_csrf_cookie(response, csrf_token)
     return response
 
 

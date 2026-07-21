@@ -113,6 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await api.logout();
     } finally {
       api.setToken(null);
+      api.setCsrfToken?.(null);
       setUser(null);
     }
   }, []);
