@@ -47,8 +47,8 @@ export default function PdfViewer({
   // Load PDF.js on mount
   React.useEffect(() => {
     // If already loaded (e.g., by another instance), skip
-    if (window.pdfjsLib) {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+    if ((window as any).pdfjsLib) {
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       setPdfJsLoaded(true);
       return;
     }
@@ -57,7 +57,7 @@ export default function PdfViewer({
     script.src = PDFJS_URL;
     script.async = true;
     script.onload = () => {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       setPdfJsLoaded(true);
     };
     document.body.appendChild(script);
@@ -70,7 +70,7 @@ export default function PdfViewer({
 
     const loadPdf = async () => {
       try {
-        const pdf = await window.pdfjsLib.getDocument(fileUrl).promise;
+        const pdf = await (window as any).pdfjsLib.getDocument(fileUrl).promise;
         pdfDocRef.current = pdf;
         onTotalPagesChange(pdf.numPages);
         onPageChange(1);
