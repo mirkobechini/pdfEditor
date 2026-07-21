@@ -640,6 +640,7 @@ class TestGoogleLoginEndpoint:
                 json={"id_token": "bad-token"},
             )
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
+            assert response.json()["code"] == "GOOGLE_AUTH_FAILED"
             assert "Invalid" in response.json()["detail"]
         finally:
             fastapi_app.dependency_overrides.clear()
