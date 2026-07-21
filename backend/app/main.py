@@ -213,13 +213,14 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-# CSRF protection — must be registered BEFORE CORS so that CSRF 403 responses
-# still pass through CORSMiddleware (which adds Access-Control-Allow-Origin).
-# CORS middleware must be outermost to intercept all responses.
+# CSRF protection — registered first (inner) so its 403 responses
+# pass through CORSMiddleware (outer) which adds CORS headers.
+# In Starlette, the LAST middleware added is the outermost wrapper.
 app.add_middleware(CSRFMiddleware)
 
 # CORS — restrict origins in production (read from ALLOWED_ORIGINS env var)
 # For local development, defaults to http://localhost:3000
+# Registered last (outermost) to intercept ALL responses, including CSRF 403s.
 allow_origins = settings.allowed_origins_list if settings.allowed_origins_list else ["http://localhost:3000"]
 app.add_middleware(
     CORSMiddleware,
@@ -228,9 +229,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# CSRF protection — must be after CORS middleware
-app.add_middleware(CSRFMiddleware)
 
 # Routers
 app.include_router(auth_router)
