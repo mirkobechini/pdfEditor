@@ -356,3 +356,49 @@ class TestPasswordReset:
         response = client.post(self.URL_RESET, json={"token": "expired-token", "new_password": "NewPass456"})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "expired" in response.json()["detail"]
+
+
+class TestCsrfRefresh:
+    """Test suite for GET /auth/csrf — re-sync CSRF token after page refresh."""
+
+    URL = "/auth/csrf"
+
+    def _login(self, client):
+        """Register + login and return the response."""
+        client.post(
+            "/auth/register",
+            json={"email": "csrf@test.com", "password": "Password123", "full_name": "CSRF Test"},
+        )
+        client.cookies.clear()
+        resp = client.post(
+            "/auth/login",
+            json={"email": "csrf@test.com", "password": "Password123"},
+        )
+        return resp
+
+    def test_csrf_refresh_returns_token_in_body(self, client):
+        """GET /auth/csrf should return a fresh csrf_token in the body."""
+        self._login(client)
+
+        response = client.get(self.URL)
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "csrf_token" in data
+        assert len(data["csrf_token"]) == 64
+
+    def test_csrf_refresh_sets_new_cookie(self, client):
+        """GET /auth/csrf should also set the csrf_token cookie."""
+        self._login(client)
+
+        response = client.get(self.URL)
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        # Cookie should match the body value
+        cookie = client.cookies.get("csrf_token")
+        assert cookie == data["csrf_token"]
+
+    def test_csrf_refresh_requires_auth(self, client):
+        """Unauthenticated request should return 401."""
+        client.cookies.clear()
+        response = client.get(self.URL)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED

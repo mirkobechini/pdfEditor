@@ -12,6 +12,7 @@ vi.mock("../api", () => ({
     logout: vi.fn(),
     setToken: vi.fn(),
     setCsrfToken: vi.fn(),
+    refreshCsrf: vi.fn(),
   },
 }));
 
@@ -45,6 +46,9 @@ describe("AuthProvider", () => {
     (api.getMe as any).mockResolvedValue({ id: "1", email: "test@example.com", full_name: "Test", is_active: true, is_admin: false, license_tier: "free", license_tier_source: "admin", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" });
     render(<AuthProvider><TestConsumer /></AuthProvider>);
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("test@example.com"));
+    // PRODUCTION CHECK: refreshCsrf must be called after getMe to re-sync CSRF token
+    // cross-origin after page refresh (in-memory token is lost)
+    expect(api.refreshCsrf).toHaveBeenCalled();
   });
 
   it("sets user after login", async () => {

@@ -36,7 +36,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     api
       .getMe()
-      .then((u) => setUser(u))
+      .then((u) => {
+        setUser(u);
+        // Re-sync CSRF token after page refresh (in-memory token is lost)
+        // Cross-origin: document.cookie is unreadable, so we need the body.
+        api.refreshCsrf();
+      })
       .catch(() => {
         // Not authenticated — user is null
       })
