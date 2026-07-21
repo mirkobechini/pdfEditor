@@ -90,6 +90,20 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 > 📋 **Storico completo dei fix:** Vedi [`CHANGELOG.md`](./CHANGELOG.md) per l'elenco di tutte le PR e issue.
 
+### 🔴 Known test failures (pre-esistenti, non bloccanti)
+
+4 test in `tests/test_edge_cases.py` falliscono in locale perché tentano connessione a PostgreSQL (Neon) con `psycopg` che ha un conflitto di parametro `channel_binding` con la versione locale del driver. Sono test di startup code (`_run_migrations`, `_seed_super_admin`, `_seed_license_features`) e coverage.
+
+| Test                                             | Causa                                              | Impatto                         |
+| ------------------------------------------------ | -------------------------------------------------- | ------------------------------- |
+| `test_run_migrations`                            | Connessione PostgreSQL fallita (`channel_binding`) | Solo locale — CI usa PostgreSQL |
+| `test_seed_super_admin`                          | Stessa causa                                       | Solo locale                     |
+| `test_seed_license_features`                     | Stessa causa                                       | Solo locale                     |
+| `test_main_seed_license_features_already_seeded` | Stessa causa                                       | Solo locale                     |
+
+**CI passa comunque** perché l'ambiente CI ha una versione compatibile del driver PostgreSQL.
+**Da fixare:** aggiornare `psycopg` o allineare `channel_binding` settings (task pianificato).
+
 ### Issue note ma non bloccanti ⏳
 
 | #   | Issue                                                            | Impatto              | Risoluzione prevista                                  |
