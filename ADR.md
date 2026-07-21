@@ -60,8 +60,8 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | Tagged PDF in output                                | PDF non strutturati        | Accessibilità screen reader (obbligo AGPL indiretto)                                                                                                                                                                                                                              |
 | SendGrid API HTTP invece di SMTP                    | SMTP via libreria SendGrid | Render free tier blocca la porta 587 in uscita. Usata API HTTP v3 direttamente con `requests` — nessuna dipendenza extra.                                                                                                                                                         |
 | Standard error codes API (codice + dettaglio)       | Solo `str(e)` plain        | Ogni HTTPException backend usa `error_response(code, detail)` con codice stabile (es. `INVALID_CREDENTIALS`). Il frontend mappa ogni codice in una chiave i18n tramite `mapError()`, eliminando `err.message` raw in UI. Motivo: UX produzione, supporto IT/EN, debug facilitato. |
-| Neon PostgreSQL (serverless)                        | Render PostgreSQL free      | Render ha discontinuato il free tier PostgreSQL. Neon offre PostgreSQL serverless con free tier permanente (0.5GB storage, 100h compute/mese con auto-suspend). Connection pooling built-in, stesso driver psycopg.                                                              |
-| Cloudflare R2 per storage PDF                       | Disco locale Render         | Già implementato in `s3_storage.py` + `storage.py`. Gratis 10GB storage, zero egress cost. Configurato con `STORAGE_BACKEND=s3`.                                                                                                                                                 |
+| Neon PostgreSQL (serverless)                        | Render PostgreSQL free     | Render ha discontinuato il free tier PostgreSQL. Neon offre PostgreSQL serverless con free tier permanente (0.5GB storage, 100h compute/mese con auto-suspend). Connection pooling built-in, stesso driver psycopg.                                                               |
+| Cloudflare R2 per storage PDF                       | Disco locale Render        | Già implementato in `s3_storage.py` + `storage.py`. Gratis 10GB storage, zero egress cost. Configurato con `STORAGE_BACKEND=s3`.                                                                                                                                                  |
 
 ## Vincoli
 
@@ -107,12 +107,13 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 **Decisione:**
 
-| Componente | Prima | Dopo | Costo |
-|---|---|---|---|
+| Componente          | Prima                                 | Dopo                                     | Costo                                     |
+| ------------------- | ------------------------------------- | ---------------------------------------- | ----------------------------------------- |
 | Database PostgreSQL | Render PostgreSQL (free, in chiusura) | Neon (neon.tech) — serverless PostgreSQL | Gratis (0.5GB storage, 100h compute/mese) |
-| File storage PDF | Cloudflare R2 | Cloudflare R2 (confermato, già attivo) | Gratis (10GB) |
+| File storage PDF    | Cloudflare R2                         | Cloudflare R2 (confermato, già attivo)   | Gratis (10GB)                             |
 
 **Vantaggi Neon:**
+
 - Free tier **senza expiry** (non come Render che ha chiuso)
 - Auto-suspend dopo 5 minuti di inattività → consumo ore reale molto basso
 - Connection pooling built-in (PgBouncer integrato)
@@ -121,6 +122,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - Si connette da Render senza problemi
 
 **Dettaglio consumo compute ore:**
+
 - Sempre attivo 24/7: 720h/mese ❌
 - Uso normale (qualche richiesta/giorno): ~5-10h/mese ✅
 - Uso intenso (decine di richieste/ora): ~30-50h/mese ✅
@@ -130,6 +132,12 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 **Per i dettagli operativi, vedi:** [`MIGRAZIONE_NEON.md`](./MIGRAZIONE_NEON.md)
 
 **Nota tecnica:** Render free tier non genera backup esportabili. L'import è stato eseguito tramite Neon Import Wizard con connessione diretta al database Render (connection string). I dati sono finiti in una branch `import-...` separata, poi impostata come default.
+
+> **⚠️ Lezione appresa (2026-07-21) — Schema DB incompleto dopo migrazione:**  
+> L'import dei dati da Render PostgreSQL a Neon ha copiato i dati ma non lo schema completo. La colonna `bug_reports.report_count` era definita solo nel modello Python, non in una migrazione Alembic. Su Render funzionava perché il database era stato modificato manualmente. Su Neon, tutte le operazioni che accedevano a `bug_reports` fallivano con `UndefinedColumn`, causando una cascata di errori (Google SSO, upload, admin bug report, ecc.).
+>
+> **Rimedio:** Creata migrazione Alembic `6b1f5a3e8c9d` per aggiungere `report_count` a `bug_reports`.  
+> **Regola per il futuro:** Ogni colonna nel modello DEVE avere una migrazione Alembic corrispondente. `_add_missing_columns()` in `main.py` è un workaround, non una soluzione — le migrazioni sono l'unico source of truth per lo schema.
 
 ### Security audit 2026-07-09
 
@@ -358,7 +366,6 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 | Rate limit login      | ✅ Protected | slowapi: 5/min login, 3/h register, 3/h forgot-password |
 | 2FA support           | ❌ Future    | Low priority, evaluable in Phase 3+                     |
 
-
 ## 📋 Stato attuale (2026-07-20)
 
 ### ✅ Completati — 21 bug + 10 miglioramenti + 3 coverage sprint + error handling
@@ -378,25 +385,25 @@ Dopo il completamento delle feature pendenti della Fase 1, il progetto prosegue 
 
 ### 🟡 MEDIA (feature)
 
-| # | Task                         | Piano                                     |
-|---|----------------------------- | ----------------------------------------- |
-| 1 | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md` |
-| 2 | PDF compression              | `feature-pdf-compression.md`              |
-| 3 | PDF naming preservation      | `feature-pdf-naming-preservation.md`      |
-| 4 | UI/UX improvements           | `feature-ui-ux-improvements.md`           |
-| 5 | Inline text editor           | `feature-inline-text-editor.md`           |
-| 6 | Conferma email account       | `feature-email-confirmation.md`           |
+| #   | Task                         | Piano                                     |
+| --- | ---------------------------- | ----------------------------------------- |
+| 1   | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md` |
+| 2   | PDF compression              | `feature-pdf-compression.md`              |
+| 3   | PDF naming preservation      | `feature-pdf-naming-preservation.md`      |
+| 4   | UI/UX improvements           | `feature-ui-ux-improvements.md`           |
+| 5   | Inline text editor           | `feature-inline-text-editor.md`           |
+| 6   | Conferma email account       | `feature-email-confirmation.md`           |
 
 #### 🔵 BASSA / Future
 
-| #  | Task                                  | Piano |
-|----|---------------------------------------|-------|
-| 7  | Stripe MCP Subscriptions              | `.specs/plans/feature-stripe-mcp-subscriptions.md` |
-| 8  | AI PDF editing                        | `.specs/plans/feature-ai-pdf-editing.md` |
-| 9  | E2E Playwright tests                  | `.specs/plans/chore-security-improvements.md` |
-| 10 | Tauri v2 Desktop (Fase 1c)            | — |
-| 11 | Cloud sync SQLite↔PostgreSQL (Fase 3) | — |
-| 12 | Mobile React Native (Fase 4)          | — |
+| #   | Task                                  | Piano                                              |
+| --- | ------------------------------------- | -------------------------------------------------- |
+| 7   | Stripe MCP Subscriptions              | `.specs/plans/feature-stripe-mcp-subscriptions.md` |
+| 8   | AI PDF editing                        | `.specs/plans/feature-ai-pdf-editing.md`           |
+| 9   | E2E Playwright tests                  | `.specs/plans/chore-security-improvements.md`      |
+| 10  | Tauri v2 Desktop (Fase 1c)            | —                                                  |
+| 11  | Cloud sync SQLite↔PostgreSQL (Fase 3) | —                                                  |
+| 12  | Mobile React Native (Fase 4)          | —                                                  |
 
 ### Test coverage (limite raggiunto)
 
