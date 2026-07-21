@@ -139,6 +139,12 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 > **Rimedio:** Creata migrazione Alembic `6b1f5a3e8c9d` per aggiungere `report_count` a `bug_reports`.  
 > **Regola per il futuro:** Ogni colonna nel modello DEVE avere una migrazione Alembic corrispondente. `_add_missing_columns()` in `main.py` è un workaround, non una soluzione — le migrazioni sono l'unico source of truth per lo schema.
 
+> **⚠️ Lezione appresa (2026-07-21) — Google SSO usava HTTPException raw invece di error_response:**  
+> Il `google_login()` in `auth.py` usava `HTTPException(status_code=401, detail=str(e))` invece di `error_response(ErrorCode.GOOGLE_AUTH_FAILED, ...)`. Il frontend non trovava un codice mappabile e mostrava `common.unknownError` invece di `auth.googleAuthFailed`.
+>
+> **Rimedio:** Sostituita raw HTTPException con `error_response()` nel google_login handler (PR #373, issue #372).  
+> **Regola per il futuro:** Ogni endpoint DEVE usare `error_response()` con un codice `ErrorCode` stabile — mai `HTTPException` raw.
+
 ### Security audit 2026-07-09
 
 > 🔒 **Security audit completato — 20/24 issue risolte (83%).**  
