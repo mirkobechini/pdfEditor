@@ -213,6 +213,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
+# CSRF protection — must be registered BEFORE CORS so that CSRF 403 responses
+# still pass through CORSMiddleware (which adds Access-Control-Allow-Origin).
+# CORS middleware must be outermost to intercept all responses.
+app.add_middleware(CSRFMiddleware)
+
 # CORS — restrict origins in production (read from ALLOWED_ORIGINS env var)
 # For local development, defaults to http://localhost:3000
 allow_origins = settings.allowed_origins_list if settings.allowed_origins_list else ["http://localhost:3000"]
