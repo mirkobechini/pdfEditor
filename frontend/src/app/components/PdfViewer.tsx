@@ -102,8 +102,11 @@ export default function PdfViewer({
         renderTaskRef.current.cancel();
       }
 
+      const doc = pdfDocRef.current;
+      if (!doc) return;
+
       try {
-        const page = await pdfDocRef.current.getPage(currentPage);
+        const page = await doc.getPage(currentPage);
         // If a newer render was requested while we waited, skip this one
         if (key !== renderKeyRef.current) return;
 
