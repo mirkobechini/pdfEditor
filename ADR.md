@@ -148,8 +148,9 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 > **⚠️ Lezione appresa (2026-07-21) — Upload cross-origin blocca senza handshake CSRF iniziale:**  
 > Il middleware `CSRFMiddleware` imposta il cookie `csrf_token` solo dopo una richiesta "safe" (GET/HEAD/OPTIONS). Se l'utente esegue il primo POST (upload) subito dopo il login, la richiesta viene respinta con `403` e il browser la segnala come errore CORS perché gli header sono generati prima del middleware CORS.
 >
-> **Fix applicato (hotfix #376):** Il cookie `csrf_token` viene ora emesso contestualmente al login/register/google tramite `set_csrf_cookie(response)` in `auth.py`. Il frontend non necessita più di una GET preliminare — il primo POST dopo login funziona immediatamente.
-> **Regola per il futuro:** Ogni flusso che effettua POST cross-origin deve assicurarsi che il cookie CSRF sia già stato emesso. Se un nuovo endpoint auth viene aggiunto, deve chiamare `set_csrf_cookie(response)` dopo aver impostato il cookie JWT.
+> **Fix 1 (hotfix #376):** Il cookie `csrf_token` viene ora emesso contestualmente al login/register/google tramite `set_csrf_cookie(response)` in `auth.py`. Il frontend non necessita più di una GET preliminare — il primo POST dopo login funziona immediatamente.
+> **Fix 2 (hotfix #381):** Il `csrf_token` viene ora restituito anche nel **body della risposta** di login/register/google (campo `csrf_token` in `TokenResponse`). Il frontend lo memorizza in memoria nell'`ApiClient` perché `document.cookie` non è leggibile cross-origin (dominio API ≠ dominio frontend).
+> **Regola per il futuro:** Ogni flusso cross-origin che usa CSRF double-submit pattern deve prevedere un meccanismo per trasmettere il token al frontend via body della risposta, non solo via cookie.
 >
 > **⚠️ Lezione appresa (2026-07-21) — Ordine middleware CSRF/CORS in Starlette:**
 > In Starlette, l'**ultimo** middleware registrato con `add_middleware()` è il **più esterno** (quello che avvolge tutti gli altri). Se CSRFMiddleware è registrato dopo CORSMiddleware, le risposte 403 del CSRF bypassano il CORS e il browser le vede come errori CORS.
