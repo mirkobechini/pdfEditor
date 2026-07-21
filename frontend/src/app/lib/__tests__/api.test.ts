@@ -286,9 +286,11 @@ describe("ApiClient", () => {
 
   describe("refreshCsrf", () => {
     it("calls GET /auth/csrf and stores the token", async () => {
-      const mockFetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response(JSON.stringify({ csrf_token: "fresh-csrf-123" })),
-      );
+      const mockFetch = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(
+          new Response(JSON.stringify({ csrf_token: "fresh-csrf-123" })),
+        );
       const setSpy = vi.spyOn(api, "setCsrfToken");
 
       await api.refreshCsrf();
@@ -303,7 +305,9 @@ describe("ApiClient", () => {
     });
 
     it("does not throw on network error", async () => {
-      vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network error"));
+      vi.spyOn(globalThis, "fetch").mockRejectedValue(
+        new Error("Network error"),
+      );
 
       await expect(api.refreshCsrf()).resolves.toBeUndefined();
     });
