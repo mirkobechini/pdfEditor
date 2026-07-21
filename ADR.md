@@ -129,6 +129,8 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 
 **Per i dettagli operativi, vedi:** [`MIGRAZIONE_NEON.md`](./MIGRAZIONE_NEON.md)
 
+**Nota tecnica:** Render free tier non genera backup esportabili. L'import è stato eseguito tramite Neon Import Wizard con connessione diretta al database Render (connection string). I dati sono finiti in una branch `import-...` separata, poi impostata come default.
+
 ### Security audit 2026-07-09
 
 > 🔒 **Security audit completato — 20/24 issue risolte (83%).**  

@@ -9,9 +9,9 @@
 
 | Passo | Azione                                             | Tempo |
 | ----- | -------------------------------------------------- | ----- |
-| 1     | Scaricare il backup da Render Dashboard            | 2 min |
+| 1     | Ottenere la connection string di Render PostgreSQL | 2 min |
 | 2     | Creare il progetto su Neon e abilitare pooler      | 5 min |
-| 3     | Importare i dati su Neon (via web)                 | 5 min |
+| 3     | Importare i dati in Neon via Import Wizard         | 5 min |
 | 4     | Aggiornare Render con la connection string di Neon | 5 min |
 | 5     | Verificare il funzionamento                        | 5 min |
 | 6     | Pulizia: eliminare il vecchio database Render      | 2 min |
@@ -29,25 +29,19 @@
 
 ---
 
-## Passo 1 — Scaricare il backup da Render
+## Passo 1 — Ottenere la connection string di Render
+
+> ⚠️ **Render free tier non genera backup esportabili.** L'unico modo per migrare i dati è usare l'Import Wizard di Neon con connessione diretta.
 
 1. Vai su [Render Dashboard](https://dashboard.render.com) e fai login
 2. Nella lista dei servizi, clicca su **pdeditor-postgres**
-3. Nel menu a sinistra, clicca su **Backups**
-4. Dovresti vedere una lista di backup automatici con data/ora
-5. Clicca sul pulsante **Download** accanto al backup più recente
-   - Render scaricherà un file `.dump` (es. `pgdump-20260721-120000.dump`)
-6. Salva il file in una cartella che ricordi (es. `Download/pdeditor-backup.dump`)
-
-> ⚠️ **Se non vedi backup disponibili:** Render free tier faceva backup automatici ma potrebbero non essere presenti. In quel caso, la migrazione è comunque possibile — vedi **Passo 1b** sotto.
-
-### Passo 1b — Solo se non ci sono backup disponibili
-
-Se Render non ha backup, puoi connetterti direttamente per esportare i dati via **Neon Console Import**. Neon ha un import wizard che accetta connessione diretta a Render. Ti servirà la **connection string** di Render:
-
-1. Vai su Render Dashboard → **pdeditor-postgres** → **Info** → **Connections**
-2. Copia la **Connection String** (sarà tipo `postgresql://user:password@host:5432/dbname`)
-3. Prosegui al Passo 2b (Neon Import via connection string)
+3. Nel menu a sinistra, clicca su **Info**
+4. Nella sezione **Connections**, clicca su **Show secret** accanto a **External Database URL**
+5. Copia la stringa che appare (sarà simile a):
+   ```
+   postgresql://pdfeditor_postgres_user:password@dpg-xxx.frankfurt-postgres.render.com/pdfeditor_postgres
+   ```
+6. Tienila da parte — servirà al Passo 3
 
 ---
 
@@ -80,27 +74,25 @@ Se Render non ha backup, puoi connetterti direttamente per esportare i dati via 
 
 ## Passo 3 — Importare i dati in Neon
 
-### 3a — Usando il backup .dump scaricato da Render
-
-Neon ha un import wizard web che carica direttamente il file `.dump`:
-
-1. Vai su [console.neon.tech](https://console.neon.tech)
-2. Apri il progetto **pdfeditor**
-3. Nel menu a sinistra, clicca su **Import**
-4. Seleziona **Upload a file**
-5. Scegli il file `.dump` scaricato da Render
-6. Clicca **Import**
-7. Neon elabora il file — ci vogliono 1-2 minuti
-8. **Fatto!** I dati sono ora su Neon.
-
-### 3b — Solo se hai usato la connection string (Passo 1b)
+### 3a — Connessione diretta a Render (raccomandata)
 
 1. Vai su [console.neon.tech](https://console.neon.tech) → progetto **pdfeditor**
-2. Menu a sinistra → **Import**
+2. Nella dashboard, clicca su **Import data**
 3. Seleziona **Connect to source database**
-4. Incolla la connection string di Render
+4. Incolla la connection string di Render (copiata al Passo 1)
 5. Clicca **Import**
 6. Neon si connette direttamente a Render, esporta e importa tutto in automatico
+7. I dati vengono importati in una branch separata chiamata `import-<data>`
+
+### 3b — Impostare la branch import come default
+
+Dopo l'import, i dati sono in una branch `import-...`, non in `production`. Per usarli:
+
+1. Vai su **Branches** nel menu a sinistra
+2. Trova la riga della branch `import-2026-07-21...`
+3. Clicca sui tre puntini (⋮) alla fine della riga
+4. Seleziona **Set as default** (oppure **Rename** → rinominala in `production`)
+5. In alternativa: clicca sulla branch `import-...`, vai su **Overview**, premi **Connect** e usa direttamente quella connection string su Render
 
 ### 3c — Verifica import
 
