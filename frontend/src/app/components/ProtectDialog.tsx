@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
+import { mapError } from "../lib/error-map";
 
 interface ProtectDialogProps {
     open: boolean;
@@ -36,7 +37,7 @@ export default function ProtectDialog({ open, onClose, pdfId }: ProtectDialogPro
             setConfirmPassword("");
             onClose();
         } catch (err) {
-            setError(t("protectFailed") + ": " + (err instanceof Error ? err.message : err));
+            setError(t("protectFailed") + ": " + mapError(err));
         } finally {
             setProtecting(false);
         }
@@ -50,7 +51,7 @@ export default function ProtectDialog({ open, onClose, pdfId }: ProtectDialogPro
                 className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
 
                 <div className="space-y-4">
                     <div>

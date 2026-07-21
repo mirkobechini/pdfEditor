@@ -171,6 +171,8 @@
     "loggingIn": "Signing in...",
     "registering": "Creating account...",
     "loginFailed": "Login failed",
+    "invalidCredentials": "Invalid email or password",
+    "rateLimitExceeded": "Too many attempts. Please try again in a minute.",
     "registerFailed": "Registration failed",
     "passwordMismatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 6 characters",
@@ -244,6 +246,27 @@
     "deleting": "Deleting...",
     "confirm": "Delete",
     "deleteFailed": "Delete failed"
+  },
+  "common": {
+    "networkError": "Network error. Please check your connection.",
+    "unknownError": "An unexpected error occurred. Please try again.",
+    "rateLimitExceeded": "Too many attempts. Please try again in a minute.",
+    "forbidden": "You do not have permission to perform this action.",
+    "notFound": "Resource not found.",
+    "validationError": "Please check your input and try again.",
+    "internalError": "An internal server error occurred. Please try again later.",
+    "conversionFailed": "Failed to convert the file.",
+    "searchTextEmpty": "Please enter search text.",
+    "mergeTooFew": "Please select at least 2 PDFs to merge.",
+    "splitInvalidRange": "Invalid page range specified."
+  },
+  "pdf": {
+    "notFound": "PDF not found.",
+    "fileNotFound": "PDF file not found on disk. It may have been deleted.",
+    "uploadTooLarge": "File too large. Maximum allowed size is 50MB.",
+    "invalidPdf": "Invalid PDF file.",
+    "onlyPdfAllowed": "Only PDF files are allowed.",
+    "unsupportedFileType": "Unsupported file type."
   },
   "landing": {
     "navbar": {

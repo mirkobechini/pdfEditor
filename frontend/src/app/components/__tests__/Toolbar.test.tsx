@@ -73,5 +73,126 @@ describe("Toolbar", () => {
         const prevBtn = buttons.find(b => b.textContent === "\u25C0")!;
         fireEvent.click(prevBtn);
         expect(onPageChange).toHaveBeenCalledWith(2);
+        const nextBtn = buttons.find(b => b.textContent === "\u25B6")!;
+        fireEvent.click(nextBtn);
+        expect(onPageChange).toHaveBeenCalledWith(4);
+    });
+
+    it("disables prev on first page", () => {
+        render(<Toolbar {...defaultProps} currentPage={1} totalPages={5} />);
+        const buttons = screen.getAllByRole("button");
+        const prevBtn = buttons.find(b => b.textContent === "\u25C0")!;
+        expect(prevBtn).toBeDisabled();
+    });
+
+    it("disables next on last page", () => {
+        render(<Toolbar {...defaultProps} currentPage={5} totalPages={5} />);
+        const buttons = screen.getAllByRole("button");
+        const nextBtn = buttons.find(b => b.textContent === "\u25B6")!;
+        expect(nextBtn).toBeDisabled();
+    });
+
+    it("disables prev and next when totalPages is 0", () => {
+        render(<Toolbar {...defaultProps} currentPage={0} totalPages={0} />);
+        const buttons = screen.getAllByRole("button");
+        const prevBtn = buttons.find(b => b.textContent === "\u25C0")!;
+        const nextBtn = buttons.find(b => b.textContent === "\u25B6")!;
+        expect(prevBtn).toBeDisabled();
+        expect(nextBtn).toBeDisabled();
+    });
+
+    it("calls onZoomChange with zoomed out value", () => {
+        const onZoomChange = vi.fn();
+        render(<Toolbar {...defaultProps} zoom={1} onZoomChange={onZoomChange} />);
+        const buttons = screen.getAllByText("\u2796")!;
+        fireEvent.click(buttons[0]);
+        expect(onZoomChange).toHaveBeenCalledWith(0.75);
+    });
+
+    it("clamps zoom to minimum 0.25", () => {
+        const onZoomChange = vi.fn();
+        render(<Toolbar {...defaultProps} zoom={0.25} onZoomChange={onZoomChange} />);
+        const buttons = screen.getAllByText("\u2796")!;
+        fireEvent.click(buttons[0]);
+        expect(onZoomChange).toHaveBeenCalledWith(0.25);
+    });
+
+    it("clamps zoom to maximum 4", () => {
+        const onZoomChange = vi.fn();
+        render(<Toolbar {...defaultProps} zoom={4} onZoomChange={onZoomChange} />);
+        const buttons = screen.getAllByText("\u2795")!;
+        fireEvent.click(buttons[0]);
+        expect(onZoomChange).toHaveBeenCalledWith(4);
+    });
+
+    it("calls onZoomChange with zoomed in value", () => {
+        const onZoomChange = vi.fn();
+        render(<Toolbar {...defaultProps} zoom={1} onZoomChange={onZoomChange} />);
+        const buttons = screen.getAllByText("\u2795")!;
+        fireEvent.click(buttons[0]);
+        expect(onZoomChange).toHaveBeenCalledWith(1.25);
+    });
+
+    it("shows zoom percentage", () => {
+        render(<Toolbar {...defaultProps} zoom={0.5} />);
+        expect(screen.getByText("50%")).toBeInTheDocument();
+    });
+
+    it("calls onSplit when split button is clicked", () => {
+        const onSplit = vi.fn();
+        render(<Toolbar {...defaultProps} onSplit={onSplit} />);
+        fireEvent.click(screen.getByText("split"));
+        expect(onSplit).toHaveBeenCalled();
+    });
+
+    it("calls onReorder when reorder button is clicked", () => {
+        const onReorder = vi.fn();
+        render(<Toolbar {...defaultProps} onReorder={onReorder} />);
+        fireEvent.click(screen.getByText("reorder"));
+        expect(onReorder).toHaveBeenCalled();
+    });
+
+    it("calls onRemovePages when remove button is clicked", () => {
+        const onRemovePages = vi.fn();
+        render(<Toolbar {...defaultProps} onRemovePages={onRemovePages} />);
+        fireEvent.click(screen.getByText("remove"));
+        expect(onRemovePages).toHaveBeenCalled();
+    });
+
+    it("calls onReplaceText when replace text button is clicked", () => {
+        const onReplaceText = vi.fn();
+        render(<Toolbar {...defaultProps} onReplaceText={onReplaceText} />);
+        fireEvent.click(screen.getByText("replaceText"));
+        expect(onReplaceText).toHaveBeenCalled();
+    });
+
+    it("calls onMetadata when metadata button is clicked", () => {
+        const onMetadata = vi.fn();
+        render(<Toolbar {...defaultProps} onMetadata={onMetadata} />);
+        fireEvent.click(screen.getByText("metadata"));
+        expect(onMetadata).toHaveBeenCalled();
+    });
+
+    it("calls onProtect when protect button is clicked", () => {
+        const onProtect = vi.fn();
+        render(<Toolbar {...defaultProps} onProtect={onProtect} />);
+        fireEvent.click(screen.getByText("protect"));
+        expect(onProtect).toHaveBeenCalled();
+    });
+
+    it("calls onPageChange on page input change within range", () => {
+        const onPageChange = vi.fn();
+        render(<Toolbar {...defaultProps} totalPages={10} onPageChange={onPageChange} />);
+        const input = screen.getByRole("spinbutton");
+        fireEvent.change(input, { target: { value: "5" } });
+        expect(onPageChange).toHaveBeenCalledWith(5);
+    });
+
+    it("does not call onPageChange on page input out of range", () => {
+        const onPageChange = vi.fn();
+        render(<Toolbar {...defaultProps} totalPages={10} onPageChange={onPageChange} />);
+        const input = screen.getByRole("spinbutton");
+        fireEvent.change(input, { target: { value: "99" } });
+        expect(onPageChange).not.toHaveBeenCalled();
     });
 });

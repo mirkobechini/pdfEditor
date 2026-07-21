@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { api, BugReport } from "../lib/api";
+import { mapError } from "../lib/error-map";
 
 const BUG_CATEGORIES = [
   "UI",
@@ -53,7 +54,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
       const res = await api.searchBugReports(searchQuery.trim());
       setResults(res);
     } catch (err) {
-      setError(t("searchFailed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("searchFailed") + ": " + mapError(err));
     } finally {
       setSearching(false);
     }
@@ -64,7 +65,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
       await api.voteBugReport(bugId);
       setStep("done");
     } catch (err) {
-      setError(t("voteFailed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("voteFailed") + ": " + mapError(err));
     }
   }
 
@@ -77,7 +78,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
       await api.createBugReport(`[${category}] ${title.trim()}`, description.trim());
       setStep("done");
     } catch (err) {
-      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("failed") + ": " + mapError(err));
     } finally {
       setSending(false);
     }
@@ -91,7 +92,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
       >
         {step === "done" ? (
           <>
-            <h2 className="text-lg font-bold mb-2">{t("sentTitle")}</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">{t("sentTitle")}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               {t("sentDescription")}
             </p>
@@ -106,7 +107,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
           </>
         ) : step === "search" ? (
           <>
-            <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
               {t("searchPrompt")}
             </p>
@@ -140,7 +141,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
                 {results.map((bug) => (
                   <div key={bug.id} className="border dark:border-gray-700 rounded p-3">
                     <div className="flex justify-between items-start mb-1">
-                      <span className="font-medium text-sm">{bug.title}</span>
+                      <span className="font-medium text-sm text-gray-900 dark:text-gray-100">{bug.title}</span>
                       <span className="text-xs text-gray-400">
                         {bug.report_count || 1}×
                       </span>
@@ -178,7 +179,7 @@ export default function BugReportDialog({ open, onClose }: BugReportDialogProps)
           </>
         ) : (
           <form onSubmit={handleSubmit}>
-            <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
 
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">

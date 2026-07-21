@@ -1,9 +1,22 @@
 # Chore: Frontend 100% Test Coverage
 
-**Status:** Planning
-**Priority:** MEDIA (Quality)
-**Complexity:** HIGH
-**Estimated Time:** 2-3 days
+**Status:** ✅ Completata (3 PR: #363, #364, #365) — 348 test, 75.9% coverage
+**Limite raggiunto:** 76% con unit test. Il 100% non è raggiungibile in jsdom per:
+
+- PDF.js canvas rendering in dialoghi (Reorder, Split, Remove)
+- Dynamic import catch in GoogleLoginButton
+- JSX props (coverage artifact)
+- Server-side guard (`typeof window === "undefined"`)
+
+**Per superare l'80% servono test E2E con Playwright (T7)**
+
+**Coverage finale per file:**
+
+- Toolbar, MergeDialog, login, register, 8 pagine statiche: 100%
+- GoogleLoginButton: 96%
+- Editor page: 69%
+- Admin page: 67%
+- ReorderDialog: 34%, SplitDialog: 38%, RemoveDialog: 44% (PDF.js canvas)
 
 ---
 

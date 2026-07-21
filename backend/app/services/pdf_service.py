@@ -1,12 +1,10 @@
 from sqlalchemy.orm import Session
 import time
-from typing import Any
 
 from app.core.config import settings
 from app.core.storage import (
     save_pdf,
     validate_pdf,
-    get_pdf_path,
     get_file_content,
     delete_pdf,
     save_snapshot,
@@ -23,20 +21,6 @@ from app.schemas.pdf import PdfListResponse, PdfResponse
 # Each entry is (password, timestamp); auto-expires after 30 minutes
 _password_cache: dict[str, tuple[str, float]] = {}
 _PASSWORD_CACHE_TTL = 1800  # 30 minutes in seconds
-
-# Track open PyMuPDF handles for graceful shutdown
-_open_pdf_handles: list[Any] = []
-
-
-def _cleanup_all_pdf_handles() -> None:
-    """Close all open PyMuPDF document handles (called on shutdown)."""
-    global _open_pdf_handles
-    for handle in _open_pdf_handles:
-        try:
-            handle.close()
-        except Exception:
-            pass
-    _open_pdf_handles.clear()
 
 
 def _get_cached_password(pdf_id: str) -> str | None:
@@ -56,6 +40,11 @@ def _cache_password(pdf_id: str, password: str) -> None:
     for k in expired:
         del _password_cache[k]
     _password_cache[pdf_id] = (password, time.time())
+
+
+def _clear_password_cache() -> None:
+    """Clear all cached passwords (called on shutdown for security)."""
+    _password_cache.clear()
 
 
 class PdfService:
@@ -86,7 +75,9 @@ class PdfService:
         content = self.get_file_content(pdf)
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
-        if pdf.is_password_protected and pdf_id in _password_cache:
+        if pdf.is_password_protected:
+            if pdf_id not in _password_cache:
+                raise ValueError("PDF is password protected. Please unlock it first.")
             import fitz
             doc = fitz.open(stream=content, filetype="pdf")
             if doc.needs_pass:
@@ -141,11 +132,10 @@ class PdfService:
         )
 
     def get_file_content(self, pdf: PdfDocument) -> bytes | None:
-        """Read the PDF file from disk."""
-        # storage_filename is "{uuid}.pdf", get_pdf_path expects the UUID
+        """Read the PDF file from storage (local or S3)."""
+        # storage_filename is "{uuid}.pdf" — storage API expects UUID only
         file_uuid = pdf.storage_filename.replace(".pdf", "")
-        path = get_pdf_path(file_uuid)
-        return path.read_bytes() if path else None
+        return get_file_content(file_uuid)
 
     def delete(self, pdf_id: str, user_id: str) -> bool:
         """Delete a PDF from DB and disk. Returns True if deleted."""

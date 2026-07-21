@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
+from app.core.errors import error_response, ErrorCode
 from app.api.deps import get_current_user, get_pdf_service, verify_feature_access
 from app.models.user import User
 from app.schemas.pdf import PdfResponse, ReplaceTextRequest, TextResponse
@@ -17,10 +18,7 @@ def replace_pdf_text(
 ) -> PdfResponse:
     """Replace text in a PDF document (find & replace)."""
     if not req.search.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Search text cannot be empty",
-        )
+        raise error_response(ErrorCode.SEARCH_TEXT_EMPTY, "Search text cannot be empty", status_code=status.HTTP_400_BAD_REQUEST)
 
     try:
         pdf = service.replace_text(
@@ -31,10 +29,7 @@ def replace_pdf_text(
             occurrence=req.occurrence,
         )
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, str(e), status_code=status.HTTP_400_BAD_REQUEST)
 
     return PdfResponse.model_validate(pdf)
 
@@ -50,9 +45,6 @@ def extract_pdf_text(
     try:
         text, pages = service.extract_text(pdf_id, current_user.id, page=page)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+        raise error_response(ErrorCode.VALIDATION_ERROR, str(e), status_code=status.HTTP_400_BAD_REQUEST)
 
     return TextResponse(text=text, pages=pages)

@@ -3,13 +3,17 @@
  * This is used for generating thumbnails/previews in the DeleteModal
  */
 
-export async function renderFirstPageToDataUrl(pdfUrl: string): Promise<string> {
+import { PDFJS_URL, PDFJS_WORKER_URL } from "./pdfjs-config";
+
+export async function renderFirstPageToDataUrl(
+  pdfUrl: string,
+): Promise<string> {
   // Ensure PDF.js is loaded
-  if (!(window as any).pdfjsLib) {
+  if (!window.pdfjsLib) {
     await loadPdfJs();
   }
 
-  const pdfjsLib = (window as any).pdfjsLib;
+  const pdfjsLib = window.pdfjsLib;
 
   // Load the PDF document
   const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
@@ -44,19 +48,17 @@ export async function renderFirstPageToDataUrl(pdfUrl: string): Promise<string> 
 async function loadPdfJs(): Promise<void> {
   return new Promise((resolve, reject) => {
     // If already loaded, resolve immediately
-    if ((window as any).pdfjsLib) {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       resolve();
       return;
     }
 
     const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    script.src = PDFJS_URL;
     script.async = true;
     script.onload = () => {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       resolve();
     };
     script.onerror = () => reject(new Error("Failed to load PDF.js"));

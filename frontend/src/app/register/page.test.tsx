@@ -91,6 +91,25 @@ describe("RegisterPage", () => {
     expect(mockRegister).not.toHaveBeenCalled();
   });
 
+  it("shows error when password too short", async () => {
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("Mario Rossi"), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getAllByPlaceholderText("email@example.com")[0], {
+      target: { value: "test@example.com" },
+    });
+    const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+    fireEvent.change(passwordInputs[0], { target: { value: "ab" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "ab" } });
+
+    fireEvent.click(screen.getByText("registerButton"));
+
+    expect(screen.getByText("passwordTooShort")).toBeTruthy();
+    expect(mockRegister).not.toHaveBeenCalled();
+  });
+
   it("calls register on submit and redirects", async () => {
     mockRegister.mockResolvedValue(undefined);
 

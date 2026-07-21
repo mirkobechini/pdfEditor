@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { downloadBlob } from "../lib/download";
 import { usePdfJs } from "../lib/usePdfJs";
+import { mapError } from "../lib/error-map";
 
 interface SplitDialogProps {
   open: boolean;
@@ -49,7 +50,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
     try {
       const blob = await api.downloadPdf(selectedId);
       const url = URL.createObjectURL(blob);
-      const pdfjsLib = (window as any).pdfjsLib;
+      const pdfjsLib = window.pdfjsLib;
       const pdf = await pdfjsLib.getDocument(url).promise;
 
       const results: PageThumbnail[] = [];
@@ -124,7 +125,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
       onSuccess?.();
       onClose();
     } catch (err) {
-      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("failed") + ": " + mapError(err));
     } finally {
       setSplitting(false);
     }
@@ -140,7 +141,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
         className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 p-6 max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
 
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           {selectedName} ({totalPages} {t("pages")})

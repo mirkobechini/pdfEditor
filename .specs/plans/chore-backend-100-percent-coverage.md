@@ -1,8 +1,10 @@
 # Chore: Backend 100% Test Coverage
 
-**Status:** Planning
-**Complexity:** Medium
-**Estimated Time:** 3-5 ore
+**Status:** [x] Completata in due PR:
+
+- PR #357 (2026-07-17): 92% → 94%, 305 test
+- PR #359 (2026-07-17): 94% → 96%, 320 test
+  **Note finale:** Copertura portata al 96%. I rimanenti ~76 miss sono def line (coverage artifact), production-only startup code (main.py), e complessi error path in pdf_service.py che richiederebbero mock di librerie di basso livello (fitz, boto3).
 
 ## Obiettivo
 

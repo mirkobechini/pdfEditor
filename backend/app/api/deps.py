@@ -9,6 +9,8 @@ from app.core.database import get_db as _get_db
 from app.models.user import User
 from app.repositories.user_repo import UserRepository
 from app.services.auth_service import AuthService
+from app.core.errors import error_response, ErrorCode
+from app.services.auth_service import AuthService
 from app.services.pdf_merge_split_service import PdfMergeSplitService
 from app.services.pdf_service import PdfService
 
@@ -45,18 +47,12 @@ def get_current_user(
     """Dependency: validate JWT from Bearer header or httpOnly cookie."""
     token = _extract_token(request, credentials)
     if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
+        raise error_response(ErrorCode.NOT_AUTHENTICATED, "Not authenticated", status_code=status.HTTP_401_UNAUTHORIZED)
     service = AuthService(db)
     try:
         return service.get_current_user(token)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
+        raise error_response(ErrorCode.INVALID_CREDENTIALS, str(e), status_code=status.HTTP_401_UNAUTHORIZED)
 
 
 def verify_feature_access(feature_key: str):
@@ -92,10 +88,7 @@ def check_feature_access(
     enabled_keys = {f.feature_key for f in features if f.enabled}
 
     if feature_key not in enabled_keys:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=(
+        raise error_response(ErrorCode.FORBIDDEN, (
                 f"License tier '{current_user.license_tier}' does not "
                 f"include '{feature_key}'. Upgrade to access this feature."
-            ),
-        )
+            ), status_code=status.HTTP_403_FORBIDDEN)

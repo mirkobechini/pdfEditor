@@ -53,6 +53,12 @@ def force_local_storage(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def disable_sendgrid(monkeypatch):
+    """Force SMTP_PASSWORD to empty so tests never send real emails via SendGrid."""
+    monkeypatch.setattr("app.core.config.settings.SMTP_PASSWORD", "")
+
+
+@pytest.fixture(autouse=True)
 def disable_rate_limiting(monkeypatch):
     """Disable rate limiting during tests."""
     from app.core.limiter import limiter
@@ -124,6 +130,18 @@ def per_test_db(tmp_path):
 def db_engine():
     """Return the current test database engine."""
     return _engine
+
+
+@pytest.fixture()
+def db_session(db_engine):
+    """Provide a SQLAlchemy session for direct DB testing."""
+    from sqlalchemy.orm import sessionmaker
+    Session = sessionmaker(bind=db_engine)
+    session = Session()
+    try:
+        yield session
+    finally:
+        session.close()
 
 
 @pytest.fixture()

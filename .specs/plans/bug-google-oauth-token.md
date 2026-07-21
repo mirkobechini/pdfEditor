@@ -1,6 +1,6 @@
 # Bug: Google OAuth - Invalid or expired token + origin_mismatch
 
-**Status:** Open
+**Status:** ✅ Completata (2026-07-15, PR #347)
 **Priority:** HIGH
 **Complexity:** Medium
 

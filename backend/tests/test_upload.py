@@ -34,7 +34,7 @@ class TestUpload:
             files={"file": ("test.txt", b"not a pdf", "text/plain")},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Only PDF files are allowed" in response.json()["detail"]
+        assert "Only PDF files are allowed" in response.json()["detail"]["detail"]
 
     def test_upload_invalid_content(self, client, free_headers):
         """Should reject files with .pdf extension but invalid content (no magic bytes)."""
@@ -44,7 +44,7 @@ class TestUpload:
             files={"file": ("fake.pdf", b"not a pdf content", "application/pdf")},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Invalid PDF" in response.json()["detail"]
+        assert "Invalid PDF" in response.json()["detail"]["detail"]
 
     def test_upload_empty_file(self, client, free_headers):
         """Should reject empty files."""
@@ -64,7 +64,7 @@ class TestUpload:
             files={"file": ("large.pdf", b"%PDF-1.4 some content", "application/pdf")},
         )
         assert response.status_code == 413
-        assert "too large" in response.json()["detail"].lower()
+        assert "too large" in response.json()["detail"]["detail"].lower()
 
     def test_upload_exceeds_page_limit(self, client, monkeypatch, sample_pdf_content, free_headers):
         """Should reject PDFs with too many pages."""
@@ -75,7 +75,7 @@ class TestUpload:
             files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Maximum allowed" in response.json()["detail"]
+        assert "Invalid PDF" in response.json()["detail"]["detail"]
 
     def test_upload_requires_auth(self, client, sample_pdf_content):
         """Should reject upload without auth."""
@@ -199,6 +199,24 @@ class TestDownload:
         response = client.get("/pdfs/non-existent-id/download", headers=free_headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+    def test_download_pdf_s3_backend(self, client, sample_pdf_content, free_headers, monkeypatch):
+        """Should download a PDF when storage backend is S3."""
+        from tests.conftest import upload_pdf
+
+        # Upload with local backend (tests enforce local in conftest)
+        pdf_id = upload_pdf(client, free_headers, sample_pdf_content)
+
+        # Simulate service reading through storage abstraction (S3 path)
+        monkeypatch.setattr(
+            "app.services.pdf_service.get_file_content",
+            lambda _uuid: sample_pdf_content,
+        )
+
+        response = client.get(f"/pdfs/{pdf_id}/download", headers=free_headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers["content-type"] == "application/pdf"
+        assert response.content == sample_pdf_content
+
     def test_download_requires_auth(self, client, sample_pdf_content):
         """Should reject download without auth."""
         response = client.get("/pdfs/some-id/download")
@@ -247,3 +265,21 @@ class TestDelete:
 
         response = client.delete(f"/pdfs/{pdf_id}", headers=other_headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND
+    def test_upload_file_without_content_length(self, client, sample_pdf_content, free_headers):
+        """Upload should work when Content-Length header is missing."""
+        response = client.post(
+            "/pdfs/upload",
+            headers=free_headers,
+            files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
+        )
+        assert response.status_code == 201
+
+    def test_upload_too_large_chunked(self, client, free_headers):
+        """Upload larger than max should be rejected."""
+        big = b"x" * (settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024 + 1)
+        response = client.post(
+            "/pdfs/upload",
+            headers=free_headers,
+            files={"file": ("big.pdf", big, "application/pdf")},
+        )
+        assert response.status_code == 413

@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
 import { downloadBlob } from "../lib/download";
+import { mapError } from "../lib/error-map";
 
 interface MergeDialogProps {
   open: boolean;
@@ -59,7 +60,7 @@ export default function MergeDialog({ open, onClose, selectedId, onMergeComplete
       onMergeComplete(result);
       onClose();
     } catch (err) {
-      setError(t("failed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t("failed") + ": " + mapError(err));
     } finally {
       setMerging(false);
     }
@@ -71,7 +72,7 @@ export default function MergeDialog({ open, onClose, selectedId, onMergeComplete
         className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold mb-4">{t("title")}</h2>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           {t("description")}
         </p>
@@ -89,7 +90,7 @@ export default function MergeDialog({ open, onClose, selectedId, onMergeComplete
                 onChange={() => toggle(f.id)}
                 className="accent-blue-500"
               />
-              <span className="text-sm truncate flex-1">{f.original_filename}</span>
+              <span className="text-sm truncate flex-1 text-gray-900 dark:text-gray-100">{f.original_filename}</span>
               {selectedId === f.id && (
                 <span className="text-xs text-blue-500 font-medium">{appT("currentFile")}</span>
               )}

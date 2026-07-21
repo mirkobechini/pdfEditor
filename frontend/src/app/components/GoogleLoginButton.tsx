@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
+import { mapError } from "../lib/error-map";
 
 export default function GoogleLoginButton() {
     const t = useTranslations("auth");
@@ -14,15 +15,17 @@ export default function GoogleLoginButton() {
     React.useEffect(() => {
         // Only run on client side
         setMounted(true);
-        try {
-            const hasClientId = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-            if (hasClientId) {
-                const mod = require("@react-oauth/google");
-                setGoogleLogin(() => mod.GoogleLogin);
+        (async () => {
+            try {
+                const hasClientId = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+                if (hasClientId) {
+                    const mod = await import("@react-oauth/google");
+                    setGoogleLogin(() => mod.GoogleLogin);
+                }
+            } catch (err) {
+                console.debug("Google OAuth not available:", err);
             }
-        } catch (err) {
-            console.debug("Google OAuth not available:", err);
-        }
+        })();
     }, []);
 
     if (!mounted || !GoogleLogin) {
@@ -39,7 +42,7 @@ export default function GoogleLoginButton() {
             await googleLogin(response.credential);
             window.location.href = "/";
         } catch (err) {
-            setError(t("loginFailed") + ": " + (err instanceof Error ? err.message : err));
+            setError(t("loginFailed") + ": " + mapError(err));
         }
     }
 

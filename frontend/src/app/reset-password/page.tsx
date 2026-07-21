@@ -7,6 +7,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import HeaderControls from "../components/HeaderControls";
 import PasswordInput from "../components/PasswordInput";
+import { mapError } from "../lib/error-map";
 
 function ResetPasswordContent() {
     const t = useTranslations("auth");

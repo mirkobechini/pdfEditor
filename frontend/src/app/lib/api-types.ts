@@ -47,3 +47,15 @@ export interface AdminUser {
   created_at: string;
   updated_at: string;
 }
+
+export interface UserResponse {
+  id: string;
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  is_admin: boolean;
+  license_tier: string;
+  license_tier_source: string;
+  created_at: string;
+  updated_at: string;
+}

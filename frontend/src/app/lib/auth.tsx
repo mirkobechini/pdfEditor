@@ -30,6 +30,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const _pendingAuthRef = React.useRef(false);
 
   // On mount: restore session from httpOnly cookie (browser sends it automatically)
   useEffect(() => {
@@ -39,52 +40,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {
         // Not authenticated — user is null
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!_pendingAuthRef.current) {
+          setLoading(false);
+        }
+      });
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    _pendingAuthRef.current = true;
     setLoading(true);
     try {
       const res = await api.login(email, password);
       // Save token in memory for Bearer header (works cross-origin in local dev)
       api.setToken(res.access_token);
       // Also cookie-based — works on same-origin production
-      const u = await api.getMe();
-      setUser(u);
+      try {
+        const u = await api.getMe();
+        setUser(u);
+      } catch {
+        // getMe failed (e.g. network blip) — redirect will re-trigger on mount
+        window.location.href = "/";
+        return;
+      }
     } finally {
       setLoading(false);
+      _pendingAuthRef.current = false;
     }
   }, []);
 
   const register = useCallback(async (email: string, password: string, fullName: string) => {
+    _pendingAuthRef.current = true;
     setLoading(true);
     try {
       const res = await api.register(email, password, fullName);
       api.setToken(res.access_token);
-      const u = await api.getMe();
-      setUser(u);
+      try {
+        const u = await api.getMe();
+        setUser(u);
+      } catch {
+        window.location.href = "/";
+        return;
+      }
     } finally {
       setLoading(false);
+      _pendingAuthRef.current = false;
     }
   }, []);
 
   const googleLogin = useCallback(async (idToken: string) => {
+    _pendingAuthRef.current = true;
     setLoading(true);
     try {
       const res = await api.googleLogin(idToken);
       api.setToken(res.access_token);
-      const u = await api.getMe();
-      setUser(u);
+      try {
+        const u = await api.getMe();
+        setUser(u);
+      } catch {
+        window.location.href = "/";
+        return;
+      }
     } finally {
       setLoading(false);
+      _pendingAuthRef.current = false;
     }
   }, []);
 
   const logout = useCallback(async () => {
     // Clear cookie by calling logout endpoint
-    await api.logout();
-    api.setToken(null);
-    setUser(null);
+    try {
+      await api.logout();
+    } finally {
+      api.setToken(null);
+      setUser(null);
+    }
   }, []);
 
   return (

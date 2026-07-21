@@ -1,3 +1,7 @@
+import logging
+
+logger = logging.getLogger("pdfeditor")
+
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -84,14 +88,17 @@ class AuthService:
         import requests
 
         # Verify the id_token by downloading Google's public keys
+        logger.debug("Validating Google token (first 30 chars): %s...", id_token[:30])
         resp = requests.get("https://www.googleapis.com/oauth2/v3/certs", timeout=10)
         if resp.status_code != 200:
+            logger.warning("Failed to fetch Google certs: HTTP %s", resp.status_code)
             raise ValueError("Failed to verify Google token")
 
         # Decode JWT using PyJWT + Google certs
         import jwt
 
         certs = resp.json()
+        logger.debug("Google certs fetched successfully, %d keys available", len(certs.get("keys", [])))
         try:
             header = jwt.get_unverified_header(id_token)
         except jwt.InvalidTokenError:
@@ -101,17 +108,17 @@ class AuthService:
             raise ValueError("Invalid token algorithm")
 
         kid = header.get("kid")
-        if not kid or kid not in certs.get("keys", {}):
-            # certs is {"keys": [...]}, we need to find by kid
-            key = None
-            for k in certs.get("keys", []):
-                if k.get("kid") == kid:
-                    key = k
-                    break
-            if not key:
-                raise ValueError("Invalid token key ID")
-        else:
-            key = certs[kid]
+        if not kid:
+            raise ValueError("Invalid token key ID")
+
+        # Find the matching key by kid in Google's certs list
+        key = None
+        for k in certs.get("keys", []):
+            if k.get("kid") == kid:
+                key = k
+                break
+        if not key:
+            raise ValueError("Invalid token key ID")
 
         try:
             payload = jwt.decode(

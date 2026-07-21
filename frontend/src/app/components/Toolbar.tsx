@@ -43,20 +43,26 @@ export default function Toolbar({
   const t = useTranslations("app");
 
   // Keyboard shortcuts: Ctrl+Z for undo, Ctrl+Shift+Z for redo
+  // Use refs to avoid re-registering the listener on every render
+  const onUndoRef = React.useRef(onUndo);
+  const onRedoRef = React.useRef(onRedo);
+  React.useEffect(() => { onUndoRef.current = onUndo; });
+  React.useEffect(() => { onRedoRef.current = onRedo; });
+
   React.useEffect(() => {
     function handler(e: KeyboardEvent) {
       if (!e.ctrlKey && !e.metaKey) return;
       if (e.shiftKey && e.key.toLowerCase() === "z") {
         e.preventDefault();
-        onRedo();
+        onRedoRef.current();
       } else if (e.key.toLowerCase() === "z") {
         e.preventDefault();
-        onUndo();
+        onUndoRef.current();
       }
     }
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onUndo, onRedo]);
+  }, []);
 
   return (
     <>

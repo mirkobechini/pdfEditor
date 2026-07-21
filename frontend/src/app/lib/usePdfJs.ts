@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-const PDFJS_URL =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-const WORKER_URL =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+import { PDFJS_URL, PDFJS_WORKER_URL as WORKER_URL } from "./pdfjs-config";
 
 /**
  * Hook to load PDF.js dynamically and track its loading state.
@@ -17,8 +13,8 @@ export function usePdfJs(): boolean {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if ((window as any).pdfjsLib) {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_URL;
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_URL;
       setLoaded(true);
       return;
     }
@@ -27,7 +23,7 @@ export function usePdfJs(): boolean {
     script.src = PDFJS_URL;
     script.async = true;
     script.onload = () => {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_URL;
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_URL;
       setLoaded(true);
     };
     document.body.appendChild(script);

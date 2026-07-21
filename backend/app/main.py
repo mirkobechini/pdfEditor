@@ -40,6 +40,7 @@ def _run_migrations():
 def _add_missing_columns():
     """Add columns that may be missing from existing database tables."""
     from sqlalchemy import text, inspect
+    from sqlalchemy.exc import OperationalError, SQLAlchemyError
     try:
         inspector = inspect(engine)
         existing_cols = {c["name"] for c in inspector.get_columns("users")}
@@ -58,18 +59,19 @@ def _add_missing_columns():
                 conn.commit()
         if missing:
             logger.info("Added missing columns to users table: %s", ", ".join(m.split()[0] for m in missing))
-    except Exception:
-        pass  # Table doesn't exist yet
+    except OperationalError:
+        pass  # Table doesn't exist yet — will be created via migration
+    except SQLAlchemyError as e:
+        logger.warning("Could not check/add missing columns: %s", e)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: create tables (skip if running in test mode)
+    # Startup: validate critical configuration
+    _validate_settings()
     if not getattr(app.state, "testing", False):
-        # Run migrations FIRST (handles existing DB schema changes)
+        # Run migrations (handles both new tables and missing columns)
         _run_migrations()
-        # Then create any missing tables (idempotent)
-        Base.metadata.create_all(bind=engine)
         # Seed license features
         _seed_license_features()
         # Seed super admin if not exists
@@ -81,10 +83,28 @@ async def lifespan(app: FastAPI):
 
 
 def _cleanup_on_shutdown():
-    """Cleanup resources on shutdown — close PyMuPDF handles, release locks."""
-    from app.services.pdf_service import _cleanup_all_pdf_handles
-    _cleanup_all_pdf_handles()
+    """Cleanup resources on shutdown."""
+    from app.services.pdf_service import _clear_password_cache
+    _clear_password_cache()
     logger.info("Cleanup complete.")
+
+
+def _validate_settings():
+    """Validate critical configuration at startup."""
+    if not settings.effective_secret_key:
+        raise RuntimeError(
+            "SECRET_KEY or JWT_SECRET_KEY must be set in .env. "
+            "Without a secret key, JWT tokens can be forged."
+        )
+    if not settings.DEBUG and settings.SUPER_ADMIN_EMAIL == "admin@pdfeditor.local":
+        raise RuntimeError(
+            "SUPER_ADMIN_EMAIL is still set to the default 'admin@pdfeditor.local'. "
+            "Change it in .env to prevent unauthorized admin access."
+        )
+    if not settings.DEBUG and not settings.GOOGLE_CLIENT_ID:
+        raise RuntimeError(
+            "GOOGLE_CLIENT_ID must be set in .env for Google OAuth to work."
+        )
 
 
 def _seed_license_features():

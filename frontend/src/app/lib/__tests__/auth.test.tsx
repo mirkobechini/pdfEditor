@@ -88,4 +88,24 @@ describe("AuthProvider", () => {
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("null"));
     expect(api.logout).toHaveBeenCalled();
   });
+
+  it("redirects to / when getMe fails after register", async () => {
+    (api.getMe as any).mockRejectedValue(new Error("Not authenticated"));
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
+    (api.register as any).mockResolvedValue({ access_token: "token" });
+    (api.getMe as any).mockRejectedValue(new Error("Failed"));
+    fireEvent.click(screen.getByTestId("btn-register"));
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
+  });
+
+  it("redirects to / when getMe fails after googleLogin", async () => {
+    (api.getMe as any).mockRejectedValue(new Error("Not authenticated"));
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
+    (api.googleLogin as any).mockResolvedValue({ access_token: "token" });
+    (api.getMe as any).mockRejectedValue(new Error("Failed"));
+    fireEvent.click(screen.getByTestId("btn-google"));
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
+  });
 });

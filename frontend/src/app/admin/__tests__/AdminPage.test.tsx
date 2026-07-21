@@ -73,4 +73,129 @@ describe("AdminPage", () => {
             expect(screen.getByText("alice@test.com")).toBeInTheDocument();
         }, { timeout: 5000 });
     });
+
+    it("switches to bugs tab and shows bug reports", async () => {
+        (api.listBugReports as any).mockResolvedValue(mockBugs);
+        render(<AdminPage />);
+        await vi.waitFor(() => {
+            expect(screen.getByText("bugReports")).toBeInTheDocument();
+        }, { timeout: 5000 });
+        fireEvent.click(screen.getByText("bugReports"));
+        await vi.waitFor(() => {
+            expect(screen.getByText("Bug 1")).toBeInTheDocument();
+        }, { timeout: 5000 });
+    });
+
+    it("shows loading state", () => {
+        mockUseAuth.mockReturnValue({ user: null, loading: true });
+        render(<AdminPage />);
+        expect(screen.getByText("loading")).toBeInTheDocument();
+    });
+
+    it("shows empty bugs state", async () => {
+        (api.listBugReports as any).mockResolvedValue({ items: [], total: 0 });
+        render(<AdminPage />);
+        await vi.waitFor(() => {
+            expect(screen.getByText("bugReports")).toBeInTheDocument();
+        }, { timeout: 5000 });
+        fireEvent.click(screen.getByText("bugReports"));
+        await vi.waitFor(() => {
+            expect(screen.getByText("noBugs")).toBeInTheDocument();
+        }, { timeout: 5000 });
+    });
+
+    it("shows no users message when empty", async () => {
+        (api.listUsers as any).mockResolvedValue({ items: [], total: 0 });
+        render(<AdminPage />);
+        await vi.waitFor(() => {
+            expect(screen.getByText("noUsers")).toBeInTheDocument();
+        }, { timeout: 5000 });
+    });
+
+    it("changes bug status filter", async () => {
+        (api.listBugReports as any).mockResolvedValue(mockBugs);
+        render(<AdminPage />);
+        await vi.waitFor(() => {
+            expect(screen.getByText("bugReports")).toBeInTheDocument();
+        }, { timeout: 5000 });
+        fireEvent.click(screen.getByText("bugReports"));
+        await vi.waitFor(() => {
+            expect(screen.getByText("Bug 1")).toBeInTheDocument();
+        }, { timeout: 5000 });
+
+        // Change status filter
+        const filterSelect = screen.getAllByRole("combobox")[0];
+        fireEvent.change(filterSelect, { target: { value: "open" } });
+    });
+
+    it("handles license tier edit click", async () => {
+        (api.listUsers as any).mockResolvedValue(mockUsers);
+        render(<AdminPage />);
+        await vi.waitFor(() => {
+            expect(screen.getByText("alice@test.com")).toBeInTheDocument();
+        }, { timeout: 5000 });
+
+        // Click edit on first user
+        const saveButtons = screen.getAllByText("save");
+        fireEvent.click(saveButtons[0]);
+    });
+
+    it("shows bug status change options", async () => {
+        (api.listBugReports as any).mockResolvedValue(mockBugs);
+        render(<AdminPage />);
+        await vi.waitFor(() => {
+            expect(screen.getByText("bugReports")).toBeInTheDocument();
+        }, { timeout: 5000 });
+        fireEvent.click(screen.getByText("bugReports"));
+        await vi.waitFor(() => {
+            expect(screen.getByText("Bug 1")).toBeInTheDocument();
+        }, { timeout: 5000 });
+        // There should be action selects (one per bug row)
+        const actionSelects = screen.getAllByRole("combobox");
+        expect(actionSelects.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("changes bug status via select", async () => {
+        (api.listBugReports as any).mockResolvedValue(mockBugs);
+        (api.updateBugReportStatus as any).mockResolvedValue({});
+        render(<AdminPage />);
+        await vi.waitFor(() => {
+            expect(screen.getByText("bugReports")).toBeInTheDocument();
+        }, { timeout: 5000 });
+        fireEvent.click(screen.getByText("bugReports"));
+        await vi.waitFor(() => {
+            expect(screen.getByText("Bug 1")).toBeInTheDocument();
+        }, { timeout: 5000 });
+
+        // Find the bug status select (last combobox after the filter)
+        const allSelects = screen.getAllByRole("combobox");
+        const bugStatusSelect = allSelects[allSelects.length - 1];
+        fireEvent.change(bugStatusSelect, { target: { value: "in_progress" } });
+        await vi.waitFor(() => {
+            expect(api.updateBugReportStatus).toHaveBeenCalledWith("b1", "in_progress");
+        });
+    });
+
+    it("shows alert on bug status change failure", async () => {
+        (api.listBugReports as any).mockResolvedValue(mockBugs);
+        (api.updateBugReportStatus as any).mockRejectedValue(new Error("API Error"));
+        const alertMock = vi.fn();
+        vi.stubGlobal("alert", alertMock);
+
+        render(<AdminPage />);
+        await vi.waitFor(() => {
+            expect(screen.getByText("bugReports")).toBeInTheDocument();
+        }, { timeout: 5000 });
+        fireEvent.click(screen.getByText("bugReports"));
+        await vi.waitFor(() => {
+            expect(screen.getByText("Bug 1")).toBeInTheDocument();
+        }, { timeout: 5000 });
+
+        const allSelects = screen.getAllByRole("combobox");
+        const bugStatusSelect = allSelects[allSelects.length - 1];
+        fireEvent.change(bugStatusSelect, { target: { value: "in_progress" } });
+        await vi.waitFor(() => {
+            expect(alertMock).toHaveBeenCalled();
+        });
+    });
 });

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
+import { PDFJS_URL, PDFJS_WORKER_URL } from "../lib/pdfjs-config";
 
 interface PdfViewerProps {
   fileUrl: string | null;
@@ -39,31 +40,28 @@ export default function PdfViewer({
   const [dragOver, setDragOver] = React.useState(false);
   const [password, setPassword] = React.useState("");
   const [unlocking, setUnlocking] = React.useState(false);
-  const pdfDocRef = React.useRef<any>(null);
-  const renderTaskRef = React.useRef<any>(null);
+  const pdfDocRef = React.useRef<PdfJsDoc | null>(null);
+  const renderTaskRef = React.useRef<{ cancel: () => void } | null>(null);
+  const renderKeyRef = React.useRef(0);
 
   // Load PDF.js on mount
   React.useEffect(() => {
     // If already loaded (e.g., by another instance), skip
-    if ((window as any).pdfjsLib) {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       setPdfJsLoaded(true);
       return;
     }
 
     const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+    script.src = PDFJS_URL;
     script.async = true;
     script.onload = () => {
-      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       setPdfJsLoaded(true);
     };
     document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
+    // Don't remove script on unmount — other PdfViewer instances may need it
   }, []);
 
   // Load PDF document when fileUrl changes (or when pdfjsLib finishes loading)
@@ -72,7 +70,7 @@ export default function PdfViewer({
 
     const loadPdf = async () => {
       try {
-        const pdf = await (window as any).pdfjsLib.getDocument(fileUrl).promise;
+        const pdf = await window.pdfjsLib.getDocument(fileUrl).promise;
         pdfDocRef.current = pdf;
         onTotalPagesChange(pdf.numPages);
         onPageChange(1);
@@ -97,6 +95,7 @@ export default function PdfViewer({
   React.useEffect(() => {
     if (!pdfDocRef.current || !canvasRef.current) return;
 
+    const key = ++renderKeyRef.current;
     const renderPage = async () => {
       setRendering(true);
       if (renderTaskRef.current) {
@@ -105,6 +104,9 @@ export default function PdfViewer({
 
       try {
         const page = await pdfDocRef.current.getPage(currentPage);
+        // If a newer render was requested while we waited, skip this one
+        if (key !== renderKeyRef.current) return;
+
         const viewport = page.getViewport({ scale: zoom });
         const canvas = canvasRef.current!;
 
@@ -182,11 +184,10 @@ export default function PdfViewer({
   if (!fileUrl) {
     return (
       <div
-        className={`flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed rounded-lg transition-colors ${
-          dragOver
-            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-            : "border-gray-300 dark:border-gray-600"
-        }`}
+        className={`flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed rounded-lg transition-colors ${dragOver
+          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+          : "border-gray-300 dark:border-gray-600"
+          }`}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => {

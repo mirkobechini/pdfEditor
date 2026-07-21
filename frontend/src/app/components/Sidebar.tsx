@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
+import { mapError } from "../lib/error-map";
 
 interface SidebarProps {
   selectedId: string | null;
@@ -25,22 +26,21 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
 
   // Load files on mount and when refreshKey changes
   React.useEffect(() => {
+    async function loadFiles() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await api.listPdfs();
+        setFiles(res.items);
+      } catch {
+        setError(t("loadFailed"));
+        console.error("Failed to load files");
+      } finally {
+        setLoading(false);
+      }
+    }
     loadFiles();
   }, [refreshKey]);
-
-  async function loadFiles() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await api.listPdfs();
-      setFiles(res.items);
-    } catch {
-      setError(t("loadFailed"));
-      console.error("Failed to load files");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleUpload(file: File) {
     if (!file.name.toLowerCase().endsWith(".pdf")) {
@@ -57,7 +57,7 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
       onUpload(doc);
       onSelect(doc.id);
     } catch (err) {
-      alert(t("uploadFailed") + ": " + err);
+      alert(t("uploadFailed") + ": " + mapError(err));
     } finally {
       setUploading(false);
       setUploadProgress(null);

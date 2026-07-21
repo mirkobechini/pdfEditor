@@ -14,6 +14,8 @@ vi.mock("../../lib/usePdfJs", () => ({
     usePdfJs: () => true,
 }));
 
+import { api } from "../../lib/api";
+
 const defaultProps = {
     open: true,
     onClose: vi.fn(),
@@ -39,5 +41,24 @@ describe("RemoveDialog", () => {
     it("shows file info", () => {
         render(<RemoveDialog {...defaultProps} />);
         expect(screen.getByText(/test.pdf/)).toBeInTheDocument();
+    });
+
+    it("shows loading spinner while thumbnails load", () => {
+        (api.downloadPdf as any).mockImplementation(() => new Promise(() => { }));
+        render(<RemoveDialog {...defaultProps} />);
+        expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
+    });
+
+    it("shows error message when thumbnails fail to load", async () => {
+        (api.downloadPdf as any).mockRejectedValue(new Error("Load failed"));
+        render(<RemoveDialog {...defaultProps} />);
+        expect(await screen.findByText(/failed/)).toBeInTheDocument();
+    });
+
+    it("calls onClose when overlay clicked", () => {
+        const onClose = vi.fn();
+        render(<RemoveDialog {...defaultProps} onClose={onClose} />);
+        fireEvent.click(screen.getByText("title").closest(".fixed")!);
+        expect(onClose).toHaveBeenCalled();
     });
 });

@@ -21,7 +21,15 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     # CORS origins (production should restrict this)
-    ALLOWED_ORIGINS: str = "http://localhost:3000"  # Comma-separated URLs
+    ALLOWED_ORIGINS: str = "http://localhost:3000"
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v: str) -> str:
+        """Normalize comma-separated origins — strip spaces around commas."""
+        if isinstance(v, str):
+            return ",".join(url.strip() for url in v.split(",") if url.strip())
+        return v
 
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""  # Set in .env for production
@@ -67,7 +75,7 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins_list(self) -> list[str]:
-        """Return ALLOWED_ORIGINS as a list of URLs."""
+        """Return ALLOWED_ORIGINS as a list of URLs (spaces already normalized)."""
         return [url.strip() for url in self.ALLOWED_ORIGINS.split(",") if url.strip()]
 
     # Admin Configuration

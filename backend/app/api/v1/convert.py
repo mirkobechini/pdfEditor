@@ -3,6 +3,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import check_feature_access, get_current_user, get_db, get_pdf_service
+from app.core.errors import error_response, ErrorCode
 from app.core.config import settings
 from app.core.sanitize import sanitize_filename
 from app.models.user import User
@@ -115,7 +116,7 @@ def import_file(
     # Validate file size before reading
     max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
     content = file.file.read(max_bytes + 1)
-    if len(content) > max_bytes:
+    if len(content) >= max_bytes:
         raise HTTPException(
             status_code=413,
             detail=f"File too large. Maximum allowed size is {settings.MAX_UPLOAD_SIZE_MB}MB",

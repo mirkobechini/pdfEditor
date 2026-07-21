@@ -6,6 +6,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
+import { mapError } from "../lib/error-map";
 import HeaderControls from "../components/HeaderControls";
 import PasswordInput from "../components/PasswordInput";
 
@@ -33,7 +34,7 @@ export default function LoginPage() {
       await login(email.trim(), password);
       window.location.href = "/app";
     } catch (err) {
-      setError(t("loginFailed") + ": " + (err instanceof Error ? err.message : err));
+      setError(t(mapError(err)));
     } finally {
       setLoading(false);
     }

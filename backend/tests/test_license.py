@@ -125,7 +125,7 @@ class TestAdmin:
             json={"license_tier": "pro"},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Admin can only assign" in response.json()["detail"]
+        assert "Admin can only assign" in response.json()["detail"]["detail"]
 
     def test_admin_update_is_admin(self, client, db_engine):
         """Should promote a user to admin."""

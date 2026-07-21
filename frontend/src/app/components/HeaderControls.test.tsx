@@ -86,3 +86,15 @@ describe("LanguageSelector", () => {
     expect(screen.getByText("EN")).toBeTruthy();
   });
 });
+
+// Restore original matchMedia for remaining tests
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })),
+});

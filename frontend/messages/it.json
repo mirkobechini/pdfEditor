@@ -171,6 +171,8 @@
     "loggingIn": "Accesso in corso...",
     "registering": "Creazione account in corso...",
     "loginFailed": "Accesso fallito",
+    "invalidCredentials": "Email o password non validi",
+    "rateLimitExceeded": "Troppi tentativi. Riprova tra un minuto.",
     "registerFailed": "Registrazione fallita",
     "passwordMismatch": "Le password non coincidono",
     "passwordTooShort": "La password deve essere almeno 6 caratteri",
@@ -244,6 +246,27 @@
     "deleting": "Eliminazione in corso...",
     "confirm": "Elimina",
     "deleteFailed": "Cancellazione fallita"
+  },
+  "common": {
+    "networkError": "Errore di rete. Controlla la connessione.",
+    "unknownError": "Si è verificato un errore imprevisto. Riprova.",
+    "rateLimitExceeded": "Troppi tentativi. Riprova tra un minuto.",
+    "forbidden": "Non hai i permessi per eseguire questa azione.",
+    "notFound": "Risorsa non trovata.",
+    "validationError": "Controlla i dati inseriti e riprova.",
+    "internalError": "Errore interno del server. Riprova più tardi.",
+    "conversionFailed": "Conversione del file fallita.",
+    "searchTextEmpty": "Inserisci un testo da cercare.",
+    "mergeTooFew": "Seleziona almeno 2 PDF per unirli.",
+    "splitInvalidRange": "Intervallo di pagine non valido."
+  },
+  "pdf": {
+    "notFound": "PDF non trovato.",
+    "fileNotFound": "File PDF non trovato sul disco. Potrebbe essere stato eliminato.",
+    "uploadTooLarge": "File troppo grande. Il limite massimo è 50MB.",
+    "invalidPdf": "File PDF non valido.",
+    "onlyPdfAllowed": "Sono ammessi solo file PDF.",
+    "unsupportedFileType": "Tipo di file non supportato."
   },
   "landing": {
     "navbar": {

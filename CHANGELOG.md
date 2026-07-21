@@ -1,5 +1,51 @@
 # Changelog
 
+## 2026-07-17
+
+- ✅ **Backend coverage 96% → 97%** — 15 nuovi test (331 totali, 0 failures). admin.py 97%, auth_service.py 99%. Raggiunto limite pratico per unit test. (PR #361, issue #360)
+- ✅ **Backend coverage 94% → 96%** — 15 nuovi test (320 totali, 0 failures). auth.py 100%, convert.py 98%, admin.py 96%. (PR #359, issue #358)
+- ✅ **Backend coverage 92% → 94%** — 49 nuovi test (305 totali, 0 failures). Modelli, repositories, email_service al 100%. auth_service 98%, admin 94%. (PR #357, issue #356)
+
+## 2026-07-15
+
+- ✅ **R1+R9: Centralized PDF.js CDN URLs** — Creato `pdfjs-config.ts` con URL condivisi (PR #330, issue #329)
+- ✅ **R2+R3: Typed pdfjsLib and PdfViewer refs** — Aggiunto `Window` augmentation + rif tipizzati (PR #332, issue #331)
+- ✅ **R4: Removed unused lazy import** — Rimosso import inutilizzato in upload.py (PR #334, issue #333)
+- ✅ **R5: logger.exception in email_service** — Stack trace preservato su errori email (PR #336, issue #335)
+- ✅ **R6: Typed api.ts return values** — UserResponse per resetPassword e updateProfile (PR #338, issue #337)
+- ✅ **R7: require → dynamic import in GoogleLoginButton** — Rimosso antipattern Next.js (PR #341, issue #340)
+- ✅ **R8: model_validate in metadata.py** — Consistenza con resto del codice (PR #343, issue #342)
+- ✅ **R10: ALLOWED_ORIGINS normalized** — field_validator per spazi in config (PR #345, issue #344)
+- ✅ **Bug Google OAuth: validazione startup + debug logging** — GOOGLE_CLIENT_ID obbligatorio in produzione (PR #347, issue #346)
+- ✅ **P1: Stream file upload** — Lettura a chunk 1MB invece di intero file in RAM (PR #349, issue #348)
+- ✅ **P2: Race condition PdfViewer render** — renderKeyRef per evitare render stale (PR #351, issue #350)
+- ✅ **P4: Blob URL leak on unmount** — Revoca blob URL su smount di EditorPage (PR #353, issue #352)
+- ✅ **P6: Toolbar keyboard listener instabile** — Refs per callback stabili (PR #355, issue #354)
+
+## 2026-07-14
+
+- ✅ **Bug B1: Duplicate HTTPException in auth.py** — Rimosso dead code in `update_me()` (PR #288, issue #287)
+- ✅ **Bug B2: \_cleanup_all_pdf_handles non funzionante** — Rimossi `_open_pdf_handles` (mai popolato) e relativa funzione (PR #290, issue #289)
+- ✅ **Bug B3: PDF protetto senza cache restituiva bytes cifrati** — Ora lancia ValueError con messaggio chiaro (PR #292, issue #291)
+- ✅ **Bug B4: Header duplicati in uploadPdf()** — Rimosso `headers: this.getHeaders()` da uploadPdf() (PR #294, issue #293)
+- ✅ **Bug B5: handleDelete non chiamava api.deletePdf** — Centralizzata logica delete in page.tsx (PR #296, issue #295)
+- ✅ **Bug B6: SECRET_KEY vuoto — token forgeable** — Validazione all'avvio in main.py (PR #298, issue #297)
+- ✅ **Bug B7: \_run_migrations chiamato 2 volte** — Rimosso create_all duplicato in lifespan (PR #300, issue #299)
+- ✅ **Bug B8: \_add_missing_columns silenziava tutte le eccezioni** — Ora cattura solo OperationalError (PR #302, issue #301)
+- ✅ **Bug B9: SUPER_ADMIN_EMAIL default pericoloso** — Startup bloccato se default in produzione (PR #304, issue #303)
+- ✅ **Bug B10: login falliva silenziosamente se getMe falliva** — Redirect a / invece di lasciare utente in limbo (PR #306, issue #305)
+- ✅ **Bug B11: logout non puliva stato su errore** — try/finally per pulire sempre stato (PR #308, issue #307)
+- ✅ **Bug B12: check dimensione file inconsistente** — Uniformato `>` a `>=` in convert.py (PR #310, issue #309)
+- ✅ **Bug B13: race condition mount getMe vs login** — `_pendingAuthRef` per evitare flash logged out (PR #312, issue #311)
+- ✅ **Bug B14: PdfViewer script cleanup rompeva multi-instanza** — Non rimuove piu script CDN condiviso (PR #314, issue #313)
+- ✅ **Bug B15: uploadPdfWithProgress ignorava JSON error body** — Ora parsato come extractError (PR #316, issue #315)
+- ✅ **Bug B16: Sidebar useEffect missing deps** — loadFiles spostato dentro l'effect (PR #318, issue #317)
+- ✅ **Bug B17: Google OAuth dead code** — Rimosso if/else morto nel lookup certs (PR #320, issue #319)
+- ✅ **Bug B18: password cache non pulita su shutdown** — Aggiunta \_clear_password_cache() (PR #322, issue #321)- ✅ **Bug B19: resource leak in merge()** — try/finally per chiudere documenti su eccezione (PR #324, issue #323)
+- ✅ **Bug B20: admin.py return type errato** — Corretta annotation a UserListResponse (PR #326, issue #325)
+- ✅ **Bug B21: handleEditText dead code** — Rimossa funzione mai chiamata (PR #328, issue #327)- ✅ **ADR audit** — Aggiunta sezione con 21 bug trovati nel codice + 10 miglioramenti
+- ✅ **21 bug-audit plans** — Creati `.specs/plans/bug-audit-*.md` per ogni bug
+
 ## 2026-07-13
 
 - ✅ **Bug fix: cookie cross-origin login** — `api.ts` ora passa `credentials: 'include'`, `samesite='none'` in produzione (PR #261, issue #260)

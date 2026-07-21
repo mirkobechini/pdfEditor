@@ -20,7 +20,7 @@ class TestSettingsValidation:
     """Test Settings class validation and properties."""
 
     def test_secret_key_empty_by_default(self):
-        """SECRET_KEY should be empty by default."""
+        """SECRET_KEY should be empty by default (validation is at startup)."""
         s = Settings(_env_file=None)
         assert s.SECRET_KEY == ""
 
@@ -83,3 +83,8 @@ class TestSettingsValidation:
         """DEBUG should be settable to True."""
         s = Settings(_env_file=None, DEBUG=True, SECRET_KEY="test")
         assert s.DEBUG is True
+
+    def test_parse_allowed_origins_non_string(self):
+        """parse_allowed_origins should return value unchanged if not a string."""
+        s = Settings(_env_file=None, ALLOWED_ORIGINS="http://localhost:3000", SECRET_KEY="test")
+        assert s.ALLOWED_ORIGINS == "http://localhost:3000"

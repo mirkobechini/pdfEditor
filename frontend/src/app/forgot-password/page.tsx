@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import HeaderControls from "../components/HeaderControls";
+import { mapError } from "../lib/error-map";
 
 export default function ForgotPasswordPage() {
     const t = useTranslations("auth");
@@ -24,7 +25,7 @@ export default function ForgotPasswordPage() {
             setSentMessage(t("resetSent"));
             setSent(true);
         } catch (err) {
-            setError(err instanceof Error ? err.message : String(err));
+            setError(mapError(err));
         } finally {
             setLoading(false);
         }
