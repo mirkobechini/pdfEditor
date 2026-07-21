@@ -9,11 +9,11 @@ export async function renderFirstPageToDataUrl(
   pdfUrl: string,
 ): Promise<string> {
   // Ensure PDF.js is loaded
-  if (!window.pdfjsLib) {
+  if (!(window as any).pdfjsLib) {
     await loadPdfJs();
   }
 
-  const pdfjsLib = window.pdfjsLib;
+  const pdfjsLib = (window as any).pdfjsLib;
 
   // Load the PDF document
   const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
@@ -48,8 +48,8 @@ export async function renderFirstPageToDataUrl(
 async function loadPdfJs(): Promise<void> {
   return new Promise((resolve, reject) => {
     // If already loaded, resolve immediately
-    if (window.pdfjsLib) {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+    if ((window as any).pdfjsLib) {
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       resolve();
       return;
     }
@@ -58,7 +58,7 @@ async function loadPdfJs(): Promise<void> {
     script.src = PDFJS_URL;
     script.async = true;
     script.onload = () => {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+      (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
       resolve();
     };
     script.onerror = () => reject(new Error("Failed to load PDF.js"));
