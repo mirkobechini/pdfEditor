@@ -6,6 +6,7 @@ pydantic>=2.10,<3
 pydantic-settings>=2.6,<3
 python-multipart==0.0.31
 PyJWT==2.13.0
+google-auth>=2.0.0
 bcrypt==4.2.1
 requests==2.34.2
 psycopg[binary]==3.2.10
