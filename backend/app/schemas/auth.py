@@ -37,6 +37,7 @@ class UserResponse(BaseModel):
     is_admin: bool
     license_tier: str
     license_tier_source: str
+    google_id: str | None = None
     created_at: datetime
     updated_at: datetime
 
