@@ -85,6 +85,12 @@ class GoogleLoginRequest(BaseModel):
     id_token: str
 
 
+class UnlinkGoogleRequest(BaseModel):
+    """Schema for unlinking Google from account."""
+
+    password: str
+
+
 class ForgotPasswordRequest(BaseModel):
     """Schema for requesting a password reset email."""
 
