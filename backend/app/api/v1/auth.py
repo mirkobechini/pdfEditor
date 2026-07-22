@@ -11,6 +11,7 @@ from app.schemas.auth import (
     GoogleLoginRequest,
     ResetPasswordRequest,
     TokenResponse,
+    UnlinkGoogleRequest,
     UserLoginRequest,
     UserRegisterRequest,
     UserResponse,
@@ -211,6 +212,55 @@ def google_login(
     _set_token_cookie(response, token)
     set_csrf_cookie(response, csrf_token)
     return response
+
+
+@router.post("/unlink/google", response_model=UserResponse)
+def unlink_google(
+    req: UnlinkGoogleRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> UserResponse:
+    """Unlink Google account from the current user.
+
+    Requires password confirmation for security.
+    """
+    token = _get_token(request)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+
+    service = AuthService(db)
+    try:
+        user = service.get_current_user(token)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+
+    # Verify password
+    from app.core.security import verify_password
+    if not verify_password(req.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid password",
+        )
+
+    # Check if Google is actually linked
+    if not user.google_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google account is not linked",
+        )
+
+    # Unlink
+    user.google_id = None
+    repo = UserRepository(db)
+    repo.update(user)
+
+    return UserResponse.model_validate(user)
 
 
 @router.get("/csrf")

@@ -444,6 +444,16 @@ export class ApiClient {
     return res.json();
   }
 
+  async unlinkGoogle(password: string): Promise<UserResponse> {
+    const res = await this._fetch(`${this.baseUrl}/auth/unlink/google`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
   async logout(): Promise<void> {
     // POST to logout endpoint clears the httpOnly cookie
     await this._fetch(`${this.baseUrl}/auth/logout`, { method: "POST" });
