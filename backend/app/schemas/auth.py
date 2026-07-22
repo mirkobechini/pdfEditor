@@ -37,6 +37,7 @@ class UserResponse(BaseModel):
     is_admin: bool
     license_tier: str
     license_tier_source: str
+    google_id: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -82,6 +83,12 @@ class GoogleLoginRequest(BaseModel):
     """Schema for Google SSO login request."""
 
     id_token: str
+
+
+class UnlinkGoogleRequest(BaseModel):
+    """Schema for unlinking Google from account."""
+
+    password: str
 
 
 class ForgotPasswordRequest(BaseModel):

@@ -402,3 +402,89 @@ class TestCsrfRefresh:
         client.cookies.clear()
         response = client.get(self.URL)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class TestUnlinkGoogle:
+    """Test suite for POST /auth/unlink/google."""
+
+    URL = "/auth/unlink/google"
+
+    def _register_and_login(self, client, email="unlink@test.com"):
+        """Register a user and return the token."""
+        client.post(
+            "/auth/register",
+            json={"email": email, "password": "Password123", "full_name": "Unlink Test"},
+        )
+        client.cookies.clear()
+        resp = client.post(
+            "/auth/login",
+            json={"email": email, "password": "Password123"},
+        )
+        return resp.json()["access_token"]
+
+    def test_unlink_success(self, client, db_engine):
+        """POST /auth/unlink/google should unlink Google when password is correct."""
+        from app.core.security import get_password_hash
+        from app.models.user import User
+        from app.repositories.user_repo import UserRepository
+        from sqlalchemy.orm import sessionmaker
+
+        SessionLocal = sessionmaker(bind=db_engine)
+        db = SessionLocal()
+        try:
+            # Create user with google_id set
+            repo = UserRepository(db)
+            user = User(
+                email="unlink_success@test.com",
+                hashed_password=get_password_hash("Password123"),
+                full_name="Unlink Success",
+                google_id="google-123",
+            )
+            repo.create(user)
+            db.commit()
+        finally:
+            db.close()
+
+        # Login
+        client.cookies.clear()
+        resp = client.post(
+            "/auth/login",
+            json={"email": "unlink_success@test.com", "password": "Password123"},
+        )
+        assert resp.status_code == 200
+
+        response = client.post(
+            self.URL,
+            json={"password": "Password123"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["google_id"] is None
+
+    def test_unlink_wrong_password(self, client):
+        """POST /auth/unlink/google should return 403 with wrong password."""
+        self._register_and_login(client)
+
+        response = client.post(
+            self.URL,
+            json={"password": "wrongpassword"},
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_unlink_no_google(self, client):
+        """POST /auth/unlink/google should return 400 when Google not linked."""
+        token = self._register_and_login(client)
+
+        response = client.post(
+            self.URL,
+            json={"password": "Password123"},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_unlink_unauthorized(self, client):
+        """POST /auth/unlink/google should return 401 without auth."""
+        response = client.post(
+            self.URL,
+            json={"password": "Password123"},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED

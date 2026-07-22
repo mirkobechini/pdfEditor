@@ -2,6 +2,9 @@
 
 **Issue:** #387
 
+**Status:** ✅ Completata (2026-07-22)
+**Fix:** `frontend/public/_headers` — Render lo applica automaticamente.
+
 ## Problema
 
 Il popup di Google OAuth (`accounts.google.com`) non riesce a comunicare con la finestra principale via `window.postMessage`. Il browser blocca la comunicazione perché `Cross-Origin-Opener-Policy` è impostato a `same-origin` (o simile) da Cloudflare/Render.
@@ -44,15 +47,10 @@ Apply to: /* (tutte le route)
 
 Altri header di sicurezza (CSP, X-Frame-Options, HSTS) rimangono attivi e continuano a proteggere il sito.
 
-## Verifica
+## Verifica ✅
 
-Dopo il fix:
-
-1. Apri la console del browser
-2. Fai login con Google
-3. Verifica che NON compaia più l'errore `Cross-Origin-Opener-Policy policy would block the window.postMessage call`
-4. Verifica che `POST /auth/google` torni 200 (non 401)
+Completata. Il login Google SSO funziona in produzione senza errore COOP.
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata (2026-07-22)

@@ -11,7 +11,19 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.8
       - key: DATABASE_URL
-        sync: false  # Imposta manualmente con la connection string di Neon
+        sync: false # Imposta manualmente con la connection string di Neon
+      - key: STORAGE_BACKEND
+        value: s3
+      - key: S3_BUCKET
+        sync: false # Imposta manualmente con il nome del bucket R2
+      - key: S3_ENDPOINT
+        sync: false # Imposta manualmente (es. https://<accountid>.r2.cloudflarestorage.com)
+      - key: S3_ACCESS_KEY
+        sync: false # Imposta manualmente (R2 API token)
+      - key: S3_SECRET_KEY
+        sync: false # Imposta manualmente (R2 API token secret)
+      - key: S3_REGION
+        value: auto
 
   - type: static_site
     name: pdeditor-frontend

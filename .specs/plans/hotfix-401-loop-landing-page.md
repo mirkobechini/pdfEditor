@@ -41,4 +41,4 @@ Se non c'è un cookie `access_token` (leggibile solo same-origin, ma su Cloudfla
 
 ## Status
 
-[ ] Non iniziata
+[ ] Non iniziata (ancora da fare)

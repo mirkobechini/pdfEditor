@@ -1,5 +1,4 @@
-# Questo file è il system prompt del vostro progetto:
-l'agente lo legge prima di qualsiasi altra azione.
+# AGENTS.md
 
 Sei un agente di sviluppo software. Questo file va letto **prima di qualsiasi altra azione** quando operi in questo repository.
 
