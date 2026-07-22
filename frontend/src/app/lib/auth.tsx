@@ -11,6 +11,7 @@ interface User {
   is_admin: boolean;
   license_tier: string;
   license_tier_source: string;
+  google_id: string | null;
   created_at: string;
   updated_at: string;
 }
