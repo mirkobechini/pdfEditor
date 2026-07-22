@@ -80,4 +80,4 @@ Prima di scollegare, mostrare un modal di conferma con input password.
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata (2026-07-22, PR #390)

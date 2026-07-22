@@ -73,4 +73,4 @@ google-auth>=2.0.0
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata (2026-07-22, PR #388)
