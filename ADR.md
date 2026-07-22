@@ -25,7 +25,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - **Database cloud:** PostgreSQL (Neon)
 - **File storage cloud:** Cloudflare R2
 - **ORM:** SQLAlchemy 2.0
-- **Auth:** JWT (bcrypt) + httpOnly cookie + SSO Google (PyJWT + requests)
+- **Auth:** JWT (bcrypt) + httpOnly cookie + SSO Google (google-auth-library)
 - **i18n:** next-intl (dichiarato, ma attualmente implementato con provider custom)
 - **Migration:** Alembic
 - **Email:** SendGrid v3 Mail Send API (HTTP) — `requests` diretto, no libreria SendGrid SDK
@@ -52,7 +52,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | UUID come PK                                        | autoincrement integer      | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti                                                                                                                                                                                                                            |
 | PyMuPDF                                             | pdf-lib, pikepdf           | Supporto nativo modifica testo, metadati, tagging accessibilità                                                                                                                                                                                                                   |
 | Autenticazione obbligatoria per ogni operazione PDF | Endpoint /pdfs/\* pubblici | Ogni PDF è associato a un utente (user_id). Anche le operazioni base (upload/list/download/delete) richiedono login, perché senza user_id non esiste ownership. Il free tier è un utente registrato a tutti gli effetti.                                                          |
-| PyJWT + requests per SSO Google                     | Authlib, python-jose       | Scelta implementativa diretta: `import jwt` (PyJWT) invece di python-jose[cryptography]. Nessuna dipendenza extra.                                                                                                                                                                |
+| google-auth-library per SSO Google                  | PyJWT + requests manuali   | google-auth ufficiale: cache automatica chiavi, validazione Google, key rotation gestita. PR #388.                                                                                                                                                                                |
 | Provider i18n custom → next-intl client-side        | next-intl con middleware   | next-intl già installato ma inutilizzato. Rifattorizzato in PR #94: NextIntlClientProvider client-side (compatibile con output: 'export').                                                                                                                                        |
 | FastAPI sidecar con PyInstaller                     | Backend remoto sempre      | Funzionamento offline desktop (Fase 1c)                                                                                                                                                                                                                                           |
 | API backend per merge/split/riordino                | pdf-lib lato client        | pdf-lib sostituito da API backend per affidabilità — refactoring PR #72. PyMuPDF server-side.                                                                                                                                                                                     |

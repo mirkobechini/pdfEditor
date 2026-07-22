@@ -2,6 +2,8 @@
 
 **Issue:** #386
 
+**Status:** ✅ Completata (2026-07-22, PR #388)
+
 ## Obiettivo
 
 Sostituire la validazione manuale del token Google SSO (PyJWT + `requests.get` a Google certs) con la libreria ufficiale `google-auth-library`.
