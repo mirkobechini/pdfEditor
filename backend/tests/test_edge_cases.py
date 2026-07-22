@@ -315,10 +315,10 @@ class TestAuthServiceEdgeCases:
 
     def test_google_login_inactive_user(self, db_session):
         """google_login should fail for inactive user.
-        Mocks the full Google certs fetch + JWT decode flow to return a known payload.
+        Mocks google-auth verify_oauth2_token to return a known payload.
         """
         import uuid
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import patch
         from app.core.security import get_password_hash
 
         user = User(
@@ -332,19 +332,15 @@ class TestAuthServiceEdgeCases:
         db_session.add(user)
         db_session.flush()
 
-        # Mock the external requests.get and jwt.decode at module level
-        with patch("requests.get") as mock_get:
-            mock_get.return_value.status_code = 200
-            mock_get.return_value.json.return_value = {"keys": [{"kid": "test-kid", "n": "test", "e": "AQAB", "kty": "RSA"}]}
+        with patch("google.oauth2.id_token.verify_oauth2_token", return_value={
+            "email": "google_inactive@test.com",
+            "sub": "google-123",
+        }):
+            from app.services.auth_service import AuthService
+            service = AuthService(db_session)
 
-            with patch("jwt.get_unverified_header", return_value={"alg": "RS256", "kid": "test-kid"}):
-                with patch("jwt.decode", return_value={"email": "google_inactive@test.com", "sub": "google-123"}):
-
-                    from app.services.auth_service import AuthService
-                    service = AuthService(db_session)
-
-                    with pytest.raises(ValueError, match="Account is inactive"):
-                        service.google_login("fake-id-token")
+            with pytest.raises(ValueError, match="Account is inactive"):
+                service.google_login("fake-id-token")
 
     def test_password_cache_expired(self):
         """Test that expired password cache entries are cleaned up."""
@@ -782,18 +778,15 @@ class TestFinalCoverage:
         db_session.add(user)
         db_session.flush()
 
-        with patch("requests.get") as mock_get:
-            mock_get.return_value.status_code = 200
-            mock_get.return_value.json.return_value = {"keys": [{"kid": "test-kid", "n": "test", "e": "AQAB", "kty": "RSA"}]}
+        with patch("google.oauth2.id_token.verify_oauth2_token", return_value={
+            "email": "google_noid@test.com",
+            "sub": "new-google-sub",
+        }):
+            from app.services.auth_service import AuthService
+            service = AuthService(db_session)
+            user_result, token = service.google_login("fake-id-token")
 
-            with patch("jwt.get_unverified_header", return_value={"alg": "RS256", "kid": "test-kid"}):
-                with patch("jwt.decode", return_value={"email": "google_noid@test.com", "sub": "new-google-sub"}):
-
-                    from app.services.auth_service import AuthService
-                    service = AuthService(db_session)
-                    user_result, token = service.google_login("fake-id-token")
-
-                    assert user_result.google_id == "new-google-sub"
+            assert user_result.google_id == "new-google-sub"
 
     def test_main_seed_license_features_already_seeded(self):
         """_seed_license_features should not raise when already seeded."""

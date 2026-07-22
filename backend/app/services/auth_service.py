@@ -80,61 +80,36 @@ class AuthService:
 
         return user
 
-    def google_login(self, id_token: str) -> tuple[User, str]:
-        """Authenticate with Google SSO. Returns (user, jwt_token)."""
-        if not id_token or not id_token.strip():
+    def google_login(self, id_token_str: str) -> tuple[User, str]:
+        """Authenticate with Google SSO. Returns (user, jwt_token).
+
+        Uses google-auth-library which handles:
+        - Automatic caching of Google's public keys (24h TTL)
+        - Signature verification, audience check, expiry validation
+        - Key rotation
+        """
+        if not id_token_str or not id_token_str.strip():
             raise ValueError("Invalid Google token")
 
-        import requests
+        from google.oauth2 import id_token as google_id_token
+        from google.auth.transport import requests as google_requests
 
-        # Verify the id_token by downloading Google's public keys
-        logger.debug("Validating Google token (first 30 chars): %s...", id_token[:30])
-        resp = requests.get("https://www.googleapis.com/oauth2/v3/certs", timeout=10)
-        if resp.status_code != 200:
-            logger.warning("Failed to fetch Google certs: HTTP %s", resp.status_code)
-            raise ValueError("Failed to verify Google token")
-
-        # Decode JWT using PyJWT + Google certs
-        import jwt
-
-        certs = resp.json()
-        logger.debug("Google certs fetched successfully, %d keys available", len(certs.get("keys", [])))
+        logger.debug("Validating Google token (first 30 chars): %s...", id_token_str[:30])
         try:
-            header = jwt.get_unverified_header(id_token)
-        except jwt.InvalidTokenError:
-            raise ValueError("Invalid or expired Google token")
-
-        if header.get("alg") != "RS256":
-            raise ValueError("Invalid token algorithm")
-
-        kid = header.get("kid")
-        if not kid:
-            raise ValueError("Invalid token key ID")
-
-        # Find the matching key by kid in Google's certs list
-        key = None
-        for k in certs.get("keys", []):
-            if k.get("kid") == kid:
-                key = k
-                break
-        if not key:
-            raise ValueError("Invalid token key ID")
-
-        try:
-            payload = jwt.decode(
-                id_token,
-                key,
-                algorithms=["RS256"],
-                audience=settings.GOOGLE_CLIENT_ID,
+            info = google_id_token.verify_oauth2_token(
+                id_token_str,
+                google_requests.Request(),
+                settings.GOOGLE_CLIENT_ID,
             )
-        except jwt.InvalidTokenError:
-            raise ValueError("Invalid or expired Google token")
+        except ValueError as e:
+            logger.warning("Google token validation failed: %s", e)
+            raise ValueError("Invalid or expired Google token") from e
 
-        email = payload.get("email")
+        email = info.get("email")
         if not email:
             raise ValueError("Google token missing email")
 
-        name = payload.get("name", email.split("@")[0])
+        name = info.get("name", email.split("@")[0])
 
         # Check if user exists, otherwise create
         user = self.repo.get_by_email(email)
@@ -147,16 +122,14 @@ class AuthService:
                 email=email,
                 hashed_password=hashed,
                 full_name=name,
-                google_id=payload.get("sub"),
+                google_id=info.get("sub"),
             )
             user = self.repo.create(user)
         else:
             # Update google_id if not already linked
             if not user.google_id:
-                user.google_id = payload.get("sub")
+                user.google_id = info.get("sub")
                 self.repo.update(user)
-
-        # Generate JWT token for the user
 
         if not user.is_active:
             raise ValueError("Account is inactive")
