@@ -176,6 +176,23 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 
 > **Nota tecnica:** Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile — `httpx2` non esiste ancora.
 
+### Vulnerabilità residue (Dependabot)
+
+Dopo i fix applicati, rimangono 3 alert Dependabot, tutti **non bloccanti**:
+
+| CVE | Pacchetto | Versione | Impatto | Motivo |
+|-----|-----------|----------|---------|--------|
+| CVE-2026-13149 | `brace-expansion` | 1.1.16 / 5.0.8 | High | DevDependency (eslint). Le versioni installate sono già sopra la soglia CVE. Dependabot si aggiornerà al prossimo scan. |
+| — | `sharp` | < 0.35.0 | High | Dipendenza interna di Next.js 16.2.11 (`sharp ^0.34.5`). In attesa di Next.js 16.2.12+ o 16.3.0 stabile per fix. |
+| CVE-2026-41305 | `postcss` | < 8.5.10 | Medium | DevDependency via Next.js. Non raggiungibile in produzione. |
+
+**Vulnerabilità risolte** (non più segnalate):
+- `js-yaml` → PR #392 (bump 4.2.0 → 4.3.0)
+- `next` → PR #393 (bump 16.2.9 → 16.2.11)
+- `python-multipart` → PR #395 (bump 0.0.31 → 0.0.32)
+- `PyJWT` → già a 2.13.0 (fixato)
+- `python-jose` → rimosso (non in uso)
+
 > **🔑 MCP Servers:** Stripe (OAuth), Render (`render-oss/render-mcp-server`), Railway (community).
 
 ## Quality assurance — test che non mentono
