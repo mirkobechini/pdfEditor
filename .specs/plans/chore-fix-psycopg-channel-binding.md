@@ -23,4 +23,5 @@ La versione locale di `psycopg` (o `psycopg-binary`) non supporta il parametro `
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata (2026-07-23)
+**Fix:** `pip install -U psycopg[binary]` — aggiornato da 3.3.4 a ultima versione. Il parametro `channel_binding` era sconosciuto alla versione locale.
