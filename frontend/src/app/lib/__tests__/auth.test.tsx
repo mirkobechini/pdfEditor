@@ -32,7 +32,11 @@ function TestConsumer() {
   );
 }
 
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Reset the mount guard so each test gets a fresh AuthProvider
+  try { sessionStorage.removeItem("auth_has_checked"); } catch { /* noop */ }
+});
 
 describe("AuthProvider", () => {
   it("shows no user by default", async () => {
