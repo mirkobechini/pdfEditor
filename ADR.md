@@ -16,7 +16,8 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 - **Frontend:** React 19 + TailwindCSS v4 — UI condivisa tra web, desktop e mobile
 - **Framework web:** Next.js 16 (app router) con `output: 'export'` per compatibilità Tauri
-- **Desktop:** Tauri v2 (futuro, Fase 1c) — sidecar con FastAPI bundle
+- **Desktop:** Tauri v2 (Fase 1c) — sidecar con FastAPI bundle (PyInstaller)
+- **Desktop cartella:** `desktop/` — codice dedicato Tauri (Rust, sidecar, icons, updater)
 - **Mobile:** React Native / Expo bare workflow (futuro, Fase 4)
 - **Backend:** FastAPI (Python) — Auth, elaborazione PDF, cloud sync
 - **PDF processing:** PyMuPDF (fitz) — modifica testo, merge/split, metadati
@@ -46,21 +47,27 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Decisioni architetturali
 
-| Scelta                                              | Alternativa implicita      | Motivo                                                                                                                                                                                                                                                                            |
-| --------------------------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Next.js con `output: 'export'`                      | SSR/API Routes             | Compatibilità Tauri (static export), API tutte su FastAPI                                                                                                                                                                                                                         |
-| UUID come PK                                        | autoincrement integer      | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti                                                                                                                                                                                                                            |
-| PyMuPDF                                             | pdf-lib, pikepdf           | Supporto nativo modifica testo, metadati, tagging accessibilità                                                                                                                                                                                                                   |
-| Autenticazione obbligatoria per ogni operazione PDF | Endpoint /pdfs/\* pubblici | Ogni PDF è associato a un utente (user_id). Anche le operazioni base (upload/list/download/delete) richiedono login, perché senza user_id non esiste ownership. Il free tier è un utente registrato a tutti gli effetti.                                                          |
-| google-auth-library per SSO Google                  | PyJWT + requests manuali   | google-auth ufficiale: cache automatica chiavi, validazione Google, key rotation gestita. PR #388.                                                                                                                                                                                |
-| Provider i18n custom → next-intl client-side        | next-intl con middleware   | next-intl già installato ma inutilizzato. Rifattorizzato in PR #94: NextIntlClientProvider client-side (compatibile con output: 'export').                                                                                                                                        |
-| FastAPI sidecar con PyInstaller                     | Backend remoto sempre      | Funzionamento offline desktop (Fase 1c)                                                                                                                                                                                                                                           |
-| API backend per merge/split/riordino                | pdf-lib lato client        | pdf-lib sostituito da API backend per affidabilità — refactoring PR #72. PyMuPDF server-side.                                                                                                                                                                                     |
-| Tagged PDF in output                                | PDF non strutturati        | Accessibilità screen reader (obbligo AGPL indiretto)                                                                                                                                                                                                                              |
-| SendGrid API HTTP invece di SMTP                    | SMTP via libreria SendGrid | Render free tier blocca la porta 587 in uscita. Usata API HTTP v3 direttamente con `requests` — nessuna dipendenza extra.                                                                                                                                                         |
-| Standard error codes API (codice + dettaglio)       | Solo `str(e)` plain        | Ogni HTTPException backend usa `error_response(code, detail)` con codice stabile (es. `INVALID_CREDENTIALS`). Il frontend mappa ogni codice in una chiave i18n tramite `mapError()`, eliminando `err.message` raw in UI. Motivo: UX produzione, supporto IT/EN, debug facilitato. |
-| Neon PostgreSQL (serverless)                        | Render PostgreSQL free     | Render ha discontinuato il free tier PostgreSQL. Neon offre PostgreSQL serverless con free tier permanente (0.5GB storage, 100h compute/mese con auto-suspend). Connection pooling built-in, stesso driver psycopg.                                                               |
-| Cloudflare R2 per storage PDF                       | Disco locale Render        | Già implementato in `s3_storage.py` + `storage.py`. Gratis 10GB storage, zero egress cost. Configurato con `STORAGE_BACKEND=s3`.                                                                                                                                                  |
+| Scelta                                              | Alternativa implicita       | Motivo                                                                                                                                                                                                                                                                            |
+| --------------------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Next.js con `output: 'export'`                      | SSR/API Routes              | Compatibilità Tauri (static export), API tutte su FastAPI                                                                                                                                                                                                                         |
+| UUID come PK                                        | autoincrement integer       | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti                                                                                                                                                                                                                            |
+| PyMuPDF                                             | pdf-lib, pikepdf            | Supporto nativo modifica testo, metadati, tagging accessibilità                                                                                                                                                                                                                   |
+| Autenticazione obbligatoria per ogni operazione PDF | Endpoint /pdfs/\* pubblici  | Ogni PDF è associato a un utente (user_id). Anche le operazioni base (upload/list/download/delete) richiedono login, perché senza user_id non esiste ownership. Il free tier è un utente registrato a tutti gli effetti.                                                          |
+| google-auth-library per SSO Google                  | PyJWT + requests manuali    | google-auth ufficiale: cache automatica chiavi, validazione Google, key rotation gestita. PR #388.                                                                                                                                                                                |
+| Provider i18n custom → next-intl client-side        | next-intl con middleware    | next-intl già installato ma inutilizzato. Rifattorizzato in PR #94: NextIntlClientProvider client-side (compatibile con output: 'export').                                                                                                                                        |
+| FastAPI sidecar con PyInstaller                     | Backend remoto sempre       | Funzionamento offline desktop (Fase 1c)                                                                                                                                                                                                                                           |
+| API backend per merge/split/riordino                | pdf-lib lato client         | pdf-lib sostituito da API backend per affidabilità — refactoring PR #72. PyMuPDF server-side.                                                                                                                                                                                     |
+| Tagged PDF in output                                | PDF non strutturati         | Accessibilità screen reader (obbligo AGPL indiretto)                                                                                                                                                                                                                              |
+| SendGrid API HTTP invece di SMTP                    | SMTP via libreria SendGrid  | Render free tier blocca la porta 587 in uscita. Usata API HTTP v3 direttamente con `requests` — nessuna dipendenza extra.                                                                                                                                                         |
+| Standard error codes API (codice + dettaglio)       | Solo `str(e)` plain         | Ogni HTTPException backend usa `error_response(code, detail)` con codice stabile (es. `INVALID_CREDENTIALS`). Il frontend mappa ogni codice in una chiave i18n tramite `mapError()`, eliminando `err.message` raw in UI. Motivo: UX produzione, supporto IT/EN, debug facilitato. |
+| Neon PostgreSQL (serverless)                        | Render PostgreSQL free      | Render ha discontinuato il free tier PostgreSQL. Neon offre PostgreSQL serverless con free tier permanente (0.5GB storage, 100h compute/mese con auto-suspend). Connection pooling built-in, stesso driver psycopg.                                                               |
+| Cloudflare R2 per storage PDF                       | Disco locale Render         | Già implementato in `s3_storage.py` + `storage.py`. Gratis 10GB storage, zero egress cost. Configurato con `STORAGE_BACKEND=s3`.                                                                                                                                                  |
+| **Desktop: stessa UI del web**                      | UI desktop nativa           | `output: 'export'` già configurato; webview Tauri carica gli stessi asset statici. Si adattano solo API calls (da Render a localhost) e si aggiungono Tauri API per file dialogs nativi.                                                                                          |
+| **Desktop: auth offline via Tauri safeStorage**     | Solo online                 | JWT cached in keychain OS (safeStorage). App funzionante offline con sync quando torna online.                                                                                                                                                                                    |
+| **Desktop: cloud sync (Fase 3) integrata**          | Sync posticipato            | UUID PK già implementati. La Fase 3 viene integrata direttamente nella Desktop App: endpoint sync backend + UI sync frontend.                                                                                                                                                     |
+| **Desktop: auto-update via GitHub Releases**        | Download manuale            | Tauri updater built-in: controlla GitHub Releases, scarica e installa in automatico.                                                                                                                                                                                              |
+| **Desktop: PyMuPDF con PyInstaller**                | pdf-lib JS, embedded Python | Si tenta PyInstaller con `--hidden-import=fitz`. Fallback: embedded Python (embeddable zip) se i binding C danno problemi.                                                                                                                                                        |
+| **Desktop: cartella `desktop/` dedicata**           | Nella root                  | Separazione netta: `backend/`, `frontend/`, `desktop/`. Il codice Tauri (Rust, sidecar, icons, updater) risiede in `desktop/src-tauri/`.                                                                                                                                          |
 
 ## Vincoli
 
@@ -77,8 +84,6 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Cosa NON è in scope (per ora)
 
-- Desktop Tauri v2 (Fase 1c — futuro)
-- Cloud sync bidirezionale (Fase 3 — futuro)
 - Mobile React Native (Fase 4 — futuro)
 - Integrazione pagamenti Stripe (pianificata — vedi `.specs/plans/feature-stripe-mcp-subscriptions.md`)
 - SSO Apple / Samsung (previsto come bonus futuro)
@@ -295,14 +300,15 @@ Le rimanenti ~79 linee non coperte sono suddivise in tre categorie, nessuna dell
 
 ### Feature short-term
 
-| Priorità | Task                         | Piano                                              |
-| -------- | ---------------------------- | -------------------------------------------------- |
-| 🟡 MEDIA | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md`          |
-| 🟡 MEDIA | PDF compression              | `feature-pdf-compression.md`                       |
-| 🟡 MEDIA | PDF naming preservation      | `feature-pdf-naming-preservation.md`               |
-| 🟡 MEDIA | UI/UX improvements           | `feature-ui-ux-improvements.md`                    |
-| 🟡 MEDIA | Inline text editor           | `feature-inline-text-editor.md`                    |
-| 🟡 MEDIA | Conferma email account       | `feature-email-confirmation.md`                    |
-| 🔵 BASSA | Stripe MCP Subscriptions     | `.specs/plans/feature-stripe-mcp-subscriptions.md` |
-| 🔵 BASSA | AI PDF editing               | `.specs/plans/feature-ai-pdf-editing.md`           |
-| 🔵 BASSA | E2E Playwright tests         | `.specs/plans/chore-security-improvements.md`      |
+| Priorità | Task                         | Piano                                                                     |
+| -------- | ---------------------------- | ------------------------------------------------------------------------- |
+| 🟡 MEDIA | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md`                                 |
+| 🟡 MEDIA | PDF compression              | `feature-pdf-compression.md`                                              |
+| 🟡 MEDIA | PDF naming preservation      | `feature-pdf-naming-preservation.md`                                      |
+| 🟡 MEDIA | UI/UX improvements           | `feature-ui-ux-improvements.md`                                           |
+| 🟡 MEDIA | Inline text editor           | `feature-inline-text-editor.md`                                           |
+| 🟡 MEDIA | Conferma email account       | `feature-email-confirmation.md`                                           |
+| 🟡 MEDIA | **Icona app (Penpot)**       | Logo unico per web, desktop e mobile. Sostituire default Next.js favicon. |
+| 🔵 BASSA | Stripe MCP Subscriptions     | `.specs/plans/feature-stripe-mcp-subscriptions.md`                        |
+| 🔵 BASSA | AI PDF editing               | `.specs/plans/feature-ai-pdf-editing.md`                                  |
+| 🔵 BASSA | E2E Playwright tests         | `.specs/plans/chore-security-improvements.md`                             |

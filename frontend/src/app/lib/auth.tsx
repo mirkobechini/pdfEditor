@@ -28,6 +28,8 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const CHECKED_KEY = "auth_has_checked";
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,12 +37,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // On mount: restore session from httpOnly cookie (browser sends it automatically)
   useEffect(() => {
+    // Module-level guard: prevents getMe() loop on StrictMode/Suspense re-mounts
+    if (typeof sessionStorage !== "undefined" && sessionStorage.getItem(CHECKED_KEY)) {
+      setLoading(false);
+      return;
+    }
+    try { sessionStorage.setItem(CHECKED_KEY, "1"); } catch { /* noop */ }
+
     api
       .getMe()
       .then((u) => {
         setUser(u);
-        // Re-sync CSRF token after page refresh (in-memory token is lost)
-        // Cross-origin: document.cookie is unreadable, so we need the body.
         api.refreshCsrf();
       })
       .catch(() => {
