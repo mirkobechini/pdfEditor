@@ -194,22 +194,23 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 
 ## Coverage test backend
 
-### Stato attuale: 97% (325 test, 0 failures, 0 warnings)
+### Stato attuale: 96% (331 test, 0 failures, 0 warnings)
 
-| Modulo                                                                                            | Coverage | Note                 |
-| ------------------------------------------------------------------------------------------------- | -------- | -------------------- |
-| `security.py`, `config.py`, `merge_split.py`, `metadata.py`, `reorder.py`, `text.py`, `unlock.py` | 100%     | ✅                   |
-| `auth.py`, `csrf.py`, `storage.py`                                                                | 100%     | ✅                   |
-| `models/*`, `repositories/*`, `email_service.py`                                                  | 100%     | ✅                   |
-| `s3_storage.py`                                                                                   | 99%      | 1 linea (def)        |
-| `auth_service.py`                                                                                 | 99%      | 1 linea Google login |
-| `convert.py`                                                                                      | 98%      | 1 linea (def)        |
-| `admin.py`                                                                                        | 97%      | 🟡                   |
-| `pdf_merge_split_service.py`                                                                      | 97%      | 🟡                   |
-| `database.py`, `user_repo.py`                                                                     | 95-98%   | 🟡                   |
-| `main.py`                                                                                         | 87%      | 🟡 startup code      |
-| `pdf_service.py`                                                                                  | 86%      | 🔴 error path        |
-| **TOTALE**                                                                                        | **97%**  |                      |
+| Modulo                                                                                            | Coverage | Note            |
+| ------------------------------------------------------------------------------------------------- | -------- | --------------- |
+| `security.py`, `config.py`, `merge_split.py`, `metadata.py`, `reorder.py`, `text.py`, `unlock.py` | 100%     | ✅              |
+| `auth.py`, `csrf.py`, `storage.py`                                                                | 97-100%  | ✅              |
+| `models/*`, `repositories/*`, `email_service.py`                                                  | 100%     | ✅              |
+| `s3_storage.py`                                                                                   | 99%      | 1 linea (def)   |
+| `auth_service.py`                                                                                 | 100%     | ✅              |
+| `convert.py`                                                                                      | 98%      | 1 linea (def)   |
+| `admin.py`                                                                                        | 97%      | 🟡              |
+| `pdf_merge_split_service.py`                                                                      | 97%      | 🟡              |
+| `database.py`                                                                                     | 95%      | 🟡              |
+| `user_repo.py`                                                                                    | 100%     | ✅              |
+| `main.py`                                                                                         | 87%      | 🟡 startup code |
+| `pdf_service.py`                                                                                  | 86%      | 🔴 error path   |
+| **TOTALE**                                                                                        | **96%**  |                 |
 
 ### Cosa manca per il 100% — limite raggiunto senza integration tests
 
@@ -283,22 +284,21 @@ Le rimanenti ~79 linee non coperte sono suddivise in tre categorie, nessuna dell
 
 | Fase                                   | Descrizione                                                                                                                                                                                                             | Stato                      |
 | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| **Fase 1c — Desktop app (Tauri v2)**   | Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI in eseguibile. Sidecar: avvio FastAPI locale all'avvio. SQLite locale per dati offline. Installer per Windows (primario), macOS/Linux (secondario). | ⬜ Futuro                  |
+| **Fase 1c — Desktop app (Tauri v2)**   | Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI in eseguibile. Sidecar: avvio FastAPI locale all'avvio. SQLite locale per dati offline. Installer per Windows (primario), macOS/Linux (secondario). | 🟡 In corso (branch #391)  |
 | **Fase 2 — Web app su cloud**          | Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export.                                                                                                                   | ✅ Completata (2026-07-10) |
 | **Fase 3 — Cloud sync**                | Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti (lock ottimistico). Modalità offline/online seamless.                                                                                  | ⬜ Futuro                  |
 | **Fase 4 — Mobile app (React Native)** | Setup React Native (Expo bare workflow). Logica React condivisa (API client, hooks auth, utility PDF). UI nativa. Viewer PDF.js via WebView. SSO Google login. Store deployment (Google Play / Apple).                  | ⬜ Futuro                  |
 
 ### Feature short-term
 
-| Priorità | Task                         | Piano                                                                     |
-| -------- | ---------------------------- | ------------------------------------------------------------------------- |
-| 🟡 MEDIA | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md`                                 |
-| 🟡 MEDIA | PDF compression              | `feature-pdf-compression.md`                                              |
-| 🟡 MEDIA | PDF naming preservation      | `feature-pdf-naming-preservation.md`                                      |
-| 🟡 MEDIA | UI/UX improvements           | `feature-ui-ux-improvements.md`                                           |
-| 🟡 MEDIA | Inline text editor           | `feature-inline-text-editor.md`                                           |
-| 🟡 MEDIA | Conferma email account       | `feature-email-confirmation.md`                                           |
-| 🟡 MEDIA | **Icona app (Penpot)**       | Logo unico per web, desktop e mobile. Sostituire default Next.js favicon. |
-| 🔵 BASSA | Stripe MCP Subscriptions     | `.specs/plans/feature-stripe-mcp-subscriptions.md`                        |
-| 🔵 BASSA | AI PDF editing               | `.specs/plans/feature-ai-pdf-editing.md`                                  |
-| 🔵 BASSA | E2E Playwright tests         | `.specs/plans/chore-security-improvements.md`                             |
+| Priorità | Task                         | Piano                                              |
+| -------- | ---------------------------- | -------------------------------------------------- |
+| 🟡 MEDIA | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md`          |
+| 🟡 MEDIA | PDF compression              | `feature-pdf-compression.md`                       |
+| 🟡 MEDIA | PDF naming preservation      | `feature-pdf-naming-preservation.md`               |
+| 🟡 MEDIA | UI/UX improvements           | `feature-ui-ux-improvements.md`                    |
+| 🟡 MEDIA | Inline text editor           | `feature-inline-text-editor.md`                    |
+| 🟡 MEDIA | Conferma email account       | `feature-email-confirmation.md`                    |
+| BASSA    | Stripe MCP Subscriptions     | `.specs/plans/feature-stripe-mcp-subscriptions.md` |
+| 🔵 BASSA | AI PDF editing               | `.specs/plans/feature-ai-pdf-editing.md`           |
+| 🔵 BASSA | E2E Playwright tests         | `.specs/plans/chore-security-improvements.md`      |
