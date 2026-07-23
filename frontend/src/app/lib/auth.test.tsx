@@ -11,6 +11,8 @@ vi.mock("./api", () => ({
     googleLogin: vi.fn(),
     logout: vi.fn(),
     setToken: vi.fn(),
+    setCsrfToken: vi.fn(),
+    refreshCsrf: vi.fn(),
   },
 }));
 
@@ -29,7 +31,10 @@ function TestConsumer() {
   );
 }
 
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => {
+  vi.clearAllMocks();
+  try { sessionStorage.removeItem("auth_has_checked"); } catch { /* noop */ }
+});
 
 describe("AuthProvider", () => {
   it("shows no user by default", async () => {
