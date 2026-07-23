@@ -62,6 +62,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | Standard error codes API (codice + dettaglio)       | Solo `str(e)` plain         | Ogni HTTPException backend usa `error_response(code, detail)` con codice stabile (es. `INVALID_CREDENTIALS`). Il frontend mappa ogni codice in una chiave i18n tramite `mapError()`, eliminando `err.message` raw in UI. Motivo: UX produzione, supporto IT/EN, debug facilitato. |
 | Neon PostgreSQL (serverless)                        | Render PostgreSQL free      | Render ha discontinuato il free tier PostgreSQL. Neon offre PostgreSQL serverless con free tier permanente (0.5GB storage, 100h compute/mese con auto-suspend). Connection pooling built-in, stesso driver psycopg.                                                               |
 | Cloudflare R2 per storage PDF                       | Disco locale Render         | Già implementato in `s3_storage.py` + `storage.py`. Gratis 10GB storage, zero egress cost. Configurato con `STORAGE_BACKEND=s3`.                                                                                                                                                  |
+| `_password_cache` module-global                     | Redis / DB centralizzato    | Module-global in pdf_service.py. Non scala con multi-worker gunicorn. Ogni worker ha cache separata. Accettato come limite noto finché si usa single-worker.                                                                                                                      |
 | **Desktop: stessa UI del web**                      | UI desktop nativa           | `output: 'export'` già configurato; webview Tauri carica gli stessi asset statici. Si adattano solo API calls (da Render a localhost) e si aggiungono Tauri API per file dialogs nativi.                                                                                          |
 | **Desktop: auth offline via Tauri safeStorage**     | Solo online                 | JWT cached in keychain OS (safeStorage). App funzionante offline con sync quando torna online.                                                                                                                                                                                    |
 | **Desktop: cloud sync (Fase 3) integrata**          | Sync posticipato            | UUID PK già implementati. La Fase 3 viene integrata direttamente nella Desktop App: endpoint sync backend + UI sync frontend.                                                                                                                                                     |
@@ -100,11 +101,16 @@ I 4 test in `tests/test_edge_cases.py` che fallivano in locale per `channel_bind
 
 ### Issue note ma non bloccanti ⏳
 
-| #   | Issue                                                            | Impatto | Risoluzione prevista                               |
-| --- | ---------------------------------------------------------------- | ------- | -------------------------------------------------- |
-| 2   | **`_password_cache` module-global** — non scala con multi-worker | Medio   | Redis o DB in Fase 2 (✅ B18: cleanup su shutdown) |
-| 14  | **Nessun integration/E2E test**                                  | Medio   | ⬜ Playwright futuro (T7)                          |
-| 19  | **Find & Replace non funziona**                                  | Medio   | ⬜ Inline text editor (feature #11)                |
+| #   | Issue                                                             | Impatto | Risoluzione prevista                                 |
+| --- | ----------------------------------------------------------------- | ------- | ---------------------------------------------------- |
+| 2   | **`_password_cache` module-global** — non scala con multi-worker  | Medio   | Redis o DB in Fase 2 (✅ B18: cleanup su shutdown)   |
+| 14  | **Nessun integration/E2E test**                                   | Medio   | ⬜ Playwright futuro (T7)                            |
+| 19  | **Find & Replace non funziona**                                   | Medio   | ⬜ Inline text editor (feature #11)                  |
+| 385 | **Hotfix: Landing page 401 loop** — AuthProvider loop infinito    | Alta    | ⬜ `.specs/plans/hotfix-401-loop-landing-page.md`    |
+| 404 | **i18n: provider custom + next-intl coesistono** — rischio sync   | Basso   | ⬜ Unificare sotto next-intl puro                    |
+| 405 | **Rate limiting su upload** — falsi positivi per file grandi      | Basso   | ⬜ Escludere endpoint upload dal rate limiter per IP |
+| 406 | **Export endpoint senza validazione formato** — crash imprevisto  | Basso   | ⬜ Aggiungere validazione enum su formati accettati  |
+| 407 | **Content-Disposition sanitization** — possibile XSS via filename | Basso   | ✅ Già parzialmente sanitizzato (PR #208)            |
 
 ## Migrazioni infrastrutturali
 
@@ -180,13 +186,14 @@ In caso di superamento, Neon sospende il database (non cancella i dati) fino al 
 
 Dopo i fix applicati, rimangono 3 alert Dependabot, tutti **non bloccanti**:
 
-| CVE | Pacchetto | Versione | Impatto | Motivo |
-|-----|-----------|----------|---------|--------|
-| CVE-2026-13149 | `brace-expansion` | 1.1.16 / 5.0.8 | High | DevDependency (eslint). Le versioni installate sono già sopra la soglia CVE. Dependabot si aggiornerà al prossimo scan. |
-| — | `sharp` | < 0.35.0 | High | Dipendenza interna di Next.js 16.2.11 (`sharp ^0.34.5`). In attesa di Next.js 16.2.12+ o 16.3.0 stabile per fix. |
-| CVE-2026-41305 | `postcss` | < 8.5.10 | Medium | DevDependency via Next.js. Non raggiungibile in produzione. |
+| CVE            | Pacchetto         | Versione       | Impatto | Motivo                                                                                                                  |
+| -------------- | ----------------- | -------------- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| CVE-2026-13149 | `brace-expansion` | 1.1.16 / 5.0.8 | High    | DevDependency (eslint). Le versioni installate sono già sopra la soglia CVE. Dependabot si aggiornerà al prossimo scan. |
+| —              | `sharp`           | < 0.35.0       | High    | Dipendenza interna di Next.js 16.2.11 (`sharp ^0.34.5`). In attesa di Next.js 16.2.12+ o 16.3.0 stabile per fix.        |
+| CVE-2026-41305 | `postcss`         | < 8.5.10       | Medium  | DevDependency via Next.js. Non raggiungibile in produzione.                                                             |
 
 **Vulnerabilità risolte** (non più segnalate):
+
 - `js-yaml` → PR #392 (bump 4.2.0 → 4.3.0)
 - `next` → PR #393 (bump 16.2.9 → 16.2.11)
 - `python-multipart` → PR #395 (bump 0.0.31 → 0.0.32)
@@ -211,7 +218,7 @@ Dopo i fix applicati, rimangono 3 alert Dependabot, tutti **non bloccanti**:
 
 ## Coverage test backend
 
-### Stato attuale: 96% (331 test, 0 failures, 0 warnings)
+### Stato attuale: 97% (331 test, 0 failures, 0 warnings)
 
 | Modulo                                                                                            | Coverage | Note            |
 | ------------------------------------------------------------------------------------------------- | -------- | --------------- |
@@ -227,7 +234,7 @@ Dopo i fix applicati, rimangono 3 alert Dependabot, tutti **non bloccanti**:
 | `user_repo.py`                                                                                    | 100%     | ✅              |
 | `main.py`                                                                                         | 87%      | 🟡 startup code |
 | `pdf_service.py`                                                                                  | 86%      | 🔴 error path   |
-| **TOTALE**                                                                                        | **96%**  |                 |
+| **TOTALE**                                                                                        | **97%**  |                 |
 
 ### Cosa manca per il 100% — limite raggiunto senza integration tests
 
@@ -293,7 +300,7 @@ Le rimanenti ~79 linee non coperte sono suddivise in tre categorie, nessuna dell
 
 **Per superare l'80% servono test E2E con Playwright (T7).**
 
-### Obiettivo: 80%+ (con Playwright) — 76% (solo unit test, limite raggiunto)
+### Obiettivo: 80%+ (con Playwright) — 75.9% (solo unit test, 348 test, limite raggiunto)
 
 ## Roadmap
 
@@ -308,14 +315,17 @@ Le rimanenti ~79 linee non coperte sono suddivise in tre categorie, nessuna dell
 
 ### Feature short-term
 
-| Priorità | Task                         | Piano                                              |
-| -------- | ---------------------------- | -------------------------------------------------- |
-| 🟡 MEDIA | SendGrid rate limit handling | `feature-sendgrid-rate-limit-handling.md`          |
-| 🟡 MEDIA | PDF compression              | `feature-pdf-compression.md`                       |
-| 🟡 MEDIA | PDF naming preservation      | `feature-pdf-naming-preservation.md`               |
-| 🟡 MEDIA | UI/UX improvements           | `feature-ui-ux-improvements.md`                    |
-| 🟡 MEDIA | Inline text editor           | `feature-inline-text-editor.md`                    |
-| 🟡 MEDIA | Conferma email account       | `feature-email-confirmation.md`                    |
-| BASSA    | Stripe MCP Subscriptions     | `.specs/plans/feature-stripe-mcp-subscriptions.md` |
-| 🔵 BASSA | AI PDF editing               | `.specs/plans/feature-ai-pdf-editing.md`           |
-| 🔵 BASSA | E2E Playwright tests         | `.specs/plans/chore-security-improvements.md`      |
+| Priorità | Task                          | Piano                                     | Note                                                                 |
+| -------- | ----------------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
+| 🟥 ALTA  | Hotfix: 401 loop landing page | `hotfix-401-loop-landing-page.md`         | Bug confermato, piano già pronto                                     |
+| 🟡 MEDIA | Conferma email account        | `feature-email-confirmation.md`           | Prerequisito per Stripe — login bloccato senza email verificata      |
+| 🟡 MEDIA | PDF naming preservation       | `feature-pdf-naming-preservation.md`      | UX improvement — nome file scelto dall'utente dopo merge/split       |
+| 🟡 MEDIA | SendGrid rate limit handling  | `feature-sendgrid-rate-limit-handling.md` | Evita che l'app sembri rotta quando il tier gratuito esaurisce email |
+| 🟡 MEDIA | PDF compression               | `feature-pdf-compression.md`              | Riduce dimensione PDF, utile per upload e storage                    |
+| 🟡 MEDIA | Inline text editor            | `feature-inline-text-editor.md`           | Sostituisce Find & Replace con editing WYSIWYG (complessità alta)    |
+| 🟡 MEDIA | UI/UX improvements            | `feature-ui-ux-improvements.md`           | Contrasto, responsive, a11y, loading states                          |
+| 🟡 MEDIA | License tier button skin      | `feature-license-tier-button-skin.md`     | Prerequisito per Stripe — indicatori visivi feature bloccate         |
+| BASSA    | Expired token cleanup         | `chore-expired-token-cleanup.md`          | Technical debt — token scaduti restano in DB                         |
+| BASSA    | Stripe MCP Subscriptions      | `feature-stripe-mcp-subscriptions.md`     | Richiede email confirmation + license skin come prerequisiti         |
+| 🔵 BASSA | AI PDF editing                | `feature-ai-pdf-editing.md`               | BYOK + cloud — complessità molto alta                                |
+| 🔵 BASSA | E2E Playwright tests          | `chore-security-improvements.md`          | Per superare 80% coverage frontend e flussi cross-origin reali       |
