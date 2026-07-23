@@ -4,8 +4,10 @@ sqlalchemy==2.0.35
 alembic==1.13.2
 pydantic>=2.10,<3
 pydantic-settings>=2.6,<3
-python-multipart==0.0.31
+python-multipart==0.0.32
 PyJWT==2.13.0
+# google-auth: google-auth-library ufficiale per validazione token Google SSO.
+# Nota: NON installare python-jose — non è usato e Dependabot segnala CVE critiche.
 google-auth>=2.0.0
 bcrypt==4.2.1
 requests==2.34.2
