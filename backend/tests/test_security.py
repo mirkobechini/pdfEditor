@@ -134,3 +134,66 @@ class TestJWTTokens:
         
         # Allow 2-second tolerance
         assert abs((exp_time - expected_expiry).total_seconds()) < 2
+
+
+class TestSanitizeFilename:
+    """Test suite for sanitize_filename utility."""
+
+    def test_normal_filename(self):
+        """Should keep a normal ASCII filename unchanged."""
+        from app.core.sanitize import sanitize_filename
+        assert sanitize_filename("report.pdf") == "report.pdf"
+        assert sanitize_filename("my document (2).pdf") == "my document (2).pdf"
+        assert sanitize_filename("invoice_2024-final.pdf") == "invoice_2024-final.pdf"
+
+    def test_removes_quotes(self):
+        """Should remove double and single quotes."""
+        from app.core.sanitize import sanitize_filename
+        assert sanitize_filename('"report".pdf') == "report.pdf"
+        assert sanitize_filename("'report'.pdf") == "report.pdf"
+
+    def test_removes_semicolons(self):
+        """Should remove semicolons (header parameter separator)."""
+        from app.core.sanitize import sanitize_filename
+        assert sanitize_filename("report.pdf; filename=evil.exe") == "report.pdf filename=evil.exe"
+
+    def test_removes_backslashes(self):
+        """Should remove backslashes."""
+        from app.core.sanitize import sanitize_filename
+        assert sanitize_filename("report\\.pdf") == "report.pdf"
+
+    def test_removes_crlf(self):
+        """Should remove CR and LF characters (header injection)."""
+        from app.core.sanitize import sanitize_filename
+        assert sanitize_filename("report.pdf\nContent-Length: 0") == "report.pdfContent-Length: 0"
+        assert sanitize_filename("report.pdf\r\nContent-Length: 0") == "report.pdfContent-Length: 0"
+
+    def test_removes_non_ascii(self):
+        """Should remove non-ASCII characters."""
+        from app.core.sanitize import sanitize_filename
+        assert sanitize_filename("réport.pdf") == "rport.pdf"
+        assert sanitize_filename("文件.pdf") == ".pdf"
+
+    def test_removes_control_chars(self):
+        """Should remove control characters."""
+        from app.core.sanitize import sanitize_filename
+        assert sanitize_filename("report\x00.pdf") == "report.pdf"
+
+    def test_empty_after_sanitize_returns_file(self):
+        """Should return 'file' if nothing safe remains."""
+        from app.core.sanitize import sanitize_filename
+        assert sanitize_filename("") == "file"
+        assert sanitize_filename("\x00\x01\x02") == "file"
+        assert sanitize_filename("") == "file"
+
+    def test_dot_only_returns_file(self):
+        """Should return 'file' for dot-only or dot-dot filenames."""
+        from app.core.sanitize import sanitize_filename
+        assert sanitize_filename(".") == "file"
+        assert sanitize_filename("..") == "file"
+
+    def test_non_string_input(self):
+        """Should handle non-string input gracefully."""
+        from app.core.sanitize import sanitize_filename
+        assert sanitize_filename(None) == ""
+        assert sanitize_filename(123) == ""
