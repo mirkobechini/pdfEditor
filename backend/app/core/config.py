@@ -98,6 +98,9 @@ class Settings(BaseSettings):
     # Frontend URL (for password reset link)
     FRONTEND_URL: str = "http://localhost:3000"
 
+    # Offline token (desktop app)
+    OFFLINE_TOKEN_EXPIRE_DAYS: int = 30
+
     # Undo/redo snapshots
     MAX_SNAPSHOTS: int = 10
 
