@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import PdfViewer from "./PdfViewer";
-import { useI18n } from "../lib/i18n";
 
 describe("PdfViewer", () => {
   beforeEach(() => {
@@ -18,10 +17,10 @@ describe("PdfViewer", () => {
         fileUrl={null}
         currentPage={1}
         totalPages={0}
-        onPageChange={() => {}}
-        onTotalPagesChange={() => {}}
+        onPageChange={() => { }}
+        onTotalPagesChange={() => { }}
         zoom={1}
-        onZoomChange={() => {}}
+        onZoomChange={() => { }}
       />
     );
     expect(screen.getByText("selectPdf")).toBeInTheDocument();
@@ -34,10 +33,10 @@ describe("PdfViewer", () => {
         fileUrl={null}
         currentPage={1}
         totalPages={0}
-        onPageChange={() => {}}
-        onTotalPagesChange={() => {}}
+        onPageChange={() => { }}
+        onTotalPagesChange={() => { }}
         zoom={1}
-        onZoomChange={() => {}}
+        onZoomChange={() => { }}
       />
     );
 
@@ -55,10 +54,10 @@ describe("PdfViewer", () => {
         fileUrl={null}
         currentPage={1}
         totalPages={0}
-        onPageChange={() => {}}
-        onTotalPagesChange={() => {}}
+        onPageChange={() => { }}
+        onTotalPagesChange={() => { }}
         zoom={1}
-        onZoomChange={() => {}}
+        onZoomChange={() => { }}
         onFileDrop={onFileDrop}
       />
     );
@@ -77,10 +76,10 @@ describe("PdfViewer", () => {
         fileUrl={null}
         currentPage={1}
         totalPages={0}
-        onPageChange={() => {}}
-        onTotalPagesChange={() => {}}
+        onPageChange={() => { }}
+        onTotalPagesChange={() => { }}
         zoom={1}
-        onZoomChange={() => {}}
+        onZoomChange={() => { }}
         onFileDrop={onFileDrop}
       />
     );

@@ -5,6 +5,7 @@ import HeaderControls, { ToggleDarkMode, LanguageSelector } from "./HeaderContro
 // Mock i18n
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
+  useLocale: () => "en",
 }));
 
 // Mock useAuth
@@ -12,9 +13,9 @@ vi.mock("../lib/auth", () => ({
   useAuth: () => ({ user: null }),
 }));
 
-// Mock useLocaleControl
+// Mock useLocaleSetter
 vi.mock("../lib/i18n", () => ({
-  useLocaleControl: () => ({ locale: "en", setLocale: vi.fn() }),
+  useLocaleSetter: () => vi.fn(),
 }));
 
 // Mock matchMedia

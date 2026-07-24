@@ -34,9 +34,9 @@ vi.mock("next-intl", () => ({
     children,
 }));
 
-// Mock the old useI18n for any remaining references
+// Mock useLocaleSetter
 vi.mock("../lib/i18n", () => ({
-  useLocaleControl: () => ({ locale: "en" as const, setLocale: vi.fn() }),
+  useLocaleSetter: () => vi.fn(),
 }));
 
 // Mock next/image component for tests

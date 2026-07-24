@@ -5,6 +5,7 @@ import AppLayout from "../AppLayout";
 
 vi.mock("next-intl", () => ({
     useTranslations: () => (key: string) => key,
+    useLocale: () => "en",
 }));
 
 const mockUseAuth = vi.fn();

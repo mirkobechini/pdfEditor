@@ -5,6 +5,7 @@ import AdminPage from "../page";
 
 vi.mock("next-intl", () => ({
     useTranslations: () => (key: string) => key,
+    useLocale: () => "en",
 }));
 
 const mockUseAuth = vi.fn();
