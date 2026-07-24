@@ -56,7 +56,7 @@ pdf-editor/
 | 0   | **Prototipo UI/UX Penpot**         | ⏸ Pausa  | —                                         | —          |
 | 1   | **Setup workspace Tauri**          | ✅ FATTA | `feature/406-desktop-setup-tauri`         | —          |
 | 2   | **PyInstaller sidecar (PoC)**      | ✅ FATTA | `feature/408-desktop-sidecar-pyinstaller` | #1         |
-| 3   | **Frontend adapter desktop**       | ~1h      | `feature/XXX-desktop-frontend-adapter`    | #1         |
+| 3   | **Frontend adapter desktop**       | ✅ FATTA | `feature/410-desktop-frontend-adapter` | #1         |
 | 4   | **Auth offline + safeStorage**     | ~1-1.5h  | `feature/XXX-desktop-offline-auth`        | #3         |
 | 5a  | **Cloud sync — backend endpoints** | ~1h      | `feature/XXX-cloud-sync-backend`          | #4         |
 | 5b  | **Cloud sync — frontend UI**       | ~1h      | `feature/XXX-cloud-sync-frontend`         | #5a        |
@@ -102,13 +102,14 @@ pdf-editor/
 - Usare `pyinstaller --onedir` per debug, `--onefile` per release
 - Il binary finisce in `desktop/src-tauri/binaries/`
 
-### 3. Frontend adapter desktop (1h)
+### 3. Frontend adapter desktop (1h) — ✅ FATTA (issue #410, PR #411)
 
-- [ ] Modificare `api.ts` per rilevare ambiente desktop (`__TAURI__`)
-- [ ] Se desktop: base URL → `http://127.0.0.1:<PORTA>` (sidecar locale)
-- [ ] Se desktop: usare Tauri API per file dialogs (al posto di `<input type=file>`)
-- [ ] Se desktop: drag & drop nativo via Tauri (API)
-- [ ] Verificare che `output: "export"` continui a funzionare
+- [x] Modificare `api.ts` per rilevare ambiente desktop (`__TAURI__`) via `getApiBaseUrl()`
+- [x] Se desktop: base URL → `http://127.0.0.1:7723` (sidecar locale)
+- [x] Creare `tauri.ts` utility per detection e Tauri invoke
+- [x] Se desktop: usare Tauri API per file dialogs via `DesktopFileDialog` (frontend-overlay)
+- [x] Se desktop: sync-overlay copia i componenti desktop in frontend/ a build time
+- [x] Verificare che `output: "export"` continui a funzionare
 
 **Output:** Frontend che funziona sia su browser che in webview Tauri
 
