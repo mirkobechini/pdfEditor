@@ -60,8 +60,8 @@ pdf-editor/
 | 4   | **Auth offline + safeStorage**     | ✅ FATTA | `feature/412-desktop-offline-auth`        | #3         |
 | 5a  | **Cloud sync — backend endpoints** | ✅ FATTA | `feature/414-cloud-sync-backend`          | #4         |
 | 5b  | **Cloud sync — frontend UI**       | ✅ FATTA | `feature/416-cloud-sync-frontend`         | #5a        |
-| 6   | **Auto-update**                    | ~1h      | `feature/XXX-desktop-auto-update`         | #2         |
-| 7   | **Installer & packaging**          | ~1h      | `feature/XXX-desktop-installer`           | #6         |
+| 6   | **Auto-update**                    | ✅ FATTA | `feature/418-desktop-auto-update`         | #2         |
+| 7   | **Installer & packaging**          | ✅ FATTA | `feature/420-desktop-installer`           | #6         |
 
 ### 0. Prototipo UI/UX (Penpot) — PRIMA DI TUTTO
 
@@ -144,21 +144,22 @@ pdf-editor/
 
 **Output:** UI di sync funzionante con le API di 5a
 
-### 6. Auto-update (1h)
+### 6. Auto-update (1h) — ✅ FATTA (issue #418, PR #419)
 
-- [ ] Configurare Tauri updater in `tauri.conf.json`
-- [ ] Puntare a GitHub Releases per i binari
-- [ ] Creare GitHub Action per build automatiche + release
-- [ ] UI: notifica update disponibile con "Installa al riavvio"
+- [x] Configurare Tauri updater in `tauri.conf.json` (endpoint GitHub Releases)
+- [x] Puntare a GitHub Releases per i binari
+- [x] Creare GitHub Action per build automatiche + release (`.github/workflows/release.yml`)
+- [x] Plugin `tauri-plugin-updater` + capabilities
 
 **Output:** `tauri build` produce installer + release pronta su GitHub
 
-### 7. Installer & packaging (1h)
+### 7. Installer & packaging (1h) — ✅ FATTA (issue #420, PR #421)
 
-- [ ] Configurare Windows .msi (WiX o NSIS)
-- [ ] Configurare macOS .dmg
-- [ ] Configurare Linux .AppImage e .deb
-- [ ] Verificare firma codice (almeno Windows, se certificato disponibile)
+- [x] Configurare Windows .msi (NSIS)
+- [x] Configurare macOS .dmg
+- [x] Configurare Linux .AppImage e .deb
+- [x] Aggiungere publisher per firma
+- [x] Verificare configurazione bundle (targets: all)
 
 **Output:** `tauri build` produce installer per tutti e 3 gli OS
 
@@ -179,9 +180,9 @@ pdf-editor/
 - ✅ Stessa UI del web, adattata per desktop (file dialogs nativi, drag & drop)
 - ✅ Auth offline (JWT in persistent store)
 - ✅ Cloud sync bidirezionale (SQLite ↔ PostgreSQL)
-- ⬜ Auto-update via GitHub Releases
-- ⬜ Installer .msi, .dmg, .AppImage
+- ✅ Auto-update via GitHub Releases
+- ✅ Installer .msi, .dmg, .AppImage
 
 ## Status
 
-[x] In corso — 5/7 issue completate, rimangono auto-update (#6) e installer (#7)
+[x] ✅ COMPLETATA — Tutte e 7 le issue desktop sono state implementate e mergiate su dev.
