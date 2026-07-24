@@ -9,10 +9,8 @@ type Locale = "it" | "en";
 
 const messages: Record<Locale, typeof en> = { en, it };
 
-const LocaleCtx = React.createContext<{
-  locale: Locale;
-  setLocale: (locale: Locale) => void;
-}>({ locale: "it", setLocale: () => { } });
+// Context minimale solo per cambiare lingua (next-intl non ha un setLocale built-in)
+const LocaleSetterCtx = React.createContext<(locale: Locale) => void>(() => { });
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = React.useState<Locale>("it");
@@ -28,14 +26,14 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <LocaleCtx.Provider value={{ locale, setLocale }}>
+    <LocaleSetterCtx.Provider value={setLocale}>
       <NextIntlClientProvider locale={locale} messages={messages[locale]} timeZone="Europe/Rome">
         {children}
       </NextIntlClientProvider>
-    </LocaleCtx.Provider>
+    </LocaleSetterCtx.Provider>
   );
 }
 
-export function useLocaleControl() {
-  return React.useContext(LocaleCtx);
+export function useLocaleSetter() {
+  return React.useContext(LocaleSetterCtx);
 }
