@@ -51,17 +51,17 @@ pdf-editor/
 
 ## Issue (1 issue = 1 branch, max ~1-1.5h ciascuna)
 
-| #   | Issue                              | Stima   | Branch                                    | Dipende da |
-| --- | ---------------------------------- | ------- | ----------------------------------------- | ---------- |
-| 0   | **Prototipo UI/UX Penpot**         | ~30min  | `feature/XXX-prototipo-penpot-desktop`    | —          |
-| 1   | **Setup workspace Tauri**          | ~30min  | `feature/XXX-desktop-setup-tauri`         | #0         |
-| 2   | **PyInstaller sidecar (PoC)**      | ~1.5h   | `feature/XXX-desktop-sidecar-pyinstaller` | #1         |
-| 3   | **Frontend adapter desktop**       | ~1h     | `feature/XXX-desktop-frontend-adapter`    | #1         |
-| 4   | **Auth offline + safeStorage**     | ~1-1.5h | `feature/XXX-desktop-offline-auth`        | #3         |
-| 5a  | **Cloud sync — backend endpoints** | ~1h     | `feature/XXX-cloud-sync-backend`          | #4         |
-| 5b  | **Cloud sync — frontend UI**       | ~1h     | `feature/XXX-cloud-sync-frontend`         | #5a        |
-| 6   | **Auto-update**                    | ~1h     | `feature/XXX-desktop-auto-update`         | #2         |
-| 7   | **Installer & packaging**          | ~1h     | `feature/XXX-desktop-installer`           | #6         |
+| #   | Issue                              | Stima    | Branch                                    | Dipende da |
+| --- | ---------------------------------- | -------- | ----------------------------------------- | ---------- |
+| 0   | **Prototipo UI/UX Penpot**         | ⏸ Pausa  | —                                         | —          |
+| 1   | **Setup workspace Tauri**          | ✅ FATTA | `feature/406-desktop-setup-tauri`         | —          |
+| 2   | **PyInstaller sidecar (PoC)**      | ~1.5h    | `feature/XXX-desktop-sidecar-pyinstaller` | #1         |
+| 3   | **Frontend adapter desktop**       | ~1h      | `feature/XXX-desktop-frontend-adapter`    | #1         |
+| 4   | **Auth offline + safeStorage**     | ~1-1.5h  | `feature/XXX-desktop-offline-auth`        | #3         |
+| 5a  | **Cloud sync — backend endpoints** | ~1h      | `feature/XXX-cloud-sync-backend`          | #4         |
+| 5b  | **Cloud sync — frontend UI**       | ~1h      | `feature/XXX-cloud-sync-frontend`         | #5a        |
+| 6   | **Auto-update**                    | ~1h      | `feature/XXX-desktop-auto-update`         | #2         |
+| 7   | **Installer & packaging**          | ~1h      | `feature/XXX-desktop-installer`           | #6         |
 
 ### 0. Prototipo UI/UX (Penpot) — PRIMA DI TUTTO
 
