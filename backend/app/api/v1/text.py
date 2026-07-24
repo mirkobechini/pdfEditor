@@ -27,6 +27,7 @@ def replace_pdf_text(
             search=req.search,
             replace=req.replace,
             occurrence=req.occurrence,
+            output_filename=req.output_filename,
         )
     except ValueError as e:
         raise error_response(ErrorCode.VALIDATION_ERROR, str(e), status_code=status.HTTP_400_BAD_REQUEST)
