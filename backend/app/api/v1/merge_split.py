@@ -26,7 +26,7 @@ def merge_pdfs(
         raise error_response(ErrorCode.MERGE_TOO_FEW, "At least 2 PDF IDs are required to merge")
 
     try:
-        pdf = service.merge(req.pdf_ids, current_user.id)
+        pdf = service.merge(req.pdf_ids, current_user.id, output_filename=req.output_filename)
     except ValueError:
         raise error_response(ErrorCode.MERGE_TOO_FEW, "At least 2 PDFs are required to merge")
 
@@ -48,12 +48,12 @@ def split_pdf(
         if not req.ranges or len(req.ranges) == 0:
             raise error_response(ErrorCode.SPLIT_INVALID_RANGE, "Ranges are required when mode is 'range'")
         try:
-            results = service.split_by_ranges(pdf_id, current_user.id, req.ranges)
+            results = service.split_by_ranges(pdf_id, current_user.id, req.ranges, output_filename=req.output_filename)
         except ValueError:
             raise error_response(ErrorCode.SPLIT_INVALID_RANGE, "Invalid page range specified")
     else:
         try:
-            results = service.split_every_page(pdf_id, current_user.id)
+            results = service.split_every_page(pdf_id, current_user.id, output_filename=req.output_filename)
         except ValueError:
             raise error_response(ErrorCode.SPLIT_INVALID_RANGE, "Invalid page range specified")
 

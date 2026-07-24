@@ -191,19 +191,30 @@ export class ApiClient {
   }
 
   // Merge / Split
-  async mergePdfs(pdfIds: string[]): Promise<PdfDocument> {
+  async mergePdfs(
+    pdfIds: string[],
+    outputFilename?: string,
+  ): Promise<PdfDocument> {
+    const body: Record<string, unknown> = { pdf_ids: pdfIds };
+    if (outputFilename) body.output_filename = outputFilename;
     const res = await this._fetch(`${this.baseUrl}/pdfs/merge`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ pdf_ids: pdfIds }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
-  async splitPdf(id: string, mode: "every" | "range", ranges?: string[]) {
+  async splitPdf(
+    id: string,
+    mode: "every" | "range",
+    ranges?: string[],
+    outputFilename?: string,
+  ) {
     const body: Record<string, unknown> = { mode };
     if (ranges) body.ranges = ranges;
+    if (outputFilename) body.output_filename = outputFilename;
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/split`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
@@ -214,21 +225,33 @@ export class ApiClient {
   }
 
   // Reorder / Remove pages
-  async reorderPages(id: string, pageOrder: number[]): Promise<PdfDocument> {
+  async reorderPages(
+    id: string,
+    pageOrder: number[],
+    outputFilename?: string,
+  ): Promise<PdfDocument> {
+    const body: Record<string, unknown> = { page_order: pageOrder };
+    if (outputFilename) body.output_filename = outputFilename;
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/reorder`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ page_order: pageOrder }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
   }
 
-  async removePages(id: string, pageNumbers: number[]): Promise<PdfDocument> {
+  async removePages(
+    id: string,
+    pageNumbers: number[],
+    outputFilename?: string,
+  ): Promise<PdfDocument> {
+    const body: Record<string, unknown> = { page_numbers: pageNumbers };
+    if (outputFilename) body.output_filename = outputFilename;
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/remove-pages`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify({ page_numbers: pageNumbers }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
@@ -240,9 +263,11 @@ export class ApiClient {
     search: string,
     replace: string,
     occurrence?: number,
+    outputFilename?: string,
   ): Promise<PdfDocument> {
     const body: Record<string, unknown> = { search, replace };
     if (occurrence !== undefined) body.occurrence = occurrence;
+    if (outputFilename) body.output_filename = outputFilename;
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/replace-text`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },

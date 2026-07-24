@@ -37,7 +37,9 @@
     "cancel": "Annulla",
     "merge": "Unisci",
     "merging": "Unione in corso...",
-    "failed": "Unione fallita"
+    "failed": "Unione fallita",
+    "outputName": "Nome file output",
+    "outputNameHint": "Lascia vuoto per nome automatico"
   },
   "splitDialog": {
     "title": "Dividi PDF",
@@ -54,7 +56,9 @@
     "cancel": "Annulla",
     "split": "Dividi",
     "splitting": "Divisione in corso...",
-    "failed": "Divisione fallita"
+    "failed": "Divisione fallita",
+    "outputName": "Nome file output",
+    "outputNameHint": "Lascia vuoto per nome automatico"
   },
   "reorderDialog": {
     "title": "Riordina Pagine",
@@ -69,7 +73,9 @@
     "cancel": "Annulla",
     "reorder": "Riordina",
     "reordering": "Riordino in corso...",
-    "failed": "Riordino fallito"
+    "failed": "Riordino fallito",
+    "outputName": "Nome file output",
+    "outputNameHint": "Lascia vuoto per nome automatico"
   },
   "removeDialog": {
     "title": "Rimuovi Pagine",
@@ -84,7 +90,9 @@
     "removing": "Rimozione in corso...",
     "failed": "Rimozione fallita",
     "confirmDelete": "Sì, Elimina",
-    "confirmMessage": "Sei sicuro di voler rimuovere le pagine selezionate? Verrà creato un nuovo file PDF."
+    "confirmMessage": "Sei sicuro di voler rimuovere le pagine selezionate? Verrà creato un nuovo file PDF.",
+    "outputName": "Nome file output",
+    "outputNameHint": "Lascia vuoto per nome automatico"
   },
   "metadata": {
     "title": "Metadati PDF",
@@ -113,7 +121,9 @@
     "replace": "Sostituisci",
     "replacing": "Sostituzione in corso...",
     "cancel": "Annulla",
-    "replaceFailed": "Sostituzione testo fallita"
+    "replaceFailed": "Sostituzione testo fallita",
+    "outputName": "Nome file output",
+    "outputNameHint": "Lascia vuoto per nome automatico"
   },
   "protectDialog": {
     "title": "Proteggi PDF con Password",

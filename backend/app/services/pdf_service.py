@@ -149,7 +149,7 @@ class PdfService:
         delete_pdf(file_uuid)
         return True
 
-    def reorder(self, pdf_id: str, user_id: str, page_order: list[int]) -> PdfDocument:
+    def reorder(self, pdf_id: str, user_id: str, page_order: list[int], output_filename: str | None = None) -> PdfDocument:
         """Reorder pages of a PDF. page_order is 1-based."""
         self._create_snapshot(pdf_id, user_id)
         import fitz
@@ -183,7 +183,10 @@ class PdfService:
         source.close()
 
         file_uuid = save_pdf(out_bytes)
-        new_name = f"{pdf.original_filename.replace('.pdf', '')}_reordered.pdf"
+        if output_filename:
+            new_name = output_filename if output_filename.endswith(".pdf") else output_filename + ".pdf"
+        else:
+            new_name = f"{pdf.original_filename.replace('.pdf', '')}_reordered.pdf"
 
         new_pdf = PdfDocument(
             original_filename=new_name,
@@ -194,7 +197,7 @@ class PdfService:
         )
         return self.repo.create(new_pdf)
 
-    def remove_pages(self, pdf_id: str, user_id: str, page_numbers: list[int]) -> PdfDocument:
+    def remove_pages(self, pdf_id: str, user_id: str, page_numbers: list[int], output_filename: str | None = None) -> PdfDocument:
         """Remove specific pages from a PDF. page_numbers is 1-based."""
         self._create_snapshot(pdf_id, user_id)
         import fitz
@@ -228,7 +231,10 @@ class PdfService:
         source.close()
 
         file_uuid = save_pdf(out_bytes)
-        new_name = f"{pdf.original_filename.replace('.pdf', '')}_pages_removed.pdf"
+        if output_filename:
+            new_name = output_filename if output_filename.endswith(".pdf") else output_filename + ".pdf"
+        else:
+            new_name = f"{pdf.original_filename.replace('.pdf', '')}_pages_removed.pdf"
 
         new_pdf = PdfDocument(
             original_filename=new_name,
@@ -246,6 +252,7 @@ class PdfService:
         search: str,
         replace: str,
         occurrence: int | None = None,
+        output_filename: str | None = None,
     ) -> PdfDocument:
         """Find and replace text in a PDF. If occurrence is None, replaces all."""
         self._create_snapshot(pdf_id, user_id)
@@ -298,7 +305,10 @@ class PdfService:
             source.close()
 
         file_uuid = save_pdf(out_bytes)
-        new_name = f"{pdf.original_filename.replace('.pdf', '')}_text_replaced.pdf"
+        if output_filename:
+            new_name = output_filename if output_filename.endswith(".pdf") else output_filename + ".pdf"
+        else:
+            new_name = f"{pdf.original_filename.replace('.pdf', '')}_text_replaced.pdf"
 
         new_pdf = PdfDocument(
             original_filename=new_name,

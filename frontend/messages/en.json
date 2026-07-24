@@ -37,7 +37,9 @@
     "cancel": "Cancel",
     "merge": "Merge",
     "merging": "Merging...",
-    "failed": "Merge failed"
+    "failed": "Merge failed",
+    "outputName": "Output filename",
+    "outputNameHint": "Leave empty for auto-generated name"
   },
   "splitDialog": {
     "title": "Split PDF",
@@ -54,7 +56,9 @@
     "cancel": "Cancel",
     "split": "Split",
     "splitting": "Splitting...",
-    "failed": "Split failed"
+    "failed": "Split failed",
+    "outputName": "Output filename",
+    "outputNameHint": "Leave empty for auto-generated name"
   },
   "reorderDialog": {
     "title": "Reorder Pages",
@@ -69,7 +73,9 @@
     "cancel": "Cancel",
     "reorder": "Reorder",
     "reordering": "Reordering...",
-    "failed": "Reorder failed"
+    "failed": "Reorder failed",
+    "outputName": "Output filename",
+    "outputNameHint": "Leave empty for auto-generated name"
   },
   "removeDialog": {
     "title": "Remove Pages",
@@ -113,7 +119,9 @@
     "replace": "Replace",
     "replacing": "Replacing...",
     "cancel": "Cancel",
-    "replaceFailed": "Failed to replace text"
+    "replaceFailed": "Failed to replace text",
+    "outputName": "Output filename",
+    "outputNameHint": "Leave empty for auto-generated name"
   },
   "protectDialog": {
     "title": "Protect PDF with Password",

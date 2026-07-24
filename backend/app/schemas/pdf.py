@@ -35,6 +35,7 @@ class MergeRequest(BaseModel):
     """Schema for merge request — list of PDF IDs to merge."""
 
     pdf_ids: list[str]
+    output_filename: str | None = None  # User-chosen filename; fallback to auto-generated
 
 
 class SplitRequest(BaseModel):
@@ -42,6 +43,7 @@ class SplitRequest(BaseModel):
 
     mode: str  # "range" or "every"
     ranges: list[str] | None = None  # e.g. ["1-3", "5-7"] — required when mode="range"
+    output_filename: str | None = None  # User-chosen filename; fallback to auto-generated
 
 
 class SplitResponse(BaseModel):
@@ -54,12 +56,14 @@ class ReorderRequest(BaseModel):
     """Schema for reorder request — new page order (1-based)."""
 
     page_order: list[int]
+    output_filename: str | None = None  # User-chosen filename; fallback to auto-generated
 
 
 class RemovePagesRequest(BaseModel):
     """Schema for remove-pages request — page numbers to remove (1-based)."""
 
     page_numbers: list[int]
+    output_filename: str | None = None  # User-chosen filename; fallback to auto-generated
 
 
 class ReplaceTextRequest(BaseModel):
@@ -68,6 +72,7 @@ class ReplaceTextRequest(BaseModel):
     search: str
     replace: str
     occurrence: int | None = None  # None = replace all
+    output_filename: str | None = None  # User-chosen filename; fallback to auto-generated
 
 
 class TextResponse(BaseModel):

@@ -28,6 +28,7 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
   const [toRemove, setToRemove] = React.useState<Set<number>>(new Set());
   const [removing, setRemoving] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [outputName, setOutputName] = React.useState("");
   const [thumbnails, setThumbnails] = React.useState<PageThumbnail[]>([]);
   const [loading, setLoading] = React.useState(false);
   const pdfJsLoaded = usePdfJs();
@@ -100,7 +101,7 @@ export default function RemoveDialog({ open, onClose, selectedId, selectedName, 
     setError("");
     try {
       const pageNumbers = Array.from(toRemove).map((i) => i + 1);
-      const result = await api.removePages(selectedId, pageNumbers);
+      const result = await api.removePages(selectedId, pageNumbers, outputName.trim() || undefined);
       const blob = await api.downloadPdf(result.id);
       downloadBlob(blob, `trimmed_${selectedName}`);
       onSuccess?.();

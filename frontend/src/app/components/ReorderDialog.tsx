@@ -29,6 +29,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
   const [loading, setLoading] = React.useState(false);
   const [reordering, setReordering] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [outputName, setOutputName] = React.useState("");
   const [dragIndex, setDragIndex] = React.useState<number | null>(null);
   const [dropIndex, setDropIndex] = React.useState<number | null>(null);
   const pdfJsLoaded = usePdfJs();
@@ -103,7 +104,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
     setReordering(true);
     setError("");
     try {
-      const result = await api.reorderPages(selectedId, order);
+      const result = await api.reorderPages(selectedId, order, outputName.trim() || undefined);
       const blob = await api.downloadPdf(result.id);
       downloadBlob(blob, `reordered_${selectedName}`);
       onSuccess?.();
@@ -231,6 +232,18 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
         )}
 
         {error && <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">{error}</div>}
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">{t("outputName")}</label>
+          <input
+            type="text"
+            value={outputName}
+            onChange={(e) => setOutputName(e.target.value)}
+            placeholder="reordered.pdf"
+            className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-xs text-gray-400 mt-1">{t("outputNameHint")}</p>
+        </div>
 
         <div className="flex justify-end gap-2 mt-auto pt-2 border-t dark:border-gray-700">
           <button

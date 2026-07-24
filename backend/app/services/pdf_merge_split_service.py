@@ -25,7 +25,7 @@ class PdfMergeSplitService:
         path = get_pdf_path(file_uuid)
         return path.read_bytes() if path else None
 
-    def merge(self, pdf_ids: list[str], user_id: str) -> PdfDocument:
+    def merge(self, pdf_ids: list[str], user_id: str, output_filename: str | None = None) -> PdfDocument:
         """Merge multiple PDFs into one."""
         if len(pdf_ids) < 2:
             raise ValueError("At least 2 PDFs are required to merge")
@@ -55,7 +55,10 @@ class PdfMergeSplitService:
                 d.close()
 
         file_uuid = save_pdf(output_bytes)
-        merge_name = f"merged_{'_'.join(n.replace('.pdf', '') for n in source_names)}.pdf"
+        if output_filename:
+            merge_name = output_filename if output_filename.endswith(".pdf") else output_filename + ".pdf"
+        else:
+            merge_name = f"merged_{'_'.join(n.replace('.pdf', '') for n in source_names)}.pdf"
 
         pdf = PdfDocument(
             original_filename=merge_name,
@@ -66,7 +69,7 @@ class PdfMergeSplitService:
         )
         return self.repo.create(pdf)
 
-    def split_by_ranges(self, pdf_id: str, user_id: str, ranges: list[str]) -> list[PdfDocument]:
+    def split_by_ranges(self, pdf_id: str, user_id: str, ranges: list[str], output_filename: str | None = None) -> list[PdfDocument]:
         """Split a PDF by page ranges."""
         pdf = self._get_user_pdf(pdf_id, user_id)
         content = self._get_file_content(pdf)
@@ -75,7 +78,7 @@ class PdfMergeSplitService:
         source = fitz.open(stream=content, filetype="pdf")
         results: list[PdfDocument] = []
         try:
-            for r in ranges:
+            for i, r in enumerate(ranges):
                 parts = r.split("-")
                 if len(parts) != 2:
                     raise ValueError(f"Invalid range: {r}. Use format 'start-end'")
@@ -88,7 +91,11 @@ class PdfMergeSplitService:
                 out_bytes = output.tobytes()
                 output.close()
                 file_uuid = save_pdf(out_bytes)
-                range_name = f"{pdf.original_filename.replace('.pdf', '')}_pages_{r}.pdf"
+                if output_filename:
+                    base = output_filename.replace(".pdf", "")
+                    range_name = f"{base}_part_{i + 1}.pdf"
+                else:
+                    range_name = f"{pdf.original_filename.replace('.pdf', '')}_pages_{r}.pdf"
                 new_pdf = PdfDocument(
                     original_filename=range_name,
                     storage_filename=f"{file_uuid}.pdf",
@@ -101,7 +108,7 @@ class PdfMergeSplitService:
             source.close()
         return results
 
-    def split_every_page(self, pdf_id: str, user_id: str) -> list[PdfDocument]:
+    def split_every_page(self, pdf_id: str, user_id: str, output_filename: str | None = None) -> list[PdfDocument]:
         """Split a PDF into one file per page."""
         pdf = self._get_user_pdf(pdf_id, user_id)
         content = self._get_file_content(pdf)
@@ -116,7 +123,11 @@ class PdfMergeSplitService:
                 out_bytes = output.tobytes()
                 output.close()
                 file_uuid = save_pdf(out_bytes)
-                page_name = f"{pdf.original_filename.replace('.pdf', '')}_page_{page_num + 1}.pdf"
+                if output_filename:
+                    base = output_filename.replace(".pdf", "")
+                    page_name = f"{base}_page_{page_num + 1}.pdf"
+                else:
+                    page_name = f"{pdf.original_filename.replace('.pdf', '')}_page_{page_num + 1}.pdf"
                 new_pdf = PdfDocument(
                     original_filename=page_name,
                     storage_filename=f"{file_uuid}.pdf",
