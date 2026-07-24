@@ -52,6 +52,10 @@ For every **feature**, create an issue with:
 - **Body**: detailed description, acceptance criteria, technical notes
 - **Labels**: relevant labels (e.g. `backend`, `frontend`, `bug`)
 
+> ⚠️ **Prima di creare un issue per un bug sospetto, leggere SEMPRE il codice reale.**
+> Non basarsi su appunti, KNOWN_ISSUES.md, ADR.md, o `.specs/plans/` — questi file possono essere datati.
+> Verificare che il bug sia effettivamente presente nel codice prima di aprire l'issue.
+
 Use the `mcp_gitkraken_cli_issues_create` tool (or project's issue tracker). The issue number determines the branch name.
 
 > **Right after creating the issue**, write in the issue body the **complete list of expected atomic commits** (e.g. `feat(api): add User model`, `feat(api): add POST /auth/register`, `test(api): add auth tests`). This list serves as a roadmap — each commit must be executed exactly as planned before moving to the next. If an extra commit becomes necessary during implementation, add it to the list.
