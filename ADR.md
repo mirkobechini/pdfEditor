@@ -107,7 +107,7 @@ I 4 test in `tests/test_edge_cases.py` che fallivano in locale per `channel_bind
 | 14  | **Nessun integration/E2E test**                                   | Medio   | ⬜ Playwright futuro (T7)                                 |
 | 19  | **Find & Replace non funziona**                                   | Medio   | ⬜ Inline text editor (feature #11)                       |
 | 385 | **Hotfix: Landing page 401 loop** — AuthProvider loop infinito    | Alta    | ✅ Risolto (commit 53ddddc in dev) — guard sessionStorage |
-| 404 | **i18n: provider custom + next-intl coesistono** — rischio sync   | Basso   | ⬜ Unificare sotto next-intl puro                         |
+| 404 | **i18n: provider custom + next-intl coesistono** — rischio sync   | Basso   | ✅ Risolto (PR #401) — useLocale() + useLocaleSetter()    |
 | 407 | **Content-Disposition sanitization** — possibile XSS via filename | Basso   | ✅ Già parzialmente sanitizzato (PR #208)                 |
 
 ## Migrazioni infrastrutturali

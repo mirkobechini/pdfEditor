@@ -20,17 +20,15 @@
 **Descrizione:** L'endpoint `POST /pdfs/{id}/replace-text` accetta `search + replace + occurrence` ma il risultato non è affidabile. PyMuPDF text search ha limitazioni con PDF complessi (font embedded, ligature, spaziature variabili).  
 **Risoluzione prevista:** Sostituire con inline text editor (`.specs/plans/feature-inline-text-editor.md`).
 
-### B3 — i18n: provider custom + next-intl coesistono
+### B3 — i18n: provider custom + next-intl coesistono ✅ **Risolto**
 
 **File:** `frontend/src/app/lib/i18n.tsx`  
-**Descrizione:** `next-intl` è installato in `package.json` e usato via `NextIntlClientProvider`, ma è avvolto da un `I18nProvider` custom con `LocaleCtx` e `useLocaleControl()`. Rischio che parti dell'UI usino un sistema e altre l'altro, con traduzioni non sincronizzate.  
-**Risoluzione prevista:** Unificare sotto `next-intl` puro, rimuovendo il provider custom.
+**Risoluzione:** Sostituito `useLocaleControl()`/`LocaleCtx` con `useLocale()` (next-intl) + `useLocaleSetter()` minimale. PR #401.
 
-### B6 — Content-Disposition: possibile XSS via filename
+### B6 — Content-Disposition: possibile XSS via filename ✅ **Risolto**
 
-**File:** `backend/app/core/security.py`  
-**Descrizione:** Il `Content-Disposition` header per il download usa `original_filename` fornito dall'utente. Parzialmente sanitizzato in PR #208, ma non c'è test esplicito per caratteri pericolosi (`;`, `\n`, `"`).  
-**Risoluzione prevista:** Aggiungere sanitizzazione rigorosa e test di sicurezza.
+**File:** `backend/app/core/sanitize.py`  
+**Risoluzione:** Rafforzata `sanitize_filename()` con allowlist ASCII sicura. PR #399.
 
 ---
 
