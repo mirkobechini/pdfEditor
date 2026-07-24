@@ -69,6 +69,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | **Desktop: auto-update via GitHub Releases**        | Download manuale            | Tauri updater built-in: controlla GitHub Releases, scarica e installa in automatico.                                                                                                                                                                                              |
 | **Desktop: PyMuPDF con PyInstaller**                | pdf-lib JS, embedded Python | Si tenta PyInstaller con `--hidden-import=fitz`. Fallback: embedded Python (embeddable zip) se i binding C danno problemi.                                                                                                                                                        |
 | **Desktop: cartella `desktop/` dedicata**           | Nella root                  | Separazione netta: `backend/`, `frontend/`, `desktop/`. Il codice Tauri (Rust, sidecar, icons, updater) risiede in `desktop/src-tauri/`.                                                                                                                                          |
+| **Desktop: frontend-overlay per componenti nativi** | Modificare i file frontend  | `desktop/frontend-overlay/` contiene componenti Tauri-specifici. A build time vengono copiati in `frontend/` prima di `npm run build`. Il frontend rimane pulito, i componenti desktop restano in `desktop/`.                                                                      |
 
 ## Vincoli
 
