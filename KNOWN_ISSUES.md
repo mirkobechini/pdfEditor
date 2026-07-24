@@ -52,10 +52,20 @@
 
 | Pacchetto                        | Versione       | Warning                       | Impatto                                                       |
 | -------------------------------- | -------------- | ----------------------------- | ------------------------------------------------------------- |
-| `httpx` + `starlette.testclient` | —              | `StarletteDeprecationWarning` | Nessuno — `httpx2` non esiste ancora                          |
+| `httpx` + `starlette.testclient` | —              | `StarletteDeprecationWarning` | **Non fixabile** — `httpx2` non esiste ancora                 |
 | `sharp`                          | < 0.35.0       | CVE (High)                    | Dipendenza interna Next.js 16.2.11, in attesa di fix upstream |
 | `brace-expansion`                | 1.1.16 / 5.0.8 | CVE-2026-13149 (High)         | DevDependency (eslint)                                        |
 | `postcss`                        | < 8.5.10       | CVE-2026-41305 (Medium)       | DevDependency via Next.js, non raggiungibile in produzione    |
+
+### Vulnerabilità risolte (non più segnalate da Dependabot)
+
+| Pacchetto          | Fix                             |
+| ------------------ | ------------------------------- |
+| `js-yaml`          | PR #392 (bump 4.2.0 → 4.3.0)    |
+| `next`             | PR #393 (bump 16.2.9 → 16.2.11) |
+| `python-multipart` | PR #395 (bump 0.0.31 → 0.0.32)  |
+| `PyJWT`            | Già a 2.13.0 (fixato)           |
+| `python-jose`      | Rimosso (non in uso)            |
 
 ---
 
@@ -64,3 +74,4 @@
 - I bug contrassegnati con **piano** hanno un file `.specs/plans/` corrispondente con dettagli e implementazione step-by-step.
 - Questo file va aggiornato quando un bug viene fixato o quando se ne scopre uno nuovo.
 - I fix risolti vanno spostati in `CHANGELOG.md`.
+- Le **lezioni apprese** (QA, migrazioni, CSRF/CORS, security audit) sono in [`LESSONS_LEARNED.md`](./LESSONS_LEARNED.md).
