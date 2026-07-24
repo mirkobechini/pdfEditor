@@ -1,12 +1,12 @@
 use std::sync::Mutex;
 use tauri::Manager;
+use tauri_plugin_store::StoreExt;
 
 struct SidecarState {
     pub child_pid: Mutex<Option<u32>>,
 }
 
 /// Spawn the FastAPI sidecar process.
-/// Called automatically at app startup.
 fn start_sidecar(app: &tauri::App) {
     let sidecar = app.shell().sidecar("fastapi-sidecar")
         .expect("failed to create sidecar command");
@@ -19,7 +19,6 @@ fn start_sidecar(app: &tauri::App) {
     log::info!("FastAPI sidecar started (PID: {})", pid);
     app.state::<SidecarState>().child_pid.lock().unwrap().replace(pid);
 
-    // Log sidecar stdout/stderr
     tauri::async_runtime::spawn(async move {
         while let Some(event) = rx.recv().await {
             match event {
@@ -61,11 +60,46 @@ fn get_sidecar_port() -> u16 {
     7723
 }
 
+/// Store a JWT token in the desktop app's persistent store.
+#[tauri::command]
+fn store_jwt(app: tauri::AppHandle, token: String) -> Result<(), String> {
+    let store = app.store("auth.json").map_err(|e| format!("Failed to open store: {}", e))?;
+    store.set("jwt", serde_json::Value::String(token));
+    store.save().map_err(|e| format!("Failed to save store: {}", e))?;
+    log::info!("JWT stored successfully");
+    Ok(())
+}
+
+/// Load the stored JWT token from the desktop app's persistent store.
+#[tauri::command]
+fn load_jwt(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let store = app.store("auth.json").map_err(|e| format!("Failed to open store: {}", e))?;
+    let value = store.get("jwt");
+    match value {
+        Some(serde_json::Value::String(token)) => {
+            log::info!("JWT loaded from store");
+            Ok(Some(token.clone()))
+        }
+        _ => Ok(None),
+    }
+}
+
+/// Delete the stored JWT token from the desktop app's persistent store.
+#[tauri::command]
+fn delete_jwt(app: tauri::AppHandle) -> Result<(), String> {
+    let store = app.store("auth.json").map_err(|e| format!("Failed to open store: {}", e))?;
+    store.delete("jwt");
+    store.save().map_err(|e| format!("Failed to save store: {}", e))?;
+    log::info!("JWT deleted from store");
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_store::Builder::default().build())
         .manage(SidecarState {
             child_pid: Mutex::new(None),
         })
@@ -78,7 +112,12 @@ pub fn run() {
                 stop_sidecar(&window.app_handle());
             }
         })
-        .invoke_handler(tauri::generate_handler![get_sidecar_port])
+        .invoke_handler(tauri::generate_handler![
+            get_sidecar_port,
+            store_jwt,
+            load_jwt,
+            delete_jwt,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
