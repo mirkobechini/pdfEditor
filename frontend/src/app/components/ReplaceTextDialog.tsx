@@ -18,6 +18,7 @@ export default function ReplaceTextDialog({ open, onClose, pdfId }: ReplaceTextD
     const [replaceAll, setReplaceAll] = React.useState(true);
     const [replacing, setReplacing] = React.useState(false);
     const [error, setError] = React.useState("");
+    const [outputName, setOutputName] = React.useState("");
 
     async function handleReplace() {
         if (!pdfId || !search.trim()) return;
@@ -87,6 +88,18 @@ export default function ReplaceTextDialog({ open, onClose, pdfId }: ReplaceTextD
                             {error}
                         </div>
                     )}
+
+                    <div>
+                        <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("outputName")}</label>
+                        <input
+                            type="text"
+                            value={outputName}
+                            onChange={(e) => setOutputName(e.target.value)}
+                            placeholder="replaced.pdf"
+                            className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">{t("outputNameHint")}</p>
+                    </div>
 
                     <div className="flex justify-end gap-2">
                         <button

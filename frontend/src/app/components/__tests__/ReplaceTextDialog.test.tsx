@@ -43,7 +43,7 @@ describe("ReplaceTextDialog", () => {
         fireEvent.change(inputs[1], { target: { value: "new" } });
         fireEvent.click(screen.getByText("replace"));
         await vi.waitFor(() => {
-            expect(api.replaceText).toHaveBeenCalledWith("pdf-1", "old", "new", undefined);
+            expect(api.replaceText).toHaveBeenCalledWith("pdf-1", "old", "new", undefined, undefined);
         });
     });
 
@@ -56,7 +56,7 @@ describe("ReplaceTextDialog", () => {
         fireEvent.click(screen.getByRole("checkbox"));
         fireEvent.click(screen.getByText("replace"));
         await vi.waitFor(() => {
-            expect(api.replaceText).toHaveBeenCalledWith("pdf-1", "old", "new", 1);
+            expect(api.replaceText).toHaveBeenCalledWith("pdf-1", "old", "new", 1, undefined);
         });
     });
 
@@ -82,7 +82,7 @@ describe("ReplaceTextDialog", () => {
     });
 
     it("shows replacing loading state", async () => {
-        (api.replaceText as any).mockImplementation(() => new Promise(() => {}));
+        (api.replaceText as any).mockImplementation(() => new Promise(() => { }));
         render(<ReplaceTextDialog {...defaultProps} />);
         const inputs = screen.getAllByRole("textbox");
         fireEvent.change(inputs[0], { target: { value: "old" } });

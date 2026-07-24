@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
 import React from "react";
 
 vi.mock("next/navigation", () => ({
@@ -58,7 +59,7 @@ describe("ResetPasswordPage", () => {
     });
 
     it("calls resetPassword and auto-login on success", async () => {
-        (api.resetPassword as any).mockResolvedValue({ id: "1", email: "test@test.com" });
+        vi.mocked(api.resetPassword).mockResolvedValue({ id: "1", email: "test@test.com", full_name: "Test", is_active: true, is_admin: false, license_tier: "free", license_tier_source: "admin", google_id: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" });
         mockLogin.mockResolvedValue(undefined);
         render(<ResetPasswordPage />);
         const inputs = screen.getAllByPlaceholderText("\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022");
@@ -71,7 +72,7 @@ describe("ResetPasswordPage", () => {
     });
 
     it("shows error message on API failure", async () => {
-        (api.resetPassword as any).mockRejectedValue(new Error("Token expired"));
+        vi.mocked(api.resetPassword).mockRejectedValue(new Error("Token expired"));
         render(<ResetPasswordPage />);
         const inputs = screen.getAllByPlaceholderText("\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022");
         fireEvent.change(inputs[0], { target: { value: "Password1" } });
@@ -81,7 +82,7 @@ describe("ResetPasswordPage", () => {
     });
 
     it("shows loading state when resetting", async () => {
-        (api.resetPassword as any).mockImplementation(() => new Promise(() => {}));
+        vi.mocked(api.resetPassword).mockImplementation(() => new Promise(() => { }));
         render(<ResetPasswordPage />);
         const inputs = screen.getAllByPlaceholderText("\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022");
         fireEvent.change(inputs[0], { target: { value: "Password1" } });
