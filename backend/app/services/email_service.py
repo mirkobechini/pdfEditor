@@ -92,6 +92,8 @@ class EmailService:
         except requests.RequestException as e:
             logger.exception("SendGrid HTTP error for %s", email)
             return False
+        except ValueError:
+            raise  # Re-raise quota exceeded error
         except Exception as e:
             logger.exception("Email Error for %s", email)
             return False
