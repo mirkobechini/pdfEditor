@@ -182,6 +182,7 @@
     "registering": "Creazione account in corso...",
     "loginFailed": "Accesso fallito",
     "invalidCredentials": "Email o password non validi",
+    "emailQuotaExceeded": "Limite email mensile raggiunto. Riprova il mese prossimo.",
     "rateLimitExceeded": "Troppi tentativi. Riprova tra un minuto.",
     "registerFailed": "Registrazione fallita",
     "passwordMismatch": "Le password non coincidono",

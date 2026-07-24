@@ -319,7 +319,10 @@ def forgot_password(
             detail="No account found with this email address.",
         )
     # Send reset email
-    EmailService.send_password_reset_email(req.email, token)
+    try:
+        EmailService.send_password_reset_email(req.email, token)
+    except ValueError as e:
+        raise error_response(ErrorCode.EMAIL_QUOTA_EXCEEDED, str(e), status_code=status.HTTP_429_TOO_MANY_REQUESTS)
     return {"message": "Password reset email sent. Check your inbox."}
 
 

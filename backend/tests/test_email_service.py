@@ -79,3 +79,12 @@ class TestEmailService:
         assert "my-token-123" in html_content
         assert "user@example.com" in sent_json["personalizations"][0]["to"][0]["email"]
         assert "PDF Editor" in sent_json["from"]["name"]
+
+    def test_send_rate_limit_raises_value_error(self, monkeypatch):
+        """Should raise ValueError when SendGrid returns 429 (quota exceeded)."""
+        monkeypatch.setattr(settings, "SMTP_PASSWORD", "sendgrid-api-key")
+        mock_response = MagicMock(status_code=429)
+
+        with patch("requests.post", return_value=mock_response):
+            with pytest.raises(ValueError, match="Monthly email quota exceeded"):
+                EmailService.send_password_reset_email("test@test.com", "abc123")
