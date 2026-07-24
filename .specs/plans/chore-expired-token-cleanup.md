@@ -51,9 +51,6 @@ Richiederebbe un worker esterno o logica di scheduling. Overengineerato per ora.
 
 ## Status
 
-- [ ] Non iniziata
-- [ ] In progress
-- [ ] In review
 - [x] ✅ Completata (merged to dev - PR #139)
 
 ## Timeline

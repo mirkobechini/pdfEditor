@@ -7,13 +7,7 @@
 
 ## 🔴 Bug aperti
 
-### B1 — Landing page 401 loop (AuthProvider)
-
-**Issue:** #385  
-**File:** `frontend/src/app/lib/auth.tsx`  
-**Piano:** `.specs/plans/hotfix-401-loop-landing-page.md`  
-**Descrizione:** `AuthProvider` chiama `getMe()` all'mount; se il componente si smonta/rimonta (StrictMode, Suspense), entra in loop infinito di 401.  
-**Fix:** Aggiungere guard `_hasChecked` persistente fuori dal ciclo React (modulo globale o sessionStorage).
+> ⚠️ **Nessun bug aperto al momento.**
 
 ---
 
@@ -31,18 +25,6 @@
 **File:** `frontend/src/app/lib/i18n.tsx`  
 **Descrizione:** `next-intl` è installato in `package.json` e usato via `NextIntlClientProvider`, ma è avvolto da un `I18nProvider` custom con `LocaleCtx` e `useLocaleControl()`. Rischio che parti dell'UI usino un sistema e altre l'altro, con traduzioni non sincronizzate.  
 **Risoluzione prevista:** Unificare sotto `next-intl` puro, rimuovendo il provider custom.
-
-### B4 — Rate limiting su upload: falsi positivi
-
-**File:** `backend/app/main.py` (slowapi config)  
-**Descrizione:** Il rate limiter è configurato su IP (5/minuto per login, etc.). Upload di file grandi (es. 49MB) richiede secondi, durante i quali altre richieste dello stesso IP potrebbero far scattare il limite.  
-**Risoluzione prevista:** Escludere l'endpoint `/pdfs/upload` dal rate limiter globale, o usare un limite separato più alto.
-
-### B5 — Export endpoint accetta formati non validi
-
-**File:** `backend/app/api/v1/convert.py`  
-**Descrizione:** `POST /pdfs/{pdf_id}/export` accetta un parametro `format` come stringa libera. Se l'utente passa un formato non supportato (es. `"gif"`), PyMuPDF potrebbe crashare con errore poco chiaro.  
-**Risoluzione prevista:** Aggiungere validazione Pydantic con enum dei formati supportati (`txt`, `png`, `jpg`, `svg`).
 
 ### B6 — Content-Disposition: possibile XSS via filename
 

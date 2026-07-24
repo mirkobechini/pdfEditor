@@ -101,16 +101,14 @@ I 4 test in `tests/test_edge_cases.py` che fallivano in locale per `channel_bind
 
 ### Issue note ma non bloccanti ⏳
 
-| #   | Issue                                                             | Impatto | Risoluzione prevista                                 |
-| --- | ----------------------------------------------------------------- | ------- | ---------------------------------------------------- |
-| 2   | **`_password_cache` module-global** — non scala con multi-worker  | Medio   | Redis o DB in Fase 2 (✅ B18: cleanup su shutdown)   |
-| 14  | **Nessun integration/E2E test**                                   | Medio   | ⬜ Playwright futuro (T7)                            |
-| 19  | **Find & Replace non funziona**                                   | Medio   | ⬜ Inline text editor (feature #11)                  |
-| 385 | **Hotfix: Landing page 401 loop** — AuthProvider loop infinito    | Alta    | ⬜ `.specs/plans/hotfix-401-loop-landing-page.md`    |
-| 404 | **i18n: provider custom + next-intl coesistono** — rischio sync   | Basso   | ⬜ Unificare sotto next-intl puro                    |
-| 405 | **Rate limiting su upload** — falsi positivi per file grandi      | Basso   | ⬜ Escludere endpoint upload dal rate limiter per IP |
-| 406 | **Export endpoint senza validazione formato** — crash imprevisto  | Basso   | ⬜ Aggiungere validazione enum su formati accettati  |
-| 407 | **Content-Disposition sanitization** — possibile XSS via filename | Basso   | ✅ Già parzialmente sanitizzato (PR #208)            |
+| #   | Issue                                                             | Impatto | Risoluzione prevista                                      |
+| --- | ----------------------------------------------------------------- | ------- | --------------------------------------------------------- |
+| 2   | **`_password_cache` module-global** — non scala con multi-worker  | Medio   | Redis o DB in Fase 2 (✅ B18: cleanup su shutdown)        |
+| 14  | **Nessun integration/E2E test**                                   | Medio   | ⬜ Playwright futuro (T7)                                 |
+| 19  | **Find & Replace non funziona**                                   | Medio   | ⬜ Inline text editor (feature #11)                       |
+| 385 | **Hotfix: Landing page 401 loop** — AuthProvider loop infinito    | Alta    | ✅ Risolto (commit 53ddddc in dev) — guard sessionStorage |
+| 404 | **i18n: provider custom + next-intl coesistono** — rischio sync   | Basso   | ⬜ Unificare sotto next-intl puro                         |
+| 407 | **Content-Disposition sanitization** — possibile XSS via filename | Basso   | ✅ Già parzialmente sanitizzato (PR #208)                 |
 
 ## Migrazioni infrastrutturali
 
@@ -315,17 +313,17 @@ Le rimanenti ~79 linee non coperte sono suddivise in tre categorie, nessuna dell
 
 ### Feature short-term
 
-| Priorità | Task                          | Piano                                     | Note                                                                 |
-| -------- | ----------------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
-| 🟥 ALTA  | Hotfix: 401 loop landing page | `hotfix-401-loop-landing-page.md`         | Bug confermato, piano già pronto                                     |
-| 🟡 MEDIA | Conferma email account        | `feature-email-confirmation.md`           | Prerequisito per Stripe — login bloccato senza email verificata      |
-| 🟡 MEDIA | PDF naming preservation       | `feature-pdf-naming-preservation.md`      | UX improvement — nome file scelto dall'utente dopo merge/split       |
-| 🟡 MEDIA | SendGrid rate limit handling  | `feature-sendgrid-rate-limit-handling.md` | Evita che l'app sembri rotta quando il tier gratuito esaurisce email |
-| 🟡 MEDIA | PDF compression               | `feature-pdf-compression.md`              | Riduce dimensione PDF, utile per upload e storage                    |
-| 🟡 MEDIA | Inline text editor            | `feature-inline-text-editor.md`           | Sostituisce Find & Replace con editing WYSIWYG (complessità alta)    |
-| 🟡 MEDIA | UI/UX improvements            | `feature-ui-ux-improvements.md`           | Contrasto, responsive, a11y, loading states                          |
-| 🟡 MEDIA | License tier button skin      | `feature-license-tier-button-skin.md`     | Prerequisito per Stripe — indicatori visivi feature bloccate         |
-| BASSA    | Expired token cleanup         | `chore-expired-token-cleanup.md`          | Technical debt — token scaduti restano in DB                         |
-| BASSA    | Stripe MCP Subscriptions      | `feature-stripe-mcp-subscriptions.md`     | Richiede email confirmation + license skin come prerequisiti         |
-| 🔵 BASSA | AI PDF editing                | `feature-ai-pdf-editing.md`               | BYOK + cloud — complessità molto alta                                |
-| 🔵 BASSA | E2E Playwright tests          | `chore-security-improvements.md`          | Per superare 80% coverage frontend e flussi cross-origin reali       |
+| Priorità   | Task                          | Piano                                     | Note                                                                 |
+| ---------- | ----------------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
+| ✅ RISOLTO | Hotfix: 401 loop landing page | commit 53ddddc in dev                     | Già fixato — guard sessionStorage in AuthProvider                    |
+| 🟡 MEDIA   | Conferma email account        | `feature-email-confirmation.md`           | Prerequisito per Stripe — login bloccato senza email verificata      |
+| 🟡 MEDIA   | PDF naming preservation       | `feature-pdf-naming-preservation.md`      | UX improvement — nome file scelto dall'utente dopo merge/split       |
+| 🟡 MEDIA   | SendGrid rate limit handling  | `feature-sendgrid-rate-limit-handling.md` | Evita che l'app sembri rotta quando il tier gratuito esaurisce email |
+| 🟡 MEDIA   | PDF compression               | `feature-pdf-compression.md`              | Riduce dimensione PDF, utile per upload e storage                    |
+| 🟡 MEDIA   | Inline text editor            | `feature-inline-text-editor.md`           | Sostituisce Find & Replace con editing WYSIWYG (complessità alta)    |
+| 🟡 MEDIA   | UI/UX improvements            | `feature-ui-ux-improvements.md`           | Contrasto, responsive, a11y, loading states                          |
+| 🟡 MEDIA   | License tier button skin      | `feature-license-tier-button-skin.md`     | Prerequisito per Stripe — indicatori visivi feature bloccate         |
+| ✅ RISOLTO | Expired token cleanup         | PR #139 in dev                            | Già implementato in UserRepository + AuthService                     |
+| BASSA      | Stripe MCP Subscriptions      | `feature-stripe-mcp-subscriptions.md`     | Richiede email confirmation + license skin come prerequisiti         |
+| 🔵 BASSA   | AI PDF editing                | `feature-ai-pdf-editing.md`               | BYOK + cloud — complessità molto alta                                |
+| 🔵 BASSA   | E2E Playwright tests          | `chore-security-improvements.md`          | Per superare 80% coverage frontend e flussi cross-origin reali       |
