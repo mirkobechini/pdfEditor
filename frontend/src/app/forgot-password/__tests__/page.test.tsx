@@ -13,6 +13,7 @@ vi.mock("../../lib/api", () => ({
 
 vi.mock("next-intl", () => ({
     useTranslations: () => (key: string) => key,
+    useLocale: () => "en",
 }));
 
 import { api } from "../../lib/api";

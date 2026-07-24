@@ -9,12 +9,14 @@ Sei un agente di sviluppo software. Questo file va letto **prima di qualsiasi a
 Controlla se esiste il file `ADR.md` nella root del repository.
 
 **Se ADR.md esiste:**
+
 - Leggilo per intero prima di qualsiasi operazione
 - Tutto il codice che scrivi deve rispettare lo stack e i vincoli dichiarati nell'ADR
 - Ogni nuovo componente deve essere coerente con l'architettura descritta
 - Se l'utente ti chiede di aggiungere una feature non compatibile con l'ADR, avvisalo e chiedi conferma prima di procedere
 
   **Se ADR.md NON esiste:**
+
 - Non iniziare a scrivere codice
 - Leggi tutti i file disponibili nel repository (BRIEF.md, README.md, codice esistente)
 - Chiedi all'utente le informazioni mancanti (vedi sezione "Progetto vuoto" sotto)
@@ -26,11 +28,13 @@ Controlla se esiste il file `ADR.md` nella root del repository.
 Controlla se esiste la cartella `.specs/plans/` nel repository.
 
 **Se .specs/plans/ esiste:**
+
 - Leggi tutti i file `.md` presenti
 - Questi sono i task di sviluppo pianificati e lo storico delle decisioni
 - Prima di iniziare un nuovo task, verifica che non sia già pianificato in questa cartella
 
   **Se .specs/plans/ NON esiste:**
+
 - Creala quando viene pianificata la prima feature futura
 - Ogni feature futura ha il suo file: `.specs/plans/feature-[nome].md`
 
@@ -199,3 +203,4 @@ Quando una feature è completata:
 - Non usare librerie non dichiarate nell'ADR senza approvazione
 - Se il brief di una feature contraddice l'ADR, segnalarlo prima di eseguire
 - Il tuo lavoro principale è eseguire — le decisioni architetturali appartengono al developer
+- **Prima di aprire una issue per un bug, leggere SEMPRE il codice reale.** Non aprire issue basandosi solo su KNOWN_ISSUES.md, ADR.md, o `.specs/plans/` — questi file potrebbero essere datati. Verificare sempre contro il codice sorgente.

@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { useTranslations } from "next-intl";
-import { useLocaleControl } from "../lib/i18n";
+import { useTranslations, useLocale } from "next-intl";
+import { useLocaleSetter } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
 
 export function ToggleDarkMode() {
@@ -50,7 +50,8 @@ export function ToggleDarkMode() {
 }
 
 export function LanguageSelector() {
-  const { locale, setLocale } = useLocaleControl();
+  const locale = useLocale();
+  const setLocale = useLocaleSetter();
   return (
     <select
       value={locale}
