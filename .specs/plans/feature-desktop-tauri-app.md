@@ -73,24 +73,25 @@ pdf-editor/
 
 **Output:** Prototipo Penpot approvato che guida tutte le scelte UI delle issue successive, incluse icone e branding
 
-### 1. Setup workspace Tauri (30 min)
+### 1. Setup workspace Tauri (30 min) — ✅ FATTA (issue #406, PR #407)
 
-- [ ] Creare cartella `desktop/` nella root del progetto
-- [ ] Inizializzare progetto Tauri v2 in `desktop/` (`npm create tauri-app`)
-- [ ] Configurare `tauri.conf.json` per Windows, macOS, Linux
-- [ ] Generare icone app con `npx tauri icon`
-- [ ] Creare `desktop/src-tauri/` con struttura Rust base
+- [x] Creare cartella `desktop/` nella root del progetto
+- [x] Inizializzare progetto Tauri v2 in `desktop/` (`npm create tauri-app`)
+- [x] Configurare `tauri.conf.json` per Windows, macOS, Linux
+- [x] Generare icone app con `npx tauri icon`
+- [x] Creare `desktop/src-tauri/` con struttura Rust base
 
-**Output:** Struttura `desktop/` funzionante con `cargo tauri dev` che apre la webview
+**Output:** Struttura `desktop/` funzionante con `cargo tauri dev` che apre la webview ✅
 
-### 2. PyInstaller sidecar + PoC (1.5h)
+### 2. PyInstaller sidecar + PoC (1.5h) — 🟡 In corso (issue #408)
 
+- [x] Creare script `desktop/build-sidecar.sh` e `.ps1` per bundle
+- [x] Configurare Tauri per eseguire il sidecar all'avvio (`tauri.conf.json` + `lib.rs`)
+- [x] Creare entry point `desktop/run_backend.py` per PyInstaller
 - [ ] Proof-of-concept: bundle script Python minimale con PyMuPDF
-- [ ] Creare script `desktop/build-sidecar.sh` e `.ps1` per bundle
 - [ ] Testare PyInstaller con app FastAPI (spec file custom)
 - [ ] Verificare inclusione esplicita PyMuPDF (--hidden-import=fitz)
 - [ ] Verificare funzionamento sidecar standalone
-- [ ] Configurare Tauri per eseguire il sidecar all'avvio
 
 **Output:** `desktop/src-tauri/binaries/fastapi-sidecar` (o .exe) funzionante
 
