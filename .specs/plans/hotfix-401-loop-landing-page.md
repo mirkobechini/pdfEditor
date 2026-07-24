@@ -41,4 +41,4 @@ Se non c'è un cookie `access_token` (leggibile solo same-origin, ma su Cloudfla
 
 ## Status
 
-[ ] Non iniziata (ancora da fare)
+[x] ✅ Completata (già mergiata in dev — commit 53ddddc)
