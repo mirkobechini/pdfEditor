@@ -180,6 +180,7 @@
     "registering": "Creating account...",
     "loginFailed": "Login failed",
     "invalidCredentials": "Invalid email or password",
+    "emailQuotaExceeded": "Monthly email limit reached. Please try again next month.",
     "rateLimitExceeded": "Too many attempts. Please try again in a minute.",
     "registerFailed": "Registration failed",
     "passwordMismatch": "Passwords do not match",

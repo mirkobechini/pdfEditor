@@ -79,6 +79,9 @@ class EmailService:
             if response.status_code in (200, 201, 202):
                 logger.info("Password reset email sent successfully to %s", email)
                 return True
+            elif response.status_code == 429:
+                logger.warning("SendGrid monthly quota exceeded for %s", email)
+                raise ValueError("Monthly email quota exceeded. Please try again next month.")
             else:
                 logger.error(
                     "SendGrid API error for %s: %s %s",
