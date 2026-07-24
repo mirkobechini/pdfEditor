@@ -26,26 +26,28 @@ pdf-editor/
 
 ## Stack
 
-| Componente             | Tecnologia                                         |
-| ---------------------- | -------------------------------------------------- |
-| **Desktop framework**  | Tauri v2 (Rust)                                    |
-| **UI**                 | Next.js static export (riutilizzato dal frontend/) |
-| **Backend locale**     | FastAPI sidecar (bundle con PyInstaller)           |
-| **PDF processing**     | PyMuPDF (fitz) — già in uso                        |
-| **Database offline**   | SQLite (stesso schema, via FastAPI)                |
-| **Cloud sync DB**      | PostgreSQL (Neon) — già in uso                     |
-| **File storage cloud** | Cloudflare R2 — già in uso                         |
-| **Auto-update**        | Tauri built-in updater + GitHub Releases           |
-| **Secure storage**     | Tauri safeStorage (JWT offline cache)              |
+| Componente             | Tecnologia                                                     |
+| ---------------------- | -------------------------------------------------------------- |
+| **Desktop framework**  | Tauri v2 (Rust)                                                |
+| **UI**                 | Next.js static export (riutilizzato dal frontend/)             |
+| **Backend locale**     | FastAPI sidecar (bundle con PyInstaller)                       |
+| **PDF processing**     | PyMuPDF (fitz) — già in uso                                    |
+| **Database offline**   | SQLite (stesso schema, via FastAPI)                            |
+| **Cloud sync DB**      | PostgreSQL (Neon) — già in uso                                 |
+| **File storage cloud** | Cloudflare R2 — già in uso                                     |
+| **Auto-update**        | Tauri built-in updater + GitHub Releases                       |
+| **Secure storage**     | Tauri safeStorage (JWT offline cache)                          |
 | **Icone**              | Penpot (design) → esportate SVG/PNG → generate per Tauri + web |
-| **Installer**          | Windows .msi, macOS .dmg, Linux .AppImage/.deb     |
+| **Installer**          | Windows .msi, macOS .dmg, Linux .AppImage/.deb                 |
 
 ## Dipendenze
 
 - Backend FastAPI esistente (completo)
 - Frontend Next.js esistente (static export già configurato)
 - PyInstaller per bundle sidecar
-- Rust toolchain (rustup, cargo)
+- Rust toolchain (rustup, cargo) — target `x86_64-pc-windows-msvc`
+- **Microsoft C++ Build Tools 2022** (Windows prerequisito Tauri ufficiale — workload "Desktop development with C++")
+- WebView2 Runtime (già presente su Windows 10 1803+)
 
 ## Issue (1 issue = 1 branch, max ~1-1.5h ciascuna)
 
