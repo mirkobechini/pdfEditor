@@ -314,9 +314,9 @@ Le rimanenti ~79 linee non coperte sono suddivise in tre categorie, nessuna dell
 ### Feature short-term
 
 | Priorità   | Task                          | Piano                                     | Note                                                                 |
-| ---------- | ----------------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
-| ✅ RISOLTO | Hotfix: 401 loop landing page | commit 53ddddc in dev                     | Già fixato — guard sessionStorage in AuthProvider                    |
-| 🟡 MEDIA   | Conferma email account        | `feature-email-confirmation.md`           | Prerequisito per Stripe — login bloccato senza email verificata      |
+| ---------- | ----------------------------- | ----------------------------------------- | -------------------------------------------------------------------- | --- | ---------- | ----------------------- | ------------------------------- | -------------------------------------------------------------------- |
+| ✅ RISOLTO | Hotfix: 401 loop landing page | commit 53ddddc in dev                     | Già fixato — guard sessionStorage in AuthProvider                    |     | ✅ RISOLTO | PDF naming preservation | PR #403 in dev                  | output_filename opzionale in merge/split/reorder/remove/replace-text |
+| ✅ RISOLTO | SendGrid rate limit handling  | PR #405 in dev                            | Rilevamento 429 → EMAIL_QUOTA_EXCEEDED con messaggio IT/EN           |     | 🟡 MEDIA   | Conferma email account  | `feature-email-confirmation.md` | Prerequisito per Stripe — login bloccato senza email verificata      |
 | 🟡 MEDIA   | PDF naming preservation       | `feature-pdf-naming-preservation.md`      | UX improvement — nome file scelto dall'utente dopo merge/split       |
 | 🟡 MEDIA   | SendGrid rate limit handling  | `feature-sendgrid-rate-limit-handling.md` | Evita che l'app sembri rotta quando il tier gratuito esaurisce email |
 | 🟡 MEDIA   | PDF compression               | `feature-pdf-compression.md`              | Riduce dimensione PDF, utile per upload e storage                    |

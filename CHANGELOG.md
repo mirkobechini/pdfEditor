@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-24
+
+- ✅ **B6: Content-Disposition sanitization** — Rafforzata `sanitize_filename()` con allowlist ASCII sicura. 11 test. (PR #399, issue #398)
+- ✅ **B3: i18n next-intl** — Sostituito `useLocaleControl()` custom con `useLocale()` di next-intl + `useLocaleSetter()` minimale. (PR #401, issue #400)
+- ✅ **PDF naming preservation** — Aggiunto `output_filename` opzionale a merge/split/reorder/remove/replace-text. Backend + frontend. (PR #403, issue #402)
+- ✅ **SendGrid rate limit handling** — Rilevamento 429 SendGrid → errore `EMAIL_QUOTA_EXCEEDED` con messaggio chiaro in IT/EN. (PR #405, issue #404)
+
 ## 2026-07-17
 
 - ✅ **Backend coverage 96% → 97%** — 15 nuovi test (331 totali, 0 failures). admin.py 97%, auth_service.py 99%. Raggiunto limite pratico per unit test. (PR #361, issue #360)

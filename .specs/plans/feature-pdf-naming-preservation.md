@@ -1,6 +1,6 @@
 # Feature Plan: PDF Filename Preservation After Operations
 
-**Status:** Planning  
+**Status:** ✅ Completata (2026-07-24, PR #403)  
 **Priority:** Medium  
 **Complexity:** Low  
 **Estimated Time:** 1 day

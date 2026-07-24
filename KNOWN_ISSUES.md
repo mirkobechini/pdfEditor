@@ -47,20 +47,18 @@
 **Descrizione:** 331 test backend (con `TestClient` same-origin) + 348 test frontend (jsdom). Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS).  
 **Risoluzione prevista:** Playwright (T7).
 
-### T3 — Expired token cleanup non implementato
+### T3 — Expired token cleanup ✅ **Risolto**
 
 **Piano:** `.specs/plans/chore-expired-token-cleanup.md`  
-**Descrizione:** I reset token scaduti rimangono in DB per sempre. Serve cleanup lazy: quando un utente richiede un nuovo reset, pulire i token scaduti prima di generare il nuovo.
+**Stato:** Già implementato in `UserRepository.delete_expired_tokens()` + chiamato da `AuthService.request_password_reset()`. PR #139.
 
-### T4 — Admin email non configurabile via env
+### T4 — Admin email non configurabile via env ✅ **Risolto**
 
-**Piano:** `.specs/plans/chore-admin-email-env.md`  
-**Descrizione:** `SUPER_ADMIN_EMAIL` è hardcodato in `config.py` con default `"admin@pdfeditor.local"`. In produzione viene validato all'avvio, ma in sviluppo rimane il default.
+**Descrizione:** `SUPER_ADMIN_EMAIL` è già leggibile da `.env` tramite Pydantic Settings. Il default in `config.py` è `"admin@pdfeditor.local"`.
 
-### T5 — Dark mode: prima visita su pagine non protette
+### T5 — Dark mode: prima visita su pagine non protette ✅ **Risolto**
 
-**File:** `frontend/src/app/layout.tsx`  
-**Descrizione:** Il `Script` di dark mode (beforeInteractive) controlla localStorage + `prefers-color-scheme`. Funziona su tutte le pagine, ma le pagine landing/legal hanno un layout diverso e potrebbero non ereditare correttamente la classe `dark` in alcuni edge case.
+**Descrizione:** Lo script `beforeInteractive` in `layout.tsx` esegue su tutte le pagine prima che React idrati. Funziona ovunque.
 
 ---
 
