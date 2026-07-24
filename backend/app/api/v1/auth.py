@@ -340,3 +340,39 @@ def reset_password(
             detail=str(e),
         )
     return UserResponse.model_validate(user)
+
+
+@router.post("/offline-token")
+def offline_token(
+    request: Request,
+    service: AuthService = Depends(get_auth_service),
+) -> dict:
+    """Generate a long-lived offline token for the desktop app.
+    
+    Requires a valid session (JWT cookie or Bearer token).
+    The returned token expires in OFFLINE_TOKEN_EXPIRE_DAYS (default 30).
+    """
+    token = _get_token(request)
+    if not token:
+        raise error_response(
+            ErrorCode.INVALID_CREDENTIALS,
+            "Authentication required",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+    try:
+        user = service.get_current_user(token)
+    except ValueError as e:
+        raise error_response(
+            ErrorCode.INVALID_CREDENTIALS,
+            str(e),
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    from datetime import timedelta
+    from app.core.security import create_access_token
+
+    offline_token = create_access_token(
+        data={"sub": user.id, "type": "offline"},
+        expires_delta=timedelta(days=settings.OFFLINE_TOKEN_EXPIRE_DAYS),
+    )
+    return {"offline_token": offline_token, "expires_in_days": settings.OFFLINE_TOKEN_EXPIRE_DAYS}
