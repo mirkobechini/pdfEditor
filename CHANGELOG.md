@@ -3,6 +3,7 @@
 ## 2026-07-24
 
 - ✅ **Desktop — Setup workspace Tauri v2 (issue #406, PR #407)** — Struttura `desktop/` + `src-tauri/` completa con tauri.conf.json, Cargo.toml, icone, lib.rs, main.rs.
+- ✅ **Desktop — PyInstaller sidecar PoC (issue #408, PR #409)** — `run_backend.py`, script build `.ps1`/`.sh`, `.env.desktop`, sidecar lifecycle in Rust, binary `fastapi-sidecar.exe` funzionante.
 
 - ✅ **Expired token cleanup (T3)** — `UserRepository.delete_expired_tokens()` + chiamato da `AuthService.request_password_reset()`. (PR #139)
 - ✅ **Admin email configurabile via env (T4)** — `SUPER_ADMIN_EMAIL` leggibile da `.env` tramite Pydantic Settings.
