@@ -62,9 +62,8 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | Standard error codes API (codice + dettaglio)       | Solo `str(e)` plain         | Ogni HTTPException backend usa `error_response(code, detail)` con codice stabile (es. `INVALID_CREDENTIALS`). Il frontend mappa ogni codice in una chiave i18n tramite `mapError()`, eliminando `err.message` raw in UI. Motivo: UX produzione, supporto IT/EN, debug facilitato. |
 | Neon PostgreSQL (serverless)                        | Render PostgreSQL free      | Render ha discontinuato il free tier PostgreSQL. Neon offre PostgreSQL serverless con free tier permanente (0.5GB storage, 100h compute/mese con auto-suspend). Connection pooling built-in, stesso driver psycopg.                                                               |
 | Cloudflare R2 per storage PDF                       | Disco locale Render         | Già implementato in `s3_storage.py` + `storage.py`. Gratis 10GB storage, zero egress cost. Configurato con `STORAGE_BACKEND=s3`.                                                                                                                                                  |
-| `_password_cache` module-global                     | Redis / DB centralizzato    | Module-global in pdf_service.py. Non scala con multi-worker gunicorn. Ogni worker ha cache separata. Accettato come limite noto finché si usa single-worker.                                                                                                                      |
 | **Desktop: stessa UI del web**                      | UI desktop nativa           | `output: 'export'` già configurato; webview Tauri carica gli stessi asset statici. Si adattano solo API calls (da Render a localhost) e si aggiungono Tauri API per file dialogs nativi.                                                                                          |
-| **Desktop: Rust target MSVC**                       | MinGW/GNU                   | Su Windows, Tauri richiede MSVC toolchain (`x86_64-pc-windows-msvc`) + Microsoft C++ Build Tools (workload "Desktop development with C++").                                                                                                                                         |
+| **Desktop: Rust target MSVC**                       | MinGW/GNU                   | Su Windows, Tauri richiede MSVC toolchain (`x86_64-pc-windows-msvc`) + Microsoft C++ Build Tools (workload "Desktop development with C++").                                                                                                                                       |
 | **Desktop: auth offline via Tauri safeStorage**     | Solo online                 | JWT cached in keychain OS (safeStorage). App funzionante offline con sync quando torna online.                                                                                                                                                                                    |
 | **Desktop: cloud sync (Fase 3) integrata**          | Sync posticipato            | UUID PK già implementati. La Fase 3 viene integrata direttamente nella Desktop App: endpoint sync backend + UI sync frontend.                                                                                                                                                     |
 | **Desktop: auto-update via GitHub Releases**        | Download manuale            | Tauri updater built-in: controlla GitHub Releases, scarica e installa in automatico.                                                                                                                                                                                              |
@@ -102,14 +101,11 @@ I 4 test in `tests/test_edge_cases.py` che fallivano in locale per `channel_bind
 
 ### Issue note ma non bloccanti ⏳
 
-| #   | Issue                                                             | Impatto | Risoluzione prevista                                      |
+> Le issue risolte sono in [`CHANGELOG.md`](./CHANGELOG.md). Il debito tecnico aperto è in [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md).
+
+| # | Issue                                                             | Impatto | Risoluzione prevista                                      |
 | --- | ----------------------------------------------------------------- | ------- | --------------------------------------------------------- |
-| 2   | **`_password_cache` module-global** — non scala con multi-worker  | Medio   | Redis o DB in Fase 2 (✅ B18: cleanup su shutdown)        |
-| 14  | **Nessun integration/E2E test**                                   | Medio   | ⬜ Playwright futuro (T7)                                 |
 | 19  | **Find & Replace non funziona**                                   | Medio   | ⬜ Inline text editor (feature #11)                       |
-| 385 | **Hotfix: Landing page 401 loop** — AuthProvider loop infinito    | Alta    | ✅ Risolto (commit 53ddddc in dev) — guard sessionStorage |
-| 404 | **i18n: provider custom + next-intl coesistono** — rischio sync   | Basso   | ✅ Risolto (PR #401) — useLocale() + useLocaleSetter()    |
-| 407 | **Content-Disposition sanitization** — possibile XSS via filename | Basso   | ✅ Già parzialmente sanitizzato (PR #208)                 |
 
 ## Migrazioni infrastrutturali
 

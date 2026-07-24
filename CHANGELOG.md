@@ -2,6 +2,9 @@
 
 ## 2026-07-24
 
+- ✅ **Expired token cleanup (T3)** — `UserRepository.delete_expired_tokens()` + chiamato da `AuthService.request_password_reset()`. (PR #139)
+- ✅ **Admin email configurabile via env (T4)** — `SUPER_ADMIN_EMAIL` leggibile da `.env` tramite Pydantic Settings.
+- ✅ **Dark mode persist su tutte le pagine (T5)** — Script `beforeInteractive` in `layout.tsx` esegue prima di React.
 - ✅ **B6: Content-Disposition sanitization** — Rafforzata `sanitize_filename()` con allowlist ASCII sicura. 11 test. (PR #399, issue #398)
 - ✅ **B3: i18n next-intl** — Sostituito `useLocaleControl()` custom con `useLocale()` di next-intl + `useLocaleSetter()` minimale. (PR #401, issue #400)
 - ✅ **PDF naming preservation** — Aggiunto `output_filename` opzionale a merge/split/reorder/remove/replace-text. Backend + frontend. (PR #403, issue #402)
