@@ -1,0 +1,3 @@
+# Sidecar binaries directory
+# After running desktop/build-sidecar.ps1 (Windows) or desktop/build-sidecar.sh (macOS/Linux),
+# the built fastapi-sidecar binary will be placed here and automatically bundled by Tauri.

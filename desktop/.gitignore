@@ -1,0 +1,7 @@
+# PyInstaller build artifacts
+build-tmp/
+fastapi-sidecar.spec
+
+# Sidecar binary (built by build-sidecar script)
+# The binary is committed once for setup, then rebuilt by CI
+src-tauri/binaries/fastapi-sidecar.exe
