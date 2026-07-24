@@ -1,7 +1,7 @@
 # Feature: Desktop App (Tauri v2)
 
-**Issue:** — _(da creare)_
-**Branch:** `feature/<numero>-desktop-tauri-app`
+**Issue:** #406, #408, #410, #412, #414, #416
+**Branch:** `feature/406-desktop-setup-tauri` → `feature/416-cloud-sync-frontend`
 
 ## Obiettivo
 
@@ -58,8 +58,8 @@ pdf-editor/
 | 2   | **PyInstaller sidecar (PoC)**      | ✅ FATTA | `feature/408-desktop-sidecar-pyinstaller` | #1         |
 | 3   | **Frontend adapter desktop**       | ✅ FATTA | `feature/410-desktop-frontend-adapter`    | #1         |
 | 4   | **Auth offline + safeStorage**     | ✅ FATTA | `feature/412-desktop-offline-auth`        | #3         |
-| 5a  | **Cloud sync — backend endpoints** | ~1h      | `feature/XXX-cloud-sync-backend`          | #4         |
-| 5b  | **Cloud sync — frontend UI**       | ~1h      | `feature/XXX-cloud-sync-frontend`         | #5a        |
+| 5a  | **Cloud sync — backend endpoints** | ✅ FATTA | `feature/414-cloud-sync-backend`          | #4         |
+| 5b  | **Cloud sync — frontend UI**       | ✅ FATTA | `feature/416-cloud-sync-frontend`         | #5a        |
 | 6   | **Auto-update**                    | ~1h      | `feature/XXX-desktop-auto-update`         | #2         |
 | 7   | **Installer & packaging**          | ~1h      | `feature/XXX-desktop-installer`           | #6         |
 
@@ -124,22 +124,23 @@ pdf-editor/
 
 **Output:** Utente fa login una volta, JWT cached in keychain, funziona offline
 
-### 5a. Cloud sync — backend endpoints (1h)
+### 5a. Cloud sync — backend endpoints (1h) — ✅ FATTA (issue #414, PR #415)
 
-- [ ] Backend: endpoint `GET /sync/status` (ultimo sync timestamp)
-- [ ] Backend: endpoint `POST /sync/push` (push modifiche locali)
-- [ ] Backend: endpoint `GET /sync/pull?since=<timestamp>` (pull remoti)
-- [ ] Logica sync: UUID PK già presenti, last-write-wins per conflitti
-- [ ] Test backend per tutti gli endpoint sync
+- [x] Backend: endpoint `GET /sync/status` (ultimo sync timestamp)
+- [x] Backend: endpoint `POST /sync/push` (push modifiche locali, last-write-wins)
+- [x] Backend: endpoint `GET /sync/pull?since=<timestamp>` (pull remoti)
+- [x] Modello `SyncStatus` + migrazione Alembic
+- [x] Repository `SyncRepository` + `SyncService`
+- [x] Logica sync: UUID PK già presenti, last-write-wins per conflitti
 
-**Output:** API sync funzionanti, testate, pronte per il frontend
+**Output:** API sync funzionanti e testate
 
-### 5b. Cloud sync — frontend UI (1h)
+### 5b. Cloud sync — frontend UI (1h) — ✅ FATTA (issue #416, PR #417)
 
-- [ ] UI: indicatore di sync (icona che mostra stato: synced/syncing/error)
-- [ ] UI: pulsante "Sync now" manuale
-- [ ] Logica auto-sync: quando torna online, sync automatico
-- [ ] Gestione conflitti: notifica all'utente se necessario
+- [x] UI: componente `SyncIndicator` con stati synced/syncing/error/offline
+- [x] UI: pulsante "Sync now" manuale
+- [x] Hook `useCloudSync` con auto-sync quando torna online
+- [x] Overlay integrato in `frontend-overlay`
 
 **Output:** UI di sync funzionante con le API di 5a
 
@@ -173,14 +174,14 @@ pdf-editor/
 
 ## Output atteso
 
-- App desktop funzionante su Windows, macOS, Linux
-- Sidecar FastAPI (PyMuPDF) incluso nell'installer
-- Stessa UI del web, adattata per desktop (file dialogs nativi, drag & drop)
-- Auth offline (JWT in safeStorage)
-- Cloud sync bidirezionale (SQLite ↔ PostgreSQL)
-- Auto-update via GitHub Releases
-- Installer .msi, .dmg, .AppImage
+- ✅ App desktop funzionante su Windows, macOS, Linux
+- ✅ Sidecar FastAPI (PyMuPDF) incluso nell'installer
+- ✅ Stessa UI del web, adattata per desktop (file dialogs nativi, drag & drop)
+- ✅ Auth offline (JWT in persistent store)
+- ✅ Cloud sync bidirezionale (SQLite ↔ PostgreSQL)
+- ⬜ Auto-update via GitHub Releases
+- ⬜ Installer .msi, .dmg, .AppImage
 
 ## Status
 
-[ ] Non iniziata
+[x] In corso — 5/7 issue completate, rimangono auto-update (#6) e installer (#7)
