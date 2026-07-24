@@ -113,13 +113,14 @@ pdf-editor/
 
 **Output:** Frontend che funziona sia su browser che in webview Tauri
 
-### 4. Auth offline + safeStorage (1-1.5h)
+### 4. Auth offline + safeStorage (1-1.5h) — ✅ FATTA (issue #412, PR #413)
 
-- [ ] Backend: endpoint `POST /auth/offline-token` (JWT con expiry lungo)
-- [ ] Frontend: store del JWT in Tauri safeStorage (keychain OS)
-- [ ] Stato offline: usare JWT cached per operazioni locali
-- [ ] Stato online: auth normale verso backend remoto (Render)
-- [ ] UI: badge "offline"/"online" nell'header
+- [x] Backend: endpoint `POST /auth/offline-token` (JWT con expiry lungo, 30gg)
+- [x] Frontend: store del JWT in Tauri persistent store (comandi Rust `store_jwt`/`load_jwt`/`delete_jwt`)
+- [x] Stato offline: usare JWT cached per operazioni locali
+- [x] Stato online: auth normale verso backend remoto (Render)
+- [x] UI: badge "offline"/"online" nell'header (`DesktopStatusBadge` overlay)
+- [x] UseOfflineAuth hook con detection navigator.onLine + store integrato
 
 **Output:** Utente fa login una volta, JWT cached in keychain, funziona offline
 
