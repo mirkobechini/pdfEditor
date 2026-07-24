@@ -25,7 +25,7 @@ export default function ReplaceTextDialog({ open, onClose, pdfId }: ReplaceTextD
         setError("");
         try {
             const occurrence = replaceAll ? undefined : 1;
-            await api.replaceText(pdfId, search, replaceWith, occurrence);
+            await api.replaceText(pdfId, search, replaceWith, occurrence, outputName.trim() || undefined);
             setSearch("");
             setReplaceWith("");
             onClose();

@@ -26,6 +26,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
   const t = useTranslations("splitDialog");
   const [splitting, setSplitting] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [outputName, setOutputName] = React.useState("");
   const [thumbnails, setThumbnails] = React.useState<PageThumbnail[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [cuts, setCuts] = React.useState<Set<number>>(new Set());
@@ -116,7 +117,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
     setSplitting(true);
     setError("");
     try {
-      const result = await api.splitPdf(selectedId, "range", ranges);
+      const result = await api.splitPdf(selectedId, "range", ranges, outputName.trim() || undefined);
       const docId = result.items?.[0]?.id;
       if (docId) {
         const blob = await api.downloadPdf(docId);
@@ -224,24 +225,39 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
           </div>
         )}
 
-        {error && <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">{error}</div>}
+        {error && <div className=\"mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded\">{error}</div>}
 
-        <div className="flex justify-end gap-2 mt-auto pt-2 border-t dark:border-gray-700">
-          <button
-            className="px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600"
-            onClick={onClose}
-          >
-            {t("cancel")}
+        <div className=\"mb-4\">
+          <label className=\"block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300\">{t(\"outputName\")}</label>
+          <input
+            type=\"text\"
+  value = { outputName }
+  onChange = {(e) => setOutputName(e.target.value)
+}
+placeholder =\"split.pdf\"
+className =\"w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500\"
+  />
+  <p className=\"text-xs text-gray-400 mt-1\">{t(\"outputNameHint\")}</p>
+        </div >
+
+  <div className=\"flex justify-end gap-2 mt-auto pt-2 border-t dark:border-gray-700\">
+    < button
+className =\"px-4 py-2 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600\"
+onClick = { onClose }
+  >
+{
+  t(\"cancel\")}
           </button>
-          <button
-            className="px-4 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
-            disabled={!selectedId || splitting}
-            onClick={handleSplit}
-          >
-            {splitting ? t("splitting") : t("split")}
+  <button
+    className=\"px-4 py-2 text-sm rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50\"
+disabled = {!selectedId || splitting}
+onClick = { handleSplit }
+  >
+{
+  splitting? t(\"splitting\") : t(\"split\")}
           </button>
-        </div>
-      </div>
-    </div>
+        </div >
+      </div >
+    </div >
   );
 }

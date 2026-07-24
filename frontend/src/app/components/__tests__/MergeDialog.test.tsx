@@ -103,7 +103,7 @@ describe("MergeDialog", () => {
 
         fireEvent.click(screen.getByText("merge"));
         await waitFor(() => {
-            expect(api.mergePdfs).toHaveBeenCalledWith(["pdf-1", "pdf-2"]);
+            expect(api.mergePdfs).toHaveBeenCalledWith(["pdf-1", "pdf-2"], undefined);
         });
     });
 

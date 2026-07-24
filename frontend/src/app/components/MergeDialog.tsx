@@ -20,6 +20,7 @@ export default function MergeDialog({ open, onClose, selectedId, onMergeComplete
   const [selected, setSelected] = React.useState<Set<string>>(new Set());
   const [merging, setMerging] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [outputName, setOutputName] = React.useState("");
 
   React.useEffect(() => {
     if (open) {
@@ -53,7 +54,7 @@ export default function MergeDialog({ open, onClose, selectedId, onMergeComplete
     setError("");
     try {
       const ids = Array.from(selected);
-      const result = await api.mergePdfs(ids);
+      const result = await api.mergePdfs(ids, outputName.trim() || undefined);
       // Download the resulting merged PDF
       const blob = await api.downloadPdf(result.id);
       downloadBlob(blob, result.original_filename);
@@ -99,6 +100,18 @@ export default function MergeDialog({ open, onClose, selectedId, onMergeComplete
         </div>
 
         {error && <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">{error}</div>}
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">{t("outputName")}</label>
+          <input
+            type="text"
+            value={outputName}
+            onChange={(e) => setOutputName(e.target.value)}
+            placeholder="merged.pdf"
+            className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-xs text-gray-400 mt-1">{t("outputNameHint")}</p>
+        </div>
 
         <div className="flex justify-end gap-2">
           <button
