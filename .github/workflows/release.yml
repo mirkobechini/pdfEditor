@@ -1,0 +1,110 @@
+name: Build & Release Desktop App
+
+on:
+  push:
+    tags:
+      - "v*" # e.g. v0.1.0, v0.2.0
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Install backend dependencies (for sidecar)
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: |
+            x86_64-pc-windows-msvc
+            aarch64-apple-darwin
+            x86_64-unknown-linux-gnu
+
+      - name: Install Linux deps
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2"
+
+      - name: Build sidecar
+        run: |
+          cd desktop
+          pip install pyinstaller
+          bash build-sidecar.sh
+
+      - name: Build Tauri app
+        run: |
+          cd desktop/src-tauri
+          cargo tauri build --ci
+        env:
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdfeditor-${{ matrix.os }}
+          path: |
+            desktop/src-tauri/target/release/bundle/
+            !desktop/src-tauri/target/release/bundle/**/*.pdb
+
+  create-release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "## PdfEditor Desktop App" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "See [CHANGELOG.md](./CHANGELOG.md) for details." >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "PdfEditor ${{ github.ref_name }}"
+          body: ${{ steps.notes.outputs.notes }}
+          draft: true
+          prerelease: false
+          files: |
+            pdfeditor-*-latest/**/*.msi
+            pdfeditor-*-latest/**/*.dmg
+            pdfeditor-*-latest/**/*.AppImage
+            pdfeditor-*-latest/**/*.deb

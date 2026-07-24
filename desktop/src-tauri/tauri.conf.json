@@ -35,5 +35,16 @@
       "icons/icon.ico"
     ],
     "externalBin": ["binaries/fastapi-sidecar"]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "",
+      "endpoints": [
+        "https://github.com/mirkobechini/pdfEditor/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }
