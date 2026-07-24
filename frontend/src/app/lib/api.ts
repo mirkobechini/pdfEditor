@@ -1,4 +1,6 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { getApiBaseUrl } from "./tauri";
+
+const API_BASE = getApiBaseUrl();
 
 import type {
   PdfDocument,
@@ -16,8 +18,8 @@ export class ApiClient {
   private token: string | null = null;
   private _csrfToken: string | null = null;
 
-  constructor(baseUrl: string = API_BASE) {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl?: string) {
+    this.baseUrl = baseUrl ?? getApiBaseUrl();
   }
 
   static async extractError(res: Response): Promise<string> {
