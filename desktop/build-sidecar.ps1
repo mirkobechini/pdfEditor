@@ -40,37 +40,10 @@ Write-Host "Running PyInstaller..." -ForegroundColor Yellow
     --workpath "$ProjectRoot\desktop\build-sidecar-tmp" `
     --specpath "$ProjectRoot\desktop" `
     --distpath $OutputDir `
+    --paths "$BackendDir" `
     --hidden-import "fitz" `
-    --hidden-import "uvicorn.logging" `
-    --hidden-import "uvicorn.loops.auto" `
-    --hidden-import "uvicorn.protocols.http.auto" `
-    --hidden-import "app.core.config" `
-    --hidden-import "app.core.database" `
-    --hidden-import "app.core.limiter" `
-    --hidden-import "app.core.csrf" `
-    --hidden-import "app.core.license_seed" `
-    --hidden-import "app.models" `
-    --hidden-import "app.repositories" `
-    --hidden-import "app.services" `
-    --hidden-import "app.api.v1" `
-    --hidden-import "slowapi" `
-    --hidden-import "bcrypt" `
-    --hidden-import "aiofiles" `
-    --hidden-import "pydantic" `
-    --hidden-import "pydantic_settings" `
-    --hidden-import "sqlalchemy" `
-    --hidden-import "alembic" `
-    --hidden-import "boto3" `
-    --hidden-import "google.auth" `
-    --hidden-import "requests" `
-    --hidden-import "psycopg" `
     --collect-all "fitz" `
-    --collect-all "app" `
-    --add-data "$BackendDir\app\*;app\" `
-    --add-data "$BackendDir\alembic.ini;." `
-    --add-data "$BackendDir\alembic\;alembic\" `
-    --add-data "$BackendDir\storage\pdfs\;storage\pdfs\" `
-    --add-data "$BackendDir\storage\snapshots\;storage\snapshots\" `
+    --add-data "$ProjectRoot\desktop\.env.desktop;." `
     --runtime-tmpdir "." `
     $EntryPoint
 

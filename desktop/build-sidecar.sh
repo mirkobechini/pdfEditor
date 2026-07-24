@@ -40,37 +40,10 @@ $PYTHON -m PyInstaller \
     --workpath "$PROJECT_ROOT/desktop/build-sidecar-tmp" \
     --specpath "$PROJECT_ROOT/desktop" \
     --distpath "$OUTPUT_DIR" \
+    --paths "$BACKEND_DIR" \
     --hidden-import "fitz" \
-    --hidden-import "uvicorn.logging" \
-    --hidden-import "uvicorn.loops.auto" \
-    --hidden-import "uvicorn.protocols.http.auto" \
-    --hidden-import "app.core.config" \
-    --hidden-import "app.core.database" \
-    --hidden-import "app.core.limiter" \
-    --hidden-import "app.core.csrf" \
-    --hidden-import "app.core.license_seed" \
-    --hidden-import "app.models" \
-    --hidden-import "app.repositories" \
-    --hidden-import "app.services" \
-    --hidden-import "app.api.v1" \
-    --hidden-import "slowapi" \
-    --hidden-import "bcrypt" \
-    --hidden-import "aiofiles" \
-    --hidden-import "pydantic" \
-    --hidden-import "pydantic_settings" \
-    --hidden-import "sqlalchemy" \
-    --hidden-import "alembic" \
-    --hidden-import "boto3" \
-    --hidden-import "google.auth" \
-    --hidden-import "requests" \
-    --hidden-import "psycopg" \
     --collect-all "fitz" \
-    --collect-all "app" \
-    --add-data "$BACKEND_DIR/app/*:app/" \
-    --add-data "$BACKEND_DIR/alembic.ini:." \
-    --add-data "$BACKEND_DIR/alembic/:alembic/" \
-    --add-data "$BACKEND_DIR/storage/pdfs/:storage/pdfs/" \
-    --add-data "$BACKEND_DIR/storage/snapshots/:storage/snapshots/" \
+    --add-data "$PROJECT_ROOT/desktop/.env.desktop:." \
     --runtime-tmpdir "." \
     "$ENTRY_POINT"
 
