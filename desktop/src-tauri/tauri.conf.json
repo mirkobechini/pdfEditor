@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "identifier": "com.mirko.pdfeditor",
   "build": {
-    "beforeDevCommand": "cd ../../frontend && npm run dev",
+    "beforeDevCommand": "powershell -ExecutionPolicy Bypass -File ../sync-overlay.ps1 && cd ../../frontend && npm run dev",
     "devUrl": "http://localhost:3000",
-    "beforeBuildCommand": "cd ../../frontend && npm run build",
+    "beforeBuildCommand": "powershell -ExecutionPolicy Bypass -File ../sync-overlay.ps1 && cd ../../frontend && npm run build",
     "frontendDist": "../../frontend/out"
   },
   "app": {
