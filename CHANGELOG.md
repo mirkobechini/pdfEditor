@@ -5,6 +5,7 @@
 - ✅ **Desktop — Setup workspace Tauri v2 (issue #406, PR #407)** — Struttura `desktop/` + `src-tauri/` completa con tauri.conf.json, Cargo.toml, icone, lib.rs, main.rs.
 - ✅ **Desktop — PyInstaller sidecar PoC (issue #408, PR #409)** — `run_backend.py`, script build `.ps1`/`.sh`, `.env.desktop`, sidecar lifecycle in Rust, binary `fastapi-sidecar.exe` funzionante.
 - ✅ **Desktop — Frontend adapter con overlay (issue #410, PR #411)** — `tauri.ts` utility, `getApiBaseUrl()` per detection, `DesktopFileDialog` via frontend-overlay, sync-overlay scripts, integrato in build Tauri.
+- ✅ **Desktop — Auth offline con Tauri store (issue #412, PR #413)** — Endpoint `POST /auth/offline-token`, comandi Rust `store_jwt`/`load_jwt`/`delete_jwt`, overlay `useOfflineAuth` e `DesktopStatusBadge`.
 
 - ✅ **Expired token cleanup (T3)** — `UserRepository.delete_expired_tokens()` + chiamato da `AuthService.request_password_reset()`. (PR #139)
 - ✅ **Admin email configurabile via env (T4)** — `SUPER_ADMIN_EMAIL` leggibile da `.env` tramite Pydantic Settings.

@@ -57,7 +57,7 @@ pdf-editor/
 | 1   | **Setup workspace Tauri**          | ✅ FATTA | `feature/406-desktop-setup-tauri`         | —          |
 | 2   | **PyInstaller sidecar (PoC)**      | ✅ FATTA | `feature/408-desktop-sidecar-pyinstaller` | #1         |
 | 3   | **Frontend adapter desktop**       | ✅ FATTA | `feature/410-desktop-frontend-adapter`    | #1         |
-| 4   | **Auth offline + safeStorage**     | ~1-1.5h  | `feature/XXX-desktop-offline-auth`        | #3         |
+| 4   | **Auth offline + safeStorage**     | ✅ FATTA | `feature/412-desktop-offline-auth`        | #3         |
 | 5a  | **Cloud sync — backend endpoints** | ~1h      | `feature/XXX-cloud-sync-backend`          | #4         |
 | 5b  | **Cloud sync — frontend UI**       | ~1h      | `feature/XXX-cloud-sync-frontend`         | #5a        |
 | 6   | **Auto-update**                    | ~1h      | `feature/XXX-desktop-auto-update`         | #2         |
