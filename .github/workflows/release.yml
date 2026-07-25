@@ -53,10 +53,22 @@ jobs:
         run: cargo install tauri-cli --version "^2"
 
       - name: Build sidecar
+        shell: bash
         run: |
           cd desktop
           pip install pyinstaller
           bash build-sidecar.sh
+
+      - name: Rename sidecar for Tauri target triple
+        shell: bash
+        run: |
+          SIDECAR="desktop/src-tauri/binaries/fastapi-sidecar"
+          TRIPLE="${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || matrix.os == 'macos-latest' && 'aarch64-apple-darwin' || 'x86_64-unknown-linux-gnu' }}"
+          EXT="${{ matrix.os == 'windows-latest' && '.exe' || '' }}"
+          if [ -f "${SIDECAR}${EXT}" ]; then
+            mv "${SIDECAR}${EXT}" "${SIDECAR}-${TRIPLE}${EXT}"
+            echo "Renamed sidecar to fastapi-sidecar-${TRIPLE}${EXT}"
+          fi
 
       - name: Build Tauri app
         run: |
@@ -69,7 +81,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pdfeditor-${{ matrix.os }}
+          name: pdfeditor-${{ runner.os }}
           path: |
             desktop/src-tauri/target/release/bundle/
             !desktop/src-tauri/target/release/bundle/**/*.pdb
@@ -85,6 +97,9 @@ jobs:
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+        with:
+          pattern: pdfeditor-*
+          merge-multiple: true
 
       - name: Generate release notes
         id: notes
@@ -104,7 +119,7 @@ jobs:
           draft: true
           prerelease: false
           files: |
-            pdfeditor-*-latest/**/*.msi
-            pdfeditor-*-latest/**/*.dmg
-            pdfeditor-*-latest/**/*.AppImage
-            pdfeditor-*-latest/**/*.deb
+            **/*.msi
+            **/*.dmg
+            **/*.AppImage
+            **/*.deb
