@@ -71,12 +71,12 @@ jobs:
           fi
 
       - name: Build Tauri app
+        # Per firma degli aggiornamenti, impostare in GitHub → Settings → Secrets:
+        #   TAURI_PRIVATE_KEY (generata con: cargo tauri signer generate)
+        #   TAURI_KEY_PASSWORD
         run: |
           cd desktop/src-tauri
           cargo tauri build --ci
-        env:
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
