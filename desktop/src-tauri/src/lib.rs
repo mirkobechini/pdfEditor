@@ -1,5 +1,6 @@
 use std::sync::Mutex;
 use tauri::Manager;
+use tauri_plugin_shell::ShellExt;
 use tauri_plugin_store::StoreExt;
 
 struct SidecarState {
@@ -35,9 +36,12 @@ fn start_sidecar(app: &tauri::App) {
 }
 
 /// Kill the sidecar process on shutdown.
-fn stop_sidecar(app: &tauri::App) {
-    let state = app.state::<SidecarState>();
-    if let Some(pid) = state.child_pid.lock().unwrap().take() {
+fn stop_sidecar(app: &tauri::AppHandle) {
+    let mut pid_opt = None;
+    if let Some(state) = app.try_state::<SidecarState>() {
+        pid_opt = state.child_pid.lock().unwrap().take();
+    }
+    if let Some(pid) = pid_opt {
         log::info!("Stopping FastAPI sidecar (PID: {})", pid);
         #[cfg(target_os = "windows")]
         {
@@ -110,7 +114,7 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Destroyed = event {
-                stop_sidecar(&window.app_handle());
+                stop_sidecar(window.app_handle());
             }
         })
         .invoke_handler(tauri::generate_handler![
