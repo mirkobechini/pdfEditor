@@ -3,11 +3,10 @@
   "productName": "PdfEditor",
   "version": "0.1.0",
   "identifier": "com.mirko.pdfeditor",
-  "publisher": "Mirko Bechini",
   "build": {
-    "beforeDevCommand": "powershell -ExecutionPolicy Bypass -File ../sync-overlay.ps1 && cd ../../frontend && npm run dev",
+    "beforeDevCommand": "cd /d ../../frontend && npm run dev",
     "devUrl": "http://localhost:3000",
-    "beforeBuildCommand": "powershell -ExecutionPolicy Bypass -File ../sync-overlay.ps1 && cd ../../frontend && npm run build",
+    "beforeBuildCommand": "cd ../../frontend && npm run build",
     "frontendDist": "../../frontend/out"
   },
   "app": {
@@ -28,6 +27,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "Mirko Bechini",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -37,21 +37,12 @@
     ],
     "externalBin": ["binaries/fastapi-sidecar"],
     "windows": {
-      "wix": null,
       "nsis": {
-        "installMode": "currentUser",
-        "installerIcon": "icons/icon.ico",
-        "displayIcon": "icons/icon.ico"
+        "installMode": "currentUser"
       }
     },
     "macOS": {
-      "minimumSystemVersion": "10.15",
-      "frameworks": []
-    },
-    "linux": {
-      "deb": {
-        "depends": []
-      }
+      "minimumSystemVersion": "10.15"
     }
   },
   "plugins": {
