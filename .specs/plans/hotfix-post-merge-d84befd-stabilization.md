@@ -66,3 +66,7 @@ Chiudere in modo definitivo i gap residui su error handling backend/frontend eme
 ## Progress update
 
 - 2026-07-21: completato fix runtime `MISSING_MESSAGE` in pagina admin bug reports (chiavi `admin.admin.*` -> mapping corretto con `BUG_STATUS_KEYS`).
+
+## Status
+
+[x] ✅ Completata (hotfix risolto)
