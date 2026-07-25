@@ -1,3 +1,6 @@
+// Suppress harmless Windows linker messages (dll.lib / dll.exp creation)
+#![allow(linker_messages)]
+
 use std::sync::Mutex;
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
