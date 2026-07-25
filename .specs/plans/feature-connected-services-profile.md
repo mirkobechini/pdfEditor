@@ -81,3 +81,7 @@ Prima di scollegare, mostrare un modal di conferma con input password.
 ## Status
 
 [x] Completata (2026-07-22, PR #390)
+
+## Status
+
+[x] ✅ Completata (già implementata, issue chiusa)
