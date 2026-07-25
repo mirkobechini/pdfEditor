@@ -102,7 +102,7 @@ describe("saveOfflineToken / loadOfflineToken / deleteOfflineToken", () => {
     (window as any).__TAURI__ = { invoke: mockInvoke };
     const { loadOfflineToken } = await import("./useOfflineAuth");
     const result = await loadOfflineToken();
-    expect(mockInvoke).toHaveBeenCalledWith("load_jwt");
+    expect(mockInvoke).toHaveBeenCalledWith("load_jwt", undefined);
     expect(result).toBe("stored-token");
     delete (window as any).__TAURI__;
   });
