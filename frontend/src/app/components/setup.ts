@@ -2,6 +2,16 @@ import "@testing-library/jest-dom/vitest";
 import { vi } from "vitest";
 import React from "react";
 
+// Suppress React act() warnings — they're informational, not bugs.
+// These warnings appear when async state updates happen outside act() wrappers,
+// which is common in tests with multiple async operations. The tests are still valid.
+const originalError = console.error;
+console.error = (...args: unknown[]) => {
+  if (typeof args[0] === "string" && args[0].includes("not wrapped in act"))
+    return;
+  originalError.call(console, ...args);
+};
+
 // Mock window.matchMedia
 Object.defineProperty(window, "matchMedia", {
   writable: true,
