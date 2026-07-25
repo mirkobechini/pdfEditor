@@ -38,13 +38,13 @@
 
 ## 📊 Coverage gaps (non bloccanti)
 
-| Area                         | Coverage        | Bloccante? | Note                                              |
-| ---------------------------- | --------------- | ---------- | ------------------------------------------------- |
+| Area                         | Coverage        | Bloccante? | Note                                                   |
+| ---------------------------- | --------------- | ---------- | ------------------------------------------------------ |
 | Backend totale               | 94% (355 test)  | ❌ No      | 13 nuovi test sync. 97% raggiungibile con test auth.py |
-| Frontend totale              | ~75% (363 test) | ❌ No      | 21 nuovi test Tauri. act() warnings soppressi     |
-| Admin page                   | 67%             | ❌ No      | API calls non testate                             |
-| Editor page                  | 69%             | ❌ No      | handleSplit/handleReorder/... non testati         |
-| Reorder/Split/Remove dialogs | 34-44%          | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom     |
+| Frontend totale              | ~75% (363 test) | ❌ No      | 21 nuovi test Tauri. act() warnings soppressi          |
+| Admin page                   | 67%             | ❌ No      | API calls non testate                                  |
+| Editor page                  | 69%             | ❌ No      | handleSplit/handleReorder/... non testati              |
+| Reorder/Split/Remove dialogs | 34-44%          | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom          |
 
 ---
 
