@@ -185,4 +185,4 @@ pdf-editor/
 
 ## Status
 
-[x] ✅ COMPLETATA — Tutte e 7 le issue desktop sono state implementate e mergiate su dev.
+[x] ✅ COMPLETATA — Tutte e 7 le issue desktop sono state implementate. Backend coverage 94%, frontend ~75%. Tauri tests: 21 test per utility e overlay.

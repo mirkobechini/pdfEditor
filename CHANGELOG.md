@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-07-25
+
+- ✅ **Test Tauri utility e overlay (issue #422, PR #422)** — 11 test per `tauri.ts`, 10 test per `useOfflineAuth`, 21 nuovi test frontend.
+- ✅ **Test sync backend (issue #424, PR #423)** — 13 test per `sync_service`, `sync_repo`, e API `/sync/status`, `/sync/push`, `/sync/pull`. Coverage backend 94%.
+
 ## 2026-07-24
 
 - ✅ **Desktop — Setup workspace Tauri v2 (issue #406, PR #407)** — Struttura `desktop/` + `src-tauri/` completa con tauri.conf.json, Cargo.toml, icone, lib.rs, main.rs.
