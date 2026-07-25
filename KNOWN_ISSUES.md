@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-07-24
+> **Aggiornato:** 2026-07-25
 
 ---
 
@@ -31,20 +31,20 @@
 
 ### T2 — Zero test E2E / integration
 
-**Descrizione:** 331 test backend (con `TestClient` same-origin) + 348 test frontend (jsdom). Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS).  
+**Descrizione:** 342 test backend (con `TestClient` same-origin) + 373 test frontend (jsdom). Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS). Aggiunti 21 test per utility Tauri e componenti overlay.  
 **Risoluzione prevista:** Playwright (T7).
 
 ---
 
 ## 📊 Coverage gaps (non bloccanti)
 
-| Area                         | Coverage         | Bloccante? | Note                                            |
-| ---------------------------- | ---------------- | ---------- | ----------------------------------------------- |
-| Backend totale               | 97% (331 test)   | ❌ No      | Limite pratico raggiunto senza integration test |
-| Frontend totale              | 75.9% (348 test) | ❌ No      | 80%+ solo con Playwright E2E                    |
-| Admin page                   | 67%              | ❌ No      | API calls non testate                           |
-| Editor page                  | 69%              | ❌ No      | handleSplit/handleReorder/... non testati       |
-| Reorder/Split/Remove dialogs | 34-44%           | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom   |
+| Area                         | Coverage        | Bloccante? | Note                                              |
+| ---------------------------- | --------------- | ---------- | ------------------------------------------------- |
+| Backend totale               | 97% (331 test)  | ❌ No      | Limite pratico raggiunto senza integration test   |
+| Frontend totale              | 76%+ (373 test) | ❌ No      | 80%+ solo con Playwright E2E. 21 nuovi test Tauri |
+| Admin page                   | 67%             | ❌ No      | API calls non testate                             |
+| Editor page                  | 69%             | ❌ No      | handleSplit/handleReorder/... non testati         |
+| Reorder/Split/Remove dialogs | 34-44%          | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom     |
 
 ---
 
