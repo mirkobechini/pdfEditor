@@ -53,7 +53,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk2Q0REOTZBN0RFMjExOTMKUldTVEVlSjlhdG5ObHZKbE",
       "endpoints": [
         "https://github.com/mirkobechini/pdfEditor/releases/latest/download/latest.json"
       ],
