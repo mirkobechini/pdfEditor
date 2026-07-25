@@ -4,9 +4,15 @@
   "version": "0.1.0",
   "identifier": "com.mirko.pdfeditor",
   "build": {
-    "beforeDevCommand": "cd /d ../../frontend && npm run dev",
+    "beforeDevCommand": {
+      "script": "npm run dev",
+      "cwd": "../../frontend"
+    },
     "devUrl": "http://localhost:3000",
-    "beforeBuildCommand": "cd ../../frontend && npm run build",
+    "beforeBuildCommand": {
+      "script": "npm run build",
+      "cwd": "../../frontend"
+    },
     "frontendDist": "../../frontend/out"
   },
   "app": {
