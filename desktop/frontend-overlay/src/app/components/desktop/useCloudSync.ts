@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { isTauri, getApiBaseUrl } from "../../../lib/tauri";
+import { isTauri, getApiBaseUrl } from "../../lib/tauri";
 
 type SyncState = "synced" | "syncing" | "error" | "offline";
 

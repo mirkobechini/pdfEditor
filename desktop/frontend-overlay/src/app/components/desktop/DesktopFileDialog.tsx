@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { isTauri, tauriInvoke } from "../../../lib/tauri";
+import { isTauri, tauriInvoke } from "../../lib/tauri";
 
 interface DesktopFileDialogProps {
     /** Called when a file is selected (desktop: via Tauri dialog, web: via <input>) */

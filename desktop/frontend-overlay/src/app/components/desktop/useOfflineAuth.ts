@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { isTauri, tauriInvoke } from "../../../lib/tauri";
+import { isTauri, tauriInvoke } from "../../lib/tauri";
 
 const STORE_KEY = "auth_offline_token";
 

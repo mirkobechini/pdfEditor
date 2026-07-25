@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { isTauri } from "../../../lib/tauri";
+import { isTauri } from "../../lib/tauri";
 import { useOfflineAuth } from "./useOfflineAuth";
 
 /**
@@ -18,8 +18,8 @@ export default function DesktopStatusBadge() {
     return (
         <span
             className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isOnline
-                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                    : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
                 }`}
             title={isOnline ? t("online") : t("offline")}
         >
