@@ -137,6 +137,48 @@ class AuthService:
         token = create_access_token(data={"sub": user.id})
         return user, token
 
+    def create_guest_user(self) -> tuple[User, str]:
+        """Create a temporary guest user and return (user, jwt_token)."""
+        import uuid
+
+        guest_id = str(uuid.uuid4())
+        guest_email = f"guest-{guest_id[:8]}@pdfeditor.local"
+        guest_name = f"Guest {guest_id[:8]}"
+
+        import secrets
+        guest_pw = secrets.token_urlsafe(32)
+        hashed = get_password_hash(guest_pw)
+
+        user = User(
+            email=guest_email,
+            hashed_password=hashed,
+            full_name=guest_name,
+            is_guest=True,
+        )
+        user = self.repo.create(user)
+        token = create_access_token(data={"sub": user.id})
+        return user, token
+
+    def convert_guest(self, user: User, email: str, password: str, full_name: str) -> User:
+        """Convert a guest account to a full registered account."""
+        if not user.is_guest:
+            raise ValueError("Account is already a full user")
+
+        _validate_password_strength(password)
+
+        # Check email not already taken
+        existing = self.repo.get_by_email(email)
+        if existing and existing.id != user.id:
+            raise ValueError("Email already registered")
+
+        hashed = get_password_hash(password)
+        user.email = email
+        user.hashed_password = hashed
+        user.full_name = full_name
+        user.is_guest = False
+        self.repo.update(user)
+        return user
+
     def request_password_reset(self, email: str) -> str | None:
         """Generate a reset token for the user. Returns the token if user exists, None otherwise.
         In production, the token would be sent via email. For now, returns it for testing.

@@ -54,6 +54,7 @@ export interface UserResponse {
   full_name: string;
   is_active: boolean;
   is_admin: boolean;
+  is_guest: boolean;
   license_tier: string;
   license_tier_source: string;
   google_id: string | null;

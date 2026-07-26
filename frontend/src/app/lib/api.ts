@@ -415,15 +415,42 @@ export class ApiClient {
     return data;
   }
 
-  async forgotPassword(email: string): Promise<{ message: string }> {
-    const res = await this._fetch(`${this.baseUrl}/auth/forgot-password`, {
+  async guestLogin(): Promise<{
+    access_token: string;
+    token_type: string;
+    csrf_token?: string;
+    user: UserResponse;
+  }> {
+    const res = await this._fetch(`${this.baseUrl}/auth/guest`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
-    return res.json();
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
   }
+
+  async convertGuest(
+    email: string,
+    password: string,
+    fullName: string,
+  ): Promise<{
+    access_token: string;
+    token_type: string;
+    csrf_token?: string;
+  }> {
+    const res = await this._fetch(`${this.baseUrl}/auth/guest/convert`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, full_name: fullName }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
 
   async resetPassword(
     token: string,
