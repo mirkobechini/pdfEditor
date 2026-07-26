@@ -50,14 +50,14 @@
 
 ## 🧪 Dipendenze con warning (Dependabot)
 
-| # | Pacchetto | Severità | Versione | Stato | Note |
-|---|---|---|---|---|---|
-| **34** | `postcss` (path traversal) | 🔴 high | 8.4.31 (via Next.js) | ⛔ **Non fixabile** | Sub-dipendenza interna di `next@16.2.11`. In attesa che Next.js aggiorni il suo sub-dep. |
-| **33** | `postcss` (arbitrary file read) | 🔴 high | 8.4.31 (via Next.js) | ⛔ **Non fixabile** | Stesso di #34. |
-| **22** | `sharp` / libvips | 🔴 high | < 0.35.0 | ⛔ **Non fixabile** | Sub-dipendenza interna Next.js 16.2.11. `sharp@0.35.0` esiste ma Next non lo richiede ancora. |
-| **32** | `glib::VariantStrIter` | 🟡 medium | < 0.20.0 (Rust) | ⏳ **Fixabile ma sconsigliato** | Dipendenza indiretta di Tauri. Forzare `glib 0.20.0` rischia di rompere `cargo tauri build`. CVE non esposto a input utente. |
-| — | `httpx` + `starlette.testclient` | — | — | ⛔ **Non fixabile** | `StarletteDeprecationWarning` — `httpx2` non esiste ancora. |
-| — | `brace-expansion` | 🔴 high | 1.1.16 / 5.0.8 | ✅ **Falso positivo** | DevDependency di eslint, non raggiungibile in produzione. Auto-dismissed da Dependabot. |
+| #      | Pacchetto                        | Severità  | Versione             | Stato                           | Note                                                                                                                         |
+| ------ | -------------------------------- | --------- | -------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **34** | `postcss` (path traversal)       | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**             | Sub-dipendenza interna di `next@16.2.11`. In attesa che Next.js aggiorni il suo sub-dep.                                     |
+| **33** | `postcss` (arbitrary file read)  | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**             | Stesso di #34.                                                                                                               |
+| **22** | `sharp` / libvips                | 🔴 high   | < 0.35.0             | ⛔ **Non fixabile**             | Sub-dipendenza interna Next.js 16.2.11. `sharp@0.35.0` esiste ma Next non lo richiede ancora.                                |
+| **32** | `glib::VariantStrIter`           | 🟡 medium | < 0.20.0 (Rust)      | ⏳ **Fixabile ma sconsigliato** | Dipendenza indiretta di Tauri. Forzare `glib 0.20.0` rischia di rompere `cargo tauri build`. CVE non esposto a input utente. |
+| —      | `httpx` + `starlette.testclient` | —         | —                    | ⛔ **Non fixabile**             | `StarletteDeprecationWarning` — `httpx2` non esiste ancora.                                                                  |
+| —      | `brace-expansion`                | 🔴 high   | 1.1.16 / 5.0.8       | ✅ **Falso positivo**           | DevDependency di eslint, non raggiungibile in produzione. Auto-dismissed da Dependabot.                                      |
 
 ### Vulnerabilità risolte (non più segnalate da Dependabot)
 
