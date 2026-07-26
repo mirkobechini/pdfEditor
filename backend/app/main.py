@@ -54,6 +54,8 @@ def _add_missing_columns():
             missing.append("reset_token VARCHAR(255)")
         if "reset_token_expires" not in existing_cols:
             missing.append("reset_token_expires TIMESTAMP")
+        if "is_guest" not in existing_cols:
+            missing.append("is_guest BOOLEAN NOT NULL DEFAULT FALSE")
         for col_def in missing:
             with engine.connect() as conn:
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_def}"))
