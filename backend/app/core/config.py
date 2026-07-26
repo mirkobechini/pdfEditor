@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     # CORS origins (production should restrict this)
-    ALLOWED_ORIGINS: str = "http://localhost:3000"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,tauri://localhost,https://tauri.localhost"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
