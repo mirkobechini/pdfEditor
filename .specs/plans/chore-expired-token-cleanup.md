@@ -1,5 +1,7 @@
 # Chore: Add Expired Token Cleanup
 
+**Status:** ✅ Completata (2026-07-26)
+
 **Issue Number**: issue-141
 
 ## Obiettivo

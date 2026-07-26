@@ -1,5 +1,7 @@
 # Chore: Move Admin Email to .env Configuration
 
+**Status:** ✅ Completata (2026-07-26)
+
 **Issue Number**: issue-139
 
 ## Obiettivo

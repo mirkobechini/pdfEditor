@@ -1,5 +1,7 @@
 # Feature: PDF Lock (Protect with Password)
 
+**Status:** ✅ Completata (2026-07-02)
+
 **Issue Number**: issue-150
 
 ## Obiettivo

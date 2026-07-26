@@ -1,6 +1,6 @@
 # Feature Plan: Password Visibility Toggle (Eye Icon)
 
-**Status:** ✅ Già implementata — `PasswordInput.tsx` contiene toggle `show/hide` via `useState`
+**Status:** ✅ Completata (2026-07-26)
 
 ---
 

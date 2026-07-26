@@ -1,6 +1,6 @@
 # Bug: Monkey logo image missing on Render deploy
 
-**Status:** ✅ Risolto (2026-07-14) — File presente in `public/`, probabile cache Cloudflare
+**Status:** ✅ Completata (2026-07-14) — File presente in `public/`, probabile cache Cloudflare
 **Priority:** LOW (cosmetic)
 **Complexity:** Low
 
