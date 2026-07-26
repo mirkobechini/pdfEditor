@@ -488,3 +488,99 @@ class TestUnlinkGoogle:
             json={"password": "Password123"},
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class TestGuestAccess:
+    """Test suite for POST /auth/guest and POST /auth/guest/convert."""
+
+    GUEST_URL = "/auth/guest"
+    CONVERT_URL = "/auth/guest/convert"
+
+    def test_guest_login_creates_user(self, client):
+        """POST /auth/guest should create a guest user and return token + user."""
+        response = client.post(self.GUEST_URL)
+        assert response.status_code == status.HTTP_201_CREATED
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+        assert "csrf_token" in data
+
+        # PRODUCTION CHECK: must return user object
+        assert "user" in data
+        assert data["user"]["is_guest"] is True
+        assert data["user"]["email"].startswith("guest-")
+        assert data["user"]["email"].endswith("@pdfeditor.local")
+
+        # PRODUCTION CHECK: httpOnly cookie must be set
+        assert "access_token" in client.cookies
+        assert client.cookies["access_token"] != ""
+
+        # Cookie-based auth must work
+        me_resp = client.get("/auth/me")
+        assert me_resp.status_code == status.HTTP_200_OK
+        assert me_resp.json()["is_guest"] is True
+
+    def test_guest_login_unique_each_time(self, client):
+        """Each guest login creates a different user."""
+        resp1 = client.post(self.GUEST_URL)
+        client.cookies.clear()
+        resp2 = client.post(self.GUEST_URL)
+        assert resp1.json()["user"]["id"] != resp2.json()["user"]["id"]
+
+    def test_guest_convert_success(self, client):
+        """POST /auth/guest/convert should convert guest to full user."""
+        # Create guest
+        guest_resp = client.post(self.GUEST_URL)
+        assert guest_resp.status_code == status.HTTP_201_CREATED
+
+        # Convert
+        response = client.post(
+            self.CONVERT_URL,
+            json={
+                "email": "converted@example.com",
+                "password": "StrongPass1",
+                "full_name": "Converted User",
+            },
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "access_token" in data
+
+        # Verify user is no longer guest
+        me_resp = client.get("/auth/me")
+        assert me_resp.status_code == status.HTTP_200_OK
+        assert me_resp.json()["is_guest"] is False
+        assert me_resp.json()["email"] == "converted@example.com"
+        assert me_resp.json()["full_name"] == "Converted User"
+
+    def test_guest_convert_unauthenticated(self, client):
+        """POST /auth/guest/convert should return 401 without auth."""
+        response = client.post(
+            self.CONVERT_URL,
+            json={
+                "email": "test@example.com",
+                "password": "StrongPass1",
+                "full_name": "Test",
+            },
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_guest_convert_non_guest_fails(self, client):
+        """A non-guest user cannot use the convert endpoint."""
+        # Register a normal user
+        client.post(
+            "/auth/register",
+            json={"email": "normal@example.com", "password": "Password123", "full_name": "Normal"},
+        )
+
+        response = client.post(
+            self.CONVERT_URL,
+            json={
+                "email": "normal@example.com",
+                "password": "Password1234",
+                "full_name": "Changed",
+            },
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        data = response.json()
+        assert "already a full user" in data["detail"]

@@ -69,13 +69,23 @@ export default function HeaderControls() {
   return (
     <div className="flex items-center gap-3">
       {user && (
-        <a
-          href="/app/profile"
-          className="text-sm text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
-          title={user.email}
-        >
-          {user.full_name} ⚙️
-        </a>
+        <>
+          {user.is_guest && (
+            <a
+              href="/register?convert=1"
+              className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded hover:bg-yellow-200 dark:hover:bg-yellow-800/40 transition-colors"
+            >
+              Guest
+            </a>
+          )}
+          <a
+            href="/app/profile"
+            className="text-sm text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+            title={user.email}
+          >
+            {user.full_name} ⚙️
+          </a>
+        </>
       )}
       <ToggleDarkMode />
       <LanguageSelector />

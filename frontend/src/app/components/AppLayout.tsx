@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../lib/auth";
 import BugReportDialog from "./BugReportDialog";
+import GuestConvertBanner from "./GuestConvertBanner";
 import HeaderControls from "./HeaderControls";
 
 interface LayoutProps {
@@ -23,6 +24,9 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-hidden">
+      {/* Guest convert banner */}
+      <GuestConvertBanner />
+
       {/* Header */}
       <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">

@@ -19,6 +19,7 @@ class User(Base):
     full_name = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
+    is_guest = Column(Boolean, default=False, nullable=False)
     license_tier = Column(String(20), default="free", nullable=False)
     license_tier_source = Column(
         String(20),

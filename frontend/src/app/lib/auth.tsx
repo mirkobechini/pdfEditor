@@ -10,6 +10,7 @@ interface User {
   full_name: string;
   is_active: boolean;
   is_admin: boolean;
+  is_guest: boolean;
   license_tier: string;
   license_tier_source: string;
   google_id: string | null;
@@ -23,6 +24,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   googleLogin: (idToken: string) => Promise<void>;
+  guestLogin: () => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   isDesktop: boolean;
@@ -113,6 +115,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const guestLogin = useCallback(async () => {
+    _pendingAuthRef.current = true;
+    setLoading(true);
+    try {
+      const res = await api.guestLogin();
+      api.setToken(res.access_token);
+      try {
+        const u = await api.getMe();
+        setUser(u);
+      } catch {
+        window.location.href = "/";
+        return;
+      }
+    } finally {
+      setLoading(false);
+      _pendingAuthRef.current = false;
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     // Clear cookie by calling logout endpoint
     try {
@@ -125,7 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout, setUser, isDesktop: isTauri() }}>
+    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, guestLogin, logout, setUser, isDesktop: isTauri() }}>
       {children}
     </AuthContext.Provider>
   );
