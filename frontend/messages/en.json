@@ -196,6 +196,7 @@
     "googleLogin": "Sign in with Google",
     "googleRegister": "Sign up with Google",
     "forgotTitle": "Forgot Password",
+    "rememberMe": "Remember me",
     "forgotDescription": "Enter your email address and we'll send you a link to reset your password.",
     "sendResetLink": "Send Reset Link",
     "resetSent": "Password reset email sent. Check your inbox.",

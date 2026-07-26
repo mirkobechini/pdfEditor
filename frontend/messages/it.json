@@ -198,6 +198,7 @@
     "googleLogin": "Accedi con Google",
     "googleRegister": "Registrati con Google",
     "forgotTitle": "Password Dimenticata",
+    "rememberMe": "Ricordami",
     "forgotDescription": "Inserisci la tua email e ti invieremo un link per reimpostare la password.",
     "sendResetLink": "Invia Link di Reset",
     "resetSent": "Email di reset inviata. Controlla la tua casella di posta.",
