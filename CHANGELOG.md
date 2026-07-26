@@ -8,6 +8,8 @@
 - ✅ **Workflow permissions (issue #433, PR #436)** — Aggiunto `permissions: contents: read` a `release.yml`. Risolve 3 Code Scanning warnings.
 - ✅ **Fix CI frontend (issue #437, PR #438)** — Ripristinato corpo `forgotPassword()` in `api.ts` e aggiunto mock `useSearchParams` in register test. CI ora verde su dev.
 - ✅ **mapError in frontend (PR #434, #438)** — Sostituiti `err.message` raw con `mapError()` in 3 file: MetadataDialog, SplitDialog, reset-password.
+- ✅ **Render deploy fix (issue #439, PR #440)** — Aggiunto `is_guest` a `_add_missing_columns()` in `main.py`.
+- ✅ **Documentation** — Create 5 new plans in `.specs/plans/`: desktop env, remember-me, guest desktop-only, webapp UI fixes, landing page fixes.
 
 ## 2026-07-25
 
