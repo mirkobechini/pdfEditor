@@ -9,6 +9,7 @@ import { useAuth } from "../lib/auth";
 import { mapError } from "../lib/error-map";
 import HeaderControls from "../components/HeaderControls";
 import PasswordInput from "../components/PasswordInput";
+import { isTauri } from "../lib/tauri";
 
 // Import GoogleLoginButton without SSR to avoid hydration mismatch
 const GoogleLoginButton = dynamic(
@@ -73,20 +74,22 @@ export default function LoginPage() {
             <hr className="flex-1 border-gray-300 dark:border-gray-600" />
           </div>
 
-          {/* Guest Access */}
-          <button
-            onClick={async () => {
-              try {
-                await guestLogin();
-                window.location.href = "/app";
-              } catch {
-                setError(t("loginFailed"));
-              }
-            }}
-            className="w-full py-2 text-sm rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium mb-4"
-          >
-            {t("guestLogin")}
-          </button>
+          {/* Guest Access — Desktop only */}
+          {isTauri() && (
+            <button
+              onClick={async () => {
+                try {
+                  await guestLogin();
+                  window.location.href = "/app";
+                } catch {
+                  setError(t("loginFailed"));
+                }
+              }}
+              className="w-full py-2 text-sm rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium mb-4"
+            >
+              {t("guestLogin")}
+            </button>
+          )}
 
           {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
