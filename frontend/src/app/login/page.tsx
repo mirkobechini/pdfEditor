@@ -23,6 +23,7 @@ export default function LoginPage() {
   const { login, guestLogin } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [remember, setRemember] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
 
@@ -33,7 +34,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      await login(email.trim(), password);
+      await login(email.trim(), password, remember);
       window.location.href = "/app";
     } catch (err) {
       const key = mapError(err);
@@ -115,6 +116,17 @@ export default function LoginPage() {
                 required
               />
             </div>
+
+            {/* Remember Me */}
+            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
+              />
+              {t("rememberMe")}
+            </label>
 
             {error && (
               <div className="p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">
