@@ -4,6 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
+const DESKTOP_RELEASE_URL = "https://github.com/mirkobechini/pdfEditor/releases/latest";
+
 export default function LandingFooter() {
     const t = useTranslations("landing.footer");
 
@@ -35,8 +37,8 @@ export default function LandingFooter() {
                             </a>
                         </li>
                         <li>
-                            <a href="#pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                {t("product.pricing")}
+                            <a href={DESKTOP_RELEASE_URL} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                Scarica Desktop
                             </a>
                         </li>
                         <li>
