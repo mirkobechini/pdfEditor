@@ -1,14 +1,13 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
 import { useAuth } from "../lib/auth";
 
 export default function GuestConvertBanner() {
     const t = useTranslations("auth");
     const { user } = useAuth();
-    const router = useRouter();
 
     if (!user?.is_guest) return null;
 
@@ -18,12 +17,12 @@ export default function GuestConvertBanner() {
                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
                     {t("guestConvertDescription")}
                 </p>
-                <button
-                    onClick={() => router.push("/register?convert=1")}
+                <Link
+                    href="/register?convert=1"
                     className="text-sm bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded font-medium transition-colors shrink-0"
                 >
                     {t("guestConvertTitle")}
-                </button>
+                </Link>
             </div>
         </div>
     );
