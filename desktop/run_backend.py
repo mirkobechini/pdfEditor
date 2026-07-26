@@ -56,6 +56,10 @@ def main():
     port = int(os.environ.get("SIDECAR_PORT", "7723"))
     host = os.environ.get("SIDECAR_HOST", "127.0.0.1")
 
+    print(f"[sidecar] Starting on {host}:{port}")
+    print(f"[sidecar] CORS origins: {os.environ.get('ALLOWED_ORIGINS', 'default')}")
+    print(f"[sidecar] Google client ID configured: {bool(os.environ.get('NEXT_PUBLIC_GOOGLE_CLIENT_ID'))}")
+
     uvicorn.run(
         "app.main:app",
         host=host,
