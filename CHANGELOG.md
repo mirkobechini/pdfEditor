@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-26
+
+- ✅ **Guest access (issue #427, PR #428)** — Nuovo endpoint `POST /auth/guest` e `POST /auth/guest/convert`, campo `is_guest` su User, pulsante "Continue as Guest" nel login, badge Guest in header, GuestConvertBanner, supporto `?convert=1` in register. 5 test backend, 329 frontend.
+- ✅ **Fix CI migration test (issue #431, PR #434)** — Aggiornato `test_downgrade_single_and_upgrade_again` per nuovo head migration `add_is_guest_to_user`.
+- ✅ **Path traversal sanitization (issue #432, PR #435)** — Aggiunto controllo path traversal in `get_pdf_path()`. Risolve 5 Code Scanning error.
+- ✅ **Workflow permissions (issue #433, PR #436)** — Aggiunto `permissions: contents: read` a `release.yml`. Risolve 3 Code Scanning warnings.
+- ✅ **Fix CI frontend (issue #437, PR #438)** — Ripristinato corpo `forgotPassword()` in `api.ts` e aggiunto mock `useSearchParams` in register test. CI ora verde su dev.
+- ✅ **mapError in frontend (PR #434, #438)** — Sostituiti `err.message` raw con `mapError()` in 3 file: MetadataDialog, SplitDialog, reset-password.
+
 ## 2026-07-25
 
 - ✅ **Test Tauri utility e overlay (issue #422, PR #422)** — 11 test per `tauri.ts`, 10 test per `useOfflineAuth`, 21 nuovi test frontend.

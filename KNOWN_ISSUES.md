@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-07-25
+> **Aggiornato:** 2026-07-26
 
 ---
 
@@ -40,7 +40,7 @@
 
 | Area                         | Coverage        | Bloccante? | Note                                                   |
 | ---------------------------- | --------------- | ---------- | ------------------------------------------------------ |
-| Backend totale               | 94% (355 test)  | ❌ No      | 13 nuovi test sync. 97% raggiungibile con test auth.py |
+| Backend totale               | 94% (359 test)  | ❌ No      | 1 pre-existing fail (test_seed_super_admin) |
 | Frontend totale              | ~75% (363 test) | ❌ No      | 21 nuovi test Tauri. act() warnings soppressi          |
 | Admin page                   | 67%             | ❌ No      | API calls non testate                                  |
 | Editor page                  | 69%             | ❌ No      | handleSplit/handleReorder/... non testati              |
