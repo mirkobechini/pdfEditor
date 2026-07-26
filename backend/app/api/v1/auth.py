@@ -6,9 +6,12 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db
 from app.core.config import settings
 from app.core.limiter import limiter
+from app.core.security import create_access_token
 from app.schemas.auth import (
     ForgotPasswordRequest,
     GoogleLoginRequest,
+    GuestConvertRequest,
+    GuestTokenResponse,
     ResetPasswordRequest,
     TokenResponse,
     UnlinkGoogleRequest,
@@ -128,6 +131,70 @@ def login(
         content=TokenResponse(access_token=token, csrf_token=csrf_token).model_dump(mode="json"),
     )
     _set_token_cookie(response, token)
+    set_csrf_cookie(response, csrf_token)
+    return response
+
+
+@router.post("/guest", response_model=GuestTokenResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/hour")
+def guest_login(
+    request: Request,
+    service: AuthService = Depends(get_auth_service),
+) -> GuestTokenResponse:
+    """Create a temporary guest account. No credentials needed."""
+    user, token = service.create_guest_user()
+    csrf_token = generate_csrf_token()
+    response = JSONResponse(
+        content=GuestTokenResponse(
+            access_token=token,
+            csrf_token=csrf_token,
+            user=UserResponse.model_validate(user),
+        ).model_dump(mode="json"),
+        status_code=status.HTTP_201_CREATED,
+    )
+    _set_token_cookie(response, token)
+    set_csrf_cookie(response, csrf_token)
+    return response
+
+
+@router.post("/guest/convert", response_model=TokenResponse)
+def convert_guest(
+    req: GuestConvertRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    service: AuthService = Depends(get_auth_service),
+) -> TokenResponse:
+    """Convert guest account to full registration."""
+    token = _get_token(request)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+
+    try:
+        user = service.get_current_user(token)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+
+    try:
+        service.convert_guest(user, email=req.email, password=req.password, full_name=req.full_name)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    # Re-login to get new token with same user
+    new_token = create_access_token(data={"sub": user.id})
+    csrf_token = generate_csrf_token()
+    response = JSONResponse(
+        content=TokenResponse(access_token=new_token, csrf_token=csrf_token).model_dump(mode="json"),
+    )
+    _set_token_cookie(response, new_token)
     set_csrf_cookie(response, csrf_token)
     return response
 

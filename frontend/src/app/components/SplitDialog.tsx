@@ -74,7 +74,7 @@ export default function SplitDialog({ open, onClose, selectedId, selectedName, t
     } catch (err) {
       // Gracefully handle error (PDF deleted, race condition, etc.)
       console.debug("Failed to load thumbnails:", err);
-      setError(t("failed") + ": " + (err instanceof Error ? err.message : "Unknown error"));
+      setError(t("failed") + ": " + mapError(err));
     } finally {
       setLoading(false);
     }

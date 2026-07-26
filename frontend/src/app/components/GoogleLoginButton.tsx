@@ -11,9 +11,9 @@ export default function GoogleLoginButton() {
     const [error, setError] = React.useState<string | null>(null);
     const [mounted, setMounted] = React.useState(false);
     const [GoogleLogin, setGoogleLogin] = React.useState<React.ComponentType<any> | null>(null);
+    const [noClientId, setNoClientId] = React.useState(false);
 
     React.useEffect(() => {
-        // Only run on client side
         setMounted(true);
         (async () => {
             try {
@@ -21,14 +21,29 @@ export default function GoogleLoginButton() {
                 if (hasClientId) {
                     const mod = await import("@react-oauth/google");
                     setGoogleLogin(() => mod.GoogleLogin);
+                } else {
+                    setNoClientId(true);
                 }
             } catch (err) {
                 console.debug("Google OAuth not available:", err);
+                setNoClientId(true);
             }
         })();
     }, []);
 
-    if (!mounted || !GoogleLogin) {
+    if (!mounted) {
+        return <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />;
+    }
+
+    if (noClientId) {
+        return (
+            <div className="p-3 text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded text-center">
+                Google login non configurato nelle variabili d'ambiente
+            </div>
+        );
+    }
+
+    if (!GoogleLogin) {
         return <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />;
     }
 

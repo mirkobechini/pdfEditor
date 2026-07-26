@@ -42,7 +42,7 @@ function ResetPasswordContent() {
             await login(user.email, password);
             router.push("/");
         } catch (err) {
-            setError(err instanceof Error ? err.message : String(err));
+            setError(mapError(err));
         } finally {
             setLoading(false);
         }

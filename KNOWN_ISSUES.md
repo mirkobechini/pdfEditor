@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-07-25
+> **Aggiornato:** 2026-07-26
 
 ---
 
@@ -38,24 +38,26 @@
 
 ## 📊 Coverage gaps (non bloccanti)
 
-| Area                         | Coverage        | Bloccante? | Note                                                   |
-| ---------------------------- | --------------- | ---------- | ------------------------------------------------------ |
-| Backend totale               | 94% (355 test)  | ❌ No      | 13 nuovi test sync. 97% raggiungibile con test auth.py |
-| Frontend totale              | ~75% (363 test) | ❌ No      | 21 nuovi test Tauri. act() warnings soppressi          |
-| Admin page                   | 67%             | ❌ No      | API calls non testate                                  |
-| Editor page                  | 69%             | ❌ No      | handleSplit/handleReorder/... non testati              |
-| Reorder/Split/Remove dialogs | 34-44%          | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom          |
+| Area                         | Coverage        | Bloccante? | Note                                          |
+| ---------------------------- | --------------- | ---------- | --------------------------------------------- |
+| Backend totale               | 94% (359 test)  | ❌ No      | 1 pre-existing fail (test_seed_super_admin)   |
+| Frontend totale              | ~75% (363 test) | ❌ No      | 21 nuovi test Tauri. act() warnings soppressi |
+| Admin page                   | 67%             | ❌ No      | API calls non testate                         |
+| Editor page                  | 69%             | ❌ No      | handleSplit/handleReorder/... non testati     |
+| Reorder/Split/Remove dialogs | 34-44%          | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom |
 
 ---
 
-## 🧪 Dipendenze con warning
+## 🧪 Dipendenze con warning (Dependabot)
 
-| Pacchetto                        | Versione       | Warning                       | Impatto                                                       |
-| -------------------------------- | -------------- | ----------------------------- | ------------------------------------------------------------- |
-| `httpx` + `starlette.testclient` | —              | `StarletteDeprecationWarning` | **Non fixabile** — `httpx2` non esiste ancora                 |
-| `sharp`                          | < 0.35.0       | CVE (High)                    | Dipendenza interna Next.js 16.2.11, in attesa di fix upstream |
-| `brace-expansion`                | 1.1.16 / 5.0.8 | CVE-2026-13149 (High)         | DevDependency (eslint)                                        |
-| `postcss`                        | < 8.5.10       | CVE-2026-41305 (Medium)       | DevDependency via Next.js, non raggiungibile in produzione    |
+| #      | Pacchetto                        | Severità  | Versione             | Stato                           | Note                                                                                                                         |
+| ------ | -------------------------------- | --------- | -------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **34** | `postcss` (path traversal)       | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**             | Sub-dipendenza interna di `next@16.2.11`. In attesa che Next.js aggiorni il suo sub-dep.                                     |
+| **33** | `postcss` (arbitrary file read)  | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**             | Stesso di #34.                                                                                                               |
+| **22** | `sharp` / libvips                | 🔴 high   | < 0.35.0             | ⛔ **Non fixabile**             | Sub-dipendenza interna Next.js 16.2.11. `sharp@0.35.0` esiste ma Next non lo richiede ancora.                                |
+| **32** | `glib::VariantStrIter`           | 🟡 medium | < 0.20.0 (Rust)      | ⏳ **Fixabile ma sconsigliato** | Dipendenza indiretta di Tauri. Forzare `glib 0.20.0` rischia di rompere `cargo tauri build`. CVE non esposto a input utente. |
+| —      | `httpx` + `starlette.testclient` | —         | —                    | ⛔ **Non fixabile**             | `StarletteDeprecationWarning` — `httpx2` non esiste ancora.                                                                  |
+| —      | `brace-expansion`                | 🔴 high   | 1.1.16 / 5.0.8       | ✅ **Falso positivo**           | DevDependency di eslint, non raggiungibile in produzione. Auto-dismissed da Dependabot.                                      |
 
 ### Vulnerabilità risolte (non più segnalate da Dependabot)
 

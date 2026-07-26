@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { api, Metadata, PdfDocument } from "../lib/api";
+import { mapError } from "../lib/error-map";
 
 interface MetadataDialogProps {
     open: boolean;
@@ -40,7 +41,7 @@ export default function MetadataDialog({ open, onClose, pdfId, onSuccess }: Meta
             setSubject(data.subject || "");
             setKeywords(data.keywords || "");
         } catch (err) {
-            setError(t("loadFailed") + ": " + (err instanceof Error ? err.message : err));
+            setError(t("loadFailed") + ": " + mapError(err));
         } finally {
             setLoading(false);
         }
@@ -61,7 +62,7 @@ export default function MetadataDialog({ open, onClose, pdfId, onSuccess }: Meta
             onSuccess?.(updated);
             onClose();
         } catch (err) {
-            setError(t("saveFailed") + ": " + (err instanceof Error ? err.message : err));
+            setError(t("saveFailed") + ": " + mapError(err));
         } finally {
             setSaving(false);
         }

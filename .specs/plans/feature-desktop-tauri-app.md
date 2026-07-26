@@ -1,6 +1,6 @@
 # Feature: Desktop App (Tauri v2)
 
-**Issue:** #406, #408, #410, #412, #414, #416
+**Status:** ✅ Completata (2026-07-26 — 7/7 issue merged su dev)
 **Branch:** `feature/406-desktop-setup-tauri` → `feature/416-cloud-sync-frontend`
 
 ## Obiettivo

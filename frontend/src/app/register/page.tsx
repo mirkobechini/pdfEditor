@@ -1,19 +1,23 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "../lib/auth";
 import { mapError } from "../lib/error-map";
 import HeaderControls from "../components/HeaderControls";
 import PasswordInput from "../components/PasswordInput";
 import GoogleLoginButton from "../components/GoogleLoginButton";
+import { api } from "../lib/api";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const t = useTranslations("auth");
-  const { register } = useAuth();
-  const [fullName, setFullName] = React.useState("");
+  const { register, user } = useAuth();
+  const searchParams = useSearchParams();
+  const isConvert = searchParams.get("convert") === "1";
+  const [fullName, setFullName] = React.useState(user?.full_name || "");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
@@ -38,8 +42,15 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register(email.trim(), password, fullName.trim());
-      window.location.href = "/app";
+      if (isConvert) {
+        const res = await api.convertGuest(email.trim(), password, fullName.trim());
+        api.setToken(res.access_token);
+        if (res.csrf_token) api.setCsrfToken(res.csrf_token);
+        window.location.href = "/app";
+      } else {
+        await register(email.trim(), password, fullName.trim());
+        window.location.href = "/app";
+      }
     } catch (err) {
       setError(t("registerFailed") + ": " + mapError(err));
     } finally {
@@ -65,7 +76,14 @@ export default function RegisterPage() {
       </header>
       <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
         <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8">
-          <h1 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">{t("registerTitle")}</h1>
+          {isConvert && (
+            <div className="mb-6 p-3 text-sm bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800 rounded">
+              {t("guestConvertDescription")}
+            </div>
+          )}
+          <h1 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-gray-100">
+            {isConvert ? t("guestConvertTitle") : t("registerTitle")}
+          </h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -143,5 +161,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
   );
 }

@@ -61,6 +61,10 @@ def get_pdf_path(file_uuid: str) -> Path | None:
     Note: When using S3, this returns None (path-based access unsupported).
     Use get_file_content() instead for cross-backend compatibility.
     """
+    # Basic path sanitization: reject traversal patterns
+    if ".." in file_uuid or "/" in file_uuid or "\\" in file_uuid:
+        return None
+
     if _use_s3():
         return None  # S3 objects don't have local paths
 

@@ -78,7 +78,7 @@ describe("ResetPasswordPage", () => {
         fireEvent.change(inputs[0], { target: { value: "Password1" } });
         fireEvent.change(inputs[1], { target: { value: "Password1" } });
         fireEvent.click(screen.getByText("resetButton"));
-        expect(await screen.findByText("Token expired")).toBeInTheDocument();
+        expect(await screen.findByText("common.unknownError")).toBeInTheDocument();
     });
 
     it("shows loading state when resetting", async () => {

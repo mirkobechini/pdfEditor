@@ -35,6 +35,7 @@ class UserResponse(BaseModel):
     full_name: str
     is_active: bool
     is_admin: bool
+    is_guest: bool
     license_tier: str
     license_tier_source: str
     google_id: str | None = None
@@ -102,3 +103,27 @@ class ResetPasswordRequest(BaseModel):
 
     token: str
     new_password: str
+
+
+class GuestTokenResponse(BaseModel):
+    """Schema for guest authentication response."""
+
+    access_token: str
+    token_type: str = "bearer"
+    csrf_token: str | None = None
+    user: UserResponse
+
+
+class GuestConvertRequest(BaseModel):
+    """Schema for converting guest account to full registration."""
+
+    email: str
+    password: str
+    full_name: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        if "@" not in v or "." not in v.split("@")[-1]:
+            raise ValueError("Invalid email address")
+        return v.lower().strip()

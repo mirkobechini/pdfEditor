@@ -18,7 +18,8 @@ const GoogleLoginButton = dynamic(
 
 export default function LoginPage() {
   const t = useTranslations("auth");
-  const { login } = useAuth();
+  const tc = useTranslations("common");
+  const { login, guestLogin } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
@@ -34,7 +35,9 @@ export default function LoginPage() {
       await login(email.trim(), password);
       window.location.href = "/app";
     } catch (err) {
-      setError(t(mapError(err)));
+      const key = mapError(err);
+      // common.* keys need the "common" translation namespace
+      setError(key.startsWith("common.") ? tc(key.replace("common.", "")) : t(key));
     } finally {
       setLoading(false);
     }
@@ -69,6 +72,21 @@ export default function LoginPage() {
             <span className="text-xs text-gray-400">or</span>
             <hr className="flex-1 border-gray-300 dark:border-gray-600" />
           </div>
+
+          {/* Guest Access */}
+          <button
+            onClick={async () => {
+              try {
+                await guestLogin();
+                window.location.href = "/app";
+              } catch {
+                setError(t("loginFailed"));
+              }
+            }}
+            className="w-full py-2 text-sm rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium mb-4"
+          >
+            {t("guestLogin")}
+          </button>
 
           {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
