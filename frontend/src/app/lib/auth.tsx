@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useCallback, useEffect, useState } from "react";
 import { api } from "./api";
+import { isTauri } from "./tauri";
 
 interface User {
   id: string;
@@ -24,6 +25,7 @@ interface AuthContextValue {
   googleLogin: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
+  isDesktop: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -123,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout, setUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, logout, setUser, isDesktop: isTauri() }}>
       {children}
     </AuthContext.Provider>
   );
