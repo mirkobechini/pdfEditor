@@ -121,7 +121,7 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByText("loginButton"));
 
     await waitFor(() => {
-      expect(screen.getByText("common.rateLimitExceeded")).toBeTruthy();
+      expect(screen.getByText("rateLimitExceeded")).toBeTruthy();
     });
   });
 
@@ -140,7 +140,7 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByText("loginButton"));
 
     await waitFor(() => {
-      expect(screen.getByText("common.unknownError")).toBeTruthy();
+      expect(screen.getByText("unknownError")).toBeTruthy();
     });
   });
 

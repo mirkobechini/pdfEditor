@@ -2,6 +2,18 @@
 
 import React from "react";
 
+// Disable browser native password toggle to avoid double icons
+const styleSheet = typeof document !== "undefined" ? document.createElement("style") : null;
+if (styleSheet) {
+    styleSheet.textContent = `
+    input[type="password"]::-ms-reveal { display: none !important; }
+    input[type="password"]::-ms-clear { display: none !important; }
+    input[type="password"]::-webkit-credentials-auto-fill-button { display: none !important; }
+    input[type="text"]::-webkit-credentials-auto-fill-button { display: none !important; }
+  `;
+    document.head.appendChild(styleSheet);
+}
+
 interface PasswordInputProps {
     value: string;
     onChange: (value: string) => void;

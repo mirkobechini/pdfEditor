@@ -18,6 +18,7 @@ const GoogleLoginButton = dynamic(
 
 export default function LoginPage() {
   const t = useTranslations("auth");
+  const tc = useTranslations("common");
   const { login } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -34,7 +35,9 @@ export default function LoginPage() {
       await login(email.trim(), password);
       window.location.href = "/app";
     } catch (err) {
-      setError(t(mapError(err)));
+      const key = mapError(err);
+      // common.* keys need the "common" translation namespace
+      setError(key.startsWith("common.") ? tc(key.replace("common.", "")) : t(key));
     } finally {
       setLoading(false);
     }
