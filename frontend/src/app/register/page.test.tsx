@@ -8,6 +8,11 @@ vi.mock("../lib/auth", () => ({
   useAuth: vi.fn(),
 }));
 
+// Mock useSearchParams (used by RegisterForm for ?convert=1)
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(""),
+}));
+
 // Mock matchMedia for HeaderControls dark mode
 Object.defineProperty(window, "matchMedia", {
   writable: true,
