@@ -22,11 +22,11 @@ Chiudere in modo definitivo i gap residui su error handling backend/frontend eme
 ### Frontend (error rendering)
 
 - [x] Fix i18n admin bug reports status (`frontend/src/app/admin/page.tsx`) — issue #374 / branch `hotfix/374-admin-bug-i18n`
-- [ ] Rimuovere `err.message` raw dai catch user-facing
-  - [ ] `frontend/src/app/components/MetadataDialog.tsx`
-  - [ ] `frontend/src/app/components/SplitDialog.tsx` (ramo thumbnail load)
-  - [ ] `frontend/src/app/reset-password/page.tsx`
-- [ ] Usare `mapError(err)` in modo uniforme
+- [x] Rimuovere `err.message` raw dai catch user-facing
+  - [x] `frontend/src/app/components/MetadataDialog.tsx`
+  - [x] `frontend/src/app/components/SplitDialog.tsx` (ramo thumbnail load)
+  - [x] `frontend/src/app/reset-password/page.tsx`
+- [x] Usare `mapError(err)` in modo uniforme
 
 ### Test & quality gate
 
