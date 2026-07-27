@@ -63,26 +63,26 @@ jobs:
           echo "Bumping version to $VERSION"
           # Use python3 for portable sed-like replacement (works on macOS, Linux, Windows)
           python3 -c "
-import json, re
-# tauri.conf.json
-with open('desktop/src-tauri/tauri.conf.json') as f:
-    c = json.load(f)
-c['version'] = '$VERSION'
-with open('desktop/src-tauri/tauri.conf.json', 'w') as f:
-    json.dump(c, f, indent=2)
-# package.json
-with open('frontend/package.json') as f:
-    c = json.load(f)
-c['version'] = '$VERSION'
-with open('frontend/package.json', 'w') as f:
-    json.dump(c, f, indent=2)
-# pyproject.toml
-with open('backend/pyproject.toml') as f:
-    content = f.read()
-content = re.sub(r'^version = \".*\"', 'version = \"$VERSION\"', content, flags=re.MULTILINE)
-with open('backend/pyproject.toml', 'w') as f:
-    f.write(content)
-"
+          import json, re
+          # tauri.conf.json
+          with open('desktop/src-tauri/tauri.conf.json') as f:
+              c = json.load(f)
+          c['version'] = '$VERSION'
+          with open('desktop/src-tauri/tauri.conf.json', 'w') as f:
+              json.dump(c, f, indent=2)
+          # package.json
+          with open('frontend/package.json') as f:
+              c = json.load(f)
+          c['version'] = '$VERSION'
+          with open('frontend/package.json', 'w') as f:
+              json.dump(c, f, indent=2)
+          # pyproject.toml
+          with open('backend/pyproject.toml') as f:
+              content = f.read()
+          content = re.sub(r'^version = \".*\"', 'version = \"$VERSION\"', content, flags=re.MULTILINE)
+          with open('backend/pyproject.toml', 'w') as f:
+              f.write(content)
+          "
           echo "Version bumped to $VERSION in all config files"
 
       - name: Setup Node.js

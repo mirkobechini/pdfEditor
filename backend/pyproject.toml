@@ -1,6 +1,6 @@
 [project]
 name = "pdf-editor-backend"
-version = "0.1.0"
+version = "0.1.8"
 description = "FastAPI backend for PDF Editor"
 requires-python = ">=3.12"
 dependencies = []
