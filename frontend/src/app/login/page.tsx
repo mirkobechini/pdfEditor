@@ -35,6 +35,13 @@ export default function LoginPage() {
     }
   }, [loading, user]);
 
+  // Show login form after 5 seconds even if still loading (cold start fallback)
+  const [showAnyway, setShowAnyway] = React.useState(false);
+  React.useEffect(() => {
+    const timer = setTimeout(() => setShowAnyway(true), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
@@ -52,8 +59,8 @@ export default function LoginPage() {
     }
   }
 
-  // Show loading while checking auth state
-  if (loading) {
+  // Show loading while checking auth state (but show form after 5s anyway)
+  if (loading && !showAnyway) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <p className="text-gray-500 dark:text-gray-400">Loading...</p>
