@@ -88,3 +88,11 @@ L'audit manuale del 2026-07-15 ha trovato 21 bug + 10 miglioramenti, tutti fixat
 **Rimedio:** Rimosse tutte le chiavi hardcoded da `.env.desktop`. Aggiunta auto-generazione di `SECRET_KEY` in `config.py` se vuota (PR #446).
 
 **Regola per il futuro:** I file `.env` pubblici non devono mai contenere secret. Se un valore è opzionale (auto-generabile), lascialo vuoto. Se è obbligatorio, documentalo in `.env.example` ma non nel file bundlato.
+
+### 2026-07-27 — La versione dell'app va aggiornata in 3 file prima di ogni release
+
+**Problema:** `tauri.conf.json`, `package.json` e `pyproject.toml` avevano tutti `version = "0.1.0"` nonostante i tag `v0.1.1`, `v0.1.2`, `v0.1.3`. L'installer desktop mostrava ancora "0.1.0" internamente.
+
+**Rimedio:** Aggiornati tutti e 3 i file manualmente.
+
+**Regola per il futuro:** Prima di creare un tag release, aggiornare SEMPRE `tauri.conf.json`, `package.json` e `pyproject.toml` con la nuova versione. Il `release.yml` dovrebbe idealmente automatizzare questo passaggio leggendo il nome del tag.
