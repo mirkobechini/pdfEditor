@@ -13,8 +13,10 @@
 - ✅ **Google button width fix** — Rimosso `width="100%"` (invalido per GSI library), sostituito con wrapper CSS.
 - ✅ **Password autocomplete** — Aggiunto `autoComplete="current-password"` a `PasswordInput`.
 - ✅ **CI pipeline** — Render ora usa "After CI checks pass" per deploy. Release job aspetta CI verde.
-- ✅ **Auto version bump** — `release.yml` aggiorna automaticamente `tauri.conf.json`, `package.json`, `pyproject.toml` dal tag name.
-- ✅ **AGENT_FLOW, LESSONS_LEARNED, skill** — Documentazione aggiornata con lezioni su CI build check, version bump, e parametri librerie terze.
+- ✅ **Fix login loading infinito (issue #453, PR #455)** — Root page ora aspetta auth check prima di redirect desktop → /login.
+- ✅ **Fix release.yml indent (issue #454, PR #455)** — Python3 bump script non indentato correttamente nel blocco YAML.
+- ✅ **Wait-for-ci API diretta** — Sostituita action lewagon/wait-on-check-action con chiamata API GitHub per evitare circolarità.
+- ✅ **Auto version bump** — `release.yml` usa python3 per aggiornare versione in tauri.conf.json, package.json, pyproject.toml (portabile macOS/Linux/Windows).
 
 ## 2026-07-26
 
