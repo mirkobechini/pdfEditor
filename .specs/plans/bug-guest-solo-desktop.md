@@ -1,6 +1,6 @@
 # Bug: Guest access visibile anche su webapp
 
-**Status:** Non iniziata
+**Status:** ✅ Completata (2026-07-27, PR #447)
 **Priority:** ALTA (UX)
 
 ## Problema

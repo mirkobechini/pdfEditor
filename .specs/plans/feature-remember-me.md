@@ -1,6 +1,6 @@
 # Feature: "Rimani connesso" (Remember Me)
 
-**Status:** Non iniziata
+**Status:** ✅ Completata (2026-07-27, PR #449)
 **Priority:** ALTA (UX)
 
 ## Obiettivo

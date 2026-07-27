@@ -1,6 +1,6 @@
 # Bug: Fix vari UI webapp
 
-**Status:** Non iniziata
+**Status:** ✅ Completata (2026-07-27, PR #450)
 **Priority:** MEDIA
 
 ## Issue
