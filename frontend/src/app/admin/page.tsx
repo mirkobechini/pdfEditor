@@ -28,7 +28,7 @@ export default function AdminPage() {
     // Check auth
     React.useEffect(() => {
         if (!loading && (!user || !user.is_admin)) {
-            window.location.href = "/";
+            window.location.href = "/app";
         }
     }, [loading, user]);
 
@@ -431,8 +431,8 @@ function BugReportsTable() {
                                 <td className="p-2 text-gray-500">
                                     {new Date(b.created_at).toLocaleDateString()}
                                 </td>
-                                <td className="p-2 text-gray-600 dark:text-gray-400 max-w-xs truncate">
-                                    {b.description}
+                                <td className="p-2 text-gray-600 dark:text-gray-400 max-w-xs">
+                                    <span title={b.description}>{b.description}</span>
                                 </td>
                                 <td className="p-2">
                                     <select
