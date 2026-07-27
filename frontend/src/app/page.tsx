@@ -14,18 +14,22 @@ export default function Home() {
   const { user, loading } = useAuth();
 
   React.useEffect(() => {
-    // Desktop: always go to login first (unless remember-me is active)
+    if (loading) return;
+
+    // If user is authenticated (remember-me), go to editor
+    if (user) {
+      window.location.href = "/app";
+      return;
+    }
+
+    // Desktop: go to login first
     if (isTauri()) {
       window.location.href = "/login";
       return;
     }
-    // Web: if user is authenticated, redirect to editor
-    if (!loading && user) {
-      window.location.href = "/app";
-    }
   }, [loading, user]);
 
-  // Desktop: show nothing while redirecting to /login
+  // Desktop: show nothing while loading/redirecting to login
   if (isTauri()) {
     return <div className="h-screen bg-white dark:bg-gray-950" />;
   }
