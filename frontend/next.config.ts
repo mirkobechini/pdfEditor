@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_GOOGLE_CLIENT_ID:
       process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
       "309361418291-0j2jpuk4sdft5hm9tdvpj1n4trukphee.apps.googleusercontent.com",
+    NEXT_PUBLIC_IUBENDA_PRIVACY_ID:
+      process.env.NEXT_PUBLIC_IUBENDA_PRIVACY_ID || "76778813",
   },
 };
 
