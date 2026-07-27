@@ -25,3 +25,11 @@ body {
   background-color: #1f2937;
   color: #f3f4f6;
 }
+
+/* iubenda CMP banner — must appear above navbar (z-50) */
+#iubenda-cmp-banner,
+.iubenda-cmp-banner,
+[class*="iubenda-cmp"] iframe,
+[class*="iubenda-cmp"] > div {
+  z-index: 9999 !important;
+}
