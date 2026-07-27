@@ -24,7 +24,6 @@ jobs:
   build:
     needs: [wait-for-ci]
     strategy:
-    strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
