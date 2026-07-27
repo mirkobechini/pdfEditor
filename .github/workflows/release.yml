@@ -13,12 +13,33 @@ jobs:
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
       - name: Wait for CI on main to pass
-        uses: lewagon/wait-on-check-action@v1.3.4
-        with:
-          ref: main
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 30
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch main branch to get the latest commit SHA
+          git fetch origin main
+          SHA=$(git rev-parse origin/main)
+          echo "Waiting for CI checks on main (commit: $SHA)..."
+          for i in $(seq 1 30); do
+            RESULT=$(gh api repos/${{ github.repository }}/commits/$SHA/check-runs --jq '[.check_runs[] | select(.name == "backend" or .name == "frontend") | .conclusion]' 2>/dev/null)
+            FAILED=$(echo "$RESULT" | grep -c '"failure"')
+            SUCCESS=$(echo "$RESULT" | grep -c '"success"')
+            echo "  backend: $(echo "$RESULT" | head -1), frontend: $(echo "$RESULT" | tail -1)"
+            if [ "$FAILED" -gt 0 ]; then
+              echo "CI failed on main, aborting release."
+              exit 1
+            fi
+            if [ "$SUCCESS" -ge 2 ]; then
+              echo "CI passed on main, proceeding with build."
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "Timeout waiting for CI on main."
+          exit 1
 
   build:
     needs: [wait-for-ci]
