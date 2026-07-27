@@ -96,3 +96,19 @@ L'audit manuale del 2026-07-15 ha trovato 21 bug + 10 miglioramenti, tutti fixat
 **Rimedio:** Aggiornati tutti e 3 i file manualmente.
 
 **Regola per il futuro:** Prima di creare un tag release, aggiornare SEMPRE `tauri.conf.json`, `package.json` e `pyproject.toml` con la nuova versione. Il `release.yml` dovrebbe idealmente automatizzare questo passaggio leggendo il nome del tag.
+
+### 2026-07-27 — La CI non faceva build check, bug di compilazione in produzione
+
+**Problema:** La frontend CI eseguiva solo `vitest run` ma non `npm run build`. Un import mancante (`useAuth` in `page.tsx`) non veniva rilevato — i test passavano ma la build falliva su Render e nella release desktop.
+
+**Rimedio:** Aggiunto step `npm run build` in `test.yml` dopo i test frontend.
+
+**Regola per il futuro:** La CI frontend DEVE includere un build check (`npm run build` o `tsc --noEmit`) oltre ai test. I test unitari non verificano la compilazione.
+
+### 2026-07-27 — Parametri invalidi a librerie di terze parti non rilevati dai test
+
+**Problema:** `GoogleLoginButton` usava `width="100%"` che la Google Identity Services library non supporta. Il parametro invalido causava l'errore `Provided button width is invalid` e un crash a catena. Nei test il componente era mockato — l'errore non emergeva.
+
+**Rimedio:** Rimosso `width="100%"`, sostituito con wrapper CSS.
+
+**Regola per il futuro:** I parametri delle librerie esterne (Google, Stripe, ecc.) vanno verificati sulla documentazione ufficiale, non dati per scontati. Aggiungere un test che verifichi i parametri passati anche quando il componente è mockato.

@@ -8,6 +8,13 @@
 - ✅ **Remember me checkbox (issue #442, PR #449)** — Checkbox login per web (localStorage) e desktop (Tauri store).
 - ✅ **Webapp UI fixes (issue #444, PR #450)** — Google SVG logo profilo, admin descrizione espandibile, back flash fix, MonkeyLogo fallback, Google button centrato.
 - ✅ **Desktop login redirect (issue #451, PR #452)** — Desktop parte sempre da /login, login redirect a /app se remember-me attivo.
+- ✅ **Missing import hotfix (v0.1.3)** — Aggiunto import `useAuth` mancante in `page.tsx` (causava build frontend fallita).
+- ✅ **CI build check** — Aggiunto `npm run build` in `test.yml` dopo i test per catturare errori di compilazione prima del deploy.
+- ✅ **Google button width fix** — Rimosso `width="100%"` (invalido per GSI library), sostituito con wrapper CSS.
+- ✅ **Password autocomplete** — Aggiunto `autoComplete="current-password"` a `PasswordInput`.
+- ✅ **CI pipeline** — Render ora usa "After CI checks pass" per deploy. Release job aspetta CI verde.
+- ✅ **Auto version bump** — `release.yml` aggiorna automaticamente `tauri.conf.json`, `package.json`, `pyproject.toml` dal tag name.
+- ✅ **AGENT_FLOW, LESSONS_LEARNED, skill** — Documentazione aggiornata con lezioni su CI build check, version bump, e parametri librerie terze.
 
 ## 2026-07-26
 
