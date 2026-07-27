@@ -56,15 +56,3 @@ jobs:
         with:
           files: frontend/coverage/lcov.info
           flags: frontend
-
-  deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [backend, frontend]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy backend to Render
-        run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
-      - name: Deploy frontend to Render
-        run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}"
