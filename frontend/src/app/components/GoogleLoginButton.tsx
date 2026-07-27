@@ -63,14 +63,15 @@ export default function GoogleLoginButton() {
 
     return (
         <div className="flex flex-col items-center w-full">
-            <GoogleLogin
-                onSuccess={handleSuccess}
-                onError={() => setError("Google login failed")}
-                size="large"
-                width="100%"
-                theme="outline"
-                text="signin_with"
-            />
+            <div className="w-full max-w-[300px]">
+                <GoogleLogin
+                    onSuccess={handleSuccess}
+                    onError={() => setError("Google login failed")}
+                    size="large"
+                    theme="outline"
+                    text="signin_with"
+                />
+            </div>
             {error && (
                 <div className="mt-2 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">
                     {error}

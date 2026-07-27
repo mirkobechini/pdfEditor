@@ -34,6 +34,7 @@ export default function PasswordInput({ value, onChange, placeholder, autoFocus,
                 placeholder={placeholder}
                 autoFocus={autoFocus}
                 required={required}
+                autoComplete="current-password"
                 className="w-full px-3 py-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
             />
             <button

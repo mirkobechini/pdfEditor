@@ -47,6 +47,8 @@ jobs:
         run: npm install
       - name: Run tests
         run: npx vitest run --reporter=verbose
+      - name: Build check (catch compilation errors)
+        run: npm run build
       - name: Run coverage
         run: npx vitest run --coverage --reporter=verbose 2>&1 | tail -10
       - name: Upload coverage
