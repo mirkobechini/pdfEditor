@@ -9,7 +9,21 @@ permissions:
   contents: read
 
 jobs:
+  wait-for-ci:
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for CI on main to pass
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: main
+          check-name: "backend, frontend"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 30
+
   build:
+    needs: [wait-for-ci]
+    strategy:
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
