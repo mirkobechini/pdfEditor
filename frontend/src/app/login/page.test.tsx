@@ -103,7 +103,7 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByText("loginButton"));
 
     await waitFor(() => {
-      expect(screen.getByText("auth.invalidCredentials")).toBeTruthy();
+      expect(screen.getByText("invalidCredentials")).toBeTruthy();
     });
   });
 

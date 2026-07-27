@@ -53,7 +53,15 @@ export default function LoginPage() {
       window.location.href = "/app";
     } catch (err) {
       const key = mapError(err);
-      setError(key.startsWith("common.") ? tc(key.replace("common.", "")) : t(key));
+      // mapError returns keys like "auth.invalidCredentials" or "common.networkError"
+      // t() is useTranslations("auth") so we need to strip the "auth." prefix
+      const ns = key.split(".")[0];
+      const k = key.substring(ns.length + 1);
+      if (ns === "common") {
+        setError(tc(k));
+      } else {
+        setError(t(k));
+      }
     } finally {
       setSubmitting(false);
     }
