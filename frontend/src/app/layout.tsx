@@ -31,6 +31,13 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* iubenda CMP — Cookie consent banner (must load before other scripts) */}
+        <Script
+          id="iubenda-cmp"
+          strategy="beforeInteractive"
+          src="https://embeds.iubenda.com/widgets/e5f130f1-5f68-489e-9f7e-57897c838141.js"
+        />
+
         {/* Prevent flash of unstyled content — apply dark class before React hydrates */}
         <Script id="dark-mode-script" strategy="beforeInteractive">
           {`

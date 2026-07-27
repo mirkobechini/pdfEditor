@@ -15,22 +15,22 @@ vi.mock("next/link", () => ({
 
 describe("Static Pages", () => {
     const pages = [
-        { name: "CookiesPage", path: "../cookies/page", titleKey: "title" },
-        { name: "DocsPage", path: "../docs/page", titleKey: "title" },
-        { name: "FaqPage", path: "../faq/page", titleKey: "title" },
-        { name: "GuidePage", path: "../guide/page", titleKey: "title" },
-        { name: "PrivacyPage", path: "../privacy/page", titleKey: "title" },
-        { name: "RoadmapPage", path: "../roadmap/page", titleKey: "title" },
-        { name: "StatusPage", path: "../status/page", titleKey: "title" },
-        { name: "TermsPage", path: "../terms/page", titleKey: "title" },
+        { name: "CookiesPage", path: "../cookies/page", titleText: "Cookie Policy" },
+        { name: "DocsPage", path: "../docs/page", titleText: "title" },
+        { name: "FaqPage", path: "../faq/page", titleText: "title" },
+        { name: "GuidePage", path: "../guide/page", titleText: "title" },
+        { name: "PrivacyPage", path: "../privacy/page", titleText: "Privacy Policy" },
+        { name: "RoadmapPage", path: "../roadmap/page", titleText: "title" },
+        { name: "StatusPage", path: "../status/page", titleText: "title" },
+        { name: "TermsPage", path: "../terms/page", titleText: "title" },
     ];
 
-    pages.forEach(({ name, path, titleKey }) => {
+    pages.forEach(({ name, path, titleText }) => {
         describe(name, () => {
-            it("renders heading with translation key", async () => {
+            it("renders heading", async () => {
                 const Page = (await import(path)).default;
                 render(<Page />);
-                expect(screen.getByText(titleKey)).toBeTruthy();
+                expect(screen.getByRole("heading", { level: 1, name: titleText })).toBeTruthy();
             });
 
             it("renders PdfEditor brand link", async () => {
