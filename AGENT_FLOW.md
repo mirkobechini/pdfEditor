@@ -172,6 +172,13 @@ Once ALL subtasks are complete and the full test suite passes:
 
 > 💡 **Keep your branch in sync**: during development, periodically rebase on `dev` to avoid large conflicts later. Prefer small, frequent rebases over a single painful one.
 
+> ⚠️ **Version bump**: Before creating a release tag, update the version in ALL of these files to match the new tag:
+>
+> - `desktop/src-tauri/tauri.conf.json`
+> - `frontend/package.json`
+> - `backend/pyproject.toml`
+>   Failure to do so will produce installers that still show the old version internally.
+
 ```bash
 # Keep feature branch in sync with dev (rebase, don't merge)
 git fetch origin dev

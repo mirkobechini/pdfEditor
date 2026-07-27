@@ -18,6 +18,20 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Bump version from tag
+        shell: bash
+        run: |
+          # Extract version from tag name (e.g. v0.1.3 → 0.1.3)
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Bumping version to $VERSION"
+          # Update tauri.conf.json
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" desktop/src-tauri/tauri.conf.json
+          # Update package.json
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" frontend/package.json
+          # Update pyproject.toml
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" backend/pyproject.toml
+          echo "Version bumped to $VERSION in all config files"
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
