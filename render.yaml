@@ -33,3 +33,5 @@ services:
     envVars:
       - key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
         sync: false
+      - key: NEXT_PUBLIC_IUBENDA_PRIVACY_ID
+        sync: false
