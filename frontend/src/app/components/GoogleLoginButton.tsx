@@ -62,7 +62,7 @@ export default function GoogleLoginButton() {
     }
 
     return (
-        <>
+        <div className="flex flex-col items-center w-full">
             <GoogleLogin
                 onSuccess={handleSuccess}
                 onError={() => setError("Google login failed")}
@@ -76,6 +76,6 @@ export default function GoogleLoginButton() {
                     {error}
                 </div>
             )}
-        </>
+        </div>
     );
 }

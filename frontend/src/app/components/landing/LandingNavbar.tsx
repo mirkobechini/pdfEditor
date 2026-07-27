@@ -2,17 +2,12 @@
 
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import HeaderControls from "../HeaderControls";
 import { useAuth } from "../../lib/auth";
+import MonkeyLogo from "../MonkeyLogo";
 
-interface LogoProps {
-    src?: string;
-    alt?: string;
-}
-
-export default function LandingNavbar({ logo }: { logo?: LogoProps }) {
+export default function LandingNavbar() {
     const t = useTranslations("landing.navbar");
     const { user } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -22,20 +17,7 @@ export default function LandingNavbar({ logo }: { logo?: LogoProps }) {
             <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2 hover:opacity-75 transition-opacity">
-                    {logo?.src ? (
-                        <Image
-                            src={logo.src}
-                            alt={logo.alt || "Logo"}
-                            width={32}
-                            height={32}
-                            className="rounded-lg object-contain"
-                            priority
-                        />
-                    ) : (
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 flex items-center justify-center text-white text-sm font-bold">
-                            P
-                        </div>
-                    )}
+                    <MonkeyLogo />
                     <span className="text-lg font-bold text-gray-900 dark:text-gray-100">PdfEditor</span>
                 </Link>
 

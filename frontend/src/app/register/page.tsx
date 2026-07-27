@@ -10,6 +10,7 @@ import { mapError } from "../lib/error-map";
 import HeaderControls from "../components/HeaderControls";
 import PasswordInput from "../components/PasswordInput";
 import GoogleLoginButton from "../components/GoogleLoginButton";
+import MonkeyLogo from "../components/MonkeyLogo";
 import { api } from "../lib/api";
 
 function RegisterForm() {
@@ -62,14 +63,7 @@ function RegisterForm() {
     <>
       <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shrink-0">
         <Link href="/" className="flex items-center gap-2 hover:opacity-75 transition-opacity">
-          <Image
-            src="/orange-monkey_logo.png"
-            alt="PdfEditor Logo"
-            width={32}
-            height={32}
-            className="rounded-lg"
-            priority
-          />
+          <MonkeyLogo />
           <span className="text-lg font-bold text-gray-900 dark:text-gray-100">PdfEditor</span>
         </Link>
         <HeaderControls />
