@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-07-26
+> **Aggiornato:** 2026-07-27
 
 ---
 
@@ -38,13 +38,13 @@
 
 ## 📊 Coverage gaps (non bloccanti)
 
-| Area                         | Coverage        | Bloccante? | Note                                          |
-| ---------------------------- | --------------- | ---------- | --------------------------------------------- |
-| Backend totale               | 94% (359 test)  | ❌ No      | 1 pre-existing fail (test_seed_super_admin)   |
-| Frontend totale              | ~75% (363 test) | ❌ No      | 21 nuovi test Tauri. act() warnings soppressi |
-| Admin page                   | 67%             | ❌ No      | API calls non testate                         |
-| Editor page                  | 69%             | ❌ No      | handleSplit/handleReorder/... non testati     |
-| Reorder/Split/Remove dialogs | 34-44%          | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom |
+| Area                         | Coverage         | Bloccante? | Note                                          |
+| ---------------------------- | ---------------- | ---------- | --------------------------------------------- |
+| Backend totale               | 94% (359 test)   | ❌ No      | 1 pre-existing fail (test_seed_super_admin)   |
+| Frontend totale              | ~75% (363+ test) | ❌ No      | 22 test login + auth remember-me aggiunti     |
+| Admin page                   | 67%              | ❌ No      | API calls non testate                         |
+| Editor page                  | 69%              | ❌ No      | handleSplit/handleReorder/... non testati     |
+| Reorder/Split/Remove dialogs | 34-44%           | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom |
 
 ---
 

@@ -18,10 +18,12 @@ interface User {
   updated_at: string;
 }
 
+const REMEMBER_TOKEN_KEY = "pdfeditor_remember_token";
+
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, remember?: boolean) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   googleLogin: (idToken: string) => Promise<void>;
   guestLogin: () => Promise<void>;
@@ -38,7 +40,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const _pendingAuthRef = React.useRef(false);
 
   // On mount: restore session from httpOnly cookie (browser sends it automatically)
+  // Also check for remembered token in localStorage/Tauri store
   useEffect(() => {
+    const remembered = localStorage.getItem(REMEMBER_TOKEN_KEY);
+    if (remembered) {
+      api.setToken(remembered);
+    }
     api
       .getMe()
       .then((u) => {
@@ -47,6 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {
         // Not authenticated — user is null
+        // Clear stale remembered token
+        localStorage.removeItem(REMEMBER_TOKEN_KEY);
       })
       .finally(() => {
         if (!_pendingAuthRef.current) {
@@ -55,19 +64,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, remember?: boolean) => {
     _pendingAuthRef.current = true;
     setLoading(true);
     try {
       const res = await api.login(email, password);
-      // Save token in memory for Bearer header (works cross-origin in local dev)
       api.setToken(res.access_token);
-      // Also cookie-based — works on same-origin production
+      // Save token for remember-me
+      if (remember) {
+        if (isTauri()) {
+          // Desktop: store via Tauri invoke
+          const { tauriInvoke } = await import("./tauri");
+          await tauriInvoke("store_jwt", { token: res.access_token });
+        } else {
+          localStorage.setItem(REMEMBER_TOKEN_KEY, res.access_token);
+        }
+      } else {
+        localStorage.removeItem(REMEMBER_TOKEN_KEY);
+      }
       try {
         const u = await api.getMe();
         setUser(u);
       } catch {
-        // getMe failed (e.g. network blip) — redirect will re-trigger on mount
         window.location.href = "/";
         return;
       }
@@ -142,6 +160,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       api.setToken(null);
       api.setCsrfToken?.(null);
       setUser(null);
+      // Clear remember-me token
+      localStorage.removeItem(REMEMBER_TOKEN_KEY);
     }
   }, []);
 

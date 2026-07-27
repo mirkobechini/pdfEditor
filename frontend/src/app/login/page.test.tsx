@@ -28,6 +28,7 @@ beforeEach(() => {
     user: null,
     loading: false,
     login: mockLogin,
+    guestLogin: vi.fn(),
     register: vi.fn(),
     logout: vi.fn(),
   });
@@ -82,7 +83,7 @@ describe("LoginPage", () => {
     fireEvent.click(screen.getByText("loginButton"));
 
     await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith("test@example.com", "password123");
+      expect(mockLogin).toHaveBeenCalledWith("test@example.com", "password123", false);
     });
     expect(window.location.href).toBe("/app");
   });

@@ -9,6 +9,8 @@ import { useAuth } from "../lib/auth";
 import { mapError } from "../lib/error-map";
 import HeaderControls from "../components/HeaderControls";
 import PasswordInput from "../components/PasswordInput";
+import MonkeyLogo from "../components/MonkeyLogo";
+import { isTauri } from "../lib/tauri";
 
 // Import GoogleLoginButton without SSR to avoid hydration mismatch
 const GoogleLoginButton = dynamic(
@@ -19,42 +21,56 @@ const GoogleLoginButton = dynamic(
 export default function LoginPage() {
   const t = useTranslations("auth");
   const tc = useTranslations("common");
-  const { login, guestLogin } = useAuth();
+  const { user, loading, login, guestLogin } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [remember, setRemember] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
+
+  // If user is already authenticated (remember-me), redirect to editor
+  React.useEffect(() => {
+    if (!loading && user) {
+      window.location.href = "/app";
+    }
+  }, [loading, user]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
 
-    setLoading(true);
+    setSubmitting(true);
     setError(null);
     try {
-      await login(email.trim(), password);
+      await login(email.trim(), password, remember);
       window.location.href = "/app";
     } catch (err) {
       const key = mapError(err);
-      // common.* keys need the "common" translation namespace
       setError(key.startsWith("common.") ? tc(key.replace("common.", "")) : t(key));
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
+  }
+
+  // Show loading while checking auth state
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+      </div>
+    );
+  }
+
+  // If already authenticated, don't render the form
+  if (user) {
+    return <div className="h-screen bg-gray-50 dark:bg-gray-900" />;
   }
 
   return (
     <>
       <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shrink-0">
         <Link href="/" className="flex items-center gap-2 hover:opacity-75 transition-opacity">
-          <Image
-            src="/orange-monkey_logo.png"
-            alt="PdfEditor Logo"
-            width={32}
-            height={32}
-            className="rounded-lg"
-            priority
-          />
+          <MonkeyLogo />
           <span className="text-lg font-bold text-gray-900 dark:text-gray-100">PdfEditor</span>
         </Link>
         <HeaderControls />
@@ -73,20 +89,22 @@ export default function LoginPage() {
             <hr className="flex-1 border-gray-300 dark:border-gray-600" />
           </div>
 
-          {/* Guest Access */}
-          <button
-            onClick={async () => {
-              try {
-                await guestLogin();
-                window.location.href = "/app";
-              } catch {
-                setError(t("loginFailed"));
-              }
-            }}
-            className="w-full py-2 text-sm rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium mb-4"
-          >
-            {t("guestLogin")}
-          </button>
+          {/* Guest Access — Desktop only */}
+          {isTauri() && (
+            <button
+              onClick={async () => {
+                try {
+                  await guestLogin();
+                  window.location.href = "/app";
+                } catch {
+                  setError(t("loginFailed"));
+                }
+              }}
+              className="w-full py-2 text-sm rounded border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium mb-4"
+            >
+              {t("guestLogin")}
+            </button>
+          )}
 
           {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -113,6 +131,17 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* Remember Me */}
+            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                className="rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
+              />
+              {t("rememberMe")}
+            </label>
+
             {error && (
               <div className="p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded">
                 {error}
@@ -122,9 +151,9 @@ export default function LoginPage() {
             <button
               type="submit"
               className="w-full py-2 text-sm rounded bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 font-medium"
-              disabled={loading || !email.trim() || !password.trim()}
+              disabled={submitting || !email.trim() || !password.trim()}
             >
-              {loading ? t("loggingIn") : t("loginButton")}
+              {submitting ? t("loggingIn") : t("loginButton")}
             </button>
           </form>
 

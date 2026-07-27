@@ -198,6 +198,7 @@
     "googleLogin": "Accedi con Google",
     "googleRegister": "Registrati con Google",
     "forgotTitle": "Password Dimenticata",
+    "rememberMe": "Ricordami",
     "forgotDescription": "Inserisci la tua email e ti invieremo un link per reimpostare la password.",
     "sendResetLink": "Invia Link di Reset",
     "resetSent": "Email di reset inviata. Controlla la tua casella di posta.",
@@ -298,6 +299,7 @@
       "description": "Unisci, dividi, riordina e modifica i tuoi PDF direttamente dal browser. Gratuito, sicuro e senza pubblicità.",
       "ctaPrimary": "Inizia gratis",
       "ctaSecondary": "Scopri di più",
+      "downloadDesktop": "Scarica App Desktop",
       "mockupTitle": "Modifica PDF",
       "mockupText": "Anteprima live del tuo PDF"
     },

@@ -12,16 +12,27 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
     DEBUG: bool = False
 
-    # Security — JWT_SECRET_KEY is required in production (via .env or env variable)
-    # SECRET_KEY empty by default; must be set explicitly in .env for production
+    # Security — if both SECRET_KEY and JWT_SECRET_KEY are empty,
+    # a random key is auto-generated. This is safe for desktop (localhost-only)
+    # but MUST be set explicitly in .env for cloud deployment.
     SECRET_KEY: str = ""
-    # Alternative env var name for Render/Docker deployments
     JWT_SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    @field_validator("SECRET_KEY", mode="before")
+    @classmethod
+    def generate_secret_if_empty(cls, v: str) -> str:
+        """Auto-generate a random secret key if none is provided.
+        This ensures the app works out-of-the-box on desktop without
+        exposing hardcoded defaults in the public .env.desktop file."""
+        if not v or not v.strip():
+            import secrets
+            return secrets.token_urlsafe(48)
+        return v
+
     # CORS origins (production should restrict this)
-    ALLOWED_ORIGINS: str = "http://localhost:3000"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,tauri://localhost,https://tauri.localhost"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod

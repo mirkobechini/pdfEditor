@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-27
+
+- ✅ **Desktop env fix (issue #441, PR #446)** — Unificato .env.desktop con GOOGLE_CLIENT_ID, auto-generazione SECRET_KEY, CORS per Tauri webview, logging sidecar.
+- ✅ **Guest solo desktop (issue #443, PR #447)** — Pulsante guest visibile solo su desktop (isTauri guard).
+- ✅ **Landing page fixes (issue #445, PR #448)** — Rimossa sezione prezzi, aggiunto link download desktop in hero e footer.
+- ✅ **Remember me checkbox (issue #442, PR #449)** — Checkbox login per web (localStorage) e desktop (Tauri store).
+- ✅ **Webapp UI fixes (issue #444, PR #450)** — Google SVG logo profilo, admin descrizione espandibile, back flash fix, MonkeyLogo fallback, Google button centrato.
+- ✅ **Desktop login redirect (issue #451, PR #452)** — Desktop parte sempre da /login, login redirect a /app se remember-me attivo.
+
 ## 2026-07-26
 
 - ✅ **Guest access (issue #427, PR #428)** — Nuovo endpoint `POST /auth/guest` e `POST /auth/guest/convert`, campo `is_guest` su User, pulsante "Continue as Guest" nel login, badge Guest in header, GuestConvertBanner, supporto `?convert=1` in register. 5 test backend, 329 frontend.
@@ -8,6 +17,8 @@
 - ✅ **Workflow permissions (issue #433, PR #436)** — Aggiunto `permissions: contents: read` a `release.yml`. Risolve 3 Code Scanning warnings.
 - ✅ **Fix CI frontend (issue #437, PR #438)** — Ripristinato corpo `forgotPassword()` in `api.ts` e aggiunto mock `useSearchParams` in register test. CI ora verde su dev.
 - ✅ **mapError in frontend (PR #434, #438)** — Sostituiti `err.message` raw con `mapError()` in 3 file: MetadataDialog, SplitDialog, reset-password.
+- ✅ **Render deploy fix (issue #439, PR #440)** — Aggiunto `is_guest` a `_add_missing_columns()` in `main.py`.
+- ✅ **Documentation** — Create 5 new plans in `.specs/plans/`: desktop env, remember-me, guest desktop-only, webapp UI fixes, landing page fixes.
 
 ## 2026-07-25
 

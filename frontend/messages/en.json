@@ -196,6 +196,7 @@
     "googleLogin": "Sign in with Google",
     "googleRegister": "Sign up with Google",
     "forgotTitle": "Forgot Password",
+    "rememberMe": "Remember me",
     "forgotDescription": "Enter your email address and we'll send you a link to reset your password.",
     "sendResetLink": "Send Reset Link",
     "resetSent": "Password reset email sent. Check your inbox.",
@@ -296,6 +297,7 @@
       "description": "Merge, split, reorder and edit your PDFs directly from your browser. Free, secure and ad-free.",
       "ctaPrimary": "Get Started Free",
       "ctaSecondary": "Learn More",
+      "downloadDesktop": "Download Desktop App",
       "mockupTitle": "Edit PDFs",
       "mockupText": "Live preview of your PDF"
     },

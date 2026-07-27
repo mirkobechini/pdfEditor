@@ -20,9 +20,10 @@ class TestSettingsValidation:
     """Test Settings class validation and properties."""
 
     def test_secret_key_empty_by_default(self):
-        """SECRET_KEY should be empty by default (validation is at startup)."""
+        """SECRET_KEY should be auto-generated if empty (safe for desktop)."""
         s = Settings(_env_file=None)
-        assert s.SECRET_KEY == ""
+        assert s.SECRET_KEY != ""
+        assert len(s.SECRET_KEY) >= 32
 
     def test_effective_secret_key_fallback(self):
         """effective_secret_key should fall back to SECRET_KEY."""
