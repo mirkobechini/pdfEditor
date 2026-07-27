@@ -21,29 +21,49 @@ const GoogleLoginButton = dynamic(
 export default function LoginPage() {
   const t = useTranslations("auth");
   const tc = useTranslations("common");
-  const { login, guestLogin } = useAuth();
+  const { user, loading, login, guestLogin } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [remember, setRemember] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
+
+  // If user is already authenticated (remember-me), redirect to editor
+  React.useEffect(() => {
+    if (!loading && user) {
+      window.location.href = "/app";
+    }
+  }, [loading, user]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
 
-    setLoading(true);
+    setSubmitting(true);
     setError(null);
     try {
       await login(email.trim(), password, remember);
       window.location.href = "/app";
     } catch (err) {
       const key = mapError(err);
-      // common.* keys need the "common" translation namespace
       setError(key.startsWith("common.") ? tc(key.replace("common.", "")) : t(key));
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
+  }
+
+  // Show loading while checking auth state
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+      </div>
+    );
+  }
+
+  // If already authenticated, don't render the form
+  if (user) {
+    return <div className="h-screen bg-gray-50 dark:bg-gray-900" />;
   }
 
   return (
@@ -131,9 +151,9 @@ export default function LoginPage() {
             <button
               type="submit"
               className="w-full py-2 text-sm rounded bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 font-medium"
-              disabled={loading || !email.trim() || !password.trim()}
+              disabled={submitting || !email.trim() || !password.trim()}
             >
-              {loading ? t("loggingIn") : t("loginButton")}
+              {submitting ? t("loggingIn") : t("loginButton")}
             </button>
           </form>
 
