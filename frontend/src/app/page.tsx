@@ -8,6 +8,7 @@ import LandingHowItWorks from "./components/landing/LandingHowItWorks";
 import LandingCTA from "./components/landing/LandingCTA";
 import LandingFooter from "./components/landing/LandingFooter";
 import { isTauri } from "./lib/tauri";
+import { useAuth } from "./lib/auth";
 
 export default function Home() {
   const { user, loading } = useAuth();
