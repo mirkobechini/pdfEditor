@@ -7,7 +7,11 @@
 
 ## 🔴 Bug aperti
 
-> ⚠️ **Nessun bug aperto al momento.**
+### B6 — Sidecar PyInstaller non funziona all'avvio (desktop v0.1.13)
+
+**File:** `desktop/build-sidecar.sh`, `.github/workflows/release.yml`, `desktop/run_backend.py`  
+**Descrizione:** L'app desktop si installa ma il backend FastAPI (sidecar PyInstaller) non parte. L'health check fallisce sempre e l'app resta in "Loading...".
+**Piano:** `.specs/plans/bug-sidecar-pyinstaller-rotto.md`
 
 ---
 
