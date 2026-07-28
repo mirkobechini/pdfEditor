@@ -17,7 +17,7 @@
   "common": {
     "loading": "Loading...",
     "networkError": "Network error. Please check your connection.",
-    "version": "v0.1.14",
+    "version": "v0.1.15",
     "license": "Open Source License"
   }
 }
