@@ -24,3 +24,15 @@ body {
   background-color: #1f2937;
   color: #f3f4f6;
 }
+
+/* Hide native browser password reveal toggle (conflicts with our custom toggle) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+  visibility: hidden;
+  pointer-events: none;
+}
