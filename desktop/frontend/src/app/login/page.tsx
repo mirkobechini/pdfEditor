@@ -5,13 +5,56 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../../shared/auth";
 import { mapError } from "../../shared/error-map";
+import { getApiBaseUrl } from "../../shared/tauri";
 import PasswordInput from "../../components/PasswordInput";
 import GoogleLoginButton from "../../components/GoogleLoginButton";
+
+const SIDECAR_HEALTH_URL = getApiBaseUrl() + "/health";
+const HEALTH_RETRY_INTERVAL = 1000; // 1 second
+const HEALTH_MAX_RETRIES = 15; // 15 seconds max
+
+function useSidecarReady() {
+    const [ready, setReady] = React.useState(false);
+    const [checking, setChecking] = React.useState(true);
+
+    React.useEffect(() => {
+        let cancelled = false;
+        let attempts = 0;
+
+        async function poll() {
+            while (attempts < HEALTH_MAX_RETRIES && !cancelled) {
+                try {
+                    const res = await fetch(SIDECAR_HEALTH_URL);
+                    if (res.ok) {
+                        if (!cancelled) {
+                            setReady(true);
+                            setChecking(false);
+                        }
+                        return;
+                    }
+                } catch {
+                    // Sidecar not ready yet
+                }
+                attempts++;
+                await new Promise((r) => setTimeout(r, HEALTH_RETRY_INTERVAL));
+            }
+            if (!cancelled) {
+                setChecking(false);
+            }
+        }
+
+        poll();
+        return () => { cancelled = true; };
+    }, []);
+
+    return { ready, checking };
+}
 
 export default function LoginPage() {
     const t = useTranslations("auth");
     const tc = useTranslations("common");
     const { user, loading, login } = useAuth();
+    const { ready, checking } = useSidecarReady();
     const [email, setEmail] = React.useState("");
     const [password, setPassword] = React.useState("");
     const [remember, setRemember] = React.useState(true);
@@ -46,6 +89,18 @@ export default function LoginPage() {
 
     if (user) {
         return <div className="h-screen bg-white dark:bg-gray-950" />;
+    }
+
+    // Show a loading indicator while the sidecar is starting up
+    if (checking && !ready) {
+        return (
+            <div className="h-screen bg-[#17120f] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-[#f7871f] border-t-transparent" />
+                    <p className="text-sm text-[#a79a8d]">{tc("loading")}</p>
+                </div>
+            </div>
+        );
     }
 
     return (
