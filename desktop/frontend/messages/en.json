@@ -16,6 +16,7 @@
   },
   "common": {
     "loading": "Loading...",
+    "networkError": "Network error. Please check your connection.",
     "version": "v0.1.11",
     "license": "Open Source License"
   }
