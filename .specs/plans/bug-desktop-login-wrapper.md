@@ -36,3 +36,10 @@ div.h-screen.grid.grid-cols-1.lg:grid-cols-2
 ## Priorità
 
 🔴 Alta — UX bloccante per l'utente
+
+## Status
+
+[x] Risolto
+**Data:** 2026-07-28
+**Issue:** #460
+**PR:** #465

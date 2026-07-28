@@ -1,36 +1,25 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> -> **Aggiornato:** 2026-07-28
-> +> **Aggiornato:** 2026-07-28
+> **Aggiornato:** 2026-07-28
 
 ---
 
 ## 🔴 Bug aperti
 
--> ⚠️ **Nessun bug aperto al momento.**
-+### B1 — Sidecar offline non funziona (desktop)
+> ⚠️ **Nessun bug aperto al momento.**
 
-- +**File:** `desktop/run_backend.py`, `desktop/src-tauri/src/lib.rs`, `.github/workflows/release.yml`  
-  +**Descrizione:** Il sidecar FastAPI non viene buildato correttamente nella CI di release, quindi il desktop non ha backend locale. Il login fallisce con `common.networkError` perché la chiamata a `http://127.0.0.1:7723` non trova nulla. +**Piano:** `.specs/plans/bug-login-network-error-desktop.md`
-- +### B2 — Wrapper layout login (desktop)
-- +**File:** `desktop/frontend/src/app/login/page.tsx`  
-  +**Descrizione:** La login page ha un contenitore esterno (`max-w-6xl`, `py-20`, `rounded-2xl`, `shadow-2xl`) che non è presente nello screenshot Lovable. Causa scrollbar indesiderata e aspetto "incorniciato".
-- +### B4 — Errore Google login persiste dopo login email/password (desktop)
-- +**File:** `desktop/frontend/src/components/GoogleLoginButton.tsx`, `desktop/frontend/src/app/login/page.tsx`  
-  +**Descrizione:** L'errore di Google rimane visibile anche dopo aver fatto login con email/password. Non viene resettato al submit del form.
-  ***
-  ## 🟡 Bug minori
-  +### B3 — Password toggle duplicato (desktop)
-- +**File:** `desktop/frontend/src/components/PasswordInput.tsx`  
-  +**Descrizione:** Il componente ha già il pulsante Mostra/Nascondi, ma Chrome aggiunge il suo nativo. Ne risultano due toggle. +**Piano:** `.specs/plans/bug-double-password-toggle.md`
-- +### B5 — Traduzione `networkError` mancante (desktop)
-- +**File:** `desktop/frontend/messages/en.json`, `desktop/frontend/messages/it.json`  
-  +**Descrizione:** `mapError` restituisce `common.networkError` ma le traduzioni IT/EN non hanno quella chiave. +**Piano:** `.specs/plans/bug-login-network-error-desktop.md`
-- **Descrizione:** L'endpoint `POST /pdfs/{id}/replace-text` accetta `search + replace + occurrence` ma il risultato non è affidabile. PyMuPDF text search ha limitazioni con PDF complessi (font embedded, ligature, spaziature variabili).  
-  **Risoluzione prevista:** Sostituire con inline text editor (`.specs/plans/feature-inline-text-editor.md`).
+---
 
-  ***
+## 🟡 Bug minori
+
+### B2 — Find & Replace non funziona
+
+**File:** `backend/app/api/v1/text.py`  
+**Descrizione:** L'endpoint `POST /pdfs/{id}/replace-text` accetta `search + replace + occurrence` ma il risultato non è affidabile. PyMuPDF text search ha limitazioni con PDF complessi (font embedded, ligature, spaziature variabili).  
+**Risoluzione prevista:** Sostituire con inline text editor (`.specs/plans/feature-inline-text-editor.md`).
+
+---
 
 ## 🔵 Debito tecnico
 

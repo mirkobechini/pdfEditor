@@ -10,11 +10,11 @@
 - ✅ **Merge dev → main + tag v0.1.11** — Merge completato, tag creato, push su origin.
 - ⛔ **Release v0.1.11 fallita** — Sidecar non buildato correttamente (deps desktop frontend mancanti in CI). Fixato release.yml, rilanciata v0.1.12.
 - ⛔ **Release v0.1.12 in corso** — CI in esecuzione con fix deps desktop frontend.
-- 🐛 **Bug B1: Sidecar offline non funziona** — Il sidecar PyInstaller non viene eseguito correttamente, login fallisce con networkError.
-- 🐛 **Bug B2: Wrapper layout login** — Login page ha contenitore esterno che causa scrollbar e aspetto incorniciato.
-- 🐛 **Bug B3: Password toggle duplicato** — Chrome nativo + pulsante React mostrano due toggle.
-- 🐛 **Bug B4: Errore Google persiste** — Errore Google rimane dopo login email/password.
-- 🐛 **Bug B5: networkError traduzione mancante** — Chiave i18n `common.networkError` assente in IT/EN.
+- ✅ **B2: Fix wrapper layout login (PR #465, issue #460)** — Rimossi wrapper intermedi full-bleed, login page senza scrollbar.
+- ✅ **B3: Fix password toggle duplicato (PR #466, issue #461)** — Nascosto native browser password reveal via CSS.
+- ✅ **B5: Fix traduzione networkError (PR #467, issue #462)** — Aggiunte chiavi i18n `common.networkError` in EN/IT.
+- ✅ **B1: Fix sidecar health check (PR #468, issue #463)** — Aggiunto poll con retry sulla login page, attesa sidecar prima del login.
+- ✅ **B4: Fix errore Google persistente (PR #469, issue #464)** — Reset errore Google al submit del form email/password.
 
 ## 2026-07-27
 

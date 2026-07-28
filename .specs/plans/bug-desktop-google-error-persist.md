@@ -27,3 +27,10 @@ Passare `setGoogleError` a `GoogleLoginButton` come prop, oppure sollevare lo st
 ## Priorità
 
 🟡 Media — UI bug, non blocca login
+
+## Status
+
+[x] Risolto
+**Data:** 2026-07-28
+**Issue:** #464
+**PR:** #469
