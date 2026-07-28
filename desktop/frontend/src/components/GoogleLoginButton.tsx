@@ -3,9 +3,17 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 
-export default function GoogleLoginButton() {
+interface GoogleLoginButtonProps {
+    resetKey?: number;
+}
+
+export default function GoogleLoginButton({ resetKey }: GoogleLoginButtonProps) {
     const t = useTranslations("auth");
     const [error, setError] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        setError(null);
+    }, [resetKey]);
 
     return (
         <div className="mb-4">

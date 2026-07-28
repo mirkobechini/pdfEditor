@@ -17,6 +17,7 @@ export default function LoginPage() {
     const [remember, setRemember] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
     const [submitting, setSubmitting] = React.useState(false);
+    const [googleResetKey, setGoogleResetKey] = React.useState(0);
 
     React.useEffect(() => {
         if (!loading && user) {
@@ -29,6 +30,7 @@ export default function LoginPage() {
         if (!email.trim() || !password.trim()) return;
         setSubmitting(true);
         setError(null);
+        setGoogleResetKey((k) => k + 1);
         try {
             await login(email.trim(), password, remember);
             window.location.href = "/app";
@@ -139,7 +141,7 @@ export default function LoginPage() {
                                         <hr className="flex-1 border-white/10" />
                                     </div>
 
-                                    <GoogleLoginButton />
+                                    <GoogleLoginButton resetKey={googleResetKey} />
 
                                     <p className="pt-2 text-center text-[11px] text-[#a79a8d]">
                                         {t("noAccount")}{" "}
