@@ -6,6 +6,15 @@
 - ✅ **Desktop settings views complete (issue #459)** — Coperti tab/sezioni mock richiesti, incluse shortcut platform-aware (macOS vs Windows/Linux).
 - ✅ **Tauri build allineato al frontend desktop (issue #459)** — Aggiornati path build in `desktop/src-tauri/tauri.conf.json` e metadati in `desktop/src-tauri/Cargo.toml` per usare `../frontend/out` (desktop) invece del frontend web.
 - ✅ **Build installer desktop validata** — Build Tauri riuscita con output: `desktop/src-tauri/target/release/bundle/nsis/PdfEditor_0.1.8_x64-setup.exe` e `desktop/src-tauri/target/release/bundle/msi/PdfEditor_0.1.8_x64_en-US.msi`.
+- ✅ **Bump release a v0.1.11** — Versioni allineate su tutti i file (tauri.conf.json, frontend/package.json, backend/pyproject.toml, desktop/frontend/package.json, Cargo.toml).
+- ✅ **Merge dev → main + tag v0.1.11** — Merge completato, tag creato, push su origin.
+- ⛔ **Release v0.1.11 fallita** — Sidecar non buildato correttamente (deps desktop frontend mancanti in CI). Fixato release.yml, rilanciata v0.1.12.
+- ⛔ **Release v0.1.12 in corso** — CI in esecuzione con fix deps desktop frontend.
+- 🐛 **Bug B1: Sidecar offline non funziona** — Il sidecar PyInstaller non viene eseguito correttamente, login fallisce con networkError.
+- 🐛 **Bug B2: Wrapper layout login** — Login page ha contenitore esterno che causa scrollbar e aspetto incorniciato.
+- 🐛 **Bug B3: Password toggle duplicato** — Chrome nativo + pulsante React mostrano due toggle.
+- 🐛 **Bug B4: Errore Google persiste** — Errore Google rimane dopo login email/password.
+- 🐛 **Bug B5: networkError traduzione mancante** — Chiave i18n `common.networkError` assente in IT/EN.
 
 ## 2026-07-27
 
