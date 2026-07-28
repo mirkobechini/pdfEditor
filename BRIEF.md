@@ -12,23 +12,24 @@ _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `d
 - [x] **Fase 1a** — Backend FastAPI ✅ (con enforcement licenze ✅ e BugReport model allineato ✅)
 - [x] **Fase 1b** — Frontend Next.js (bug report ✅, auth UI ✅, dark mode ✅, header controls ✅, dialog refactor ✅)
 - [x] **Fase 2** — Web app su cloud (Deploy su Render, Neon PostgreSQL, Cloudflare R2)
-- [ ] **Fase 1c** — Desktop Tauri v2
+- [ ] **Fase 1c** — Desktop Tauri v2 (refactoring: frontend desktop separato)
+- [ ] **Fase 1d** — Desktop UI "PDF Harmony Suite" (design Lovable)
 - [ ] **Fase 3** — Cloud sync
 - [ ] **Fase 4** — Mobile app React Native
 
 ## Stack scelto
 
-| Livello                | Tecnologia               | Ruolo                                                                  |
-| ---------------------- | ------------------------ | ---------------------------------------------------------------------- |
-| **Frontend**           | React + TailwindCSS      | UI condivisa tra web, desktop e mobile                                 |
-| **Web app**            | Next.js (app router)     | Versione browser, PWA installabile                                     |
-| **Desktop**            | Tauri v2 (Rust)          | App nativa leggera (~5MB UI + ~30-50MB sidecar FastAPI), stessa web UI |
-| **Mobile**             | React Native (Expo bare) | App nativa iOS/Android, logica React condivisa                         |
-| **Backend**            | FastAPI (Python)         | Auth, elaborazione PDF, cloud sync                                     |
-| **PDF modifica testo** | PyMuPDF (fitz)           | Modifica testo, estrazione, manipolazione                              |
-| **PDF viewer**         | PDF.js (Mozilla)         | Render lato client                                                     |
-| **Database offline**   | SQLite                   | Stessa struttura del cloud, sync bidirezionale                         |
-| **Database cloud**     | PostgreSQL               | Produzione, sincronizzato con SQLite locale                            |
+| Livello                | Tecnologia               | Ruolo                                                                                                                                               |
+| ---------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Frontend**           | React + TailwindCSS      | UI condivisa tra web, desktop e mobile                                                                                                              |
+| **Web app**            | Next.js (app router)     | Versione browser, PWA installabile                                                                                                                  |
+| **Desktop**            | Tauri v2 (Rust)          | App nativa leggera (~5MB UI + ~30-50MB sidecar FastAPI), frontend Next.js dedicato (`desktop/frontend/`), layout personalizzato "PDF Harmony Suite" |
+| **Mobile**             | React Native (Expo bare) | App nativa iOS/Android, logica React condivisa                                                                                                      |
+| **Backend**            | FastAPI (Python)         | Auth, elaborazione PDF, cloud sync                                                                                                                  |
+| **PDF modifica testo** | PyMuPDF (fitz)           | Modifica testo, estrazione, manipolazione                                                                                                           |
+| **PDF viewer**         | PDF.js (Mozilla)         | Render lato client                                                                                                                                  |
+| **Database offline**   | SQLite                   | Stessa struttura del cloud, sync bidirezionale                                                                                                      |
+| **Database cloud**     | PostgreSQL               | Produzione, sincronizzato con SQLite locale                                                                                                         |
 
 ## Roadmap (ordine di implementazione)
 
@@ -38,7 +39,8 @@ _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `d
 2. **Desktop app (Fase 1)** — Tauri + Next.js + FastAPI locale (sidecar). Prima versione funzionante offline
    - **Fase 1a**: Backend FastAPI
    - **Fase 1b**: Frontend Next.js
-   - **Fase 1c**: Tauri wrapper
+   - **Fase 1c**: Tauri wrapper (overlay) — ✅ DEPRECATO
+   - **Fase 1d**: Frontend desktop separato con design "PDF Harmony Suite"
 3. **Web app (Fase 2)** — Next.js + FastAPI cloud. Stessa UI, backend remoto
 4. **Cloud sync (Fase 3)** — Sync bidirezionale SQLite ↔ PostgreSQL
 5. **Mobile app (Fase 4)** — React Native. Stesse API cloud
