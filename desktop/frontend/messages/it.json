@@ -1,18 +1,22 @@
 {
   "auth": {
-    "loginTitle": "Accedi",
-    "email": "Email",
-    "password": "Password",
+    "loginTitle": "Sign in",
+    "email": "EMAIL",
+    "password": "PASSWORD",
     "loginButton": "Sign in",
     "noAccount": "Non hai un account?",
     "createAccount": "Registrati",
-    "or": "or",
+    "or": "oppure",
     "continueWithGoogle": "Continua con Google",
-    "forgotPassword": "Password dimenticata?"
+    "forgotPassword": "Password dimenticata?",
+    "recover": "Recupera",
+    "rememberMe": "Ricordami su questo dispositivo",
+    "workspace": "Accedi al tuo workspace",
+    "freeTier": "free tier"
   },
   "common": {
     "loading": "Caricamento...",
-    "version": "v2.0.4-stable",
-    "license": "AGPL-3.0"
+    "version": "v0.1.8",
+    "license": "Open Source License"
   }
 }
