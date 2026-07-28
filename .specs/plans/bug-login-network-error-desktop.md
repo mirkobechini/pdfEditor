@@ -23,3 +23,10 @@ La desktop app punta a `http://127.0.0.1:7723` (sidecar locale) tramite `getApiB
 ## Priorità
 
 🔴 Alta — Blocca login desktop
+
+## Status
+
+[x] Risolto
+**Data:** 2026-07-28
+**Issue:** #463 / #462 (parte i18n)
+**PR:** #468 / #467

@@ -17,3 +17,10 @@ La `login/page.tsx` usa `PasswordInput` per la password, ma c'è anche il campo 
 ## Priorità
 
 🟡 Media — UI bug, non blocca funzionalità
+
+## Status
+
+[x] Risolto
+**Data:** 2026-07-28
+**Issue:** #461
+**PR:** #466
