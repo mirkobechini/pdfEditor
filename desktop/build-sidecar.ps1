@@ -43,6 +43,24 @@ Write-Host "Running PyInstaller..." -ForegroundColor Yellow
     --paths "$BackendDir" `
     --hidden-import "fitz" `
     --collect-all "fitz" `
+    --hidden-import "uvicorn" `
+    --hidden-import "fastapi" `
+    --hidden-import "sqlalchemy" `
+    --hidden-import "alembic" `
+    --hidden-import "pydantic" `
+    --hidden-import "pydantic_settings" `
+    --hidden-import "slowapi" `
+    --hidden-import "google.auth" `
+    --hidden-import "app.main" `
+    --hidden-import "app.core.config" `
+    --hidden-import "app.core.database" `
+    --hidden-import "app.core.csrf" `
+    --hidden-import "app.core.limiter" `
+    --hidden-import "app.core.license_seed" `
+    --hidden-import "app.models" `
+    --hidden-import "app.repositories" `
+    --hidden-import "app.services" `
+    --hidden-import "app.api.v1" `
     --add-data "$ProjectRoot\desktop\.env.desktop;." `
     --runtime-tmpdir "." `
     $EntryPoint
