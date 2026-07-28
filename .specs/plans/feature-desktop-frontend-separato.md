@@ -189,4 +189,15 @@ progetto/
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+
+Completata il: 2026-07-28
+
+Note:
+
+- Implementato `desktop/frontend/` come frontend Next.js desktop dedicato, con build statica autonoma.
+- Implementate e rifinite (pixel loop da mock Lovable) le pagine principali desktop: wizard, license, settings.
+- Aggiornata configurazione Tauri (`desktop/src-tauri/tauri.conf.json`) per puntare a `../frontend/out`.
+- Allineati metadati Cargo (`desktop/src-tauri/Cargo.toml`) al dist path desktop.
+- Validata build installer Tauri su Windows (`.exe` NSIS e `.msi`).
+- Nota deviazione rispetto al piano originale: `desktop/frontend-overlay/` è ancora presente nel repository (legacy), ma il build desktop corrente usa `desktop/frontend` dedicato.
