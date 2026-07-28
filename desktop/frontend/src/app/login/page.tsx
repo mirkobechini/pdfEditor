@@ -17,6 +17,7 @@ export default function LoginPage() {
     const [remember, setRemember] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
     const [submitting, setSubmitting] = React.useState(false);
+    const [googleResetKey, setGoogleResetKey] = React.useState(0);
 
     React.useEffect(() => {
         if (!loading && user) {
@@ -29,6 +30,7 @@ export default function LoginPage() {
         if (!email.trim() || !password.trim()) return;
         setSubmitting(true);
         setError(null);
+        setGoogleResetKey((k) => k + 1);
         try {
             await login(email.trim(), password, remember);
             window.location.href = "/app";
@@ -59,7 +61,7 @@ export default function LoginPage() {
                         </div>
                     </div>
 
-                    <div>
+<div>
                         <h1 className="mb-6 max-w-sm text-3xl font-bold leading-tight tracking-tight">
                             Editing PDF di precisione. In locale.
                         </h1>
