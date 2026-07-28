@@ -100,6 +100,11 @@ jobs:
           cd frontend
           npm ci
 
+      - name: Install desktop frontend dependencies
+        run: |
+          cd desktop/frontend
+          npm ci
+
       - name: Install backend dependencies (for sidecar)
         run: |
           cd backend
