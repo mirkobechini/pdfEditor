@@ -41,9 +41,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": [
-      "binaries/fastapi-sidecar"
-    ],
+    "externalBin": ["binaries/fastapi-sidecar"],
     "windows": {
       "nsis": {
         "installMode": "currentUser"
