@@ -1,18 +1,18 @@
 [package]
 name = "pdf-editor-desktop"
-version = "0.1.0"
+version = "0.1.11"
 description = "PdfEditor - Desktop App"
 authors = ["Mirko Bechini"]
 edition = "2021"
 
 [package.metadata]
-"dist" = "../../frontend/out"
+"dist" = "../frontend/out"
 
 [package.metadata.tauri-winres]
 "icon" = "icons/icon.ico"
 
 [package.metadata.tauri]
-"frontendDist" = "../../frontend/out"
+"frontendDist" = "../frontend/out"
 
 [lib]
 name = "pdf_editor_desktop_lib"

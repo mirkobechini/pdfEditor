@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-28
+
+- ✅ **Desktop frontend separato — pixel perfect UI (issue #459)** — Implementate pagine desktop dedicate in `desktop/frontend/` con flusso wizard, pagina licenza separata e suite impostazioni (iterazioni di refining tipografico/spaziature da mock Lovable).
+- ✅ **Desktop settings views complete (issue #459)** — Coperti tab/sezioni mock richiesti, incluse shortcut platform-aware (macOS vs Windows/Linux).
+- ✅ **Tauri build allineato al frontend desktop (issue #459)** — Aggiornati path build in `desktop/src-tauri/tauri.conf.json` e metadati in `desktop/src-tauri/Cargo.toml` per usare `../frontend/out` (desktop) invece del frontend web.
+- ✅ **Build installer desktop validata** — Build Tauri riuscita con output: `desktop/src-tauri/target/release/bundle/nsis/PdfEditor_0.1.8_x64-setup.exe` e `desktop/src-tauri/target/release/bundle/msi/PdfEditor_0.1.8_x64_en-US.msi`.
+
 ## 2026-07-27
 
 - ✅ **Desktop env fix (issue #441, PR #446)** — Unificato .env.desktop con GOOGLE_CLIENT_ID, auto-generazione SECRET_KEY, CORS per Tauri webview, logging sidecar.

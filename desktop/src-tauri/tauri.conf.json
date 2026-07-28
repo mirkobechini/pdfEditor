@@ -1,19 +1,19 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "PdfEditor",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "identifier": "com.mirko.pdfeditor",
   "build": {
     "beforeDevCommand": {
       "script": "npm run dev",
-      "cwd": "../../frontend"
+      "cwd": "../frontend"
     },
     "devUrl": "http://localhost:3000",
     "beforeBuildCommand": {
       "script": "npm run build",
-      "cwd": "../../frontend"
+      "cwd": "../frontend"
     },
-    "frontendDist": "../../frontend/out"
+    "frontendDist": "../frontend/out"
   },
   "app": {
     "windows": [
