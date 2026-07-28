@@ -8,82 +8,67 @@ const sections = [
     { id: "editor", label: "Editor" },
     { id: "cloud", label: "Cloud & Sync" },
     { id: "shortcuts", label: "Shortcuts" },
-    { id: "advanced", label: "Advanced", active: true },
-    { id: "about", label: "About" },
+    { id: "advanced", label: "Advanced" },
+    { id: "about", label: "About", active: true },
 ] as const;
 
-type AdvancedRow = {
+type AboutRow = {
     id: string;
     title: string;
     subtitle: string;
-    type: "toggle" | "select" | "badge" | "action";
-    enabled?: boolean;
+    type: "badge" | "action";
     value?: string;
 };
 
-const sidecarRows: readonly AdvancedRow[] = [
+const runtimeRows: readonly AboutRow[] = [
     {
-        id: "port",
-        title: "Porta sidecar",
-        subtitle: "Processo FastAPI locale su 127.0.0.1",
+        id: "pdf_engine",
+        title: "Motore PDF",
+        subtitle: "Rendering ed editing locale",
         type: "badge",
-        value: "8756",
+        value: "PyMuPDF 1.24.9",
     },
     {
-        id: "workers",
-        title: "Worker paralleli",
-        subtitle: "Job di conversione simultanei",
+        id: "shell",
+        title: "Shell desktop",
+        subtitle: "Bundle nativo firmato e notarizzato",
         type: "badge",
-        value: "4",
+        value: "Tauri 2.1",
     },
     {
-        id: "ram",
-        title: "Limite RAM per job",
-        subtitle: "Il job viene interrotto oltre la soglia",
+        id: "sidecar",
+        title: "Sidecar",
+        subtitle: "Processo API locale",
         type: "badge",
-        value: "1.5 GB",
-    },
-    {
-        id: "restart",
-        title: "Riavvio automatico",
-        subtitle: "Se il sidecar termina in modo anomalo",
-        type: "toggle",
-        enabled: true,
+        value: "FastAPI • Python 3.12",
     },
 ];
 
-const diagnosticRows: readonly AdvancedRow[] = [
+const licenseRows: readonly AboutRow[] = [
     {
-        id: "log_level",
-        title: "Livello di log",
-        subtitle: "Scritti in ~/Library/Logs/PdfEditor",
-        type: "select",
-        value: "INFO",
+        id: "app_license",
+        title: "Licenza applicazione",
+        subtitle: "Codice sorgente disponibile su richiesta",
+        type: "badge",
+        value: "AGPL-3.0",
     },
     {
-        id: "crash",
-        title: "Invia crash report",
-        subtitle: "Stack trace anonimizzati, nessun contenuto PDF",
-        type: "toggle",
-        enabled: true,
-    },
-    {
-        id: "telemetry",
-        title: "Telemetria d'uso",
-        subtitle: "Conteggi anonimi delle funzioni usate",
-        type: "toggle",
-        enabled: false,
-    },
-    {
-        id: "open_logs",
-        title: "Apri cartella log",
-        subtitle: "Utile per allegare file a un bug report",
+        id: "third_party",
+        title: "Licenze di terze parti",
+        subtitle: "Elenco completo delle dipendenze",
         type: "action",
-        value: "Mostra nel Finder",
+        value: "Visualizza",
+    },
+    {
+        id: "license_key",
+        title: "Chiave licenza",
+        subtitle: "Attivata su 2 dispositivi di 3",
+        type: "badge",
+        value: "PE-PRM-••••-7742",
     },
 ];
 
-function AdvancedSection({ title, rows }: { title: string; rows: readonly AdvancedRow[] }) {
+function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[] }) {
     return (
         <section className="mt-6">
             <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#9d9184]">{title}</p>
@@ -99,24 +84,7 @@ function AdvancedSection({ title, rows }: { title: string; rows: readonly Advanc
                             <p className="mt-1 text-[14px] text-[#9d9184]">{row.subtitle}</p>
                         </div>
 
-                        {row.type === "toggle" ? (
-                            <button
-                                className={`relative h-7 w-12 rounded-full border transition ${row.enabled
-                                    ? "border-[#f7871f] bg-[#f7871f]"
-                                    : "border-white/10 bg-white/10"
-                                    }`}
-                                aria-label={row.title}
-                            >
-                                <span
-                                    className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${row.enabled ? "right-1" : "left-1"}`}
-                                />
-                            </button>
-                        ) : row.type === "select" ? (
-                            <button className="inline-flex items-center gap-3 rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">
-                                <span>{row.value}</span>
-                                <span className="text-[10px] text-[#8f8377]">▼</span>
-                            </button>
-                        ) : row.type === "action" ? (
+                        {row.type === "action" ? (
                             <button className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">
                                 {row.value}
                             </button>
@@ -154,26 +122,29 @@ export default function SettingsPage() {
 
                 <main className="flex-1 bg-[#221b16] px-9 py-8">
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Advanced</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Motore locale, limiti di risorse e strumenti di diagnostica.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">About</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">Versione, componenti open source e informazioni di licenza.</p>
 
-                        <AdvancedSection title="Sidecar engine" rows={sidecarRows} />
-                        <AdvancedSection title="Diagnostica" rows={diagnosticRows} />
-
-                        <section className="mt-7 rounded-2xl border border-[#b45147]/70 bg-[#3a2521] px-4 py-4">
-                            <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#ff7f73]">Danger zone</p>
-                            <div className="mt-3 flex items-center justify-between gap-4">
-                                <div>
-                                    <h3 className="text-[18px] font-semibold text-white">Reimposta tutte le preferenze</h3>
-                                    <p className="mt-1 text-[13px] text-[#bfa39c]">
-                                        Cancella il database SQLite locale delle impostazioni. I PDF non vengono toccati.
-                                    </p>
+                        <section className="mt-6 flex items-center gap-4">
+                            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f7871f] shadow-[0_8px_20px_rgba(247,135,31,0.35)]">
+                                <div className="relative h-8 w-6 rounded-[8px] bg-[#fff8f2]">
+                                    <span className="absolute -bottom-1 -right-1 inline-flex h-3.5 w-3.5 rounded-full border-2 border-[#f7871f] bg-white" />
                                 </div>
-
-                                <button className="rounded-xl bg-[#f26d63] px-4 py-2 text-[12px] font-bold text-white">
-                                    Reset
-                                </button>
                             </div>
+
+                            <div>
+                                <h2 className="text-[42px] font-bold leading-tight text-white">PdfEditor</h2>
+                                <p className="mt-1 text-[14px] text-[#9d9184]">v1.4.2 (build 20260728·a3f19c2) · macOS arm64</p>
+                            </div>
+                        </section>
+
+                        <AboutSection title="Runtime" rows={runtimeRows} />
+                        <AboutSection title="Licenza" rows={licenseRows} />
+
+                        <section className="mt-7 flex items-center gap-3">
+                            <button className="rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Note di rilascio</button>
+                            <button className="rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Segnala un bug</button>
+                            <button className="rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Documentazione</button>
                         </section>
                     </div>
                 </main>

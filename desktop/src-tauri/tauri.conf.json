@@ -6,14 +6,14 @@
   "build": {
     "beforeDevCommand": {
       "script": "npm run dev",
-      "cwd": "../../frontend"
+      "cwd": "../frontend"
     },
     "devUrl": "http://localhost:3000",
     "beforeBuildCommand": {
       "script": "npm run build",
-      "cwd": "../../frontend"
+      "cwd": "../frontend"
     },
-    "frontendDist": "../../frontend/out"
+    "frontendDist": "../frontend/out"
   },
   "app": {
     "windows": [
