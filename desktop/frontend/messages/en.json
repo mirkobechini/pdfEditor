@@ -1,0 +1,22 @@
+{
+  "auth": {
+    "loginTitle": "Sign in",
+    "email": "EMAIL",
+    "password": "PASSWORD",
+    "loginButton": "Sign in",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Register",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "forgotPassword": "Forgot password?",
+    "recover": "Recover",
+    "rememberMe": "Remember me on this device",
+    "workspace": "Access your workspace",
+    "freeTier": "free tier"
+  },
+  "common": {
+    "loading": "Loading...",
+    "version": "v0.1.8",
+    "license": "Open Source License"
+  }
+}
