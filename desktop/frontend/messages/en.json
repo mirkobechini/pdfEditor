@@ -1,0 +1,18 @@
+{
+  "auth": {
+    "loginTitle": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "loginButton": "Sign in",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Register",
+    "or": "or",
+    "continueWithGoogle": "Continue with Google",
+    "forgotPassword": "Forgot password?"
+  },
+  "common": {
+    "loading": "Loading...",
+    "version": "v2.0.4-stable",
+    "license": "AGPL-3.0"
+  }
+}
