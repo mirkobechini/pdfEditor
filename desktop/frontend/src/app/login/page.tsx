@@ -10,9 +10,8 @@ import PasswordInput from "../../components/PasswordInput";
 import GoogleLoginButton from "../../components/GoogleLoginButton";
 
 const SIDECAR_HEALTH_URL = getApiBaseUrl() + "/health";
-const HEALTH_RETRY_INTERVAL = 500; // 500ms between attempts
-const HEALTH_FETCH_TIMEOUT = 2000; // 2s per fetch attempt
-const HEALTH_MAX_RETRIES = 40; // ~20s max — should cover uvicorn boot
+const HEALTH_RETRY_INTERVAL = 2000; // 2 seconds
+const HEALTH_MAX_RETRIES = 30; // 60 seconds max — uvicorn boot can be slow
 
 function useSidecarReady() {
     const [ready, setReady] = React.useState(false);
@@ -25,10 +24,9 @@ function useSidecarReady() {
 
         async function poll() {
             while (!cancelled) {
-                attempts++;
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), HEALTH_FETCH_TIMEOUT);
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
                     const res = await fetch(SIDECAR_HEALTH_URL, { signal: controller.signal });
                     clearTimeout(timeoutId);
                     if (res.ok) {
@@ -42,6 +40,7 @@ function useSidecarReady() {
                 } catch {
                     // Sidecar not ready yet (network error or abort)
                 }
+                attempts++;
                 if (attempts >= HEALTH_MAX_RETRIES) {
                     if (!cancelled) {
                         setChecking(false);
