@@ -18,6 +18,13 @@
 - ✅ **P1.1 Media: PDF.js viewer + zoom + navigazione (PR #497, issue #496)** — Sostituito mock viewer con PDF.js reale. Canvas dentro la grafica mock originale. Zoom +/- e navigazione pagine ◀▶.
 - ✅ **B10: First-launch wizard + fix loading loop (PR #500, issue #498)** — Root page ora reindirizza a `/wizard` alla prima installazione. Rimosso spinner bloccante: ora il login si mostra subito con avviso non bloccante.
 - ✅ **B11: CMD flash sidecar (PR #500, issue #499)** — Aggiunto `--noconsole` a PyInstaller per eliminare la finestra CMD all'avvio del sidecar.
+- ✅ **B12: Health check più lungo (PR #505, issue #504)** — Aumentato retry a 40 tentativi, polling continuo anche dopo UI mostrata.
+- ✅ **B13: Health check più veloce (PR #507, issue #506)** — Timeout fetch 2s, intervallo 500ms, primo tentativo immediato.
+- ✅ **Wizard 2 step + cursor-pointer + draft fix (PR #503, issue #501/502)** — Wizard solo Benvenuto+Cartella, cursor-pointer su bottoni, release non più draft.
+- ✅ **Startup screen con progress (PR #511, issue #510)** — Nuova pagina `/startup` con 3 step di avvio backend e redirect automatico a wizard/login.
+- ✅ **Fix Node 24 deprecation warning (test.yml)** — Aggiunto `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` per eliminare warning su codecov-action.
+- ✅ **Release v0.1.17 pubblicata** — Prima release con PDF.js viewer, guest login, first-launch wizard.
+- ✅ **Release v0.1.18 pubblicata** — Wizard 2 step, cursor-pointer, startup screen, health check ottimizzato.
 
 ## 2026-07-28
 
