@@ -10,8 +10,9 @@ import PasswordInput from "../../components/PasswordInput";
 import GoogleLoginButton from "../../components/GoogleLoginButton";
 
 const SIDECAR_HEALTH_URL = getApiBaseUrl() + "/health";
-const HEALTH_RETRY_INTERVAL = 1000; // 1 second
-const HEALTH_MAX_RETRIES = 15; // 15 seconds max
+const HEALTH_RETRY_INTERVAL = 500; // 500ms between attempts
+const HEALTH_FETCH_TIMEOUT = 2000; // 2s per fetch attempt
+const HEALTH_MAX_RETRIES = 40; // ~20s max — should cover uvicorn boot
 
 function useSidecarReady() {
     const [ready, setReady] = React.useState(false);
@@ -23,28 +24,32 @@ function useSidecarReady() {
         let attempts = 0;
 
         async function poll() {
-            while (attempts < HEALTH_MAX_RETRIES && !cancelled) {
+            while (!cancelled) {
+                attempts++;
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    const timeoutId = setTimeout(() => controller.abort(), HEALTH_FETCH_TIMEOUT);
                     const res = await fetch(SIDECAR_HEALTH_URL, { signal: controller.signal });
                     clearTimeout(timeoutId);
                     if (res.ok) {
                         if (!cancelled) {
                             setReady(true);
                             setChecking(false);
+                            setFailed(false);
                         }
                         return;
                     }
                 } catch {
                     // Sidecar not ready yet (network error or abort)
                 }
-                attempts++;
+                if (attempts >= HEALTH_MAX_RETRIES) {
+                    if (!cancelled) {
+                        setChecking(false);
+                        setFailed(true);
+                    }
+                    return;
+                }
                 await new Promise((r) => setTimeout(r, HEALTH_RETRY_INTERVAL));
-            }
-            if (!cancelled) {
-                setChecking(false);
-                setFailed(true);
             }
         }
 
