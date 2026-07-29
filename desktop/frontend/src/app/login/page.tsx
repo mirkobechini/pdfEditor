@@ -10,8 +10,8 @@ import PasswordInput from "../../components/PasswordInput";
 import GoogleLoginButton from "../../components/GoogleLoginButton";
 
 const SIDECAR_HEALTH_URL = getApiBaseUrl() + "/health";
-const HEALTH_RETRY_INTERVAL = 1000; // 1 second
-const HEALTH_MAX_RETRIES = 15; // 15 seconds max
+const HEALTH_RETRY_INTERVAL = 2000; // 2 seconds
+const HEALTH_MAX_RETRIES = 30; // 60 seconds max — uvicorn boot can be slow
 
 function useSidecarReady() {
     const [ready, setReady] = React.useState(false);
@@ -23,7 +23,7 @@ function useSidecarReady() {
         let attempts = 0;
 
         async function poll() {
-            while (attempts < HEALTH_MAX_RETRIES && !cancelled) {
+            while (!cancelled) {
                 try {
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -33,6 +33,7 @@ function useSidecarReady() {
                         if (!cancelled) {
                             setReady(true);
                             setChecking(false);
+                            setFailed(false);
                         }
                         return;
                     }
@@ -40,11 +41,14 @@ function useSidecarReady() {
                     // Sidecar not ready yet (network error or abort)
                 }
                 attempts++;
+                if (attempts >= HEALTH_MAX_RETRIES) {
+                    if (!cancelled) {
+                        setChecking(false);
+                        setFailed(true);
+                    }
+                    return;
+                }
                 await new Promise((r) => setTimeout(r, HEALTH_RETRY_INTERVAL));
-            }
-            if (!cancelled) {
-                setChecking(false);
-                setFailed(true);
             }
         }
 
@@ -185,7 +189,7 @@ export default function LoginPage() {
                             <button
                                 type="submit"
                                 disabled={submitting || !email.trim() || !password.trim()}
-                                className="mb-4 w-full rounded-xl bg-[#f7871f] py-3 text-sm font-semibold text-white shadow-sm shadow-[#f7871f]/30 transition-colors hover:bg-[#ce5a00] disabled:cursor-not-allowed disabled:opacity-50"
+                                className="mb-4 w-full cursor-pointer rounded-xl bg-[#f7871f] py-3 text-sm font-semibold text-white shadow-sm shadow-[#f7871f]/30 transition-colors hover:bg-[#ce5a00] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {submitting ? tc("loading") : t("loginButton")}
                             </button>
@@ -214,7 +218,7 @@ export default function LoginPage() {
                                     setError(ns === "common" ? tc(k) : t(k));
                                 }
                             }}
-                            className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl border border-dashed border-white/10 bg-transparent py-3 text-sm font-semibold text-[#9d9184] transition-colors hover:border-[#f7871f]/40 hover:text-[#f4f1ee]"
+                            className="mb-4 flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-dashed border-white/10 bg-transparent py-3 text-sm font-semibold text-[#9d9184] transition-colors hover:border-[#f7871f]/40 hover:text-[#f4f1ee]"
                         >
                             <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
