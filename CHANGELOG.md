@@ -30,7 +30,7 @@
 - ✅ **Preflight script locale (PR )** — Script pre-release (`desktop/preflight.sh` + `desktop/preflight.ps1`) che verifica npm ci, next build, import backend e allineamento versioni prima di taggare. Rileva errori come @swc/helpers in 3min invece di 25min di CI.
 - ✅ **Preflight job in release.yml** — Nuovo job `preflight` tra `wait-for-ci` e `build`. Blocca la build se npm ci / next build / import backend falliscono.
 - ✅ **Release v0.1.20 pubblicata** — Pydantic sidecar fix + dialog nativo cartella di lavoro + preflight.
-- ✅ **Release v0.1.21 pubblicata** — Fix macOS sidecar rename (target triple dinamico), indent fix release.yml, preflight cross-platform con grep, bump versione.
+- ✅ **Release v0.1.22 pubblicata** — Fix macOS sidecar rename (target triple dinamico), fix indent preflight job, fix IndentationError python -c, workflow_dispatch trigger.
 
 ## 2026-07-28
 
