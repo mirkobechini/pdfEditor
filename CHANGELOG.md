@@ -25,6 +25,9 @@
 - ✅ **Fix Node 24 deprecation warning (test.yml)** — Aggiunto `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` per eliminare warning su codecov-action.
 - ✅ **Release v0.1.17 pubblicata** — Prima release con PDF.js viewer, guest login, first-launch wizard.
 - ✅ **Release v0.1.18 pubblicata** — Wizard 2 step, cursor-pointer, startup screen, health check ottimizzato.
+- ✅ **#508: Fix sidecar crash su Windows (PR #513)** — Rimosse `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `SIDECAR_PORT`, `STORAGE_LOCAL_PATH` da `.env.desktop` che causavano ValidationError in pydantic_settings.
+- ✅ **#509: Dialog nativo per cartella lavoro (PR #514)** — Sostituito `prompt()` con `tauri-plugin-dialog` `open({ directory: true })` nel wizard step 2. Fallback a prompt preservato per browser.
+- ✅ **Release v0.1.20 pubblicata** — Pydantic sidecar fix + dialog nativo cartella di lavoro.
 
 ## 2026-07-28
 
