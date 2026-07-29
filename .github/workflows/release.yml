@@ -186,7 +186,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: "PdfEditor ${{ github.ref_name }}"
           body: ${{ steps.notes.outputs.notes }}
-          draft: true
+          draft: false
           prerelease: false
           files: |
             **/*.msi
