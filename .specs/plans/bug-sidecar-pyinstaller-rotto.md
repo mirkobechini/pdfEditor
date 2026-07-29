@@ -30,4 +30,7 @@ Il sidecar PyInstaller (`fastapi-sidecar.exe`) è buildato nella CI ma non funzi
 
 ## Status
 
-[ ] Non iniziata
+[x] Risolto
+**Data:** 2026-07-28
+**Issue:** #470
+**PR:** #471
