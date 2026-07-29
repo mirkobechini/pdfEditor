@@ -12,12 +12,50 @@
     "recover": "Recupera",
     "rememberMe": "Ricordami su questo dispositivo",
     "workspace": "Accedi al tuo workspace",
-    "freeTier": "free tier"
+    "freeTier": "free tier",
+    "invalidCredentials": "Email o password non validi",
+    "emailAlreadyRegistered": "Questa email è già registrata",
+    "notAuthenticated": "Accedi per continuare",
+    "passwordTooShort": "La password deve essere di almeno 8 caratteri",
+    "passwordMissingUppercase": "La password deve contenere almeno una lettera maiuscola",
+    "passwordMissingLowercase": "La password deve contenere almeno una lettera minuscola",
+    "passwordMissingNumber": "La password deve contenere almeno un numero",
+    "passwordTooWeak": "Password troppo debole",
+    "resetInvalidToken": "Link di reset non valido o scaduto",
+    "resetTokenExpired": "Questo link di reset è scaduto",
+    "emailQuotaExceeded": "Troppe email inviate. Riprova più tardi",
+    "googleAuthFailed": "Autenticazione Google fallita"
   },
   "common": {
     "loading": "Caricamento...",
     "networkError": "Errore di rete. Verifica la connessione.",
+    "rateLimitExceeded": "Troppe richieste. Attendi un momento",
+    "forbidden": "Non hai i permessi per questa operazione",
+    "notFound": "Risorsa non trovata",
+    "validationError": "Dati di input non validi",
+    "conversionFailed": "Conversione fallita",
+    "searchTextEmpty": "Il testo da cercare non può essere vuoto",
+    "mergeTooFew": "Servono almeno due documenti per unire",
+    "splitInvalidRange": "Intervallo pagine non valido",
+    "internalError": "Errore interno imprevisto",
+    "unknownError": "Errore imprevisto",
     "version": "v0.1.15",
     "license": "Open Source License"
+  },
+  "pdf": {
+    "notFound": "PDF non trovato",
+    "fileNotFound": "File PDF non trovato su disco",
+    "uploadTooLarge": "Il file è troppo grande",
+    "invalidPdf": "File PDF non valido",
+    "onlyPdfAllowed": "Sono ammessi solo file PDF",
+    "unsupportedFileType": "Tipo di file non supportato"
+  },
+  "admin": {
+    "cannotDemoteSuperAdmin": "Non puoi retrocedere un super admin",
+    "stripeLicenseLocked": "Licenza bloccata via Stripe"
+  },
+  "bugReport": {
+    "notFound": "Segnalazione bug non trovata",
+    "voteNotFound": "Voto non trovato"
   }
 }
