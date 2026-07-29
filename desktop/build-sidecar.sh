@@ -37,6 +37,7 @@ echo "Running PyInstaller..."
 $PYTHON -m PyInstaller \
     --name "fastapi-sidecar" \
     --onefile \
+    --noconsole \
     --workpath "$PROJECT_ROOT/desktop/build-sidecar-tmp" \
     --specpath "$PROJECT_ROOT/desktop" \
     --distpath "$OUTPUT_DIR" \

@@ -8,6 +8,7 @@
 ## 🔴 Bug aperti
 
 > ⚠️ **Nessun bug aperto al momento.**
+> Tutti i bug noti (B1-B11) sono stati risolti in questa sessione.
 
 ---
 
