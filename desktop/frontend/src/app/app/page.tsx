@@ -4,6 +4,7 @@ import React from "react";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
 import { getApiBaseUrl } from "../../shared/tauri";
+import PdfViewer from "../../components/PdfViewer";
 import type { PdfDocument } from "../../shared/types";
 
 const API_BASE = getApiBaseUrl();
@@ -67,6 +68,10 @@ export default function EditorPage() {
     const [docs, setDocs] = React.useState<PdfDocument[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [selectedDoc, setSelectedDoc] = React.useState<PdfDocument | null>(null);
+    const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const [totalPages, setTotalPages] = React.useState(0);
+    const [zoom, setZoom] = React.useState(1);
 
     React.useEffect(() => {
         api.listPdfs(0, 10)
@@ -81,6 +86,30 @@ export default function EditorPage() {
             })
             .finally(() => setLoading(false));
     }, []);
+
+    // Load PDF blob URL when a document is selected
+    React.useEffect(() => {
+        if (!selectedDoc) {
+            setPdfUrl(null);
+            return;
+        }
+
+        let cancelled = false;
+        api.downloadPdf(selectedDoc.id)
+            .then((blob) => {
+                if (cancelled) return;
+                const url = URL.createObjectURL(blob);
+                setPdfUrl(url);
+            })
+            .catch(() => {
+                // Download failed
+            });
+
+        return () => {
+            cancelled = true;
+            if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+        };
+    }, [selectedDoc?.id]);
 
     async function handleOpenLocal() {
         try {
@@ -212,28 +241,56 @@ export default function EditorPage() {
 
                 <main className="flex min-h-screen flex-col border-r border-white/10 bg-[#13100d]">
                     <header className="flex h-14 items-center justify-between border-b border-white/10 bg-[#201a15] px-4">
-                        <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-1">
-                            {modeTabs.map(([label, active]) => (
-                                <button key={label} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${active ? "border border-white/10 bg-[#201a15] text-white" : "text-[#9a8d80]"}`}>
-                                    {label}
-                                </button>
-                            ))}
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-1">
+                                {["Edit", "Organize", "Convert"].map((label) => (
+                                    <button key={label} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${label === "Edit" ? "border border-white/10 bg-[#201a15] text-white" : "text-[#9a8d80]"}`}>
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                            {totalPages > 0 && (
+                                <div className="flex items-center gap-1 ml-2 text-[11px] text-[#9a8d80] font-mono">
+                                    <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} className="h-7 w-7 rounded hover:bg-white/6" disabled={currentPage <= 1}>
+                                        ◀
+                                    </button>
+                                    <span className="px-1">{currentPage} / {totalPages}</span>
+                                    <button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} className="h-7 w-7 rounded hover:bg-white/6" disabled={currentPage >= totalPages}>
+                                        ▶
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                        <div className="flex items-center gap-2 pr-2 text-xs font-medium text-[#9a8d80]">
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 mr-2 text-[11px] font-mono text-[#9a8d80]">
+                                <button onClick={() => setZoom(Math.max(0.25, zoom - 0.25))} className="h-7 w-7 rounded hover:bg-white/6">−</button>
+                                <span className="w-10 text-center">{Math.round(zoom * 100)}%</span>
+                                <button onClick={() => setZoom(Math.min(3, zoom + 0.25))} className="h-7 w-7 rounded hover:bg-white/6">+</button>
+                            </div>
                             {"Merge Split Reorder Remove Metadata".split(" ").map((item) => (
-                                <button key={item} className="h-8 rounded-lg px-2.5 transition-colors hover:bg-white/6 hover:text-white">{item}</button>
+                                <button key={item} className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white">{item}</button>
                             ))}
                         </div>
                     </header>
 
                     <div className="flex-1 bg-black p-6">
-                        <div className="relative h-full border border-white/6 bg-[#0f0d0b] p-6">
-                            {selectedDoc && (
-                                <span className="absolute right-10 top-8 font-mono text-[10px] text-[#d8d8d8]">
-                                    {selectedDoc.original_filename}
-                                </span>
-                            )}
-                            <DocMock pageNum={1} totalPages={selectedDoc?.page_count || 12} />
+                        <div className="relative h-full border border-white/6 bg-[#0f0d0b]">
+                            <div className="absolute left-4 top-3 z-10 flex items-center gap-3">
+                                {selectedDoc && (
+                                    <span className="font-mono text-[10px] text-[#d8d8d8]">
+                                        {selectedDoc.original_filename}
+                                    </span>
+                                )}
+                            </div>
+                            <PdfViewer
+                                fileUrl={pdfUrl}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                                onTotalPagesChange={setTotalPages}
+                                zoom={zoom}
+                                onZoomChange={setZoom}
+                            />
                         </div>
                     </div>
                 </main>
