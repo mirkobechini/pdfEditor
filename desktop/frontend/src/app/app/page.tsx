@@ -274,23 +274,47 @@ export default function EditorPage() {
                     </header>
 
                     <div className="flex-1 bg-black p-6">
-                        <div className="relative h-full border border-white/6 bg-[#0f0d0b]">
-                            <div className="absolute left-4 top-3 z-10 flex items-center gap-3">
-                                {selectedDoc && (
-                                    <span className="font-mono text-[10px] text-[#d8d8d8]">
-                                        {selectedDoc.original_filename}
-                                    </span>
-                                )}
+                        <div className="relative h-full border border-white/6 bg-[#0f0d0b] p-6">
+                            <div className="absolute left-4 top-3 z-10 font-mono text-[10px] text-[#d8d8d8]">
+                                {selectedDoc?.original_filename || "Page 1 of 12"}
                             </div>
-                            <PdfViewer
-                                fileUrl={pdfUrl}
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                onPageChange={setCurrentPage}
-                                onTotalPagesChange={setTotalPages}
-                                zoom={zoom}
-                                onZoomChange={setZoom}
-                            />
+                            {pdfUrl ? (
+                                <div className="mx-auto h-full w-full max-w-[760px] bg-[#f6f6f6] overflow-auto p-6">
+                                    <PdfViewer
+                                        fileUrl={pdfUrl}
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={setCurrentPage}
+                                        onTotalPagesChange={setTotalPages}
+                                        zoom={zoom}
+                                        onZoomChange={setZoom}
+                                    />
+                                    <div className="mt-6 border-t border-[#ececec] pt-4 text-[10px] font-semibold tracking-[0.18em] text-[#c3c3c3]">
+                                        PDF/A-3b · 300 DPI · TAGGED DOCUMENT
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="mx-auto h-full w-full max-w-[760px] bg-[#f6f6f6] p-10">
+                                    <div className="mb-5 h-8 w-[64%] bg-[#1f2328]" />
+                                    <div className="space-y-3">
+                                        <div className="h-3 rounded-full bg-[#ececec]" />
+                                        <div className="h-3 rounded-full bg-[#ececec]" />
+                                        <div className="h-3 w-[92%] rounded-full bg-[#ececec]" />
+                                        <div className="h-3 w-[84%] rounded-full bg-[#ececec]" />
+                                    </div>
+                                    <div className="my-10 flex h-[150px] items-center justify-center rounded-xl border border-[#f2dfc5] bg-[#f6efdf] text-xs font-semibold tracking-[0.2em] text-[#e09c4f]">
+                                        SYSTEM_DIAG_V2.SVG
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="h-3 rounded-full bg-[#ececec]" />
+                                        <div className="h-3 w-[82%] rounded-full bg-[#ececec]" />
+                                        <div className="h-3 w-[88%] rounded-full bg-[#ececec]" />
+                                    </div>
+                                    <div className="mt-20 border-t border-[#ececec] pt-8 text-[10px] font-semibold tracking-[0.18em] text-[#c3c3c3]">
+                                        PDF/A-3b · 300 DPI · TAGGED DOCUMENT
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </main>

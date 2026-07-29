@@ -136,13 +136,13 @@ export default function PdfViewer({
     }
 
     return (
-        <div className="relative flex h-full w-full items-start justify-center overflow-auto p-4">
+        <div className="relative flex w-full items-start justify-center">
             {rendering && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0f0d0b]/80">
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#f6f6f6]/80">
                     <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#f7871f] border-t-transparent" />
                 </div>
             )}
-            <canvas ref={canvasRef} className="shadow-2xl" />
+            <canvas ref={canvasRef} className="shadow-lg" />
         </div>
     );
 }
