@@ -31,10 +31,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* iubenda CMP — Cookie consent banner (must load before other scripts) */}
+        {/* iubenda CMP — Cookie consent banner (loads after page render, appears at bottom) */}
         <Script
           id="iubenda-cmp"
-          strategy="beforeInteractive"
+          strategy="lazyOnload"
           src="https://embeds.iubenda.com/widgets/e5f130f1-5f68-489e-9f7e-57897c838141.js"
         />
 
