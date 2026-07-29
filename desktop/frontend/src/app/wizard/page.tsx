@@ -41,11 +41,13 @@ export default function WizardPage() {
     }
 
     function handleFinish() {
-        router.push("/app");
+        localStorage.setItem("pdfeditor_wizard_done", "true");
+        router.push("/login");
     }
 
     function handleSkip() {
-        router.push("/app");
+        localStorage.setItem("pdfeditor_wizard_done", "true");
+        router.push("/login");
     }
 
     async function handleCopyCode() {

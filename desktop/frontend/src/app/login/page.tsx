@@ -96,18 +96,6 @@ export default function LoginPage() {
         return <div className="h-screen bg-white dark:bg-gray-950" />;
     }
 
-    // Show a loading indicator while the sidecar is starting up
-    if (checking && !ready && !failed) {
-        return (
-            <div className="h-screen bg-[#17120f] flex items-center justify-center">
-                <div className="text-center">
-                    <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-[#f7871f] border-t-transparent" />
-                    <p className="text-sm text-[#a79a8d]">{tc("loading")}</p>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="h-screen bg-[#17120f] font-sans text-[#f4f1ee] transition-colors">
             <div className="grid h-full grid-cols-1 lg:grid-cols-2">
@@ -138,6 +126,17 @@ export default function LoginPage() {
 
                 <div className="flex flex-col justify-center bg-[#201a15] p-10">
                     <div className="mx-auto w-full max-w-sm">
+                        {!ready && !failed && checking && (
+                            <div className="mb-4 rounded-xl border border-yellow-500/35 bg-yellow-500/10 px-4 py-3 text-[11px] text-yellow-200 flex items-center gap-2">
+                                <span className="inline-block h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
+                                Avvio del backend in corso...
+                            </div>
+                        )}
+                        {failed && (
+                            <div className="mb-4 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-[11px] text-red-200">
+                                Backend non disponibile. Login e guest potrebbero non funzionare.
+                            </div>
+                        )}
                         {error && (
                             <div className="mb-4 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div>
                         )}

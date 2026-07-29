@@ -22,9 +22,11 @@ $Python = "python"
 if (Test-Path "$BackendDir\.venv\Scripts\python.exe") {
     $Python = "$BackendDir\.venv\Scripts\python.exe"
     Write-Host "Using venv Python: $Python"
-} elseif (Get-Command "python" -ErrorAction SilentlyContinue) {
+}
+elseif (Get-Command "python" -ErrorAction SilentlyContinue) {
     $Python = (Get-Command "python").Source
-} else {
+}
+else {
     Write-Error "Python not found. Install Python 3.10+ and try again."
     exit 1
 }
@@ -37,6 +39,7 @@ Write-Host "Running PyInstaller..." -ForegroundColor Yellow
 & $Python -m PyInstaller `
     --name "fastapi-sidecar" `
     --onefile `
+    --noconsole `
     --workpath "$ProjectRoot\desktop\build-sidecar-tmp" `
     --specpath "$ProjectRoot\desktop" `
     --distpath $OutputDir `
