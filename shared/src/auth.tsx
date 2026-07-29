@@ -39,9 +39,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(u);
         api.refreshCsrf();
       })
-      .catch(() => {
-        // Not authenticated — user is null
-        localStorage.removeItem(REMEMBER_TOKEN_KEY);
+      .catch((err) => {
+        // Only delete the token on explicit auth errors (401), not on network errors
+        // Network errors happen when the sidecar hasn't started yet
+        if (err instanceof TypeError) {
+          // fetch failed (network error) — keep the token
+        } else {
+          localStorage.removeItem(REMEMBER_TOKEN_KEY);
+        }
       })
       .finally(() => {
         if (!_pendingAuthRef.current) {
