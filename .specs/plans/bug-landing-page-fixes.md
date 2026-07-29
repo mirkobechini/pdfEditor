@@ -1,6 +1,6 @@
 # Bug: Landing page fixes
 
-**Status:** ✅ Completata (2026-07-27, PR #448)
+**Status:** Non iniziata
 **Priority:** MEDIA
 
 ## Issue

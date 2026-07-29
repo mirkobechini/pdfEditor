@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - "v*" # e.g. v0.1.0, v0.2.0
-  workflow_dispatch: # Allow manual trigger from Actions tab
 
 permissions:
   contents: read
@@ -47,69 +46,8 @@ jobs:
           echo "Timeout waiting for CI on main (15 minutes). Proceeding anyway."
           exit 0
 
-  preflight:
-    needs: [wait-for-ci]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Preflight — frontend npm ci
-        run: |
-          cd frontend
-          npm ci
-        shell: bash
-
-      - name: Preflight — desktop frontend npm ci
-        run: |
-          cd desktop/frontend
-          npm ci
-        shell: bash
-
-      - name: Preflight — desktop frontend build (static export)
-        run: |
-          cd desktop/frontend
-          npm run build
-        shell: bash
-
-      - name: Preflight — backend pip deps
-        run: |
-          cd backend
-          pip install -r requirements.txt
-        shell: bash
-
-      - name: Preflight — backend imports (sidecar entry)
-        run: |
-          cd desktop
-          pip install -r ../backend/requirements.txt pyinstaller -q
-          python -c "
-import sys
-sys.path.insert(0, '../backend')
-from app.core.config import Settings
-s = Settings()
-print(f'Settings OK: APP_NAME={s.APP_NAME}')
-import app.main
-import app.core.database
-import app.models
-import app.repositories
-import app.services
-import app.api.v1
-import uvicorn
-print('All sidecar imports OK')
-"
-        shell: bash
-
   build:
-    needs: [preflight]
+    needs: [wait-for-ci]
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
@@ -162,6 +100,11 @@ print('All sidecar imports OK')
           cd frontend
           npm ci
 
+      - name: Install desktop frontend dependencies
+        run: |
+          cd desktop/frontend
+          npm ci
+
       - name: Install backend dependencies (for sidecar)
         run: |
           cd backend
@@ -175,31 +118,6 @@ print('All sidecar imports OK')
             aarch64-apple-darwin
             x86_64-unknown-linux-gnu
 
-      - name: Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "desktop/src-tauri -> target"
-
-      - name: Cache npm (frontend)
-        uses: actions/cache@v4
-        with:
-          path: frontend/node_modules
-          key: ${{ runner.os }}-npm-frontend-${{ hashFiles('frontend/package-lock.json') }}
-
-      - name: Cache npm (desktop frontend)
-        uses: actions/cache@v4
-        with:
-          path: desktop/frontend/node_modules
-          key: ${{ runner.os }}-npm-desktop-${{ hashFiles('desktop/frontend/package-lock.json') }}
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
       - name: Install Linux deps
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -207,9 +125,7 @@ print('All sidecar imports OK')
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
       - name: Install Tauri CLI
-        run: |
-          cargo install cargo-binstall
-          cargo binstall -y tauri-cli@^2
+        run: cargo install tauri-cli --version "^2"
 
       - name: Build sidecar
         shell: bash
@@ -221,7 +137,7 @@ print('All sidecar imports OK')
       - name: Rename sidecar for Tauri target triple
         shell: bash
         run: |
-          # Detect host target triple dynamically (macOS runners alternate between Intel and ARM)
+          # Detect host triple dynamically: macOS runners alternate between Intel and ARM
           TRIPLE=$(rustc -vV | grep "^host:" | awk '{print $2}')
           SIDECAR="desktop/src-tauri/binaries/fastapi-sidecar"
           EXT=""
@@ -231,9 +147,6 @@ print('All sidecar imports OK')
           if [ -f "${SIDECAR}${EXT}" ]; then
             mv "${SIDECAR}${EXT}" "${SIDECAR}-${TRIPLE}${EXT}"
             echo "Renamed sidecar to fastapi-sidecar-${TRIPLE}${EXT}"
-          else
-            echo "Warning: ${SIDECAR}${EXT} not found, skipping rename"
-            ls -la "$(dirname "$SIDECAR")" || true
           fi
 
       - name: Build Tauri app
