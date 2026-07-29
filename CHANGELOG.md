@@ -31,6 +31,9 @@
 - ✅ **Preflight job in release.yml** — Nuovo job `preflight` tra `wait-for-ci` e `build`. Blocca la build se npm ci / next build / import backend falliscono.
 - ✅ **Release v0.1.20 pubblicata** — Pydantic sidecar fix + dialog nativo cartella di lavoro + preflight.
 - ✅ **Release v0.1.22 pubblicata** — Fix macOS sidecar rename (target triple dinamico), fix indent preflight job, fix IndentationError python -c, workflow_dispatch trigger.
+- ✅ **#516: Startup screen istantanea (PR #517)** — Rimossa attesa bloccante (60-300s di health check polling). Ora reindirizza immediatamente a /login o /wizard. Il login mostra già un warning non bloccante se il backend non è pronto.
+- ✅ **Login health check esteso** — Aumentati retry da 60 a 180s (HEALTH_MAX_RETRIES 30→90) per gestire sidecar lento al primo avvio.
+- ✅ **Release v0.1.23 pubblicata** — Startup immediata + cargo-binstall (build CI più veloce).
 
 ## 2026-07-28
 
@@ -249,4 +252,3 @@
 - ✅ Google SSO
 - ✅ Reset password con token
 - ✅ Super admin protection
-
