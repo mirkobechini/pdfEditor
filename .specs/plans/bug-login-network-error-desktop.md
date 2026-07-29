@@ -30,3 +30,10 @@ La desktop app punta a `http://127.0.0.1:7723` (sidecar locale) tramite `getApiB
 **Data:** 2026-07-28
 **Issue:** #463 / #462 (parte i18n)
 **PR:** #468 / #467
+
+---
+
+### Nota: Risolto in 3 PR
+1. B1 (PR #468): Health check + retry
+2. B5 (PR #467): Traduzione networkError
+3. B8 (PR #475): Timeout AbortController

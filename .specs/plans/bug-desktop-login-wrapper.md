@@ -43,3 +43,9 @@ div.h-screen.grid.grid-cols-1.lg:grid-cols-2
 **Data:** 2026-07-28
 **Issue:** #460
 **PR:** #465
+
+---
+
+### Nota: B6 (sidecar) risolto in PR #471
+
+Il problema di fondo era che il sidecar non partiva. Dopo aver fixato PyInstaller (B6), l'health check funziona e la login page carica correttamente.
