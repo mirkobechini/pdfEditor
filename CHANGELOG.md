@@ -15,6 +15,9 @@
 - ✅ **B9: iubenda lazyOnload (PR #477, issue #476)** — Spostato script iubenda da `beforeInteractive` a `lazyOnload`, rimosso `z-index: 9999` forzato.
 - ✅ **P1.1 Base: Editor con documenti reali (PR #493, issue #492)** — Lista documenti da backend, upload PDF via file picker, metadati reali, sidebar utente autenticato.
 - ✅ **Guest login desktop (PR #495, issue #494)** — Aggiunto pulsante "Continue as Guest" nel login desktop, con grafica lucchetto e chiamata a `guestLogin()`.
+- ✅ **P1.1 Media: PDF.js viewer + zoom + navigazione (PR #497, issue #496)** — Sostituito mock viewer con PDF.js reale. Canvas dentro la grafica mock originale. Zoom +/- e navigazione pagine ◀▶.
+- ✅ **B10: First-launch wizard + fix loading loop (PR #500, issue #498)** — Root page ora reindirizza a `/wizard` alla prima installazione. Rimosso spinner bloccante: ora il login si mostra subito con avviso non bloccante.
+- ✅ **B11: CMD flash sidecar (PR #500, issue #499)** — Aggiunto `--noconsole` a PyInstaller per eliminare la finestra CMD all'avvio del sidecar.
 
 ## 2026-07-28
 
