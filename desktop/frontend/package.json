@@ -1,6 +1,6 @@
 {
   "name": "desktop-frontend",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "private": true,
   "scripts": {
     "prebuild": "node scripts/copy-shared.js",
