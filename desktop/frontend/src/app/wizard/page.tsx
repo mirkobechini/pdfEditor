@@ -2,6 +2,8 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { open } from "@tauri-apps/plugin-dialog";
+import { isTauri } from "../../shared/tauri";
 
 const steps = [
     { id: "01", title: "Benvenuto" },
@@ -84,7 +86,15 @@ export default function WizardPage() {
                                     className="h-full flex-1 rounded-[12px] border border-white/10 bg-[#1b1612] px-4 text-[14px] font-semibold text-white outline-none transition focus:border-[#f7871f]"
                                 />
                                 <button
-                                    onClick={() => { const folder = prompt("Inserisci il percorso della cartella di lavoro:"); if (folder) setWorkFolder(folder); }}
+                                    onClick={async () => {
+                                        if (isTauri()) {
+                                            const selected = await open({ directory: true, multiple: false, title: "Seleziona cartella di lavoro" });
+                                            if (selected) setWorkFolder(selected as string);
+                                        } else {
+                                            const folder = prompt("Inserisci il percorso della cartella di lavoro:");
+                                            if (folder) setWorkFolder(folder);
+                                        }
+                                    }}
                                     className="h-full cursor-pointer rounded-[12px] border border-white/15 bg-[#1b1612] px-6 text-[13px] font-semibold text-white transition hover:bg-[#231c17]"
                                 >
                                     Sfoglia…
