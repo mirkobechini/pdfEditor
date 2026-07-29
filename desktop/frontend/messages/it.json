@@ -24,7 +24,8 @@
     "resetInvalidToken": "Link di reset non valido o scaduto",
     "resetTokenExpired": "Questo link di reset è scaduto",
     "emailQuotaExceeded": "Troppe email inviate. Riprova più tardi",
-    "googleAuthFailed": "Autenticazione Google fallita"
+    "googleAuthFailed": "Autenticazione Google fallita",
+    "continueAsGuest": "Continua come Ospite"
   },
   "common": {
     "loading": "Caricamento...",

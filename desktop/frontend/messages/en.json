@@ -24,7 +24,8 @@
     "resetInvalidToken": "Invalid or expired reset link",
     "resetTokenExpired": "This reset link has expired",
     "emailQuotaExceeded": "Too many emails sent. Please try again later",
-    "googleAuthFailed": "Google authentication failed"
+    "googleAuthFailed": "Google authentication failed",
+    "continueAsGuest": "Continue as Guest"
   },
   "common": {
     "loading": "Loading...",
