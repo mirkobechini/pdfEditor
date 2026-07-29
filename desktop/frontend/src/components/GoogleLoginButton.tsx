@@ -2,6 +2,8 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
+import { useAuth } from "../shared/auth";
+import { mapError } from "../shared/error-map";
 
 interface GoogleLoginButtonProps {
     resetKey?: number;
@@ -9,11 +11,76 @@ interface GoogleLoginButtonProps {
 
 export default function GoogleLoginButton({ resetKey }: GoogleLoginButtonProps) {
     const t = useTranslations("auth");
+    const tc = useTranslations("common");
+    const { googleLogin } = useAuth();
     const [error, setError] = React.useState<string | null>(null);
+    const [mounted, setMounted] = React.useState(false);
+    const [GoogleLogin, setGoogleLogin] = React.useState<React.ComponentType<any> | null>(null);
+    const [noClientId, setNoClientId] = React.useState(false);
 
     React.useEffect(() => {
         setError(null);
     }, [resetKey]);
+
+    React.useEffect(() => {
+        setMounted(true);
+        (async () => {
+            try {
+                const hasClientId = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+                if (hasClientId) {
+                    const mod = await import("@react-oauth/google");
+                    setGoogleLogin(() => mod.GoogleLogin);
+                } else {
+                    setNoClientId(true);
+                }
+            } catch (err) {
+                console.debug("Google OAuth not available:", err);
+                setNoClientId(true);
+            }
+        })();
+    }, []);
+
+    async function handleSuccess(response: { credential?: string }) {
+        setError(null);
+        if (!response.credential) {
+            setError("No credential received");
+            return;
+        }
+        try {
+            await googleLogin(response.credential);
+            window.location.href = "/app";
+        } catch (err) {
+            const key = mapError(err);
+            const ns = key.split(".")[0];
+            const k = key.substring(ns.length + 1);
+            setError(ns === "common" ? tc(k) : t(k));
+        }
+    }
+
+    if (!mounted) {
+        return <div className="mb-4 h-11 rounded-xl bg-white/5 animate-pulse" />;
+    }
+
+    if (noClientId) {
+        return null;
+    }
+
+    if (GoogleLogin) {
+        return (
+            <div className="mb-4">
+                <div className="flex justify-center">
+                    <GoogleLogin
+                        onSuccess={handleSuccess}
+                        onError={() => setError(t("googleAuthFailed"))}
+                        size="large"
+                        theme="outline"
+                        text="signin_with"
+                    />
+                </div>
+                {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
+            </div>
+        );
+    }
 
     return (
         <div className="mb-4">
