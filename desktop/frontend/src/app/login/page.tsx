@@ -11,7 +11,7 @@ import GoogleLoginButton from "../../components/GoogleLoginButton";
 
 const SIDECAR_HEALTH_URL = getApiBaseUrl() + "/health";
 const HEALTH_RETRY_INTERVAL = 2000; // 2 seconds
-const HEALTH_MAX_RETRIES = 30; // 60 seconds max — uvicorn boot can be slow
+const HEALTH_MAX_RETRIES = 90; // 3 minutes max — uvicorn boot can be slow on first launch
 
 function useSidecarReady() {
     const [ready, setReady] = React.useState(false);
