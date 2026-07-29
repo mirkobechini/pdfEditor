@@ -16,6 +16,7 @@ const HEALTH_MAX_RETRIES = 15; // 15 seconds max
 function useSidecarReady() {
     const [ready, setReady] = React.useState(false);
     const [checking, setChecking] = React.useState(true);
+    const [failed, setFailed] = React.useState(false);
 
     React.useEffect(() => {
         let cancelled = false;
@@ -24,7 +25,10 @@ function useSidecarReady() {
         async function poll() {
             while (attempts < HEALTH_MAX_RETRIES && !cancelled) {
                 try {
-                    const res = await fetch(SIDECAR_HEALTH_URL);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    const res = await fetch(SIDECAR_HEALTH_URL, { signal: controller.signal });
+                    clearTimeout(timeoutId);
                     if (res.ok) {
                         if (!cancelled) {
                             setReady(true);
@@ -33,13 +37,14 @@ function useSidecarReady() {
                         return;
                     }
                 } catch {
-                    // Sidecar not ready yet
+                    // Sidecar not ready yet (network error or abort)
                 }
                 attempts++;
                 await new Promise((r) => setTimeout(r, HEALTH_RETRY_INTERVAL));
             }
             if (!cancelled) {
                 setChecking(false);
+                setFailed(true);
             }
         }
 
@@ -47,14 +52,14 @@ function useSidecarReady() {
         return () => { cancelled = true; };
     }, []);
 
-    return { ready, checking };
+    return { ready, checking, failed };
 }
 
 export default function LoginPage() {
     const t = useTranslations("auth");
     const tc = useTranslations("common");
     const { user, loading, login } = useAuth();
-    const { ready, checking } = useSidecarReady();
+    const { ready, checking, failed } = useSidecarReady();
     const [email, setEmail] = React.useState("");
     const [password, setPassword] = React.useState("");
     const [remember, setRemember] = React.useState(true);
@@ -92,7 +97,7 @@ export default function LoginPage() {
     }
 
     // Show a loading indicator while the sidecar is starting up
-    if (checking && !ready) {
+    if (checking && !ready && !failed) {
         return (
             <div className="h-screen bg-[#17120f] flex items-center justify-center">
                 <div className="text-center">
@@ -116,7 +121,7 @@ export default function LoginPage() {
                         </div>
                     </div>
 
-<div>
+                    <div>
                         <h1 className="mb-6 max-w-sm text-3xl font-bold leading-tight tracking-tight">
                             Editing PDF di precisione. In locale.
                         </h1>
