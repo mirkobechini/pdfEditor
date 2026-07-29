@@ -1,6 +1,9 @@
 "use client";
 
 import React from "react";
+import { getApiBaseUrl } from "../../shared/tauri";
+
+const API_BASE = getApiBaseUrl();
 
 const recentDocs = [
     { name: "architecture_adr_022.pdf", meta: "1.2 MB · 24m ago", active: true },
@@ -157,7 +160,7 @@ export default function EditorPage() {
                 <div className="mx-auto flex h-full max-w-[1880px] items-center justify-between">
                     <div className="flex items-center gap-5">
                         <span className="text-[#48c769]">●</span>
-                        <span>Sidecar API: Online (localhost:8000)</span>
+                        <span>Sidecar API: Online ({API_BASE.replace("http://", "")})</span>
                         <span>UTF-8</span>
                         <span>SQLite: local.db</span>
                     </div>
