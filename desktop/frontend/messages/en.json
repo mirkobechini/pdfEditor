@@ -12,12 +12,51 @@
     "recover": "Recover",
     "rememberMe": "Remember me on this device",
     "workspace": "Access your workspace",
-    "freeTier": "free tier"
+    "freeTier": "free tier",
+    "invalidCredentials": "Invalid email or password",
+    "emailAlreadyRegistered": "This email is already registered",
+    "notAuthenticated": "Please sign in to continue",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordMissingUppercase": "Password must contain at least one uppercase letter",
+    "passwordMissingLowercase": "Password must contain at least one lowercase letter",
+    "passwordMissingNumber": "Password must contain at least one number",
+    "passwordTooWeak": "Password is too weak",
+    "resetInvalidToken": "Invalid or expired reset link",
+    "resetTokenExpired": "This reset link has expired",
+    "emailQuotaExceeded": "Too many emails sent. Please try again later",
+    "googleAuthFailed": "Google authentication failed",
+    "continueAsGuest": "Continue as Guest"
   },
   "common": {
     "loading": "Loading...",
     "networkError": "Network error. Please check your connection.",
-    "version": "v0.1.15",
+    "rateLimitExceeded": "Too many requests. Please wait a moment",
+    "forbidden": "You don't have permission to do this",
+    "notFound": "Resource not found",
+    "validationError": "Invalid input data",
+    "conversionFailed": "Conversion failed",
+    "searchTextEmpty": "Search text cannot be empty",
+    "mergeTooFew": "At least two documents are required to merge",
+    "splitInvalidRange": "Invalid page range",
+    "internalError": "An unexpected error occurred",
+    "unknownError": "An unexpected error occurred",
+    "version": "v0.1.16",
     "license": "Open Source License"
+  },
+  "pdf": {
+    "notFound": "PDF not found",
+    "fileNotFound": "PDF file not found on disk",
+    "uploadTooLarge": "File is too large",
+    "invalidPdf": "Invalid PDF file",
+    "onlyPdfAllowed": "Only PDF files are allowed",
+    "unsupportedFileType": "Unsupported file type"
+  },
+  "admin": {
+    "cannotDemoteSuperAdmin": "Cannot demote a super admin",
+    "stripeLicenseLocked": "License is locked via Stripe"
+  },
+  "bugReport": {
+    "notFound": "Bug report not found",
+    "voteNotFound": "Vote not found"
   }
 }

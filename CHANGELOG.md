@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-29
+
+- ✅ **P0.1: Remember-me token non cancellato su network error (PR #479, issue #478)** — Il `catch` di `getMe()` ora distingue errori di rete (TypeError) da errori 401. Il token non viene più cancellato all'avvio se il sidecar non è ancora pronto.
+- ✅ **P0.2: JWT da Tauri store caricato all'avvio (PR #481, issue #480)** — All'avvio ora controlla anche `tauriInvoke("load_jwt")` per recuperare il token salvato via Tauri store plugin.
+- ✅ **P1.6: Status bar porta dinamica (PR #483, issue #482)** — Sostituita porta hardcoded 8000 con `getApiBaseUrl()` che restituisce 127.0.0.1:7723.
+- ✅ **P1.8: Chiavi i18n errore complete (PR #485, issue #484)** — Aggiunte 30+ chiavi i18n in EN/IT per tutti gli errori (auth.invalidCredentials, common.rateLimitExceeded, pdf.notFound, ecc.).
+- ✅ **P1.7: Google login reale (PR #487, issue #486)** — Sostituito placeholder con vero componente Google OAuth via `@react-oauth/google`, con chiamata a `googleLogin(idToken)`.
+- ✅ **P1.2: Wizard navigazione interattiva (PR #489, issue #488)** — Aggiunta navigazione a 4 step con stato, bottoni avanti/indietro/salta, input licenza, cartella di lavoro, toggle sync, copia recovery code.
+- ✅ **P1.4: Settings 7 tab navigabili (PR #491, issue #490)** — Tutti i tab (General, Appearance, Editor, Cloud & Sync, Shortcuts, Advanced, About) con contenuto e navigazione funzionante.
+- ✅ **B6: Sidecar PyInstaller hidden-imports (PR #471, issue #470)** — Aggiunti `--hidden-import` completi per uvicorn, fastapi, sqlalchemy, pydantic, ecc. in build-sidecar.sh e build-sidecar.ps1.
+- ✅ **B7: NSIS installer hooks (PR #473, issue #472)** — Aggiunto `installerHooks` in tauri.conf.json + `installer.nsh` con macro `NSIS_HOOK_PREINSTALL`/`PREUNINSTALL` che killano processi prima di install/disinstall.
+- ✅ **B8: Health check sidecar con timeout (PR #475, issue #474)** — Aggiunto `AbortController` con timeout 5s per ogni tentativo health check. Se fallisce, mostra login con messaggio invece di loading infinito.
+- ✅ **B9: iubenda lazyOnload (PR #477, issue #476)** — Spostato script iubenda da `beforeInteractive` a `lazyOnload`, rimosso `z-index: 9999` forzato.
+- ✅ **P1.1 Base: Editor con documenti reali (PR #493, issue #492)** — Lista documenti da backend, upload PDF via file picker, metadati reali, sidebar utente autenticato.
+- ✅ **Guest login desktop (PR #495, issue #494)** — Aggiunto pulsante "Continue as Guest" nel login desktop, con grafica lucchetto e chiamata a `guestLogin()`.
+
 ## 2026-07-28
 
 - ✅ **Desktop frontend separato — pixel perfect UI (issue #459)** — Implementate pagine desktop dedicate in `desktop/frontend/` con flusso wizard, pagina licenza separata e suite impostazioni (iterazioni di refining tipografico/spaziature da mock Lovable).
