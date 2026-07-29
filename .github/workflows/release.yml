@@ -89,22 +89,22 @@ jobs:
       - name: Preflight — backend imports (sidecar entry)
         run: |
           cd desktop
-          pip install -r ../backend/requirements.txt pyinstaller
+          pip install -r ../backend/requirements.txt pyinstaller -q
           python -c "
-            import sys
-            sys.path.insert(0, '../backend')
-            from app.core.config import Settings
-            s = Settings()
-            print(f'Settings OK: APP_NAME={s.APP_NAME}')
-            import app.main
-            import app.core.database
-            import app.models
-            import app.repositories
-            import app.services
-            import app.api.v1
-            import uvicorn
-            print('All sidecar imports OK')
-            "
+import sys
+sys.path.insert(0, '../backend')
+from app.core.config import Settings
+s = Settings()
+print(f'Settings OK: APP_NAME={s.APP_NAME}')
+import app.main
+import app.core.database
+import app.models
+import app.repositories
+import app.services
+import app.api.v1
+import uvicorn
+print('All sidecar imports OK')
+"
         shell: bash
 
   build:
