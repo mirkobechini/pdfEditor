@@ -40,7 +40,7 @@
     "splitInvalidRange": "Invalid page range",
     "internalError": "An unexpected error occurred",
     "unknownError": "An unexpected error occurred",
-    "version": "v0.1.18",
+    "version": "v0.1.19",
     "license": "Open Source License"
   },
   "pdf": {
