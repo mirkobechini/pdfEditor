@@ -1,6 +1,6 @@
 [package]
 name = "pdf-editor-desktop"
-version = "0.1.16"
+version = "0.1.17"
 description = "PdfEditor - Desktop App"
 authors = ["Mirko Bechini"]
 edition = "2021"
