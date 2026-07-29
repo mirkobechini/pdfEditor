@@ -29,30 +29,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // On mount: restore session from httpOnly cookie (browser sends it automatically)
   // Also check for remembered token in localStorage/Tauri store
   useEffect(() => {
-    const remembered = localStorage.getItem(REMEMBER_TOKEN_KEY);
-    if (remembered) {
-      api.setToken(remembered);
-    }
-    api
-      .getMe()
-      .then((u) => {
-        setUser(u);
-        api.refreshCsrf();
-      })
-      .catch((err) => {
+    let cancelled = false;
+
+    async function restoreSession() {
+      // Check localStorage first (web remember-me)
+      const remembered = localStorage.getItem(REMEMBER_TOKEN_KEY);
+      if (remembered) {
+        api.setToken(remembered);
+      }
+
+      // Check Tauri store (desktop remember-me via store_jwt command)
+      if (!remembered && isTauri()) {
+        const { tauriInvoke } = await import("./tauri");
+        const storedToken = await tauriInvoke<string>("load_jwt");
+        if (storedToken) {
+          api.setToken(storedToken);
+        }
+      }
+
+      try {
+        const u = await api.getMe();
+        if (!cancelled) {
+          setUser(u);
+          api.refreshCsrf();
+        }
+      } catch (err) {
         // Only delete the token on explicit auth errors (401), not on network errors
         // Network errors happen when the sidecar hasn't started yet
-        if (err instanceof TypeError) {
-          // fetch failed (network error) — keep the token
-        } else {
+        if (!(err instanceof TypeError)) {
           localStorage.removeItem(REMEMBER_TOKEN_KEY);
         }
-      })
-      .finally(() => {
-        if (!_pendingAuthRef.current) {
+      } finally {
+        if (!cancelled && !_pendingAuthRef.current) {
           setLoading(false);
         }
-      });
+      }
+    }
+
+    restoreSession();
+    return () => { cancelled = true; };
   }, []);
 
   const login = useCallback(async (email: string, password: string, remember?: boolean) => {
