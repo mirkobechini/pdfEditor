@@ -29,8 +29,7 @@
 - ✅ **#509: Dialog nativo per cartella lavoro (PR #514)** — Sostituito `prompt()` con `tauri-plugin-dialog` `open({ directory: true })` nel wizard step 2. Fallback a prompt preservato per browser.
 - ✅ **Preflight script locale (PR )** — Script pre-release (`desktop/preflight.sh` + `desktop/preflight.ps1`) che verifica npm ci, next build, import backend e allineamento versioni prima di taggare. Rileva errori come @swc/helpers in 3min invece di 25min di CI.
 - ✅ **Preflight job in release.yml** — Nuovo job `preflight` tra `wait-for-ci` e `build`. Blocca la build se npm ci / next build / import backend falliscono.
-- ✅ **Release v0.1.20 pubblicata** — Pydantic sidecar fix + dialog nativo cartella di lavoro + preflight.
-
+- ✅ **Release v0.1.20 pubblicata** — Pydantic sidecar fix + dialog nativo cartella di lavoro + preflight.- ✅ **Release v0.1.21 pubblicata** — Fix macOS sidecar rename (target triple dinamico), indent fix release.yml, bump versione.
 ## 2026-07-28
 
 - ✅ **Desktop frontend separato — pixel perfect UI (issue #459)** — Implementate pagine desktop dedicate in `desktop/frontend/` con flusso wizard, pagina licenza separata e suite impostazioni (iterazioni di refining tipografico/spaziature da mock Lovable).
