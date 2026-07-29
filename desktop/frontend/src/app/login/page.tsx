@@ -58,7 +58,7 @@ function useSidecarReady() {
 export default function LoginPage() {
     const t = useTranslations("auth");
     const tc = useTranslations("common");
-    const { user, loading, login } = useAuth();
+    const { user, loading, login, guestLogin } = useAuth();
     const { ready, checking, failed } = useSidecarReady();
     const [email, setEmail] = React.useState("");
     const [password, setPassword] = React.useState("");
@@ -199,6 +199,29 @@ export default function LoginPage() {
                         </div>
 
                         <GoogleLoginButton />
+
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                setGoogleResetKey((k) => k + 1);
+                                setError(null);
+                                try {
+                                    await guestLogin();
+                                    window.location.href = "/app";
+                                } catch (err) {
+                                    const key = mapError(err);
+                                    const ns = key.split(".")[0];
+                                    const k = key.substring(ns.length + 1);
+                                    setError(ns === "common" ? tc(k) : t(k));
+                                }
+                            }}
+                            className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl border border-dashed border-white/10 bg-transparent py-3 text-sm font-semibold text-[#9d9184] transition-colors hover:border-[#f7871f]/40 hover:text-[#f4f1ee]"
+                        >
+                            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            {t("continueAsGuest")}
+                        </button>
 
                         <p className="pt-2 text-center text-[11px] text-[#a79a8d]">
                             {t("noAccount")}{" "}
