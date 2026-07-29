@@ -13,6 +13,8 @@
 - ✅ **B7: NSIS installer hooks (PR #473, issue #472)** — Aggiunto `installerHooks` in tauri.conf.json + `installer.nsh` con macro `NSIS_HOOK_PREINSTALL`/`PREUNINSTALL` che killano processi prima di install/disinstall.
 - ✅ **B8: Health check sidecar con timeout (PR #475, issue #474)** — Aggiunto `AbortController` con timeout 5s per ogni tentativo health check. Se fallisce, mostra login con messaggio invece di loading infinito.
 - ✅ **B9: iubenda lazyOnload (PR #477, issue #476)** — Spostato script iubenda da `beforeInteractive` a `lazyOnload`, rimosso `z-index: 9999` forzato.
+- ✅ **P1.1 Base: Editor con documenti reali (PR #493, issue #492)** — Lista documenti da backend, upload PDF via file picker, metadati reali, sidebar utente autenticato.
+- ✅ **Guest login desktop (PR #495, issue #494)** — Aggiunto pulsante "Continue as Guest" nel login desktop, con grafica lucchetto e chiamata a `guestLogin()`.
 
 ## 2026-07-28
 
