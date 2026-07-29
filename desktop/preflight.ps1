@@ -67,11 +67,11 @@ catch { fail "sidecar imports ($($_.Exception.Message))" }
 
 # ── 6/6 Version alignment ──
 Write-Host "── 6/6 Version alignment ──"
-$VFe = (Get-Content "$Root\frontend\package.json" | ConvertFrom-Json).version
-$VDfe = (Get-Content "$Root\desktop\frontend\package.json" | ConvertFrom-Json).version
+$VFe = (Select-String '"version":\s*"([^"]+)"' "$Root\frontend\package.json").Matches[0].Groups[1].Value
+$VDfe = (Select-String '"version":\s*"([^"]+)"' "$Root\desktop\frontend\package.json").Matches[0].Groups[1].Value
 $VCargo = Select-String '^version = "(.*)"' "$Root\desktop\src-tauri\Cargo.toml" | ForEach-Object { $_.Matches.Groups[1].Value }
-$VTauri = (Get-Content "$Root\desktop\src-tauri\tauri.conf.json" | ConvertFrom-Json).version
-$VUi = (Select-String 'v\d+\.\d+\.\d+' "$Root\desktop\frontend\src\app\startup\page.tsx").Matches[0].Value -replace 'v', ''
+$VTauri = (Select-String '"version":\s*"([^"]+)"' "$Root\desktop\src-tauri\tauri.conf.json").Matches[0].Groups[1].Value
+$VUi = (Select-String 'v(\d+\.\d+\.\d+)' "$Root\desktop\frontend\src\app\startup\page.tsx").Matches[0].Groups[1].Value
 
 Write-Host "  Frontend web:      $VFe"
 Write-Host "  Desktop frontend:  $VDfe"

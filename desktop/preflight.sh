@@ -17,6 +17,7 @@ fail() { FAIL=$((FAIL+1)); echo "  ❌ $1"; }
 echo ""
 echo "═══════════════════════════════════════════"
 echo "  🔍 PREFLIGHT — Release sanity check"
+echo "  Cross-platform (bash/macOS/Linux/Windows)"
 echo "═══════════════════════════════════════════"
 echo ""
 
@@ -95,11 +96,11 @@ print('  All sidecar imports OK')
 # 6. Verifica versioni allineate
 # ─────────────────────────────────────────────
 echo "── 6/6 Version alignment ──"
-V_FE=$(node -p "require('$ROOT/frontend/package.json').version")
-V_DFE=$(node -p "require('$ROOT/desktop/frontend/package.json').version")
-V_CARGO=$(node -p "require('$ROOT/desktop/src-tauri/Cargo.toml'.replace(/\.toml$/,'') )" 2>/dev/null || grep -m1 '^version' "$ROOT/desktop/src-tauri/Cargo.toml" | cut -d'"' -f2)
-V_TAURI=$(node -p "require('$ROOT/desktop/src-tauri/tauri.conf.json').version")
-V_UI=$(grep -oP 'v\d+\.\d+\.\d+' "$ROOT/desktop/frontend/src/app/startup/page.tsx" | head -1 | tr -d 'v')
+V_FE=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/frontend/package.json" 2>/dev/null)
+V_DFE=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/desktop/frontend/package.json" 2>/dev/null)
+V_CARGO=$(grep -m1 '^version' "$ROOT/desktop/src-tauri/Cargo.toml" 2>/dev/null | cut -d'"' -f2)
+V_TAURI=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/desktop/src-tauri/tauri.conf.json" 2>/dev/null)
+V_UI=$(grep -oP 'v\K\d+\.\d+\.\d+' "$ROOT/desktop/frontend/src/app/startup/page.tsx" 2>/dev/null | head -1)
 
 echo "  Frontend web:      $V_FE"
 echo "  Desktop frontend:  $V_DFE"
