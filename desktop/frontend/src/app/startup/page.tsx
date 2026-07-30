@@ -24,7 +24,7 @@ export default function StartupPage() {
                     <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-[#f7871f] border-t-transparent" />
                 </div>
                 <p className="mt-10 text-center text-[10px] text-[#8e8175]">
-                    v0.1.24 · AGPL-3.0
+                    v0.1.25 · AGPL-3.0
                 </p>
             </div>
         </div>
