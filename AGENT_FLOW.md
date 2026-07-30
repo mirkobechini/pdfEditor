@@ -18,6 +18,22 @@ This document defines the **git workflow** that the AI agent must follow for eve
 
 ## Core Principles
 
+## ⚠️ Pre-flight checklist (obbligatoria prima di agire)
+
+Prima di creare/modificare/cancellare QUALSIASI file, l'agente DEVE verificare mentalmente TUTTI questi punti:
+
+1. **Branch**: sono su `dev`? (MAI lavorare su `main`)
+2. **Issue**: esiste un issue per questo task? Se no → crearlo PRIMA di scrivere codice.
+3. **Plan**: esiste un file `.specs/plans/` per questa feature/bug? Se sì → seguirlo. Se no → crearlo PRIMA di scrivere codice.
+4. **Consenso**: questa modifica cambia UX/architettura/comportamento visibile dall'utente? → Chiedere approvazione PRIMA.
+5. **Contesto**: ho letto il file che voglio modificare? So cosa contiene?
+6. **Commit atomic**: ogni file modificato è un commit separato (salvo eccezioni approvate).
+7. **Build**: il codice compila? (eseguire `next build` o equivalente)
+8. **Documentazione**: CHANGELOG e ADR aggiornati dopo ogni completamento?
+9. **PR**: dopo il merge su dev, ho creato PR da branch a dev?
+
+> ℹ️ L'agente DEVE scorrere questa lista mentalmente prima di ogni azione. Se anche UN SOLO punto è violato, fermarsi e correggere PRIMA di procedere.
+
 - **One branch per issue.** Branch naming: `feature/<issue-number>-<short-description>`.
 - Every feature branch is created from `dev`. `dev` is a permanent branch created from `main` at project start.
 - **No merge to `main` without user approval.**
@@ -39,6 +55,7 @@ This document defines the **git workflow** that the AI agent must follow for eve
 - **Never ask the user what to do next.** The sequential order is defined in the project's task list — follow it without asking. Do not propose skipping or reordering.
 - **Always ask for approval before starting a new issue.** After completing an issue (tests passing, PR merged, issue closed), briefly describe what was done and ask _"May I proceed with the next issue?"_ — do NOT start the next issue without user confirmation.
 - **Wait for CI after PR creation before merging to dev.** If CI fails: fix the failure, push, wait for CI again, only then merge.
+- **🚨 RELEASE: MAI procedere con una release senza esplicita richiesta del developer.** Anche se tutte le feature sono pronte, i test passano e la documentazione è aggiornata — l'agente NON deve bumpare la versione, fare merge su main o creare un tag senza che il developer dica esplicitamente _"fai la release"_ o _"procedi con la release"_. Questa è la regola più importante: **la release è una decisione del developer, non dell'agente.**
 
 ---
 
@@ -179,7 +196,7 @@ Once ALL subtasks are complete and the full test suite passes:
 > - `backend/pyproject.toml`
 >   Failure to do so will produce installers that still show the old version internally.
 
-```bash
+````bash
 # Keep feature branch in sync with dev (rebase, don't merge)
 git fetch origin dev
 git rebase origin/dev
@@ -196,8 +213,12 @@ gh pr create --base dev --title "<type>(<scope>): <feature description>" --body 
 
 gh pr merge --merge --delete-branch
 
-# Verify issue auto-closed (GitHub sometimes misses the body reference)
-gh issue list --limit 5 | grep "#<issue-number>"
+# ✅ Dopo il merge, verificare SEMPRE:
+# 1. Issue chiusa: gh issue list --limit 5 | grep "#<issue-number>"
+#    Se non è chiusa, chiuderla manualmente: gh issue close <issue-number>
+# 2. Branch locale eliminato (--delete-branch fa già il remote, controllare locale):
+#    git branch -d feature/<issue-number>-<short-description>
+# 3. Branch remote eliminato: gh pr merge --delete-branch lo fa automaticamente
 
 ### 7. Release — push to main + tag
 
@@ -221,7 +242,8 @@ After ALL PRs for a release are merged to `dev`:
    git checkout main
    git merge dev --no-ff -m "merge: dev into main (vX.Y.Z)"
    git push origin main
-   ```
+````
+
 5. **Tag + push** (triggera la release CI che builda per Windows, macOS, Linux):
    ```bash
    git tag vX.Y.Z && git push origin vX.Y.Z
@@ -231,21 +253,27 @@ After ALL PRs for a release are merged to `dev`:
 8. **Ritorna su dev** per il prossimo ciclo.
 
 **Regole per la release:**
+
 - La release può contenere MULTIPLE feature PR mergiate in `dev`
 - Usa sempre `git merge dev --no-ff` anche se fast-forwardable
 - Se la CI della release fallisce: fix su `dev`, ri-mergia su `main`, **elimina il tag fallito** (`git tag -d vX.Y.Z && git push origin --delete vX.Y.Z`), ricrea il tag, pusha
 - Non forzare mai commit diretti su `main` — solo merge da `dev`
 - Preflight cattura errori comuni: lock file desync (`@swc/helpers`), import mancanti, versioni disallineate
+
 # If still open, close manually:
-#   gh issue close <issue-number> --comment "Resolved by PR #<pr-number>."
+
+# gh issue close <issue-number> --comment "Resolved by PR #<pr-number>."
 
 # Switch back to dev and sync
+
 git checkout dev
 git pull origin dev
 
 # Delete local branch (remote already deleted by --delete-branch)
+
 git branch -d feature/<issue-number>-<short-description>
-```
+
+````
 
 > ⚠️ Use `--merge` (not `--squash`) to preserve atomic commit history on `dev`. GitHub should auto-close the issue because the PR body contains `closes #N`. However, this occasionally fails. **Always verify** with `gh issue list` after merge. If still open, close manually with `gh issue close <number>`.
 
@@ -283,7 +311,7 @@ gh pr merge --merge --delete-branch
 git checkout dev
 git pull origin dev
 git branch -d hotfix/<issue-number>-<short-description>
-```
+````
 
 ## Hotfix workflow
 
