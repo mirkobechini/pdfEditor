@@ -1,13 +1,14 @@
 {
   "name": "desktop-frontend",
-  "version": "0.1.27",
+  "version": "0.1.28",
   "private": true,
   "scripts": {
     "prebuild": "node scripts/copy-shared.js",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "tauri": "tauri"
   },
   "dependencies": {
     "@react-oauth/google": "^0.13.5",
