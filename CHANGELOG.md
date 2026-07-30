@@ -34,6 +34,8 @@
 - ✅ **#516: Startup screen istantanea (PR #517)** — Rimossa attesa bloccante (60-300s di health check polling). Ora reindirizza immediatamente a /login o /wizard. Il login mostra già un warning non bloccante se il backend non è pronto.
 - ✅ **Login health check esteso** — Aumentati retry da 60 a 180s (HEALTH_MAX_RETRIES 30→90) per gestire sidecar lento al primo avvio.
 - ✅ **Release v0.1.23 pubblicata** — Startup immediata + cargo-binstall (build CI più veloce).
+- ✅ **#518: Fix macOS release (PR #519)** — `cargo binstall` scaricava binario x86_64 tauri-cli su runner ARM. Ora macOS usa `cargo install` (nativo), Windows/Linux usano `cargo binstall`.
+- ✅ **Release v0.1.24 pubblicata** — Fix macOS binstall + cargo install su ARM.
 
 ## 2026-07-28
 
