@@ -36,6 +36,8 @@
 - ✅ **Release v0.1.23 pubblicata** — Startup immediata + cargo-binstall (build CI più veloce).
 - ✅ **#518: Fix macOS release (PR #519)** — `cargo binstall` scaricava binario x86_64 tauri-cli su runner ARM. Ora macOS usa `cargo install` (nativo), Windows/Linux usano `cargo binstall`.
 - ✅ **Release v0.1.24 pubblicata** — Fix macOS binstall + cargo install su ARM.
+- ✅ **#520: Fix Windows release (PR #521)** — Aggiunto `shell: bash` allo step `Install Tauri CLI` che causava ParserError su Windows (PowerShell non capisce `if [ ... ]`).
+- ✅ **Release v0.1.25 pubblicata** — Fix Windows shell + macOS binstall definitivo.
 
 ## 2026-07-28
 
