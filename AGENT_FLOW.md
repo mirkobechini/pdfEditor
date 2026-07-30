@@ -18,6 +18,21 @@ This document defines the **git workflow** that the AI agent must follow for eve
 
 ## Core Principles
 
+## ⚠️ Pre-flight checklist (obbligatoria prima di agire)
+
+Prima di creare/modificare/cancellare QUALSIASI file, l'agente DEVE verificare mentalmente TUTTI questi punti:
+
+1. **Branch**: sono su `dev`? (MAI lavorare su `main`)
+2. **Issue**: esiste un issue per questo task? Se no → crearlo PRIMA di scrivere codice.
+3. **Consenso**: questa modifica cambia UX/architettura/comportamento visibile dall'utente? → Chiedere approvazione PRIMA.
+4. **Contesto**: ho letto il file che voglio modificare? So cosa contiene?
+5. **Commit atomic**: ogni file modificato è un commit separato (salvo eccezioni approvate).
+6. **Build**: il codice compila? (eseguire `next build` o equivalente)
+7. **Documentazione**: CHANGELOG e ADR aggiornati dopo ogni completamento?
+8. **PR**: dopo il merge su dev, ho creato PR da branch a dev?
+
+> ℹ️ L'agente DEVE scorrere questa lista mentalmente prima di ogni azione. Se anche UN SOLO punto è violato, fermarsi e correggere PRIMA di procedere.
+
 - **One branch per issue.** Branch naming: `feature/<issue-number>-<short-description>`.
 - Every feature branch is created from `dev`. `dev` is a permanent branch created from `main` at project start.
 - **No merge to `main` without user approval.**
@@ -179,7 +194,7 @@ Once ALL subtasks are complete and the full test suite passes:
 > - `backend/pyproject.toml`
 >   Failure to do so will produce installers that still show the old version internally.
 
-```bash
+````bash
 # Keep feature branch in sync with dev (rebase, don't merge)
 git fetch origin dev
 git rebase origin/dev
@@ -221,7 +236,8 @@ After ALL PRs for a release are merged to `dev`:
    git checkout main
    git merge dev --no-ff -m "merge: dev into main (vX.Y.Z)"
    git push origin main
-   ```
+````
+
 5. **Tag + push** (triggera la release CI che builda per Windows, macOS, Linux):
    ```bash
    git tag vX.Y.Z && git push origin vX.Y.Z
@@ -231,21 +247,27 @@ After ALL PRs for a release are merged to `dev`:
 8. **Ritorna su dev** per il prossimo ciclo.
 
 **Regole per la release:**
+
 - La release può contenere MULTIPLE feature PR mergiate in `dev`
 - Usa sempre `git merge dev --no-ff` anche se fast-forwardable
 - Se la CI della release fallisce: fix su `dev`, ri-mergia su `main`, **elimina il tag fallito** (`git tag -d vX.Y.Z && git push origin --delete vX.Y.Z`), ricrea il tag, pusha
 - Non forzare mai commit diretti su `main` — solo merge da `dev`
 - Preflight cattura errori comuni: lock file desync (`@swc/helpers`), import mancanti, versioni disallineate
+
 # If still open, close manually:
-#   gh issue close <issue-number> --comment "Resolved by PR #<pr-number>."
+
+# gh issue close <issue-number> --comment "Resolved by PR #<pr-number>."
 
 # Switch back to dev and sync
+
 git checkout dev
 git pull origin dev
 
 # Delete local branch (remote already deleted by --delete-branch)
+
 git branch -d feature/<issue-number>-<short-description>
-```
+
+````
 
 > ⚠️ Use `--merge` (not `--squash`) to preserve atomic commit history on `dev`. GitHub should auto-close the issue because the PR body contains `closes #N`. However, this occasionally fails. **Always verify** with `gh issue list` after merge. If still open, close manually with `gh issue close <number>`.
 
@@ -283,7 +305,7 @@ gh pr merge --merge --delete-branch
 git checkout dev
 git pull origin dev
 git branch -d hotfix/<issue-number>-<short-description>
-```
+````
 
 ## Hotfix workflow
 
