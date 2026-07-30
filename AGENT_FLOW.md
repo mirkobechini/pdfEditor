@@ -24,12 +24,13 @@ Prima di creare/modificare/cancellare QUALSIASI file, l'agente DEVE verificare m
 
 1. **Branch**: sono su `dev`? (MAI lavorare su `main`)
 2. **Issue**: esiste un issue per questo task? Se no → crearlo PRIMA di scrivere codice.
-3. **Consenso**: questa modifica cambia UX/architettura/comportamento visibile dall'utente? → Chiedere approvazione PRIMA.
-4. **Contesto**: ho letto il file che voglio modificare? So cosa contiene?
-5. **Commit atomic**: ogni file modificato è un commit separato (salvo eccezioni approvate).
-6. **Build**: il codice compila? (eseguire `next build` o equivalente)
-7. **Documentazione**: CHANGELOG e ADR aggiornati dopo ogni completamento?
-8. **PR**: dopo il merge su dev, ho creato PR da branch a dev?
+3. **Plan**: esiste un file `.specs/plans/` per questa feature/bug? Se sì → seguirlo. Se no → crearlo PRIMA di scrivere codice.
+4. **Consenso**: questa modifica cambia UX/architettura/comportamento visibile dall'utente? → Chiedere approvazione PRIMA.
+5. **Contesto**: ho letto il file che voglio modificare? So cosa contiene?
+6. **Commit atomic**: ogni file modificato è un commit separato (salvo eccezioni approvate).
+7. **Build**: il codice compila? (eseguire `next build` o equivalente)
+8. **Documentazione**: CHANGELOG e ADR aggiornati dopo ogni completamento?
+9. **PR**: dopo il merge su dev, ho creato PR da branch a dev?
 
 > ℹ️ L'agente DEVE scorrere questa lista mentalmente prima di ogni azione. Se anche UN SOLO punto è violato, fermarsi e correggere PRIMA di procedere.
 
@@ -212,8 +213,12 @@ gh pr create --base dev --title "<type>(<scope>): <feature description>" --body 
 
 gh pr merge --merge --delete-branch
 
-# Verify issue auto-closed (GitHub sometimes misses the body reference)
-gh issue list --limit 5 | grep "#<issue-number>"
+# ✅ Dopo il merge, verificare SEMPRE:
+# 1. Issue chiusa: gh issue list --limit 5 | grep "#<issue-number>"
+#    Se non è chiusa, chiuderla manualmente: gh issue close <issue-number>
+# 2. Branch locale eliminato (--delete-branch fa già il remote, controllare locale):
+#    git branch -d feature/<issue-number>-<short-description>
+# 3. Branch remote eliminato: gh pr merge --delete-branch lo fa automaticamente
 
 ### 7. Release — push to main + tag
 
