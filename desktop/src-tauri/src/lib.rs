@@ -3,6 +3,8 @@
 
 use std::sync::Mutex;
 use tauri::Manager;
+use tauri::tray::{TrayIconBuilder, MouseButton, MouseButtonState, TrayIconEvent};
+use tauri::menu::{Menu, MenuItem};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_store::StoreExt;
 
@@ -114,11 +116,62 @@ pub fn run() {
         })
         .setup(|app| {
             start_sidecar(app);
+
+            // Build tray menu
+            let show_item = MenuItem::with_id(app, "show", "Mostra PdfEditor", true, None::<&str>)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Esci", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+
+            // Build system tray icon
+            TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .tooltip("PdfEditor — in esecuzione")
+                .menu(&menu)
+                .on_menu_event(move |app, event| {
+                    match event.id().as_ref() {
+                        "show" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        "quit" => {
+                            stop_sidecar(app);
+                            app.exit(0);
+                        }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        if let Some(app) = tray.app_handle() {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                    }
+                })
+                .build(app)?;
+
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::Destroyed = event {
-                stop_sidecar(window.app_handle());
+            match event {
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    // Hide window instead of closing — keep sidecar alive
+                    let _ = window.hide();
+                    api.prevent_close();
+                }
+                tauri::WindowEvent::Destroyed => {
+                    stop_sidecar(window.app_handle());
+                }
+                _ => {}
             }
         })
         .invoke_handler(tauri::generate_handler![
