@@ -127,15 +127,9 @@ jobs:
       - name: Install Tauri CLI
         shell: bash
         run: |
-          cargo install cargo-binstall
-          # cargo binstall downloads a precompiled binary — on macOS ARM runners this
-          # may be x86_64, causing Tauri to cross-compile and look for the wrong
-          # sidecar target triple. Use cargo install (compile from source) for macOS.
-          if [ "$RUNNER_OS" = "macOS" ]; then
-            cargo install tauri-cli --version "^2"
-          else
-            cargo binstall -y tauri-cli@^2
-          fi
+          # @tauri-apps/cli is already a devDependency in desktop/frontend/package.json
+          # Installed via npm ci in the previous step.
+          echo "Tauri CLI will be used via npm run tauri build"
 
       - name: Build sidecar
         shell: bash
@@ -160,12 +154,11 @@ jobs:
           fi
 
       - name: Build Tauri app
-        # Per firma degli aggiornamenti, impostare in GitHub → Settings → Secrets:
-        #   TAURI_PRIVATE_KEY (generata con: cargo tauri signer generate)
-        #   TAURI_KEY_PASSWORD
+        # Uses @tauri-apps/cli from desktop/frontend/node_modules (installed via npm ci)
+        # --ci flag disables interactive prompts
         run: |
-          cd desktop/src-tauri
-          cargo tauri build --ci
+          cd desktop/frontend
+          npm run tauri build -- --ci
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
