@@ -79,7 +79,12 @@ Write-Host "  Cargo.toml:        $VCargo"
 Write-Host "  tauri.conf.json:   $VTauri"
 Write-Host "  Startup UI:        $VUi"
 
-if ($VDfe -eq $VFe -and $VFe -eq $VCargo -and $VCargo -eq $VTauri) {
+$VEn = (Select-String '"version":\s*"v([^"]+)"' "$Root\desktop\frontend\messages\en.json").Matches[0].Groups[1].Value
+$VIt = (Select-String '"version":\s*"v([^"]+)"' "$Root\desktop\frontend\messages\it.json").Matches[0].Groups[1].Value
+Write-Host "  messages/en.json:  $VEn"
+Write-Host "  messages/it.json:  $VIt"
+
+if ($VDfe -eq $VFe -and $VFe -eq $VCargo -and $VCargo -eq $VTauri -and $VTauri -eq $VEn -and $VEn -eq $VIt) {
     pass "versioni allineate ($VFe)"
 }
 else {

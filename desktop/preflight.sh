@@ -108,7 +108,13 @@ echo "  Cargo.toml:        $V_CARGO"
 echo "  tauri.conf.json:   $V_TAURI"
 echo "  Startup UI:        $V_UI"
 
-if [ "$V_DFE" = "$V_FE" ] && [ "$V_FE" = "$V_CARGO" ] && [ "$V_CARGO" = "$V_TAURI" ]; then
+# Also check i18n messages version
+V_EN=$(grep -oP '"version":\s*"v\K[^"]+' "$ROOT/desktop/frontend/messages/en.json" 2>/dev/null)
+V_IT=$(grep -oP '"version":\s*"v\K[^"]+' "$ROOT/desktop/frontend/messages/it.json" 2>/dev/null)
+echo "  messages/en.json:  $V_EN"
+echo "  messages/it.json:  $V_IT"
+
+if [ "$V_DFE" = "$V_FE" ] && [ "$V_FE" = "$V_CARGO" ] && [ "$V_CARGO" = "$V_TAURI" ] && [ "$V_TAURI" = "$V_EN" ] && [ "$V_EN" = "$V_IT" ]; then
   pass "versioni allineate ($V_FE)"
 else
   fail "versioni NON allineate! Web=$V_FE Desktop=$V_DFE Cargo=$V_CARGO Tauri=$V_TAURI UI=$V_UI"
