@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-30
+
+- ✅ **#518: Fix macOS release (PR #519)** — `cargo binstall` scaricava binario x86_64 tauri-cli su runner ARM. Ora macOS usa `cargo install` (nativo), Windows/Linux usano `cargo binstall`.
+- ✅ **Release v0.1.24 pubblicata** — Fix macOS binstall + cargo install su ARM.
+- ✅ **#520: Fix Windows release (PR #521)** — Aggiunto `shell: bash` allo step `Install Tauri CLI` che causava ParserError su Windows (PowerShell non capisce `if [ ... ]`).
+- ✅ **Release v0.1.25 pubblicata** — Fix Windows shell + macOS binstall definitivo.
+- ✅ **#522: Bump versione i18n (PR #523)** — Aggiornato `desktop/frontend/messages/en.json` e `it.json` da `v0.1.19` a `v0.1.25`. Il bump automatico non aggiornava i file i18n.
+- ✅ **#524: Startup screen migliorata con 3 step (PR #525)** — Ripristinata la startup screen come prima schermata con 3 step: "Avvio del backend in locale...", "Connessione al database SQLite...", "Verifica API e servizi...". Messaggi di errore specifici (connessione rifiutata, timeout, ecc.) e pulsante Riprova.
+- ✅ **#526: Dialog nativo try/catch (PR #527)** — Aggiunto try/catch a `open()` in wizard page. Se il dialog nativo fallisce, fallback automatico a `prompt()`.
+- ✅ **AGENT_FLOW: pre-flight checklist + plan-first rule + release rule** — Aggiunta checklist obbligatoria (branch, issue, plan, consenso, contesto, commit atomic, build, docs, PR). Aggiunta regola: "RELEASE: MAI procedere senza esplicita richiesta del developer". Aggiunta regola post-merge: verificare issue chiusa, branch locale eliminato.
+- ✅ **#528: Script bump automatico versione (PR #530)** — Nuovo `scripts/bump-version.js` che aggiorna TUTTI i file con versione in un colpo solo. Preflight check ora controlla anche i messaggi i18n.
+- ✅ **#529: Ottimizzazione build CI (PR #531)** — Sostituito `cargo install tauri-cli` con `@tauri-apps/cli` via npm (~5-7 min risparmiati per build).
+- ✅ **#532: System tray (PR #533)** — Click X nasconde in tray (icona nella barra). Click icona riapre. Click destro: "Mostra PdfEditor" / "Esci". Sidecar NON killato finché non si clicca "Esci". Richiede `features = ["tray-icon"]` in Cargo.toml.
+- ✅ **#534: Fix tauri script + preflight (PR #535)** — Aggiunto `"tauri": "tauri"` a `package.json`. Il preflight ora verifica `npm run tauri -- --version`.
+- ✅ **#536: Fix build path + cargo check (PR #537)** — `npx tauri build` ora eseguito da `desktop/src-tauri/` (dove si trova tauri.conf.json). Preflight potenziato a 8/8 checks con `cargo check`.
+- ✅ **Preflight 8/8** — Aggiunti: Tauri CLI check, cargo check (Rust compilation), version alignment i18n. Totale: 8 check in ~3 min.
+- ✅ **Login health check esteso** — Aumentati retry da 60 a 180s (HEALTH_MAX_RETRIES 30→90) per gestire sidecar lento al primo avvio.
+- ✅ **Release v0.1.29 pubblicata** — Fix build path, preflight 8/8, system tray, ottimizzazioni CI.
+
 ## 2026-07-29
 
 - ✅ **P0.1: Remember-me token non cancellato su network error (PR #479, issue #478)** — Il `catch` di `getMe()` ora distingue errori di rete (TypeError) da errori 401. Il token non viene più cancellato all'avvio se il sidecar non è ancora pronto.
@@ -34,18 +53,6 @@
 - ✅ **#516: Startup screen istantanea (PR #517)** — Rimossa attesa bloccante (60-300s di health check polling). Ora reindirizza immediatamente a /login o /wizard. Il login mostra già un warning non bloccante se il backend non è pronto.
 - ✅ **Login health check esteso** — Aumentati retry da 60 a 180s (HEALTH_MAX_RETRIES 30→90) per gestire sidecar lento al primo avvio.
 - ✅ **Release v0.1.23 pubblicata** — Startup immediata + cargo-binstall (build CI più veloce).
-- ✅ **#518: Fix macOS release (PR #519)** — `cargo binstall` scaricava binario x86_64 tauri-cli su runner ARM. Ora macOS usa `cargo install` (nativo), Windows/Linux usano `cargo binstall`.
-- ✅ **Release v0.1.24 pubblicata** — Fix macOS binstall + cargo install su ARM.
-- ✅ **#520: Fix Windows release (PR #521)** — Aggiunto `shell: bash` allo step `Install Tauri CLI` che causava ParserError su Windows (PowerShell non capisce `if [ ... ]`).
-- ✅ **Release v0.1.25 pubblicata** — Fix Windows shell + macOS binstall definitivo.
-- ✅ **#522: Bump versione i18n (PR #523)** — Aggiornato `desktop/frontend/messages/en.json` e `it.json` da `v0.1.19` a `v0.1.25`. Il bump automatico non aggiornava i file i18n.
-- ✅ **#524: Startup screen migliorata con 3 step (PR #525)** — Ripristinata la startup screen come prima schermata con 3 step: "Avvio del backend in locale...", "Connessione al database SQLite...", "Verifica API e servizi...". Messaggi di errore specifici (connessione rifiutata, timeout, ecc.) e pulsante Riprova.
-- ✅ **#526: Dialog nativo try/catch (PR #527)** — Aggiunto try/catch a `open()` in wizard page. Se il dialog nativo fallisce, fallback automatico a `prompt()`.
-- ✅ **AGENT_FLOW: pre-flight checklist** — Aggiunta checklist obbligatoria (branch, issue, consenso, contesto, commit atomic, build, docs, PR) per ridurre errori procedurali.
-- ✅ **Release v0.1.26 pubblicata** — Startup screen 3 step, dialog try/catch, bump i18n, pre-flight checklist.
-- ✅ **#528: Script bump automatico versione (PR #530)** — Nuovo `scripts/bump-version.js` che aggiorna TUTTI i file con versione in un colpo solo. Preflight check ora controlla anche i messaggi i18n.
-- ✅ **#529: Ottimizzazione build CI (PR #531)** — Sostituito `cargo install tauri-cli` con `@tauri-apps/cli` via npm (~5-7 min risparmiati per build).
-- ✅ **#532: System tray (PR #533)** — Click X nasconde in tray (icona nella barra). Click icona riapre. Click destro: "Mostra PdfEditor" / "Esci". Sidecar NON killato finché non si clicca "Esci".
 
 ## 2026-07-28
 
