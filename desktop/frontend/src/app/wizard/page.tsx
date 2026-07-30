@@ -88,8 +88,13 @@ export default function WizardPage() {
                                 <button
                                     onClick={async () => {
                                         if (isTauri()) {
-                                            const selected = await open({ directory: true, multiple: false, title: "Seleziona cartella di lavoro" });
-                                            if (selected) setWorkFolder(selected as string);
+                                            try {
+                                                const selected = await open({ directory: true, multiple: false, title: "Seleziona cartella di lavoro" });
+                                                if (selected) setWorkFolder(selected as string);
+                                            } catch {
+                                                const folder = prompt("Inserisci il percorso della cartella di lavoro:");
+                                                if (folder) setWorkFolder(folder);
+                                            }
                                         } else {
                                             const folder = prompt("Inserisci il percorso della cartella di lavoro:");
                                             if (folder) setWorkFolder(folder);
