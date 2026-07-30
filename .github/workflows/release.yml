@@ -127,7 +127,14 @@ jobs:
       - name: Install Tauri CLI
         run: |
           cargo install cargo-binstall
-          cargo binstall -y tauri-cli@^2
+          # cargo binstall downloads a precompiled binary — on macOS ARM runners this
+          # may be x86_64, causing Tauri to cross-compile and look for the wrong
+          # sidecar target triple. Use cargo install (compile from source) for macOS.
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            cargo install tauri-cli --version "^2"
+          else
+            cargo binstall -y tauri-cli@^2
+          fi
 
       - name: Build sidecar
         shell: bash
