@@ -68,7 +68,7 @@ fi
 # ─────────────────────────────────────────────
 # 5. Backend — sidecar imports (simula PyInstaller)
 # ─────────────────────────────────────────────
-echo "── 5/6 Sidecar imports ──"
+echo "── 5/7 Sidecar imports ──"
 cd "$ROOT/desktop"
 if pip install pyinstaller -q 2>&1 | tail -1; then
   :
@@ -93,9 +93,20 @@ print('  All sidecar imports OK')
 " && pass "sidecar imports" || fail "sidecar imports"
 
 # ─────────────────────────────────────────────
-# 6. Verifica versioni allineate
+# 6. Tauri CLI — check script availability
 # ─────────────────────────────────────────────
-echo "── 6/6 Version alignment ──"
+echo "── 6/7 Tauri CLI check ──"
+cd "$ROOT/desktop/frontend"
+if npm run tauri -- --version 2>&1 | grep -q "tauri"; then
+  pass "Tauri CLI disponibile (npm run tauri)"
+else
+  fail "Tauri CLI non disponibile"
+fi
+
+# ─────────────────────────────────────────────
+# 7. Verifica versioni allineate
+# ─────────────────────────────────────────────
+echo "── 7/7 Version alignment ──"
 V_FE=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/frontend/package.json" 2>/dev/null)
 V_DFE=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/desktop/frontend/package.json" 2>/dev/null)
 V_CARGO=$(grep -m1 '^version' "$ROOT/desktop/src-tauri/Cargo.toml" 2>/dev/null | cut -d'"' -f2)
