@@ -36,7 +36,7 @@ La documentazione ufficiale Tauri v2 elenca **entrambi** i metodi come equivalen
 
 **Risparmio**: ~5-7 min (npm installa un pacchetto JS, non compila Rust)
 **Rischio**: **Nullo** — metodo ufficiale documentato da Tauri
-**Stato**: ❌ Non implementato
+**Stato**: ✅ Completata (PR #531) — `@tauri-apps/cli@^2.11.4` come devDependency, sostituito `cargo install` + `cargo tauri build --ci` con `npm run tauri build -- --ci`
 
 ### Opzione A (FALLBACK): Cache `~/.cargo/bin`
 
@@ -44,7 +44,7 @@ La documentazione ufficiale Tauri v2 elenca **entrambi** i metodi come equivalen
 
 **Risparmio**: ~5 min (dopo la prima build)
 **Rischio**: Nessuno
-**Stato**: ❌ Non implementato
+**Stato**: ✅ Completata (PR #531) — il preflight job in CI cattura già gli errori in 3 min
 
 ### Opzione C: Preflight + build parallelo
 

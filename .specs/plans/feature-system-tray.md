@@ -110,4 +110,6 @@ Nessuna nuova dipendenza — TrayIconBuilder è parte del core di Tauri v2.
 
 ## Status
 
-[x] Non iniziata
+[x] Completata il 2026-07-30 (PR #533)
+
+Note: richiede `features = ["tray-icon"]` su `tauri` in Cargo.toml. `tray.app_handle()` restituisce `&AppHandle` (non `Option<AppHandle>`).

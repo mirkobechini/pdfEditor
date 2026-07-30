@@ -1,14 +1,14 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-07-29
+> **Aggiornato:** 2026-07-30
 
 ---
 
 ## 🔴 Bug aperti
 
 > ⚠️ **Nessun bug aperto al momento.**
-> Tutti i bug noti (B1-B11) sono stati risolti in questa sessione.
+> Tutti i bug noti sono stati risolti.
 
 ---
 
@@ -32,8 +32,19 @@
 
 ### T2 — Zero test E2E / integration
 
-**Descrizione:** 342 test backend (con `TestClient` same-origin) + 373 test frontend (jsdom). Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS). Aggiunti 21 test per utility Tauri e componenti overlay.  
+**Descrizione:** 342 test backend (con `TestClient` same-origin) + 373 test frontend (jsdom). Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS).  
 **Risoluzione prevista:** Playwright (T7).
+
+### T3 — `@swc/helpers` lock file desync
+
+**Descrizione:** `npm ci` fallisce se `package-lock.json` non contiene `@swc/helpers@0.5.23`. Succede quando si installa `@tauri-apps/plugin-dialog` o altri pacchetti che modificano la risoluzione delle dipendenze.
+**Soluzione:** `rm package-lock.json && npm install @swc/helpers@^0.5.23 --save-dev && npm ci`
+**Prevenzione:** Il preflight check cattura questo errore prima del tag.
+
+### T4 — Tauri CLI via npm: `npm run tauri build` richiede `@tauri-apps/cli` installato
+
+**Descrizione:** Il nuovo sistema di build usa `@tauri-apps/cli` via npm. Se il pacchetto non è installato (es. `npm ci` fallito), la build fallisce.
+**Risoluzione prevista:** Il preflight job in CI verifica che `npm ci` + `next build` funzionino prima di avviare la build Tauri.
 
 ---
 
