@@ -46,6 +46,8 @@
 - ✅ **#528: Script bump automatico versione (PR #530)** — Nuovo `scripts/bump-version.js` che aggiorna TUTTI i file con versione in un colpo solo. Preflight check ora controlla anche i messaggi i18n.
 - ✅ **#529: Ottimizzazione build CI (PR #531)** — Sostituito `cargo install tauri-cli` con `@tauri-apps/cli` via npm (~5-7 min risparmiati per build).
 - ✅ **#532: System tray (PR #533)** — Click X nasconde in tray (icona nella barra). Click icona riapre. Click destro: "Mostra PdfEditor" / "Esci". Sidecar NON killato finché non si clicca "Esci".
+- ✅ **#534: Fix tauri script + preflight (PR #535)** — Aggiunto `"tauri": "tauri"` a `package.json`. Il preflight ora verifica `npm run tauri -- --version` (check 6/7).
+- ✅ **Release v0.1.28 pubblicata** — System tray, fix tauri script, preflight potenziato.
 
 ## 2026-07-28
 
