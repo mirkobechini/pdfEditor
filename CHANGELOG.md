@@ -43,6 +43,9 @@
 - ✅ **#526: Dialog nativo try/catch (PR #527)** — Aggiunto try/catch a `open()` in wizard page. Se il dialog nativo fallisce, fallback automatico a `prompt()`.
 - ✅ **AGENT_FLOW: pre-flight checklist** — Aggiunta checklist obbligatoria (branch, issue, consenso, contesto, commit atomic, build, docs, PR) per ridurre errori procedurali.
 - ✅ **Release v0.1.26 pubblicata** — Startup screen 3 step, dialog try/catch, bump i18n, pre-flight checklist.
+- ✅ **#528: Script bump automatico versione (PR #530)** — Nuovo `scripts/bump-version.js` che aggiorna TUTTI i file con versione in un colpo solo. Preflight check ora controlla anche i messaggi i18n.
+- ✅ **#529: Ottimizzazione build CI (PR #531)** — Sostituito `cargo install tauri-cli` con `@tauri-apps/cli` via npm (~5-7 min risparmiati per build).
+- ✅ **#532: System tray (PR #533)** — Click X nasconde in tray (icona nella barra). Click icona riapre. Click destro: "Mostra PdfEditor" / "Esci". Sidecar NON killato finché non si clicca "Esci".
 
 ## 2026-07-28
 
