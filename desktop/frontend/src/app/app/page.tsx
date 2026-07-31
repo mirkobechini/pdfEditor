@@ -5,6 +5,7 @@ import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
 import { getApiBaseUrl } from "../../shared/tauri";
 import PdfViewer from "../../components/PdfViewer";
+import GuestConvertBanner from "../components/GuestConvertBanner";
 import type { PdfDocument } from "../../shared/types";
 
 const API_BASE = getApiBaseUrl();
@@ -221,6 +222,8 @@ export default function EditorPage() {
                             </div>
                         )}
                     </div>
+
+                    <GuestConvertBanner />
 
                     <div className="mt-auto border-t border-white/8 p-5">
                         <div className="mb-3 flex items-center justify-between">
