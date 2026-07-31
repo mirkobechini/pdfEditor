@@ -77,9 +77,9 @@ Risolvere 6 problemi identificati nella release v0.1.30 per rendere la build pi√
 
 ## Status
 
-[ ] P1: pip cache + ottimizzazione build
-[ ] P2: Aggiornare versioni action per Node 24
-[ ] P3: Fix startup screen retry button
-[ ] P4: Aggiungere .exe ai files della release
-[ ] P5: Fix doppio processo sidecar
-[ ] P6: Kill sidecar su chiusura (rimuovere tray)
+[x] P1: single-instance plugin + prevent duplicate sidecar (su dev, commit 90049be)
+[x] P2: startup screen retry button (su dev, commit 45ae13e)
+[x] P3: pip cache (su dev, PR #541)
+[ ] P4: Aggiornare versioni action per Node 24
+[ ] P5: Aggiungere .exe ai files della release
+[x] P6: doppio processo sidecar (su dev, commit 90049be)
