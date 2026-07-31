@@ -53,7 +53,7 @@ export default function StartupPage() {
                     if (!cancelled && err instanceof TypeError && (err as any).cause === "aborted") {
                         // Timeout — keep trying
                     } else if (!cancelled) {
-                        // Connection refused or other error — show specific message
+                        // Connection refused or other error — show specific message and enable retry
                         setSteps((prev) =>
                             prev.map((s) =>
                                 s.id === "backend" ? {
@@ -62,6 +62,7 @@ export default function StartupPage() {
                                 } : s
                             )
                         );
+                        setFatalError("Impossibile contattare il backend. Verifica che il sidecar sia presente sulla porta 7723.");
                     }
                 }
                 await new Promise((r) => setTimeout(r, 1000));
