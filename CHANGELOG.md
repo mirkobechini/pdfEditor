@@ -2,7 +2,7 @@
 
 ## 2026-07-31
 
-- ✅ **O1-O4: Build ottimizzazioni** — UPX compression (O1, PR #549), PyInstaller cache (O2, PR #551), frontend build parallelo (O3, PR #553), Rust strip profile (O4, PR #557).
+- ✅ **Release v0.1.33 pubblicata** — Build ottimizzazioni (UPX, cache, frontend parallelo, Rust strip), fix Python DLL error.
 - ✅ **#555: Fix Python DLL error (PR #558)** — Popup "Failed to load Python DLL" a ogni avvio causato da directory _MEI* corrotte dopo kill forzato del sidecar. Risolto con cleanup automatico delle _MEI* orfane in %TEMP% prima di spawnare il sidecar.
 - ✅ **#514: Fix NSIS installer hook (PR #557)** — Aggiunto installer.nsh con macro NSIS_HOOK_PREINSTALL/PREUNINSTALL che killano i processi fastapi-sidecar esistenti prima di install/disinstall, prevenendo il fallimento della disinstallazione.
 - ✅ **Release v0.1.32 pubblicata** — Sidecar startup fix, build speed (separate frontend), sidecar strip symbols.
