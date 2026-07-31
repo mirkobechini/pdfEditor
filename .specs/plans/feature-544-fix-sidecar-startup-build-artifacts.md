@@ -52,5 +52,5 @@ Risolvere 3 problemi critici della release v0.1.31:
 ## Status
 
 [x] P1: Sidecar startup fix (su dev, PR #545)
-[ ] P2: Build speed — separare frontend build da Tauri build
-[ ] P3: Artifact size — UPX compression
+[x] P2: Build speed — separare frontend build da Tauri build (su dev, PR #546)
+[ ] P3: Artifact size — strip symbols (in PR #547)
