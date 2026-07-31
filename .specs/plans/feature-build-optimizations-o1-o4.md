@@ -71,7 +71,7 @@ Questo dice a Rust di rimuovere i simboli di debug dal binario release, riducend
 
 ## Status
 
-[ ] O1: UPX compression — plan approvato
+[x] O1: UPX compression — in PR #549
 [ ] O2: PyInstaller cache — plan approvato
 [ ] O3: Build matrix split — plan approvato
 [ ] O4: Rust strip profile — plan approvato
