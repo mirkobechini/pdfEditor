@@ -155,10 +155,11 @@ jobs:
 
       - name: Build Tauri app
         # Uses @tauri-apps/cli from desktop/frontend/node_modules (installed via npm ci)
+        # Must run from desktop/src-tauri/ where tauri.conf.json is located
         # --ci flag disables interactive prompts
         run: |
-          cd desktop/frontend
-          npm run tauri build -- --ci
+          cd desktop/src-tauri
+          npx tauri build --ci
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

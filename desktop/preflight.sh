@@ -93,11 +93,26 @@ print('  All sidecar imports OK')
 " && pass "sidecar imports" || fail "sidecar imports"
 
 # ─────────────────────────────────────────────
-# 6. Tauri CLI — check script availability
+# 6. Tauri CLI — check script + Rust compilation
 # ─────────────────────────────────────────────
-echo "── 6/7 Tauri CLI check ──"
+echo "── 6/8 Tauri CLI check ──"
 cd "$ROOT/desktop/frontend"
 if npm run tauri -- --version 2>&1 | grep -q "tauri"; then
+  pass "Tauri CLI disponibile (npm run tauri)"
+else
+  fail "Tauri CLI non disponibile"
+fi
+
+# ─────────────────────────────────────────────
+# 7. Rust — cargo check (compilation test)
+# ─────────────────────────────────────────────
+echo "── 7/8 Rust compilation (cargo check) ──"
+cd "$ROOT/desktop/src-tauri"
+if cargo check 2>&1 | tail -5; then
+  pass "cargo check (Rust compila)"
+else
+  fail "cargo check (Rust NON compila)"
+fi
   pass "Tauri CLI disponibile (npm run tauri)"
 else
   fail "Tauri CLI non disponibile"
