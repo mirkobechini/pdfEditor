@@ -16,8 +16,6 @@
 - ✅ **#534: Fix tauri script + preflight (PR #535)** — Aggiunto `"tauri": "tauri"` a `package.json`. Il preflight ora verifica `npm run tauri -- --version`.
 - ✅ **#536: Fix build path + cargo check (PR #537)** — `npx tauri build` ora eseguito da `desktop/src-tauri/` (dove si trova tauri.conf.json). Preflight potenziato a 8/8 checks con `cargo check`.
 - ✅ **Preflight 8/8** — Aggiunti: Tauri CLI check, cargo check (Rust compilation), version alignment i18n. Totale: 8 check in ~3 min.
-- ✅ **Login health check esteso** — Aumentati retry da 60 a 180s (HEALTH_MAX_RETRIES 30→90) per gestire sidecar lento al primo avvio.
-- ✅ **Release v0.1.29 pubblicata** — Fix build path, preflight 8/8, system tray, ottimizzazioni CI.
 
 ## 2026-07-29
 
