@@ -2,7 +2,8 @@
 
 ## 2026-07-31
 
-- ✅ **Release v0.1.29 pubblicata** — Fix build path, preflight 8/8, system tray, ottimizzazioni CI, startup screen 3-step, dialog nativo, bump i18n.
+- ✅ **Release v0.1.30 pubblicata** — Fix release CI macOS (npm --prefix), fix preflight syntax, npm/Rust cache, Intel macOS target.
+- ✅ **#538: Fix release CI — npx non trova @tauri-apps/cli su macOS (PR #539)** — `npx tauri build` da `desktop/src-tauri/` non trovava il binario in `desktop/frontend/node_modules/`. Risolto con `npm --prefix ../frontend exec tauri build -- --ci`. Rimossi step no-op, aggiunte npm cache, Rust cache, target x86_64-apple-darwin, files espliciti in create-release.
 
 ## 2026-07-30
 
