@@ -164,22 +164,19 @@ jobs:
         run: |
           case "${{ runner.os }}" in
             Linux)
-              sudo apt-get install -y upx >/dev/null 2>&1
+              sudo apt-get install -y upx >/dev/null 2>&1 || true
               ;;
             macOS)
-              curl -sL "https://github.com/upx/upx/releases/download/v5.2.0/upx-5.2.0-arm64_macos.tar.xz" -o /tmp/upx.tar.xz
-              tar -xf /tmp/upx.tar.xz -C /tmp
-              cp /tmp/upx-5.2.0-arm64_macos/upx /usr/local/bin/upx
-              chmod +x /usr/local/bin/upx
+              brew install upx >/dev/null 2>&1 || true
               ;;
             Windows)
               curl -sL "https://github.com/upx/upx/releases/download/v5.2.0/upx-5.2.0-win64.zip" -o /tmp/upx.zip
-              unzip -q /tmp/upx.zip -d /tmp/upx
+              unzip -q -o /tmp/upx.zip -d /tmp/upx 2>/dev/null
               mkdir -p /usr/local/bin
-              cp /tmp/upx/upx-5.2.0-win64/upx.exe /usr/local/bin/upx.exe
+              cp /tmp/upx/upx-5.2.0-win64/upx.exe /usr/local/bin/upx.exe 2>/dev/null || true
               ;;
           esac
-          echo "UPX version:" && upx --version 2>/dev/null || echo "UPX not available (non bloccante)"
+          upx --version 2>/dev/null && echo "UPX available" || echo "UPX not available (non bloccante)"
 
       - name: Build sidecar
         shell: bash
