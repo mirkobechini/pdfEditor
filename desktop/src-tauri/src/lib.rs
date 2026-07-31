@@ -34,6 +34,11 @@ fn start_sidecar(app: &tauri::App) {
         return;
     }
 
+    // Clean up orphaned PyInstaller _MEI* temp directories left from crashed sidecars.
+    // If the sidecar was killed forcefully (taskkill /F), _MEI* dirs remain corrupted
+    // and cause "Failed to load Python DLL" on next startup.
+    cleanup_mei_temp_dirs();
+
     let sidecar = app.shell().sidecar("fastapi-sidecar")
         .expect("failed to create sidecar command");
 
@@ -58,6 +63,26 @@ fn start_sidecar(app: &tauri::App) {
             }
         }
     });
+}
+
+/// Clean up orphaned PyInstaller _MEI* temp directories.
+fn cleanup_mei_temp_dirs() {
+    let tmp_dir = std::env::temp_dir();
+    if let Ok(entries) = std::fs::read_dir(&tmp_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                if let Some(name) = path.file_name() {
+                    if let Some(name_str) = name.to_str() {
+                        if name_str.starts_with("_MEI") {
+                            log::info!("Pulizia directory _MEI orfana: {:?}", path);
+                            let _ = std::fs::remove_dir_all(&path);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /// Kill the sidecar process on shutdown.
