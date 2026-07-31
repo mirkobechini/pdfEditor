@@ -90,6 +90,8 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | **PyInstaller cache pip (O2)** | PyInstaller reinstallato su ogni build | **IMPLEMENTATO dal 2026-07-31 (PR #551).** `pip install pyinstaller` spostato nello step backend deps, dove viene cacheato dal pip cache. |
 | **Frontend build parallelo (O3)** | Frontend buildato 3 volte (una per OS) | **IMPLEMENTATO dal 2026-07-31 (PR #553).** Nuovo job `build-frontend` su ubuntu-latest. Il job `build` scarica l'artifact. Frontend buildato una volta sola. |
 | **Rust strip profile (O4)** | Binario Rust con simboli di debug | **IMPLEMENTATO dal 2026-07-31 (PR #557).** Aggiunto `strip = true` a `[profile.release]` in Cargo.toml. Binario Rust 10-20% più piccolo. |
+| **MEI temp dir cleanup (Python DLL fix)** | Popup Python DLL error su startup | **IMPLEMENTATO dal 2026-07-31 (PR #558).** Nuova funzione `cleanup_mei_temp_dirs()` in Rust che pulisce le directory `_MEI*` orfane in `%TEMP%` prima di spawnare il sidecar. Previene il popup "Failed to load Python DLL" causato da kill forzato del sidecar. |
+| **Phone scanner (futuro)** | — | **PIANIFICATO.** Scan da fotocamera telefono → PDF automatico. Vedi `.specs/plans/feature-phone-scanner.md`. |
 
 ## Vincoli
 
