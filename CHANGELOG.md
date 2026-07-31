@@ -1,8 +1,11 @@
 # Changelog
 
-## 2026-07-30
+## 2026-07-31
 
 - ✅ **Release v0.1.29 pubblicata** — Fix build path, preflight 8/8, system tray, ottimizzazioni CI, startup screen 3-step, dialog nativo, bump i18n.
+
+## 2026-07-30
+
 - ✅ **#518: Fix macOS release (PR #519)** — `cargo binstall` scaricava binario x86_64 tauri-cli su runner ARM. Ora macOS usa `cargo install` (nativo), Windows/Linux usano `cargo binstall`.
 - ✅ **Release v0.1.24 pubblicata** — Fix macOS binstall + cargo install su ARM.
 - ✅ **#520: Fix Windows release (PR #521)** — Aggiunto `shell: bash` allo step `Install Tauri CLI` che causava ParserError su Windows (PowerShell non capisce `if [ ... ]`).
