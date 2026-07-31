@@ -105,10 +105,11 @@ jobs:
         run: cd desktop/frontend && npm ci
       - name: Build desktop frontend (static export)
         run: cd desktop/frontend && npm run build
-      - name: Install backend deps
+      - name: Install backend deps (incl. PyInstaller)
         run: |
           cd backend
           pip install -r requirements.txt
+          pip install pyinstaller
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -156,7 +157,6 @@ jobs:
         shell: bash
         run: |
           cd desktop
-          pip install pyinstaller
           bash build-sidecar.sh
 
       - name: Rename sidecar for Tauri target triple
