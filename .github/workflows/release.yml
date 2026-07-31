@@ -99,17 +99,13 @@ jobs:
           cache: "pip"
           cache-dependency-path: "backend/requirements.txt"
 
-      - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm ci
-
-      - name: Install desktop frontend dependencies
-        run: |
-          cd desktop/frontend
-          npm ci
-
-      - name: Install backend dependencies (for sidecar)
+      - name: Install frontend deps
+        run: cd frontend && npm ci
+      - name: Install desktop frontend deps
+        run: cd desktop/frontend && npm ci
+      - name: Build desktop frontend (static export)
+        run: cd desktop/frontend && npm run build
+      - name: Install backend deps
         run: |
           cd backend
           pip install -r requirements.txt
