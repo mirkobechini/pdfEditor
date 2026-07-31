@@ -207,6 +207,7 @@ jobs:
           prerelease: false
           files: |
             **/*.msi
+            **/*setup.exe
             **/*.dmg
             **/*.AppImage
             **/*.deb
