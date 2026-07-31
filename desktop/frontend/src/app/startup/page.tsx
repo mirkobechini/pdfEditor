@@ -177,7 +177,7 @@ export default function StartupPage() {
                 )}
 
                 <p className="mt-10 text-center text-[10px] text-[#8e8175]">
-                    v0.1.31 · AGPL-3.0
+                    v0.1.32 · AGPL-3.0
                 </p>
             </div>
         </div>
