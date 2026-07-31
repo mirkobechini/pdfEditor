@@ -224,38 +224,49 @@ gh pr merge --merge --delete-branch
 
 After ALL PRs for a release are merged to `dev`:
 
-1. **Preflight** (opzionale ma raccomandato): esegui `bash desktop/preflight.sh` o `.\desktop\preflight.ps1` per verificare npm ci, next build, import backend e allineamento versioni (~3min invece di 25min di CI build).
-2. **Bump versione**: aggiorna TUTTI questi file con la nuova versione:
-   - `frontend/package.json`
-   - `desktop/frontend/package.json`
-   - `desktop/frontend/package-lock.json`
-   - `desktop/src-tauri/Cargo.toml`
-   - `desktop/src-tauri/tauri.conf.json`
-   - `desktop/frontend/src/app/startup/page.tsx` (UI version string)
-   - `backend/pyproject.toml` (CI bump, ma allinearlo manualmente)
+1. **Preflight** (obbligatorio): esegui `bash desktop/preflight.sh` o `.\desktop\preflight.ps1` per verificare npm ci, next build, import backend e allineamento versioni (~3min).
 
-   Commit singolo: `chore(release): bump version to X.Y.Z`
+2. **Build locale obbligatoria** (PRIMA del tag GitHub):
+   ```bash
+   # Windows (PowerShell)
+   cd desktop
+   .\build-sidecar.ps1
+   cd frontend && npm run build && cd ..
+   cd src-tauri
+   npm --prefix ../frontend exec tauri build -- --ci
+   ```
+   Verificare che:
+   - La build locale completi senza errori
+   - L'installer `.exe` venga generato in `desktop/src-tauri/target/release/bundle/nsis/`
+   - L'app si avvii e funzioni correttamente
+   - Solo SE la build locale è OK → procedere col tag GitHub
 
-3. **Aggiorna CHANGELOG.md**: aggiungi entry per la nuova release con tutte le feature/bug fix inclusi.
-4. **Merge dev → main**:
+3. **Bump versione**: usa `node scripts/bump-version.js X.Y.Z` per aggiornare TUTTI i 9 file con versione.
+
+4. **Aggiorna CHANGELOG.md**: aggiungi entry per la nuova release con tutte le feature/bug fix inclusi.
+
+5. **Merge dev → main**:
    ```bash
    git checkout main
    git merge dev --no-ff -m "merge: dev into main (vX.Y.Z)"
    git push origin main
-````
+   ```
 
-5. **Tag + push** (triggera la release CI che builda per Windows, macOS, Linux):
+6. **Tag + push** (triggera la release CI che builda per Windows, macOS, Linux):
    ```bash
    git tag vX.Y.Z && git push origin vX.Y.Z
    ```
-6. **Monitora la CI**: `gh run list --workflow release.yml -L 3` — la build richiede ~10-15min.
-7. **Verifica la release**: controlla che `gh release list --limit 3` mostri `PdfEditor vX.Y.Z` pubblicata.
-8. **Ritorna su dev** per il prossimo ciclo.
+
+7. **Monitora la CI**: `gh run list --workflow release.yml -L 3` — la build richiede ~10-15min.
+
+8. **Verifica la release**: controlla che `gh release list --limit 3` mostri `PdfEditor vX.Y.Z` pubblicata.
+
+9. **Ritorna su dev** per il prossimo ciclo.
 
 **Regole per la release:**
 
-- La release può contenere MULTIPLE feature PR mergiate in `dev`
-- Usa sempre `git merge dev --no-ff` anche se fast-forwardable
+- **BUILD LOCALE PRIMA DEL TAG**: ogni release DEVE essere buildata e testata in locale PRIMA di creare il tag GitHub. La CI su GitHub serve solo per generare gli installer per macOS e Linux, non per scoprire errori di build.
+- Se la build locale fallisce → fix su `dev`, non procedere
 - Se la CI della release fallisce: fix su `dev`, ri-mergia su `main`, **elimina il tag fallito** (`git tag -d vX.Y.Z && git push origin --delete vX.Y.Z`), ricrea il tag, pusha
 - Non forzare mai commit diretti su `main` — solo merge da `dev`
 - Preflight cattura errori comuni: lock file desync (`@swc/helpers`), import mancanti, versioni disallineate
