@@ -130,6 +130,28 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
+      - name: Install UPX (compress sidecar)
+        shell: bash
+        run: |
+          case "${{ runner.os }}" in
+            Linux)
+              sudo apt-get install -y upx >/dev/null 2>&1
+              ;;
+            macOS)
+              curl -sL "https://github.com/upx/upx/releases/download/v5.2.0/upx-5.2.0-arm64_macos.tar.xz" -o /tmp/upx.tar.xz
+              tar -xf /tmp/upx.tar.xz -C /tmp
+              cp /tmp/upx-5.2.0-arm64_macos/upx /usr/local/bin/upx
+              chmod +x /usr/local/bin/upx
+              ;;
+            Windows)
+              curl -sL "https://github.com/upx/upx/releases/download/v5.2.0/upx-5.2.0-win64.zip" -o /tmp/upx.zip
+              unzip -q /tmp/upx.zip -d /tmp/upx
+              mkdir -p /usr/local/bin
+              cp /tmp/upx/upx-5.2.0-win64/upx.exe /usr/local/bin/upx.exe
+              ;;
+          esac
+          echo "UPX version:" && upx --version 2>/dev/null || echo "UPX not available (non bloccante)"
+
       - name: Build sidecar
         shell: bash
         run: |
