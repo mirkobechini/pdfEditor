@@ -38,6 +38,7 @@ $PYTHON -m PyInstaller \
     --name "fastapi-sidecar" \
     --onefile \
     --noconsole \
+    --strip \
     --workpath "$PROJECT_ROOT/desktop/build-sidecar-tmp" \
     --specpath "$PROJECT_ROOT/desktop" \
     --distpath "$OUTPUT_DIR" \
