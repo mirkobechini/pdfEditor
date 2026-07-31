@@ -113,15 +113,11 @@ if cargo check 2>&1 | tail -5; then
 else
   fail "cargo check (Rust NON compila)"
 fi
-  pass "Tauri CLI disponibile (npm run tauri)"
-else
-  fail "Tauri CLI non disponibile"
-fi
 
 # ─────────────────────────────────────────────
-# 7. Verifica versioni allineate
+# 8. Verifica versioni allineate
 # ─────────────────────────────────────────────
-echo "── 7/7 Version alignment ──"
+echo "── 8/8 Version alignment ──"
 V_FE=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/frontend/package.json" 2>/dev/null)
 V_DFE=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/desktop/frontend/package.json" 2>/dev/null)
 V_CARGO=$(grep -m1 '^version' "$ROOT/desktop/src-tauri/Cargo.toml" 2>/dev/null | cut -d'"' -f2)
@@ -152,6 +148,13 @@ fi
 echo ""
 echo "═══════════════════════════════════════════"
 echo "  Risultati: $PASS ✅  |  $FAIL ❌"
+echo ""
+if [ "$FAIL" -gt 0 ]; then
+  echo "  ❌ Preflight FALLITO — correggi gli errori prima del tag."
+  exit 1
+else
+  echo "  ✅ Preflight SUPERATO — tutto pronto per il tag!"
+fi
 echo "═══════════════════════════════════════════"
 echo ""
 if [ "$FAIL" -gt 0 ]; then
