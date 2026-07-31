@@ -14,26 +14,6 @@ struct SidecarState {
 
 /// Spawn the FastAPI sidecar process.
 fn start_sidecar(app: &tauri::App) {
-    // If port 7723 already responds, a sidecar is already running (e.g. orphan from a crash).
-    // Do NOT spawn a second one — this prevents duplicate fastapi-sidecar processes.
-    use std::io::Write;
-    use std::net::TcpStream;
-
-    let already_running = TcpStream::connect_timeout(
-        &"127.0.0.1:7723".parse().unwrap(),
-        std::time::Duration::from_millis(500),
-    )
-    .map(|mut stream| {
-        let _ = write!(stream, "GET /health HTTP/1.0\r\n\r\n");
-        true
-    })
-    .unwrap_or(false);
-
-    if already_running {
-        log::info!("Sidecar già in esecuzione sulla porta 7723 — skip spawn.");
-        return;
-    }
-
     let sidecar = app.shell().sidecar("fastapi-sidecar")
         .expect("failed to create sidecar command");
 
@@ -135,16 +115,6 @@ pub fn run() {
             child_pid: Mutex::new(None),
         })
         .setup(|app| {
-            // Register single-instance plugin: second instance focuses the running one
-            #[cfg(desktop)]
-            {
-                app.handle().plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-                    let _ = app.get_webview_window("main")
-                        .expect("no main window")
-                        .set_focus();
-                })).expect("failed to register single-instance plugin");
-            }
-
             start_sidecar(app);
 
             // Build tray menu
