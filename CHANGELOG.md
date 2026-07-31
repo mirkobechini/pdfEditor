@@ -2,6 +2,7 @@
 
 ## 2026-07-31
 
+- ✅ **O1-O4: Build ottimizzazioni** — UPX compression (O1, PR #549), PyInstaller cache (O2, PR #551), frontend build parallelo (O3, PR #553), Rust strip profile (O4, PR #557).
 - ✅ **Release v0.1.32 pubblicata** — Sidecar startup fix, build speed (separate frontend), sidecar strip symbols.
 - ✅ **#544: Fix sidecar startup, build speed, artifact size (PR #545, #546, #547)** — P1: sidecar non si avviava — `ECONNREFUSED` ora non mostra errore, ritenta per 60s. P2: build più veloce — `beforeBuildCommand` rimosso, frontend buildato in CI separatamente. P3: sidecar `--strip` per ridurre dimensione artifact del 20-30%.
 - ✅ **Release v0.1.31 pubblicata** — Single-instance, startup retry, pip cache, Node 24, NSIS .exe, fix doppio sidecar.

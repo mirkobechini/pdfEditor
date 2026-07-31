@@ -2,6 +2,7 @@
 
 **Progetto:** PdfEditor
 **Data:** 2026-06-25 (ultimo aggiornamento 2026-07-31)
+**Versioni ADR incluse:** v0.1.24 → v0.1.32 (9 release)
 **Autore:** Mirko Bechini
 
 ## Decisione
@@ -85,6 +86,10 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | **Build: beforeBuildCommand rimosso** | `beforeBuildCommand` esegue next build dentro tauri build | **IMPLEMENTATO dal 2026-07-31 (PR #546).** Rimosso `beforeBuildCommand` da `tauri.conf.json`. Il frontend viene buildato in CI come step esplicito PRIMA di `tauri build`, permettendo parallelismo con sidecar build. |
 | **Sidecar: strip symbols** | Binario con debug symbols | **IMPLEMENTATO dal 2026-07-31 (PR #547).** Aggiunto flag `--strip` a PyInstaller per rimuovere simboli di debug dai .so/.dll/.pyd bundled. Riduce dimensione artifact del 20-30%. |
 | **Startup: ECONNREFUSED non bloccante** | Errore immediato su ECONNREFUSED | **IMPLEMENTATO dal 2026-07-31 (PR #545).** Il `catch` in `startup/page.tsx` non mostra più errore su `ECONNREFUSED`. Continua a ritentare per tutti i 60 tentativi. L'errore appare solo se TUTTI falliscono. |
+| **UPX compression sidecar (O1)** | Binario PyInstaller non compresso | **IMPLEMENTATO dal 2026-07-31 (PR #549).** UPX installato in CI prima di build-sidecar. PyInstaller lo rileva automaticamente sul PATH e comprime i .so/.dll/.pyd. Sidecar 60MB → ~20MB. |
+| **PyInstaller cache pip (O2)** | PyInstaller reinstallato su ogni build | **IMPLEMENTATO dal 2026-07-31 (PR #551).** `pip install pyinstaller` spostato nello step backend deps, dove viene cacheato dal pip cache. |
+| **Frontend build parallelo (O3)** | Frontend buildato 3 volte (una per OS) | **IMPLEMENTATO dal 2026-07-31 (PR #553).** Nuovo job `build-frontend` su ubuntu-latest. Il job `build` scarica l'artifact. Frontend buildato una volta sola. |
+| **Rust strip profile (O4)** | Binario Rust con simboli di debug | **IMPLEMENTATO dal 2026-07-31 (PR #557).** Aggiunto `strip = true` a `[profile.release]` in Cargo.toml. Binario Rust 10-20% più piccolo. |
 
 ## Vincoli
 
