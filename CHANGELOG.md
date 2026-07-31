@@ -2,6 +2,8 @@
 
 ## 2026-07-31
 
+- ✅ **Release v0.1.32 pubblicata** — Sidecar startup fix, build speed (separate frontend), sidecar strip symbols.
+- ✅ **#544: Fix sidecar startup, build speed, artifact size (PR #545, #546, #547)** — P1: sidecar non si avviava — `ECONNREFUSED` ora non mostra errore, ritenta per 60s. P2: build più veloce — `beforeBuildCommand` rimosso, frontend buildato in CI separatamente. P3: sidecar `--strip` per ridurre dimensione artifact del 20-30%.
 - ✅ **Release v0.1.31 pubblicata** — Single-instance, startup retry, pip cache, Node 24, NSIS .exe, fix doppio sidecar.
 - ✅ **#540: Release hardening (PR #541, #542, #543)** — P1: single-instance plugin (no tray duplicati). P2: startup screen retry button su connection refused. P3: pip cache per build più veloce. P4: tutte le action CI aggiornate a Node 24. P5: NSIS .exe incluso nella release. P6: prevenzione doppio sidecar via port check.
 - ✅ **Release v0.1.30 pubblicata** — Fix release CI macOS (npm --prefix), fix preflight syntax, npm/Rust cache, Intel macOS target.
