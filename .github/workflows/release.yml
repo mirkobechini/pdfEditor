@@ -46,8 +46,34 @@ jobs:
           echo "Timeout waiting for CI on main (15 minutes). Proceeding anyway."
           exit 0
 
-  build:
+  build-frontend:
     needs: [wait-for-ci]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+
+      - name: Install frontend deps
+        run: cd frontend && npm ci
+      - name: Install desktop frontend deps
+        run: cd desktop/frontend && npm ci
+      - name: Build desktop frontend (static export)
+        run: cd desktop/frontend && npm run build
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-out
+          path: desktop/frontend/out/
+
+  build:
+    needs: [wait-for-ci, build-frontend]
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
@@ -55,6 +81,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-out
+          path: desktop/frontend/out/
 
       - name: Bump version from tag
         shell: bash
@@ -99,16 +131,13 @@ jobs:
           cache: "pip"
           cache-dependency-path: "backend/requirements.txt"
 
-      - name: Install frontend deps
-        run: cd frontend && npm ci
-      - name: Install desktop frontend deps
+      - name: Install desktop frontend deps (for @tauri-apps/cli)
         run: cd desktop/frontend && npm ci
-      - name: Build desktop frontend (static export)
-        run: cd desktop/frontend && npm run build
-      - name: Install backend deps
+      - name: Install backend deps (incl. PyInstaller)
         run: |
           cd backend
           pip install -r requirements.txt
+          pip install pyinstaller
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -130,11 +159,32 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
+      - name: Install UPX (compress sidecar)
+        shell: bash
+        run: |
+          case "${{ runner.os }}" in
+            Linux)
+              sudo apt-get install -y upx >/dev/null 2>&1
+              ;;
+            macOS)
+              curl -sL "https://github.com/upx/upx/releases/download/v5.2.0/upx-5.2.0-arm64_macos.tar.xz" -o /tmp/upx.tar.xz
+              tar -xf /tmp/upx.tar.xz -C /tmp
+              cp /tmp/upx-5.2.0-arm64_macos/upx /usr/local/bin/upx
+              chmod +x /usr/local/bin/upx
+              ;;
+            Windows)
+              curl -sL "https://github.com/upx/upx/releases/download/v5.2.0/upx-5.2.0-win64.zip" -o /tmp/upx.zip
+              unzip -q /tmp/upx.zip -d /tmp/upx
+              mkdir -p /usr/local/bin
+              cp /tmp/upx/upx-5.2.0-win64/upx.exe /usr/local/bin/upx.exe
+              ;;
+          esac
+          echo "UPX version:" && upx --version 2>/dev/null || echo "UPX not available (non bloccante)"
+
       - name: Build sidecar
         shell: bash
         run: |
           cd desktop
-          pip install pyinstaller
           bash build-sidecar.sh
 
       - name: Rename sidecar for Tauri target triple
