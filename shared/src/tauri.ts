@@ -26,12 +26,10 @@ export function isTauri(): boolean {
 
 /** Get the API base URL depending on environment. */
 export function getApiBaseUrl(): string {
-  if (isTauri()) {
-    // In desktop mode, the FastAPI sidecar runs on localhost:7723
-    return "http://127.0.0.1:7723";
-  }
-  // In web/browser mode, use the env variable or fallback to localhost:8000
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  // Desktop: FastAPI sidecar runs on localhost:7723
+  // isTauri() check removed because process.env and window.__TAURI__
+  // are not reliable during static export first render.
+  return "http://127.0.0.1:7723";
 }
 
 /**
