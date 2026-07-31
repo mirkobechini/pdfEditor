@@ -53,7 +53,7 @@ export default function StartupPage() {
                     if (!cancelled && err instanceof TypeError && (err as any).cause === "aborted") {
                         // Timeout — keep trying
                     } else if (!cancelled) {
-                        // Connection refused or other error — show specific message
+                        // Connection refused or other error — show specific message and enable retry
                         setSteps((prev) =>
                             prev.map((s) =>
                                 s.id === "backend" ? {
@@ -62,6 +62,7 @@ export default function StartupPage() {
                                 } : s
                             )
                         );
+                        setFatalError("Impossibile contattare il backend. Verifica che il sidecar sia presente sulla porta 7723.");
                     }
                 }
                 await new Promise((r) => setTimeout(r, 1000));
@@ -188,7 +189,7 @@ export default function StartupPage() {
                 )}
 
                 <p className="mt-10 text-center text-[10px] text-[#8e8175]">
-                    v0.1.30 · AGPL-3.0
+                    v0.1.31 · AGPL-3.0
                 </p>
             </div>
         </div>

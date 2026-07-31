@@ -2,6 +2,8 @@
 
 ## 2026-07-31
 
+- ✅ **Release v0.1.31 pubblicata** — Single-instance, startup retry, pip cache, Node 24, NSIS .exe, fix doppio sidecar.
+- ✅ **#540: Release hardening (PR #541, #542, #543)** — P1: single-instance plugin (no tray duplicati). P2: startup screen retry button su connection refused. P3: pip cache per build più veloce. P4: tutte le action CI aggiornate a Node 24. P5: NSIS .exe incluso nella release. P6: prevenzione doppio sidecar via port check.
 - ✅ **Release v0.1.30 pubblicata** — Fix release CI macOS (npm --prefix), fix preflight syntax, npm/Rust cache, Intel macOS target.
 - ✅ **#538: Fix release CI — npx non trova @tauri-apps/cli su macOS (PR #539)** — `npx tauri build` da `desktop/src-tauri/` non trovava il binario in `desktop/frontend/node_modules/`. Risolto con `npm --prefix ../frontend exec tauri build -- --ci`. Rimossi step no-op, aggiunte npm cache, Rust cache, target x86_64-apple-darwin, files espliciti in create-release.
 
