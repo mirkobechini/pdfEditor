@@ -48,22 +48,10 @@ export default function StartupPage() {
                         }
                         return;
                     }
-                } catch (err: unknown) {
-                    // Check for connection refused vs generic timeout
-                    if (!cancelled && err instanceof TypeError && (err as any).cause === "aborted") {
-                        // Timeout — keep trying
-                    } else if (!cancelled) {
-                        // Connection refused or other error — show specific message and enable retry
-                        setSteps((prev) =>
-                            prev.map((s) =>
-                                s.id === "backend" ? {
-                                    ...s, status: "error" as const,
-                                    message: "Nessuna risposta. Verifica che il sidecar sia presente."
-                                } : s
-                            )
-                        );
-                        setFatalError("Impossibile contattare il backend. Verifica che il sidecar sia presente sulla porta 7723.");
-                    }
+                } catch {
+                    // Sidecar non ancora pronto (ECONNREFUSED, timeout, ecc.):
+                    // continuiamo a ritentare — mostriamo errore solo se TUTTI
+                    // i 60 tentativi falliscono (blocco if (!cancelled) dopo il loop).
                 }
                 await new Promise((r) => setTimeout(r, 1000));
             }
