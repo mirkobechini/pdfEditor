@@ -46,8 +46,34 @@ jobs:
           echo "Timeout waiting for CI on main (15 minutes). Proceeding anyway."
           exit 0
 
-  build:
+  build-frontend:
     needs: [wait-for-ci]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+
+      - name: Install frontend deps
+        run: cd frontend && npm ci
+      - name: Install desktop frontend deps
+        run: cd desktop/frontend && npm ci
+      - name: Build desktop frontend (static export)
+        run: cd desktop/frontend && npm run build
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-out
+          path: desktop/frontend/out/
+
+  build:
+    needs: [wait-for-ci, build-frontend]
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
@@ -55,6 +81,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-out
+          path: desktop/frontend/out/
 
       - name: Bump version from tag
         shell: bash
@@ -99,12 +131,8 @@ jobs:
           cache: "pip"
           cache-dependency-path: "backend/requirements.txt"
 
-      - name: Install frontend deps
-        run: cd frontend && npm ci
-      - name: Install desktop frontend deps
+      - name: Install desktop frontend deps (for @tauri-apps/cli)
         run: cd desktop/frontend && npm ci
-      - name: Build desktop frontend (static export)
-        run: cd desktop/frontend && npm run build
       - name: Install backend deps (incl. PyInstaller)
         run: |
           cd backend
