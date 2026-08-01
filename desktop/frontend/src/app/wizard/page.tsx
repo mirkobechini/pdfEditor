@@ -5,6 +5,20 @@ import { useRouter } from "next/navigation";
 import { open } from "@tauri-apps/plugin-dialog";
 import { isTauri } from "../../shared/tauri";
 
+/** Open a URL in the system browser (works in Tauri webview). */
+async function openExternal(url: string) {
+    if (isTauri()) {
+        try {
+            const { openUrl } = await import("@tauri-apps/plugin-opener");
+            await openUrl(url);
+            return;
+        } catch {
+            // fallback
+        }
+    }
+    window.open(url, "_blank");
+}
+
 const steps = [
     { id: "01", title: "Benvenuto" },
     { id: "02", title: "Cartella di lavoro" },
@@ -60,8 +74,8 @@ export default function WizardPage() {
                                 />
                                 <span className="text-[14px] leading-relaxed text-[#9d9184]">
                                     Accetto i{" "}
-                                    <a href="https://github.com/mirkobechini/pdfEditor/blob/main/frontend/src/app/terms/page.tsx" target="_blank" className="text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</a> e la{" "}
-                                    <a href="https://www.iubenda.com/privacy-policy/76778813" target="_blank" className="text-[#f7871f] underline hover:text-[#ff9b37]">privacy policy</a>
+                                    <button type="button" onClick={() => openExternal("https://github.com/mirkobechini/pdfEditor/blob/main/frontend/src/app/terms/page.tsx")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</button> e la{" "}
+                                    <button type="button" onClick={() => openExternal("https://www.iubenda.com/privacy-policy/76778813")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">privacy policy</button>
                                 </span>
                             </label>
                         </div>
