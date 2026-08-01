@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-01
+
+- ✅ **Fix startup page in produzione — CORS error (PR #572, fix #571)** — La webview Tauri in produzione usa origin `http://tauri.localhost` (senza 's'), ma `ALLOWED_ORIGINS` autorizzava solo `https://tauri.localhost`. Aggiunto `http://tauri.localhost` in `backend/app/core/config.py` e `desktop/.env.desktop`.
+- ✅ **#569: Devtools abilitati per debug startup page (PR #570)** — Aggiunto feature `devtools` e `window.open_devtools()` in lib.rs per diagnosi errori console in produzione.
+
 ## 2026-07-31
 
 - ✅ **Release v0.1.33 pubblicata** — Build ottimizzazioni (UPX, cache, frontend parallelo, Rust strip), fix Python DLL error.
