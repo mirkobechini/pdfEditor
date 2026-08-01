@@ -5,12 +5,10 @@ import { useRouter } from "next/navigation";
 import { isTauri, tauriInvoke } from "../../shared/tauri";
 
 /** Open a URL in the system browser (works in Tauri webview). */
-async function openExternal(url: string) {
-    // Use Tauri plugin-opener via IPC (no JS module needed)
-    const ok = await tauriInvoke("plugin:opener|open_url", { url });
-    if (!ok && !isTauri()) {
-        window.open(url, "_blank");
-    }
+function openExternal(url: string) {
+    // In Tauri v2, window.open with _blank opens in the system browser
+    // thanks to tauri-plugin-opener being registered.
+    window.open(url, "_blank");
 }
 
 /** Open a directory picker dialog (Tauri native) or fallback to manual input. */
