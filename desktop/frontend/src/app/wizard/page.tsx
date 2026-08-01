@@ -2,7 +2,6 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { open } from "@tauri-apps/plugin-dialog";
 import { isTauri } from "../../shared/tauri";
 
 /** Open a URL in the system browser (works in Tauri webview). */
@@ -17,6 +16,20 @@ async function openExternal(url: string) {
         }
     }
     window.open(url, "_blank");
+}
+
+/** Open a directory picker dialog (Tauri native) or fallback to manual input. */
+async function pickDirectory(): Promise<string | null> {
+    if (isTauri()) {
+        try {
+            const { open } = await import("@tauri-apps/plugin-dialog");
+            const selected = await open({ directory: true, multiple: false, title: "Seleziona cartella di lavoro" });
+            return selected as string | null;
+        } catch {
+            return null;
+        }
+    }
+    return prompt("Inserisci il percorso della cartella di lavoro:");
 }
 
 const steps = [
@@ -101,17 +114,8 @@ export default function WizardPage() {
                                 />
                                 <button
                                     onClick={async () => {
-                                        if (isTauri()) {
-                                            try {
-                                                const selected = await open({ directory: true, multiple: false, title: "Seleziona cartella di lavoro" });
-                                                if (selected) setWorkFolder(selected as string);
-                                            } catch {
-                                                // Dialog non disponibile — l'utente può scrivere il percorso a mano
-                                            }
-                                        } else {
-                                            const folder = prompt("Inserisci il percorso della cartella di lavoro:");
-                                            if (folder) setWorkFolder(folder);
-                                        }
+                                        const folder = await pickDirectory();
+                                        if (folder) setWorkFolder(folder);
                                     }}
                                     className="h-full cursor-pointer rounded-[12px] border border-white/15 bg-[#1b1612] px-6 text-[13px] font-semibold text-white transition hover:bg-[#231c17]"
                                 >
