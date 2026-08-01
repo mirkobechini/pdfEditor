@@ -96,9 +96,11 @@ fn stop_sidecar(app: &tauri::AppHandle) {
         log::info!("Stopping FastAPI sidecar (PID: {})", pid);
         #[cfg(target_os = "windows")]
         {
+            // Use .status() (synchronous) instead of .output() to ensure
+            // the kill completes before Tauri exits
             let _ = std::process::Command::new("taskkill")
                 .args(["/PID", &pid.to_string(), "/F"])
-                .output();
+                .status();
         }
         #[cfg(not(target_os = "windows"))]
         {
@@ -108,22 +110,24 @@ fn stop_sidecar(app: &tauri::AppHandle) {
             );
         }
     } else {
-        // Fallback: kill by process name (e.g. orphan from a crash)
         log::info!("No PID found — killing sidecar by process name");
-        #[cfg(target_os = "windows")]
-        {
-            // Tauri sidecar binary includes the target triple suffix
-            let _ = std::process::Command::new("taskkill")
-                .args(["/F", "/IM", "fastapi-sidecar-*.exe"])
-                .output();
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            let _ = std::process::Command::new("pkill")
-                .arg("fastapi-sidecar")
-                .output();
-        }
+        kill_by_name();
     }
+}
+
+/// Kill sidecar processes by name (wildcard matches target triple suffix).
+#[cfg(target_os = "windows")]
+fn kill_by_name() {
+    let _ = std::process::Command::new("taskkill")
+        .args(["/F", "/IM", "fastapi-sidecar*"])
+        .status();
+}
+
+#[cfg(not(target_os = "windows"))]
+fn kill_by_name() {
+    let _ = std::process::Command::new("pkill")
+        .arg("fastapi-sidecar")
+        .output();
 }
 
 #[tauri::command]
@@ -214,6 +218,8 @@ pub fn run() {
                         }
                         "quit" => {
                             stop_sidecar(app);
+                            // Give taskkill time to complete before exit
+                            std::thread::sleep(std::time::Duration::from_millis(500));
                             app.exit(0);
                         }
                         _ => {}
