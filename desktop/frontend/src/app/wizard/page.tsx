@@ -6,17 +6,29 @@ import { isTauri, tauriInvoke } from "../../shared/tauri";
 
 /** Open a URL in the system browser (works in Tauri webview). */
 async function openExternal(url: string) {
-    // Use tauri-plugin-opener via IPC (withGlobalTauri: true)
-    const ok = await tauriInvoke("plugin:opener|open_url", { url });
-    if (!ok && !isTauri()) {
+    // With withGlobalTauri: true, window.__TAURI__.opener is available
+    try {
+        await window.__TAURI__?.opener?.openUrl(url);
+        return;
+    } catch {
+        // fallback for non-Tauri
         window.open(url, "_blank");
     }
 }
 
 /** Open a directory picker dialog (Tauri native) or fallback to manual input. */
-function pickDirectory(): string | null {
-    const folder = prompt("Inserisci il percorso della cartella di lavoro:");
-    return folder || null;
+async function pickDirectory(): Promise<string | null> {
+    try {
+        // With withGlobalTauri: true, window.__TAURI__.dialog is available
+        const selected = await window.__TAURI__?.dialog?.open({
+            directory: true,
+            multiple: false,
+            title: "Seleziona cartella di lavoro",
+        });
+        return (selected as string) || null;
+    } catch {
+        return null;
+    }
 }
 
 const steps = [
@@ -101,7 +113,7 @@ export default function WizardPage() {
                                 />
                                 <button
                                     onClick={async () => {
-                                        const folder = pickDirectory();
+                                        const folder = await pickDirectory();
                                         if (folder) setWorkFolder(folder);
                                     }}
                                     className="h-full cursor-pointer rounded-[12px] border border-white/15 bg-[#1b1612] px-6 text-[13px] font-semibold text-white transition hover:bg-[#231c17]"
