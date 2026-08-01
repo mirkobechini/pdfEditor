@@ -5,7 +5,6 @@ import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
 import { getApiBaseUrl } from "../../shared/tauri";
 import PdfViewer from "../../components/PdfViewer";
-import GuestConvertBanner from "../components/GuestConvertBanner";
 import type { PdfDocument } from "../../shared/types";
 
 const API_BASE = getApiBaseUrl();
