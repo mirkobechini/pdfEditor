@@ -92,8 +92,7 @@ export default function WizardPage() {
                                                 const selected = await open({ directory: true, multiple: false, title: "Seleziona cartella di lavoro" });
                                                 if (selected) setWorkFolder(selected as string);
                                             } catch {
-                                                const folder = prompt("Inserisci il percorso della cartella di lavoro:");
-                                                if (folder) setWorkFolder(folder);
+                                                // Dialog non disponibile — l'utente può scrivere il percorso a mano
                                             }
                                         } else {
                                             const folder = prompt("Inserisci il percorso della cartella di lavoro:");
