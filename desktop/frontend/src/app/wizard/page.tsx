@@ -74,7 +74,7 @@ export default function WizardPage() {
                                 />
                                 <span className="text-[14px] leading-relaxed text-[#9d9184]">
                                     Accetto i{" "}
-                                    <button type="button" onClick={() => openExternal("https://pdeditor-frontend.onrender.com/terms")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</button> e la{" "}
+                                    <button type="button" onClick={() => openExternal("https://pdfeditor.mirkobechini.com/terms")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</button> e la{" "}
                                     <button type="button" onClick={() => openExternal("https://www.iubenda.com/privacy-policy/76778813")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">privacy policy</button>
                                 </span>
                             </div>
