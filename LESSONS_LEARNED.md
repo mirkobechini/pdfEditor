@@ -1,7 +1,18 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-07-27
+> **Aggiornato:** 2026-08-01
+
+---
+
+## CORS in produzione Tauri — tauri.localhost vs tauri://localhost
+
+> **Lezione appresa (2026-08-01):**
+
+La webview Tauri in produzione usa `http://tauri.localhost` come origin, NON `https://tauri.localhost` (con 's').
+Mancava in `ALLOWED_ORIGINS`, causando CORS error su tutte le fetch. Il dev mode funzionava perché l'origin era `http://localhost:3000`.
+
+**Regola:** Quando si configura CORS per Tauri, aggiungere SEMPRE tutti e tre: `tauri://localhost`, `http://tauri.localhost`, `https://tauri.localhost`.
 
 ---
 
