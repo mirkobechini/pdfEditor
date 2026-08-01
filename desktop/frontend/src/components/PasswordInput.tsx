@@ -8,14 +8,16 @@ interface PasswordInputProps {
     placeholder: string;
     autoFocus?: boolean;
     required?: boolean;
+    id?: string;
 }
 
-export default function PasswordInput({ value, onChange, placeholder, autoFocus, required }: PasswordInputProps) {
+export default function PasswordInput({ value, onChange, placeholder, autoFocus, required, id }: PasswordInputProps) {
     const [show, setShow] = React.useState(false);
 
     return (
         <div className="relative">
             <input
+                id={id}
                 type={show ? "text" : "password"}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}

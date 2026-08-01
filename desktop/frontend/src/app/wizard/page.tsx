@@ -6,26 +6,29 @@ import { isTauri, tauriInvoke } from "../../shared/tauri";
 
 /** Open a URL in the system browser (works in Tauri webview). */
 async function openExternal(url: string) {
-    // Use tauri-plugin-opener via IPC (withGlobalTauri: true)
-    const ok = await tauriInvoke("plugin:opener|open_url", { url });
-    if (!ok && !isTauri()) {
+    // With withGlobalTauri: true, window.__TAURI__.opener is available
+    try {
+        await window.__TAURI__?.opener?.openUrl(url);
+        return;
+    } catch {
+        // fallback for non-Tauri
         window.open(url, "_blank");
     }
 }
 
 /** Open a directory picker dialog (Tauri native) or fallback to manual input. */
 async function pickDirectory(): Promise<string | null> {
-    if (isTauri()) {
-        // Use Tauri plugin-dialog via IPC (no JS module needed)
-        const selected = await tauriInvoke<string>("plugin:dialog|open", {
+    try {
+        // With withGlobalTauri: true, window.__TAURI__.dialog is available
+        const selected = await window.__TAURI__?.dialog?.open({
             directory: true,
             multiple: false,
             title: "Seleziona cartella di lavoro",
         });
-        return selected || null;
+        return (selected as string) || null;
+    } catch {
+        return null;
     }
-    const folder = prompt("Inserisci il percorso della cartella di lavoro:");
-    return folder || null;
 }
 
 const steps = [
@@ -83,7 +86,7 @@ export default function WizardPage() {
                                 />
                                 <span className="text-[14px] leading-relaxed text-[#9d9184]">
                                     Accetto i{" "}
-                                    <button type="button" onClick={() => openExternal("https://pdeditor-frontend.onrender.com/terms")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</button> e la{" "}
+                                    <button type="button" onClick={() => openExternal("https://pdfeditor.mirkobechini.com/terms")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</button> e la{" "}
                                     <button type="button" onClick={() => openExternal("https://www.iubenda.com/privacy-policy/76778813")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">privacy policy</button>
                                 </span>
                             </div>

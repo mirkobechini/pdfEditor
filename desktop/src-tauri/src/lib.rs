@@ -6,10 +6,11 @@ use tauri::Manager;
 use tauri::tray::{TrayIconBuilder, MouseButton, MouseButtonState, TrayIconEvent};
 use tauri::menu::{Menu, MenuItem};
 use tauri_plugin_shell::ShellExt;
+use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_store::StoreExt;
 
 struct SidecarState {
-    pub child_pid: Mutex<Option<u32>>,
+    pub child: Mutex<Option<CommandChild>>,
 }
 
 /// Spawn the FastAPI sidecar process.
@@ -49,7 +50,7 @@ fn start_sidecar(app: &tauri::App) {
 
     let pid = child.pid();
     log::info!("FastAPI sidecar started (PID: {})", pid);
-    app.state::<SidecarState>().child_pid.lock().unwrap().replace(pid);
+    app.state::<SidecarState>().child.lock().unwrap().replace(child);
 
     tauri::async_runtime::spawn(async move {
         while let Some(event) = rx.recv().await {
@@ -88,41 +89,33 @@ fn cleanup_mei_temp_dirs() {
 
 /// Kill the sidecar process on shutdown.
 fn stop_sidecar(app: &tauri::AppHandle) {
-    let mut pid_opt = None;
-    if let Some(state) = app.try_state::<SidecarState>() {
-        pid_opt = state.child_pid.lock().unwrap().take();
-    }
-    if let Some(pid) = pid_opt {
-        log::info!("Stopping FastAPI sidecar (PID: {})", pid);
-        #[cfg(target_os = "windows")]
-        {
-            let _ = std::process::Command::new("taskkill")
-                .args(["/PID", &pid.to_string(), "/F"])
-                .output();
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            let _ = nix::sys::signal::kill(
-                nix::unistd::Pid::from_raw(pid as i32),
-                nix::sys::signal::SIGTERM,
-            );
-        }
+    let child_opt = app.try_state::<SidecarState>()
+        .and_then(|state| state.child.lock().unwrap().take());
+
+    if let Some(mut child) = child_opt {
+        log::info!("Killing sidecar via CommandChild");
+        let _ = child.write("app_exit\n".as_bytes());
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        let _ = child.kill();
     } else {
-        // Fallback: kill by process name (e.g. orphan from a crash)
-        log::info!("No PID found — killing sidecar by process name");
-        #[cfg(target_os = "windows")]
-        {
-            let _ = std::process::Command::new("taskkill")
-                .args(["/F", "/IM", "fastapi-sidecar.exe"])
-                .output();
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            let _ = std::process::Command::new("pkill")
-                .arg("fastapi-sidecar")
-                .output();
-        }
+        log::info!("No child handle — killing sidecar by process name");
+        kill_by_name();
     }
+    std::thread::sleep(std::time::Duration::from_millis(300));
+}
+
+#[cfg(target_os = "windows")]
+fn kill_by_name() {
+    let _ = std::process::Command::new("taskkill")
+        .args(["/F", "/IM", "fastapi-sidecar*"])
+        .status();
+}
+
+#[cfg(not(target_os = "windows"))]
+fn kill_by_name() {
+    let _ = std::process::Command::new("pkill")
+        .arg("fastapi-sidecar")
+        .output();
 }
 
 #[tauri::command]
@@ -173,7 +166,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .manage(SidecarState {
-            child_pid: Mutex::new(None),
+            child: Mutex::new(None),
         })
         .setup(|app| {
             // Register single-instance plugin: second instance focuses the running one
@@ -212,8 +205,23 @@ pub fn run() {
                             }
                         }
                         "quit" => {
-                            stop_sidecar(app);
-                            app.exit(0);
+                            log::info!("Exiting app — killing sidecar and exiting process");
+                            // Kill sidecar child handle
+                            if let Some(state) = app.try_state::<SidecarState>() {
+                                if let Some(mut child) = state.child.lock().unwrap().take() {
+                                    let _ = child.kill();
+                                }
+                            }
+                            std::thread::sleep(std::time::Duration::from_millis(300));
+                            // Force-kill any remaining fastapi-sidecar processes
+                            #[cfg(target_os = "windows")]
+                            {
+                                let _ = std::process::Command::new("taskkill")
+                                    .args(["/F", "/IM", "fastapi-sidecar*"])
+                                    .status();
+                            }
+                            // Exit the entire process immediately — kills all children
+                            std::process::exit(0);
                         }
                         _ => {}
                     }
@@ -244,7 +252,14 @@ pub fn run() {
                     api.prevent_close();
                 }
                 tauri::WindowEvent::Destroyed => {
-                    stop_sidecar(window.app_handle());
+                    // Cleanup: kill sidecar by name (child handle might already be gone)
+                    log::info!("Window destroyed — killing sidecar by name");
+                    #[cfg(target_os = "windows")]
+                    {
+                        let _ = std::process::Command::new("taskkill")
+                            .args(["/F", "/IM", "fastapi-sidecar*"])
+                            .status();
+                    }
                 }
                 _ => {}
             }

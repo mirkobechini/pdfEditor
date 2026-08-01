@@ -15,6 +15,13 @@ declare global {
       opener?: {
         openUrl: (url: string) => Promise<void>;
       };
+      dialog?: {
+        open: (options: {
+          multiple?: boolean;
+          directory?: boolean;
+          title?: string;
+        }) => Promise<string | string[] | null>;
+      };
     };
   }
 }
