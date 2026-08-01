@@ -14,10 +14,26 @@ struct SidecarState {
 
 /// Spawn the FastAPI sidecar process.
 fn start_sidecar(app: &tauri::App) {
-    // If port 7723 already responds, kill the existing process first.
-    // This ensures we always have a fresh sidecar with a known PID,
-    // and prevents orphan processes after app uninstall.
-    kill_existing_sidecar();
+    // If port 7723 already responds, a sidecar is already running (e.g. from a previous instance).
+    // Do NOT kill it — it belongs to the running instance. The single-instance plugin
+    // will handle bringing the existing window to focus.
+    use std::io::Write;
+    use std::net::TcpStream;
+
+    let already_running = TcpStream::connect_timeout(
+        &"127.0.0.1:7723".parse().unwrap(),
+        std::time::Duration::from_millis(500),
+    )
+    .map(|mut stream| {
+        let _ = write!(stream, "GET /health HTTP/1.0\r\n\r\n");
+        true
+    })
+    .unwrap_or(false);
+
+    if already_running {
+        log::info!("Sidecar già in esecuzione sulla porta 7723 — skip spawn.");
+        return;
+    }
 
     // Clean up orphaned PyInstaller _MEI* temp directories left from crashed sidecars.
     // If the sidecar was killed forcefully (taskkill /F), _MEI* dirs remain corrupted
@@ -48,24 +64,6 @@ fn start_sidecar(app: &tauri::App) {
             }
         }
     });
-}
-
-/// Kill any existing fastapi-sidecar process.
-/// On Windows: taskkill /F /IM fastapi-sidecar.exe
-/// On Unix: pkill fastapi-sidecar
-fn kill_existing_sidecar() {
-    #[cfg(target_os = "windows")]
-    {
-        let _ = std::process::Command::new("taskkill")
-            .args(["/F", "/IM", "fastapi-sidecar.exe"])
-            .output();
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        let _ = std::process::Command::new("pkill")
-            .arg("fastapi-sidecar")
-            .output();
-    }
 }
 
 /// Clean up orphaned PyInstaller _MEI* temp directories.
@@ -108,6 +106,21 @@ fn stop_sidecar(app: &tauri::AppHandle) {
                 nix::unistd::Pid::from_raw(pid as i32),
                 nix::sys::signal::SIGTERM,
             );
+        }
+    } else {
+        // Fallback: kill by process name (e.g. orphan from a crash)
+        log::info!("No PID found — killing sidecar by process name");
+        #[cfg(target_os = "windows")]
+        {
+            let _ = std::process::Command::new("taskkill")
+                .args(["/F", "/IM", "fastapi-sidecar.exe"])
+                .output();
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            let _ = std::process::Command::new("pkill")
+                .arg("fastapi-sidecar")
+                .output();
         }
     }
 }
