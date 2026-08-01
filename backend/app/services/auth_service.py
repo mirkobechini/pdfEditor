@@ -51,10 +51,10 @@ class AuthService:
         """Authenticate a user and return a JWT token."""
         user = self.repo.get_by_email(email)
         if not user:
-            raise ValueError("Invalid email or password")
+            raise ValueError("EMAIL_NOT_FOUND")
 
         if not verify_password(password, user.hashed_password):
-            raise ValueError("Invalid email or password")
+            raise ValueError("WRONG_PASSWORD")
 
         if not user.is_active:
             raise ValueError("Account is inactive")
