@@ -2,6 +2,7 @@
 
 ## 2026-08-01
 
+- ✅ **#600: PR#600 mergiata** — Wizard Sfoglia (window.__TAURI__.dialog), wizard link (window.__TAURI__.opener), sidecar cleanup definitivo con CommandChild.kill() + taskkill + std::process::exit(0)
 - ✅ **#583: Auth cloud per login/register desktop (PR #584)** — Login/register chiamano `https://pdeditor-backend.onrender.com/auth/*` (Neon). Operazioni PDF restano sul sidecar locale. getMe prova prima locale poi cloud. Nuova pagina `/register` per desktop.
 - ✅ **#585: Wizard link in webview (PR #590)** — Sostituiti `<a target=_blank>` con `@tauri-apps/plugin-opener` per aprire browser esterno (non funziona in Tauri webview).
 - ✅ **#586: Wizard Sfoglia dialog (PR #591)** — Sostituito import statico di `@tauri-apps/plugin-dialog` con dynamic import (funziona in static export Next.js).

@@ -71,7 +71,9 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | `.env.desktop` con solo campi del modello | Variabili extra | pydantic_settings v2 con `extra='forbid'`. Rimossi `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `SIDECAR_PORT`, `STORAGE_LOCAL_PATH`. |
 | SECRET_KEY auto-generata | Hardcoded nel .env | Se vuota, config.py genera chiave casuale (safe per localhost). Obbligatoria in cloud. |
 | CORS per Tauri webview | Solo localhost:3000 | Aggiunti origins `tauri://localhost`, `http://tauri.localhost` e `https://tauri.localhost` (PR #572). |
-| `--strip` su PyInstaller | Binario con debug symbols | Riduce dimensione artifact del 20-30% (PR #547). |
+| `withGlobalTauri: true` | Solo npm packages | Abilita `window.__TAURI__` globale senza moduli npm. Permette di usare `window.__TAURI__.opener.openUrl()` e `window.__TAURI__.dialog.open()` in produzione. (PR #600) |
+| `__TAURI_INTERNALS__` per `tauriInvoke` | `window.__TAURI__` | Fallback IPC sempre disponibile anche senza `withGlobalTauri`. Usato per `isTauri()` detection. (PR #600) |
+| Sidecar cleanup: `CommandChild.kill()` + `std::process::exit(0)` | Solo `taskkill` | `taskkill /F /IM` da solo non bastava — Windows riavviava il processo orfano. ORA: 1) child.kill() via handle Tauri, 2) taskkill forzato, 3) std::process::exit(0) per terminare definitivamente. (PR #600) |
 | UPX compression (O1) | Nessuna compressione | UPX installato in CI. Sidecar 60MB → ~20MB (PR #549). |
 | MEI temp dir cleanup | — | Pulizia directory `_MEI*` orfane in `%TEMP%` prima di spawnare (PR #558). |
 
