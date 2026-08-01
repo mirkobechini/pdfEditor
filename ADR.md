@@ -1,8 +1,8 @@
 # Architecture Decision Record
 
 **Progetto:** PdfEditor
-**Data:** 2026-06-25 (ultimo aggiornamento 2026-07-31)
-**Versioni ADR incluse:** v0.1.24 → v0.1.32 (9 release)
+**Data:** 2026-06-25 (ultimo aggiornamento 2026-08-01)
+**Versioni ADR incluse:** v0.1.24 → v0.1.33 (10 release)
 **Autore:** Mirko Bechini
 
 ## Decisione
@@ -13,42 +13,157 @@ Applicazione cross-platform per la modifica e gestione di file PDF, con funziona
 
 Creare un'applicazione PDF editor che funzioni offline come priorità (desktop), con estensione al web e successivamente al mobile. L'utente target è un utente tecnico che necessita di editing PDF avanzato senza dipendere da servizi cloud a pagamento. Il progetto è open source (licenza AGPL compatibile per PyMuPDF).
 
-## Piattaforme scelte
+---
 
-- **Frontend:** React 19 + TailwindCSS v4 — UI condivisa tra web, desktop e mobile
-- **Framework web:** Next.js 16 (app router) con `output: 'export'` per compatibilità Tauri
-- **Desktop:** Tauri v2 (Fase 1c) — sidecar con FastAPI bundle (PyInstaller)
-- **Desktop cartella:** `desktop/` — codice dedicato Tauri (Rust, sidecar, icons, updater)
-- **Mobile:** React Native / Expo bare workflow (futuro, Fase 4)
-- **Backend:** FastAPI (Python) — Auth, elaborazione PDF, cloud sync
-- **PDF processing:** PyMuPDF (fitz) — modifica testo, merge/split, metadati
-- **PDF viewer lato client:** PDF.js (Mozilla)
-- **Database offline:** SQLite
-- **Database cloud:** PostgreSQL (Neon)
-- **File storage cloud:** Cloudflare R2
-- **ORM:** SQLAlchemy 2.0
-- **Auth:** JWT (bcrypt) + httpOnly cookie + SSO Google (google-auth-library)
-- **i18n:** next-intl (dichiarato, ma attualmente implementato con provider custom)
-- **Migration:** Alembic
-- **Email:** SendGrid v3 Mail Send API (HTTP) — `requests` diretto, no libreria SendGrid SDK
-- **Test backend:** pytest
-- **Test frontend:** vitest + jsdom + @testing-library/react
+## 1. Backend (FastAPI) — comune a web, desktop e mobile
 
-## Componenti principali
+| Scelta | Alternativa | Motivo |
+|--------|-------------|--------|
+| FastAPI (Python) | Node.js, Go | PyMuPDF per elaborazione PDF nativa. Team Python. |
+| PyMuPDF (fitz) | pdf-lib, pikepdf | Supporto nativo modifica testo, metadati, tagging accessibilità. |
+| UUID come PK | autoincrement integer | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti. |
+| SQLAlchemy 2.0 | Django ORM, raw SQL | Async support, migration via Alembic, già noto al team. |
+| Alembic per migration | — | Standard de facto per SQLAlchemy. |
+| JWT (bcrypt) + httpOnly cookie | Session-based | Stateless, compatibile con mobile e desktop offline. |
+| google-auth-library per SSO Google | PyJWT + requests manuali | google-auth ufficiale: cache automatica chiavi, validazione Google, key rotation gestita. PR #388. |
+| SendGrid API HTTP (requests diretto) | SMTP via libreria SendGrid | Render free tier blocca porta 587 in uscita. Nessuna dipendenza extra. |
+| Standard error codes API (codice + dettaglio) | Solo `str(e)` plain | Ogni HTTPException usa `error_response(code, detail)`. Frontend mappa in chiave i18n tramite `mapError()`. UX produzione, supporto IT/EN. |
+| Neon PostgreSQL (serverless) | Render PostgreSQL free | Render ha discontinuato il free tier PostgreSQL. Neon offre free tier permanente (0.5GB storage, 100h compute/mese). |
+| Cloudflare R2 per storage PDF | Disco locale Render | Già implementato in `s3_storage.py`. Gratis 10GB storage, zero egress cost. |
+| Autenticazione obbligatoria per ogni operazione PDF | Endpoint /pdfs/* pubblici | Ogni PDF è associato a un utente (user_id). Anche le operazioni base richiedono login. |
+| Tagged PDF in output | PDF non strutturati | Accessibilità screen reader (obbligo AGPL indiretto). |
+| API backend per merge/split/riordino | pdf-lib lato client | pdf-lib sostituito da API backend per affidabilità — refactoring PR #72. |
+| Provider i18n custom → next-intl client-side | next-intl con middleware | next-intl già installato ma inutilizzato. Rifattorizzato in PR #94: NextIntlClientProvider client-side (compatibile con output: 'export'). |
+| pytest per test backend | unittest | Standard di fatto per FastAPI. Coverage 94%. |
 
-- **Visualizzazione PDF** — Viewer PDF.js integrato in React, con zoom, navigazione pagine e anteprime
-- **Sidebar** — Elenco PDF caricati con upload, download, elimina e rinomina
-- **Toolbar** — Barra strumenti superiore con navigazione pagine, zoom, azioni (annotazione, modifica, conversione)
-- **Backend API (FastAPI)** — Endpoint REST per upload/download, merge/split, riordino, rimozione pagine, modifica testo, metadati, conversione formato, autenticazione JWT + SSO Google
-- **Autenticazione** — JWT email/password + SSO Google. Modelli User con license_tier
-- **Licensing** — Modelli LicenseFeature per blocco feature per tier (free/premium/lifetime/admin)
-- **Bug reporting** — Modello BugReport API per segnalazioni dall'interfaccia
-- **Conversione formati** — PDF ↔ DOCX/XLSX/PNG/JPG/TXT/SVG tramite PyMuPDF + librerie ausiliarie
-- **Dashboard admin** — Gestione utenti, licenze e bug report
+---
 
-## Decisioni architetturali
+## 2. Webapp Frontend (Next.js)
 
-| Scelta                                                          | Alternativa implicita       | Motivo                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Scelta | Alternativa | Motivo |
+|--------|-------------|--------|
+| React 19 + TailwindCSS v4 | Vue, Svelte, Angular | UI condivisa tra web, desktop e mobile. Ecosistema React maturo. |
+| Next.js 16 (app router) con `output: 'export'` | SSR/API Routes | Compatibilità Tauri (static export). API tutte su FastAPI. |
+| PDF.js (Mozilla) per viewer | pdf-lib, PSPDFKit | Viewer PDF lato client open source, standard de facto. |
+| vitest + jsdom + @testing-library/react | Jest, Cypress | Test frontend. Coverage ~75%. |
+| Dark mode con persistenza | localStorage + system preference fallback | — |
+
+---
+
+## 3. Desktop (Tauri v2)
+
+### Architettura generale
+
+| Scelta | Alternativa | Motivo |
+|--------|-------------|--------|
+| Tauri v2 | Electron | Binario più piccolo (~5MB vs ~150MB), Rust per performance, security. |
+| Frontend desktop separato (`desktop/frontend/`) | Overlay su frontend unico | Sostituisce il sistema di overlay. Zero `isTauri()` conditionali, landing page assente su desktop, manutenzione indipendente. |
+| Cartella `desktop/` dedicata | Nella root | Separazione netta: `backend/`, `frontend/`, `desktop/`. |
+| Rust target MSVC (Windows) | MinGW/GNU | Tauri richiede MSVC toolchain + Microsoft C++ Build Tools. |
+
+### Sidecar (FastAPI locale)
+
+| Scelta | Alternativa | Motivo |
+|--------|-------------|--------|
+| FastAPI sidecar con PyInstaller | Backend remoto sempre | Funzionamento offline desktop (Fase 1c). |
+| PyMuPDF con PyInstaller | pdf-lib JS, embedded Python | PyInstaller con `--hidden-import=fitz`. Fallback: embedded Python. |
+| Porta 7723 | 8000 (default) | Hardcoded in Rust, configurabile via SIDECAR_PORT env. |
+| `.env.desktop` con solo campi del modello | Variabili extra | pydantic_settings v2 con `extra='forbid'`. Rimossi `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `SIDECAR_PORT`, `STORAGE_LOCAL_PATH`. |
+| SECRET_KEY auto-generata | Hardcoded nel .env | Se vuota, config.py genera chiave casuale (safe per localhost). Obbligatoria in cloud. |
+| CORS per Tauri webview | Solo localhost:3000 | Aggiunti origins `tauri://localhost` e `https://tauri.localhost`. |
+| `--strip` su PyInstaller | Binario con debug symbols | Riduce dimensione artifact del 20-30% (PR #547). |
+| UPX compression (O1) | Nessuna compressione | UPX installato in CI. Sidecar 60MB → ~20MB (PR #549). |
+| MEI temp dir cleanup | — | Pulizia directory `_MEI*` orfane in `%TEMP%` prima di spawnare (PR #558). |
+
+### Auth e dati
+
+| Scelta | Alternativa | Motivo |
+|--------|-------------|--------|
+| Auth offline via Tauri store plugin | Solo online | JWT cached in auth.json. App funzionante offline. |
+| Guest access | Solo registrazione | Utenti guest temporanei (is_guest flag). Convertibili in account completo. |
+| Cloud sync (Fase 3) integrata | Sync posticipato | UUID PK già implementati. Endpoint sync backend + UI sync frontend. |
+| Database offline: SQLite | PostgreSQL locale | Zero configurazione, file-based, perfetto per uso offline. |
+
+### UI e UX
+
+| Scelta | Alternativa | Motivo |
+|--------|-------------|--------|
+| Dialog nativo con `tauri-plugin-dialog` | `prompt()` browser | Sostituito `prompt()` nel wizard con `open({ directory: true })`. Fallback a prompt preservato per browser. |
+| Startup screen con 3 step | Redirect diretto al login | Messaggi di errore specifici (tempo scaduto, connessione rifiutata). Pulsante Riprova. |
+| System tray su close | Uscita completa | Click X nasconde in tray. Click icona riapre. Menu "Mostra" / "Esci". Sidecar NON killato finché non si clicca "Esci". Richiede `features = ["tray-icon"]`. |
+| Single-instance plugin | Nessuno | Impedisce seconda istanza (e tray duplicati). Seconda istanza porta in primo piano la finestra esistente (PR #558). |
+| Auto-update via GitHub Releases | Download manuale | Tauri updater built-in. |
+
+### Build e CI/CD
+
+| Scelta | Alternativa | Motivo |
+|--------|-------------|--------|
+| `@tauri-apps/cli` via npm (devDependency) | `cargo install tauri-cli` | ~5-12 min risparmiati. Funziona su ARM macOS. (PR #531) |
+| `npm --prefix ../frontend exec tauri build` | `npx tauri build` | npx non trova il binario in `desktop/frontend/node_modules/` da `desktop/src-tauri/`. (PR #539) |
+| Preflight 8/8 checks | Solo build CI | 8 check in ~3 min invece di 25 min di CI. (PR #535, #537) |
+| Bump versione automatico centralizzato | Bump manuale | `scripts/bump-version.js` aggiorna tutti i 9 file. (PR #530) |
+| Frontend build parallelo (O3) | Frontend buildato 3 volte | Job separato `build-frontend` su ubuntu-latest. (PR #553) |
+| PyInstaller cache pip (O2) | PyInstaller reinstallato | `pip install pyinstaller` spostato nel backend deps step. (PR #551) |
+| Rust strip profile (O4) | Binario con debug symbols | `strip = true` in `[profile.release]`. (PR #557) |
+| NSIS installer hooks | — | Macro `NSIS_HOOK_PREINSTALL`/`PREUNINSTALL` killano processi prima di install/disinstall. |
+| Build locale obbligatoria prima del tag | Solo CI GitHub | AGENT_FLOW: build locale → test → solo se OK → tag GitHub. |
+
+---
+
+## 4. Mobile (React Native) — futuro, Fase 4
+
+| Scelta | Alternativa | Motivo |
+|--------|-------------|--------|
+| React Native / Expo bare workflow | Flutter, Kotlin Multiplatform | Logica React condivisa con web/desktop. |
+| PDF.js via WebView | PDF nativo | Riutilizzo viewer esistente. |
+| SSO Google login | — | Già implementato su web/desktop. |
+| Phone scanner → PDF | — | Feature pianificata. Vedi `.specs/plans/feature-phone-scanner.md`. |
+
+---
+
+## Decisioni deprecate
+
+| Scelta deprecata | Sostituita da | Data |
+|------------------|---------------|------|
+| Desktop: stessa UI del web (overlay) | Frontend desktop separato | 2026-07-27 |
+| Desktop: frontend-overlay per componenti nativi | Frontend desktop separato | 2026-07-28 |
+| Desktop: startup screen con 3 step di init (redirect immediato) | Startup screen con 3 step (con errori) | 2026-07-29 → 2026-07-30 |
+
+---
+
+## Vincoli
+
+- Licenza AGPL PyMuPDF — compatibile con open source. Se futuro closed source, necessaria licenza commerciale o alternativa
+- Next.js in static export (no API routes, no SSR) per compatibilità Tauri
+- UUID come PK in ogni tabella (sync bidirezionale futuro)
+- `updated_at` timestamp su ogni record
+- Ogni funzione atomica richiede test pytest/vitest prima di essere considerata completa
+- Le feature partono solo dopo approvazione esplicita dell'utente (roadmap a fasi)
+- Max 10 snapshot undo/redo per sessione (configurabile via MAX_SNAPSHOTS in .env)
+- Dark mode con persistenza (localStorage + system preference fallback)
+- `ALLOWED_EXTENSIONS` in `.env` come stringa (non lista) — parsato via `allowed_extensions_list` property
+
+## Cosa NON è in scope (per ora)
+
+- Mobile React Native (Fase 4 — futuro)
+- Integrazione pagamenti Stripe (pianificata — vedi `.specs/plans/feature-stripe-mcp-subscriptions.md`)
+- SSO Apple / Samsung (previsto come bonus futuro)
+- react-native-web (valutabile, non deciso)
+- **Annotazioni PDF** (drawing, highlight, commenti) — non implementate
+
+## Roadmap
+
+| Fase | Descrizione | Stato |
+|------|-------------|:-----:|
+| **Fase 1c — Desktop app (Tauri v2)** | Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI. SQLite locale. Installer per Windows/macOS/Linux. | ✅ Completata (v0.1.20) |
+| **Fase 2 — Web app su cloud** | Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export. | ✅ Completata (2026-07-10) |
+| **Fase 3 — Cloud sync** | Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti. | ✅ Completata |
+| **Fase 4 — Mobile app (React Native)** | Setup React Native (Expo bare workflow). Logica React condivisa. UI nativa. Store deployment. | ⬜ Futuro |
+
+> 📋 **Storico completo dei fix:** Vedi [`CHANGELOG.md`](./CHANGELOG.md).
+> 🐞 **Bug aperti e debito tecnico:** Vedi [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md).
+> 📖 **Lezioni apprese:** Vedi [`LESSONS_LEARNED.md`](./LESSONS_LEARNED.md).
+> 📝 **Feature pianificate:** Vedi `.specs/plans/`.
 | --------------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- | -------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Next.js con `output: 'export'`                                  | SSR/API Routes              | Compatibilità Tauri (static export), API tutte su FastAPI                                                                                                                                                                                                                                                                                                                                              |
 | UUID come PK                                                    | autoincrement integer       | Sync bidirezionale SQLite ↔ PostgreSQL senza conflitti                                                                                                                                                                                                                                                                                                                                                 |
