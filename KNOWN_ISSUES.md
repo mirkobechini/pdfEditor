@@ -7,15 +7,8 @@
 
 ## 🔴 Bug aperti
 
-### K1 — Devtools abilitati in produzione
-
-**File:** `desktop/src-tauri/src/lib.rs` e `desktop/src-tauri/Cargo.toml`  
-**Descrizione:** Abbiamo abilitato `features = ["tray-icon", "devtools"]` e `window.open_devtools()` in produzione per debug issue #569. Da rimuovere PRIMA di una release pubblica.
-
-### K2 — Startup page non funziona in produzione (CORS fixato)
-
-**File:** `desktop/frontend/src/app/startup/page.tsx`  
-**Descrizione:** Il CORS error è stato fixato (#571) ma non abbiamo ancora verificato che la startup page funzioni in produzione dopo rebuild. In attesa di test con nuova build.
+> ⚠️ **Nessun bug aperto al momento.**
+> Tutti i bug noti sono stati risolti.
 
 ---
 
