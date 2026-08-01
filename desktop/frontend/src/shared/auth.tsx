@@ -135,19 +135,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const googleLogin = useCallback(async (idToken: string) => {
+  const googleLogin = useCallback(async (token: string) => {
     _pendingAuthRef.current = true;
     setLoading(true);
     try {
-      const res = await cloudApi.googleLogin(idToken);
-      api.setToken(res.access_token);
-      cloudApi.setToken(res.access_token);
-      try {
-        const u = await api.getMe();
-        setUser(u);
-      } catch {
-        const u = await cloudApi.getMe();
-        setUser(u);
+      // Desktop redirect flow: token is already a JWT from the sidecar
+      // Web flow: token is a Google id_token, exchange it via cloud API
+      if (token.startsWith("eyJ")) {
+        // Already a JWT — set it directly
+        api.setToken(token);
+        cloudApi.setToken(token);
+        try {
+          const u = await api.getMe();
+          setUser(u);
+        } catch {
+          const u = await cloudApi.getMe();
+          setUser(u);
+        }
+      } else {
+        // Google id_token — exchange via cloud API
+        const res = await cloudApi.googleLogin(token);
+        api.setToken(res.access_token);
+        cloudApi.setToken(res.access_token);
+        try {
+          const u = await api.getMe();
+          setUser(u);
+        } catch {
+          const u = await cloudApi.getMe();
+          setUser(u);
+        }
       }
     } finally {
       setLoading(false);

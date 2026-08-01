@@ -14,16 +14,7 @@ async function openExternal(url: string) {
 }
 
 /** Open a directory picker dialog (Tauri native) or fallback to manual input. */
-async function pickDirectory(): Promise<string | null> {
-    if (isTauri()) {
-        // Use Tauri plugin-dialog via IPC (no JS module needed)
-        const selected = await tauriInvoke<string>("plugin:dialog|open", {
-            directory: true,
-            multiple: false,
-            title: "Seleziona cartella di lavoro",
-        });
-        return selected || null;
-    }
+function pickDirectory(): string | null {
     const folder = prompt("Inserisci il percorso della cartella di lavoro:");
     return folder || null;
 }
@@ -110,7 +101,7 @@ export default function WizardPage() {
                                 />
                                 <button
                                     onClick={async () => {
-                                        const folder = await pickDirectory();
+                                        const folder = pickDirectory();
                                         if (folder) setWorkFolder(folder);
                                     }}
                                     className="h-full cursor-pointer rounded-[12px] border border-white/15 bg-[#1b1612] px-6 text-[13px] font-semibold text-white transition hover:bg-[#231c17]"
