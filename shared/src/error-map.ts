@@ -8,6 +8,8 @@
 
 // Backend error codes (must match backend/app/core/errors.py)
 export const ErrorCode = {
+  EMAIL_NOT_FOUND: "EMAIL_NOT_FOUND",
+  WRONG_PASSWORD: "WRONG_PASSWORD",
   INVALID_CREDENTIALS: "INVALID_CREDENTIALS",
   RATE_LIMIT: "RATE_LIMIT",
   NOT_AUTHENTICATED: "NOT_AUTHENTICATED",
@@ -65,6 +67,8 @@ export function mapError(err: unknown): string {
   if (message === "RATE_LIMIT") return "common.rateLimitExceeded";
   if (message.includes("Email already registered"))
     return "auth.emailAlreadyRegistered";
+  if (message.includes("EMAIL_NOT_FOUND")) return "auth.emailNotFound";
+  if (message.includes("WRONG_PASSWORD")) return "auth.wrongPassword";
   if (message.includes("Invalid email or password"))
     return "auth.invalidCredentials";
   if (message.includes("Not authenticated")) return "auth.notAuthenticated";
@@ -97,6 +101,8 @@ export function mapError(err: unknown): string {
 
 function codeToI18nKey(code: string): string {
   const map: Record<string, string> = {
+    EMAIL_NOT_FOUND: "auth.emailNotFound",
+    WRONG_PASSWORD: "auth.wrongPassword",
     INVALID_CREDENTIALS: "auth.invalidCredentials",
     RATE_LIMIT: "common.rateLimitExceeded",
     NOT_AUTHENTICATED: "auth.notAuthenticated",

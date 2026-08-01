@@ -13,6 +13,8 @@ class ErrorCode:
     Each code maps to a stable i18n key on the frontend.
     """
     INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
+    EMAIL_NOT_FOUND = "EMAIL_NOT_FOUND"
+    WRONG_PASSWORD = "WRONG_PASSWORD"
     RATE_LIMIT = "RATE_LIMIT"
     NOT_AUTHENTICATED = "NOT_AUTHENTICATED"
     FORBIDDEN = "FORBIDDEN"

@@ -121,6 +121,11 @@ def login(
     try:
         token = service.login(email=req.email, password=req.password)
     except ValueError as e:
+        err_msg = str(e)
+        if err_msg == "EMAIL_NOT_FOUND":
+            raise error_response(ErrorCode.EMAIL_NOT_FOUND, "Email not registered", status.HTTP_401_UNAUTHORIZED)
+        if err_msg == "WRONG_PASSWORD":
+            raise error_response(ErrorCode.WRONG_PASSWORD, "Wrong password", status.HTTP_401_UNAUTHORIZED)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),

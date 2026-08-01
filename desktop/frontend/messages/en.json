@@ -14,6 +14,8 @@
     "workspace": "Access your workspace",
     "freeTier": "free tier",
     "invalidCredentials": "Invalid email or password",
+    "emailNotFound": "No account found with this email",
+    "wrongPassword": "Wrong password. Try again or reset it",
     "emailAlreadyRegistered": "This email is already registered",
     "notAuthenticated": "Please sign in to continue",
     "passwordTooShort": "Password must be at least 8 characters",
