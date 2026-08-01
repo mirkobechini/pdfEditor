@@ -112,8 +112,9 @@ fn stop_sidecar(app: &tauri::AppHandle) {
         log::info!("No PID found — killing sidecar by process name");
         #[cfg(target_os = "windows")]
         {
+            // Tauri sidecar binary includes the target triple suffix
             let _ = std::process::Command::new("taskkill")
-                .args(["/F", "/IM", "fastapi-sidecar.exe"])
+                .args(["/F", "/IM", "fastapi-sidecar-*.exe"])
                 .output();
         }
         #[cfg(not(target_os = "windows"))]
