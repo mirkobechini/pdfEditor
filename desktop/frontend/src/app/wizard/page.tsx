@@ -2,34 +2,30 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { isTauri } from "../../shared/tauri";
+import { isTauri, tauriInvoke } from "../../shared/tauri";
 
 /** Open a URL in the system browser (works in Tauri webview). */
 async function openExternal(url: string) {
-    if (isTauri()) {
-        try {
-            const { openUrl } = await import("@tauri-apps/plugin-opener");
-            await openUrl(url);
-            return;
-        } catch {
-            // fallback
-        }
+    // Use Tauri plugin-opener via IPC (no JS module needed)
+    const ok = await tauriInvoke("plugin:opener|open_url", { url });
+    if (!ok && !isTauri()) {
+        window.open(url, "_blank");
     }
-    window.open(url, "_blank");
 }
 
 /** Open a directory picker dialog (Tauri native) or fallback to manual input. */
 async function pickDirectory(): Promise<string | null> {
     if (isTauri()) {
-        try {
-            const { open } = await import("@tauri-apps/plugin-dialog");
-            const selected = await open({ directory: true, multiple: false, title: "Seleziona cartella di lavoro" });
-            return selected as string | null;
-        } catch {
-            return null;
-        }
+        // Use Tauri plugin-dialog via IPC (no JS module needed)
+        const selected = await tauriInvoke<string>("plugin:dialog|open", {
+            directory: true,
+            multiple: false,
+            title: "Seleziona cartella di lavoro",
+        });
+        return selected || null;
     }
-    return prompt("Inserisci il percorso della cartella di lavoro:");
+    const folder = prompt("Inserisci il percorso della cartella di lavoro:");
+    return folder || null;
 }
 
 const steps = [
@@ -78,7 +74,7 @@ export default function WizardPage() {
                             Funziona offline e si sincronizza quando torni online.
                         </p>
                         <div className="mt-9 max-w-[700px] rounded-2xl border border-white/10 bg-[#1b1612] p-6">
-                            <label className="flex cursor-pointer items-start gap-3">
+                            <div className="flex items-start gap-3">
                                 <input
                                     type="checkbox"
                                     checked={acceptedTerms}
@@ -90,7 +86,7 @@ export default function WizardPage() {
                                     <button type="button" onClick={() => openExternal("https://github.com/mirkobechini/pdfEditor/blob/main/frontend/src/app/terms/page.tsx")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</button> e la{" "}
                                     <button type="button" onClick={() => openExternal("https://www.iubenda.com/privacy-policy/76778813")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">privacy policy</button>
                                 </span>
-                            </label>
+                            </div>
                         </div>
                     </>
                 );
