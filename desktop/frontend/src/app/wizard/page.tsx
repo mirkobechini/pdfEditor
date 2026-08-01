@@ -2,8 +2,35 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { open } from "@tauri-apps/plugin-dialog";
 import { isTauri } from "../../shared/tauri";
+
+/** Open a URL in the system browser (works in Tauri webview). */
+async function openExternal(url: string) {
+    if (isTauri()) {
+        try {
+            const { openUrl } = await import("@tauri-apps/plugin-opener");
+            await openUrl(url);
+            return;
+        } catch {
+            // fallback
+        }
+    }
+    window.open(url, "_blank");
+}
+
+/** Open a directory picker dialog (Tauri native) or fallback to manual input. */
+async function pickDirectory(): Promise<string | null> {
+    if (isTauri()) {
+        try {
+            const { open } = await import("@tauri-apps/plugin-dialog");
+            const selected = await open({ directory: true, multiple: false, title: "Seleziona cartella di lavoro" });
+            return selected as string | null;
+        } catch {
+            return null;
+        }
+    }
+    return prompt("Inserisci il percorso della cartella di lavoro:");
+}
 
 const steps = [
     { id: "01", title: "Benvenuto" },
@@ -60,8 +87,8 @@ export default function WizardPage() {
                                 />
                                 <span className="text-[14px] leading-relaxed text-[#9d9184]">
                                     Accetto i{" "}
-                                    <a href="https://github.com/mirkobechini/pdfEditor/blob/main/frontend/src/app/terms/page.tsx" target="_blank" className="text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</a> e la{" "}
-                                    <a href="https://www.iubenda.com/privacy-policy/76778813" target="_blank" className="text-[#f7871f] underline hover:text-[#ff9b37]">privacy policy</a>
+                                    <button type="button" onClick={() => openExternal("https://github.com/mirkobechini/pdfEditor/blob/main/frontend/src/app/terms/page.tsx")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</button> e la{" "}
+                                    <button type="button" onClick={() => openExternal("https://www.iubenda.com/privacy-policy/76778813")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">privacy policy</button>
                                 </span>
                             </label>
                         </div>
@@ -87,17 +114,8 @@ export default function WizardPage() {
                                 />
                                 <button
                                     onClick={async () => {
-                                        if (isTauri()) {
-                                            try {
-                                                const selected = await open({ directory: true, multiple: false, title: "Seleziona cartella di lavoro" });
-                                                if (selected) setWorkFolder(selected as string);
-                                            } catch {
-                                                // Dialog non disponibile — l'utente può scrivere il percorso a mano
-                                            }
-                                        } else {
-                                            const folder = prompt("Inserisci il percorso della cartella di lavoro:");
-                                            if (folder) setWorkFolder(folder);
-                                        }
+                                        const folder = await pickDirectory();
+                                        if (folder) setWorkFolder(folder);
                                     }}
                                     className="h-full cursor-pointer rounded-[12px] border border-white/15 bg-[#1b1612] px-6 text-[13px] font-semibold text-white transition hover:bg-[#231c17]"
                                 >
