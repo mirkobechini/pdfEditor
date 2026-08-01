@@ -32,7 +32,7 @@ class Settings(BaseSettings):
         return v
 
     # CORS origins (production should restrict this)
-    ALLOWED_ORIGINS: str = "http://localhost:3000,tauri://localhost,https://tauri.localhost"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,tauri://localhost,http://tauri.localhost,https://tauri.localhost"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
