@@ -60,8 +60,8 @@ export default function WizardPage() {
                                 />
                                 <span className="text-[14px] leading-relaxed text-[#9d9184]">
                                     Accetto i{" "}
-                                    <span className="text-[#f7871f] underline">termini di licenza</span> e la{" "}
-                                    <span className="text-[#f7871f] underline">privacy policy</span>
+                                    <a href="https://github.com/mirkobechini/pdfEditor/blob/main/frontend/src/app/terms/page.tsx" target="_blank" className="text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</a> e la{" "}
+                                    <a href="https://www.iubenda.com/privacy-policy/76778813" target="_blank" className="text-[#f7871f] underline hover:text-[#ff9b37]">privacy policy</a>
                                 </span>
                             </label>
                         </div>
