@@ -2,6 +2,11 @@
 
 ## 2026-08-01
 
+- ✅ **Fix wizard link privacy/termini cliccabili (PR #578, fix #577)** — I testi "termini di licenza" e "privacy policy" nella prima schermata del wizard erano `<span>` non cliccabili. Sostituiti con `<a href target=_blank>` che aprono nel browser esterno.
+- ✅ **Fix guest login 403 CSRF (PR #579, fix #574)** — `/auth/guest` e `/auth/guest/convert` non erano in `CSRF_EXEMPT_PATHS`. Aggiunti insieme a test con CSRF abilitato.
+- ✅ **Fix wizard Sfoglia senza prompt() (PR #580, fix #573)** — Rimosso fallback a `prompt()` nel pulsante Sfoglia (non funziona in webview Tauri). L'utente scrive il percorso a mano se il dialog nativo fallisce.
+- ✅ **Fix sidecar cleanup su quit (PR #581, fix #575)** — `start_sidecar` ora kill sempre il processo fastapi-sidecar esistente prima di spawnarne uno nuovo, garantendo PID sempre noto a `stop_sidecar`.
+- ✅ **Icone personalizzate app/tray (PR #582, fix #576)** — Generata icona matching la startup page (quadrato arancione + documento bianco) per tutte le dimensioni (32x32, 128x128, ico, icns, android, iOS).
 - ✅ **Fix startup page in produzione — CORS error (PR #572, fix #571)** — La webview Tauri in produzione usa origin `http://tauri.localhost` (senza 's'), ma `ALLOWED_ORIGINS` autorizzava solo `https://tauri.localhost`. Aggiunto `http://tauri.localhost` in `backend/app/core/config.py` e `desktop/.env.desktop`.
 - ✅ **#569: Devtools abilitati per debug startup page (PR #570)** — Aggiunto feature `devtools` e `window.open_devtools()` in lib.rs per diagnosi errori console in produzione.
 
