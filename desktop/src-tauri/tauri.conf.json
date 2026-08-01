@@ -12,6 +12,7 @@
     "frontendDist": "../frontend/out"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "PdfEditor",
@@ -38,9 +39,7 @@
       "icons/icon.ico",
       "icons/icon.png"
     ],
-    "externalBin": [
-      "binaries/fastapi-sidecar"
-    ],
+    "externalBin": ["binaries/fastapi-sidecar"],
     "windows": {
       "nsis": {
         "installMode": "currentUser",

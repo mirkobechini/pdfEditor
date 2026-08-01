@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { isTauri, tauriInvoke } from "../../shared/tauri";
 
 /** Open a URL in the system browser (works in Tauri webview). */
-function openExternal(url: string) {
-    // In Tauri v2, window.open with _blank opens in the system browser
-    // thanks to tauri-plugin-opener being registered.
-    window.open(url, "_blank");
+async function openExternal(url: string) {
+    // Use tauri-plugin-opener via IPC (withGlobalTauri: true)
+    const ok = await tauriInvoke("plugin:opener|open_url", { url });
+    if (!ok && !isTauri()) {
+        window.open(url, "_blank");
+    }
 }
 
 /** Open a directory picker dialog (Tauri native) or fallback to manual input. */
@@ -81,7 +83,7 @@ export default function WizardPage() {
                                 />
                                 <span className="text-[14px] leading-relaxed text-[#9d9184]">
                                     Accetto i{" "}
-                                    <button type="button" onClick={() => openExternal("https://github.com/mirkobechini/pdfEditor/blob/main/frontend/src/app/terms/page.tsx")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</button> e la{" "}
+                                    <button type="button" onClick={() => openExternal("https://pdeditor-frontend.onrender.com/terms")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</button> e la{" "}
                                     <button type="button" onClick={() => openExternal("https://www.iubenda.com/privacy-policy/76778813")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">privacy policy</button>
                                 </span>
                             </div>
