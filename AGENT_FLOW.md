@@ -29,6 +29,9 @@ Prima di creare/modificare/cancellare QUALSIASI file, l'agente DEVE verificare m
 5. **Contesto**: ho letto il file che voglio modificare? So cosa contiene?
 6. **Commit atomic**: ogni file modificato è un commit separato (salvo eccezioni approvate).
 7. **Build**: il codice compila? (eseguire `next build` o equivalente)
+   > ⚠️ **MAI buildare (Tauri, sidecar, frontend) prima di aver committato.**
+   > L'installer/build deve SEMPRE riflettere il codice committato, non modifiche non committate.
+   > Committa → poi builda. Mai l'inverso.
 8. **Documentazione**: CHANGELOG e ADR aggiornati dopo ogni completamento?
 9. **PR**: dopo il merge su dev, ho creato PR da branch a dev?
 
