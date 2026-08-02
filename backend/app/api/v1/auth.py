@@ -107,7 +107,7 @@ def register(
         status_code=status.HTTP_201_CREATED,
     )
     _set_token_cookie(response, token)
-    set_csrf_cookie(response, csrf_token)
+    set_csrf_cookie(response, csrf_token, request=request)
     return response
 
 
@@ -137,7 +137,7 @@ def login(
         content=TokenResponse(access_token=token, csrf_token=csrf_token).model_dump(mode="json"),
     )
     _set_token_cookie(response, token)
-    set_csrf_cookie(response, csrf_token)
+    set_csrf_cookie(response, csrf_token, request=request)
     return response
 
 
@@ -159,7 +159,7 @@ def guest_login(
         status_code=status.HTTP_201_CREATED,
     )
     _set_token_cookie(response, token)
-    set_csrf_cookie(response, csrf_token)
+    set_csrf_cookie(response, csrf_token, request=request)
     return response
 
 
@@ -201,7 +201,7 @@ def convert_guest(
         content=TokenResponse(access_token=new_token, csrf_token=csrf_token).model_dump(mode="json"),
     )
     _set_token_cookie(response, new_token)
-    set_csrf_cookie(response, csrf_token)
+    set_csrf_cookie(response, csrf_token, request=request)
     return response
 
 
@@ -283,7 +283,7 @@ def google_login(
         content=TokenResponse(access_token=token, csrf_token=csrf_token).model_dump(mode="json"),
     )
     _set_token_cookie(response, token)
-    set_csrf_cookie(response, csrf_token)
+    set_csrf_cookie(response, csrf_token, request=request)
     return response
 
 
@@ -513,7 +513,7 @@ def get_csrf_token(
 
     csrf_token = generate_csrf_token()
     response = JSONResponse(content={"csrf_token": csrf_token})
-    set_csrf_cookie(response, csrf_token)
+    set_csrf_cookie(response, csrf_token, request=request)
     return response
 
 
