@@ -1,11 +1,16 @@
 {
   "auth": {
     "loginTitle": "Sign in",
+    "registerTitle": "Create Account",
+    "fullName": "Full Name",
+    "registerFailed": "Registration failed",
     "email": "EMAIL",
     "password": "PASSWORD",
     "loginButton": "Sign in",
-    "noAccount": "Don't have an account?",
+    "confirmPassword": "Confirm Password",
+    "registerButton": "Create Account",
     "createAccount": "Register",
+    "noAccount": "Don't have an account?",
     "or": "or",
     "continueWithGoogle": "Continue with Google",
     "forgotPassword": "Forgot password?",

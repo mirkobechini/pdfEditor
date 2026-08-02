@@ -4,10 +4,10 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../shared/auth";
 import { mapError } from "../shared/error-map";
-import { isTauri, getApiBaseUrl } from "../shared/tauri";
+import { isTauri, getApiBaseUrl, getCloudApiBaseUrl } from "../shared/tauri";
 
 const SIDECAR_BASE = getApiBaseUrl();
-const CLOUD_BASE = "https://pdeditor-backend.onrender.com";
+const CLOUD_BASE = getCloudApiBaseUrl();
 
 interface GoogleLoginButtonProps {
     resetKey?: number;
