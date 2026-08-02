@@ -126,6 +126,14 @@ L'audit manuale del 2026-07-15 ha trovato 21 bug + 10 miglioramenti, tutti fixat
 
 **Regola:** Dopo aver chiamato un endpoint che restituisce un nuovo JWT, aggiornare SEMPRE il client locale con `api.setToken(newToken)` prima di chiamare altre API sul sidecar.
 
+### 2026-08-02 — SameSite cookie su connessione cross-site Tauri
+
+**Problema:** Il cookie CSRF non veniva inviato sulle POST cross-site in ambiente Tauri. La webview Tauri ha origin `http://tauri.localhost`, mentre il sidecar ascolta su `http://127.0.0.1:7723` — due origini diverse. Con `SameSite=Lax`, il browser non invia il cookie su richieste POST cross-site.
+
+**Soluzione:** Rilevare se la connessione è su localhost (127.0.0.1, localhost, ::1) e in quel caso usare `SameSite=None, Secure=False`. Chrome/Edge permettono `SameSite=None` senza `Secure` su localhost.
+
+**Regola:** In ambiente Tauri, dove webview origin ≠ sidecar origin, i cookie devono usare `SameSite=None` anche su HTTP (localhost). Non assumere mai che localhost = same-site.
+
 ### 2026-07-26 — I file .env pubblici su GitHub non devono contenere secret
 
 **Problema:** `desktop/.env.desktop` conteneva `SECRET_KEY`, `JWT_SECRET_KEY` e `SUPER_ADMIN_EMAIL` hardcoded e pubblici su GitHub. Anche se il backend desktop ascolta solo su localhost, è cattiva pratica.
