@@ -48,7 +48,7 @@ def set_csrf_cookie(response: Response, token: str | None = None, request: Reque
     # Localhost: SameSite=None without Secure (Chrome/Edge allow on localhost)
     # This lets cross-site POSTs from Tauri webview send the cookie.
     is_localhost = request is not None and (
-        request.url.host in ("127.0.0.1", "localhost", "::1")
+        request.url.hostname in ("127.0.0.1", "localhost", "::1")
     )
 
     if is_localhost:
@@ -71,9 +71,6 @@ def set_csrf_cookie(response: Response, token: str | None = None, request: Reque
             max_age=3600,
             path="/",
         )
-    return token
-        path="/",
-    )
     return token
 
 
