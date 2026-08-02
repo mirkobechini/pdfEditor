@@ -20,6 +20,7 @@ CSRF_EXEMPT_PATHS = {
     "/auth/reset-password",
     "/auth/guest",
     "/auth/guest/convert",
+    "/auth/sync",
     "/health",
 }
 
