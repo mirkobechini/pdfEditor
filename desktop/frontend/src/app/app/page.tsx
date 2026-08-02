@@ -258,21 +258,23 @@ export default function EditorPage() {
                                 <p className="text-lg font-semibold text-[#f7871f]">Rilascia per caricare il PDF</p>
                             </div>
                         )}
-                        <div className="relative h-full border border-white/6 bg-[#0f0d0b] p-6">
+                        <div className="relative h-full border border-white/6 bg-[#0f0d0b]">
                             <div className="absolute left-4 top-3 z-10 font-mono text-[10px] text-[#d8d8d8]">
                                 {selectedDoc?.original_filename || ""}
                             </div>
                             {pdfUrl ? (
-                                <div className="mx-auto h-full w-full max-w-[760px] bg-[#f6f6f6] overflow-auto p-6">
-                                    <PdfViewer
-                                        fileUrl={pdfUrl}
-                                        currentPage={currentPage}
-                                        totalPages={totalPages}
-                                        onPageChange={setCurrentPage}
-                                        onTotalPagesChange={setTotalPages}
-                                        zoom={zoom}
-                                        onZoomChange={setZoom}
-                                    />
+                                <div className="absolute inset-0 overflow-auto p-6 [&>div:first-child]:min-h-full">
+                                    <div className="mx-auto min-h-full w-full max-w-[760px] bg-[#f6f6f6]">
+                                        <PdfViewer
+                                            fileUrl={pdfUrl}
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            onPageChange={setCurrentPage}
+                                            onTotalPagesChange={setTotalPages}
+                                            zoom={zoom}
+                                            onZoomChange={setZoom}
+                                        />
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="flex h-full items-center justify-center text-[#7e7267] text-sm">
