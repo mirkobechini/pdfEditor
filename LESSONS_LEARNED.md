@@ -118,6 +118,22 @@ L'audit manuale del 2026-07-15 ha trovato 21 bug + 10 miglioramenti, tutti fixat
 
 - Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile — `httpx2` non esiste ancora.
 
+### 2026-08-02 — Sync user non basta per CSRF sidecar
+
+**Problema:** `api.syncUser(u)` salva l'utente in SQLite locale ed emette un JWT locale, ma il frontend continua a usare il token JWT della cloud (con SECRET_KEY diversa) per chiamare il sidecar. Il sidecar non riconosce il token e `getMe()`/`refreshCsrf()` falliscono.
+
+**Lezione:** Non basta sincronizzare l'utente — bisogna anche **sostituire il token JWT** nel client con quello locale emesso dal sidecar. `syncUser()` restituisce già `access_token` e `csrf_token`, ma il frontend non li usa per aggiornare `api.setToken()`/`api.setCsrfToken()`.
+
+**Regola:** Dopo aver chiamato un endpoint che restituisce un nuovo JWT, aggiornare SEMPRE il client locale con `api.setToken(newToken)` prima di chiamare altre API sul sidecar.
+
+### 2026-08-02 — SameSite cookie su connessione cross-site Tauri
+
+**Problema:** Il cookie CSRF non veniva inviato sulle POST cross-site in ambiente Tauri. La webview Tauri ha origin `http://tauri.localhost`, mentre il sidecar ascolta su `http://127.0.0.1:7723` — due origini diverse. Con `SameSite=Lax`, il browser non invia il cookie su richieste POST cross-site.
+
+**Soluzione:** Rilevare se la connessione è su localhost (127.0.0.1, localhost, ::1) e in quel caso usare `SameSite=None, Secure=False`. Chrome/Edge permettono `SameSite=None` senza `Secure` su localhost.
+
+**Regola:** In ambiente Tauri, dove webview origin ≠ sidecar origin, i cookie devono usare `SameSite=None` anche su HTTP (localhost). Non assumere mai che localhost = same-site.
+
 ### 2026-07-26 — I file .env pubblici su GitHub non devono contenere secret
 
 **Problema:** `desktop/.env.desktop` conteneva `SECRET_KEY`, `JWT_SECRET_KEY` e `SUPER_ADMIN_EMAIL` hardcoded e pubblici su GitHub. Anche se il backend desktop ascolta solo su localhost, è cattiva pratica.

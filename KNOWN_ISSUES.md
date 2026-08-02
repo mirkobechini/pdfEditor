@@ -7,6 +7,14 @@
 
 ## 🔴 Bug aperti
 
+### K3 — Upload PDF 403 (CSRF validation failed) — DRAFT
+
+**File:** `shared/src/auth.tsx`, `shared/src/api.ts`, `backend/app/core/csrf.py`  
+**Descrizione:** L'upload PDF su sidecar dà 403 CSRF. Il cookie CSRF non viene inviato dal browser su POST cross-site (origin `http://tauri.localhost` → target `127.0.0.1:7723`) a causa di `SameSite=Lax`.
+
+**Soluzione prevista:** Usare `SameSite=None, Secure=False` su localhost. Chrome/Edge permettono SameSite=None senza Secure su localhost.
+**Stato:** Fix implementato in `csrf.py`, da testare con nuova build.
+
 ### K1 — Login con email/password non funziona su Neon (401)
 
 **File:** `shared/src/auth.tsx`, `desktop/frontend/src/shared/auth.tsx`  
