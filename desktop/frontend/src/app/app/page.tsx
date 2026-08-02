@@ -19,6 +19,47 @@ export default function EditorPage() {
     const [currentPage, setCurrentPage] = React.useState(1);
     const [totalPages, setTotalPages] = React.useState(0);
     const [zoom, setZoom] = React.useState(1);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [dragOver, setDragOver] = React.useState(false);
+
+    async function handleUploadFile(file: File) {
+        if (!file.name.toLowerCase().endsWith(".pdf")) return;
+        try {
+            const uploaded = await api.uploadPdf(file);
+            setDocs((prev) => [uploaded, ...prev]);
+            setSelectedDoc(uploaded);
+        } catch (err) {
+            console.error("Upload failed:", err);
+        }
+    }
+
+    function handleOpenLocal() {
+        fileInputRef.current?.click();
+    }
+
+    function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (file) handleUploadFile(file);
+        // Reset so the same file can be picked again
+        e.target.value = "";
+    }
+
+    function handleDragOver(e: React.DragEvent) {
+        e.preventDefault();
+        setDragOver(true);
+    }
+
+    function handleDragLeave(e: React.DragEvent) {
+        e.preventDefault();
+        setDragOver(false);
+    }
+
+    function handleDrop(e: React.DragEvent) {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file) handleUploadFile(file);
+    }
 
     React.useEffect(() => {
         api.listPdfs(0, 10)
@@ -42,10 +83,12 @@ export default function EditorPage() {
         }
 
         let cancelled = false;
+        let currentUrl: string | null = null;
         api.downloadPdf(selectedDoc.id)
             .then((blob) => {
                 if (cancelled) return;
                 const url = URL.createObjectURL(blob);
+                currentUrl = url;
                 setPdfUrl(url);
             })
             .catch(() => {
@@ -54,55 +97,9 @@ export default function EditorPage() {
 
         return () => {
             cancelled = true;
-            if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+            if (currentUrl) URL.revokeObjectURL(currentUrl);
         };
     }, [selectedDoc?.id]);
-
-    async function handleOpenLocal() {
-        try {
-            const { tauriInvoke } = await import("../../shared/tauri");
-            // Use Tauri dialog API to open a file picker
-            const result = await tauriInvoke<{ path: string }>("dialog_open", {
-                filters: [{ name: "PDF", extensions: ["pdf"] }],
-                multiple: false,
-            });
-            if (result?.path) {
-                // Upload the selected file to the sidecar
-                const fileInput = document.createElement("input");
-                fileInput.type = "file";
-                fileInput.accept = ".pdf";
-                fileInput.onchange = async (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (!file) return;
-                    try {
-                        const uploaded = await api.uploadPdf(file);
-                        setDocs((prev) => [uploaded, ...prev]);
-                        setSelectedDoc(uploaded);
-                    } catch {
-                        // Upload failed
-                    }
-                };
-                fileInput.click();
-            }
-        } catch {
-            // Fallback: file input
-            const input = document.createElement("input");
-            input.type = "file";
-            input.accept = ".pdf";
-            input.onchange = async (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (!file) return;
-                try {
-                    const uploaded = await api.uploadPdf(file);
-                    setDocs((prev) => [uploaded, ...prev]);
-                    setSelectedDoc(uploaded);
-                } catch {
-                    // Upload failed
-                }
-            };
-            input.click();
-        }
-    }
 
     function formatFileSize(bytes: number): string {
         if (bytes < 1024) return bytes + " B";
@@ -130,6 +127,7 @@ export default function EditorPage() {
                         <button onClick={handleOpenLocal} className="w-full rounded-[14px] bg-[#f7871f] py-2.5 text-sm font-medium text-white shadow-sm shadow-[#f7871f]/30 transition hover:bg-[#ce5a00]">
                             Open Local PDF
                         </button>
+                        <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileInputChange} />
                     </div>
 
                     <div className="flex-1 overflow-y-auto border-y border-white/8 px-5 py-5">
@@ -222,7 +220,16 @@ export default function EditorPage() {
                         </div>
                     </header>
 
-                    <div className="flex-1 bg-black p-6 overflow-hidden">
+                    <div className="flex-1 bg-black p-6 overflow-hidden relative"
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                    >
+                        {dragOver && (
+                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#f7871f]/10 border-2 border-dashed border-[#f7871f]/50 rounded-2xl m-6 pointer-events-none">
+                                <p className="text-lg font-semibold text-[#f7871f]">Rilascia per caricare il PDF</p>
+                            </div>
+                        )}
                         <div className="relative h-full border border-white/6 bg-[#0f0d0b] p-6">
                             <div className="absolute left-4 top-3 z-10 font-mono text-[10px] text-[#d8d8d8]">
                                 {selectedDoc?.original_filename || ""}
