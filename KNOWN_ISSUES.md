@@ -7,6 +7,16 @@
 
 ## 🔴 Bug aperti
 
+### K3 — Upload PDF 403 (CSRF validation failed)
+
+**File:** `shared/src/auth.tsx`, `shared/src/api.ts`, `backend/app/core/csrf.py`  
+**Descrizione:** L'upload PDF su sidecar dà sempre 403 CSRF anche dopo login riuscito. Flusso: login cloud → token JWT → `api.getMe()` fallisce (utente non in SQLite locale) → fallback `cloudApi.getMe()` → `api.syncUser(u)` → `api.refreshCsrf()`. Il 403 persiste, causa ancora non identificata.
+
+**Soluzione prevista:** Da diagnosticare. Possibili cause:
+1. `syncUser` non viene chiamato (JWT sidecar non impostato)
+2. `refreshCsrf` fallisce silenziosamente
+3. Il cookie CSRF non viene inviato dal frontend nonostante sia impostato
+
 ### K1 — Login con email/password non funziona su Neon (401)
 
 **File:** `shared/src/auth.tsx`, `desktop/frontend/src/shared/auth.tsx`  
