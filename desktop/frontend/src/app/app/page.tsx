@@ -33,6 +33,32 @@ export default function EditorPage() {
         }
     }
 
+    // Refresh CSRF token on mount (required for sidecar writes)
+    React.useEffect(() => {
+        api.refreshCsrf();
+    }, []);
+
+    // Document-level drag-and-drop for Tauri webview
+    React.useEffect(() => {
+        function onDragOver(e: DragEvent) { e.preventDefault(); setDragOver(true); }
+        function onDragLeave() { setDragOver(false); }
+        function onDrop(e: DragEvent) {
+            e.preventDefault();
+            setDragOver(false);
+            const file = e.dataTransfer?.files?.[0];
+            if (file) handleUploadFile(file);
+        }
+        document.addEventListener("dragover", onDragOver);
+        document.addEventListener("dragleave", onDragLeave);
+        document.addEventListener("drop", onDrop);
+        return () => {
+            document.removeEventListener("dragover", onDragOver);
+            document.removeEventListener("dragleave", onDragLeave);
+            document.removeEventListener("drop", onDrop);
+        };
+    }, []);
+
+    // Use wizard folder as default path (stored in localStorage by wizard)
     function handleOpenLocal() {
         fileInputRef.current?.click();
     }
@@ -42,23 +68,6 @@ export default function EditorPage() {
         if (file) handleUploadFile(file);
         // Reset so the same file can be picked again
         e.target.value = "";
-    }
-
-    function handleDragOver(e: React.DragEvent) {
-        e.preventDefault();
-        setDragOver(true);
-    }
-
-    function handleDragLeave(e: React.DragEvent) {
-        e.preventDefault();
-        setDragOver(false);
-    }
-
-    function handleDrop(e: React.DragEvent) {
-        e.preventDefault();
-        setDragOver(false);
-        const file = e.dataTransfer.files?.[0];
-        if (file) handleUploadFile(file);
     }
 
     React.useEffect(() => {
@@ -124,7 +133,7 @@ export default function EditorPage() {
             <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0">
                 <aside className="flex flex-col border-r border-white/10 bg-[#1f1914]">
                     <div className="p-4">
-                        <button onClick={handleOpenLocal} className="w-full rounded-[14px] bg-[#f7871f] py-2.5 text-sm font-medium text-white shadow-sm shadow-[#f7871f]/30 transition hover:bg-[#ce5a00]">
+                        <button onClick={handleOpenLocal} className="w-full cursor-pointer rounded-[14px] bg-[#f7871f] py-2.5 text-sm font-medium text-white shadow-sm shadow-[#f7871f]/30 transition hover:bg-[#ce5a00]">
                             Open Local PDF
                         </button>
                         <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileInputChange} />
@@ -220,11 +229,7 @@ export default function EditorPage() {
                         </div>
                     </header>
 
-                    <div className="flex-1 bg-black p-6 overflow-hidden relative"
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                    >
+                    <div className="flex-1 bg-black p-6 overflow-hidden relative">
                         {dragOver && (
                             <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#f7871f]/10 border-2 border-dashed border-[#f7871f]/50 rounded-2xl m-6 pointer-events-none">
                                 <p className="text-lg font-semibold text-[#f7871f]">Rilascia per caricare il PDF</p>
