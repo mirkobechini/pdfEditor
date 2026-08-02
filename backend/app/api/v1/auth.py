@@ -487,30 +487,13 @@ def unlink_google(
 @router.get("/csrf")
 def get_csrf_token(
     request: Request,
-    db: Session = Depends(get_db),
 ) -> dict:
     """Return a fresh CSRF token in the response body.
 
-    Cross-origin production: after page refresh the in-memory csrf_token
-    is lost and document.cookie is unreadable. This endpoint lets the
-    frontend re-sync the token on mount (called after getMe succeeds).
+    No authentication required — the CSRF token is just a random string
+    for the double-submit pattern. This allows the desktop sidecar to
+    issue CSRF tokens even when the user is authenticated via Neon (cloud).
     """
-    # Require authentication — no point refreshing CSRF for anonymous users
-    token = _get_token(request)
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-    service = AuthService(db)
-    try:
-        service.get_current_user(token)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
-
     csrf_token = generate_csrf_token()
     response = JSONResponse(content={"csrf_token": csrf_token})
     set_csrf_cookie(response, csrf_token, request=request)

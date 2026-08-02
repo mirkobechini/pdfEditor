@@ -63,6 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const u = await cloudApi.getMe();
             if (!cancelled) {
               setUser(u);
+              // Refresh CSRF for both sidecar and cloud
+              api.refreshCsrf();
               cloudApi.refreshCsrf();
               return;
             }
@@ -108,6 +110,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const u = await cloudApi.getMe();
         setUser(u);
       }
+      // Refresh CSRF for both sidecar and cloud
+      api.refreshCsrf();
+      cloudApi.refreshCsrf();
     } finally {
       setLoading(false);
       _pendingAuthRef.current = false;
@@ -129,6 +134,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const u = await cloudApi.getMe();
         setUser(u);
       }
+      // Refresh CSRF for both sidecar and cloud
+      api.refreshCsrf();
+      cloudApi.refreshCsrf();
     } finally {
       setLoading(false);
       _pendingAuthRef.current = false;
@@ -165,6 +173,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(u);
         }
       }
+      // Refresh CSRF for both sidecar and cloud
+      api.refreshCsrf();
+      cloudApi.refreshCsrf();
     } finally {
       setLoading(false);
       _pendingAuthRef.current = false;
@@ -184,6 +195,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.location.href = "/";
         return;
       }
+      // Refresh CSRF for sidecar
+      api.refreshCsrf();
     } finally {
       setLoading(false);
       _pendingAuthRef.current = false;
