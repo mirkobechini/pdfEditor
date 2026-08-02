@@ -4,7 +4,8 @@
 
 - ✅ **Native dialog with wizard folder default path** — Nuovo comando Rust `dialog_open` + `read_file_binary` per aprire file dal dialog nativo Tauri partendo dalla cartella wizard. `handleOpenLocal()` usa `isTauri()` per scegliere tra dialog nativo e fallback browser.
 - ✅ **Sync cloud user to local sidecar** — Nuovo endpoint `POST /auth/sync` (esente CSRF) che riceve dati utente dal cloud e li salva in SQLite locale. `auth.tsx` chiama `api.syncUser(u)` dopo login/register quando `api.getMe()` fallisce.
-- ⛔ **CSRF upload 403 — fix tentato ma non risolutivo** — Modificato `set_csrf_cookie()` per rilevare HTTP, e aggiunto `api.refreshCsrf()` dopo login. Il 403 persiste — da diagnosticare.
+- ✅ **Fix CSRF upload: await syncUser mancante** — `api.syncUser(u)` in `restoreSession()` mancava `await`, quindi `refreshCsrf()` partiva prima che l'utente fosse salvato in SQLite locale.
+- ✅ **Fix CSRF upload: SameSite cookie cross-site** — Il cookie CSRF usava `SameSite=Lax` su localhost, ma il browser non lo invia su POST cross-site (origin `http://tauri.localhost` → target `127.0.0.1:7723`). Fix: `SameSite=None, Secure=False` su localhost (Chrome/Edge permette).
 
 ## 2026-08-01
 
