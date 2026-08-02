@@ -478,6 +478,35 @@ export class ApiClient {
     }
   }
 
+  async syncUser(user: {
+    id: string;
+    email: string;
+    full_name: string;
+    is_active: boolean;
+    is_admin: boolean;
+    is_guest: boolean;
+    license_tier: string;
+    license_tier_source: string;
+    google_id?: string | null;
+    created_at?: string;
+    updated_at?: string;
+  }): Promise<{ access_token: string; csrf_token: string } | null> {
+    try {
+      const res = await this._fetch(`${this.baseUrl}/auth/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.access_token) this.setToken(data.access_token);
+      if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
   async updateProfile(data: { full_name: string }): Promise<UserResponse> {
     const res = await this._fetch(`${this.baseUrl}/auth/me`, {
       method: "PUT",

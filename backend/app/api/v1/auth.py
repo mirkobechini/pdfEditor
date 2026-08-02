@@ -8,12 +8,14 @@ from app.api.deps import get_db
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.security import create_access_token
+from app.models.user import User
 from app.schemas.auth import (
     ForgotPasswordRequest,
     GoogleLoginRequest,
     GuestConvertRequest,
     GuestTokenResponse,
     ResetPasswordRequest,
+    SyncUserRequest,
     TokenResponse,
     UnlinkGoogleRequest,
     UserLoginRequest,
@@ -495,7 +497,6 @@ def get_csrf_token(
     is lost and document.cookie is unreadable. This endpoint lets the
     frontend re-sync the token on mount (called after getMe succeeds).
     """
-    # Require authentication — no point refreshing CSRF for anonymous users
     token = _get_token(request)
     if not token:
         raise HTTPException(
@@ -513,6 +514,73 @@ def get_csrf_token(
 
     csrf_token = generate_csrf_token()
     response = JSONResponse(content={"csrf_token": csrf_token})
+    set_csrf_cookie(response, csrf_token, request=request)
+    return response
+
+
+@router.post("/sync", status_code=status.HTTP_200_OK)
+def sync_user(
+    req: SyncUserRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict:
+    """Sync a cloud user into the local sidecar database.
+
+    This allows the desktop sidecar to recognise the user for getMe
+    and CSRF requests without needing the cloud's JWT secret key.
+    A new local JWT is issued and a CSRF token is set.
+    """
+
+    from datetime import datetime, timezone
+
+    repo = UserRepository(db)
+
+    # Upsert user by id (matching cloud user id)
+    user = repo.get_by_id(req.id)
+    if user:
+        # Update existing
+        user.email = req.email
+        user.full_name = req.full_name
+        user.is_active = req.is_active
+        user.is_admin = req.is_admin
+        user.is_guest = req.is_guest
+        user.license_tier = req.license_tier
+        user.license_tier_source = req.license_tier_source
+        user.google_id = req.google_id
+        if req.created_at:
+            user.created_at = req.created_at
+        user.updated_at = req.updated_at or datetime.now(timezone.utc)
+        repo.update(user)
+    else:
+        # Create new
+        user = User(
+            id=req.id,
+            email=req.email,
+            full_name=req.full_name,
+            is_active=req.is_active,
+            is_admin=req.is_admin,
+            is_guest=req.is_guest,
+            license_tier=req.license_tier,
+            license_tier_source=req.license_tier_source,
+            google_id=req.google_id,
+            hashed_password="",  # password managed on cloud, not stored locally
+            created_at=req.created_at or datetime.now(timezone.utc),
+            updated_at=req.updated_at or datetime.now(timezone.utc),
+        )
+        repo.create(user)
+
+    # Issue a local JWT so getMe and refreshCsrf work
+    local_token = create_access_token(data={"sub": user.id})
+
+    csrf_token = generate_csrf_token()
+    response = JSONResponse(
+        content={
+            "access_token": local_token,
+            "token_type": "bearer",
+            "csrf_token": csrf_token,
+        }
+    )
+    _set_token_cookie(response, local_token)
     set_csrf_cookie(response, csrf_token, request=request)
     return response
 

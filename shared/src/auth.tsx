@@ -63,6 +63,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const u = await cloudApi.getMe();
             if (!cancelled) {
               setUser(u);
+              // Sync user to sidecar so local getMe/CSRF work
+              api.syncUser(u);
+              // Refresh CSRF for both sidecar and cloud
+              api.refreshCsrf();
               cloudApi.refreshCsrf();
               return;
             }
@@ -107,7 +111,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Fallback: getMe via cloud
         const u = await cloudApi.getMe();
         setUser(u);
+        // Sync cloud user into local sidecar so getMe/CSRF work next time
+        await api.syncUser(u);
+        // Refresh CSRF for both sidecar and cloud
+        api.refreshCsrf();
+        cloudApi.refreshCsrf();
       }
+      // Refresh CSRF for both sidecar and cloud
+      api.refreshCsrf();
+      cloudApi.refreshCsrf();
     } finally {
       setLoading(false);
       _pendingAuthRef.current = false;
@@ -127,8 +139,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(u);
       } catch {
         const u = await cloudApi.getMe();
-        setUser(u);
+        setUser(u); await api.syncUser(u);
       }
+      // Refresh CSRF for both sidecar and cloud
+      api.refreshCsrf();
+      cloudApi.refreshCsrf();
     } finally {
       setLoading(false);
       _pendingAuthRef.current = false;
@@ -163,8 +178,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch {
           const u = await cloudApi.getMe();
           setUser(u);
+          await api.syncUser(u);
         }
       }
+      // Refresh CSRF for both sidecar and cloud
+      api.refreshCsrf();
+      cloudApi.refreshCsrf();
     } finally {
       setLoading(false);
       _pendingAuthRef.current = false;
@@ -184,6 +203,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.location.href = "/";
         return;
       }
+      // Refresh CSRF for sidecar
+      api.refreshCsrf();
     } finally {
       setLoading(false);
       _pendingAuthRef.current = false;
