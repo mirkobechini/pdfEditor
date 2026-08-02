@@ -157,6 +157,13 @@ fn delete_jwt(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Read a binary file from the given path and return its contents.
+#[tauri::command]
+fn read_file_binary(path: String) -> Result<Vec<u8>, String> {
+    use std::fs;
+    fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -269,6 +276,7 @@ pub fn run() {
             store_jwt,
             load_jwt,
             delete_jwt,
+            read_file_binary,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

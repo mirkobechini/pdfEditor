@@ -59,8 +59,32 @@ export default function EditorPage() {
     }, []);
 
     // Use wizard folder as default path (stored in localStorage by wizard)
-    function handleOpenLocal() {
-        fileInputRef.current?.click();
+    async function handleOpenLocal() {
+        const defaultPath = typeof window !== "undefined" ? localStorage.getItem("pdfeditor_work_folder") || "" : "";
+        try {
+            // Open native file picker via IPC (avoids type restrictions on global __TAURI__)
+            const { tauriInvoke } = await import("../../shared/tauri");
+            const result = await tauriInvoke<{ path: string } | null>("dialog_open", {
+                filters: [{ name: "PDF", extensions: ["pdf"] }],
+                multiple: false,
+                defaultPath: defaultPath || undefined,
+            });
+            if (!result?.path) return;
+
+            // Read file contents via IPC command
+            const raw = await tauriInvoke<number[]>("read_file_binary", { path: result.path });
+            if (!raw) throw new Error("Failed to read file");
+            const blob = new Blob([new Uint8Array(raw)], { type: "application/pdf" });
+            const file = new File([blob], result.path.split(/[/\\]/).pop() || "document.pdf", { type: "application/pdf" });
+
+            // Upload via standard API
+            const uploaded = await api.uploadPdf(file);
+            setDocs((prev) => [uploaded, ...prev]);
+            setSelectedDoc(uploaded);
+        } catch {
+            // Fallback to file input
+            fileInputRef.current?.click();
+        }
     }
 
     function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
