@@ -13,24 +13,19 @@ Upload failed: Error: CSRF validation failed
 
 Il login funziona (cloud → utente riconosciuto), ma l'upload dà 403.
 
-## Diagnosi (da verificare)
+## Diagnosi
 
-1. **Flusso attuale**: login cloud → `api.setToken(token_cloud)` → `api.getMe()` fallisce (utente non in SQLite locale) → `cloudApi.getMe()` → `api.syncUser(u)` → salva utente in locale + emette JWT locale
-2. **Problema sospetto**: `api.syncUser()` restituisce `{ access_token: jwt_locale, csrf_token }` ma il frontend **non aggiorna** `api.setToken()` con il JWT locale. Il client continua a usare il token cloud per le chiamate al sidecar.
-3. **Conseguenza**: `/auth/csrf` sul sidecar riceve token cloud → `get_current_user()` fallisce (firmato con SECRET_KEY diversa) → 401 → CSRF non arriva mai
+1. **POST /auth/sync → 200 OK** ✅ — Endpoint funzionante, restituisce JWT locale + CSRF
+2. **Cookie CSRF non inviato** ❌ — Il cookie `csrf_token` è impostato con `SameSite=Lax`, ma la richiesta upload è cross-site (origin `http://tauri.localhost` → target `http://127.0.0.1:7723`) → il browser non lo invia su POST
+3. **Conseguenza**: il server confronta `X-CSRF-Token` (inviato) con il cookie (non inviato) → mismatch → 403
 
 ## Soluzione proposta
 
+### Fix backend (`backend/app/core/csrf.py`)
+Rilevare se la connessione è su localhost e usare `SameSite=None, Secure=False`. Chrome/Edge permettono `SameSite=None` senza `Secure` su localhost.
+
 ### Fix frontend (`shared/src/auth.tsx`)
-Dopo `api.syncUser(u)`, usare il nuovo token restituito:
-```typescript
-const syncResult = await api.syncUser(u);
-if (syncResult?.access_token) {
-  api.setToken(syncResult.access_token);
-  api.setCsrfToken(syncResult.csrf_token);
-}
-```
-In questo modo il sidecar riconosce l'utente e `/auth/csrf` funziona.
+Già fixato: `await api.syncUser(u)` mancante (non aspettava il completamento).
 
 ## Stack
 
