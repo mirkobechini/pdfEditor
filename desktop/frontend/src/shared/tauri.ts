@@ -40,7 +40,7 @@ export function getApiBaseUrl(): string {
 
 /** Base URL for the cloud backend on Render (auth/register/login). */
 export function getCloudApiBaseUrl(): string {
-  return "https://pdeditor-backend.onrender.com";
+  return "https://pdfeditor-api.mirkobechini.com";
 }
 
 /**
