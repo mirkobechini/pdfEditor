@@ -98,6 +98,22 @@ class ForgotPasswordRequest(BaseModel):
     email: str
 
 
+class SyncUserRequest(BaseModel):
+    """Schema for syncing a cloud user to the local sidecar database."""
+
+    id: str
+    email: str
+    full_name: str
+    is_active: bool = True
+    is_admin: bool = False
+    is_guest: bool = False
+    license_tier: str = "free"
+    license_tier_source: str = "admin"
+    google_id: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
 class ResetPasswordRequest(BaseModel):
     """Schema for resetting password with a token."""
 
