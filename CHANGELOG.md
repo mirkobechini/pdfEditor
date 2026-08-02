@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-02
+
+- ✅ **Native dialog with wizard folder default path** — Nuovo comando Rust `dialog_open` + `read_file_binary` per aprire file dal dialog nativo Tauri partendo dalla cartella wizard. `handleOpenLocal()` usa `isTauri()` per scegliere tra dialog nativo e fallback browser.
+- ✅ **Sync cloud user to local sidecar** — Nuovo endpoint `POST /auth/sync` (esente CSRF) che riceve dati utente dal cloud e li salva in SQLite locale. `auth.tsx` chiama `api.syncUser(u)` dopo login/register quando `api.getMe()` fallisce.
+- ⛔ **CSRF upload 403 — fix tentato ma non risolutivo** — Modificato `set_csrf_cookie()` per rilevare HTTP, e aggiunto `api.refreshCsrf()` dopo login. Il 403 persiste — da diagnosticare.
+
 ## 2026-08-01
 
 - ✅ **#600: PR#600 mergiata** — Wizard Sfoglia (window.__TAURI__.dialog), wizard link (window.__TAURI__.opener), sidecar cleanup definitivo con CommandChild.kill() + taskkill + std::process::exit(0)
