@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-01
+
+- ✅ **#600: PR#600 mergiata** — Wizard Sfoglia (window.__TAURI__.dialog), wizard link (window.__TAURI__.opener), sidecar cleanup definitivo con CommandChild.kill() + taskkill + std::process::exit(0)
+- ✅ **#583: Auth cloud per login/register desktop (PR #584)** — Login/register chiamano `https://pdeditor-backend.onrender.com/auth/*` (Neon). Operazioni PDF restano sul sidecar locale. getMe prova prima locale poi cloud. Nuova pagina `/register` per desktop.
+- ✅ **#585: Wizard link in webview (PR #590)** — Sostituiti `<a target=_blank>` con `@tauri-apps/plugin-opener` per aprire browser esterno (non funziona in Tauri webview).
+- ✅ **#586: Wizard Sfoglia dialog (PR #591)** — Sostituito import statico di `@tauri-apps/plugin-dialog` con dynamic import (funziona in static export Next.js).
+- ✅ **#587: Editor layout pulito (PR #592)** — Rimosso DocMock con dati finti. Layout senza scrollbar (flex + h-screen). Utente sempre visibile in sidebar. Footer non più fixed.
+- ✅ **#588: Sidecar cleanup + focus (PR #593)** — `start_sidecar` non kill più processi esistenti (single-instance). `stop_sidecar` con fallback per nome processo.
+- ✅ **#589: Icona desktop (PR #594)** — Rigenerate icone da SVG per installer NSIS e taskbar.
+- ✅ **Fix wizard link privacy/termini cliccabili (PR #578, fix #577)** — I testi "termini di licenza" e "privacy policy" nella prima schermata del wizard erano `<span>` non cliccabili. Sostituiti con `<a href target=_blank>` che aprono nel browser esterno.
+- ✅ **Fix guest login 403 CSRF (PR #579, fix #574)** — `/auth/guest` e `/auth/guest/convert` non erano in `CSRF_EXEMPT_PATHS`. Aggiunti insieme a test con CSRF abilitato.
+- ✅ **Fix wizard Sfoglia senza prompt() (PR #580, fix #573)** — Rimosso fallback a `prompt()` nel pulsante Sfoglia (non funziona in webview Tauri). L'utente scrive il percorso a mano se il dialog nativo fallisce.
+- ✅ **Fix sidecar cleanup su quit (PR #581, fix #575)** — `start_sidecar` ora kill sempre il processo fastapi-sidecar esistente prima di spawnarne uno nuovo, garantendo PID sempre noto a `stop_sidecar`.
+- ✅ **Icone personalizzate app/tray (PR #582, fix #576)** — Generata icona matching la startup page (quadrato arancione + documento bianco) per tutte le dimensioni (32x32, 128x128, ico, icns, android, iOS).
+- ✅ **Fix startup page in produzione — CORS error (PR #572, fix #571)** — La webview Tauri in produzione usa origin `http://tauri.localhost` (senza 's'), ma `ALLOWED_ORIGINS` autorizzava solo `https://tauri.localhost`. Aggiunto `http://tauri.localhost` in `backend/app/core/config.py` e `desktop/.env.desktop`.
+- ✅ **#569: Devtools abilitati per debug startup page (PR #570)** — Aggiunto feature `devtools` e `window.open_devtools()` in lib.rs per diagnosi errori console in produzione.
+
 ## 2026-07-31
 
 - ✅ **Release v0.1.33 pubblicata** — Build ottimizzazioni (UPX, cache, frontend parallelo, Rust strip), fix Python DLL error.

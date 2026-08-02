@@ -584,3 +584,28 @@ class TestGuestAccess:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
         assert "already a full user" in data["detail"]
+
+    def test_guest_login_with_csrf_enabled(self, client, monkeypatch):
+        """Guest login should work even with CSRF enabled (exempt path)."""
+        monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
+        response = client.post(self.GUEST_URL)
+        assert response.status_code == status.HTTP_201_CREATED, \
+            f"Guest login with CSRF enabled should work, got {response.status_code}: {response.text}"
+
+    def test_guest_convert_with_csrf_enabled(self, client, monkeypatch):
+        """Guest convert should work even with CSRF enabled (exempt path)."""
+        monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
+        # Create guest
+        guest_resp = client.post(self.GUEST_URL)
+        assert guest_resp.status_code == status.HTTP_201_CREATED
+        # Convert
+        response = client.post(
+            self.CONVERT_URL,
+            json={
+                "email": "csrf-convert@example.com",
+                "password": "StrongPass1",
+                "full_name": "CSRF Convert",
+            },
+        )
+        assert response.status_code == status.HTTP_200_OK, \
+            f"Guest convert with CSRF enabled should work, got {response.status_code}: {response.text}"

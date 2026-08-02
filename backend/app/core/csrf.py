@@ -18,6 +18,8 @@ CSRF_EXEMPT_PATHS = {
     "/auth/logout",
     "/auth/forgot-password",
     "/auth/reset-password",
+    "/auth/guest",
+    "/auth/guest/convert",
     "/health",
 }
 
@@ -27,20 +29,28 @@ def generate_csrf_token() -> str:
     return secrets.token_hex(32)
 
 
-def set_csrf_cookie(response: Response, token: str | None = None) -> str:
+def set_csrf_cookie(response: Response, token: str | None = None, request: Request | None = None) -> str:
     """Set the csrf_token cookie on a response.
 
     If no token is provided, a new one is generated.
     Returns the token value (useful for testing).
+
+    When called with a request on an HTTP connection (local/dev),
+    secure=False is used so the cookie is sent over plain HTTP.
     """
     if token is None:
         token = generate_csrf_token()
+
+    # Detect if we're on a plain HTTP connection (desktop sidecar).
+    # The browser will NOT send a secure=True cookie over HTTP.
+    is_http = request is not None and request.url.scheme == "http"
+
     response.set_cookie(
         key="csrf_token",
         value=token,
         httponly=False,  # Must be readable by JS for double-submit pattern
-        samesite="none" if not settings.DEBUG else "lax",
-        secure=not settings.DEBUG,
+        samesite="none" if not settings.DEBUG and not is_http else "lax",
+        secure=not settings.DEBUG and not is_http,
         max_age=3600,  # 1 hour
         path="/",
     )
@@ -69,7 +79,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         if request.method in ("GET", "HEAD", "OPTIONS"):
             response = await call_next(request)
             if "csrf_token" not in request.cookies:
-                set_csrf_cookie(response)
+                set_csrf_cookie(response, request=request)
             return response
 
         # Skip CSRF validation for exempt paths (auth endpoints, health)

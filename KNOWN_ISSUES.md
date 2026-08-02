@@ -1,13 +1,23 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-07-30
+> **Aggiornato:** 2026-08-01
 
 ---
 
 ## 🔴 Bug aperti
 
-> ⚠️ **Nessun bug aperto al momento.**
+### K1 — Login con email/password non funziona su Neon (401)
+
+**File:** `shared/src/auth.tsx`, `desktop/frontend/src/shared/auth.tsx`  
+**Descrizione:** Il login chiama `cloudApi.login()` su `https://pdfeditor-api.mirkobechini.com/auth/login` ma risponde 401. Possibili cause: utente non registrato su Neon, o SECRET_KEY del cloud diversa da quella del sidecar.
+
+**Soluzione prevista:** Verificare che Render backend sia attivo, che l'utente sia registrato su Neon, e differenziare l'errore (già implementato ma non verificato: EMAIL_NOT_FOUND vs WRONG_PASSWORD).
+
+### K2 — Google OAuth popup non funziona in Tauri
+
+**File:** `backend/app/api/v1/auth.py` (endpoint già implementati), `desktop/frontend/src/components/GoogleLoginButton.tsx`  
+20:**Descrizione:** La popup JavaScript di Google One Tap non funziona in webview Tauri (richiede dominio pubblico). È stato implementato un redirect flow via browser di sistema con endpoint `/auth/google/desktop-login` e `/auth/google/desktop-callback`, ma il redirect URI su Google Cloud Console deve essere aggiornato a `https://pdfeditor-api.mirkobechini.com/auth/google/desktop-callback`.
 > Tutti i bug noti sono stati risolti.
 
 ---

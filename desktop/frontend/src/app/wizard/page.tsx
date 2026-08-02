@@ -2,8 +2,34 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { open } from "@tauri-apps/plugin-dialog";
-import { isTauri } from "../../shared/tauri";
+import { isTauri, tauriInvoke } from "../../shared/tauri";
+
+/** Open a URL in the system browser (works in Tauri webview). */
+async function openExternal(url: string) {
+    // With withGlobalTauri: true, window.__TAURI__.opener is available
+    try {
+        await window.__TAURI__?.opener?.openUrl(url);
+        return;
+    } catch {
+        // fallback for non-Tauri
+        window.open(url, "_blank");
+    }
+}
+
+/** Open a directory picker dialog (Tauri native) or fallback to manual input. */
+async function pickDirectory(): Promise<string | null> {
+    try {
+        // With withGlobalTauri: true, window.__TAURI__.dialog is available
+        const selected = await window.__TAURI__?.dialog?.open({
+            directory: true,
+            multiple: false,
+            title: "Seleziona cartella di lavoro",
+        });
+        return (selected as string) || null;
+    } catch {
+        return null;
+    }
+}
 
 const steps = [
     { id: "01", title: "Benvenuto" },
@@ -51,7 +77,7 @@ export default function WizardPage() {
                             Funziona offline e si sincronizza quando torni online.
                         </p>
                         <div className="mt-9 max-w-[700px] rounded-2xl border border-white/10 bg-[#1b1612] p-6">
-                            <label className="flex cursor-pointer items-start gap-3">
+                            <div className="flex items-start gap-3">
                                 <input
                                     type="checkbox"
                                     checked={acceptedTerms}
@@ -60,10 +86,10 @@ export default function WizardPage() {
                                 />
                                 <span className="text-[14px] leading-relaxed text-[#9d9184]">
                                     Accetto i{" "}
-                                    <span className="text-[#f7871f] underline">termini di licenza</span> e la{" "}
-                                    <span className="text-[#f7871f] underline">privacy policy</span>
+                                    <button type="button" onClick={() => openExternal("https://pdfeditor.mirkobechini.com/terms")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</button> e la{" "}
+                                    <button type="button" onClick={() => openExternal("https://www.iubenda.com/privacy-policy/76778813")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">privacy policy</button>
                                 </span>
-                            </label>
+                            </div>
                         </div>
                     </>
                 );
@@ -87,18 +113,8 @@ export default function WizardPage() {
                                 />
                                 <button
                                     onClick={async () => {
-                                        if (isTauri()) {
-                                            try {
-                                                const selected = await open({ directory: true, multiple: false, title: "Seleziona cartella di lavoro" });
-                                                if (selected) setWorkFolder(selected as string);
-                                            } catch {
-                                                const folder = prompt("Inserisci il percorso della cartella di lavoro:");
-                                                if (folder) setWorkFolder(folder);
-                                            }
-                                        } else {
-                                            const folder = prompt("Inserisci il percorso della cartella di lavoro:");
-                                            if (folder) setWorkFolder(folder);
-                                        }
+                                        const folder = await pickDirectory();
+                                        if (folder) setWorkFolder(folder);
                                     }}
                                     className="h-full cursor-pointer rounded-[12px] border border-white/15 bg-[#1b1612] px-6 text-[13px] font-semibold text-white transition hover:bg-[#231c17]"
                                 >

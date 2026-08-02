@@ -1,7 +1,44 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-07-27
+> **Aggiornato:** 2026-08-01
+
+---
+
+## Sidecar cleanup — taskkill da solo non basta
+
+> **Lezione appresa (2026-08-01):**
+
+Chiamare `taskkill /F /IM fastapi-sidecar.exe` NON è sufficiente per terminare il sidecar definitivamente. Dopo il kill, Windows può riavviare il processo in assenza di un cleanup completo del process group.
+
+**Soluzione:** Triplice kill: 1) `CommandChild.kill()` via handle Tauri nativo, 2) `taskkill /F /IM fastapi-sidecar*` (wildcard per target triple suffix), 3) `std::process::exit(0)` per uscita immediata del processo senza cleanup Tauri che possa riavviare orfani.
+
+**Regola:** Quando si termina un sidecar Tauri, non affidarsi solo a comandi esterni (taskkill). Usare SEMPRE il `CommandChild` handle restituito da `.spawn()` per kill pulito, combinato con exit forzato.
+
+---
+
+## Tauri IPC senza npm modules — withGlobalTauri
+
+> **Lezione appresa (2026-08-01):**
+
+`tauriInvoke("plugin:opener|open_url")` non funziona in produzione perché il comando IPC non è direttamente accessibile via `__TAURI_INTERNALS__`. La soluzione corretta è abilitare `withGlobalTauri: true` in `tauri.conf.json`, che rende `window.__TAURI__` disponibile con tutti i plugin (opener, dialog, ecc.) senza bisogno di moduli npm.
+
+**Comandi disponibili con withGlobalTauri:**
+- `window.__TAURI__.opener.openUrl(url)` — apre URL nel browser di sistema
+- `window.__TAURI__.dialog.open(options)` — dialog nativo per file/cartelle
+
+**Regola:** Per qualsiasi API Tauri nel frontend, abilitare `withGlobalTauri: true` e usare `window.__TAURI__.*` invece di importare pacchetti npm che non vengono inclusi nello static export di Next.js.
+
+---
+
+## CORS in produzione Tauri — tauri.localhost vs tauri://localhost
+
+> **Lezione appresa (2026-08-01):**
+
+La webview Tauri in produzione usa `http://tauri.localhost` come origin, NON `https://tauri.localhost` (con 's').
+Mancava in `ALLOWED_ORIGINS`, causando CORS error su tutte le fetch. Il dev mode funzionava perché l'origin era `http://localhost:3000`.
+
+**Regola:** Quando si configura CORS per Tauri, aggiungere SEMPRE tutti e tre: `tauri://localhost`, `http://tauri.localhost`, `https://tauri.localhost`.
 
 ---
 

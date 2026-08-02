@@ -6,16 +6,18 @@ use tauri::Manager;
 use tauri::tray::{TrayIconBuilder, MouseButton, MouseButtonState, TrayIconEvent};
 use tauri::menu::{Menu, MenuItem};
 use tauri_plugin_shell::ShellExt;
+use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_store::StoreExt;
 
 struct SidecarState {
-    pub child_pid: Mutex<Option<u32>>,
+    pub child: Mutex<Option<CommandChild>>,
 }
 
 /// Spawn the FastAPI sidecar process.
 fn start_sidecar(app: &tauri::App) {
-    // If port 7723 already responds, a sidecar is already running (e.g. orphan from a crash).
-    // Do NOT spawn a second one — this prevents duplicate fastapi-sidecar processes.
+    // If port 7723 already responds, a sidecar is already running (e.g. from a previous instance).
+    // Do NOT kill it — it belongs to the running instance. The single-instance plugin
+    // will handle bringing the existing window to focus.
     use std::io::Write;
     use std::net::TcpStream;
 
@@ -48,7 +50,7 @@ fn start_sidecar(app: &tauri::App) {
 
     let pid = child.pid();
     log::info!("FastAPI sidecar started (PID: {})", pid);
-    app.state::<SidecarState>().child_pid.lock().unwrap().replace(pid);
+    app.state::<SidecarState>().child.lock().unwrap().replace(child);
 
     tauri::async_runtime::spawn(async move {
         while let Some(event) = rx.recv().await {
@@ -87,26 +89,33 @@ fn cleanup_mei_temp_dirs() {
 
 /// Kill the sidecar process on shutdown.
 fn stop_sidecar(app: &tauri::AppHandle) {
-    let mut pid_opt = None;
-    if let Some(state) = app.try_state::<SidecarState>() {
-        pid_opt = state.child_pid.lock().unwrap().take();
+    let child_opt = app.try_state::<SidecarState>()
+        .and_then(|state| state.child.lock().unwrap().take());
+
+    if let Some(mut child) = child_opt {
+        log::info!("Killing sidecar via CommandChild");
+        let _ = child.write("app_exit\n".as_bytes());
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        let _ = child.kill();
+    } else {
+        log::info!("No child handle — killing sidecar by process name");
+        kill_by_name();
     }
-    if let Some(pid) = pid_opt {
-        log::info!("Stopping FastAPI sidecar (PID: {})", pid);
-        #[cfg(target_os = "windows")]
-        {
-            let _ = std::process::Command::new("taskkill")
-                .args(["/PID", &pid.to_string(), "/F"])
-                .output();
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            let _ = nix::sys::signal::kill(
-                nix::unistd::Pid::from_raw(pid as i32),
-                nix::sys::signal::SIGTERM,
-            );
-        }
-    }
+    std::thread::sleep(std::time::Duration::from_millis(300));
+}
+
+#[cfg(target_os = "windows")]
+fn kill_by_name() {
+    let _ = std::process::Command::new("taskkill")
+        .args(["/F", "/IM", "fastapi-sidecar*"])
+        .status();
+}
+
+#[cfg(not(target_os = "windows"))]
+fn kill_by_name() {
+    let _ = std::process::Command::new("pkill")
+        .arg("fastapi-sidecar")
+        .output();
 }
 
 #[tauri::command]
@@ -148,6 +157,35 @@ fn delete_jwt(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Read a binary file from the given path and return its contents.
+#[tauri::command]
+fn read_file_binary(path: String) -> Result<Vec<u8>, String> {
+    use std::fs;
+    fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))
+}
+
+/// Open a native file dialog with an optional default path.
+#[tauri::command]
+fn dialog_open(app: tauri::AppHandle, default_path: Option<String>) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut builder = app.dialog()
+        .file()
+        .add_filter("PDF", &["pdf"]);
+
+    if let Some(ref path) = default_path {
+        builder = builder.set_directory(path);
+    }
+
+    match builder.blocking_pick_file() {
+        Some(file_path) => {
+            let path = file_path.into_path().map_err(|e| format!("Failed to resolve path: {}", e))?;
+            Ok(Some(path.to_string_lossy().to_string()))
+        }
+        None => Ok(None),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -157,7 +195,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .manage(SidecarState {
-            child_pid: Mutex::new(None),
+            child: Mutex::new(None),
         })
         .setup(|app| {
             // Register single-instance plugin: second instance focuses the running one
@@ -171,6 +209,11 @@ pub fn run() {
             }
 
             start_sidecar(app);
+
+            // Open devtools automatically for debugging (production build with devtools feature)
+            if let Some(window) = app.get_webview_window("main") {
+                window.open_devtools();
+            }
 
             // Build tray menu
             let show_item = MenuItem::with_id(app, "show", "Mostra PdfEditor", true, None::<&str>)?;
@@ -191,8 +234,23 @@ pub fn run() {
                             }
                         }
                         "quit" => {
-                            stop_sidecar(app);
-                            app.exit(0);
+                            log::info!("Exiting app — killing sidecar and exiting process");
+                            // Kill sidecar child handle
+                            if let Some(state) = app.try_state::<SidecarState>() {
+                                if let Some(mut child) = state.child.lock().unwrap().take() {
+                                    let _ = child.kill();
+                                }
+                            }
+                            std::thread::sleep(std::time::Duration::from_millis(300));
+                            // Force-kill any remaining fastapi-sidecar processes
+                            #[cfg(target_os = "windows")]
+                            {
+                                let _ = std::process::Command::new("taskkill")
+                                    .args(["/F", "/IM", "fastapi-sidecar*"])
+                                    .status();
+                            }
+                            // Exit the entire process immediately — kills all children
+                            std::process::exit(0);
                         }
                         _ => {}
                     }
@@ -223,7 +281,14 @@ pub fn run() {
                     api.prevent_close();
                 }
                 tauri::WindowEvent::Destroyed => {
-                    stop_sidecar(window.app_handle());
+                    // Cleanup: kill sidecar by name (child handle might already be gone)
+                    log::info!("Window destroyed — killing sidecar by name");
+                    #[cfg(target_os = "windows")]
+                    {
+                        let _ = std::process::Command::new("taskkill")
+                            .args(["/F", "/IM", "fastapi-sidecar*"])
+                            .status();
+                    }
                 }
                 _ => {}
             }
@@ -233,6 +298,8 @@ pub fn run() {
             store_jwt,
             load_jwt,
             delete_jwt,
+            read_file_binary,
+            dialog_open,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -70,6 +70,10 @@ export default function LoginPage() {
     const [error, setError] = React.useState<string | null>(null);
     const [submitting, setSubmitting] = React.useState(false);
     const [googleResetKey, setGoogleResetKey] = React.useState(0);
+    const hasStoredToken = React.useMemo(() => {
+        if (typeof window === "undefined") return false;
+        return !!localStorage.getItem("pdfeditor_remember_token");
+    }, []);
 
     React.useEffect(() => {
         if (!loading && user) {
