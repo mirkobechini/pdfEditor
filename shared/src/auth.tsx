@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!cancelled) {
               setUser(u);
               // Sync user to sidecar so local getMe/CSRF work
-              api.syncUser(u);
+              await api.syncUser(u);
               // Refresh CSRF for both sidecar and cloud
               api.refreshCsrf();
               cloudApi.refreshCsrf();

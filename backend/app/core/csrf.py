@@ -36,25 +36,41 @@ def set_csrf_cookie(response: Response, token: str | None = None, request: Reque
     If no token is provided, a new one is generated.
     Returns the token value (useful for testing).
 
-    When called with a request on an HTTP connection (local/dev),
-    secure=False is used so the cookie is sent over plain HTTP.
+    Uses SameSite=None on localhost connections (127.0.0.1, localhost)
+    even without Secure, because Chrome/Edge allow this on localhost.
+    This is required because the Tauri webview origin (http://tauri.localhost)
+    is cross-site to the sidecar (http://127.0.0.1:7723) — with SameSite=Lax
+    the browser would not send the cookie on cross-site POST requests.
     """
     if token is None:
         token = generate_csrf_token()
 
-    # Detect if we're on a plain HTTP connection (desktop sidecar).
-    # The browser will NOT send a secure=True cookie over HTTP.
-    is_http = request is not None and request.url.scheme == "http"
-
-    response.set_cookie(
-        key="csrf_token",
-        value=token,
-        httponly=False,  # Must be readable by JS for double-submit pattern
-        samesite="none" if not settings.DEBUG and not is_http else "lax",
-        secure=not settings.DEBUG and not is_http,
-        max_age=3600,  # 1 hour
-        path="/",
+    # Localhost: SameSite=None without Secure (Chrome/Edge allow on localhost)
+    # This lets cross-site POSTs from Tauri webview send the cookie.
+    is_localhost = request is not None and (
+        request.url.hostname in ("127.0.0.1", "localhost", "::1")
     )
+
+    if is_localhost:
+        response.set_cookie(
+            key="csrf_token",
+            value=token,
+            httponly=False,
+            samesite="none",
+            secure=False,
+            max_age=3600,
+            path="/",
+        )
+    else:
+        response.set_cookie(
+            key="csrf_token",
+            value=token,
+            httponly=False,
+            samesite="none" if not settings.DEBUG else "lax",
+            secure=not settings.DEBUG,
+            max_age=3600,
+            path="/",
+        )
     return token
 
 
