@@ -3,7 +3,7 @@
 import React from "react";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
-import { getApiBaseUrl } from "../../shared/tauri";
+import { getApiBaseUrl, isTauri, tauriInvoke } from "../../shared/tauri";
 import PdfViewer from "../../components/PdfViewer";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import type { PdfDocument } from "../../shared/types";
@@ -58,9 +58,32 @@ export default function EditorPage() {
         };
     }, []);
 
-    // Open native file picker — click the hidden input directly (preserves user gesture)
-    function handleOpenLocal() {
-        fileInputRef.current?.click();
+    // Open native file picker, optionally starting from wizard folder
+    async function handleOpenLocal() {
+        if (isTauri()) {
+            const defaultPath = typeof window !== "undefined"
+                ? localStorage.getItem("pdfeditor_work_folder") || undefined
+                : undefined;
+            const filePath = await tauriInvoke<string>("dialog_open", {
+                defaultPath: defaultPath,
+            });
+            if (!filePath) return;
+
+            // Read file contents via IPC command
+            const raw = await tauriInvoke<number[]>("read_file_binary", { path: filePath });
+            if (!raw) return;
+
+            const blob = new Blob([new Uint8Array(raw)], { type: "application/pdf" });
+            const file = new File(
+                [blob],
+                filePath.split(/[/\\]/).pop() || "document.pdf",
+                { type: "application/pdf" }
+            );
+            handleUploadFile(file);
+        } else {
+            // Fallback for browser: use hidden file input (no default path available)
+            fileInputRef.current?.click();
+        }
     }
 
     function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {

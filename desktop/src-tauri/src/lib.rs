@@ -164,6 +164,28 @@ fn read_file_binary(path: String) -> Result<Vec<u8>, String> {
     fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
+/// Open a native file dialog with an optional default path.
+#[tauri::command]
+fn dialog_open(app: tauri::AppHandle, default_path: Option<String>) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut builder = app.dialog()
+        .file()
+        .add_filter("PDF", &["pdf"]);
+
+    if let Some(ref path) = default_path {
+        builder = builder.set_directory(path);
+    }
+
+    match builder.blocking_pick_file() {
+        Some(file_path) => {
+            let path = file_path.into_path().map_err(|e| format!("Failed to resolve path: {}", e))?;
+            Ok(Some(path.to_string_lossy().to_string()))
+        }
+        None => Ok(None),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -277,6 +299,7 @@ pub fn run() {
             load_jwt,
             delete_jwt,
             read_file_binary,
+            dialog_open,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
