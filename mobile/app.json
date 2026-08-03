@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "PdfEditor",
     "slug": "mobile",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -10,13 +10,18 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.mirkobechini.pdfeditor",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -35,6 +40,11 @@
           "cameraPermission": "Allow PdfEditor to access your camera to scan documents."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b32fb915-ff2f-42ca-81e4-cd311a4602b3"
+      }
+    }
   }
 }
