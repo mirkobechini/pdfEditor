@@ -4,12 +4,12 @@ import React from "react";
 import { useTranslations } from "next-intl";
 
 const sections = [
-    { id: "general", label: "settings.general" },
-    { id: "appearance", label: "settings.appearance" },
-    { id: "editor", label: "settings.editor" },
-    { id: "shortcuts", label: "settings.shortcuts" },
-    { id: "advanced", label: "settings.advanced" },
-    { id: "about", label: "settings.about" },
+    { id: "general", label: "general" },
+    { id: "appearance", label: "appearance" },
+    { id: "editor", label: "editor" },
+    { id: "shortcuts", label: "shortcuts" },
+    { id: "advanced", label: "advanced" },
+    { id: "about", label: "about" },
 ] as const;
 
 type SectionId = (typeof sections)[number]["id"];
