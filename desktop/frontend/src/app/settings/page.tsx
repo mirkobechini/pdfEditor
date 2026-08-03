@@ -301,14 +301,14 @@ export default function SettingsPage() {
                                     <p className="text-[16px] font-semibold text-white">{ts("systemLog")}</p>
                                     <p className="text-[14px] text-[#9d9184]">{ts("systemLogDesc")}</p>
                                 </div>
-                                <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">{ts("open")}</button>
+                                <button onClick={() => alert("Log di sistema:\n\nIl sidecar scrive i log nella console del terminale.\nPer vederli, avvia l'app da terminale con: desktop\pdf-editor-desktop.exe")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">{ts("open")}</button>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
                                     <p className="text-[16px] font-semibold text-white">{ts("clearCache")}</p>
                                     <p className="text-[14px] text-[#9d9184]">{ts("clearCacheDesc")}</p>
                                 </div>
-                                <button className="cursor-pointer rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] font-semibold text-red-300">{ts("delete")}</button>
+                                <button onClick={() => { if (confirm("Cancellare la cache locale?")) { localStorage.clear(); alert("Cache cancellata."); } }} className="cursor-pointer rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] font-semibold text-red-300">{ts("delete")}</button>
                             </div>
                         </div>
                     </div>
@@ -336,9 +336,9 @@ export default function SettingsPage() {
                         <AboutSection title={ts("appLicense")} rows={licenseRows} />
 
                         <section className="mt-7 flex items-center gap-3">
-                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("releaseNotes")}</button>
-                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("reportBug")}</button>
-                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("documentation")}</button>
+                            <button onClick={() => window.open("https://github.com/mirkobechini/pdfEditor/releases", "_blank")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("releaseNotes")}</button>
+                            <button onClick={() => window.open("https://github.com/mirkobechini/pdfEditor/issues/new", "_blank")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("reportBug")}</button>
+                            <button onClick={() => window.open("https://github.com/mirkobechini/pdfEditor", "_blank")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("documentation")}</button>
                         </section>
                     </div>
                 );
