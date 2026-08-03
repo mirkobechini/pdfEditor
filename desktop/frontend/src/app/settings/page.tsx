@@ -63,13 +63,6 @@ const licenseRows: readonly AboutRow[] = [
         type: "action",
         value: "Visualizza",
     },
-    {
-        id: "license_key",
-        title: "Chiave licenza",
-        subtitle: "Attivata su 2 dispositivi di 3",
-        type: "badge",
-        value: "PE-PRM-••••-7742",
-    },
 ];
 
 function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[] }) {
