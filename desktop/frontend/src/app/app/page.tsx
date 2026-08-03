@@ -342,7 +342,6 @@ export default function EditorPage() {
                     </div>
                     <div className="flex items-center gap-6">
                         <span>PyMuPDF v1.24.2</span>
-                        <span className="font-semibold text-white">Snapshots 3 / 10</span>
                     </div>
                 </div>
             </footer>
