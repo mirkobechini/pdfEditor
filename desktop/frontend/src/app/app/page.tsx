@@ -202,7 +202,7 @@ export default function EditorPage() {
 
                     <GuestConvertBanner />
 
-                    <Link href="/settings" className="border-t border-white/8 p-5 block hover:bg-white/[0.02] transition-colors">
+                    <Link href="/profile" className="border-t border-white/8 p-5 block hover:bg-white/[0.02] transition-colors">
                         <div className="mb-3 flex items-center justify-between">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#918476]">Cloud Sync</p>
                             <span className="h-2.5 w-2.5 rounded-full bg-[#3ec35f]" />
