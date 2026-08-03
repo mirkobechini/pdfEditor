@@ -1,14 +1,15 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 
 const sections = [
-    { id: "general", label: "General" },
-    { id: "appearance", label: "Appearance" },
-    { id: "editor", label: "Editor" },
-    { id: "shortcuts", label: "Shortcuts" },
-    { id: "advanced", label: "Advanced" },
-    { id: "about", label: "About" },
+    { id: "general", label: "settings.general" },
+    { id: "appearance", label: "settings.appearance" },
+    { id: "editor", label: "settings.editor" },
+    { id: "shortcuts", label: "settings.shortcuts" },
+    { id: "advanced", label: "settings.advanced" },
+    { id: "about", label: "settings.about" },
 ] as const;
 
 type SectionId = (typeof sections)[number]["id"];
@@ -100,6 +101,7 @@ function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[
 }
 
 export default function SettingsPage() {
+    const ts = useTranslations("settings");
     const [activeTab, setActiveTab] = React.useState<SectionId>("general");
 
     function renderTabContent() {
@@ -107,20 +109,20 @@ export default function SettingsPage() {
             case "general":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">General</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Lingua, avvio e preferenze generali dell&apos;applicazione.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("generalTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("generalDesc")}</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Lingua</p>
-                                    <p className="text-[14px] text-[#9d9184]">Italiano</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("language")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("languageDesc")}</p>
                                 </div>
-                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">Italiano</span>
+                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">{ts("languageDesc")}</span>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Avvio automatico</p>
-                                    <p className="text-[14px] text-[#9d9184]">Apri PdfEditor all&apos;avvio del sistema</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("autoStart")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("autoStartDesc")}</p>
                                 </div>
                                 <div className="h-6 w-11 rounded-full bg-[#f7871f] relative">
                                     <div className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow" />
@@ -132,20 +134,20 @@ export default function SettingsPage() {
             case "appearance":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Appearance</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Tema, densità e aspetto dell&apos;interfaccia.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("appearanceTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("appearanceDesc")}</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Tema</p>
-                                    <p className="text-[14px] text-[#9d9184]">Scuro (sistema)</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("theme")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("themeDesc")}</p>
                                 </div>
                                 <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">Scuro</span>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Densità</p>
-                                    <p className="text-[14px] text-[#9d9184]">Compatto / Comodo / Ampio</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("density")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("densityDesc")}</p>
                                 </div>
                                 <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">Comodo</span>
                             </div>
@@ -155,20 +157,20 @@ export default function SettingsPage() {
             case "editor":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Editor</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Zoom, qualità rendering e comportamento del viewer PDF.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("editorTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("editorDesc")}</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Zoom predefinito</p>
-                                    <p className="text-[14px] text-[#9d9184]">Percentuale di zoom all&apos;apertura</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("defaultZoom")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("defaultZoomDesc")}</p>
                                 </div>
                                 <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">125%</span>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Antialiasing</p>
-                                    <p className="text-[14px] text-[#9d9184]">Migliora la resa dei caratteri</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("antialiasing")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("antialiasingDesc")}</p>
                                 </div>
                                 <div className="h-6 w-11 rounded-full bg-[#f7871f] relative">
                                     <div className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow" />
@@ -180,19 +182,19 @@ export default function SettingsPage() {
             case "shortcuts":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Shortcuts</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Tasti rapidi per le azioni più comuni.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("shortcutsTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("shortcutsDesc")}</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             {[
-                                ["Salva", "Ctrl+S"],
-                                ["Annulla", "Ctrl+Z"],
-                                ["Ripeti", "Ctrl+Shift+Z"],
-                                ["Cerca", "Ctrl+F"],
-                                ["Zoom avanti", "Ctrl++"],
-                                ["Zoom indietro", "Ctrl+-"],
+                                [ts("save"), "Ctrl+S"],
+                                [ts("undo"), "Ctrl+Z"],
+                                [ts("redo"), "Ctrl+Shift+Z"],
+                                [ts("search"), "Ctrl+F"],
+                                [ts("zoomIn"), "Ctrl++"],
+                                [ts("zoomOut"), "Ctrl+-"],
                             ].map(([action, key], i) => (
-                                <div key={action} className={`flex items-center justify-between py-3 ${i < 5 ? "border-b border-white/10" : ""}`}>
-                                    <p className="text-[16px] font-semibold text-white">{action}</p>
+                                <div key={action as string} className={`flex items-center justify-between py-3 ${i < 5 ? "border-b border-white/10" : ""}`}>
+                                    <p className="text-[16px] font-semibold text-white">{action as string}</p>
                                     <kbd className="rounded-lg border border-white/10 bg-[#2a231d] px-3 py-1 font-mono text-[12px] text-[#9d9184]">{key}</kbd>
                                 </div>
                             ))}
@@ -202,22 +204,22 @@ export default function SettingsPage() {
             case "advanced":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Advanced</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Impostazioni avanzate, log e debug.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("advancedTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("advancedDesc")}</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Log di sistema</p>
-                                    <p className="text-[14px] text-[#9d9184]">Visualizza i log del sidecar e dell&apos;app</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("systemLog")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("systemLogDesc")}</p>
                                 </div>
-                                <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">Apri</button>
+                                <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">{ts("open")}</button>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Cancella cache</p>
-                                    <p className="text-[14px] text-[#9d9184]">Libera spazio su disco</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("clearCache")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("clearCacheDesc")}</p>
                                 </div>
-                                <button className="cursor-pointer rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] font-semibold text-red-300">Cancella</button>
+                                <button className="cursor-pointer rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] font-semibold text-red-300">{ts("delete")}</button>
                             </div>
                         </div>
                     </div>
@@ -225,8 +227,8 @@ export default function SettingsPage() {
             case "about":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">About</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Versione, componenti open source e informazioni di licenza.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("aboutTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("aboutDesc")}</p>
 
                         <section className="mt-6 flex items-center gap-4">
                             <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f7871f] shadow-[0_8px_20px_rgba(247,135,31,0.35)]">
@@ -241,13 +243,13 @@ export default function SettingsPage() {
                             </div>
                         </section>
 
-                        <AboutSection title="Runtime" rows={runtimeRows} />
-                        <AboutSection title="Licenza" rows={licenseRows} />
+                        <AboutSection title={ts("pdfEngine")} rows={runtimeRows} />
+                        <AboutSection title={ts("appLicense")} rows={licenseRows} />
 
                         <section className="mt-7 flex items-center gap-3">
-                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Note di rilascio</button>
-                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Segnala un bug</button>
-                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Documentazione</button>
+                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("releaseNotes")}</button>
+                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("reportBug")}</button>
+                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("documentation")}</button>
                         </section>
                     </div>
                 );
@@ -269,7 +271,7 @@ export default function SettingsPage() {
                                         : "border border-transparent text-[#9d9184] hover:text-white"
                                         }`}
                                 >
-                                    {item.label}
+                                    {ts(item.label)}
                                 </button>
                             );
                         })}
