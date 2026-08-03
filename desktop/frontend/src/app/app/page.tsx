@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
 import { getApiBaseUrl, isTauri, tauriInvoke } from "../../shared/tauri";
@@ -95,10 +96,31 @@ export default function EditorPage() {
 
     React.useEffect(() => {
         api.listPdfs(0, 10)
-            .then((res) => {
-                setDocs(res.items || []);
-                if (res.items && res.items.length > 0) {
-                    setSelectedDoc(res.items[0]);
+            .then(async (res) => {
+                const items = res.items || [];
+                // Verify all docs exist on disk (remove ghosts)
+                const verified: PdfDocument[] = [];
+                for (const doc of items) {
+                    try {
+                        const headRes = await fetch(`${API_BASE}/pdfs/${doc.id}/download`, {
+                            method: "HEAD",
+                            credentials: "include",
+                            headers: { "Authorization": `Bearer ${(api as any).token}` },
+                        });
+                        if (headRes.ok) {
+                            verified.push(doc);
+                        } else {
+                            // Ghost PDF: remove from DB too
+                            api.deletePdf(doc.id).catch(() => { });
+                        }
+                    } catch {
+                        // Network error or 404 — remove from DB
+                        api.deletePdf(doc.id).catch(() => { });
+                    }
+                }
+                setDocs(verified);
+                if (verified.length > 0) {
+                    setSelectedDoc(verified[0]);
                 }
             })
             .catch(() => {
@@ -116,7 +138,8 @@ export default function EditorPage() {
 
         let cancelled = false;
         let currentUrl: string | null = null;
-        api.downloadPdf(selectedDoc.id)
+        const docId = selectedDoc?.id;
+        api.downloadPdf(docId!)
             .then((blob) => {
                 if (cancelled) return;
                 const url = URL.createObjectURL(blob);
@@ -124,7 +147,11 @@ export default function EditorPage() {
                 setPdfUrl(url);
             })
             .catch(() => {
-                // Download failed
+                // Download failed — file missing on disk. Remove ghost document from list.
+                if (!cancelled && docId) {
+                    setDocs((prev) => prev.filter((d) => d.id !== docId));
+                    setSelectedDoc(null);
+                }
             });
 
         return () => {
@@ -178,7 +205,7 @@ export default function EditorPage() {
                                     <div
                                         key={doc.id}
                                         onClick={() => setSelectedDoc(doc)}
-                                        className={`rounded-2xl border p-3 cursor-pointer transition ${selectedDoc?.id === doc.id ? "border-white/10 bg-white/[0.03]" : "border-transparent hover:bg-white/[0.02]"
+                                        className={`doc-item rounded-2xl border p-3 cursor-pointer transition ${selectedDoc?.id === doc.id ? "border-white/10 bg-white/[0.03]" : "border-transparent hover:bg-white/[0.02]"
                                             }`}
                                     >
                                         <div className="flex items-start gap-3">
@@ -189,7 +216,7 @@ export default function EditorPage() {
                                             <div className="min-w-0 flex-1">
                                                 <p className="text-[14px] font-semibold leading-tight text-[#f3ede7] truncate">{doc.original_filename}</p>
                                                 <p className="mt-1 font-mono text-[10px] text-[#7e7267]">
-                                                    {formatFileSize(doc.file_size)} · {formatDate(doc.created_at)}
+                                                    {formatFileSize(doc.file_size)} · {doc.pdf_creation_date ? formatDate(doc.pdf_creation_date) : formatDate(doc.created_at)}
                                                 </p>
                                             </div>
                                         </div>
@@ -207,13 +234,21 @@ export default function EditorPage() {
                             <span className="h-2.5 w-2.5 rounded-full bg-[#3ec35f]" />
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#3e2717] text-sm font-bold text-[#f7871f]">
-                                {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold leading-tight truncate">{user?.full_name || "Utente"}</p>
-                                <p className="text-[12px] text-[#8d8175]">{user?.license_tier || "Free"} License</p>
-                            </div>
+                            <Link href="/settings" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm hover:bg-white/15 transition-colors" title="Impostazioni">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#9a8d80]">
+                                    <circle cx="12" cy="12" r="3" />
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                </svg>
+                            </Link>
+                            <Link href="/profile" className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#3e2717] text-sm font-bold text-[#f7871f] shrink-0">
+                                    {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold leading-tight truncate">{user?.full_name || "Utente"}</p>
+                                    <p className="text-[12px] text-[#8d8175]">{user?.license_tier || "Free"} License</p>
+                                </div>
+                            </Link>
                         </div>
                     </div>
                 </aside>
@@ -258,21 +293,23 @@ export default function EditorPage() {
                                 <p className="text-lg font-semibold text-[#f7871f]">Rilascia per caricare il PDF</p>
                             </div>
                         )}
-                        <div className="relative h-full border border-white/6 bg-[#0f0d0b] p-6">
+                        <div className="relative h-full border border-white/6 bg-[#0f0d0b]">
                             <div className="absolute left-4 top-3 z-10 font-mono text-[10px] text-[#d8d8d8]">
                                 {selectedDoc?.original_filename || ""}
                             </div>
                             {pdfUrl ? (
-                                <div className="mx-auto h-full w-full max-w-[760px] bg-[#f6f6f6] overflow-auto p-6">
-                                    <PdfViewer
-                                        fileUrl={pdfUrl}
-                                        currentPage={currentPage}
-                                        totalPages={totalPages}
-                                        onPageChange={setCurrentPage}
-                                        onTotalPagesChange={setTotalPages}
-                                        zoom={zoom}
-                                        onZoomChange={setZoom}
-                                    />
+                                <div className="absolute inset-0 overflow-auto p-6 [&>div:first-child]:min-h-full">
+                                    <div className="mx-auto min-h-full w-full max-w-[760px] bg-[#f6f6f6]">
+                                        <PdfViewer
+                                            fileUrl={pdfUrl}
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            onPageChange={setCurrentPage}
+                                            onTotalPagesChange={setTotalPages}
+                                            zoom={zoom}
+                                            onZoomChange={setZoom}
+                                        />
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="flex h-full items-center justify-center text-[#7e7267] text-sm">
@@ -318,11 +355,6 @@ export default function EditorPage() {
                             </button>
                         ))}
                     </div>
-
-                    <div className="mt-6 rounded-2xl border border-[#8a4f22] bg-[#3a2212] p-4">
-                        <p className="text-xs font-bold text-[#ff9a41]">Pro Version Active</p>
-                        <p className="mt-2 text-xs text-[#d29055]">Unlimited cloud sync, batch processing and OCR enabled.</p>
-                    </div>
                 </aside>
             </div>
 
@@ -336,7 +368,6 @@ export default function EditorPage() {
                     </div>
                     <div className="flex items-center gap-6">
                         <span>PyMuPDF v1.24.2</span>
-                        <span className="font-semibold text-white">Snapshots 3 / 10</span>
                     </div>
                 </div>
             </footer>

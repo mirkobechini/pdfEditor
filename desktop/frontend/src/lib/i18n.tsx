@@ -26,7 +26,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <LocaleSetterCtx.Provider value={setLocale}>
-            <NextIntlClientProvider locale={locale} messages={messages[locale]} timeZone="Europe/Rome">
+            <NextIntlClientProvider key={locale} locale={locale} messages={messages[locale]} timeZone="Europe/Rome">
                 {children}
             </NextIntlClientProvider>
         </LocaleSetterCtx.Provider>

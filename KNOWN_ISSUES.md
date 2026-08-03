@@ -1,11 +1,18 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-08-01
+> **Aggiornato:** 2026-08-03
 
 ---
 
 ## 🔴 Bug aperti
+
+### K4 — Settings: antialiasing/densità nessun effetto visibile
+
+**File:** `desktop/frontend/src/app/settings/page.tsx`  
+**Descrizione:** Il toggle antialiasing e il select densità non producono cambiamenti visibili nell'interfaccia. L'antialiasing agisce sul font rendering (`-webkit-font-smoothing` su body), ma la differenza è impercettibile con i font e colori usati. La densità modifica solo il padding degli elementi `.doc-item` (8/12/20px), ma la differenza è troppo sottile per essere notata.
+
+**Stato:** Applicato tecnicamente, nessun effetto visibile.
 
 ### K3 — Upload PDF 403 (CSRF validation failed) — DRAFT
 
@@ -26,6 +33,7 @@
 
 **File:** `backend/app/api/v1/auth.py` (endpoint già implementati), `desktop/frontend/src/components/GoogleLoginButton.tsx`  
 20:**Descrizione:** La popup JavaScript di Google One Tap non funziona in webview Tauri (richiede dominio pubblico). È stato implementato un redirect flow via browser di sistema con endpoint `/auth/google/desktop-login` e `/auth/google/desktop-callback`, ma il redirect URI su Google Cloud Console deve essere aggiornato a `https://pdfeditor-api.mirkobechini.com/auth/google/desktop-callback`.
+
 > Tutti i bug noti sono stati risolti.
 
 ---

@@ -1,7 +1,19 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-08-01
+> **Aggiornato:** 2026-08-03
+
+---
+
+## Ghost PDF — rimuovere dal DB, non solo dalla UI
+
+> **Lezione appresa (2026-08-03):**
+
+I record orfani nel DB (PDF senza file fisico su disco) non devono essere solo nascosti dalla UI. Se non li cancelli dal DB, al prossimo riavvio la lista `listPdfs` li restituisce di nuovo e il problema si ripresenta.
+
+**Soluzione:** Dopo aver constatato il 404 con HEAD request, chiamare `api.deletePdf(id)` per rimuovere definitivamente il record.
+
+**Regola:** "Rimuovere" dalla lista non basta — bisogna eliminare il record dal database.
 
 ---
 
@@ -24,6 +36,7 @@ Chiamare `taskkill /F /IM fastapi-sidecar.exe` NON è sufficiente per terminare 
 `tauriInvoke("plugin:opener|open_url")` non funziona in produzione perché il comando IPC non è direttamente accessibile via `__TAURI_INTERNALS__`. La soluzione corretta è abilitare `withGlobalTauri: true` in `tauri.conf.json`, che rende `window.__TAURI__` disponibile con tutti i plugin (opener, dialog, ecc.) senza bisogno di moduli npm.
 
 **Comandi disponibili con withGlobalTauri:**
+
 - `window.__TAURI__.opener.openUrl(url)` — apre URL nel browser di sistema
 - `window.__TAURI__.dialog.open(options)` — dialog nativo per file/cartelle
 

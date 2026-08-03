@@ -1,15 +1,19 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { api } from "../../shared/api";
+import { useAuth } from "../../shared/auth";
+import { useLocaleSetter } from "../../lib/i18n";
 
 const sections = [
-    { id: "general", label: "General" },
-    { id: "appearance", label: "Appearance" },
-    { id: "editor", label: "Editor" },
-    { id: "cloud", label: "Cloud & Sync" },
-    { id: "shortcuts", label: "Shortcuts" },
-    { id: "advanced", label: "Advanced" },
-    { id: "about", label: "About" },
+    { id: "general", label: "general" },
+    { id: "appearance", label: "appearance" },
+    { id: "editor", label: "editor" },
+    { id: "shortcuts", label: "shortcuts" },
+    { id: "advanced", label: "advanced" },
+    { id: "about", label: "about" },
 ] as const;
 
 type SectionId = (typeof sections)[number]["id"];
@@ -61,13 +65,6 @@ const licenseRows: readonly AboutRow[] = [
         type: "action",
         value: "Visualizza",
     },
-    {
-        id: "license_key",
-        title: "Chiave licenza",
-        subtitle: "Attivata su 2 dispositivi di 3",
-        type: "badge",
-        value: "PE-PRM-••••-7742",
-    },
 ];
 
 function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[] }) {
@@ -87,7 +84,7 @@ function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[
                         </div>
 
                         {row.type === "action" ? (
-                            <button className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">
+                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">
                                 {row.value}
                             </button>
                         ) : (
@@ -101,27 +98,78 @@ function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[
 }
 
 export default function SettingsPage() {
-    const [activeTab, setActiveTab] = React.useState<SectionId>("about");
+    const ts = useTranslations("settings");
+    const { user } = useAuth();
+    const setLocale = useLocaleSetter();
+    const [activeTab, setActiveTab] = React.useState<SectionId>("general");
+    const [theme, setTheme] = React.useState("dark");
+    const [language, setLanguage] = React.useState("it");
+    const [defaultZoom, setDefaultZoom] = React.useState(100);
+    const [antialiasing, setAntialiasing] = React.useState(true);
+    const [density, setDensity] = React.useState("comfortable");
+    const [saving, setSaving] = React.useState(false);
+    const [appVersion, setAppVersion] = React.useState("");
+
+    // Load preferences on mount and apply them
+    React.useEffect(() => {
+        api.getPreferences().then((prefs) => {
+            setTheme(prefs.theme);
+            setLanguage(prefs.language);
+            setDefaultZoom(prefs.default_zoom);
+            setAntialiasing(prefs.antialiasing);
+            setDensity(prefs.density);
+            // Apply antialiasing
+            document.body.style.setProperty("-webkit-font-smoothing", prefs.antialiasing ? "antialiased" : "auto");
+            // Apply density
+            document.documentElement.dataset.density = prefs.density;
+        });
+        // Read version from common i18n
+        const tc = (window as any).__NEXT_INTL_MESSAGES?.common?.version;
+        if (tc) setAppVersion(tc);
+    }, []);
+
+    function savePreference(update: { theme?: string; language?: string; default_zoom?: number; antialiasing?: boolean; density?: string }) {
+        setSaving(true);
+        // Apply immediately to UI before saving to backend
+        if (update.antialiasing !== undefined) {
+            setAntialiasing(update.antialiasing);
+            document.body.style.setProperty("-webkit-font-smoothing", update.antialiasing ? "antialiased" : "auto");
+        }
+        if (update.density !== undefined) {
+            setDensity(update.density);
+            document.documentElement.dataset.density = update.density;
+        }
+        if (update.default_zoom !== undefined) setDefaultZoom(update.default_zoom);
+        // Save to backend
+        api.updatePreferences(update).finally(() => setSaving(false));
+    }
 
     function renderTabContent() {
         switch (activeTab) {
             case "general":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">General</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Lingua, avvio e preferenze generali dell&apos;applicazione.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("generalTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("generalDesc")}</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Lingua</p>
-                                    <p className="text-[14px] text-[#9d9184]">Italiano</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("language")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{language === "it" ? "Italiano" : "English"}</p>
                                 </div>
-                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">Italiano</span>
+                                <select
+                                    value={language}
+                                    onChange={(e) => { const newLang = e.target.value; setLanguage(newLang); setLocale(newLang as "it" | "en"); savePreference({ language: newLang }); }}
+                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                >
+                                    <option value="it">Italiano</option>
+                                    <option value="en">English</option>
+                                </select>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Avvio automatico</p>
-                                    <p className="text-[14px] text-[#9d9184]">Apri PdfEditor all&apos;avvio del sistema</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("autoStart")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("autoStartDesc")}</p>
                                 </div>
                                 <div className="h-6 w-11 rounded-full bg-[#f7871f] relative">
                                     <div className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow" />
@@ -133,22 +181,35 @@ export default function SettingsPage() {
             case "appearance":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Appearance</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Tema, densità e aspetto dell&apos;interfaccia.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("appearanceTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("appearanceDesc")}</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Tema</p>
-                                    <p className="text-[14px] text-[#9d9184]">Scuro (sistema)</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("density")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("densityDesc")}</p>
                                 </div>
-                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">Scuro</span>
+                                <select
+                                    value={density}
+                                    onChange={(e) => { setDensity(e.target.value); savePreference({ density: e.target.value }); }}
+                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                >
+                                    <option value="compact">Compatto</option>
+                                    <option value="comfortable">Comodo</option>
+                                    <option value="spacious">Ampio</option>
+                                </select>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Densità</p>
-                                    <p className="text-[14px] text-[#9d9184]">Compatto / Comodo / Ampio</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("antialiasing")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("antialiasingDesc")}</p>
                                 </div>
-                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">Comodo</span>
+                                <button
+                                    onClick={() => { setAntialiasing(!antialiasing); savePreference({ antialiasing: !antialiasing }); }}
+                                    className={`h-6 w-11 rounded-full relative transition-colors cursor-pointer ${antialiasing ? "bg-[#f7871f]" : "bg-white/20"}`}
+                                >
+                                    <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${antialiasing ? "right-0.5" : "left-0.5"}`} />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -156,47 +217,23 @@ export default function SettingsPage() {
             case "editor":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Editor</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Zoom, qualità rendering e comportamento del viewer PDF.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("editorTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("editorDesc")}</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Zoom predefinito</p>
-                                    <p className="text-[14px] text-[#9d9184]">Percentuale di zoom all&apos;apertura</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("defaultZoom")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("defaultZoomDesc")}</p>
                                 </div>
-                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">125%</span>
-                            </div>
-                            <div className="flex items-center justify-between py-3">
-                                <div>
-                                    <p className="text-[16px] font-semibold text-white">Antialiasing</p>
-                                    <p className="text-[14px] text-[#9d9184]">Migliora la resa dei caratteri</p>
-                                </div>
-                                <div className="h-6 w-11 rounded-full bg-[#f7871f] relative">
-                                    <div className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            case "cloud":
-                return (
-                    <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Cloud & Sync</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Backup cifrato, sincronizzazione e archiviazione remota.</p>
-                        <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
-                            <div className="flex items-center justify-between py-3 border-b border-white/10">
-                                <div>
-                                    <p className="text-[16px] font-semibold text-white">Sync automatico</p>
-                                    <p className="text-[14px] text-[#9d9184]">Sincronizza i PDF con Cloudflare R2</p>
-                                </div>
-                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">Disabilitato</span>
-                            </div>
-                            <div className="flex items-center justify-between py-3">
-                                <div>
-                                    <p className="text-[16px] font-semibold text-white">Spazio utilizzato</p>
-                                    <p className="text-[14px] text-[#9d9184]">0 MB di 1 GB</p>
-                                </div>
-                                <span className="text-[#48c769] text-[12px] font-semibold">● Online</span>
+                                <select
+                                    value={defaultZoom}
+                                    onChange={(e) => { const v = parseInt(e.target.value); setDefaultZoom(v); savePreference({ default_zoom: v }); }}
+                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                >
+                                    {[75, 100, 125, 150, 200].map((z) => (
+                                        <option key={z} value={z}>{z}%</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -204,19 +241,19 @@ export default function SettingsPage() {
             case "shortcuts":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Shortcuts</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Tasti rapidi per le azioni più comuni.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("shortcutsTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("shortcutsDesc")}</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             {[
-                                ["Salva", "Ctrl+S"],
-                                ["Annulla", "Ctrl+Z"],
-                                ["Ripeti", "Ctrl+Shift+Z"],
-                                ["Cerca", "Ctrl+F"],
-                                ["Zoom avanti", "Ctrl++"],
-                                ["Zoom indietro", "Ctrl+-"],
+                                [ts("save"), "Ctrl+S"],
+                                [ts("undo"), "Ctrl+Z"],
+                                [ts("redo"), "Ctrl+Shift+Z"],
+                                [ts("search"), "Ctrl+F"],
+                                [ts("zoomIn"), "Ctrl++"],
+                                [ts("zoomOut"), "Ctrl+-"],
                             ].map(([action, key], i) => (
-                                <div key={action} className={`flex items-center justify-between py-3 ${i < 5 ? "border-b border-white/10" : ""}`}>
-                                    <p className="text-[16px] font-semibold text-white">{action}</p>
+                                <div key={action as string} className={`flex items-center justify-between py-3 ${i < 5 ? "border-b border-white/10" : ""}`}>
+                                    <p className="text-[16px] font-semibold text-white">{action as string}</p>
                                     <kbd className="rounded-lg border border-white/10 bg-[#2a231d] px-3 py-1 font-mono text-[12px] text-[#9d9184]">{key}</kbd>
                                 </div>
                             ))}
@@ -226,22 +263,22 @@ export default function SettingsPage() {
             case "advanced":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Advanced</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Impostazioni avanzate, log e debug.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("advancedTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("advancedDesc")}</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Log di sistema</p>
-                                    <p className="text-[14px] text-[#9d9184]">Visualizza i log del sidecar e dell&apos;app</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("systemLog")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("systemLogDesc")}</p>
                                 </div>
-                                <button className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">Apri</button>
+                                <button onClick={() => alert("Log di sistema:\n\nIl sidecar scrive i log nella console del terminale.\nPer vederli, avvia l'app da terminale con: desktop\pdf-editor-desktop.exe")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">{ts("open")}</button>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Cancella cache</p>
-                                    <p className="text-[14px] text-[#9d9184]">Libera spazio su disco</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("clearCache")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("clearCacheDesc")}</p>
                                 </div>
-                                <button className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] font-semibold text-red-300">Cancella</button>
+                                <button onClick={() => { if (confirm("Cancellare la cache locale?")) { localStorage.clear(); alert("Cache cancellata."); } }} className="cursor-pointer rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] font-semibold text-red-300">{ts("delete")}</button>
                             </div>
                         </div>
                     </div>
@@ -249,8 +286,8 @@ export default function SettingsPage() {
             case "about":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">About</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Versione, componenti open source e informazioni di licenza.</p>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("aboutTitle")}</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">{ts("aboutDesc")}</p>
 
                         <section className="mt-6 flex items-center gap-4">
                             <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f7871f] shadow-[0_8px_20px_rgba(247,135,31,0.35)]">
@@ -261,17 +298,17 @@ export default function SettingsPage() {
 
                             <div>
                                 <h2 className="text-[42px] font-bold leading-tight text-white">PdfEditor</h2>
-                                <p className="mt-1 text-[14px] text-[#9d9184]">v1.4.2 (build 20260728·a3f19c2) · macOS arm64</p>
+                                <p className="mt-1 text-[14px] text-[#9d9184]">{appVersion || "v0.1.33"} · {user?.license_tier || "Free"} License</p>
                             </div>
                         </section>
 
-                        <AboutSection title="Runtime" rows={runtimeRows} />
-                        <AboutSection title="Licenza" rows={licenseRows} />
+                        <AboutSection title={ts("pdfEngine")} rows={runtimeRows} />
+                        <AboutSection title={ts("appLicense")} rows={licenseRows} />
 
                         <section className="mt-7 flex items-center gap-3">
-                            <button className="rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Note di rilascio</button>
-                            <button className="rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Segnala un bug</button>
-                            <button className="rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Documentazione</button>
+                            <button onClick={() => window.open("https://github.com/mirkobechini/pdfEditor/releases", "_blank")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("releaseNotes")}</button>
+                            <button onClick={() => window.open("https://github.com/mirkobechini/pdfEditor/issues/new", "_blank")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("reportBug")}</button>
+                            <button onClick={() => window.open("https://github.com/mirkobechini/pdfEditor", "_blank")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("documentation")}</button>
                         </section>
                     </div>
                 );
@@ -281,26 +318,32 @@ export default function SettingsPage() {
     return (
         <div className="min-h-screen bg-[#17120f] p-[3px] text-[#f4f1ee]">
             <div className="mx-auto flex min-h-[calc(100vh-6px)] w-full max-w-[1330px] overflow-hidden rounded-[22px] border border-white/10 bg-[#201a15]">
-                <aside className="w-[250px] border-r border-white/10 bg-[#1f1914] px-5 py-6">
+                <aside className="w-[250px] shrink-0 border-r border-white/10 bg-[#1f1914] px-5 py-6">
+                    <Link href="/app" className="flex items-center gap-2 rounded-[14px] border border-white/10 bg-[#2a231d] px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-[#2f2822] transition cursor-pointer mb-6">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                        Torna all'editor
+                    </Link>
                     <div className="space-y-1">
                         {sections.map((item) => {
                             return (
                                 <button
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
-                                    className={`w-full rounded-[14px] px-4 py-2.5 text-left text-[13px] transition ${activeTab === item.id
+                                    className={`w-full rounded-[14px] px-4 py-2.5 text-left text-[13px] transition cursor-pointer ${activeTab === item.id
                                         ? "border border-white/10 bg-[#241d17] font-semibold text-white"
                                         : "border border-transparent text-[#9d9184] hover:text-white"
                                         }`}
                                 >
-                                    {item.label}
+                                    {ts(item.label)}
                                 </button>
                             );
                         })}
                     </div>
                 </aside>
 
-                <main className="flex-1 bg-[#221b16] px-9 py-8">
+                <main className="flex-1 bg-[#221b16] px-9 py-8 overflow-y-auto">
                     {renderTabContent()}
                 </main>
             </div>

@@ -12,7 +12,7 @@ _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `d
 - [x] **Fase 1a** — Backend FastAPI ✅ (con enforcement licenze ✅ e BugReport model allineato ✅)
 - [x] **Fase 1b** — Frontend Next.js (bug report ✅, auth UI ✅, dark mode ✅, header controls ✅, dialog refactor ✅)
 - [x] **Fase 2** — Web app su cloud (Deploy su Render, Neon PostgreSQL, Cloudflare R2)
-- [ ] **Fase 1c** — Desktop Tauri v2 (refactoring: frontend desktop separato)
+- [x] **Fase 1c** — Desktop Tauri v2 (refactoring: frontend desktop separato)
 - [ ] **Fase 1d** — Desktop UI "PDF Harmony Suite" (design Lovable)
 - [ ] **Fase 3** — Cloud sync
 - [ ] **Fase 4** — Mobile app React Native

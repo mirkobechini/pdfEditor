@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-03
+
+- ✅ **Fix: ghost PDF permanent deletion** — Tutti i PDF vengono verificati all'avvio via HEAD request. Se fallisce (404), il record viene cancellato dal DB, non solo dalla UI.
+- ✅ **Fix: lingua live** — `key={locale}` su `NextIntlClientProvider` forza il re-render delle traduzioni al cambio lingua dalle settings.
+- ✅ **Fix: antialiasing su body** — Spostato `-webkit-font-smoothing` da `<html>` a `<body>`. Rimosso valore fisso dal CSS.
+- ✅ **Fix: remember-me checkbox visual state** — Checkbox "Rimani connesso" ora mostra spunta `✓` e sfondo arancione solo quando checked. Quando deselezionato, solo bordino bianco. (PR #606, issue #605)
+- ✅ **Fix: PDF viewer scroll container** — Il viewer PDF ora scrolla solo il suo div interno invece di scrollare l'intera finestra.
+
 ## 2026-08-02
 
 - ✅ **Native dialog with wizard folder default path** — Nuovo comando Rust `dialog_open` + `read_file_binary` per aprire file dal dialog nativo Tauri partendo dalla cartella wizard. `handleOpenLocal()` usa `isTauri()` per scegliere tra dialog nativo e fallback browser.
@@ -9,7 +17,7 @@
 
 ## 2026-08-01
 
-- ✅ **#600: PR#600 mergiata** — Wizard Sfoglia (window.__TAURI__.dialog), wizard link (window.__TAURI__.opener), sidecar cleanup definitivo con CommandChild.kill() + taskkill + std::process::exit(0)
+- ✅ **#600: PR#600 mergiata** — Wizard Sfoglia (window.**TAURI**.dialog), wizard link (window.**TAURI**.opener), sidecar cleanup definitivo con CommandChild.kill() + taskkill + std::process::exit(0)
 - ✅ **#583: Auth cloud per login/register desktop (PR #584)** — Login/register chiamano `https://pdeditor-backend.onrender.com/auth/*` (Neon). Operazioni PDF restano sul sidecar locale. getMe prova prima locale poi cloud. Nuova pagina `/register` per desktop.
 - ✅ **#585: Wizard link in webview (PR #590)** — Sostituiti `<a target=_blank>` con `@tauri-apps/plugin-opener` per aprire browser esterno (non funziona in Tauri webview).
 - ✅ **#586: Wizard Sfoglia dialog (PR #591)** — Sostituito import statico di `@tauri-apps/plugin-dialog` con dynamic import (funziona in static export Next.js).
@@ -27,7 +35,7 @@
 ## 2026-07-31
 
 - ✅ **Release v0.1.33 pubblicata** — Build ottimizzazioni (UPX, cache, frontend parallelo, Rust strip), fix Python DLL error.
-- ✅ **#555: Fix Python DLL error (PR #558)** — Popup "Failed to load Python DLL" a ogni avvio causato da directory _MEI* corrotte dopo kill forzato del sidecar. Risolto con cleanup automatico delle _MEI* orfane in %TEMP% prima di spawnare il sidecar.
+- ✅ **#555: Fix Python DLL error (PR #558)** — Popup "Failed to load Python DLL" a ogni avvio causato da directory \_MEI* corrotte dopo kill forzato del sidecar. Risolto con cleanup automatico delle \_MEI* orfane in %TEMP% prima di spawnare il sidecar.
 - ✅ **#514: Fix NSIS installer hook (PR #557)** — Aggiunto installer.nsh con macro NSIS_HOOK_PREINSTALL/PREUNINSTALL che killano i processi fastapi-sidecar esistenti prima di install/disinstall, prevenendo il fallimento della disinstallazione.
 - ✅ **Release v0.1.32 pubblicata** — Sidecar startup fix, build speed (separate frontend), sidecar strip symbols.
 - ✅ **#544: Fix sidecar startup, build speed, artifact size (PR #545, #546, #547)** — P1: sidecar non si avviava — `ECONNREFUSED` ora non mostra errore, ritenta per 60s. P2: build più veloce — `beforeBuildCommand` rimosso, frontend buildato in CI separatamente. P3: sidecar `--strip` per ridurre dimensione artifact del 20-30%.

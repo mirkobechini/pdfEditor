@@ -1,5 +1,30 @@
 # Reflections — Week 1
 
+> **Scopo:** Documentare lezioni apprese durante lo sviluppo, problemi emersi, regole per evitare ripetizioni.
+> **Aggiornato:** 2026-08-03
+
+---
+
+## I fix "non funzionano" — problema del re-building e test su build sbagliata
+
+**Lezione appresa (2026-08-03):** Dopo ogni modifica al frontend, l'utente installa una nuova build. L'agente fa fix logicamente corretti ma l'utente testa sulla build precedente o con cache sporca. Inoltre il DB SQLite persistente tra installazioni mantiene ghost PDF e preferenze vecchie.
+
+**Regola:** Serve validazione esplicita: l'agente deve dire "installa questa build e conferma che X funzioni" prima di passare alla prossima modifica. Non fare più fix in parallelo sullo stesso giro.
+
+## Ghost PDF — rimozione solo dalla UI, non dal DB
+
+**Lezione appresa (2026-08-03):** I ghost PDF (record DB orfani senza file fisico su disco) venivano rimossi solo dalla UI ma non cancellati dal DB. Al prossimo riavvio riapparivano. Fix: DELETE dal DB dopo aver constatato il 404.
+
+**Regola:** Quando un record è corrotto, cancellarlo dal database — non solo nasconderlo dalla UI.
+
+## Impostazioni live (lingua/antialiasing/densità) — effetti impercettibili
+
+**Lezione appresa (2026-08-03):** L'antialiasing (`-webkit-font-smoothing`) ha effetto microscopico — non cambia nulla a occhio nudo. La densità (padding 8/12/20px) è troppo sottile per essere notata.
+
+**Regola:** Chiedere "che effetto ti aspetti?" prima di implementare preferenze UI. Se l'effetto è impercettibile, lasciare stare.
+
+---
+
 ## Il codice fa quello che ho chiesto?
 
 **Parzialmente** — il backend è sostanzialmente completo, il frontend ha delle lacune rispetto alla roadmap.

@@ -19,6 +19,7 @@ class PdfDocument(Base):
     title = Column(String(255), nullable=True)
     author = Column(String(255), nullable=True)
     is_password_protected = Column(Boolean, default=False, nullable=False)
+    pdf_creation_date = Column(String(50), nullable=True)  # Original PDF creation date
 
     created_at = Column(
         DateTime,

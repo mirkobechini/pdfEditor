@@ -531,6 +531,53 @@ export class ApiClient {
     await this._fetch(`${this.baseUrl}/auth/logout`, { method: "POST" });
   }
 
+  async getPreferences(): Promise<{
+    theme: string;
+    language: string;
+    default_zoom: number;
+    antialiasing: boolean;
+    density: string;
+  }> {
+    const res = await this._fetch(`${this.baseUrl}/settings/`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok)
+      return {
+        theme: "dark",
+        language: "it",
+        default_zoom: 100,
+        antialiasing: true,
+        density: "comfortable",
+      };
+    return res.json();
+  }
+
+  async updatePreferences(prefs: {
+    theme?: string;
+    language?: string;
+    default_zoom?: number;
+    antialiasing?: boolean;
+    density?: string;
+  }): Promise<{
+    theme: string;
+    language: string;
+    default_zoom: number;
+    antialiasing: boolean;
+    density: string;
+  } | null> {
+    try {
+      const res = await this._fetch(`${this.baseUrl}/settings/`, {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify(prefs),
+      });
+      if (!res.ok) return null;
+      return res.json();
+    } catch {
+      return null;
+    }
+  }
+
   // ─── Undo / Redo ─────────────────────────────────────────────────
 
   async undoPdf(id: string): Promise<PdfDocument> {

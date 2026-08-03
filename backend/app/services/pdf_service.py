@@ -98,6 +98,9 @@ class PdfService:
         doc = fitz.open(stream=content, filetype="pdf")
         page_count = doc.page_count
         is_encrypted = bool(doc.needs_pass)
+        # Extract original PDF creation date from metadata
+        meta = doc.metadata
+        pdf_creation_date = meta.get("creationDate") if isinstance(meta, dict) else None
         doc.close()
 
         # Enforce page limit (skip for encrypted — can't verify without password)
@@ -116,6 +119,7 @@ class PdfService:
             file_size=len(content),
             page_count=page_count if not is_encrypted else 0,
             is_password_protected=is_encrypted,
+            pdf_creation_date=pdf_creation_date,
             user_id=user_id,
         )
         return self.repo.create(pdf)

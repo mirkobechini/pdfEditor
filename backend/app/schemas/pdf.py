@@ -15,6 +15,7 @@ class PdfResponse(BaseModel):
     title: str | None = None
     author: str | None = None
     is_password_protected: bool = False
+    pdf_creation_date: str | None = None
     created_at: datetime
     updated_at: datetime
 
