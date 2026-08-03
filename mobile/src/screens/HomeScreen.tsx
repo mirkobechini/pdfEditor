@@ -1,35 +1,50 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
-import { Text, Card, FAB, useTheme, ActivityIndicator } from "react-native-paper";
+import { Text, Card, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
-import type { LocalPdf, PdfDocument } from "../shared/types";
-import { api } from "../shared/api";
+import type { LocalPdf } from "../shared/types";
+import { usePdfStorage } from "../hooks/usePdfStorage";
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Home">;
 
 export default function HomeScreen() {
     const theme = useTheme();
     const navigation = useNavigation<HomeNavProp>();
-    const [pdfs, setPdfs] = useState<(LocalPdf | PdfDocument)[]>([]);
+    const { pickAndSavePdf, loadLocalPdfs, loading: storageLoading } = usePdfStorage();
+    const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showMenu, setShowMenu] = useState(false);
 
-    useEffect(() => {
-        loadPdfs();
-    }, []);
+    // Reload PDFs when screen is focused
+    useFocusEffect(
+        useCallback(() => {
+            loadPdfs();
+        }, [])
+    );
 
     async function loadPdfs() {
         setLoading(true);
         try {
-            const response = await api.listPdfs();
-            setPdfs(response.items);
+            const local = await loadLocalPdfs();
+            setPdfs(local);
         } catch {
-            // Offline — show empty list
             setPdfs([]);
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function handleUpload() {
+        setShowMenu(false);
+        const pdf = await pickAndSavePdf();
+        if (pdf) {
+            navigation.navigate("PdfViewer", {
+                pdfId: pdf.id,
+                title: pdf.original_filename,
+            });
         }
     }
 
@@ -48,7 +63,7 @@ export default function HomeScreen() {
             ) : pdfs.length === 0 ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
                     <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}>
-                        No PDFs yet. Tap the + button to upload a PDF or Scanner.
+                        No PDFs yet. Tap the + button to upload a PDF or use the Scanner.
                     </Text>
                 </View>
             ) : (
@@ -71,7 +86,7 @@ export default function HomeScreen() {
                                         {item.original_filename}
                                     </Text>
                                     <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                                        {formatSize(item.file_size)} • {item.page_count} page{item.page_count !== 1 ? "s" : ""}
+                                        {formatSize(item.file_size)}
                                     </Text>
                                 </Card.Content>
                             </Card>
@@ -89,11 +104,33 @@ export default function HomeScreen() {
                     backgroundColor: theme.colors.primary,
                 }}
                 color={theme.colors.onPrimary}
-                onPress={() => {
-                    // TODO: show action sheet: Upload / Scanner
-                    navigation.navigate("Scanner");
-                }}
+                onPress={() => setShowMenu(true)}
             />
+
+            <Portal>
+                <Modal visible={showMenu} onDismiss={() => setShowMenu(false)} contentContainerStyle={{ backgroundColor: theme.colors.surface, margin: 24, borderRadius: 12 }}>
+                    <List.Section>
+                        <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>
+                            Add PDF
+                        </List.Subheader>
+                        <List.Item
+                            title="Upload from device"
+                            description="Pick a PDF file from your device"
+                            left={(props) => <List.Icon {...props} icon="file-upload" />}
+                            onPress={handleUpload}
+                        />
+                        <List.Item
+                            title="Scan with camera"
+                            description="Take a photo and convert to PDF"
+                            left={(props) => <List.Icon {...props} icon="camera" />}
+                            onPress={() => {
+                                setShowMenu(false);
+                                navigation.navigate("Scanner");
+                            }}
+                        />
+                    </List.Section>
+                </Modal>
+            </Portal>
         </SafeAreaView>
     );
 }
