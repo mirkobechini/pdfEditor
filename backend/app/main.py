@@ -63,6 +63,20 @@ def _add_missing_columns():
                 conn.commit()
         if missing:
             logger.info("Added missing columns to users table: %s", ", ".join(m.split()[0] for m in missing))
+
+        # Check user_preferences table for missing columns
+        pref_cols = {c["name"] for c in inspector.get_columns("user_preferences")} if "user_preferences" in inspector.get_table_names() else set()
+        pref_missing = []
+        if "antialiasing" not in pref_cols:
+            pref_missing.append("antialiasing INTEGER NOT NULL DEFAULT 1")
+        if "density" not in pref_cols:
+            pref_missing.append("density VARCHAR(20) NOT NULL DEFAULT 'comfortable'")
+        for col_def in pref_missing:
+            with engine.connect() as conn:
+                conn.execute(text(f"ALTER TABLE user_preferences ADD COLUMN {col_def}"))
+                conn.commit()
+        if pref_missing:
+            logger.info("Added missing columns to user_preferences table: %s", ", ".join(m.split()[0] for m in pref_missing))
     except OperationalError:
         pass  # Table doesn't exist yet — will be created via migration
     except SQLAlchemyError as e:
