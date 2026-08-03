@@ -174,14 +174,14 @@ export default function LoginPage() {
 
                             <div className="flex items-center justify-between text-xs">
                                 <label className="flex cursor-pointer items-center gap-2 text-[#a79a8d]">
-                                    <span className="relative inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#f7871f]">
+                                    <span className={`relative inline-flex h-4 w-4 items-center justify-center rounded-full ${remember ? "bg-[#f7871f]" : "border border-white/20"}`}>
                                         <input
                                             type="checkbox"
                                             checked={remember}
                                             onChange={(e) => setRemember(e.target.checked)}
                                             className="absolute inset-0 cursor-pointer opacity-0"
                                         />
-                                        <span className="text-[10px] font-black text-white">✓</span>
+                                        {remember && <span className="text-[10px] font-black text-white">✓</span>}
                                     </span>
                                     {t("rememberMe")}
                                 </label>

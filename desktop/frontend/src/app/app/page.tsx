@@ -320,11 +320,6 @@ export default function EditorPage() {
                             </button>
                         ))}
                     </div>
-
-                    <div className="mt-6 rounded-2xl border border-[#8a4f22] bg-[#3a2212] p-4">
-                        <p className="text-xs font-bold text-[#ff9a41]">Pro Version Active</p>
-                        <p className="mt-2 text-xs text-[#d29055]">Unlimited cloud sync, batch processing and OCR enabled.</p>
-                    </div>
                 </aside>
             </div>
 
