@@ -1,23 +1,10 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@shared/*": [
-        "./src/shared/*"
-      ]
-    },
-    "jsx": "react-jsx",
-    "moduleResolution": "bundler",
-    "target": "esnext",
-    "module": "esnext",
-    "esModuleInterop": true,
-    "skipLibCheck": true
+      "@shared/*": ["./src/shared/*"]
+    }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ],
-  "extends": "expo/tsconfig.base"
+  "include": ["**/*.ts", "**/*.tsx", "src/**/*.ts", "src/**/*.tsx"]
 }

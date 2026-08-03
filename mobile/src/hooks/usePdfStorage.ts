@@ -1,6 +1,11 @@
+/**
+ * Hook for managing local PDF storage.
+ * Handles file picking, copying to local storage, and DB metadata.
+ * Uses expo-file-system SDK 57+ (Paths, File, Directory).
+ */
 import { useState, useCallback } from "react";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system/legacy";
+import { Paths, File, Directory } from "expo-file-system";
 import {
   savePdfLocally,
   getLocalPdfs,
@@ -8,8 +13,6 @@ import {
   getLocalPdfById,
 } from "../services/localDb";
 import type { LocalPdf } from "../shared/types";
-
-const PDF_DIR = `${FileSystem.documentDirectory}pdfs/`;
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
@@ -30,21 +33,28 @@ export function usePdfStorage() {
 
       const asset = result.assets[0];
       const id = generateId();
-      const destDir = PDF_DIR;
 
-      await FileSystem.makeDirectoryAsync(destDir, { intermediates: true });
+      // Create pdfs directory in documents folder
+      const pdfDir = new Directory(Paths.document, "pdfs");
+      pdfDir.create();
 
-      const destUri = `${destDir}${id}.pdf`;
-      await FileSystem.copyAsync({ from: asset.uri, to: destUri });
+      // Create destination file
+      const destFile = new File(pdfDir, `${id}.pdf`);
+
+      // Copy from source to destination
+      const sourceFile = new File(asset.uri);
+      await sourceFile.copy(destFile);
 
       const now = new Date().toISOString();
 
       const localPdf: LocalPdf = {
         id,
         original_filename: asset.name || "untitled.pdf",
-        file_size: asset.size ?? 0,
+        file_size: destFile.exists
+          ? (destFile.size ?? asset.size ?? 0)
+          : (asset.size ?? 0),
         page_count: 1,
-        uri: destUri,
+        uri: destFile.uri,
         created_at: now,
         updated_at: now,
       };
@@ -71,7 +81,10 @@ export function usePdfStorage() {
     try {
       const pdf = await getLocalPdfById(id);
       if (pdf?.uri) {
-        await FileSystem.deleteAsync(pdf.uri, { idempotent: true });
+        const file = new File(pdf.uri);
+        if (file.exists) {
+          file.delete();
+        }
       }
       await deleteLocalPdf(id);
     } catch (e) {
