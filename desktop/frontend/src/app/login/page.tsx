@@ -181,7 +181,7 @@ export default function LoginPage() {
                                             onChange={(e) => setRemember(e.target.checked)}
                                             className="absolute inset-0 cursor-pointer opacity-0"
                                         />
-                                        <span className="text-[10px] font-black text-white">✓</span>
+                                        {remember && <span className="text-[10px] font-black text-white">✓</span>}
                                     </span>
                                     {t("rememberMe")}
                                 </label>
