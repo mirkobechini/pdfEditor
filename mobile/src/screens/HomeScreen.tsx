@@ -128,6 +128,24 @@ export default function HomeScreen() {
                                 navigation.navigate("Scanner");
                             }}
                         />
+                        <List.Item
+                            title="PDF Tools"
+                            description="Merge, split, reorder, metadata"
+                            left={(props) => <List.Icon {...props} icon="tools" />}
+                            onPress={() => {
+                                setShowMenu(false);
+                                navigation.navigate("Tools");
+                            }}
+                        />
+                        <List.Item
+                            title="Settings"
+                            description="App preferences"
+                            left={(props) => <List.Icon {...props} icon="cog" />}
+                            onPress={() => {
+                                setShowMenu(false);
+                                navigation.navigate("Settings");
+                            }}
+                        />
                     </List.Section>
                 </Modal>
             </Portal>

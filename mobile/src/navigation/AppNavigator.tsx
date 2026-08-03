@@ -7,6 +7,7 @@ import LoginScreen from "../screens/LoginScreen";
 import HomeScreen from "../screens/HomeScreen";
 import PdfViewerScreen from "../screens/PdfViewerScreen";
 import ScannerScreen from "../screens/ScannerScreen";
+import ToolsScreen from "../screens/ToolsScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 
 export type RootStackParamList = {
@@ -14,6 +15,7 @@ export type RootStackParamList = {
     Home: undefined;
     PdfViewer: { pdfId: string; title?: string };
     Scanner: undefined;
+    Tools: undefined;
     Settings: undefined;
 };
 
@@ -49,6 +51,11 @@ export default function AppNavigator() {
                             name="Scanner"
                             component={ScannerScreen}
                             options={{ title: "Scanner" }}
+                        />
+                        <Stack.Screen
+                            name="Tools"
+                            component={ToolsScreen}
+                            options={{ title: "PDF Tools" }}
                         />
                         <Stack.Screen
                             name="Settings"
