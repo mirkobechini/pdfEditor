@@ -3,31 +3,33 @@
  * All operations work offline — no backend needed.
  */
 import { PDFDocument } from "pdf-lib";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { getLocalPdfById, savePdfLocally } from "./localDb";
 import type { LocalPdf } from "../shared/types";
+
+const PDF_DIR = `${FileSystem.documentDirectory}pdfs/`;
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
 }
 
 async function readPdfBytes(uri: string): Promise<Uint8Array> {
-  // Use the new File API from SDK 57
-  const { File } = await import("expo-file-system");
-  const file = new File(uri);
-  const buffer = await file.arrayBuffer();
-  return new Uint8Array(buffer);
+  const base64 = await FileSystem.readAsStringAsync(uri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
 }
 
 async function writePdfBytes(uri: string, bytes: Uint8Array): Promise<void> {
-  const { writeAsStringAsync, EncodingType } =
-    await import("expo-file-system/legacy");
   let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
+  for (let i = 0; i < bytes.length; i++)
     binary += String.fromCharCode(bytes[i]);
-  }
-  const base64 = btoa(binary);
-  await writeAsStringAsync(uri, base64, { encoding: EncodingType.Base64 });
+  await FileSystem.writeAsStringAsync(uri, btoa(binary), {
+    encoding: FileSystem.EncodingType.Base64,
+  });
 }
 
 export async function mergePdfs(pdfIds: string[]): Promise<LocalPdf | null> {
@@ -46,15 +48,9 @@ export async function mergePdfs(pdfIds: string[]): Promise<LocalPdf | null> {
 
     const pdfBytes = await mergedPdf.save();
 
-    // Save result
-    const pdfDir = new (await import("expo-file-system")).Directory(
-      (await import("expo-file-system")).Paths.document,
-      "pdfs",
-    );
-    pdfDir.create();
-
+    await FileSystem.makeDirectoryAsync(PDF_DIR, { intermediates: true });
     const id = generateId();
-    const uri = `${pdfDir.uri}${id}.pdf`;
+    const uri = `${PDF_DIR}${id}.pdf`;
     await writePdfBytes(uri, pdfBytes);
 
     const now = new Date().toISOString();
@@ -86,11 +82,7 @@ export async function splitPdf(
     const bytes = await readPdfBytes(pdf.uri);
     const source = await PDFDocument.load(bytes);
     const results: LocalPdf[] = [];
-    const pdfDir = new (await import("expo-file-system")).Directory(
-      (await import("expo-file-system")).Paths.document,
-      "pdfs",
-    );
-    pdfDir.create();
+    await FileSystem.makeDirectoryAsync(PDF_DIR, { intermediates: true });
 
     for (let i = 0; i < pageRanges.length; i++) {
       const [start, end] = pageRanges[i];
@@ -104,7 +96,7 @@ export async function splitPdf(
       const pdfBytes = await newPdf.save();
 
       const id = generateId();
-      const uri = `${pdfDir.uri}${id}.pdf`;
+      const uri = `${PDF_DIR}${id}.pdf`;
       await writePdfBytes(uri, pdfBytes);
 
       const now = new Date().toISOString();
@@ -145,14 +137,9 @@ export async function reorderPages(
 
     const pdfBytes = await newPdf.save();
 
-    const pdfDir = new (await import("expo-file-system")).Directory(
-      (await import("expo-file-system")).Paths.document,
-      "pdfs",
-    );
-    pdfDir.create();
-
+    await FileSystem.makeDirectoryAsync(PDF_DIR, { intermediates: true });
     const id = generateId();
-    const uri = `${pdfDir.uri}${id}.pdf`;
+    const uri = `${PDF_DIR}${id}.pdf`;
     await writePdfBytes(uri, pdfBytes);
 
     const now = new Date().toISOString();

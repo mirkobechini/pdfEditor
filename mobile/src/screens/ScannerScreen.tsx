@@ -4,8 +4,7 @@ import { Text, Button, useTheme, ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
-import { Paths, Directory } from "expo-file-system";
-import { writeAsStringAsync, EncodingType } from "expo-file-system/legacy";
+import * as FileSystem from "expo-file-system/legacy";
 import { PDFDocument } from "pdf-lib";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -73,10 +72,9 @@ export default function ScannerScreen() {
                 format: SaveFormat.JPEG,
             });
 
-            // Step 2: Read the image as base64 via legacy API
-            const { readAsStringAsync } = await import("expo-file-system/legacy");
-            const base64 = await readAsStringAsync(manipulated.uri, {
-                encoding: EncodingType.Base64,
+            // Step 2: Read the image as base64
+            const base64 = await FileSystem.readAsStringAsync(manipulated.uri, {
+                encoding: FileSystem.EncodingType.Base64,
             });
 
             // Step 3: Create a PDF with pdf-lib and embed the image
@@ -92,11 +90,11 @@ export default function ScannerScreen() {
 
             const pdfBytes = await pdfDoc.save();
 
-            // Step 4: Save PDF locally via legacy API
-            const pdfDir = new Directory(Paths.document, "pdfs");
-            pdfDir.create();
+            // Step 4: Save PDF locally
+            const pdfDir = `${FileSystem.documentDirectory}pdfs/`;
+            await FileSystem.makeDirectoryAsync(pdfDir, { intermediates: true });
             const id = generateId();
-            const pdfFilePath = `${pdfDir.uri}${id}.pdf`;
+            const pdfFilePath = `${pdfDir}${id}.pdf`;
 
             // Convert pdf-lib bytes to base64
             const uint8Array = new Uint8Array(pdfBytes);
@@ -106,8 +104,8 @@ export default function ScannerScreen() {
             }
             const pdfBase64 = btoa(binary);
 
-            await writeAsStringAsync(pdfFilePath, pdfBase64, {
-                encoding: EncodingType.Base64,
+            await FileSystem.writeAsStringAsync(pdfFilePath, pdfBase64, {
+                encoding: FileSystem.EncodingType.Base64,
             });
 
             const now = new Date().toISOString();
