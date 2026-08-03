@@ -210,11 +210,6 @@ pub fn run() {
 
             start_sidecar(app);
 
-            // Open devtools automatically for debugging (production build with devtools feature)
-            if let Some(window) = app.get_webview_window("main") {
-                window.open_devtools();
-            }
-
             // Build tray menu
             let show_item = MenuItem::with_id(app, "show", "Mostra PdfEditor", true, None::<&str>)?;
             let quit_item = MenuItem::with_id(app, "quit", "Esci", true, None::<&str>)?;
