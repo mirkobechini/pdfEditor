@@ -1,7 +1,8 @@
 # Feature: "Rimani connesso" (Remember Me) — Desktop
 
-**Status:** Non iniziata
-**Priority:** ALTA (UX)
+**Status:** Completata
+**Completata il:** 2026-08-03
+**Note:** Fix mergeato su dev via PR #606. Sfondo arancione quando checked, solo bordino quando unchecked. Checkmark visibile solo quando checked.
 
 ## Obiettivo
 
