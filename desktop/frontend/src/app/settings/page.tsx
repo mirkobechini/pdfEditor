@@ -6,7 +6,6 @@ const sections = [
     { id: "general", label: "General" },
     { id: "appearance", label: "Appearance" },
     { id: "editor", label: "Editor" },
-    { id: "cloud", label: "Cloud & Sync" },
     { id: "shortcuts", label: "Shortcuts" },
     { id: "advanced", label: "Advanced" },
     { id: "about", label: "About" },
@@ -87,7 +86,7 @@ function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[
                         </div>
 
                         {row.type === "action" ? (
-                            <button className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">
+                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">
                                 {row.value}
                             </button>
                         ) : (
@@ -101,7 +100,7 @@ function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[
 }
 
 export default function SettingsPage() {
-    const [activeTab, setActiveTab] = React.useState<SectionId>("about");
+    const [activeTab, setActiveTab] = React.useState<SectionId>("general");
 
     function renderTabContent() {
         switch (activeTab) {
@@ -178,29 +177,6 @@ export default function SettingsPage() {
                         </div>
                     </div>
                 );
-            case "cloud":
-                return (
-                    <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Cloud & Sync</h1>
-                        <p className="mt-1 text-[14px] text-[#9d9184]">Backup cifrato, sincronizzazione e archiviazione remota.</p>
-                        <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
-                            <div className="flex items-center justify-between py-3 border-b border-white/10">
-                                <div>
-                                    <p className="text-[16px] font-semibold text-white">Sync automatico</p>
-                                    <p className="text-[14px] text-[#9d9184]">Sincronizza i PDF con Cloudflare R2</p>
-                                </div>
-                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">Disabilitato</span>
-                            </div>
-                            <div className="flex items-center justify-between py-3">
-                                <div>
-                                    <p className="text-[16px] font-semibold text-white">Spazio utilizzato</p>
-                                    <p className="text-[14px] text-[#9d9184]">0 MB di 1 GB</p>
-                                </div>
-                                <span className="text-[#48c769] text-[12px] font-semibold">● Online</span>
-                            </div>
-                        </div>
-                    </div>
-                );
             case "shortcuts":
                 return (
                     <div className="max-w-[900px]">
@@ -234,14 +210,14 @@ export default function SettingsPage() {
                                     <p className="text-[16px] font-semibold text-white">Log di sistema</p>
                                     <p className="text-[14px] text-[#9d9184]">Visualizza i log del sidecar e dell&apos;app</p>
                                 </div>
-                                <button className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">Apri</button>
+                                <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">Apri</button>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
                                     <p className="text-[16px] font-semibold text-white">Cancella cache</p>
                                     <p className="text-[14px] text-[#9d9184]">Libera spazio su disco</p>
                                 </div>
-                                <button className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] font-semibold text-red-300">Cancella</button>
+                                <button className="cursor-pointer rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] font-semibold text-red-300">Cancella</button>
                             </div>
                         </div>
                     </div>
@@ -269,9 +245,9 @@ export default function SettingsPage() {
                         <AboutSection title="Licenza" rows={licenseRows} />
 
                         <section className="mt-7 flex items-center gap-3">
-                            <button className="rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Note di rilascio</button>
-                            <button className="rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Segnala un bug</button>
-                            <button className="rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Documentazione</button>
+                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Note di rilascio</button>
+                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Segnala un bug</button>
+                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">Documentazione</button>
                         </section>
                     </div>
                 );
@@ -281,14 +257,14 @@ export default function SettingsPage() {
     return (
         <div className="min-h-screen bg-[#17120f] p-[3px] text-[#f4f1ee]">
             <div className="mx-auto flex min-h-[calc(100vh-6px)] w-full max-w-[1330px] overflow-hidden rounded-[22px] border border-white/10 bg-[#201a15]">
-                <aside className="w-[250px] border-r border-white/10 bg-[#1f1914] px-5 py-6">
+                <aside className="w-[250px] shrink-0 border-r border-white/10 bg-[#1f1914] px-5 py-6">
                     <div className="space-y-1">
                         {sections.map((item) => {
                             return (
                                 <button
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
-                                    className={`w-full rounded-[14px] px-4 py-2.5 text-left text-[13px] transition ${activeTab === item.id
+                                    className={`w-full rounded-[14px] px-4 py-2.5 text-left text-[13px] transition cursor-pointer ${activeTab === item.id
                                         ? "border border-white/10 bg-[#241d17] font-semibold text-white"
                                         : "border border-transparent text-[#9d9184] hover:text-white"
                                         }`}
@@ -300,7 +276,7 @@ export default function SettingsPage() {
                     </div>
                 </aside>
 
-                <main className="flex-1 bg-[#221b16] px-9 py-8">
+                <main className="flex-1 bg-[#221b16] px-9 py-8 overflow-y-auto">
                     {renderTabContent()}
                 </main>
             </div>
