@@ -205,7 +205,7 @@ export default function LoginPage() {
                             <hr className="flex-1 border-white/10" />
                         </div>
 
-                        <GoogleLoginButton />
+                        {/* <GoogleLoginButton /> */}
 
                         <button
                             type="button"
