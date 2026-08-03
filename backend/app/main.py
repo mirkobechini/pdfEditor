@@ -17,6 +17,7 @@ from app.api.v1.convert import router as convert_router
 from app.api.v1.metadata import router as metadata_router
 from app.api.v1.merge_split import router as merge_split_router
 from app.api.v1.reorder import router as reorder_router
+from app.api.v1.settings import router as settings_router
 from app.api.v1.sync import router as sync_router
 from app.api.v1.text import router as text_router
 from app.api.v1.unlock import router as unlock_router
@@ -246,3 +247,4 @@ app.include_router(text_router)
 app.include_router(unlock_router)
 app.include_router(undo_redo_router)
 app.include_router(sync_router)
+app.include_router(settings_router)

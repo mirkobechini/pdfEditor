@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
+import { api } from "../../shared/api";
 
 const sections = [
     { id: "general", label: "general" },
@@ -103,6 +104,24 @@ function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[
 export default function SettingsPage() {
     const ts = useTranslations("settings");
     const [activeTab, setActiveTab] = React.useState<SectionId>("general");
+    const [theme, setTheme] = React.useState("dark");
+    const [language, setLanguage] = React.useState("it");
+    const [defaultZoom, setDefaultZoom] = React.useState(100);
+    const [saving, setSaving] = React.useState(false);
+
+    // Load preferences on mount
+    React.useEffect(() => {
+        api.getPreferences().then((prefs) => {
+            setTheme(prefs.theme);
+            setLanguage(prefs.language);
+            setDefaultZoom(prefs.default_zoom);
+        });
+    }, []);
+
+    function savePreference(update: { theme?: string; language?: string; default_zoom?: number }) {
+        setSaving(true);
+        api.updatePreferences(update).finally(() => setSaving(false));
+    }
 
     function renderTabContent() {
         switch (activeTab) {
@@ -115,9 +134,16 @@ export default function SettingsPage() {
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
                                     <p className="text-[16px] font-semibold text-white">{ts("language")}</p>
-                                    <p className="text-[14px] text-[#9d9184]">{ts("languageDesc")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{language === "it" ? "Italiano" : "English"}</p>
                                 </div>
-                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">{ts("languageDesc")}</span>
+                                <select
+                                    value={language}
+                                    onChange={(e) => { setLanguage(e.target.value); savePreference({ language: e.target.value }); }}
+                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                >
+                                    <option value="it">Italiano</option>
+                                    <option value="en">English</option>
+                                </select>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
@@ -140,9 +166,16 @@ export default function SettingsPage() {
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
                                     <p className="text-[16px] font-semibold text-white">{ts("theme")}</p>
-                                    <p className="text-[14px] text-[#9d9184]">{ts("themeDesc")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{theme === "dark" ? "Scuro" : "Chiaro"}</p>
                                 </div>
-                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">Scuro</span>
+                                <select
+                                    value={theme}
+                                    onChange={(e) => { setTheme(e.target.value); savePreference({ theme: e.target.value }); }}
+                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                >
+                                    <option value="dark">Scuro</option>
+                                    <option value="light">Chiaro</option>
+                                </select>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
@@ -165,7 +198,15 @@ export default function SettingsPage() {
                                     <p className="text-[16px] font-semibold text-white">{ts("defaultZoom")}</p>
                                     <p className="text-[14px] text-[#9d9184]">{ts("defaultZoomDesc")}</p>
                                 </div>
-                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">125%</span>
+                                <select
+                                    value={defaultZoom}
+                                    onChange={(e) => { const v = parseInt(e.target.value); setDefaultZoom(v); savePreference({ default_zoom: v }); }}
+                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                >
+                                    {[75, 100, 125, 150, 200].map((z) => (
+                                        <option key={z} value={z}>{z}%</option>
+                                    ))}
+                                </select>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
