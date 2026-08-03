@@ -116,14 +116,22 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ---
 
-## 4. Mobile (React Native) — futuro, Fase 4
+## 4. Mobile (React Native / Expo) — Fase 4 (in sviluppo)
 
-| Scelta                            | Alternativa                   | Motivo                                                             |
-| --------------------------------- | ----------------------------- | ------------------------------------------------------------------ |
-| React Native / Expo bare workflow | Flutter, Kotlin Multiplatform | Logica React condivisa con web/desktop.                            |
-| PDF.js via WebView                | PDF nativo                    | Riutilizzo viewer esistente.                                       |
-| SSO Google login                  | —                             | Già implementato su web/desktop.                                   |
-| Phone scanner → PDF               | —                             | Feature pianificata. Vedi `.specs/plans/feature-phone-scanner.md`. |
+| Scelta                                      | Alternativa                           | Motivo                                                                                                     |
+| ------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Expo managed workflow                       | React Native CLI, Expo bare workflow  | Sviluppo rapido, hot-reload con Expo Go, EAS Build per APK cloud. Niente Xcode/Android Studio obbligatorio |
+| React Native Paper + NativeWind             | Solo NativeWind o solo Paper          | Paper per componenti pronti (navigazione, cards, bottoni), NativeWind per ritocchi Tailwind                |
+| `@react-navigation/native-stack`            | Bottom tabs, Expo Router              | Stack navigator semplice per MVP (login → home → viewer → scanner)                                         |
+| `pdf-lib` per editing PDF offline           | PyMuPDF (non disponibile su RN)       | Puro TypeScript, funziona in RN. Merge/split/reorder/metadata/password                                     |
+| `react-native-pdf` per viewer               | PDF.js via WebView                    | Viewer nativo con scroll e zoom integrati                                                                  |
+| `expo-camera` (CameraView)                  | Camera legacy                         | `CameraView` disponibile da SDK 54+, supporto permissions hook                                             |
+| `expo-file-system/legacy` (SDK 54)          | `expo-file-system` nuova API (SDK 57) | SDK 54 usa API legacy. SDK 57+ usa `Paths`, `File`, `Directory`                                            |
+| `@react-native-async-storage/async-storage` | expo-secure-store                     | Semplice per JWT. Import statico (mai dinamico)                                                            |
+| `expo-sqlite` per DB locale                 | —                                     | Metadati PDF locali, coda sync futuro                                                                      |
+| EAS Build per distribuzione APK             | Expo Go, sideloading manuale          | Build cloud gratuita, APK scaricabile. Richiede `.easignore` per escludere node_modules (max 2GB upload)   |
+| SDK 57 (progetto) con APK diretto           | SDK 54 (Expo Go compatibile)          | SDK 57 è l'ultima. Expo Go sul Play Store potrebbe essere indietro — usare APK diretto invece              |
+| `"use client"` **non usare**                | Copiata da shared/ Next.js            | Direttiva Next.js, non esiste in React Native. Causa errore runtime                                        |
 
 ---
 
@@ -159,12 +167,13 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Roadmap
 
-| Fase                                   | Descrizione                                                                                                            |           Stato            |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | :------------------------: |
-| **Fase 1c — Desktop app (Tauri v2)**   | Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI. SQLite locale. Installer per Windows/macOS/Linux. |  ✅ Completata (v0.1.20)   |
-| **Fase 2 — Web app su cloud**          | Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export.                  | ✅ Completata (2026-07-10) |
-| **Fase 3 — Cloud sync**                | Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti.                                      |       ✅ Completata        |
-| **Fase 4 — Mobile app (React Native)** | Setup React Native (Expo bare workflow). Logica React condivisa. UI nativa. Store deployment.                          |         ⬜ Futuro          |
+| Fase                                        | Descrizione                                                                                                            |               Stato               |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | :-------------------------------: |
+| **Fase 1c — Desktop app (Tauri v2)**        | Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI. SQLite locale. Installer per Windows/macOS/Linux. |      ✅ Completata (v0.1.20)      |
+| **Fase 2 — Web app su cloud**               | Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export.                  |    ✅ Completata (2026-07-10)     |
+| **Fase 3 — Cloud sync**                     | Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti.                                      |           ✅ Completata           |
+| **Fase 4 — Mobile app (React Native/Expo)** | Setup Expo + auth + upload + viewer + scanner + editing pdf-lib + EAS Build APK.                                       | ✅ Completata (MVP v0.1.0 mobile) |
+| **Fase 4b — EAS CI Integration**            | Collegare EAS Build a GitHub Actions per build automatica su tag release.                                              |            ⬜ In piano            |
 
 > 📋 **Storico completo dei fix:** Vedi [`CHANGELOG.md`](./CHANGELOG.md).
 > 🐞 **Bug aperti e debito tecnico:** Vedi [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md).
