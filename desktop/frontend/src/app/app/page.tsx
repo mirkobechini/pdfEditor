@@ -195,7 +195,7 @@ export default function EditorPage() {
                                             <div className="min-w-0 flex-1">
                                                 <p className="text-[14px] font-semibold leading-tight text-[#f3ede7] truncate">{doc.original_filename}</p>
                                                 <p className="mt-1 font-mono text-[10px] text-[#7e7267]">
-                                                    {formatFileSize(doc.file_size)} · {formatDate(doc.created_at)}
+                                                    {formatFileSize(doc.file_size)} · {doc.pdf_creation_date ? formatDate(doc.pdf_creation_date) : formatDate(doc.created_at)}
                                                 </p>
                                             </div>
                                         </div>

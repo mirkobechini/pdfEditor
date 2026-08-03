@@ -64,6 +64,18 @@ def _add_missing_columns():
         if missing:
             logger.info("Added missing columns to users table: %s", ", ".join(m.split()[0] for m in missing))
 
+        # Check pdf_documents table for missing columns
+        pdf_cols = {c["name"] for c in inspector.get_columns("pdf_documents")} if "pdf_documents" in inspector.get_table_names() else set()
+        pdf_missing = []
+        if "pdf_creation_date" not in pdf_cols:
+            pdf_missing.append("pdf_creation_date VARCHAR(50)")
+        for col_def in pdf_missing:
+            with engine.connect() as conn:
+                conn.execute(text(f"ALTER TABLE pdf_documents ADD COLUMN {col_def}"))
+                conn.commit()
+        if pdf_missing:
+            logger.info("Added missing columns to pdf_documents table: %s", ", ".join(m.split()[0] for m in pdf_missing))
+
         # Check user_preferences table for missing columns
         pref_cols = {c["name"] for c in inspector.get_columns("user_preferences")} if "user_preferences" in inspector.get_table_names() else set()
         pref_missing = []
