@@ -535,11 +535,20 @@ export class ApiClient {
     theme: string;
     language: string;
     default_zoom: number;
+    antialiasing: boolean;
+    density: string;
   }> {
     const res = await this._fetch(`${this.baseUrl}/settings/`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) return { theme: "dark", language: "it", default_zoom: 100 };
+    if (!res.ok)
+      return {
+        theme: "dark",
+        language: "it",
+        default_zoom: 100,
+        antialiasing: true,
+        density: "comfortable",
+      };
     return res.json();
   }
 
@@ -547,10 +556,14 @@ export class ApiClient {
     theme?: string;
     language?: string;
     default_zoom?: number;
+    antialiasing?: boolean;
+    density?: string;
   }): Promise<{
     theme: string;
     language: string;
     default_zoom: number;
+    antialiasing: boolean;
+    density: string;
   } | null> {
     try {
       const res = await this._fetch(`${this.baseUrl}/settings/`, {

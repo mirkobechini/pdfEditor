@@ -14,12 +14,16 @@ class PreferenceResponse(BaseModel):
     theme: str
     language: str
     default_zoom: int
+    antialiasing: bool
+    density: str
 
 
 class PreferenceUpdateRequest(BaseModel):
     theme: str | None = None
     language: str | None = None
     default_zoom: int | None = None
+    antialiasing: bool | None = None
+    density: str | None = None
 
 
 def _get_user_id(request: Request) -> str:
@@ -51,8 +55,10 @@ def get_preferences(
             theme=pref.theme,
             language=pref.language,
             default_zoom=pref.default_zoom,
+            antialiasing=bool(pref.antialiasing),
+            density=pref.density,
         )
-    return PreferenceResponse(theme="dark", language="it", default_zoom=100)
+    return PreferenceResponse(theme="dark", language="it", default_zoom=100, antialiasing=True, density="comfortable")
 
 
 @router.put("/", response_model=PreferenceResponse)
@@ -69,9 +75,13 @@ def update_preferences(
         theme=req.theme,
         language=req.language,
         default_zoom=req.default_zoom,
+        antialiasing=req.antialiasing,
+        density=req.density,
     )
     return PreferenceResponse(
         theme=pref.theme,
         language=pref.language,
         default_zoom=pref.default_zoom,
+        antialiasing=bool(pref.antialiasing),
+        density=pref.density,
     )

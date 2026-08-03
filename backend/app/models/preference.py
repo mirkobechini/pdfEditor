@@ -15,6 +15,8 @@ class UserPreference(Base):
     theme = Column(String(20), default="dark", nullable=False)
     language = Column(String(10), default="it", nullable=False)
     default_zoom = Column(Integer, default=100, nullable=False)  # percentage
+    antialiasing = Column(Integer, default=1, nullable=False)  # boolean as int for SQLite
+    density = Column(String(20), default="comfortable", nullable=False)  # compact, comfortable, spacious
 
     created_at = Column(
         DateTime,

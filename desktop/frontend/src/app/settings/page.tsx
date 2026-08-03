@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../../shared/api";
+import { useAuth } from "../../shared/auth";
 
 const sections = [
     { id: "general", label: "general" },
@@ -103,11 +104,15 @@ function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[
 
 export default function SettingsPage() {
     const ts = useTranslations("settings");
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = React.useState<SectionId>("general");
     const [theme, setTheme] = React.useState("dark");
     const [language, setLanguage] = React.useState("it");
     const [defaultZoom, setDefaultZoom] = React.useState(100);
+    const [antialiasing, setAntialiasing] = React.useState(true);
+    const [density, setDensity] = React.useState("comfortable");
     const [saving, setSaving] = React.useState(false);
+    const [appVersion, setAppVersion] = React.useState("");
 
     // Load preferences on mount
     React.useEffect(() => {
@@ -115,10 +120,15 @@ export default function SettingsPage() {
             setTheme(prefs.theme);
             setLanguage(prefs.language);
             setDefaultZoom(prefs.default_zoom);
+            setAntialiasing(prefs.antialiasing);
+            setDensity(prefs.density);
         });
+        // Read version from common i18n
+        const tc = (window as any).__NEXT_INTL_MESSAGES?.common?.version;
+        if (tc) setAppVersion(tc);
     }, []);
 
-    function savePreference(update: { theme?: string; language?: string; default_zoom?: number }) {
+    function savePreference(update: { theme?: string; language?: string; default_zoom?: number; antialiasing?: boolean; density?: string }) {
         setSaving(true);
         api.updatePreferences(update).finally(() => setSaving(false));
     }
@@ -177,12 +187,32 @@ export default function SettingsPage() {
                                     <option value="light">Chiaro</option>
                                 </select>
                             </div>
-                            <div className="flex items-center justify-between py-3">
+                            <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
                                     <p className="text-[16px] font-semibold text-white">{ts("density")}</p>
                                     <p className="text-[14px] text-[#9d9184]">{ts("densityDesc")}</p>
                                 </div>
-                                <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px]">Comodo</span>
+                                <select
+                                    value={density}
+                                    onChange={(e) => { setDensity(e.target.value); savePreference({ density: e.target.value }); }}
+                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                >
+                                    <option value="compact">Compatto</option>
+                                    <option value="comfortable">Comodo</option>
+                                    <option value="spacious">Ampio</option>
+                                </select>
+                            </div>
+                            <div className="flex items-center justify-between py-3">
+                                <div>
+                                    <p className="text-[16px] font-semibold text-white">{ts("antialiasing")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("antialiasingDesc")}</p>
+                                </div>
+                                <button
+                                    onClick={() => { setAntialiasing(!antialiasing); savePreference({ antialiasing: !antialiasing }); }}
+                                    className={`h-6 w-11 rounded-full relative transition-colors cursor-pointer ${antialiasing ? "bg-[#f7871f]" : "bg-white/20"}`}
+                                >
+                                    <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${antialiasing ? "right-0.5" : "left-0.5"}`} />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -207,15 +237,6 @@ export default function SettingsPage() {
                                         <option key={z} value={z}>{z}%</option>
                                     ))}
                                 </select>
-                            </div>
-                            <div className="flex items-center justify-between py-3">
-                                <div>
-                                    <p className="text-[16px] font-semibold text-white">{ts("antialiasing")}</p>
-                                    <p className="text-[14px] text-[#9d9184]">{ts("antialiasingDesc")}</p>
-                                </div>
-                                <div className="h-6 w-11 rounded-full bg-[#f7871f] relative">
-                                    <div className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow" />
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -280,7 +301,7 @@ export default function SettingsPage() {
 
                             <div>
                                 <h2 className="text-[42px] font-bold leading-tight text-white">PdfEditor</h2>
-                                <p className="mt-1 text-[14px] text-[#9d9184]">v1.4.2 (build 20260728·a3f19c2) · macOS arm64</p>
+                                <p className="mt-1 text-[14px] text-[#9d9184]">{appVersion || "v0.1.33"} · {user?.license_tier || "Free"} License</p>
                             </div>
                         </section>
 
