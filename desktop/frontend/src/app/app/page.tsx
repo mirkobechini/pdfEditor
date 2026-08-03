@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
 import { getApiBaseUrl, isTauri, tauriInvoke } from "../../shared/tauri";
@@ -201,7 +202,7 @@ export default function EditorPage() {
 
                     <GuestConvertBanner />
 
-                    <div className="border-t border-white/8 p-5">
+                    <Link href="/settings" className="border-t border-white/8 p-5 block hover:bg-white/[0.02] transition-colors">
                         <div className="mb-3 flex items-center justify-between">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#918476]">Cloud Sync</p>
                             <span className="h-2.5 w-2.5 rounded-full bg-[#3ec35f]" />
@@ -215,7 +216,7 @@ export default function EditorPage() {
                                 <p className="text-[12px] text-[#8d8175]">{user?.license_tier || "Free"} License</p>
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 </aside>
 
                 <main className="flex flex-col border-r border-white/10 bg-[#13100d] min-h-0">
