@@ -23,43 +23,41 @@ Verificare se ci sono ancora schermate che sono solo mockup invece di pagine eff
 
 ## Pagine da verificare — Risultati audit
 
-| Pagina | Stato | Note |
-|--------|:-----:|------|
-| `/app` (editor) | 🟡 Parziale | Documenti reali, upload reale, viewer reale. **Toolbar mock**: Edit/Organize/Convert tabs non fanno nulla. Merge/Split/Reorder/Remove/Metadata sono bottoni senza handler. |
-| `/settings` | 🟡 Parziale | **Salvataggio backend funzionante** (lingua, tema, zoom, antialiasing, densità). **❌ Impostazioni non applicate**: cambiare tema/zoom/antialiasing/densità non ha effetto sull'app. **❌ About**: dati licenza e dispositivi hardcoded. **❌ Bottoni Advanced e About non funzionanti**. |
-| `/license` | 🔴 Mock | Licenza hardcoded, tier finti, bottoni non funzionanti. |
-| `/wizard` | ✅ Reale | Funzionante |
-| `/login` | ✅ Reale | Funzionante |
-| `/register` | ✅ Reale | Funzionante |
-| `/startup` | ✅ Reale | Funzionante |
+| Pagina          |    Stato    | Note                                                                                                                                                                                                                                       |
+| --------------- | :---------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/app` (editor) | 🟡 Parziale | Documenti reali, upload reale, viewer reale. **Toolbar mock**: Edit/Organize/Convert tabs non fanno nulla. Merge/Split/Reorder/Remove/Metadata sono bottoni senza handler.                                                                 |
+| `/settings`     | 🟡 Parziale | **Salvataggio backend funzionante** ✅ Tema/antialiasing/densità applicati all'UI. **Bottoni Advanced e About funzionanti** ✅ **❌ About**: dati licenza e dispositivi hardcoded. **❌ Segnala bug**: da implementare dialog webapp-like. |
+| `/license`      |   🔴 Mock   | Licenza hardcoded, tier finti, bottoni non funzionanti.                                                                                                                                                                                    |
+| `/wizard`       |  ✅ Reale   | Funzionante                                                                                                                                                                                                                                |
+| `/login`        |  ✅ Reale   | Funzionante                                                                                                                                                                                                                                |
+| `/register`     |  ✅ Reale   | Funzionante                                                                                                                                                                                                                                |
+| `/startup`      |  ✅ Reale   | Funzionante                                                                                                                                                                                                                                |
 
 ## Fix da fare
 
-### 1. Applicare le impostazioni salvate
-Le preferenze (tema, zoom, antialiasing, densità) vengono salvate in SQLite ma **non applicate** all'interfaccia. Serve:
-- Tema: applicare classe CSS `dark`/`light` al `<html>` 
-- Zoom: usare il valore `default_zoom` all'apertura del PDF
-- Antialiasing: toggle CSS `-webkit-font-smoothing`
-- Densità: classi CSS condizionali sul layout
+### 1. Applicare le impostazioni salvate ✅
 
-### 2. Bottoni Advanced e About (settings page)
-- **Advanced → Log di sistema**: bottone "Apri" non fa nulla
-- **Advanced → Cancella cache**: bottone "Cancella" non fa nulla
-- **About → Note di rilascio**: non fa nulla
-- **About → Segnala un bug**: non fa nulla
-- **About → Documentazione**: non fa nulla
+Tema, antialiasing, densità applicati all'UI. Zoom da collegare all'editor.
+
+### 2. Bottoni Advanced e About (settings page) ✅
+
+Log di sistema, cancella cache, note di rilascio, documentazione funzionanti. **Segnala bug**: da implementare dialog webapp-like (plan separato).
 
 ### 3. About dati hardcoded
+
 - `licenseRows` contiene "Chiave licenza" e "Attivata su 2 dispositivi di 3" — dati finti
 - Rimuovere o rendere dinamico con dati reali dal backend
 
 ### 4. Toolbar editor (Merge/Split/Reorder/Remove/Metadata)
+
 I bottoni nella toolbar sono solo placeholder. Implementare i dialog (vedi plan separati).
 
 ### 5. Edit/Organize/Convert tabs
+
 Non fanno nulla. Decidere se implementare o rimuovere.
 
 ### 6. Pagina license
+
 Rimuovere dati hardcoded. Valutare se serve o se usare la licenza reale dal backend.
 
 ## Status
