@@ -250,6 +250,12 @@ export default function EditorPage() {
                             {"Merge Split Reorder Remove Metadata".split(" ").map((item) => (
                                 <button key={item} className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white">{item}</button>
                             ))}
+                            <Link href="/settings" className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#9a8d80] hover:bg-white/6 hover:text-white transition-colors" title="Impostazioni">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="3" />
+                                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                                </svg>
+                            </Link>
                         </div>
                     </header>
 
