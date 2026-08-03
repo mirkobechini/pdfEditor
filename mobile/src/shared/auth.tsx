@@ -1,8 +1,7 @@
-"use client";
-
 import React, { createContext, useContext, useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 import type { User } from "./types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const REMEMBER_TOKEN_KEY = "pdfeditor_remember_token";
 
@@ -18,47 +17,54 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// AsyncStorage wrapper (lazy import for Expo compatibility)
-let AsyncStorage: { getItem: (k: string) => Promise<string | null>; setItem: (k: string, v: string) => Promise<void>; removeItem: (k: string) => Promise<void> };
-
-async function getAsyncStorage() {
-    if (!AsyncStorage) {
-        const mod = await import("@react-native-async-storage/async-storage");
-        AsyncStorage = mod.default;
-    }
-    return AsyncStorage;
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
+        const safetyTimer = setTimeout(() => {
+            if (!cancelled) setLoading(false);
+        }, 4000);
 
         async function restoreSession() {
             try {
-                const storage = await getAsyncStorage();
-                const remembered = await storage.getItem(REMEMBER_TOKEN_KEY);
-                if (remembered) {
+                const remembered = await AsyncStorage.getItem(REMEMBER_TOKEN_KEY);
+                if (remembered && !cancelled) {
                     api.setToken(remembered);
                 }
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 5000);
                 try {
-                    const u = await api.getMe();
-                    if (!cancelled) {
+                    const res = await fetch("https://pdfeditor-api.mirkobechini.com/auth/me", {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${api.getToken() || ""}`,
+                            "Content-Type": "application/json",
+                        },
+                        signal: controller.signal,
+                    });
+                    if (res.ok && !cancelled) {
+                        const u = await res.json();
                         setUser(u);
-                        return;
                     }
                 } catch {
-                    // Offline — no session to restore
+                    // Offline — ignore
+                } finally {
+                    clearTimeout(timeout);
                 }
+            } catch {
+                // AsyncStorage error
             } finally {
-                if (!cancelled) setLoading(false);
+                if (!cancelled) {
+                    clearTimeout(safetyTimer);
+                    setLoading(false);
+                }
             }
         }
 
         restoreSession();
-        return () => { cancelled = true; };
+        return () => { cancelled = true; clearTimeout(safetyTimer); };
     }, []);
 
     const login = useCallback(async (email: string, password: string, remember?: boolean) => {
@@ -67,14 +73,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const res = await api.login(email, password);
             api.setToken(res.access_token);
             if (remember) {
-                const storage = await getAsyncStorage();
-                await storage.setItem(REMEMBER_TOKEN_KEY, res.access_token);
+                await AsyncStorage.setItem(REMEMBER_TOKEN_KEY, res.access_token);
             } else {
-                const storage = await getAsyncStorage();
-                await storage.removeItem(REMEMBER_TOKEN_KEY);
+                await AsyncStorage.removeItem(REMEMBER_TOKEN_KEY);
             }
             const u = await api.getMe();
             setUser(u);
+        } catch (e) {
+            throw e;
         } finally {
             setLoading(false);
         }
@@ -101,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const u = await api.getMe();
                 setUser(u);
             } catch {
-                // Login succeeded but getMe failed — ignore
+                // Login ok but getMe failed
             }
         } finally {
             setLoading(false);
@@ -116,10 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             api.setToken(null);
             api.setCsrfToken(null);
             setUser(null);
-            try {
-                const storage = await getAsyncStorage();
-                await storage.removeItem(REMEMBER_TOKEN_KEY);
-            } catch { /* ignore */ }
+            try { await AsyncStorage.removeItem(REMEMBER_TOKEN_KEY); } catch { /* ignore */ }
         }
     }, []);
 
