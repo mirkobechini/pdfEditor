@@ -130,6 +130,21 @@ mobile/
 - Installare: react-native-paper, nativewind, react-navigation, expo-file-system, expo-camera, pdf-lib, react-native-pdf, react-native-blob-util, expo-sqlite, async-storage
 - Configurare NativeWind + tailwind.config.js
 
+### 1b. CI — Mobile Test CI
+
+- Workflow `.github/workflows/test-mobile.yml`:
+  - Trigger: push su `feature/611-*` e `dev`, PR verso `dev`
+  - Steps: checkout → setup Node → npm ci → npx tsc --noEmit
+  - Nome job: "mobile-test"
+
+### 1c. CI — Release Mobile App
+
+- Workflow `.github/workflows/release-mobile.yml`:
+  - Trigger: tag `v*` (stesso trigger della release desktop, ma condizionale)
+  - Steps: checkout → setup Node → npm ci → eas build --platform android
+  - Richiede: account Expo + EXPO_TOKEN in GitHub secrets
+  - APK caricato su GitHub Release esistente (stessa release del desktop)
+
 ### 2. Shared adapter per React Native
 
 - Copiare `shared/src/types.ts` → `mobile/src/shared/types.ts`
@@ -191,6 +206,23 @@ mobile/
 - Configurare eas.json per build Android
 - `eas build --platform android --profile preview`
 - Scaricare APK e allegare a GitHub Release
+
+## CI Workflows
+
+### Mobile Test CI (`.github/workflows/test-mobile.yml`)
+
+- **Trigger**: push su `feature/611-*` e `dev`, PR verso `dev`
+- **Steps**: checkout → setup Node → npm ci → `npx tsc --noEmit`
+- **Nome job**: `mobile-test`
+- **Obiettivo**: garantire che il codice mobile compili senza errori
+
+### Release Mobile App (`.github/workflows/release-mobile.yml`)
+
+- **Trigger**: tag `v*` (stesso trigger della release desktop)
+- **Prerequisito**: account Expo gratuito + `EXPO_TOKEN` nei GitHub secrets
+- **Steps**: checkout → setup Node → npm ci → `eas build --platform android --non-interactive`
+- **Output**: APK caricato sulla stessa GitHub Release del desktop
+- **EAS Build**: servizio cloud Expo (gratis, 30 build/mese) — nessun Android SDK richiesto sulla macchina CI
 
 ## Note
 
