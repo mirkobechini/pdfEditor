@@ -1,6 +1,6 @@
 # Feature: Settings Access from Editor
 
-**Status:** Non iniziata
+**Status:** ✅ Completata (2026-08-03)
 
 ## Obiettivo
 
@@ -28,4 +28,7 @@ Mettere in funzione l'accesso alle impostazioni dall'editor desktop.
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+
+**Completata il:** 2026-08-03
+**Note:** Gear icon in sidebar + navigazione via `<Link href="/settings">`. Settings page reali con preferenze backend.

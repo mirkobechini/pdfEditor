@@ -1,10 +1,10 @@
 # Feature: Settings gear icon button in editor
 
-**Status:** Non iniziata
+**Status:** ✅ Completata (2026-08-03)
 
 ## Obiettivo
 
-Aggiungere un pulsante con icona ingranaggio nella schermata principale dell'editor per accedere alle impostazioni, separato dal click sul nome utente.
+Aggiungere un pulsante con icona ingranaggio nella schermata principale dell'editor per accedere alle impostazioni.
 
 ## Dipendenze
 
@@ -27,4 +27,7 @@ Aggiungere un pulsante con icona ingranaggio nella schermata principale dell'edi
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata
+
+**Completata il:** 2026-08-03
+**Note:** Icona ingranaggio nella sidebar dell'editor. Il click sul nome utente va a `/profile`.
