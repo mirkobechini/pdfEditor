@@ -202,21 +202,29 @@ export default function EditorPage() {
 
                     <GuestConvertBanner />
 
-                    <Link href="/profile" className="border-t border-white/8 p-5 block hover:bg-white/[0.02] transition-colors">
+                    <div className="border-t border-white/8 p-5">
                         <div className="mb-3 flex items-center justify-between">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#918476]">Cloud Sync</p>
                             <span className="h-2.5 w-2.5 rounded-full bg-[#3ec35f]" />
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#3e2717] text-sm font-bold text-[#f7871f]">
-                                {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold leading-tight truncate">{user?.full_name || "Utente"}</p>
-                                <p className="text-[12px] text-[#8d8175]">{user?.license_tier || "Free"} License</p>
-                            </div>
+                            <Link href="/settings" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm hover:bg-white/15 transition-colors" title="Impostazioni">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#9a8d80]">
+                                    <circle cx="12" cy="12" r="3" />
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                </svg>
+                            </Link>
+                            <Link href="/profile" className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#3e2717] text-sm font-bold text-[#f7871f] shrink-0">
+                                    {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold leading-tight truncate">{user?.full_name || "Utente"}</p>
+                                    <p className="text-[12px] text-[#8d8175]">{user?.license_tier || "Free"} License</p>
+                                </div>
+                            </Link>
                         </div>
-                    </Link>
+                    </div>
                 </aside>
 
                 <main className="flex flex-col border-r border-white/10 bg-[#13100d] min-h-0">
@@ -250,12 +258,6 @@ export default function EditorPage() {
                             {"Merge Split Reorder Remove Metadata".split(" ").map((item) => (
                                 <button key={item} className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white">{item}</button>
                             ))}
-                            <Link href="/settings" className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#9a8d80] hover:bg-white/6 hover:text-white transition-colors" title="Impostazioni">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="3" />
-                                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-                                </svg>
-                            </Link>
                         </div>
                     </header>
 

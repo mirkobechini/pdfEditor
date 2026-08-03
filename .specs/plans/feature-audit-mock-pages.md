@@ -37,7 +37,7 @@ Verificare se ci sono ancora schermate che sono solo mockup invece di pagine eff
 
 ### 1. Applicare le impostazioni salvate ✅
 
-Tema, antialiasing, densità applicati all'UI. Zoom da collegare all'editor.
+Tema, antialiasing, densità applicati all'UI. **Tema deferito**: i colori sono hardcoded (non usano `dark:`), serve refactoring CSS futuro. Zoom da collegare all'editor.
 
 ### 2. Bottoni Advanced e About (settings page) ✅
 

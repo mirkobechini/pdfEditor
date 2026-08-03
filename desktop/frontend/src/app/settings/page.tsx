@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
@@ -115,8 +116,6 @@ export default function SettingsPage() {
             setDefaultZoom(prefs.default_zoom);
             setAntialiasing(prefs.antialiasing);
             setDensity(prefs.density);
-            // Apply theme to document
-            applyTheme(prefs.theme);
             // Apply antialiasing
             document.documentElement.style.setProperty("-webkit-font-smoothing", prefs.antialiasing ? "antialiased" : "auto");
             // Apply density
@@ -127,19 +126,9 @@ export default function SettingsPage() {
         if (tc) setAppVersion(tc);
     }, []);
 
-    function applyTheme(t: string) {
-        if (t === "dark") {
-            document.documentElement.classList.add("dark");
-        } else {
-            document.documentElement.classList.remove("dark");
-        }
-        localStorage.setItem("darkMode", t === "dark" ? "true" : "false");
-    }
-
     function savePreference(update: { theme?: string; language?: string; default_zoom?: number; antialiasing?: boolean; density?: string }) {
         setSaving(true);
         // Apply immediately to UI before saving to backend
-        if (update.theme !== undefined) { setTheme(update.theme); applyTheme(update.theme); }
         if (update.antialiasing !== undefined) {
             setAntialiasing(update.antialiasing);
             document.documentElement.style.setProperty("-webkit-font-smoothing", update.antialiasing ? "antialiased" : "auto");
@@ -193,20 +182,6 @@ export default function SettingsPage() {
                         <h1 className="text-[36px] font-bold leading-tight text-white">{ts("appearanceTitle")}</h1>
                         <p className="mt-1 text-[14px] text-[#9d9184]">{ts("appearanceDesc")}</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
-                            <div className="flex items-center justify-between py-3 border-b border-white/10">
-                                <div>
-                                    <p className="text-[16px] font-semibold text-white">{ts("theme")}</p>
-                                    <p className="text-[14px] text-[#9d9184]">{theme === "dark" ? "Scuro" : "Chiaro"}</p>
-                                </div>
-                                <select
-                                    value={theme}
-                                    onChange={(e) => { savePreference({ theme: e.target.value }); }}
-                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
-                                >
-                                    <option value="dark">Scuro</option>
-                                    <option value="light">Chiaro</option>
-                                </select>
-                            </div>
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
                                     <p className="text-[16px] font-semibold text-white">{ts("density")}</p>
@@ -357,6 +332,14 @@ export default function SettingsPage() {
                                 </button>
                             );
                         })}
+                    </div>
+                    <div className="mt-6 pt-6 border-t border-white/10">
+                        <Link href="/app" className="flex items-center gap-2 rounded-[14px] px-4 py-2.5 text-[13px] text-[#9d9184] hover:text-white transition cursor-pointer">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M15 18l-6-6 6-6" />
+                            </svg>
+                            Editor
+                        </Link>
                     </div>
                 </aside>
 
