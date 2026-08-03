@@ -107,9 +107,15 @@ export default function EditorPage() {
                             credentials: "include",
                             headers: { "Authorization": `Bearer ${(api as any).token}` },
                         });
-                        if (headRes.ok) verified.push(doc);
+                        if (headRes.ok) {
+                            verified.push(doc);
+                        } else {
+                            // Ghost PDF: remove from DB too
+                            api.deletePdf(doc.id).catch(() => { });
+                        }
                     } catch {
-                        // 404 = ghost, skip
+                        // Network error or 404 — remove from DB
+                        api.deletePdf(doc.id).catch(() => { });
                     }
                 }
                 setDocs(verified);

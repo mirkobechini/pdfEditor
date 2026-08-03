@@ -119,7 +119,7 @@ export default function SettingsPage() {
             setAntialiasing(prefs.antialiasing);
             setDensity(prefs.density);
             // Apply antialiasing
-            document.documentElement.style.setProperty("-webkit-font-smoothing", prefs.antialiasing ? "antialiased" : "auto");
+            document.body.style.setProperty("-webkit-font-smoothing", prefs.antialiasing ? "antialiased" : "auto");
             // Apply density
             document.documentElement.dataset.density = prefs.density;
         });
@@ -133,7 +133,7 @@ export default function SettingsPage() {
         // Apply immediately to UI before saving to backend
         if (update.antialiasing !== undefined) {
             setAntialiasing(update.antialiasing);
-            document.documentElement.style.setProperty("-webkit-font-smoothing", update.antialiasing ? "antialiased" : "auto");
+            document.body.style.setProperty("-webkit-font-smoothing", update.antialiasing ? "antialiased" : "auto");
         }
         if (update.density !== undefined) {
             setDensity(update.density);
