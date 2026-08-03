@@ -117,7 +117,8 @@ export default function EditorPage() {
 
         let cancelled = false;
         let currentUrl: string | null = null;
-        api.downloadPdf(selectedDoc.id)
+        const docId = selectedDoc?.id;
+        api.downloadPdf(docId!)
             .then((blob) => {
                 if (cancelled) return;
                 const url = URL.createObjectURL(blob);
@@ -125,7 +126,11 @@ export default function EditorPage() {
                 setPdfUrl(url);
             })
             .catch(() => {
-                // Download failed
+                // Download failed — file missing on disk. Remove ghost document from list.
+                if (!cancelled && docId) {
+                    setDocs((prev) => prev.filter((d) => d.id !== docId));
+                    setSelectedDoc(null);
+                }
             });
 
         return () => {
