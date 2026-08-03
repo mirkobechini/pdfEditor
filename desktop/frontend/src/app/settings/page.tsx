@@ -317,6 +317,12 @@ export default function SettingsPage() {
         <div className="min-h-screen bg-[#17120f] p-[3px] text-[#f4f1ee]">
             <div className="mx-auto flex min-h-[calc(100vh-6px)] w-full max-w-[1330px] overflow-hidden rounded-[22px] border border-white/10 bg-[#201a15]">
                 <aside className="w-[250px] shrink-0 border-r border-white/10 bg-[#1f1914] px-5 py-6">
+                    <Link href="/app" className="flex items-center gap-2 rounded-[14px] border border-white/10 bg-[#2a231d] px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-[#2f2822] transition cursor-pointer mb-6">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                        Torna all'editor
+                    </Link>
                     <div className="space-y-1">
                         {sections.map((item) => {
                             return (
@@ -332,14 +338,6 @@ export default function SettingsPage() {
                                 </button>
                             );
                         })}
-                    </div>
-                    <div className="mt-6 pt-6 border-t border-white/10">
-                        <Link href="/app" className="flex items-center gap-2 rounded-[14px] px-4 py-2.5 text-[13px] text-[#9d9184] hover:text-white transition cursor-pointer">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M15 18l-6-6 6-6" />
-                            </svg>
-                            Editor
-                        </Link>
                     </div>
                 </aside>
 

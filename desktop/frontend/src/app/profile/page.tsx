@@ -23,8 +23,8 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#17120f] p-[3px] text-[#f4f1ee]">
-            <div className="mx-auto min-h-[calc(100vh-6px)] w-full max-w-[800px] rounded-[22px] border border-white/10 bg-[#201a15] p-10">
+        <div className="min-h-screen bg-[#17120f] text-[#f4f1ee]">
+            <div className="mx-auto max-w-[800px] px-6 py-10">
                 <div className="flex items-center gap-4 mb-8">
                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#3e2717] text-2xl font-bold text-[#f7871f]">
                         {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
