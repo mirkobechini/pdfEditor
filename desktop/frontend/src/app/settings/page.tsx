@@ -114,7 +114,7 @@ export default function SettingsPage() {
     const [saving, setSaving] = React.useState(false);
     const [appVersion, setAppVersion] = React.useState("");
 
-    // Load preferences on mount
+    // Load preferences on mount and apply them
     React.useEffect(() => {
         api.getPreferences().then((prefs) => {
             setTheme(prefs.theme);
@@ -122,14 +122,41 @@ export default function SettingsPage() {
             setDefaultZoom(prefs.default_zoom);
             setAntialiasing(prefs.antialiasing);
             setDensity(prefs.density);
+            // Apply theme to document
+            applyTheme(prefs.theme);
+            // Apply antialiasing
+            document.documentElement.style.setProperty("-webkit-font-smoothing", prefs.antialiasing ? "antialiased" : "auto");
+            // Apply density
+            document.documentElement.dataset.density = prefs.density;
         });
         // Read version from common i18n
         const tc = (window as any).__NEXT_INTL_MESSAGES?.common?.version;
         if (tc) setAppVersion(tc);
     }, []);
 
+    function applyTheme(t: string) {
+        if (t === "dark") {
+            document.documentElement.classList.add("dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+        }
+        localStorage.setItem("darkMode", t === "dark" ? "true" : "false");
+    }
+
     function savePreference(update: { theme?: string; language?: string; default_zoom?: number; antialiasing?: boolean; density?: string }) {
         setSaving(true);
+        // Apply immediately to UI before saving to backend
+        if (update.theme !== undefined) { setTheme(update.theme); applyTheme(update.theme); }
+        if (update.antialiasing !== undefined) {
+            setAntialiasing(update.antialiasing);
+            document.documentElement.style.setProperty("-webkit-font-smoothing", update.antialiasing ? "antialiased" : "auto");
+        }
+        if (update.density !== undefined) {
+            setDensity(update.density);
+            document.documentElement.dataset.density = update.density;
+        }
+        if (update.default_zoom !== undefined) setDefaultZoom(update.default_zoom);
+        // Save to backend
         api.updatePreferences(update).finally(() => setSaving(false));
     }
 
@@ -180,7 +207,7 @@ export default function SettingsPage() {
                                 </div>
                                 <select
                                     value={theme}
-                                    onChange={(e) => { setTheme(e.target.value); savePreference({ theme: e.target.value }); }}
+                                    onChange={(e) => { savePreference({ theme: e.target.value }); }}
                                     className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
                                 >
                                     <option value="dark">Scuro</option>
