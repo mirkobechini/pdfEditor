@@ -1,5 +1,6 @@
 # PyInstaller build artifacts
 build-tmp/
+build-sidecar-tmp/
 fastapi-sidecar.spec
 
 # Sidecar binary (built by build-sidecar script)
