@@ -18,7 +18,14 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Density: padding inside document list items */
+[data-density="compact"] .doc-item { padding: 8px; }
+[data-density="comfortable"] .doc-item { padding: 12px; }
+[data-density="spacious"] .doc-item { padding: 20px; }
+
 
 .dark select option {
   background-color: #1f2937;

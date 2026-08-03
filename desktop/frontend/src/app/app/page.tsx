@@ -96,10 +96,25 @@ export default function EditorPage() {
 
     React.useEffect(() => {
         api.listPdfs(0, 10)
-            .then((res) => {
-                setDocs(res.items || []);
-                if (res.items && res.items.length > 0) {
-                    setSelectedDoc(res.items[0]);
+            .then(async (res) => {
+                const items = res.items || [];
+                // Verify all docs exist on disk (remove ghosts)
+                const verified: PdfDocument[] = [];
+                for (const doc of items) {
+                    try {
+                        const headRes = await fetch(`${API_BASE}/pdfs/${doc.id}/download`, {
+                            method: "HEAD",
+                            credentials: "include",
+                            headers: { "Authorization": `Bearer ${(api as any).token}` },
+                        });
+                        if (headRes.ok) verified.push(doc);
+                    } catch {
+                        // 404 = ghost, skip
+                    }
+                }
+                setDocs(verified);
+                if (verified.length > 0) {
+                    setSelectedDoc(verified[0]);
                 }
             })
             .catch(() => {
@@ -184,7 +199,7 @@ export default function EditorPage() {
                                     <div
                                         key={doc.id}
                                         onClick={() => setSelectedDoc(doc)}
-                                        className={`rounded-2xl border p-3 cursor-pointer transition ${selectedDoc?.id === doc.id ? "border-white/10 bg-white/[0.03]" : "border-transparent hover:bg-white/[0.02]"
+                                        className={`doc-item rounded-2xl border p-3 cursor-pointer transition ${selectedDoc?.id === doc.id ? "border-white/10 bg-white/[0.03]" : "border-transparent hover:bg-white/[0.02]"
                                             }`}
                                     >
                                         <div className="flex items-start gap-3">

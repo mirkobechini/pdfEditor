@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
+import { useLocaleSetter } from "../../lib/i18n";
 
 const sections = [
     { id: "general", label: "general" },
@@ -99,6 +100,7 @@ function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[
 export default function SettingsPage() {
     const ts = useTranslations("settings");
     const { user } = useAuth();
+    const setLocale = useLocaleSetter();
     const [activeTab, setActiveTab] = React.useState<SectionId>("general");
     const [theme, setTheme] = React.useState("dark");
     const [language, setLanguage] = React.useState("it");
@@ -157,7 +159,7 @@ export default function SettingsPage() {
                                 </div>
                                 <select
                                     value={language}
-                                    onChange={(e) => { setLanguage(e.target.value); savePreference({ language: e.target.value }); }}
+                                    onChange={(e) => { const newLang = e.target.value; setLanguage(newLang); setLocale(newLang as "it" | "en"); savePreference({ language: newLang }); }}
                                     className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
                                 >
                                     <option value="it">Italiano</option>
