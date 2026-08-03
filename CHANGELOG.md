@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-08-03
+
+- ✅ **Fix: remember-me checkbox visual state** — Checkbox "Rimani connesso" ora mostra spunta `✓` e sfondo arancione solo quando checked. Quando deselezionato, solo bordino bianco. (PR #606, issue #605)
+- ✅ **Fix: PDF viewer scroll container** — Il viewer PDF ora scrolla solo il suo div interno invece di scrollare l'intera finestra.
+
 ## 2026-08-02
 
 - ✅ **Native dialog with wizard folder default path** — Nuovo comando Rust `dialog_open` + `read_file_binary` per aprire file dal dialog nativo Tauri partendo dalla cartella wizard. `handleOpenLocal()` usa `isTauri()` per scegliere tra dialog nativo e fallback browser.
