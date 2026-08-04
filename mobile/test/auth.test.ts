@@ -5,15 +5,23 @@
 import { api } from "../src/shared/api";
 
 const mockFetch = jest.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch as any;
 
 const BASE = "https://pdfeditor-api.mirkobechini.com";
 
 function ok(body: unknown) {
-  return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) });
+  return Promise.resolve({
+    ok: true,
+    status: 200,
+    json: () => Promise.resolve(body),
+  });
 }
 function fail(body: unknown, status = 401) {
-  return Promise.resolve({ ok: false, status, json: () => Promise.resolve(body) });
+  return Promise.resolve({
+    ok: false,
+    status,
+    json: () => Promise.resolve(body),
+  });
 }
 
 describe("Auth integration", () => {
@@ -29,7 +37,9 @@ describe("Auth integration", () => {
   });
 
   it("login returns token", async () => {
-    mockFetch.mockResolvedValueOnce(ok({ access_token: "login-jwt", token_type: "bearer" }));
+    mockFetch.mockResolvedValueOnce(
+      ok({ access_token: "login-jwt", token_type: "bearer" }),
+    );
     const res = await api.login("a@b.com", "pw");
     expect(res.access_token).toBe("login-jwt");
   });
@@ -40,7 +50,9 @@ describe("Auth integration", () => {
   });
 
   it("guestLogin creates session", async () => {
-    mockFetch.mockResolvedValueOnce(ok({ access_token: "guest-jwt", user: { id: "g1" } }));
+    mockFetch.mockResolvedValueOnce(
+      ok({ access_token: "guest-jwt", user: { id: "g1" } }),
+    );
     const res = await api.guestLogin();
     expect(res.access_token).toBe("guest-jwt");
   });
@@ -54,7 +66,7 @@ describe("Auth integration", () => {
       `${BASE}/auth/me`,
       expect.objectContaining({
         headers: expect.objectContaining({ Authorization: "Bearer valid-jwt" }),
-      })
+      }),
     );
   });
 
@@ -67,6 +79,9 @@ describe("Auth integration", () => {
   it("logout sends POST", async () => {
     mockFetch.mockResolvedValueOnce(ok({}));
     await api.logout();
-    expect(mockFetch).toHaveBeenCalledWith(`${BASE}/auth/logout`, expect.objectContaining({ method: "POST" }));
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${BASE}/auth/logout`,
+      expect.objectContaining({ method: "POST" }),
+    );
   });
 });

@@ -7,7 +7,7 @@ import type {
 
 // Mock global fetch
 const mockFetch = jest.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch as any;
 
 const BASE = "https://pdfeditor-api.mirkobechini.com";
 
