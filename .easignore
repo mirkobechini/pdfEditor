@@ -1,4 +1,4 @@
-# EAS Build — monorepo: escludi le directory non necessarie per la build mobile
+<# EAS Build — monorepo: escludi le directory non necessarie per la build mobile
 # (NON usare "*" + negazioni: rompe il caricamento di mobile/package.json)
 node_modules/
 .expo/
@@ -12,11 +12,7 @@ scripts/
 shared/
 .specs/
 .github/
-<<<<<<< HEAD
 *.md
 *.jpg
 *.png
 LICENSE
-=======
-*.md
->>>>>>> 6e30701 (fix: add root .easignore to exclude other dirs from EAS mobile build (issue-611))
