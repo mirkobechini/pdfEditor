@@ -33,17 +33,14 @@ Coprire la logica business e i componenti dell'app mobile con test automatizzati
 | `api.extractError()` — rate limit, JSON error, fallback | `test/api.test.ts` | Alta     | ✅    |
 | `api.token()` — get/set token                           | `test/api.test.ts` | Alta     | ✅    |
 
-### 3. Auth (con AsyncStorage mock)
+### 3. Auth (API layer) ✅ Completato (7 test, senza rendering React)
 
-| Test                                               | File                 | Priorità |
-| -------------------------------------------------- | -------------------- | -------- |
-| `AuthProvider` — restore session con token salvato | `test/auth.test.tsx` | Alta     |
-| `AuthProvider` — restore session senza token       | `test/auth.test.tsx` | Alta     |
-| `AuthProvider` — login e salvataggio token         | `test/auth.test.tsx` | Alta     |
-| `AuthProvider` — guest login                       | `test/auth.test.tsx` | Alta     |
-| `AuthProvider` — logout e pulizia token            | `test/auth.test.tsx` | Alta     |
-| `AuthProvider` — loading state iniziale            | `test/auth.test.tsx` | Alta     |
-| `AuthProvider` — safety timeout se offline         | `test/auth.test.tsx` | Media    |
+| Test                                           | File                | Priorità | Stato |
+| ---------------------------------------------- | ------------------- | -------- | ----- |
+| `auth()` — login + getMe + guestLogin + logout | `test/auth.test.ts` | Alta     | ✅    |
+
+> **Nota**: I test del provider React (AuthProvider) richiedono `@testing-library/react-native` che ha conflitti di dipendenze con React 19.2.3 / Expo SDK 57.
+> I test API layer + AsyncStorage sono stati scritti in `test/auth.test.ts`. Da sbloccare quando `@testing-library/react-native` sarà compatibile.
 
 ### 4. Servizi PDF (con pdf-lib reale)
 
