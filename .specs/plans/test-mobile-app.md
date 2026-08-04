@@ -12,13 +12,13 @@ Coprire la logica business e i componenti dell'app mobile con test automatizzati
 
 ## Test pianificati
 
-### 1. Logica pura (nessuna dipendenza RN)
+### 1. Logica pura (nessuna dipendenza RN) ✅ Completato (13 test, fix bug EMAIL_NOT_FOUND)
 
-| Test                                                  | File                     | Priorità |
-| ----------------------------------------------------- | ------------------------ | -------- |
-| `error-map.ts` — mapError copre tutti i codici errore | `test/error-map.test.ts` | Alta     |
-| `error-map.ts` — extractErrorDetail funziona          | `test/error-map.test.ts` | Alta     |
-| `types.ts` — type check (solo compilazione)           | —                        | Bassa    |
+| Test                                                  | File                     | Priorità | Stato |
+| ----------------------------------------------------- | ------------------------ | -------- | ----- |
+| `error-map.ts` — mapError copre tutti i codici errore | `test/error-map.test.ts` | Alta     | ✅    |
+| `error-map.ts` — extractErrorDetail funziona          | `test/error-map.test.ts` | Alta     | ✅    |
+| `types.ts` — type check (solo compilazione)           | —                        | Bassa    | ❌    |
 
 ### 2. API client (con fetch mockato)
 
