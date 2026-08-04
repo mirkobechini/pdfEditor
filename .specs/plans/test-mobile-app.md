@@ -20,17 +20,18 @@ Coprire la logica business e i componenti dell'app mobile con test automatizzati
 | `error-map.ts` — extractErrorDetail funziona          | `test/error-map.test.ts` | Alta     | ✅    |
 | `types.ts` — type check (solo compilazione)           | —                        | Bassa    | ❌    |
 
-### 2. API client (con fetch mockato)
+### 2. API client (con fetch mockato) ✅ Completato (13 test)
 
-| Test                                                    | File               | Priorità |
-| ------------------------------------------------------- | ------------------ | -------- |
-| `api.login()` — chiamata e parsing risposta             | `test/api.test.ts` | Alta     |
-| `api.register()` — chiamata e gestione errore           | `test/api.test.ts` | Alta     |
-| `api.guestLogin()` — flusso guest                       | `test/api.test.ts` | Alta     |
-| `api.getMe()` — token valido e scaduto                  | `test/api.test.ts` | Alta     |
-| `api.listPdfs()` — lista PDF                            | `test/api.test.ts` | Media    |
-| `api.uploadPdf()` — upload con FormData                 | `test/api.test.ts` | Media    |
-| `api.extractError()` — rate limit, JSON error, fallback | `test/api.test.ts` | Alta     |
+| Test                                                    | File               | Priorità | Stato |
+| ------------------------------------------------------- | ------------------ | -------- | ----- |
+| `api.login()` — chiamata e parsing risposta             | `test/api.test.ts` | Alta     | ✅    |
+| `api.register()` — chiamata e gestione errore           | `test/api.test.ts` | Alta     | ✅    |
+| `api.guestLogin()` — flusso guest                       | `test/api.test.ts` | Alta     | ✅    |
+| `api.getMe()` — token valido e scaduto                  | `test/api.test.ts` | Alta     | ✅    |
+| `api.listPdfs()` — lista PDF                            | `test/api.test.ts` | Media    | ✅    |
+| `api.deletePdf()` — chiamata DELETE                     | `test/api.test.ts` | Media    | ✅    |
+| `api.extractError()` — rate limit, JSON error, fallback | `test/api.test.ts` | Alta     | ✅    |
+| `api.token()` — get/set token                           | `test/api.test.ts` | Alta     | ✅    |
 
 ### 3. Auth (con AsyncStorage mock)
 
