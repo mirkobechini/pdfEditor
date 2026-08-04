@@ -159,7 +159,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Cosa NON è in scope (per ora)
 
-- Mobile React Native (Fase 4 — futuro)
+- Mobile React Native (Fase 4) — ✅ **MVP completato** (issue #611)
 - Integrazione pagamenti Stripe (pianificata — vedi `.specs/plans/feature-stripe-mcp-subscriptions.md`)
 - SSO Apple / Samsung (previsto come bonus futuro)
 - react-native-web (valutabile, non deciso)

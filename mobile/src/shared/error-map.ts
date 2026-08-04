@@ -50,10 +50,8 @@ export function mapError(err: unknown): string {
   if (message === "RATE_LIMIT") return "common.rateLimitExceeded";
   if (message.includes("Email already registered"))
     return "auth.emailAlreadyRegistered";
-  if (
-    message.includes("EMAIL_NOT_FOUND") ||
-    message.includes("Invalid email or password")
-  )
+  if (message.includes("EMAIL_NOT_FOUND")) return "auth.emailNotFound";
+  if (message.includes("Invalid email or password"))
     return "auth.invalidCredentials";
   if (message.includes("WRONG_PASSWORD")) return "auth.wrongPassword";
   if (message.includes("Not authenticated")) return "auth.notAuthenticated";
