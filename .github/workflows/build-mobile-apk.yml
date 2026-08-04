@@ -1,0 +1,48 @@
+name: Build Mobile APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Java 17 (required for Android SDK)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: cd mobile && npm ci
+
+      - name: Prebuild native project
+        run: cd mobile && npx expo prebuild --platform android
+        env:
+          EXPO_NO_INSTALL: 1
+
+      - name: Build APK locally
+        run: |
+          cd mobile/android
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: pdfeditor-mobile-apk
+          path: mobile/android/app/build/outputs/apk/release/app-release.apk
