@@ -1,19 +1,24 @@
 <# EAS Build — monorepo: escludi le directory non necessarie per la build mobile
-# (NON usare "*" + negazioni: rompe il caricamento di mobile/package.json)
-# (NON usare "*.png"/"*.jpg"/"*.md" senza "/": escludono anche gli asset in mobile/assets/)
-node_modules/
-.expo/
-.git/
-android/
-ios/
-backend/
-frontend/
-desktop/
-scripts/
-shared/
-.specs/
-.github/
-/*.md
-/*.jpg
-/*.png
+
+# REGOLA CRITICA: ogni pattern con "/" iniziale è ancorato alla root del repo.
+
+# Pattern senza "/" (es. "shared/") matchano QUALSIASI dir con quel nome a
+
+# qualsiasi profondità — es. escludono mobile/src/shared/ e rompono Metro.
+
+/node_modules/
+/.expo/
+/.git/
+/android/
+/ios/
+/backend/
+/frontend/
+/desktop/
+/scripts/
+/shared/
+/.specs/
+/.github/
+/_.md
+/_.jpg
+/\*.png
 /LICENSE
