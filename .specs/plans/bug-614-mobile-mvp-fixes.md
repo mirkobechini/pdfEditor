@@ -4,25 +4,33 @@
 
 Fixare i bug emersi dai test dell'APK MVP mobile e aggiungere piccole migliorie UX.
 
-## Commit pianificati
+## Commit eseguiti (15)
 
-### Fix obbligatori
+1. ✅ `fix(mobile): add @expo/vector-icons and configure PaperProvider icon settings`
+2. ✅ `fix(mobile): add useSafeAreaInsets to FAB position in HomeScreen`
+3. ✅ `fix(mobile): add key={pdfId} to PdfViewer to force remount on PDF change`
+4. ✅ `fix(mobile): rewrite Scanner convertToPdf with expo-file-system/legacy static import`
+5. ✅ `fix(mobile): save guest token in AsyncStorage and handle offline restoreSession`
+6. ✅ `fix(mobile): add expo-font peer dependency`
+7. ✅ `fix(mobile): add expo-font to app.json plugins`
+8. ✅ `fix(mobile): improve error handling in api.ts — extractErrorResponse returns plain detail`
+9. ✅ `fix(mobile): always remember login token so offline re-auth works`
+10. ✅ `fix(mobile): force Pdf component remount via setTimeout(50ms)`
+11. ✅ `feat(mobile): add optional file name input after camera scan`
+12. ✅ `fix(mobile): replace dynamic imports with static imports in pdfService`
+13. ✅ `feat(mobile): add loading spinner during auth restore and password visibility toggle`
+14. ✅ `feat(mobile): replace app icon with desktop branding`
+15. ✅ `fix(mobile): real fixes — page_count from pdf-lib, Pdf remount via refreshKey, offline restore real user, split/reorder confirm dialog, icon 1024x1024`
+16. ✅ `fix(mobile): increment refreshKey AFTER setting pdfUri`
 
-1. `fix(mobile): add loading spinner to AppNavigator while auth restores session`
-2. `fix(mobile): improve error display — catch blocks in screens now show user-facing messages`
-3. `fix(mobile): fix merge/split/reorder — pdfService operations need proper file:// URI handling`
-4. `fix(mobile): add password visibility toggle to LoginScreen`
-5. `fix(mobile): replace app icon with desktop branding`
+## Ancora da fixare
 
-### UI miglioramenti
+- [ ] Icona: cancellare android/ e rifare prebuild per far caricare la nuova icona
+- [ ] Login: overlay loading visibile durante login (non solo spinner AppNavigator)
+- [ ] Split UI: selezionare pagine da estrarre
+- [ ] Reorder UI: riordinare pagine con pulsanti su/giù
+- [ ] Secondo PDF: fix refreshKey presente ma non testato
 
-6. `feat(mobile): move Settings button to header right instead of FAB menu`
-7. `feat(mobile): simplify FAB menu — only upload and scanner, tools in their own nav`
+## Build
 
-### Build
-
-8. Build APK → test → PR → merge
-
-## Status
-
-[ ] Non iniziato
+- [ ] Build APK → test → PR → merge

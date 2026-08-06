@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-08-06
+
+- ✅ **Fix mobile MVP bugs** — Issue #614: icona app (1024x1024), password visibility toggle, loading spinner auth restore, errori login visibili, offline restore utente reale, page_count calcolato da pdf-lib, secondo PDF fix (refreshKey), split/reorder con dialog di conferma, import statici pdfService, expo-font peer dep.
+
 ## 2026-08-04
 
 - ✅ **Mobile app MVP completata** — Issue #611: Expo SDK 57, React Native Paper, navigazione stack, auth (guest + email/password), upload PDF locale, PDF viewer con zoom, scanner fotocamera → PDF, editing base (merge/split/reorder/metadata) con pdf-lib.
