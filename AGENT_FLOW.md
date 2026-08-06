@@ -59,6 +59,13 @@ Prima di creare/modificare/cancellare QUALSIASI file, l'agente DEVE verificare m
 - **Always ask for approval before starting a new issue.** After completing an issue (tests passing, PR merged, issue closed), briefly describe what was done and ask _"May I proceed with the next issue?"_ — do NOT start the next issue without user confirmation.
 - **Wait for CI after PR creation before merging to dev.** If CI fails: fix the failure, push, wait for CI again, only then merge.
 - **🚨 RELEASE: MAI procedere con una release senza esplicita richiesta del developer.** Anche se tutte le feature sono pronte, i test passano e la documentazione è aggiornata — l'agente NON deve bumpare la versione, fare merge su main o creare un tag senza che il developer dica esplicitamente _"fai la release"_ o _"procedi con la release"_. Questa è la regola più importante: **la release è una decisione del developer, non dell'agente.**
+- **🚨 MOBILE: BUILD APK PRIMA DEL PR/MERGE.** Per ogni modifica al codice mobile, l'agente DEVE:
+  1. Committare atomicamente su branch feature
+  2. Lanciare EAS Build (`npx eas build --platform android --profile preview --non-interactive`)
+  3. Attendere il completamento della build
+  4. Solo SE la build è FINISHED (successo) → procedere con PR e merge su dev
+  5. Se la build fallisce → fixare, pushare, rilanciare build, ripetere
+  Questo evita di creare PR/branch multipli per lo stesso problema non ancora risolto.
 
 ---
 
