@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { View, TouchableOpacity, Image } from "react-native";
-import { Text, Button, useTheme, ActivityIndicator } from "react-native-paper";
+import { Text, Button, useTheme, ActivityIndicator, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
@@ -24,6 +24,7 @@ export default function ScannerScreen() {
     const [permission, requestPermission] = useCameraPermissions();
     const [photoUri, setPhotoUri] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
+    const [fileName, setFileName] = useState("");
     const cameraRef = useRef<CameraView>(null);
 
     if (!permission) {
@@ -112,9 +113,12 @@ export default function ScannerScreen() {
             });
 
             const now = new Date().toISOString();
+            const safeName = fileName.trim()
+                ? fileName.trim().replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+                : `scan_${new Date().toISOString().slice(0, 10)}.pdf`;
             const localPdf: LocalPdf = {
                 id,
-                original_filename: `scan_${new Date().toISOString().slice(0, 10)}.pdf`,
+                original_filename: safeName,
                 file_size: pdfBytes.length,
                 page_count: 1,
                 uri: pdfFilePath,
@@ -146,6 +150,13 @@ export default function ScannerScreen() {
                     <Text variant="titleMedium" style={{ marginBottom: 16 }}>
                         Photo captured
                     </Text>
+                    <TextInput
+                        label="File name (optional)"
+                        value={fileName}
+                        onChangeText={setFileName}
+                        mode="outlined"
+                        style={{ width: "100%", marginBottom: 16 }}
+                    />
                     <Button
                         mode="contained"
                         onPress={convertToPdf}
