@@ -1,0 +1,140 @@
+import React, { createContext, useContext, useCallback, useEffect, useState } from "react";
+import { api } from "./api";
+import type { User } from "./types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const REMEMBER_TOKEN_KEY = "pdfeditor_remember_token";
+
+interface AuthContextValue {
+    user: User | null;
+    loading: boolean;
+    login: (email: string, password: string, remember?: boolean) => Promise<void>;
+    register: (email: string, password: string, fullName: string) => Promise<void>;
+    guestLogin: () => Promise<void>;
+    logout: () => Promise<void>;
+    setUser: (user: User | null) => void;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        const safetyTimer = setTimeout(() => {
+            if (!cancelled) setLoading(false);
+        }, 4000);
+
+        async function restoreSession() {
+            try {
+                const remembered = await AsyncStorage.getItem(REMEMBER_TOKEN_KEY);
+                if (remembered && !cancelled) {
+                    api.setToken(remembered);
+                }
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 5000);
+                try {
+                    const res = await fetch("https://pdfeditor-api.mirkobechini.com/auth/me", {
+                        method: "GET",
+                        headers: {
+                            Authorization: `Bearer ${api.getToken() || ""}`,
+                            "Content-Type": "application/json",
+                        },
+                        signal: controller.signal,
+                    });
+                    if (res.ok && !cancelled) {
+                        const u = await res.json();
+                        setUser(u);
+                    }
+                } catch {
+                    // Offline — ignore
+                } finally {
+                    clearTimeout(timeout);
+                }
+            } catch {
+                // AsyncStorage error
+            } finally {
+                if (!cancelled) {
+                    clearTimeout(safetyTimer);
+                    setLoading(false);
+                }
+            }
+        }
+
+        restoreSession();
+        return () => { cancelled = true; clearTimeout(safetyTimer); };
+    }, []);
+
+    const login = useCallback(async (email: string, password: string, remember?: boolean) => {
+        setLoading(true);
+        try {
+            const res = await api.login(email, password);
+            api.setToken(res.access_token);
+            if (remember) {
+                await AsyncStorage.setItem(REMEMBER_TOKEN_KEY, res.access_token);
+            } else {
+                await AsyncStorage.removeItem(REMEMBER_TOKEN_KEY);
+            }
+            const u = await api.getMe();
+            setUser(u);
+        } catch (e) {
+            throw e;
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const register = useCallback(async (email: string, password: string, fullName: string) => {
+        setLoading(true);
+        try {
+            const res = await api.register(email, password, fullName);
+            api.setToken(res.access_token);
+            const u = await api.getMe();
+            setUser(u);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const guestLogin = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await api.guestLogin();
+            api.setToken(res.access_token);
+            try {
+                const u = await api.getMe();
+                setUser(u);
+            } catch {
+                // Login ok but getMe failed
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const logout = useCallback(async () => {
+        try {
+            await api.logout();
+        } catch { /* ignore */ }
+        finally {
+            api.setToken(null);
+            api.setCsrfToken(null);
+            setUser(null);
+            try { await AsyncStorage.removeItem(REMEMBER_TOKEN_KEY); } catch { /* ignore */ }
+        }
+    }, []);
+
+    return (
+        <AuthContext.Provider value={{ user, loading, login, register, guestLogin, logout, setUser }}>
+            {children}
+        </AuthContext.Provider>
+    );
+}
+
+export function useAuth() {
+    const ctx = useContext(AuthContext);
+    if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
+    return ctx;
+}

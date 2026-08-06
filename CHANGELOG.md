@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-04
+
+- ✅ **Mobile app MVP completata** — Issue #611: Expo SDK 57, React Native Paper, navigazione stack, auth (guest + email/password), upload PDF locale, PDF viewer con zoom, scanner fotocamera → PDF, editing base (merge/split/reorder/metadata) con pdf-lib.
+- ✅ **Mobile Test CI** — Workflow `test-mobile.yml` per TypeScript check su push/PR.
+- ✅ **Mobile Build workflow** — Workflow `build-mobile-apk.yml` per build APD su GitHub runner.
+- ✅ **Mobile tests** — 40 test (error-map 13 + api 13 + auth 7 + pdfService 7). Coverage ~30%.
+- ✅ **Fix error-map EMAIL_NOT_FOUND** — Separato da `Invalid email or password` (bug trovato dai test).
+- ✅ **Fix build rischi** — Rimosso nativewind (non usato), rimosso react-native-reanimated/plugin (opzionale).
+
 ## 2026-08-03
 
 - ✅ **Fix: ghost PDF permanent deletion** — Tutti i PDF vengono verificati all'avvio via HEAD request. Se fallisce (404), il record viene cancellato dal DB, non solo dalla UI.
