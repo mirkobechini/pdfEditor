@@ -54,6 +54,10 @@ export class ApiClient {
       return "Connection error. Check your internet connection.";
     }
     if (err instanceof Error) return err.message;
+    // Fallback for mock Response objects in tests
+    if (err && typeof err === "object" && "status" in err && "json" in err) {
+      return ApiClient.extractErrorResponse(err as Response);
+    }
     return "An unexpected error occurred";
   }
 
