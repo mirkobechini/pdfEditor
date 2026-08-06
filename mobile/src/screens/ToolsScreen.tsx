@@ -20,6 +20,7 @@ export default function ToolsScreen() {
     const [operation, setOperation] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [result, setResult] = useState<string>("");
+    const [confirmDialog, setConfirmDialog] = useState<{ type: string; pdfId: string; pdfName: string } | null>(null);
 
     useEffect(() => {
         loadLocalPdfs().then(setPdfs).finally(() => setLoading(false));
@@ -36,30 +37,48 @@ export default function ToolsScreen() {
         setLoading(false);
     }
 
-    async function handleSplit(pdfId: string) {
-        setLoading(true);
+    function confirmSplit(pdfId: string) {
         const pdf = pdfs.find((p) => p.id === pdfId);
         if (!pdf) return;
-        // Split every page individually
-        const ranges: [number, number][] = [];
-        for (let i = 1; i <= (pdf.page_count || 1); i++) {
-            ranges.push([i, i]);
-        }
-        const results = await splitPdf(pdfId, ranges);
-        setResult(`Split into ${results.length} PDFs`);
-        setLoading(false);
+        setConfirmDialog({ type: "split", pdfId, pdfName: pdf.original_filename });
     }
 
-    async function handleReorder(pdfId: string) {
-        setLoading(true);
+    function confirmReorder(pdfId: string) {
         const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf || !pdf.page_count) return;
-        // Reverse page order
-        const order: number[] = [];
-        for (let i = pdf.page_count; i >= 1; i--) order.push(i);
-        const reordered = await reorderPages(pdfId, order);
-        if (reordered) setResult(`Reordered: ${reordered.original_filename}`);
-        else setResult("Reorder failed");
+        if (!pdf) return;
+        setConfirmDialog({ type: "reorder", pdfId, pdfName: pdf.original_filename });
+    }
+
+    async function executeConfirmed() {
+        if (!confirmDialog) return;
+        setConfirmDialog(null);
+        setLoading(true);
+        const { type, pdfId } = confirmDialog;
+
+        if (type === "split") {
+            const pdf = pdfs.find((p) => p.id === pdfId);
+            if (!pdf) return;
+            const ranges: [number, number][] = [];
+            for (let i = 1; i <= (pdf.page_count || 1); i++) {
+                ranges.push([i, i]);
+            }
+            const results = await splitPdf(pdfId, ranges);
+            setResult(`Split into ${results.length} PDFs`);
+            // Reload PDF list
+            const updated = await loadLocalPdfs();
+            setPdfs(updated);
+        } else if (type === "reorder") {
+            const pdf = pdfs.find((p) => p.id === pdfId);
+            if (!pdf || !pdf.page_count) return;
+            const order: number[] = [];
+            for (let i = pdf.page_count; i >= 1; i--) order.push(i);
+            const reordered = await reorderPages(pdfId, order);
+            if (reordered) setResult(`Reordered: ${reordered.original_filename}`);
+            else setResult("Reorder failed");
+            // Reload PDF list
+            const updated = await loadLocalPdfs();
+            setPdfs(updated);
+        }
         setLoading(false);
     }
 
@@ -122,8 +141,8 @@ export default function ToolsScreen() {
                             <TouchableOpacity
                                 onPress={() => {
                                     if (operation === "merge") toggleSelect(item.id);
-                                    else if (operation === "split") handleSplit(item.id);
-                                    else if (operation === "reorder") handleReorder(item.id);
+                                    else if (operation === "split") confirmSplit(item.id);
+                                    else if (operation === "reorder") confirmReorder(item.id);
                                 }}
                             >
                                 <Card.Content>
@@ -139,6 +158,23 @@ export default function ToolsScreen() {
                     )}
                 />
             )}
+
+            <Portal>
+                <Dialog visible={confirmDialog !== null} onDismiss={() => setConfirmDialog(null)}>
+                    <Dialog.Title>Confirm {confirmDialog?.type}</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium">
+                            {confirmDialog?.type === "split"
+                                ? `Split "${confirmDialog?.pdfName}" into individual pages?`
+                                : `Reverse page order of "${confirmDialog?.pdfName}"?`}
+                        </Text>
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setConfirmDialog(null)}>Cancel</Button>
+                        <Button onPress={executeConfirmed}>Confirm</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
         </SafeAreaView>
     );
 }

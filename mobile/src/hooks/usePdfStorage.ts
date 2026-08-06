@@ -6,6 +6,7 @@
 import { useState, useCallback } from "react";
 import * as DocumentPicker from "expo-document-picker";
 import { Paths, File, Directory } from "expo-file-system";
+import { PDFDocument } from "pdf-lib";
 import {
   savePdfLocally,
   getLocalPdfs,
@@ -45,6 +46,11 @@ export function usePdfStorage() {
       const sourceFile = new File(asset.uri);
       await sourceFile.copy(destFile);
 
+      // Read the copied file to count pages using pdf-lib
+      const buffer = await destFile.arrayBuffer();
+      const pdfDoc = await PDFDocument.load(new Uint8Array(buffer));
+      const pageCount = pdfDoc.getPageCount();
+
       const now = new Date().toISOString();
 
       const localPdf: LocalPdf = {
@@ -53,7 +59,7 @@ export function usePdfStorage() {
         file_size: destFile.exists
           ? (destFile.size ?? asset.size ?? 0)
           : (asset.size ?? 0),
-        page_count: 1,
+        page_count: pageCount,
         uri: destFile.uri,
         created_at: now,
         updated_at: now,

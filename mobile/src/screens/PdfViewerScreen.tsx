@@ -25,6 +25,7 @@ export default function PdfViewerScreen() {
     const [error, setError] = useState<string | null>(null);
     const [scale, setScale] = useState(1);
     const PdfRef = useRef<any>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Load PDF URI from local DB
     React.useEffect(() => {
@@ -35,27 +36,26 @@ export default function PdfViewerScreen() {
         setError(null);
         setScale(1);
 
-        // Force Pdf component remount by briefly setting null, then the real URI
-        setPdfUri(null);
-        setTimeout(() => {
-            (async () => {
-                try {
-                    const localPdf = await getLocalPdfById(pdfId);
-                    if (localPdf?.uri) {
-                        const uri = localPdf.uri.startsWith("file://")
-                            ? localPdf.uri
-                            : `file://${localPdf.uri}`;
-                        setPdfUri(uri);
-                    } else {
-                        setError("PDF not found locally");
-                        setLoading(false);
-                    }
-                } catch (e) {
-                    setError("Failed to load PDF");
+        // Force remount of Pdf component by incrementing key
+        setRefreshKey((k) => k + 1);
+
+        (async () => {
+            try {
+                const localPdf = await getLocalPdfById(pdfId);
+                if (localPdf?.uri) {
+                    const uri = localPdf.uri.startsWith("file://")
+                        ? localPdf.uri
+                        : `file://${localPdf.uri}`;
+                    setPdfUri(uri);
+                } else {
+                    setError("PDF not found locally");
                     setLoading(false);
                 }
-            })();
-        }, 50);
+            } catch (e) {
+                setError("Failed to load PDF");
+                setLoading(false);
+            }
+        })();
     }, [pdfId]);
 
     const onLoadComplete = useCallback((numberOfPages: number) => {
@@ -139,7 +139,7 @@ export default function PdfViewerScreen() {
                 {pdfUri && (
                     <View style={{ flex: 1 }}>
                         <Pdf
-                            key={pdfId}
+                            key={refreshKey}
                             ref={PdfRef}
                             source={{ uri: pdfUri, cache: false }}
                             onLoadComplete={onLoadComplete}
