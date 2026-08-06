@@ -19,7 +19,7 @@ export default function LoginScreen() {
             if (isRegister) {
                 await register(email, password, fullName);
             } else {
-                await login(email, password);
+                await login(email, password, true);
             }
         } catch (e) {
             setError(e instanceof Error ? e.message : "Login failed");
