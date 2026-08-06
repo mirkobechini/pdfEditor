@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { getLocalPdfById } from "../services/localDb";
+import Pdf from "react-native-pdf";
 
 type PdfViewerRouteProp = RouteProp<RootStackParamList, "PdfViewer">;
 type PdfViewerNavProp = NativeStackNavigationProp<RootStackParamList, "PdfViewer">;
@@ -27,6 +28,14 @@ export default function PdfViewerScreen() {
 
     // Load PDF URI from local DB
     React.useEffect(() => {
+        // Reset state for new PDF
+        setPdfUri(null);
+        setNumPages(0);
+        setCurrentPage(1);
+        setLoading(true);
+        setError(null);
+        setScale(1);
+
         (async () => {
             try {
                 const localPdf = await getLocalPdfById(pdfId);
@@ -56,8 +65,8 @@ export default function PdfViewerScreen() {
         setCurrentPage(page);
     }, []);
 
-    const onError = useCallback((err: Error) => {
-        setError(err.message);
+    const onError = useCallback((err: object) => {
+        setError(String(err));
         setLoading(false);
     }, []);
 
@@ -126,25 +135,21 @@ export default function PdfViewerScreen() {
                 )}
 
                 {pdfUri && (
-                    <View style={{ flex: 1 }} key={pdfId}>
-                        {(() => {
-                            const Pdf = require("react-native-pdf").default;
-                            return (
-                                <Pdf
-                                    ref={PdfRef}
-                                    source={{ uri: pdfUri, cache: false }}
-                                    onLoadComplete={onLoadComplete}
-                                    onPageChanged={onPageChanged}
-                                    onError={onError}
-                                    style={{ flex: 1 }}
-                                    scale={scale}
-                                    minScale={0.5}
-                                    maxScale={3}
-                                    enablePaging={true}
-                                    spacing={0}
-                                />
-                            );
-                        })()}
+                    <View style={{ flex: 1 }}>
+                        <Pdf
+                            key={pdfId}
+                            ref={PdfRef}
+                            source={{ uri: pdfUri, cache: false }}
+                            onLoadComplete={onLoadComplete}
+                            onPageChanged={onPageChanged}
+                            onError={onError}
+                            style={{ flex: 1 }}
+                            scale={scale}
+                            minScale={0.5}
+                            maxScale={3}
+                            enablePaging={true}
+                            spacing={0}
+                        />
                     </View>
                 )}
             </View>

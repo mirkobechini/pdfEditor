@@ -46,21 +46,29 @@ export class ApiClient {
     this._csrfToken = token;
   }
 
-  static async extractError(res: Response): Promise<string> {
+  static async extractError(err: unknown): Promise<string> {
+    if (err instanceof Response) {
+      return ApiClient.extractErrorResponse(err);
+    }
+    if (err instanceof TypeError && err.message === "Network request failed") {
+      return "Connection error. Check your internet connection.";
+    }
+    if (err instanceof Error) return err.message;
+    return "An unexpected error occurred";
+  }
+
+  static async extractErrorResponse(res: Response): Promise<string> {
     if (res.status === 429) {
-      return JSON.stringify({
-        code: "RATE_LIMIT",
-        detail: "Too many requests",
-      });
+      return "Too many requests. Please try again later.";
     }
     try {
       const body = await res.json();
-      if (body && typeof body === "object" && body.code && body.detail) {
-        return JSON.stringify(body);
+      if (body && typeof body === "object") {
+        if (body.detail && typeof body.detail === "string") return body.detail;
+        if (body.code && body.detail) return body.detail;
+        if (Array.isArray(body.detail))
+          return body.detail[0]?.msg || res.statusText;
       }
-      if (typeof body.detail === "string") return body.detail;
-      if (Array.isArray(body.detail))
-        return body.detail[0]?.msg || res.statusText;
       return JSON.stringify(body);
     } catch {
       return res.statusText;
@@ -101,7 +109,7 @@ export class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, full_name: fullName }),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     const data = await res.json();
     if (data.csrf_token) this.setCsrfToken(data.csrf_token);
     return data;
@@ -113,7 +121,7 @@ export class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     const data = await res.json();
     if (data.csrf_token) this.setCsrfToken(data.csrf_token);
     return data;
@@ -123,7 +131,7 @@ export class ApiClient {
     const res = await this._fetch(`${this.baseUrl}/auth/guest`, {
       method: "POST",
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     const data = await res.json();
     if (data.csrf_token) this.setCsrfToken(data.csrf_token);
     return data;
@@ -133,7 +141,7 @@ export class ApiClient {
     const res = await this._fetch(`${this.baseUrl}/auth/me`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 
@@ -158,7 +166,7 @@ export class ApiClient {
       method: "POST",
       body: formData,
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 
@@ -167,7 +175,7 @@ export class ApiClient {
       `${this.baseUrl}/pdfs?skip=${skip}&limit=${limit}`,
       { headers: this.getHeaders() },
     );
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 
@@ -175,7 +183,7 @@ export class ApiClient {
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 
@@ -184,14 +192,14 @@ export class ApiClient {
       method: "DELETE",
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
   }
 
   async downloadPdf(id: string): Promise<Blob> {
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/download`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.blob();
   }
 
@@ -208,7 +216,7 @@ export class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 
@@ -226,7 +234,7 @@ export class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 
@@ -242,7 +250,7 @@ export class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 
@@ -258,7 +266,7 @@ export class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 
@@ -268,7 +276,7 @@ export class ApiClient {
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 
@@ -281,7 +289,7 @@ export class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(metadata),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 
@@ -293,7 +301,7 @@ export class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 
@@ -303,7 +311,7 @@ export class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
   }
 }

@@ -52,7 +52,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         setUser({ id: "guest", email: null as any, full_name: "Guest", is_active: true, is_admin: false, is_guest: true, license_tier: "", license_tier_source: "", google_id: null, created_at: "", updated_at: "" });
                     }
                 } catch {
-                    // Offline — ignore
+                    // Offline — if we have a remembered token, keep user logged in
+                    if (remembered && !cancelled) {
+                        setUser({ id: "guest", email: null as any, full_name: "Guest", is_active: true, is_admin: false, is_guest: true, license_tier: "", license_tier_source: "", google_id: null, created_at: "", updated_at: "" });
+                    }
                 } finally {
                     clearTimeout(timeout);
                 }
