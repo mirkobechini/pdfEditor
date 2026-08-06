@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
 import { Text, Card, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
@@ -13,6 +13,7 @@ type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Home">;
 export default function HomeScreen() {
     const theme = useTheme();
     const navigation = useNavigation<HomeNavProp>();
+    const insets = useSafeAreaInsets();
     const { pickAndSavePdf, loadLocalPdfs, loading: storageLoading } = usePdfStorage();
     const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
@@ -100,7 +101,7 @@ export default function HomeScreen() {
                 style={{
                     position: "absolute",
                     right: 16,
-                    bottom: 16,
+                    bottom: 16 + insets.bottom,
                     backgroundColor: theme.colors.primary,
                 }}
                 color={theme.colors.onPrimary}
