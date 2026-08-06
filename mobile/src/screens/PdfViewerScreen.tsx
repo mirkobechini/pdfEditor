@@ -28,32 +28,34 @@ export default function PdfViewerScreen() {
 
     // Load PDF URI from local DB
     React.useEffect(() => {
-        // Reset state for new PDF
-        setPdfUri(null);
+        // Reset all state when PDF changes
         setNumPages(0);
         setCurrentPage(1);
         setLoading(true);
         setError(null);
         setScale(1);
 
-        (async () => {
-            try {
-                const localPdf = await getLocalPdfById(pdfId);
-                if (localPdf?.uri) {
-                    // Ensure file:// prefix for react-native-pdf
-                    const uri = localPdf.uri.startsWith("file://")
-                        ? localPdf.uri
-                        : `file://${localPdf.uri}`;
-                    setPdfUri(uri);
-                } else {
-                    setError("PDF not found locally");
+        // Force Pdf component remount by briefly setting null, then the real URI
+        setPdfUri(null);
+        setTimeout(() => {
+            (async () => {
+                try {
+                    const localPdf = await getLocalPdfById(pdfId);
+                    if (localPdf?.uri) {
+                        const uri = localPdf.uri.startsWith("file://")
+                            ? localPdf.uri
+                            : `file://${localPdf.uri}`;
+                        setPdfUri(uri);
+                    } else {
+                        setError("PDF not found locally");
+                        setLoading(false);
+                    }
+                } catch (e) {
+                    setError("Failed to load PDF");
+                    setLoading(false);
                 }
-            } catch (e) {
-                setError("Failed to load PDF");
-            } finally {
-                setLoading(false);
-            }
-        })();
+            })();
+        }, 50);
     }, [pdfId]);
 
     const onLoadComplete = useCallback((numberOfPages: number) => {
