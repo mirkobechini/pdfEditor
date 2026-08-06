@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
-import { Text, TextInput, Button, Surface, useTheme } from "react-native-paper";
+import { Text, TextInput, Button, Surface, useTheme, IconButton } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../shared/auth";
 
@@ -12,6 +12,7 @@ export default function LoginScreen() {
     const [fullName, setFullName] = useState("");
     const [isRegister, setIsRegister] = useState(false);
     const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async () => {
         setError("");
@@ -102,7 +103,8 @@ export default function LoginScreen() {
                             value={password}
                             onChangeText={setPassword}
                             mode="outlined"
-                            secureTextEntry
+                            secureTextEntry={!showPassword}
+                            right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />}
                             style={{ marginBottom: 24 }}
                         />
 
