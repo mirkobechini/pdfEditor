@@ -1,5 +1,6 @@
 <# EAS Build — monorepo: escludi le directory non necessarie per la build mobile
 # (NON usare "*" + negazioni: rompe il caricamento di mobile/package.json)
+# (NON usare "*.png"/"*.jpg"/"*.md" senza "/": escludono anche gli asset in mobile/assets/)
 node_modules/
 .expo/
 .git/
@@ -12,7 +13,7 @@ scripts/
 shared/
 .specs/
 .github/
-*.md
-*.jpg
-*.png
-LICENSE
+/*.md
+/*.jpg
+/*.png
+/LICENSE
