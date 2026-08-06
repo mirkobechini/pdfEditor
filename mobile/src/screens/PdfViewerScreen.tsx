@@ -30,14 +30,12 @@ export default function PdfViewerScreen() {
     // Load PDF URI from local DB
     React.useEffect(() => {
         // Reset all state when PDF changes
+        setPdfUri(null);
         setNumPages(0);
         setCurrentPage(1);
         setLoading(true);
         setError(null);
         setScale(1);
-
-        // Force remount of Pdf component by incrementing key
-        setRefreshKey((k) => k + 1);
 
         (async () => {
             try {
@@ -46,7 +44,9 @@ export default function PdfViewerScreen() {
                     const uri = localPdf.uri.startsWith("file://")
                         ? localPdf.uri
                         : `file://${localPdf.uri}`;
+                    // Set URI first, then increment key to force remount with new URI
                     setPdfUri(uri);
+                    setRefreshKey((k) => k + 1);
                 } else {
                     setError("PDF not found locally");
                     setLoading(false);
