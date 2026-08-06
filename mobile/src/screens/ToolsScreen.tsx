@@ -1,30 +1,39 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
-import { Text, Card, Button, useTheme, ActivityIndicator, TextInput, Dialog, Portal } from "react-native-paper";
+import { Text, Card, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages, updateMetadata } from "../services/pdfService";
+import { mergePdfs, splitPdf, reorderPages } from "../services/pdfService";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 
 export default function ToolsScreen() {
     const theme = useTheme();
     const navigation = useNavigation<ToolsNavProp>();
-    const { pickAndSavePdf, loadLocalPdfs } = usePdfStorage();
+    const { loadLocalPdfs } = usePdfStorage();
     const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
     const [operation, setOperation] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [result, setResult] = useState<string>("");
-    const [confirmDialog, setConfirmDialog] = useState<{ type: string; pdfId: string; pdfName: string } | null>(null);
+    const [result, setResult] = useState("");
+
+    // Split dialog state
+    const [splitDialog, setSplitDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number; selectedPages: number[] } | null>(null);
+    // Reorder dialog state
+    const [reorderDialog, setReorderDialog] = useState<{ pdfId: string; pdfName: string; pageOrder: number[] } | null>(null);
 
     useEffect(() => {
         loadLocalPdfs().then(setPdfs).finally(() => setLoading(false));
     }, []);
+
+    const reloadPdfs = useCallback(async () => {
+        const updated = await loadLocalPdfs();
+        setPdfs(updated);
+    }, [loadLocalPdfs]);
 
     async function handleMerge() {
         if (selectedIds.length < 2) { setResult("Select at least 2 PDFs"); return; }
@@ -33,53 +42,120 @@ export default function ToolsScreen() {
         if (merged) {
             setResult(`Merged into: ${merged.original_filename}`);
             setSelectedIds([]);
+            await reloadPdfs();
         } else setResult("Merge failed");
         setLoading(false);
     }
 
-    function confirmSplit(pdfId: string) {
+    // ─── Split ────────────────────────────────────────────────────
+
+    function openSplitDialog(pdfId: string) {
         const pdf = pdfs.find((p) => p.id === pdfId);
         if (!pdf) return;
-        setConfirmDialog({ type: "split", pdfId, pdfName: pdf.original_filename });
+        setSplitDialog({
+            pdfId,
+            pdfName: pdf.original_filename,
+            totalPages: pdf.page_count || 1,
+            selectedPages: [],
+        });
     }
 
-    function confirmReorder(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf) return;
-        setConfirmDialog({ type: "reorder", pdfId, pdfName: pdf.original_filename });
+    function toggleSplitPage(page: number) {
+        if (!splitDialog) return;
+        const selected = splitDialog.selectedPages.includes(page)
+            ? splitDialog.selectedPages.filter((p) => p !== page)
+            : [...splitDialog.selectedPages, page];
+        setSplitDialog({ ...splitDialog, selectedPages: selected });
     }
 
-    async function executeConfirmed() {
-        if (!confirmDialog) return;
-        setConfirmDialog(null);
+    async function executeSplit() {
+        if (!splitDialog || splitDialog.selectedPages.length === 0) return;
+        const { pdfId, totalPages, selectedPages } = splitDialog;
+        setSplitDialog(null);
         setLoading(true);
-        const { type, pdfId } = confirmDialog;
 
-        if (type === "split") {
-            const pdf = pdfs.find((p) => p.id === pdfId);
-            if (!pdf) return;
-            const ranges: [number, number][] = [];
-            for (let i = 1; i <= (pdf.page_count || 1); i++) {
-                ranges.push([i, i]);
+        // Build contiguous ranges from selected pages (e.g., [1,2,4,5] → [[1,2],[4,5]])
+        const selectedRanges: [number, number][] = [];
+        let start = selectedPages[0];
+        let end = selectedPages[0];
+        for (let i = 1; i < selectedPages.length; i++) {
+            if (selectedPages[i] === end + 1) {
+                end = selectedPages[i];
+            } else {
+                selectedRanges.push([start, end]);
+                start = selectedPages[i];
+                end = selectedPages[i];
             }
-            const results = await splitPdf(pdfId, ranges);
-            setResult(`Split into ${results.length} PDFs`);
-            // Reload PDF list
-            const updated = await loadLocalPdfs();
-            setPdfs(updated);
-        } else if (type === "reorder") {
-            const pdf = pdfs.find((p) => p.id === pdfId);
-            if (!pdf || !pdf.page_count) return;
-            const order: number[] = [];
-            for (let i = pdf.page_count; i >= 1; i--) order.push(i);
-            const reordered = await reorderPages(pdfId, order);
-            if (reordered) setResult(`Reordered: ${reordered.original_filename}`);
-            else setResult("Reorder failed");
-            // Reload PDF list
-            const updated = await loadLocalPdfs();
-            setPdfs(updated);
         }
+        selectedRanges.push([start, end]);
+
+        // Remaining pages as contiguous ranges
+        const remainingPages: number[] = [];
+        for (let i = 1; i <= totalPages; i++) {
+            if (!selectedPages.includes(i)) remainingPages.push(i);
+        }
+        const remainingRanges: [number, number][] = [];
+        if (remainingPages.length > 0) {
+            let rStart = remainingPages[0];
+            let rEnd = remainingPages[0];
+            for (let i = 1; i < remainingPages.length; i++) {
+                if (remainingPages[i] === rEnd + 1) {
+                    rEnd = remainingPages[i];
+                } else {
+                    remainingRanges.push([rStart, rEnd]);
+                    rStart = remainingPages[i];
+                    rEnd = remainingPages[i];
+                }
+            }
+            remainingRanges.push([rStart, rEnd]);
+        }
+
+        const allRanges = [...selectedRanges, ...remainingRanges];
+        const results = await splitPdf(pdfId, allRanges);
+        setResult(`Split into ${results.length} PDFs`);
         setLoading(false);
+        await reloadPdfs();
+    }
+
+    // ─── Reorder ──────────────────────────────────────────────────
+
+    function openReorderDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        if (!pdf || !pdf.page_count) return;
+        const pages: number[] = [];
+        for (let i = 1; i <= pdf.page_count; i++) pages.push(i);
+        setReorderDialog({
+            pdfId,
+            pdfName: pdf.original_filename,
+            pageOrder: pages,
+        });
+    }
+
+    function movePageUp(index: number) {
+        if (!reorderDialog || index === 0) return;
+        const order = [...reorderDialog.pageOrder];
+        [order[index - 1], order[index]] = [order[index], order[index - 1]];
+        setReorderDialog({ ...reorderDialog, pageOrder: order });
+    }
+
+    function movePageDown(index: number) {
+        if (!reorderDialog || index >= reorderDialog.pageOrder.length - 1) return;
+        const order = [...reorderDialog.pageOrder];
+        [order[index], order[index + 1]] = [order[index + 1], order[index]];
+        setReorderDialog({ ...reorderDialog, pageOrder: order });
+    }
+
+    async function executeReorder() {
+        if (!reorderDialog) return;
+        const { pdfId, pageOrder } = reorderDialog;
+        setReorderDialog(null);
+        setLoading(true);
+
+        const reordered = await reorderPages(pdfId, pageOrder);
+        if (reordered) setResult(`Reordered: ${reordered.original_filename}`);
+        else setResult("Reorder failed");
+        setLoading(false);
+        await reloadPdfs();
     }
 
     function toggleSelect(id: string) {
@@ -141,8 +217,8 @@ export default function ToolsScreen() {
                             <TouchableOpacity
                                 onPress={() => {
                                     if (operation === "merge") toggleSelect(item.id);
-                                    else if (operation === "split") confirmSplit(item.id);
-                                    else if (operation === "reorder") confirmReorder(item.id);
+                                    else if (operation === "split") openSplitDialog(item.id);
+                                    else if (operation === "reorder") openReorderDialog(item.id);
                                 }}
                             >
                                 <Card.Content>
@@ -159,19 +235,66 @@ export default function ToolsScreen() {
                 />
             )}
 
+            {/* Split Dialog — choose pages to extract */}
             <Portal>
-                <Dialog visible={confirmDialog !== null} onDismiss={() => setConfirmDialog(null)}>
-                    <Dialog.Title>Confirm {confirmDialog?.type}</Dialog.Title>
+                <Dialog visible={splitDialog !== null} onDismiss={() => setSplitDialog(null)}>
+                    <Dialog.Title>Split "{splitDialog?.pdfName}"</Dialog.Title>
                     <Dialog.Content>
-                        <Text variant="bodyMedium">
-                            {confirmDialog?.type === "split"
-                                ? `Split "${confirmDialog?.pdfName}" into individual pages?`
-                                : `Reverse page order of "${confirmDialog?.pdfName}"?`}
+                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                            Select pages to extract into a new PDF:
                         </Text>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                            {splitDialog && Array.from({ length: splitDialog.totalPages }, (_, i) => i + 1).map((page) => (
+                                <TouchableOpacity
+                                    key={page}
+                                    onPress={() => toggleSplitPage(page)}
+                                    style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 8,
+                                        backgroundColor: splitDialog.selectedPages.includes(page)
+                                            ? theme.colors.primary
+                                            : theme.colors.surfaceVariant,
+                                        justifyContent: "center",
+                                        alignItems: "center",
+                                        margin: 2,
+                                    }}
+                                >
+                                    <Text style={{ color: splitDialog.selectedPages.includes(page) ? "#fff" : theme.colors.onSurface }}>
+                                        {page}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setConfirmDialog(null)}>Cancel</Button>
-                        <Button onPress={executeConfirmed}>Confirm</Button>
+                        <Button onPress={() => setSplitDialog(null)}>Cancel</Button>
+                        <Button onPress={executeSplit} disabled={!splitDialog || splitDialog.selectedPages.length === 0}>
+                            Extract {splitDialog?.selectedPages.length || 0} pages
+                        </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Reorder Dialog — move pages up/down */}
+            <Portal>
+                <Dialog visible={reorderDialog !== null} onDismiss={() => setReorderDialog(null)}>
+                    <Dialog.Title>Reorder "{reorderDialog?.pdfName}"</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                            Rearrange pages by moving them up or down:
+                        </Text>
+                        {reorderDialog && reorderDialog.pageOrder.map((page, index) => (
+                            <View key={page} style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                                <Text style={{ width: 30, fontWeight: "600" }}>{page}</Text>
+                                <IconButton icon="arrow-up" size={16} onPress={() => movePageUp(index)} disabled={index === 0} />
+                                <IconButton icon="arrow-down" size={16} onPress={() => movePageDown(index)} disabled={index >= reorderDialog.pageOrder.length - 1} />
+                            </View>
+                        ))}
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setReorderDialog(null)}>Cancel</Button>
+                        <Button onPress={executeReorder}>Reorder</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

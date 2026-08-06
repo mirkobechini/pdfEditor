@@ -50,6 +50,9 @@ export class ApiClient {
     if (err instanceof Response) {
       return ApiClient.extractErrorResponse(err);
     }
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return "Connection timeout. The server is waking up, please try again in a moment.";
+    }
     if (err instanceof TypeError && err.message === "Network request failed") {
       return "Connection error. Check your internet connection.";
     }
@@ -89,16 +92,24 @@ export class ApiClient {
   private async _fetch(
     url: string,
     options: RequestInit = {},
+    timeoutMs = 30000,
   ): Promise<Response> {
     const headers = {
       ...this.getHeaders(),
       ...((options.headers as Record<string, string>) || {}),
     };
-    return fetch(url, {
-      ...options,
-      credentials: "include",
-      headers,
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, {
+        ...options,
+        credentials: "include",
+        headers,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   // ─── Auth ────────────────────────────────────────────────────────
