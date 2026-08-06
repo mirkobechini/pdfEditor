@@ -47,6 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     if (res.ok && !cancelled) {
                         const u = await res.json();
                         setUser(u);
+                    } else if (remembered && !cancelled) {
+                        // Token exists but getMe failed (offline) — keep user logged in
+                        setUser({ id: "guest", email: null as any, full_name: "Guest", is_active: true, is_admin: false, is_guest: true, license_tier: "", license_tier_source: "", google_id: null, created_at: "", updated_at: "" });
                     }
                 } catch {
                     // Offline — ignore
@@ -103,11 +106,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const res = await api.guestLogin();
             api.setToken(res.access_token);
+            // Save guest token too so it persists across app restarts
+            await AsyncStorage.setItem(REMEMBER_TOKEN_KEY, res.access_token);
             try {
                 const u = await api.getMe();
                 setUser(u);
             } catch {
-                // Login ok but getMe failed
+                // Login ok but getMe failed (offline) — still set a minimal user
+                setUser({ id: "guest", email: null as any, full_name: "Guest", is_active: true, is_admin: false, is_guest: true, license_tier: "", license_tier_source: "", google_id: null, created_at: "", updated_at: "" });
             }
         } finally {
             setLoading(false);
