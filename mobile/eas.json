@@ -6,16 +6,13 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "workingDirectory": "mobile"
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "workingDirectory": "mobile"
+      "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true,
-      "workingDirectory": "mobile"
+      "autoIncrement": true
     }
   },
   "submit": {
