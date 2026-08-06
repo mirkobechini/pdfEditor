@@ -4,7 +4,11 @@
 
 Fixare i bug emersi dai test dell'APK MVP mobile e aggiungere piccole migliorie UX.
 
-## Commit eseguiti (15)
+## Status
+
+✅ **Completata** — Build #6 testata, fix funzionanti. Issue chiusa.
+
+## Commit eseguiti (18)
 
 1. ✅ `fix(mobile): add @expo/vector-icons and configure PaperProvider icon settings`
 2. ✅ `fix(mobile): add useSafeAreaInsets to FAB position in HomeScreen`
