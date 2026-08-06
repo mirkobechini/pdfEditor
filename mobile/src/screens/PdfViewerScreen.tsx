@@ -126,7 +126,7 @@ export default function PdfViewerScreen() {
                 )}
 
                 {pdfUri && (
-                    <View style={{ flex: 1 }}>
+                    <View style={{ flex: 1 }} key={pdfId}>
                         {(() => {
                             const Pdf = require("react-native-pdf").default;
                             return (
