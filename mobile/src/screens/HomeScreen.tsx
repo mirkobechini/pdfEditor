@@ -24,6 +24,7 @@ export default function HomeScreen() {
     const [renameDialog, setRenameDialog] = useState(false);
     const [renameText, setRenameText] = useState("");
     const [renameTarget, setRenameTarget] = useState<LocalPdf | null>(null);
+    const [detailsPdf, setDetailsPdf] = useState<LocalPdf | null>(null);
 
     // Reload PDFs when screen is focused
     useFocusEffect(
@@ -162,15 +163,6 @@ export default function HomeScreen() {
                                 navigation.navigate("Scanner");
                             }}
                         />
-                        <List.Item
-                            title="PDF Tools"
-                            description="Merge, split, reorder, metadata"
-                            left={(props) => <List.Icon {...props} icon="tools" />}
-                            onPress={() => {
-                                setShowMenu(false);
-                                navigation.navigate("Tools");
-                            }}
-                        />
                     </List.Section>
                 </Modal>
             </Portal>
@@ -182,7 +174,7 @@ export default function HomeScreen() {
                     <Dialog.Content>
                         <List.Item title="Rename" left={(p) => <List.Icon {...p} icon="pencil" />} onPress={() => { if (contextPdf) openRename(contextPdf); }} />
                         <List.Item title="Delete" left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
-                        <List.Item title="Details" left={(p) => <List.Icon {...p} icon="information" />} onPress={() => setContextPdf(null)} />
+                        <List.Item title="Details" left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setDetailsPdf(pdf); } }} />
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setContextPdf(null)}>Close</Button>
@@ -200,6 +192,23 @@ export default function HomeScreen() {
                     <Dialog.Actions>
                         <Button onPress={() => setRenameDialog(false)}>Cancel</Button>
                         <Button onPress={confirmRename}>Rename</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Details dialog */}
+            <Portal>
+                <Dialog visible={detailsPdf !== null} onDismiss={() => setDetailsPdf(null)}>
+                    <Dialog.Title>PDF Details</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>Name: </Text>{detailsPdf?.original_filename}</Text>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>Size: </Text>{detailsPdf ? formatSize(detailsPdf.file_size) : ""}</Text>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>Pages: </Text>{detailsPdf?.page_count}</Text>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>Created: </Text>{detailsPdf ? new Date(detailsPdf.created_at).toLocaleDateString() : ""}</Text>
+                        <Text variant="bodyMedium"><Text style={{ fontWeight: "700" }}>Updated: </Text>{detailsPdf ? new Date(detailsPdf.updated_at).toLocaleDateString() : ""}</Text>
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setDetailsPdf(null)}>Close</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

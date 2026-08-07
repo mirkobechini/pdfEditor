@@ -193,9 +193,8 @@ export default function ToolsScreen() {
     // ─── Remove Pages ────────────────────────────────────────────
 
     async function executeRemove(fileName?: string) {
-        if (!removeDialog) return;
-        const { pdfId, selectedPages } = removeDialog;
-        setRemoveDialog(null);
+        if (!nameDialog || nameDialog.type !== "remove") return;
+        const { pdfId, selectedPages } = nameDialog.data;
         if (selectedPages.length === 0) return;
         setLoading(true);
         const result_pdf = await removePages(pdfId, selectedPages, fileName);

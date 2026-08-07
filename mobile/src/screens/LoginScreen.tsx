@@ -66,15 +66,11 @@ export default function LoginScreen() {
                         </Text>
 
                         {error ? (
-                            <Text
-                                style={{
-                                    color: theme.colors.error,
-                                    marginBottom: 16,
-                                    textAlign: "center",
-                                }}
-                            >
-                                {error}
-                            </Text>
+                            <View style={{ backgroundColor: "#FFE0E0", padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                                <Text style={{ color: "#B00020", textAlign: "center" }}>
+                                    {error}
+                                </Text>
+                            </View>
                         ) : null}
 
                         {isRegister && (
@@ -154,12 +150,12 @@ export default function LoginScreen() {
                 </ScrollView>
             </KeyboardAvoidingView>
 
-            {/* Loading overlay — blocks all interactions */}
+            {/* Loading overlay — form visible in background, spinner in foreground */}
             {loading && (
-                <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
-                    <View style={{ backgroundColor: theme.colors.surface, padding: 32, borderRadius: 16, alignItems: "center", elevation: 8 }}>
+                <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
+                    <View style={{ backgroundColor: "rgba(255,255,255,0.9)", padding: 32, borderRadius: 16, alignItems: "center", elevation: 4 }}>
                         <ActivityIndicator size="large" color={theme.colors.primary} />
-                        <Text style={{ marginTop: 16, color: theme.colors.onSurface, fontWeight: "600" }}>
+                        <Text style={{ marginTop: 16, color: theme.colors.primary, fontWeight: "600" }}>
                             Signing in...
                         </Text>
                     </View>

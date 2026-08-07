@@ -49,12 +49,20 @@ export default function AppNavigator() {
                             options={({ navigation }) => ({
                                 title: "PdfEditor",
                                 headerRight: () => (
-                                    <IconButton
-                                        icon="cog"
-                                        size={22}
-                                        iconColor="#FFFFFF"
-                                        onPress={() => navigation.navigate("Settings")}
-                                    />
+                                    <View style={{ flexDirection: "row" }}>
+                                        <IconButton
+                                            icon="tools"
+                                            size={22}
+                                            iconColor="#FFFFFF"
+                                            onPress={() => navigation.navigate("Tools")}
+                                        />
+                                        <IconButton
+                                            icon="cog"
+                                            size={22}
+                                            iconColor="#FFFFFF"
+                                            onPress={() => navigation.navigate("Settings")}
+                                        />
+                                    </View>
                                 ),
                             })}
                         />
