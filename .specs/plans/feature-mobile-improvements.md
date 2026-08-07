@@ -5,43 +5,55 @@ Migliorie UX e funzionalità mancanti dopo il completamento del MVP mobile.
 
 ---
 
-## 🐛 Bug aperti (da testare in build #9)
+## Panoramica completa
+
+### 🐛 Bug aperti
 | # | Bug | Probabile fix |
 |---|-----|---------------|
-| B1 | **Login non mostra errori** | Separato `actionLoading` da `loading` iniziale |
-| B2 | **Login overlay non visibile** | Stesso fix, overlay usa `actionLoading` |
-| B3 | **Icona app non corretta** | Rimosso monochromeImage da app.json, icona rigenerata senza sfondo bianco |
-| B4 | **Bottoni viola** | Aggiunto `theme={lightTheme}` al PaperProvider |
+| B1 | Login non mostra errori | actionLoading separato da loading |
+| B2 | Login overlay non visibile | Stesso fix |
+| B3 | Icona app non corretta | monochromeImage rimosso, icona rigenerata |
+| B4 | Bottoni viola | theme aggiunto a PaperProvider |
 
-## ❌ Feature mancanti dal piano originale
+### ❌ Feature mancanti dal piano originale
 | # | Cosa | Priorità | Note |
 |---|------|----------|------|
-| 1 | **Sync cloud push/pull** | Media | Sync bidirezionale PDF (Fase 4b) |
-| 2 | **EAS CI Integration** | Bassa | Build automatica su tag release |
-| 3 | **Metadata editing (titolo/autore)** | Bassa | pdf-lib supporta, manca UI |
-| 4 | **Password protect/unlock PDF** | Bassa | pdf-lib supporta, manca UI |
-| 5 | **Componenti UI (PdfListItem, GuestBanner, SyncStatusBadge)** | Bassa | Da estrarre da screens |
-| 6 | **Hook useSyncQueue** | Bassa | Per coda sync offline |
-| 7 | **Test componenti UI** | Bassa | Bloccato da @testing-library/react-native |
-| 8 | **Rework UI completo (Penpot)** | Alta | UI da rifare col design |
-| 9 | **Bottom tabs navigation** | Bassa | Invece di solo stack |
+| F1 | Sync cloud push/pull | Media | Sync bidirezionale PDF (Fase 4b) |
+| F2 | EAS CI Integration | Bassa | Build automatica su tag release |
+| F3 | Metadata editing (titolo/autore) | Media | pdf-lib supporta, manca UI |
+| F4 | Password protect/unlock PDF | Media | pdf-lib supporta, manca UI |
+| F5 | Componenti UI (PdfListItem, GuestBanner, SyncStatusBadge) | Bassa | Da estrarre da screens |
+| F6 | Hook useSyncQueue | Media | Per coda sync offline |
+| F7 | Test componenti UI | Bassa | Bloccato da @testing-library/react-native |
+| F8 | Rework UI completo (Penpot) | Alta | UI da rifare col design |
+| F9 | Bottom tabs navigation | Bassa | Invece di solo stack |
 
-## 💡 Cose da aggiungere/modificare
+### 💡 Migliorie UX proposte
 | # | Cosa | Perché |
 |---|------|--------|
-| 1 | **Toast/notifica dopo operazioni** | Invece di testo "result" in ToolsScreen, un toast che sparisce |
-| 2 | **Refresh-to-reload in Home** | Pull down per ricaricare lista PDF |
-| 3 | **Badge count su icona** | Per mostrare numero PDF nella lista |
-| 4 | **Swipe-to-delete in Home** | Swipe left su PDF per eliminare veloce |
-| 5 | **Search/filtro in Home** | Se ci sono tanti PDF |
-| 6 | **Preview thumbnail in Home** | Miniatura della prima pagina (pdf-lib può estrarla) |
-| 7 | **Share PDF** | Condividere PDF via Android share sheet |
-| 8 | **Multi-select in Home** | Per operazioni batch |
-| 9 | **Animazioni transizioni** | Transizioni più fluide tra schermate |
-| 10 | **Splash screen personalizzata** | Invece dello schermo bianco all'avvio |
+| M1 | Toast/notifica dopo operazioni | Invece di testo "result" in ToolsScreen |
+| M2 | Refresh-to-reload in Home | Pull down per ricaricare lista PDF |
+| M3 | Badge count su icona | Mostrare numero PDF nella lista |
+| M4 | Swipe-to-delete in Home | Swipe left per eliminare veloce |
+| M5 | Search/filtro in Home | Cercare PDF per nome |
+| M6 | Preview thumbnail in Home | Miniatura prima pagina nella lista |
+| M7 | Share PDF | Condividere via Android share sheet |
+| M8 | Multi-select in Home | Per operazioni batch |
+| M9 | Animazioni transizioni | Transizioni più fluide |
+| M10 | Splash screen personalizzata | Invece di schermo bianco all'avvio |
 
-## Riepilogo priorità
-1. Bug fix (build #9) → 2. Rework UI (Penpot) → 3. Feature sync cloud → 4. Migliorie UX
+---
+
+## Task in ordine di esecuzione (scelte dall'utente)
+
+1. **Metadata editing** (F3) — dialog per titolo/autore
+2. **Password protect/unlock PDF** (F4) — dialog per password
+3. **Hook useSyncQueue** (F6) — sync in background
+4. **Refresh-to-reload in Home** (M2) — pull-to-refresh
+5. **Search/filter in Home** (M5) — barra di ricerca
+6. **Preview thumbnail in Home** (M6) — miniatura prima pagina
+7. **Toast/notifiche** (M1) — Snackbar al posto di "result"
+8. **Swipe to delete** (M4) — con conferma
 
 ## Status
 [ ] Non iniziato
