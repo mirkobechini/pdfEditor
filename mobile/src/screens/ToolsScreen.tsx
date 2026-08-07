@@ -7,7 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages } from "../services/pdfService";
+import { mergePdfs, splitPdf, reorderPages, removePages } from "../services/pdfService";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 
@@ -23,10 +23,12 @@ export default function ToolsScreen() {
 
     // Split dialog state
     const [splitDialog, setSplitDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number; selectedPages: number[] } | null>(null);
+    // Remove dialog state
+    const [removeDialog, setRemoveDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number; selectedPages: number[] } | null>(null);
     // Reorder dialog state
     const [reorderDialog, setReorderDialog] = useState<{ pdfId: string; pdfName: string; pageOrder: number[] } | null>(null);
     // Name dialog state
-    const [nameDialog, setNameDialog] = useState<{ type: "merge" | "split" | "reorder"; data: any } | null>(null);
+    const [nameDialog, setNameDialog] = useState<{ type: "merge" | "split" | "reorder" | "remove"; data: any } | null>(null);
     const [nameInput, setNameInput] = useState("");
 
     useEffect(() => {
@@ -77,6 +79,25 @@ export default function ToolsScreen() {
             ? splitDialog.selectedPages.filter((p) => p !== page)
             : [...splitDialog.selectedPages, page];
         setSplitDialog({ ...splitDialog, selectedPages: selected });
+    }
+
+    function openRemoveDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        if (!pdf) return;
+        setRemoveDialog({
+            pdfId,
+            pdfName: pdf.original_filename,
+            totalPages: pdf.page_count || 1,
+            selectedPages: [],
+        });
+    }
+
+    function toggleRemovePage(page: number) {
+        if (!removeDialog) return;
+        const selected = removeDialog.selectedPages.includes(page)
+            ? removeDialog.selectedPages.filter((p) => p !== page)
+            : [...removeDialog.selectedPages, page];
+        setRemoveDialog({ ...removeDialog, selectedPages: selected });
     }
 
     async function executeSplit(fileName?: string) {
@@ -169,6 +190,21 @@ export default function ToolsScreen() {
         await reloadPdfs();
     }
 
+    // ─── Remove Pages ────────────────────────────────────────────
+
+    async function executeRemove(fileName?: string) {
+        if (!removeDialog) return;
+        const { pdfId, selectedPages } = removeDialog;
+        setRemoveDialog(null);
+        if (selectedPages.length === 0) return;
+        setLoading(true);
+        const result_pdf = await removePages(pdfId, selectedPages, fileName);
+        if (result_pdf) setResult(`Removed pages: ${result_pdf.original_filename}`);
+        else setResult("Remove pages failed");
+        setLoading(false);
+        await reloadPdfs();
+    }
+
     function toggleSelect(id: string) {
         setSelectedIds((prev) =>
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
@@ -188,6 +224,9 @@ export default function ToolsScreen() {
                     </Button>
                     <Button mode="contained" compact onPress={() => { setOperation("reorder"); setSelectedIds([]); }}>
                         Reorder
+                    </Button>
+                    <Button mode="contained" compact onPress={() => { setOperation("remove"); setSelectedIds([]); }}>
+                        Remove pages
                     </Button>
                 </View>
             </View>
@@ -230,6 +269,7 @@ export default function ToolsScreen() {
                                     if (operation === "merge") toggleSelect(item.id);
                                     else if (operation === "split") openSplitDialog(item.id);
                                     else if (operation === "reorder") openReorderDialog(item.id);
+                                    else if (operation === "remove") openRemoveDialog(item.id);
                                 }}
                             >
                                 <Card.Content>
@@ -310,6 +350,47 @@ export default function ToolsScreen() {
                 </Dialog>
             </Portal>
 
+            {/* Remove Pages Dialog — choose pages to remove */}
+            <Portal>
+                <Dialog visible={removeDialog !== null} onDismiss={() => setRemoveDialog(null)}>
+                    <Dialog.Title>Remove pages from "{removeDialog?.pdfName}"</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                            Select pages to remove:
+                        </Text>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                            {removeDialog && Array.from({ length: removeDialog.totalPages }, (_, i) => i + 1).map((page) => (
+                                <TouchableOpacity
+                                    key={page}
+                                    onPress={() => toggleRemovePage(page)}
+                                    style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: 8,
+                                        backgroundColor: removeDialog.selectedPages.includes(page)
+                                            ? theme.colors.error
+                                            : theme.colors.surfaceVariant,
+                                        justifyContent: "center",
+                                        alignItems: "center",
+                                        margin: 2,
+                                    }}
+                                >
+                                    <Text style={{ color: removeDialog.selectedPages.includes(page) ? "#fff" : theme.colors.onSurface }}>
+                                        {page}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setRemoveDialog(null)}>Cancel</Button>
+                        <Button onPress={() => { if (removeDialog) { const data = { ...removeDialog }; setRemoveDialog(null); setNameDialog({ type: "remove", data }); } }} disabled={!removeDialog || removeDialog.selectedPages.length === 0}>
+                            Remove {removeDialog?.selectedPages.length || 0} pages
+                        </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
             {/* Name Dialog — ask for file name before executing */}
             <Portal>
                 <Dialog visible={nameDialog !== null} onDismiss={() => setNameDialog(null)}>
@@ -334,6 +415,7 @@ export default function ToolsScreen() {
                             if (type === "merge") executeMerge(fileName);
                             else if (type === "split") executeSplit(fileName);
                             else if (type === "reorder") executeReorder(fileName);
+                            else if (type === "remove") executeRemove(fileName);
                         }}>Save</Button>
                     </Dialog.Actions>
                 </Dialog>

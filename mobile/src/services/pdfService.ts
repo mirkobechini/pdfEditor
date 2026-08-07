@@ -177,6 +177,52 @@ export async function reorderPages(
   }
 }
 
+export async function removePages(
+  pdfId: string,
+  pagesToRemove: number[],
+  fileName?: string,
+): Promise<LocalPdf | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const bytes = await readPdfBytes(pdf.uri);
+    const source = await PDFDocument.load(bytes);
+    const newPdf = await PDFDocument.create();
+
+    const allPages = source.getPageIndices();
+    const keepPages = allPages.filter((p) => !pagesToRemove.includes(p + 1));
+    const pages = await newPdf.copyPages(source, keepPages);
+    pages.forEach((page) => newPdf.addPage(page));
+
+    const pdfBytes = await newPdf.save();
+
+    const pdfDir = getPdfDir();
+    const id = generateId();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, pdfBytes);
+
+    const now = new Date().toISOString();
+    const safeName = fileName
+      ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+      : `removed-pages_${now.slice(0, 10)}.pdf`;
+    const result: LocalPdf = {
+      id,
+      original_filename: safeName,
+      file_size: pdfBytes.length,
+      page_count: newPdf.getPageCount(),
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("Remove pages error:", e);
+    return null;
+  }
+}
+
 export async function updateMetadata(
   pdfId: string,
   title?: string,
