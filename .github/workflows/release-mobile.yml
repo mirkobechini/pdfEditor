@@ -39,13 +39,28 @@ jobs:
       - name: Download APK from EAS
         run: |
           cd mobile
-          # Wait for build to complete and download artifact
+          # Wait for the build to finish (EAS builds take 15-40 min)
           echo "Waiting for EAS build to complete..."
-          sleep 60
-          eas build:list --platform android --limit 1 --json > build-info.json
-          BUILD_ID=$(node -e "const b=require('./build-info.json'); console.log(b[0]?.id)")
+          for i in $(seq 1 120); do
+            eas build:list --platform android --limit 1 --json > build-info.json 2>/dev/null
+            STATUS=$(node -e "try { const b=require('./build-info.json'); console.log(b[0]?.status || '') } catch(e) { console.log('error') }")
+            echo "  iteration $i: status=$STATUS"
+            if [ "$STATUS" = "finished" ]; then
+              break
+            fi
+            if [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
+              echo "EAS build failed with status: $STATUS"
+              exit 1
+            fi
+            sleep 30
+          done
+
+          # Download the APK
+          BUILD_ID=$(node -e "try { const b=require('./build-info.json'); console.log(b[0]?.id || '') } catch(e) { console.log('') }")
           echo "Build ID: $BUILD_ID"
-          eas build:download $BUILD_ID --output=pdfeditor-mobile.apk
+          eas build:download --build-id "$BUILD_ID" --platform android
+          mv build-*.apk pdfeditor-mobile.apk
+          ls -la pdfeditor-mobile.apk
 
       - name: Generate release notes
         id: notes
