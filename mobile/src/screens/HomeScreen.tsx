@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
-import { Text, Card, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List } from "react-native-paper";
+import { Text, Card, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List, Dialog, TextInput } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
+import { getLocalPdfById, savePdfLocally, deleteLocalPdf } from "../services/localDb";
+import { File } from "expo-file-system";
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Home">;
 
@@ -18,6 +20,10 @@ export default function HomeScreen() {
     const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
     const [showMenu, setShowMenu] = useState(false);
+    const [contextPdf, setContextPdf] = useState<LocalPdf | null>(null);
+    const [renameDialog, setRenameDialog] = useState(false);
+    const [renameText, setRenameText] = useState("");
+    const [renameTarget, setRenameTarget] = useState<LocalPdf | null>(null);
 
     // Reload PDFs when screen is focused
     useFocusEffect(
@@ -55,6 +61,32 @@ export default function HomeScreen() {
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     }
 
+    async function handleDelete(pdf: LocalPdf) {
+        setContextPdf(null);
+        try {
+            const file = new File(pdf.uri);
+            if (file.exists) file.delete();
+        } catch { /* ignore */ }
+        await deleteLocalPdf(pdf.id);
+        await loadPdfs();
+    }
+
+    function openRename(pdf: LocalPdf) {
+        setContextPdf(null);
+        setRenameTarget(pdf);
+        setRenameText(pdf.original_filename);
+        setRenameDialog(true);
+    }
+
+    async function confirmRename() {
+        if (!renameTarget || !renameText.trim()) return;
+        const updated = { ...renameTarget, original_filename: renameText.trim(), updated_at: new Date().toISOString() };
+        await savePdfLocally(updated);
+        setRenameDialog(false);
+        setRenameTarget(null);
+        await loadPdfs();
+    }
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["bottom"]}>
             {loading ? (
@@ -80,6 +112,7 @@ export default function HomeScreen() {
                                     title: item.original_filename,
                                 })
                             }
+                            onLongPress={() => setContextPdf(item)}
                         >
                             <Card style={{ marginBottom: 12, backgroundColor: theme.colors.surface }}>
                                 <Card.Content>
@@ -138,17 +171,37 @@ export default function HomeScreen() {
                                 navigation.navigate("Tools");
                             }}
                         />
-                        <List.Item
-                            title="Settings"
-                            description="App preferences"
-                            left={(props) => <List.Icon {...props} icon="cog" />}
-                            onPress={() => {
-                                setShowMenu(false);
-                                navigation.navigate("Settings");
-                            }}
-                        />
                     </List.Section>
                 </Modal>
+            </Portal>
+
+            {/* Context menu — long press on PDF */}
+            <Portal>
+                <Dialog visible={contextPdf !== null && !renameDialog} onDismiss={() => setContextPdf(null)}>
+                    <Dialog.Title>{contextPdf?.original_filename}</Dialog.Title>
+                    <Dialog.Content>
+                        <List.Item title="Rename" left={(p) => <List.Icon {...p} icon="pencil" />} onPress={() => { if (contextPdf) openRename(contextPdf); }} />
+                        <List.Item title="Delete" left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
+                        <List.Item title="Details" left={(p) => <List.Icon {...p} icon="information" />} onPress={() => setContextPdf(null)} />
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setContextPdf(null)}>Close</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Rename dialog */}
+            <Portal>
+                <Dialog visible={renameDialog} onDismiss={() => setRenameDialog(false)}>
+                    <Dialog.Title>Rename PDF</Dialog.Title>
+                    <Dialog.Content>
+                        <TextInput label="File name" value={renameText} onChangeText={setRenameText} mode="outlined" autoFocus />
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setRenameDialog(false)}>Cancel</Button>
+                        <Button onPress={confirmRename}>Rename</Button>
+                    </Dialog.Actions>
+                </Dialog>
             </Portal>
         </SafeAreaView>
     );

@@ -1,7 +1,8 @@
 import React from "react";
-import { View, ActivityIndicator } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { View, ActivityIndicator, TouchableOpacity } from "react-native";
+import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { IconButton } from "react-native-paper";
 import { useAuth } from "../shared/auth";
 
 import LoginScreen from "../screens/LoginScreen";
@@ -45,7 +46,17 @@ export default function AppNavigator() {
                         <Stack.Screen
                             name="Home"
                             component={HomeScreen}
-                            options={{ title: "PdfEditor" }}
+                            options={({ navigation }) => ({
+                                title: "PdfEditor",
+                                headerRight: () => (
+                                    <IconButton
+                                        icon="cog"
+                                        size={22}
+                                        iconColor="#FFFFFF"
+                                        onPress={() => navigation.navigate("Settings")}
+                                    />
+                                ),
+                            })}
                         />
                         <Stack.Screen
                             name="PdfViewer"
