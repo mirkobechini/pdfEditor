@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
-import { Text, TextInput, Button, Surface, useTheme, IconButton, ActivityIndicator, Portal, Modal } from "react-native-paper";
+import { Text, TextInput, Button, Surface, useTheme, IconButton, ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../shared/auth";
 
