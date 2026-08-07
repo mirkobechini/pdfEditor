@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
-import { Text, Card, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton } from "react-native-paper";
+import { Text, Card, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -25,6 +25,9 @@ export default function ToolsScreen() {
     const [splitDialog, setSplitDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number; selectedPages: number[] } | null>(null);
     // Reorder dialog state
     const [reorderDialog, setReorderDialog] = useState<{ pdfId: string; pdfName: string; pageOrder: number[] } | null>(null);
+    // Name dialog state
+    const [nameDialog, setNameDialog] = useState<{ type: "merge" | "split" | "reorder"; data: any } | null>(null);
+    const [nameInput, setNameInput] = useState("");
 
     useEffect(() => {
         loadLocalPdfs().then(setPdfs).finally(() => setLoading(false));
@@ -37,8 +40,16 @@ export default function ToolsScreen() {
 
     async function handleMerge() {
         if (selectedIds.length < 2) { setResult("Select at least 2 PDFs"); return; }
+        // Ask for file name before merging
+        setNameDialog({ type: "merge", data: { ids: [...selectedIds] } });
+    }
+
+    async function executeMerge(fileName?: string) {
+        if (!nameDialog) return;
+        const { ids } = nameDialog.data;
+        setNameDialog(null);
         setLoading(true);
-        const merged = await mergePdfs(selectedIds);
+        const merged = await mergePdfs(ids, fileName);
         if (merged) {
             setResult(`Merged into: ${merged.original_filename}`);
             setSelectedIds([]);
@@ -68,9 +79,9 @@ export default function ToolsScreen() {
         setSplitDialog({ ...splitDialog, selectedPages: selected });
     }
 
-    async function executeSplit() {
-        if (!splitDialog || splitDialog.selectedPages.length === 0) return;
-        const { pdfId, totalPages, selectedPages } = splitDialog;
+    async function executeSplit(fileName?: string) {
+        if (!nameDialog) return;
+        const { pdfId, totalPages, selectedPages } = nameDialog.data;
         setSplitDialog(null);
         setLoading(true);
 
@@ -111,7 +122,7 @@ export default function ToolsScreen() {
         }
 
         const allRanges = [...selectedRanges, ...remainingRanges];
-        const results = await splitPdf(pdfId, allRanges);
+        const results = await splitPdf(pdfId, allRanges, fileName);
         setResult(`Split into ${results.length} PDFs`);
         setLoading(false);
         await reloadPdfs();
@@ -145,13 +156,13 @@ export default function ToolsScreen() {
         setReorderDialog({ ...reorderDialog, pageOrder: order });
     }
 
-    async function executeReorder() {
+    async function executeReorder(fileName?: string) {
         if (!reorderDialog) return;
         const { pdfId, pageOrder } = reorderDialog;
         setReorderDialog(null);
         setLoading(true);
 
-        const reordered = await reorderPages(pdfId, pageOrder);
+        const reordered = await reorderPages(pdfId, pageOrder, fileName);
         if (reordered) setResult(`Reordered: ${reordered.original_filename}`);
         else setResult("Reorder failed");
         setLoading(false);
@@ -269,7 +280,7 @@ export default function ToolsScreen() {
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setSplitDialog(null)}>Cancel</Button>
-                        <Button onPress={executeSplit} disabled={!splitDialog || splitDialog.selectedPages.length === 0}>
+                        <Button onPress={() => { if (splitDialog) { const data = { ...splitDialog }; setSplitDialog(null); setNameDialog({ type: "split", data }); } }} disabled={!splitDialog || splitDialog.selectedPages.length === 0}>
                             Extract {splitDialog?.selectedPages.length || 0} pages
                         </Button>
                     </Dialog.Actions>
@@ -294,7 +305,36 @@ export default function ToolsScreen() {
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setReorderDialog(null)}>Cancel</Button>
-                        <Button onPress={executeReorder}>Reorder</Button>
+                        <Button onPress={() => { if (reorderDialog) { const data = { ...reorderDialog }; setReorderDialog(null); setNameDialog({ type: "reorder", data }); } }}>Reorder</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Name Dialog — ask for file name before executing */}
+            <Portal>
+                <Dialog visible={nameDialog !== null} onDismiss={() => setNameDialog(null)}>
+                    <Dialog.Title>Name your PDF</Dialog.Title>
+                    <Dialog.Content>
+                        <TextInput
+                            label="File name (optional)"
+                            mode="outlined"
+                            autoFocus
+                            value={nameInput}
+                            onChangeText={setNameInput}
+                        />
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setNameDialog(null)}>Cancel</Button>
+                        <Button onPress={() => {
+                            const type = nameDialog?.type;
+                            const data = nameDialog?.data;
+                            const fileName = nameInput.trim() || undefined;
+                            setNameDialog(null);
+                            setNameInput("");
+                            if (type === "merge") executeMerge(fileName);
+                            else if (type === "split") executeSplit(fileName);
+                            else if (type === "reorder") executeReorder(fileName);
+                        }}>Save</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

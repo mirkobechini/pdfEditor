@@ -33,7 +33,10 @@ function getPdfDir(): Directory {
   return dir;
 }
 
-export async function mergePdfs(pdfIds: string[]): Promise<LocalPdf | null> {
+export async function mergePdfs(
+  pdfIds: string[],
+  fileName?: string,
+): Promise<LocalPdf | null> {
   if (pdfIds.length < 2) return null;
   try {
     const mergedPdf = await PDFDocument.create();
@@ -57,9 +60,12 @@ export async function mergePdfs(pdfIds: string[]): Promise<LocalPdf | null> {
     await writePdfBytes(uri, pdfBytes);
 
     const now = new Date().toISOString();
+    const safeName = fileName
+      ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+      : `merged_${now.slice(0, 10)}.pdf`;
     const result: LocalPdf = {
       id,
-      original_filename: `merged_${now.slice(0, 10)}.pdf`,
+      original_filename: safeName,
       file_size: pdfBytes.length,
       page_count: mergedPdf.getPageCount(),
       uri,
@@ -77,6 +83,7 @@ export async function mergePdfs(pdfIds: string[]): Promise<LocalPdf | null> {
 export async function splitPdf(
   pdfId: string,
   pageRanges: [number, number][],
+  fileName?: string,
 ): Promise<LocalPdf[]> {
   try {
     const pdf = await getLocalPdfById(pdfId);
@@ -103,9 +110,12 @@ export async function splitPdf(
       await writePdfBytes(uri, pdfBytes);
 
       const now = new Date().toISOString();
+      const safeName = fileName
+        ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + `_${i + 1}.pdf`
+        : `split_${i + 1}_${now.slice(0, 10)}.pdf`;
       const result: LocalPdf = {
         id,
-        original_filename: `split_${i + 1}_${now.slice(0, 10)}.pdf`,
+        original_filename: safeName,
         file_size: pdfBytes.length,
         page_count: newPdf.getPageCount(),
         uri,
@@ -125,6 +135,7 @@ export async function splitPdf(
 export async function reorderPages(
   pdfId: string,
   pageOrder: number[],
+  fileName?: string,
 ): Promise<LocalPdf | null> {
   try {
     const pdf = await getLocalPdfById(pdfId);
@@ -146,9 +157,12 @@ export async function reorderPages(
     await writePdfBytes(uri, pdfBytes);
 
     const now = new Date().toISOString();
+    const safeName = fileName
+      ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+      : `reordered_${now.slice(0, 10)}.pdf`;
     const result: LocalPdf = {
       id,
-      original_filename: `reordered_${now.slice(0, 10)}.pdf`,
+      original_filename: safeName,
       file_size: pdfBytes.length,
       page_count: newPdf.getPageCount(),
       uri,
