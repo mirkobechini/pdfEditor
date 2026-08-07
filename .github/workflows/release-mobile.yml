@@ -1,0 +1,70 @@
+name: Build & Release Mobile APK
+
+on:
+  push:
+    tags:
+      - "v*-mobile" # e.g. v0.1.0-mobile, v0.2.0-mobile
+
+permissions:
+  contents: read
+
+jobs:
+  build-mobile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "mobile/package-lock.json"
+
+      - name: Install dependencies
+        run: cd mobile && npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v9
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK with EAS
+        run: cd mobile && eas build --platform android --profile release --non-interactive --no-wait
+
+      - name: Download APK from EAS
+        run: |
+          cd mobile
+          # Wait for build to complete and download artifact
+          echo "Waiting for EAS build to complete..."
+          sleep 60
+          eas build:list --platform android --limit 1 --json > build-info.json
+          BUILD_ID=$(node -e "const b=require('./build-info.json'); console.log(b[0]?.id)")
+          echo "Build ID: $BUILD_ID"
+          eas build:download $BUILD_ID --output=pdfeditor-mobile.apk
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "## PdfEditor Mobile App" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "APK buildato con EAS Build (profile: release)." >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "See [CHANGELOG.md](./CHANGELOG.md) for details." >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "PdfEditor Mobile ${{ github.ref_name }}"
+          body: ${{ steps.notes.outputs.notes }}
+          draft: false
+          prerelease: false
+          files: |
+            mobile/pdfeditor-mobile.apk
