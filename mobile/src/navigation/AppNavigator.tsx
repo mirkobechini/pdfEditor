@@ -51,7 +51,7 @@ export default function AppNavigator() {
                                 headerRight: () => (
                                     <View style={{ flexDirection: "row" }}>
                                         <IconButton
-                                            icon="tools"
+                                            icon="file-document-multiple"
                                             size={22}
                                             iconColor="#FFFFFF"
                                             onPress={() => navigation.navigate("Tools")}
