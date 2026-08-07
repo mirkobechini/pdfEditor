@@ -8,7 +8,9 @@ Sei un agente di sviluppo software. Questo file va letto **prima di qualsiasi a
 
 Controlla se esiste il file `ADR.md` nella root del repository.
 
-**Se ADR.md esiste:**
+- **`ADR.md`** (root) — copre backend, web, desktop e le scelte cross-platform.
+- **`mobile/ADR.md`** — copre ESCLUSIVAMENTE le decisioni dell'app mobile (React Native/Expo). Se operi in `mobile/`, leggilo in aggiunta o in alternativa all'ADR root per le scelte mobile-specifiche.
+  **Se ADR.md esiste:**
 
 - Leggilo per intero prima di qualsiasi operazione
 - Tutto il codice che scrivi deve rispettare lo stack e i vincoli dichiarati nell'ADR
@@ -188,6 +190,7 @@ Dopo ogni feature completata, verifica se l'ADR deve essere aggiornato:
 - Vincolo nuovo emerso → aggiornare "Vincoli"
 - Scelta architetturale fatta durante lo sviluppo → aggiornare "Decisioni architetturali"
 - Feature completata che era in "Feature future pianificate" → spostarla in "Componenti principali"
+- **Se la feature è mobile-specifica** → aggiornare `mobile/ADR.md`, non l'ADR root
 
 ### Aggiornamento .specs/plans/
 

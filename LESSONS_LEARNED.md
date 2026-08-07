@@ -1,7 +1,21 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-08-03
+> **Aggiornato:** 2026-08-07
+
+---
+
+## pdf-lib non supporta encryption — Fork @cantoo/pdf-lib come alternativa
+
+> **Lezione appresa (2026-08-07):**
+
+`pdf-lib@1.17.1` (ultima versione ufficiale) **non supporta** encryption/decryption dei PDF. Il tipo `PDFDocument` non ha il metodo `encrypt()` né l'opzione `password` in `load()`. Questa funzionalità è assente nell'originale Hopding/pdf-lib.
+
+Il fork **`@cantoo/pdf-lib`** (v2.8.1) aggiunge sia `encrypt(SecurityOptions)` che `load(bytes, { password })`, ma ha una dipendenza da `node-html-better-parser` (Node-only) che potrebbe causare fallimenti di bundle con Metro in React Native.
+
+**Regola:** Prima di implementare password protect/unlock, verificare che `@cantoo/pdf-lib` sia compatibile con React Native (Metro bundler). Se non lo è, cercare un fork alternativo o implementare manualmente la crittografia PDF (RC4/AES con trailer).
+
+**Note:** UI e funzioni già scritte in `pdfService.ts` e `ToolsScreen.tsx` — serve solo attivare la libreria giusta.
 
 ---
 

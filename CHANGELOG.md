@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-07
+
+- ✅ **Task 1: Metadata editing (F3)** — Dialog per modificare titolo/autore in ToolsScreen. `updateMetadata` già esistente in pdfService, aggiunta UI.
+- ⏸ **Task 2: Password protect/unlock (F4)** — Messo in pausa. UI e funzioni `protectPdf`/`unlockPdf` scritte ma non attivabili: `pdf-lib@1.17.1` non supporta encryption. Soluzione alternativa (`@cantoo/pdf-lib` fork) ha compatibilità React Native da verificare. Vedi `.specs/plans/feature-mobile-improvements.md` per dettagli.
+- 📝 **Documentazione allineata:**
+  - Creato `mobile/ADR.md` — ADR dedicato al mobile con tutte le decisioni, architettura, salvataggio offline, limiti (Task 2 in pausa), roadmap.
+  - `ADR.md` (root) — sezione 4 mobile sostituita con riferimento a `mobile/ADR.md`.
+  - `BRIEF.md` — corretto: Expo managed (non bare), Fase 3/4 ✅ completate, viewer mobile (react-native-pdf), nota password mobile.
+  - `architecture.mmd` — aggiunto blocco `Client_Mobile` con tutte le dipendenze (pdfService, localDb, shared, RN Paper, react-native-pdf).
+  - `AGENTS.md` — Onboarding ora legge anche `mobile/ADR.md` per feature mobile-specific.
+  - `KNOWN_ISSUES.md` — aggiunta sezione 📱 Mobile con 5 voci (M0-M4: niente sync, .easignore, dynamic import, viewer cache, password in pausa).
+  - `AGENT_FLOW.md` — aggiunte sezioni 8 (Mobile workflow), 9 (Version alignment mobile), con regole, EAS Build, differenze dal flusso standard.
+
 ## 2026-08-06
 
 - ✅ **Fix mobile MVP bugs** — Issue #614: icona app (1024x1024), password visibility toggle, loading overlay login, errori login visibili, offline restore utente reale, page_count calcolato da pdf-lib, secondo PDF fix (refreshKey), split interattivo (scegli pagine), reorder (pulsanti su/giù), import statici pdfService, expo-font peer dep, ADR/docs aggiornati.

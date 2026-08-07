@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-08-03
+> **Aggiornato:** 2026-08-07
 
 ---
 
@@ -73,6 +73,39 @@
 **Risoluzione prevista:** Il preflight job in CI verifica che `npm ci` + `next build` funzionino prima di avviare la build Tauri.
 
 ---
+
+## 📱 Bug/limitazioni mobile
+
+### M4 — Password protect/unlock PDF non implementabile (F4) — IN PAUSA
+
+**File:** `mobile/src/services/pdfService.ts` (funzioni scritte ma non attive), `mobile/src/screens/ToolsScreen.tsx`
+**Descrizione:** `pdf-lib@1.17.1` (unica versione ufficiale) **non supporta** encryption/decryption. Il tipo `PDFDocument` non ha `encrypt()` né l'opzione `password` in `load()`. Compile error garantito.
+**Opzioni:** Fork `@cantoo/pdf-lib` (2.8.1) supporta encryption ma ha dipendenza Node-only (`node-html-better-parser`) che rischia il bundle Metro/EAS. Crittografia manuale troppo complessa.
+**Stato:** ⏸ In pausa. UI e funzioni già scritte in codice ma non attivabili. Dettagli in `mobile/ADR.md` + `.specs/plans/feature-mobile-improvements.md`.
+
+### M3 — `react-native-pdf` non rimonta il viewer per un secondo PDF
+
+**File:** `mobile/src/screens/PdfViewerScreen.tsx`
+**Descrizione:** Il viewer non si aggiorna quando si apre un secondo PDF perché il componente non viene rimontato. Fix: `key={refreshKey}` incrementata in `useEffect([pdfId])` **dopo** aver settato `pdfUri`.
+**Stato:** Risolto (Build #6). Documentato come pattern obbligatorio.
+
+### M2 — Dynamic import non funziona in APK standalone
+
+**File:** `mobile/src/services/pdfService.ts`, `mobile/src/screens/ScannerScreen.tsx`
+**Descrizione:** `await import("expo-file-system")` a runtime non risolve in APK standalone — rompe pdfService e Scanner. **Regola:** SEMPRE import statici.
+**Stato:** Risolto (Build #6). Lezione in `LESSONS_LEARNED.md`.
+
+### M1 — `.easignore` pattern non ancorati escludevano `mobile/src/shared/`
+
+**File:** `.easignore` (root)
+**Descrizione:** Pattern senza `/` iniziale matchavano a qualsiasi profondità, escludendo `mobile/src/shared/` → Metro non trovava auth/api. Fix: ancorare tutti i pattern con `/` (es. `/shared/`, `/*.png`).
+**Stato:** Risolto (Build #5). Documentato in `mobile/ADR.md`.
+
+### M0 — Nessun sync cloud PDF mobile
+
+**File:** `mobile/src/services/localDb.ts`, `mobile/src/hooks/usePdfStorage.ts`
+**Descrizione:** I PDF locali (in `Paths.document/pdfs/`) sono solo sul dispositivo, non collegati a `user_id`, **non caricati sul cloud**. Alla disinstallazione/cancellazione dati si perdono. Sync è feature futura (F1).
+**Stato:** Noto, accettato per MVP. Nessun backup cloud.
 
 ## 📊 Coverage gaps (non bloccanti)
 

@@ -7,7 +7,7 @@
 
 ## Decisione
 
-Applicazione cross-platform per la modifica e gestione di file PDF, con funzionalità di visualizzazione, annotazione, conversione, modifica testo e manipolazione avanzata. Architettura modulare che copre web (Next.js), desktop (Tauri v2), mobile (React Native) e backend (FastAPI).
+Applicazione cross-platform per la modifica e gestione di file PDF, con funzionalità di visualizzazione, annotazione, conversione, modifica testo e manipolazione avanzata. Architettura modulare che copre web (Next.js), desktop (Tauri v2), **mobile (React Native — vedi [`mobile/ADR.md`](./mobile/ADR.md))** e backend (FastAPI).
 
 ## Contesto
 
@@ -118,21 +118,14 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## 4. Mobile (React Native / Expo) — Fase 4 (MVP completato + bug fix)
 
-| Scelta                                      | Alternativa                          | Motivo                                                                                                     |
-| ------------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Expo managed workflow                       | React Native CLI, Expo bare workflow | Sviluppo rapido, hot-reload con Expo Go, EAS Build per APK cloud. Niente Xcode/Android Studio obbligatorio |
-| React Native Paper                          | NativeWind, TailwindCSS              | Paper per componenti pronti. NativeWind rimosso (non usato, conflitti)                                     |
-| `@react-navigation/native-stack`            | Bottom tabs, Expo Router             | Stack navigatore semplice per MVP (login → home → viewer → scanner)                                        |
-| `pdf-lib` per editing PDF offline           | API cloud backend                    | Operazioni offline senza dipendere dal cloud. Sync cloud separato (futuro)                                 |
-| `react-native-pdf` per viewer               | PDF.js via WebView                   | Viewer nativo con scroll e zoom integrati                                                                  |
-| `expo-camera` (CameraView)                  | Camera legacy                        | `CameraView` disponibile da SDK 54+, supporto permissions hook                                             |
-| `expo-file-system` SDK 57 API               | `expo-file-system/legacy`            | SDK 57 usa `Paths`, `File`, `Directory`. Legacy solo dove indispensabile (Scanner)                         |
-| `@expo/vector-icons` per icone              | `react-native-vector-icons`          | Funziona in APK standalone senza configurazione nativa                                                     |
-| `@react-native-async-storage/async-storage` | expo-secure-store                    | Semplice per JWT + cache utente offline. Import statico (mai dinamico)                                     |
-| `expo-sqlite` per DB locale                 | —                                    | Metadati PDF locali, coda sync futuro                                                                      |
-| EAS Build per distribuzione APK             | Expo Go, sideloading manuale         | Build cloud gratuita, APK scaricabile. Richiede `.easignore` corretto                                      |
-| `.easignore` pattern ancorati con `/`       | Pattern senza `/`                    | Pattern senza `/` iniziale matchano a qualsiasi profondità, escludendo `mobile/src/shared/`                |
-| Import statici (mai dynamic import)         | `await import()` in runtime          | Dynamic import non funziona in APK standalone — rompe pdfService e Scanner                                 |
+> 📱 **Le decisioni mobile sono documentate in [`mobile/ADR.md`](./mobile/ADR.md).**
+> Questo file contiene solo il riferimento. Le scelte architetturali specifiche del mobile (Expo managed, pdf-lib offline, react-native-pdf, auth cloud-only, salvataggio offline, EAS Build) sono trattate nel documento dedicato.
+
+| Scelta                                      | Riferimento                                                     |
+| ------------------------------------------- | --------------------------------------------------------------- |
+| Stack mobile completo                       | [`mobile/ADR.md`](./mobile/ADR.md)                              |
+| Task 2 — Password protect/unlock (in pausa) | `mobile/ADR.md` + `.specs/plans/feature-mobile-improvements.md` |
+| Feature pianificate post-MVP                | `.specs/plans/feature-mobile-improvements.md`                   |
 
 ---
 
@@ -160,7 +153,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Cosa NON è in scope (per ora)
 
-- Mobile React Native (Fase 4) — ✅ **MVP completato** (issue #611)
+- Mobile React Native (Fase 4) — ✅ **MVP completato** — vedi [`mobile/ADR.md`](./mobile/ADR.md)
 - Integrazione pagamenti Stripe (pianificata — vedi `.specs/plans/feature-stripe-mcp-subscriptions.md`)
 - SSO Apple / Samsung (previsto come bonus futuro)
 - react-native-web (valutabile, non deciso)
@@ -168,13 +161,13 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Roadmap
 
-| Fase                                        | Descrizione                                                                                                            |               Stato               |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | :-------------------------------: |
-| **Fase 1c — Desktop app (Tauri v2)**        | Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI. SQLite locale. Installer per Windows/macOS/Linux. |      ✅ Completata (v0.1.20)      |
-| **Fase 2 — Web app su cloud**               | Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export.                  |    ✅ Completata (2026-07-10)     |
-| **Fase 3 — Cloud sync**                     | Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti.                                      |           ✅ Completata           |
-| **Fase 4 — Mobile app (React Native/Expo)** | Setup Expo + auth + upload + viewer + scanner + editing pdf-lib + EAS Build APK.                                       | ✅ Completata (MVP v0.1.0 mobile) |
-| **Fase 4b — EAS CI Integration**            | Collegare EAS Build a GitHub Actions per build automatica su tag release.                                              |            ⬜ In piano            |
+| Fase                                        | Descrizione                                                                                                            |                                    Stato                                    |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------: |
+| **Fase 1c — Desktop app (Tauri v2)**        | Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI. SQLite locale. Installer per Windows/macOS/Linux. |                           ✅ Completata (v0.1.20)                           |
+| **Fase 2 — Web app su cloud**               | Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export.                  |                         ✅ Completata (2026-07-10)                          |
+| **Fase 3 — Cloud sync**                     | Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti.                                      |                                ✅ Completata                                |
+| **Fase 4 — Mobile app (React Native/Expo)** | Setup Expo + auth + upload + viewer + scanner + editing pdf-lib + EAS Build APK.                                       | ✅ Completata (MVP mobile) — dettagli in [`mobile/ADR.md`](./mobile/ADR.md) |
+| **Fase 4b — EAS CI Integration**            | Collegare EAS Build a GitHub Actions per build automatica su tag release.                                              |                                 ⬜ In piano                                 |
 
 > 📋 **Storico completo dei fix:** Vedi [`CHANGELOG.md`](./CHANGELOG.md).
 > 🐞 **Bug aperti e debito tecnico:** Vedi [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md).

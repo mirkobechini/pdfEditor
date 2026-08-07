@@ -260,6 +260,122 @@ After ALL PRs for a release are merged to `dev`:
    git tag vX.Y.Z && git push origin vX.Y.Z
    ```
 
+---
+
+## 8. Mobile app workflow (React Native / Expo)
+
+Il mobile ha un flusso diverso da web/desktop perché **non esiste un ambiente CI per build automatiche su GitHub** (l'APK è generato da EAS Build cloud). Il test è manuale sulla build.
+
+### 8.1 Differenze principali dal flusso standard
+
+| Aspetto                    | Web/Desktop                     | Mobile                                    |
+| -------------------------- | ------------------------------- | ----------------------------------------- |
+| Build locale               | `npm run build` + preflight     | `npx tsc --noEmit` (solo TypeScript check) |
+| Build finale               | Tauri/PyInstaller locali        | EAS Build (cloud)                         |
+| Test PR                    | CI su GitHub (test.yml)         | `npx tsc --noEmit` + `npm test`           |
+| Test utente                | Prima del merge (preflight)     | **Dopo il merge** (build EAS → APK)       |
+| Preflight check            | `desktop/preflight.sh`          | Non esiste (si farebbe, da creare)        |
+| Version alignment          | 5 file (bump-version.js)        | `mobile/package.json` + `mobile/app.json` |
+
+### 8.2 Flusso mobile
+
+```bash
+git checkout dev
+git checkout -b feature/<issue-number>-<short-description>
+git push origin feature/<issue-number>-<short-description>
+
+# 1. Implementazione + commit atomici
+# Stessa regola: un commit per file logico
+git add mobile/src/services/...
+git commit -m "feat(mobile): add ..."
+git push origin feature/<issue-number>-<short-description>
+
+# 2. TypeScript check (vale come "build check")
+cd mobile && npx tsc --noEmit
+# Se fallisce → fixare → commit → push
+
+# 3. Test (se presenti)
+cd mobile && npx jest --passWithNoTests 2>&1
+
+# 4. PR → merge → branch cleanup
+# Stessa procedura del flusso standard (step 6)
+
+# 5. ⚠️ DOPO il merge su dev:
+#    - Creare una build EAS (es. eas build --platform android --profile preview)
+#    - L'utente testa l'APK
+#    - Se ci sono bug → nuova issue/branch → fix → PR → merge → nuova build EAS
+
+# 6. RELEASE: solo quando il developer dice esplicitamente "fai la release"
+```
+
+### 8.3 Regole specifiche mobile
+
+1. **TypeScript check è obbligatorio** prima di ogni commit che tocca codice mobile. `npx tsc --noEmit` deve passare.
+2. **Test sono obbligatori** solo se esistono. Se non ci sono test per la nuova feature, va documentato il motivo.
+3. **Build EAS DOPO il merge**, non prima. Tentativo di fare build EAS prima del merge è stato revertito (impractical: EAS build richiede ~20min, il branch intanto cambia).
+4. **Version alignment mobile**: `mobile/package.json` e `mobile/app.json` devono essere allineati in versione. Non esiste ancora uno script di bump automatico per mobile.
+5. **Dynamic import vietato** in APK standalone. Usare sempre `import` statico, mai `await import()`.
+6. **Nessun preflight mobile** (da creare in futuro). Per ora il TypeScript check + test sono l'unica verifica pre-commit.
+7. **KNOWN_ISSUES.md** va aggiornato con le limitazioni mobile (M0-M4).
+8. **CHANGELOG.md** va aggiornato con le feature mobile completate (sezione `mobile/` o `## Mobile`).
+
+### 8.4 EAS Build
+
+```bash
+# Install eas-cli se non presente
+npm install -g eas-cli
+
+# Login
+eas login
+
+# Build APK (preview = internal distribution)
+cd mobile
+eas build --platform android --profile preview
+
+# Build per release (production)
+eas build --platform android --profile production
+```
+
+Configurazione in `mobile/eas.json`:
+```json
+{
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      },
+      "distribution": "internal"
+    },
+    "production": {}
+  }
+}
+```
+
+> ⚠️ **Attenzione a `.easignore`**: i pattern devono essere ancorati con `/` (es. `/shared/`, `/*.png`) per non escludere accidentalmente file dentro `mobile/`. Errore comune: pattern senza `/` matchano a qualsiasi profondità.
+
+---
+
+## 9. Version alignment
+
+### Web/Desktop
+
+Prima di creare un tag release, aggiornare la versione in TUTTI questi file:
+
+- `desktop/src-tauri/tauri.conf.json`
+- `desktop/frontend/package.json`
+- `frontend/package.json`
+- `backend/pyproject.toml`
+- `scripts/bump-version.js` (script centralizzato)
+
+Usare: `node scripts/bump-version.js X.Y.Z`
+
+### Mobile
+
+- `mobile/package.json` — versione app
+- `mobile/app.json` — `expo.version` e `expo.ios.buildNumber` / `expo.android.versionCode`
+- **Non esiste ancora script di bump automatico per mobile.** Farlo manualmente.
+   ```
+
 7. **Monitora la CI**: `gh run list --workflow release.yml -L 3` — la build richiede ~10-15min.
 
 8. **Verifica la release**: controlla che `gh release list --limit 3` mostri `PdfEditor vX.Y.Z` pubblicata.
