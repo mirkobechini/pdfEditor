@@ -1,31 +1,20 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { View, TouchableOpacity, Image } from "react-native";
 import { Text, Button, useTheme, ActivityIndicator, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { CameraView, useCameraPermissions } from "expo-camera";
-import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
-import * as FileSystem from "expo-file-system/legacy";
-import { PDFDocument } from "pdf-lib";
+import { CameraView } from "expo-camera";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
-import { savePdfLocally } from "../services/localDb";
-import type { LocalPdf } from "../shared/types";
+import { useCameraScanner } from "../hooks/useCameraScanner";
 
 type ScannerNavProp = NativeStackNavigationProp<RootStackParamList, "Scanner">;
-
-function generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-}
 
 export default function ScannerScreen() {
     const theme = useTheme();
     const navigation = useNavigation<ScannerNavProp>();
-    const [permission, requestPermission] = useCameraPermissions();
-    const [photoUri, setPhotoUri] = useState<string | null>(null);
-    const [processing, setProcessing] = useState(false);
+    const { permission, requestPermission, photoUri, processing, cameraRef, takePhoto, convertToPdf, resetPhoto } = useCameraScanner();
     const [fileName, setFileName] = useState("");
-    const cameraRef = useRef<CameraView>(null);
 
     if (!permission) {
         return (
@@ -48,92 +37,10 @@ export default function ScannerScreen() {
         );
     }
 
-    async function takePhoto() {
-        if (!cameraRef.current) return;
-        setProcessing(true);
-        try {
-            const photo = await cameraRef.current.takePictureAsync();
-            if (photo) {
-                setPhotoUri(photo.uri);
-            }
-        } catch (e) {
-            console.error("Camera error:", e);
-        } finally {
-            setProcessing(false);
-        }
-    }
-
-    async function convertToPdf() {
-        if (!photoUri) return;
-        setProcessing(true);
-        try {
-            // Step 1: Crop/optimize the image
-            const manipulated = await manipulateAsync(photoUri, [], {
-                compress: 0.8,
-                format: SaveFormat.JPEG,
-            });
-
-            // Step 2: Read the image as base64 via expo-file-system
-            const base64 = await FileSystem.readAsStringAsync(manipulated.uri, {
-                encoding: FileSystem.EncodingType.Base64,
-            });
-
-            // Step 3: Create a PDF with pdf-lib and embed the image
-            const pdfDoc = await PDFDocument.create();
-            const jpgImage = await pdfDoc.embedJpg(base64);
-            const page = pdfDoc.addPage([jpgImage.width, jpgImage.height]);
-            page.drawImage(jpgImage, {
-                x: 0,
-                y: 0,
-                width: jpgImage.width,
-                height: jpgImage.height,
-            });
-
-            const pdfBytes = await pdfDoc.save();
-
-            // Step 4: Save PDF locally
-            const pdfDir = (FileSystem.documentDirectory || "") + "pdfs/";
-            const dirInfo = await FileSystem.getInfoAsync(pdfDir);
-            if (!dirInfo.exists) {
-                await FileSystem.makeDirectoryAsync(pdfDir, { intermediates: true });
-            }
-            const id = generateId();
-            const pdfFilePath = pdfDir + id + ".pdf";
-
-            // Convert pdf-lib bytes to base64
-            const uint8Array = new Uint8Array(pdfBytes);
-            let binary = "";
-            for (let i = 0; i < uint8Array.length; i++) {
-                binary += String.fromCharCode(uint8Array[i]);
-            }
-            const pdfBase64 = btoa(binary);
-
-            await FileSystem.writeAsStringAsync(pdfFilePath, pdfBase64, {
-                encoding: FileSystem.EncodingType.Base64,
-            });
-
-            const now = new Date().toISOString();
-            const safeName = fileName.trim()
-                ? fileName.trim().replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
-                : `scan_${new Date().toISOString().slice(0, 10)}.pdf`;
-            const localPdf: LocalPdf = {
-                id,
-                original_filename: safeName,
-                file_size: pdfBytes.length,
-                page_count: 1,
-                uri: pdfFilePath,
-                created_at: now,
-                updated_at: now,
-            };
-
-            await savePdfLocally(localPdf);
-
-            // Navigate back to home — the PDF is now in the list
+    async function handleConvert() {
+        const pdf = await convertToPdf(fileName || undefined);
+        if (pdf) {
             navigation.navigate("Home");
-        } catch (e) {
-            console.error("PDF conversion error:", e);
-        } finally {
-            setProcessing(false);
         }
     }
 
@@ -141,7 +48,6 @@ export default function ScannerScreen() {
         return (
             <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
-                    {/* Show preview of captured photo */}
                     <Image
                         source={{ uri: photoUri }}
                         style={{ width: "100%", height: 300, borderRadius: 12, marginBottom: 24 }}
@@ -159,7 +65,7 @@ export default function ScannerScreen() {
                     />
                     <Button
                         mode="contained"
-                        onPress={convertToPdf}
+                        onPress={handleConvert}
                         loading={processing}
                         disabled={processing}
                         style={{ marginBottom: 12, borderRadius: 8 }}
@@ -168,7 +74,7 @@ export default function ScannerScreen() {
                     </Button>
                     <Button
                         mode="outlined"
-                        onPress={() => setPhotoUri(null)}
+                        onPress={resetPhoto}
                         disabled={processing}
                         style={{ borderRadius: 8 }}
                     >
