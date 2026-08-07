@@ -266,9 +266,25 @@ Adattare i passi alle piattaforme del progetto corrente. Eseguire SOLO quelle ap
 
 #### 7.3 Version bump
 
-Aggiornare la versione in tutti i file che la dichiarano. Usare script automatico se disponibile, altrimenti manuale.
+**Regola d'oro: la versione è PER PIATTAFORMA.** Il web/desktop e il mobile hanno versioni **indipendenti** (es. web `0.1.34`, mobile `0.1.0`). Non usare mai la versione di una piattaforma per un'altra.
 
-Sorgenti tipiche da controllare:
+Aggiornare la versione in tutti i file che la dichiarano. Usare script automatico (`scripts/bump-version.js`) se disponibile, altrimenti manuale.
+
+**Web/Desktop** → `node scripts/bump-version.js X.Y.Z` aggiorna:
+- `frontend/package.json`
+- `desktop/frontend/package.json`
+- `desktop/frontend/package-lock.json`
+- `desktop/src-tauri/tauri.conf.json`
+- `desktop/src-tauri/Cargo.toml`
+- `desktop/frontend/src/app/startup/page.tsx`
+- `desktop/frontend/messages/en.json` + `it.json`
+- `backend/pyproject.toml`
+
+**Mobile** → lo stesso script ora aggiorna anche:
+- `mobile/package.json`
+- `mobile/app.json` (`version` + `expo.version`)
+
+Sorgenti tipiche (se manuale) da controllare:
 - `package.json` (root + ogni sub-package)
 - `Cargo.toml` (Rust)
 - `pyproject.toml` / `setup.cfg` (Python)
@@ -344,7 +360,7 @@ npm test
 1. **Type/compilation check obbligatorio** prima di ogni commit mobile. Se non passa, non si committa.
 2. **Test obbligatori** solo se esistono. Se non ci sono test per la nuova feature, documentare il motivo.
 3. **Build finale DOPO il merge**, non prima. Build cloud tipicamente richiedono 15-40 min, il branch intanto cambierebbe.
-4. **Version alignment**: mantenere allineati i file che dichiarano la versione (es. `package.json` + `app.json` per Expo).
+4. **Version alignment**: `mobile/package.json` e `mobile/app.json` (expo.version) devono essere allineati. `scripts/bump-version.js` li aggiorna entrambi. **La versione mobile è INDIPENDENTE da web/desktop** — non usare la versione del web per una release mobile (lezione appresa 2026-08-07: tag `v0.1.34-build9` errato, corretto in `v0.1.0-mobile`).
 5. **Limitazioni del runtime**: alcune funzionalità JS/TS potrebbero non funzionare standalone (es. dynamic import, moduli Node-only). Verificare prima di usare.
 6. **KNOWN_ISSUES.md** va aggiornato con le limitazioni mobile scoperte.
 7. **CHANGELOG.md** va aggiornato con le feature mobile completate.

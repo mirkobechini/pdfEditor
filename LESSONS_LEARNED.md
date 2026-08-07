@@ -5,6 +5,18 @@
 
 ---
 
+## Versioni separate per piattaforma — non usare versione web per release mobile
+
+> **Lezione appresa (2026-08-07):**
+
+Durante la creazione della prima release mobile, è stato usato per errore il tag `v0.1.34-build9` (versione del web/desktop) invece della versione mobile corretta. Il mobile ha la sua versione indipendente in `mobile/package.json` e `mobile/app.json` (expo.version). EAS Build usa `app.json` per l'APK, non `package.json`.
+
+**Regola:** La versione mobile è **indipendente** da web/desktop. Prima di creare un tag per una release mobile:
+
+1. Verificare che `mobile/package.json` e `mobile/app.json` (expo.version) siano allineati
+2. Usare uno script di bump che aggiorni entrambi (`scripts/bump-version.js` ora lo fa)
+3. Il tag deve riflettere la versione mobile (es. `v0.1.0-mobile`), non quella del web (es. `v0.1.34`)
+
 ## pdf-lib non supporta encryption — Fork @cantoo/pdf-lib come alternativa
 
 > **Lezione appresa (2026-08-07):**
