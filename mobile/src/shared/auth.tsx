@@ -20,7 +20,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true); // initial restore
+    const [actionLoading, setActionLoading] = useState(false); // login/register/guest
 
     useEffect(() => {
         let cancelled = false;
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const login = useCallback(async (email: string, password: string, remember?: boolean) => {
-        setLoading(true);
+        setActionLoading(true);
         try {
             const res = await api.login(email, password);
             api.setToken(res.access_token);
@@ -98,12 +99,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {
             throw e;
         } finally {
-            setLoading(false);
+            setActionLoading(false);
         }
     }, []);
 
     const register = useCallback(async (email: string, password: string, fullName: string) => {
-        setLoading(true);
+        setActionLoading(true);
         try {
             const res = await api.register(email, password, fullName);
             api.setToken(res.access_token);
@@ -111,12 +112,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await AsyncStorage.setItem(REMEMBER_USER_KEY, JSON.stringify(u));
             setUser(u);
         } finally {
-            setLoading(false);
+            setActionLoading(false);
         }
     }, []);
 
     const guestLogin = useCallback(async () => {
-        setLoading(true);
+        setActionLoading(true);
         try {
             const res = await api.guestLogin();
             api.setToken(res.access_token);
@@ -133,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(guestUser);
             }
         } finally {
-            setLoading(false);
+            setActionLoading(false);
         }
     }, []);
 
@@ -153,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, guestLogin, logout, setUser }}>
+        <AuthContext.Provider value={{ user, loading: loading || actionLoading, login, register, guestLogin, logout, setUser }}>
             {children}
         </AuthContext.Provider>
     );
