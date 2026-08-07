@@ -325,7 +325,7 @@ gh pr merge --merge --delete-branch
 git checkout dev
 git pull origin dev
 git branch -d hotfix/<issue-number>-<short-description>
-````
+```
 
 ## Hotfix workflow
 

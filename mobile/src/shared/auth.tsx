@@ -4,6 +4,7 @@ import type { User } from "./types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const REMEMBER_TOKEN_KEY = "pdfeditor_remember_token";
+const REMEMBER_USER_KEY = "pdfeditor_remember_user";
 
 interface AuthContextValue {
     user: User | null;
@@ -46,10 +47,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     });
                     if (res.ok && !cancelled) {
                         const u = await res.json();
+                        await AsyncStorage.setItem(REMEMBER_USER_KEY, JSON.stringify(u));
                         setUser(u);
+                    } else if (remembered && !cancelled) {
+                        // Token exists but expired — restore user from cached data
+                        const cached = await AsyncStorage.getItem(REMEMBER_USER_KEY);
+                        if (cached) {
+                            setUser(JSON.parse(cached));
+                        }
                     }
                 } catch {
-                    // Offline — ignore
+                    // Offline — restore user from cache (with real email, not guest)
+                    if (remembered && !cancelled) {
+                        const cached = await AsyncStorage.getItem(REMEMBER_USER_KEY);
+                        if (cached) {
+                            setUser(JSON.parse(cached));
+                        }
+                    }
                 } finally {
                     clearTimeout(timeout);
                 }
@@ -78,6 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 await AsyncStorage.removeItem(REMEMBER_TOKEN_KEY);
             }
             const u = await api.getMe();
+            // Save user data for offline restore
+            await AsyncStorage.setItem(REMEMBER_USER_KEY, JSON.stringify(u));
             setUser(u);
         } catch (e) {
             throw e;
@@ -92,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const res = await api.register(email, password, fullName);
             api.setToken(res.access_token);
             const u = await api.getMe();
+            await AsyncStorage.setItem(REMEMBER_USER_KEY, JSON.stringify(u));
             setUser(u);
         } finally {
             setLoading(false);
@@ -103,11 +120,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const res = await api.guestLogin();
             api.setToken(res.access_token);
+            // Save guest token too so it persists across app restarts
+            await AsyncStorage.setItem(REMEMBER_TOKEN_KEY, res.access_token);
             try {
                 const u = await api.getMe();
+                await AsyncStorage.setItem(REMEMBER_USER_KEY, JSON.stringify(u));
                 setUser(u);
             } catch {
-                // Login ok but getMe failed
+                // Login ok but getMe failed (offline) — still set a minimal user
+                const guestUser = { id: "guest", email: null as any, full_name: "Guest", is_active: true, is_admin: false, is_guest: true, license_tier: "", license_tier_source: "", google_id: null, created_at: "", updated_at: "" };
+                await AsyncStorage.setItem(REMEMBER_USER_KEY, JSON.stringify(guestUser));
+                setUser(guestUser);
             }
         } finally {
             setLoading(false);
@@ -122,7 +145,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             api.setToken(null);
             api.setCsrfToken(null);
             setUser(null);
-            try { await AsyncStorage.removeItem(REMEMBER_TOKEN_KEY); } catch { /* ignore */ }
+            try {
+                await AsyncStorage.removeItem(REMEMBER_TOKEN_KEY);
+                await AsyncStorage.removeItem(REMEMBER_USER_KEY);
+            } catch { /* ignore */ }
         }
     }, []);
 

@@ -116,22 +116,23 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ---
 
-## 4. Mobile (React Native / Expo) — Fase 4 (in sviluppo)
+## 4. Mobile (React Native / Expo) — Fase 4 (MVP completato + bug fix)
 
-| Scelta                                      | Alternativa                           | Motivo                                                                                                     |
-| ------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Expo managed workflow                       | React Native CLI, Expo bare workflow  | Sviluppo rapido, hot-reload con Expo Go, EAS Build per APK cloud. Niente Xcode/Android Studio obbligatorio |
-| React Native Paper + NativeWind             | Solo NativeWind o solo Paper          | Paper per componenti pronti (navigazione, cards, bottoni), NativeWind per ritocchi Tailwind                |
-| `@react-navigation/native-stack`            | Bottom tabs, Expo Router              | Stack navigator semplice per MVP (login → home → viewer → scanner)                                         |
-| `pdf-lib` per editing PDF offline           | PyMuPDF (non disponibile su RN)       | Puro TypeScript, funziona in RN. Merge/split/reorder/metadata/password                                     |
-| `react-native-pdf` per viewer               | PDF.js via WebView                    | Viewer nativo con scroll e zoom integrati                                                                  |
-| `expo-camera` (CameraView)                  | Camera legacy                         | `CameraView` disponibile da SDK 54+, supporto permissions hook                                             |
-| `expo-file-system/legacy` (SDK 54)          | `expo-file-system` nuova API (SDK 57) | SDK 54 usa API legacy. SDK 57+ usa `Paths`, `File`, `Directory`                                            |
-| `@react-native-async-storage/async-storage` | expo-secure-store                     | Semplice per JWT. Import statico (mai dinamico)                                                            |
-| `expo-sqlite` per DB locale                 | —                                     | Metadati PDF locali, coda sync futuro                                                                      |
-| EAS Build per distribuzione APK             | Expo Go, sideloading manuale          | Build cloud gratuita, APK scaricabile. Richiede `.easignore` per escludere node_modules (max 2GB upload)   |
-| SDK 57 (progetto) con APK diretto           | SDK 54 (Expo Go compatibile)          | SDK 57 è l'ultima. Expo Go sul Play Store potrebbe essere indietro — usare APK diretto invece              |
-| `"use client"` **non usare**                | Copiata da shared/ Next.js            | Direttiva Next.js, non esiste in React Native. Causa errore runtime                                        |
+| Scelta                                      | Alternativa                          | Motivo                                                                                                     |
+| ------------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Expo managed workflow                       | React Native CLI, Expo bare workflow | Sviluppo rapido, hot-reload con Expo Go, EAS Build per APK cloud. Niente Xcode/Android Studio obbligatorio |
+| React Native Paper                          | NativeWind, TailwindCSS              | Paper per componenti pronti. NativeWind rimosso (non usato, conflitti)                                     |
+| `@react-navigation/native-stack`            | Bottom tabs, Expo Router             | Stack navigatore semplice per MVP (login → home → viewer → scanner)                                        |
+| `pdf-lib` per editing PDF offline           | API cloud backend                    | Operazioni offline senza dipendere dal cloud. Sync cloud separato (futuro)                                 |
+| `react-native-pdf` per viewer               | PDF.js via WebView                   | Viewer nativo con scroll e zoom integrati                                                                  |
+| `expo-camera` (CameraView)                  | Camera legacy                        | `CameraView` disponibile da SDK 54+, supporto permissions hook                                             |
+| `expo-file-system` SDK 57 API               | `expo-file-system/legacy`            | SDK 57 usa `Paths`, `File`, `Directory`. Legacy solo dove indispensabile (Scanner)                         |
+| `@expo/vector-icons` per icone              | `react-native-vector-icons`          | Funziona in APK standalone senza configurazione nativa                                                     |
+| `@react-native-async-storage/async-storage` | expo-secure-store                    | Semplice per JWT + cache utente offline. Import statico (mai dinamico)                                     |
+| `expo-sqlite` per DB locale                 | —                                    | Metadati PDF locali, coda sync futuro                                                                      |
+| EAS Build per distribuzione APK             | Expo Go, sideloading manuale         | Build cloud gratuita, APK scaricabile. Richiede `.easignore` corretto                                      |
+| `.easignore` pattern ancorati con `/`       | Pattern senza `/`                    | Pattern senza `/` iniziale matchano a qualsiasi profondità, escludendo `mobile/src/shared/`                |
+| Import statici (mai dynamic import)         | `await import()` in runtime          | Dynamic import non funziona in APK standalone — rompe pdfService e Scanner                                 |
 
 ---
 

@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { getLocalPdfById } from "../services/localDb";
+import Pdf from "react-native-pdf";
 
 type PdfViewerRouteProp = RouteProp<RootStackParamList, "PdfViewer">;
 type PdfViewerNavProp = NativeStackNavigationProp<RootStackParamList, "PdfViewer">;
@@ -24,24 +25,34 @@ export default function PdfViewerScreen() {
     const [error, setError] = useState<string | null>(null);
     const [scale, setScale] = useState(1);
     const PdfRef = useRef<any>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Load PDF URI from local DB
     React.useEffect(() => {
+        // Reset all state when PDF changes
+        setPdfUri(null);
+        setNumPages(0);
+        setCurrentPage(1);
+        setLoading(true);
+        setError(null);
+        setScale(1);
+
         (async () => {
             try {
                 const localPdf = await getLocalPdfById(pdfId);
                 if (localPdf?.uri) {
-                    // Ensure file:// prefix for react-native-pdf
                     const uri = localPdf.uri.startsWith("file://")
                         ? localPdf.uri
                         : `file://${localPdf.uri}`;
+                    // Set URI first, then increment key to force remount with new URI
                     setPdfUri(uri);
+                    setRefreshKey((k) => k + 1);
                 } else {
                     setError("PDF not found locally");
+                    setLoading(false);
                 }
             } catch (e) {
                 setError("Failed to load PDF");
-            } finally {
                 setLoading(false);
             }
         })();
@@ -56,8 +67,8 @@ export default function PdfViewerScreen() {
         setCurrentPage(page);
     }, []);
 
-    const onError = useCallback((err: Error) => {
-        setError(err.message);
+    const onError = useCallback((err: object) => {
+        setError(String(err));
         setLoading(false);
     }, []);
 
@@ -127,24 +138,20 @@ export default function PdfViewerScreen() {
 
                 {pdfUri && (
                     <View style={{ flex: 1 }}>
-                        {(() => {
-                            const Pdf = require("react-native-pdf").default;
-                            return (
-                                <Pdf
-                                    ref={PdfRef}
-                                    source={{ uri: pdfUri, cache: false }}
-                                    onLoadComplete={onLoadComplete}
-                                    onPageChanged={onPageChanged}
-                                    onError={onError}
-                                    style={{ flex: 1 }}
-                                    scale={scale}
-                                    minScale={0.5}
-                                    maxScale={3}
-                                    enablePaging={true}
-                                    spacing={0}
-                                />
-                            );
-                        })()}
+                        <Pdf
+                            key={refreshKey}
+                            ref={PdfRef}
+                            source={{ uri: pdfUri, cache: false }}
+                            onLoadComplete={onLoadComplete}
+                            onPageChanged={onPageChanged}
+                            onError={onError}
+                            style={{ flex: 1 }}
+                            scale={scale}
+                            minScale={0.5}
+                            maxScale={3}
+                            enablePaging={true}
+                            spacing={0}
+                        />
                     </View>
                 )}
             </View>

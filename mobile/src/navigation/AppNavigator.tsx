@@ -1,4 +1,5 @@
 import React from "react";
+import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../shared/auth";
@@ -24,7 +25,11 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function AppNavigator() {
     const { user, loading } = useAuth();
 
-    if (loading) return null; // Splash / loading screen can be added later
+    if (loading) return (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
+            <ActivityIndicator size="large" color="#F97316" />
+        </View>
+    );
 
     return (
         <NavigationContainer>

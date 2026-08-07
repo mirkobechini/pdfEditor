@@ -39,7 +39,8 @@
         {
           "cameraPermission": "Allow PdfEditor to access your camera to scan documents."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {

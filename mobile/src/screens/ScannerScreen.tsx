@@ -1,11 +1,10 @@
 import React, { useState, useRef } from "react";
 import { View, TouchableOpacity, Image } from "react-native";
-import { Text, Button, useTheme, ActivityIndicator } from "react-native-paper";
+import { Text, Button, useTheme, ActivityIndicator, TextInput } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
-import { Paths, Directory } from "expo-file-system";
-import { writeAsStringAsync, EncodingType } from "expo-file-system/legacy";
+import * as FileSystem from "expo-file-system/legacy";
 import { PDFDocument } from "pdf-lib";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -25,6 +24,7 @@ export default function ScannerScreen() {
     const [permission, requestPermission] = useCameraPermissions();
     const [photoUri, setPhotoUri] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
+    const [fileName, setFileName] = useState("");
     const cameraRef = useRef<CameraView>(null);
 
     if (!permission) {
@@ -73,10 +73,9 @@ export default function ScannerScreen() {
                 format: SaveFormat.JPEG,
             });
 
-            // Step 2: Read the image as base64 via legacy API
-            const { readAsStringAsync } = await import("expo-file-system/legacy");
-            const base64 = await readAsStringAsync(manipulated.uri, {
-                encoding: EncodingType.Base64,
+            // Step 2: Read the image as base64 via expo-file-system
+            const base64 = await FileSystem.readAsStringAsync(manipulated.uri, {
+                encoding: FileSystem.EncodingType.Base64,
             });
 
             // Step 3: Create a PDF with pdf-lib and embed the image
@@ -92,11 +91,14 @@ export default function ScannerScreen() {
 
             const pdfBytes = await pdfDoc.save();
 
-            // Step 4: Save PDF locally via legacy API
-            const pdfDir = new Directory(Paths.document, "pdfs");
-            pdfDir.create();
+            // Step 4: Save PDF locally
+            const pdfDir = (FileSystem.documentDirectory || "") + "pdfs/";
+            const dirInfo = await FileSystem.getInfoAsync(pdfDir);
+            if (!dirInfo.exists) {
+                await FileSystem.makeDirectoryAsync(pdfDir, { intermediates: true });
+            }
             const id = generateId();
-            const pdfFilePath = `${pdfDir.uri}${id}.pdf`;
+            const pdfFilePath = pdfDir + id + ".pdf";
 
             // Convert pdf-lib bytes to base64
             const uint8Array = new Uint8Array(pdfBytes);
@@ -106,14 +108,17 @@ export default function ScannerScreen() {
             }
             const pdfBase64 = btoa(binary);
 
-            await writeAsStringAsync(pdfFilePath, pdfBase64, {
-                encoding: EncodingType.Base64,
+            await FileSystem.writeAsStringAsync(pdfFilePath, pdfBase64, {
+                encoding: FileSystem.EncodingType.Base64,
             });
 
             const now = new Date().toISOString();
+            const safeName = fileName.trim()
+                ? fileName.trim().replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+                : `scan_${new Date().toISOString().slice(0, 10)}.pdf`;
             const localPdf: LocalPdf = {
                 id,
-                original_filename: `scan_${new Date().toISOString().slice(0, 10)}.pdf`,
+                original_filename: safeName,
                 file_size: pdfBytes.length,
                 page_count: 1,
                 uri: pdfFilePath,
@@ -145,6 +150,13 @@ export default function ScannerScreen() {
                     <Text variant="titleMedium" style={{ marginBottom: 16 }}>
                         Photo captured
                     </Text>
+                    <TextInput
+                        label="File name (optional)"
+                        value={fileName}
+                        onChangeText={setFileName}
+                        mode="outlined"
+                        style={{ width: "100%", marginBottom: 16 }}
+                    />
                     <Button
                         mode="contained"
                         onPress={convertToPdf}

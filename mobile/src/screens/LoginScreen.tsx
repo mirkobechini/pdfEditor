@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
-import { Text, TextInput, Button, Surface, useTheme } from "react-native-paper";
+import { Text, TextInput, Button, Surface, useTheme, IconButton, ActivityIndicator, Portal, Modal } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../shared/auth";
 
@@ -12,6 +12,7 @@ export default function LoginScreen() {
     const [fullName, setFullName] = useState("");
     const [isRegister, setIsRegister] = useState(false);
     const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async () => {
         setError("");
@@ -19,7 +20,7 @@ export default function LoginScreen() {
             if (isRegister) {
                 await register(email, password, fullName);
             } else {
-                await login(email, password);
+                await login(email, password, true);
             }
         } catch (e) {
             setError(e instanceof Error ? e.message : "Login failed");
@@ -31,10 +32,9 @@ export default function LoginScreen() {
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={{ flex: 1 }}
+            >                <ScrollView
+                contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24 }}
             >
-                <ScrollView
-                    contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24 }}
-                >
                     <Surface
                         style={{
                             padding: 32,
@@ -102,7 +102,8 @@ export default function LoginScreen() {
                             value={password}
                             onChangeText={setPassword}
                             mode="outlined"
-                            secureTextEntry
+                            secureTextEntry={!showPassword}
+                            right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />}
                             style={{ marginBottom: 24 }}
                         />
 
@@ -152,6 +153,18 @@ export default function LoginScreen() {
                     </Surface>
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            {/* Loading overlay — visible during login/register/guest */}
+            <Portal>
+                <Modal visible={loading} dismissable={false} onDismiss={() => { }} contentContainerStyle={{ backgroundColor: "transparent", alignItems: "center", justifyContent: "center" }}>
+                    <View style={{ backgroundColor: theme.colors.surface, padding: 24, borderRadius: 12, alignItems: "center" }}>
+                        <ActivityIndicator size="large" color={theme.colors.primary} />
+                        <Text style={{ marginTop: 12, color: theme.colors.onSurface }}>
+                            {loading ? "Signing in..." : ""}
+                        </Text>
+                    </View>
+                </Modal>
+            </Portal>
         </SafeAreaView>
     );
 }

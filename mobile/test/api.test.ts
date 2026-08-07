@@ -163,17 +163,17 @@ describe("ApiClient", () => {
   // ─── Error handling ──────────────────────────────────────────────
 
   describe("extractError", () => {
-    it("parses 429 as RATE_LIMIT", async () => {
+    it("parses 429 as rate limit message", async () => {
       const res = {
         status: 429,
         statusText: "Too Many Requests",
         json: () => Promise.resolve({ detail: "Rate limit" }),
       } as Response;
       const msg = await ApiClient.extractError(res);
-      expect(msg).toContain("RATE_LIMIT");
+      expect(msg).toBe("Too many requests. Please try again later.");
     });
 
-    it("parses JSON error body with code+detail", async () => {
+    it("parses JSON error body with detail", async () => {
       const res = {
         status: 400,
         statusText: "Bad Request",
@@ -181,7 +181,7 @@ describe("ApiClient", () => {
           Promise.resolve({ code: "INVALID_PDF", detail: "Not a PDF" }),
       } as Response;
       const msg = await ApiClient.extractError(res);
-      expect(msg).toContain("INVALID_PDF");
+      expect(msg).toBe("Not a PDF");
     });
 
     it("falls back to detail string", async () => {
