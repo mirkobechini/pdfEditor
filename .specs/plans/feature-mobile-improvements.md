@@ -1,42 +1,45 @@
-# Feature: Mobile app migliorie post-MVP (issue 615)
+# Feature: Mobile app migliorie post-MVP (issue 618)
 
 ## Obiettivo
-
 Migliorie UX e funzionalità mancanti dopo il completamento del MVP mobile.
 
-## Task pianificate
+## Task pianificate (in ordine di esecuzione)
 
-### 1. Naming PDF da operazioni
+### 1. Metadata editing
+- [ ] Aggiungere dialog in ToolsScreen per modificare titolo e autore del PDF
+- [ ] Usare `updateMetadata` già presente in pdfService.ts
 
-- [ ] Aggiungere dialog per rinominare il PDF risultante dopo split, merge e reorder
-- [ ] Pre-compilare il nome con il default attuale (es. `merged_2026-08-06.pdf`)
+### 2. Password protect/unlock PDF
+- [ ] Aggiungere dialog per impostare/rimuovere password su PDF
+- [ ] Usare `pdf-lib` (PDFDocument.encrypt/decrypt)
 
-### 2. Icona app definitiva
+### 3. Hook useSyncQueue (background)
+- [ ] Creare hook per coda di operazioni da sincronizzare col cloud
+- [ ] Eseguire sync in background quando c'è connessione
+- [ ] Struttura già predisposta in localDb
 
-- [ ] Sostituire l'attuale icona 1024x1024 con quella vera del progetto (da Penpot o da asset desktop)
-- [ ] Verificare che appaia correttamente dopo prebuild clean
+### 4. Refresh-to-reload in Home
+- [ ] Aggiungere pull-to-refresh in HomeScreen per ricaricare lista PDF
 
-### 3. Rework UI con Penpot
+### 5. Search/filter in Home
+- [ ] Aggiungere barra di ricerca sopra la lista PDF in Home
+- [ ] Filtrare per nome file
 
-- [ ] Creare prototipo Penpot per la nuova UI mobile
-- [ ] Mostrare all'utente per approvazione
-- [ ] Implementare dopo approvazione
+### 6. Preview thumbnail in Home
+- [ ] Estrarre prima pagina del PDF con pdf-lib e mostrare thumbnail
+- [ ] Usare `getPage(0).toDataUrl()` o simile
 
-### 4. Azioni long-press sui PDF in Home
+### 7. Toast/notifiche dopo operazioni
+- [ ] Sostituire i testi "result" in ToolsScreen con toast temporanei
+- [ ] Usare `Snackbar` di React Native Paper
 
-- [ ] Aggiungere menu contestuale tenendo premuto un PDF nella lista Home
-- [ ] Azioni: Elimina, Rinomina, Dettagli
-
-### 5. Settings in navbar
-
-- [ ] Spostare il pulsante Settings dalla FAB menu all'header destro della Home
-- [ ] Semplificare la FAB menu (solo upload + scanner)
+### 8. Swipe to delete (con conferma)
+- [ ] Aggiungere swipe-to-delete su ogni card PDF in Home
+- [ ] Mostrare dialog di conferma prima di eliminare
 
 ## Dipendenze
-
-- Task 3 (Penpot) è propedeutico al rework UI completo
-- Task 5 può essere fatto indipendentemente
+- Task 1 e 2 sono indipendenti e possono essere fatti subito
+- Task 3 ha struttura già predisposta
 
 ## Status
-
 [ ] Non iniziato
