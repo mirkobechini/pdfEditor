@@ -256,3 +256,112 @@ export async function updateMetadata(
     return null;
   }
 }
+
+export async function isPdfEncrypted(pdfId: string): Promise<boolean> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return false;
+    const bytes = await readPdfBytes(pdf.uri);
+    const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+    return doc.isEncrypted;
+  } catch (e) {
+    console.error("isPdfEncrypted error:", e);
+    return false;
+  }
+}
+
+export async function protectPdf(
+  pdfId: string,
+  password: string,
+  fileName?: string,
+): Promise<LocalPdf | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const bytes = await readPdfBytes(pdf.uri);
+    const doc = await PDFDocument.load(bytes);
+
+    doc.encrypt({
+      userPassword: password,
+      ownerPassword: password,
+      permissions: {
+        printing: "highResolution",
+        modifying: false,
+        copying: false,
+        annotating: false,
+        fillingForms: false,
+        contentAccessibility: true,
+        documentAssembly: false,
+      },
+    });
+
+    const pdfBytes = await doc.save();
+
+    const pdfDir = getPdfDir();
+    const id = generateId();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, pdfBytes);
+
+    const now = new Date().toISOString();
+    const safeName = fileName
+      ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+      : `protected_${now.slice(0, 10)}.pdf`;
+    const result: LocalPdf = {
+      id,
+      original_filename: safeName,
+      file_size: pdfBytes.length,
+      page_count: doc.getPageCount(),
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("Protect error:", e);
+    return null;
+  }
+}
+
+export async function unlockPdf(
+  pdfId: string,
+  password: string,
+  fileName?: string,
+): Promise<LocalPdf | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const bytes = await readPdfBytes(pdf.uri);
+    const doc = await PDFDocument.load(bytes, { password });
+
+    // Loading with the correct password then saving produces
+    // an unencrypted copy — this is the unlock.
+    const pdfBytes = await doc.save();
+
+    const pdfDir = getPdfDir();
+    const id = generateId();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, pdfBytes);
+
+    const now = new Date().toISOString();
+    const safeName = fileName
+      ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+      : `unlocked_${now.slice(0, 10)}.pdf`;
+    const result: LocalPdf = {
+      id,
+      original_filename: safeName,
+      file_size: pdfBytes.length,
+      page_count: doc.getPageCount(),
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("Unlock error:", e);
+    return null;
+  }
+}
