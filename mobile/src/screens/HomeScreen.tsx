@@ -226,11 +226,11 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                     onChangeText={setSearchQuery}
                     style={{ flex: 1, margin: 16, marginBottom: 0 }}
                 />
-                {!multiSelect ? (
+                {pdfs.length > 0 && !multiSelect ? (
                     <IconButton icon="checkbox-multiple-marked-outline" onPress={enterMultiSelect} />
-                ) : (
+                ) : pdfs.length > 0 && multiSelect ? (
                     <IconButton icon="close" onPress={exitMultiSelect} />
-                )}
+                ) : null}
             </View>
             {loading ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
