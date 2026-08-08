@@ -2,10 +2,7 @@
 
 ## 2026-08-08
 
-- ✅ **Task 3: Hook useSyncQueue (F6)** — Hook per coda sync offline con persistenza AsyncStorage, processing FIFO, retry, enqueue/processQueue/clearQueue.
-- ✅ **Task 4: Pull-to-refresh in HomeScreen (M2)** — RefreshControl su FlatList per ricaricare lista PDF con swipe down.
-- 🧹 **Pulizia GitHub** — Branch remoti/locali eliminati (~40→4), release vecchie eliminate (20→5), tag residui rimossi.
-- 📝 **README** — creato in inglese con badge, tech stack per layer, features a elenco puntato.
+- 🚀 **Mobile release v0.2.0-mobile** — Seconda release mobile APK (EAS Build)
 - ✅ **UX: Bottom tabs navigation (F9)** — Home + Settings tabs con MainTabs.tsx, navigazione refactored.
 - ✅ **UX: Search bar in Home (M5)** — Searchbar React Native Paper + filteredPdfs via useMemo.
 - ✅ **UX: Snackbar in Tools (M1)** — Risultati operazioni mostrati come Snackbar invece di testo statico.
@@ -15,10 +12,19 @@
 - ✅ **UX: Badge count on app icon (M3)** — expo-notifications setBadgeCountAsync + tabBarBadge in MainTabs.
 - ✅ **UX: Multi-select in Home (M8)** — Modalità multi-selezione con checkbox, Select All, batch delete, action bar.
 - ✅ **UX: Share PDF (M7)** — Condivisione via Android share sheet con expo-sharing nel context menu.
-- ✅ **UX: Splash screen (M10)** — Sfondo arancione #F97316 in app.json, adattato anche adaptive icon background.
-- ✅ **Task 2: Password protect/unlock (F4)** — Migrato a @cantoo/pdf-lib@2.8.1 con supporto encryption. UI Password/Unlock in ToolsScreen con dialog (protect: conferma password, unlock: singola). Fix showResult recursion bug.
-- ✅ **F5: Reusable components** — PdfListItem, GuestBanner, SyncStatusBadge in mobile/src/components/.
-- ✅ **Docs allineate** — .specs/plans/feature-mobile-improvements.md, CHANGELOG.md
+- ✅ **UX: Splash screen (M10)** — Sfondo arancione in splash screen (via expo-splash-screen plugin).
+- ✅ **Task 2: Password protect/unlock (F4)** — Migrato a @cantoo/pdf-lib@2.8.1 con supporto encryption. UI Password/Unlock in ToolsScreen con dialog (protect: conferma password, unlock: singola).
+- ✅ **Task 3: Hook useSyncQueue (F6)** — Hook per coda sync offline con persistenza AsyncStorage.
+- ✅ **Task 4: Pull-to-refresh in HomeScreen (M2)** — RefreshControl su FlatList.
+- ✅ **Download PDF su mobile** — SAF StorageAccessFramework per salvare PDF su dispositivo.
+- ✅ **Forgot/reset password su mobile** — Nuovo ForgotPasswordScreen, API + auth context, link in LoginScreen.
+- ✅ **F5: Reusable components** — PdfListItem, GuestBanner, SyncStatusBadge.
+- 🧹 **Pulizia GitHub** — Branch eliminato, tag v0.2.0-mobile ricreato dopo fix splash screen.
+- 🔧 **Fix splash screen validation** — Rimosso campo `splash` da app.json (non valido in SDK 57), installato expo-splash-screen.
+- 🧹 **Riorganizzazione .specs/** — 156 file → `active/` (15 da fare) + `archive/` (141 completati).
+- 📝 **FEATURE_COMPARISON.md** — Nuovo file con tabella feature cross-platform.
+- 📝 **Pagina /download** — Download page con GitHub release fetcher dinamico.
+- 📝 **Landing page aggiornata** — Navbar link Download, badge hero corretto, edit text description "coming soon".
 
 ## 2026-08-07
 
