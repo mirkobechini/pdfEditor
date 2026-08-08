@@ -1,13 +1,15 @@
 # Architecture Decision Record
 
 **Progetto:** PdfEditor
-**Data:** 2026-06-25 (ultimo aggiornamento 2026-08-03)
+**Data:** 2026-06-25 (ultimo aggiornamento 2026-08-08)
 **Versioni ADR incluse:** v0.1.24 → v0.1.33 (11 release)
 **Autore:** Mirko Bechini
 
 ## Decisione
 
 Applicazione cross-platform per la modifica e gestione di file PDF, con funzionalità di visualizzazione, annotazione, conversione, modifica testo e manipolazione avanzata. Architettura modulare che copre web (Next.js), desktop (Tauri v2), **mobile (React Native — vedi [`mobile/ADR.md`](./mobile/ADR.md))** e backend (FastAPI).
+
+> **Confronto feature tra piattaforme:** Vedi [`FEATURE_COMPARISON.md`](./FEATURE_COMPARISON.md)
 
 ## Contesto
 
