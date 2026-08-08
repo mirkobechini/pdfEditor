@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: cd mobile && npm ci
 
+      - name: Expo doctor (check package compatibility)
+        run: cd mobile && npx expo-doctor 2>&1 || echo "expo doctor warnings (non-blocking)"
+
       - name: Setup EAS
         uses: expo/expo-github-action@v9
         with:
@@ -58,9 +61,18 @@ jobs:
           # Download the APK (--build-id implies platform, no --platform flag)
           BUILD_ID=$(node -e "try { const b=require('./build-info.json'); console.log(b[0]?.id || '') } catch(e) { console.log('') }")
           echo "Build ID: $BUILD_ID"
-          eas build:download --build-id "$BUILD_ID"
-          mv build-*.apk pdfeditor-mobile.apk
-          ls -la pdfeditor-mobile.apk
+          # eas build:download outputs the download path to stdout
+          OUTPUT=$(eas build:download --build-id "$BUILD_ID" --non-interactive 2>&1)
+          echo "$OUTPUT"
+          # Find the APK path from the output and copy it
+          APK_PATH=$(echo "$OUTPUT" | grep -oP '/tmp/runner/.*?\.apk' | head -1)
+          if [ -n "$APK_PATH" ]; then
+            cp "$APK_PATH" pdfeditor-mobile.apk
+            ls -la pdfeditor-mobile.apk
+          else
+            echo "Could not find downloaded APK path in output"
+            exit 1
+          fi
 
       - name: Generate release notes
         id: notes
