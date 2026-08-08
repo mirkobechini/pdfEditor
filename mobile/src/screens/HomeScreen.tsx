@@ -11,10 +11,15 @@ import { useAuth } from "../shared/auth";
 import { getLocalPdfById, savePdfLocally, deleteLocalPdf } from "../services/localDb";
 import { File } from "expo-file-system";
 import { Swipeable } from "react-native-gesture-handler";
+import { setBadgeCountAsync } from "expo-notifications";
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Main">;
 
-export default function HomeScreen() {
+interface HomeScreenProps {
+    onPdfCountChange?: (count: number) => void;
+}
+
+export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const theme = useTheme();
     const navigation = useNavigation<HomeNavProp>();
     const insets = useSafeAreaInsets();
@@ -50,6 +55,8 @@ export default function HomeScreen() {
         try {
             const local = await loadLocalPdfs(userId);
             setPdfs(local);
+            onPdfCountChange?.(local.length);
+            setBadgeCountAsync(local.length).catch(() => { });
         } catch {
             setPdfs([]);
         } finally {
@@ -69,6 +76,8 @@ export default function HomeScreen() {
         try {
             const local = await loadLocalPdfs(userId);
             setPdfs(local);
+            onPdfCountChange?.(local.length);
+            setBadgeCountAsync(local.length).catch(() => { });
         } catch {
             setPdfs([]);
         } finally {

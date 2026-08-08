@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { IconButton, useTheme } from "react-native-paper";
 import HomeScreen from "../screens/HomeScreen";
@@ -8,6 +8,7 @@ const Tab = createBottomTabNavigator();
 
 export default function MainTabs() {
     const theme = useTheme();
+    const [pdfCount, setPdfCount] = useState(0);
 
     return (
         <Tab.Navigator
@@ -25,10 +26,11 @@ export default function MainTabs() {
         >
             <Tab.Screen
                 name="HomeTab"
-                component={HomeScreen}
+                children={() => <HomeScreen onPdfCountChange={setPdfCount} />}
                 options={{
                     title: "PdfEditor",
                     tabBarLabel: "Home",
+                    tabBarBadge: pdfCount > 0 ? pdfCount : undefined,
                     tabBarIcon: ({ color, size }) => (
                         <IconButton icon="file-document" size={size} iconColor={color} />
                     ),
