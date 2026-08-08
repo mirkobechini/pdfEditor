@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-08
+
+- ✅ **Task 3: Hook useSyncQueue (F6)** — Hook per coda sync offline con persistenza AsyncStorage, processing FIFO, retry, enqueue/processQueue/clearQueue.
+- ✅ **Task 4: Pull-to-refresh in HomeScreen (M2)** — RefreshControl su FlatList per ricaricare lista PDF con swipe down.
+- 🔧 **Fix badge README desktop** — Filtro `v*.*.*` per escludere release mobile.
+- 🔧 **Fix CI mobile** — `expo doctor` check, pacchetti Expo aggiornati (57.0.11), fix download APK path.
+- 🚀 **Prima release mobile v0.1.0-mobile** — APK buildato e pubblicato su GitHub Releases.
+- 🧹 **Pulizia GitHub** — Branch remoti/locali eliminati (~40→4), release vecchie eliminate (20→5), tag residui rimossi.
+- 📝 **README** — creato in inglese con badge, tech stack per layer, features a elenco puntato.
+
 ## 2026-08-07
 
 - ✅ **Task 1: Metadata editing (F3)** — Dialog per modificare titolo/autore in ToolsScreen. `updateMetadata` già esistente in pdfService, aggiunta UI.

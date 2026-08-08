@@ -52,8 +52,8 @@ Migliorie UX e funzionalità mancanti dopo il completamento del MVP mobile.
 
 1. **Metadata editing** (F3) — dialog per titolo/autore — ✅ **Completata** (2026-08-07)
 2. **Password protect/unlock PDF** (F4) — ⏸ **In pausa** — vedi note sotto
-3. **Hook useSyncQueue** (F6) — sync in background
-4. **Refresh-to-reload in Home** (M2) — pull-to-refresh
+3. **Hook useSyncQueue** (F6) — sync in background — ✅ **Completata** (2026-08-08)
+4. **Refresh-to-reload in Home** (M2) — pull-to-refresh — ✅ **Completata** (2026-08-08)
 5. **Search/filter in Home** (M5) — barra di ricerca
 6. **Preview thumbnail in Home** (M6) — miniatura prima pagina
 7. **Toast/notifiche** (M1) — Snackbar al posto di "result"
