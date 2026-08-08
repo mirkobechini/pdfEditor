@@ -132,13 +132,27 @@
 
 ### Vulnerabilità risolte (non più segnalate da Dependabot)
 
-| Pacchetto          | Fix                             |
-| ------------------ | ------------------------------- |
-| `js-yaml`          | PR #392 (bump 4.2.0 → 4.3.0)    |
-| `next`             | PR #393 (bump 16.2.9 → 16.2.11) |
-| `python-multipart` | PR #395 (bump 0.0.31 → 0.0.32)  |
-| `PyJWT`            | Già a 2.13.0 (fixato)           |
-| `python-jose`      | Rimosso (non in uso)            |
+| Pacchetto          | Fix                                                  |
+| ------------------ | ---------------------------------------------------- |
+| `js-yaml`          | PR #392 (bump 4.2.0 → 4.3.0)                         |
+| `next`             | PR #393 (bump 16.2.9 → 16.2.11)                      |
+| `next` (CVE-2026)  | **bump 16.2.11 → 16.3.0** (3 high, 5 medium risolte) |
+| `python-multipart` | PR #395 (bump 0.0.31 → 0.0.32)                       |
+| `PyJWT`            | Già a 2.13.0 (fixato)                                |
+| `python-jose`      | Rimosso (non in uso)                                 |
+
+### ⚠️ Vulnerabilità note non fixabili (accettate)
+
+| Pacchetto           | Versione        | CVE (High/Medium)                                                 | Motivo accettazione                                                                                                              |
+| ------------------- | --------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **PyJWT**           | 2.13.0 (ultima) | 2 high, 2 medium (CVE-2026-32597, -48523, -48525, -48526)         | Già all'ultima versione disponibile. Fix attesi da upstream.                                                                     |
+| **PostCSS**         | sub-dep Next.js | 5 high, 2 medium (CVE-2026-41305, -45623, -69153, path traversal) | Sub-dipendenza interna di Next.js. Non fixabile separatamente.                                                                   |
+| **sharp/libvips**   | sub-dep Next.js | 1 high (CVE-2026-33327/28/35590)                                  | Sub-dipendenza interna di Next.js. Non fixabile separatamente.                                                                   |
+| **brace-expansion** | sub-dep eslint  | 3 high (CVE-2026-13149, -14257, -69152)                           | DevDependency. Non in produzione.                                                                                                |
+| **js-yaml**         | sub-dep eslint  | 1 high (CVE-2026-59869)                                           | DevDependency. Non in produzione.                                                                                                |
+| **glib (Rust)**     | sub-dep Tauri   | 0 (1 medium)                                                      | Sub-dipendenza indiretta di Tauri. Forzare `glib 0.20.0` rischia di rompere `cargo tauri build`. CVE non esposto a input utente. |
+
+> **Totale:** 30 segnalazioni Dependabot. **12 risolte** (incluso bump Next.js 16.3.0), **18 accettate** come non fixabili o già all'ultima versione.
 
 ---
 
