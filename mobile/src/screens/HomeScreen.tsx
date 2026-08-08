@@ -12,6 +12,7 @@ import { getLocalPdfById, savePdfLocally, deleteLocalPdf } from "../services/loc
 import { File } from "expo-file-system";
 import { Swipeable } from "react-native-gesture-handler";
 import { setBadgeCountAsync } from "expo-notifications";
+import * as Sharing from "expo-sharing";
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Main">;
 
@@ -78,6 +79,23 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         showSnack(`Deleted ${selectedIds.size} PDF(s)`);
         exitMultiSelect();
         await loadPdfs();
+    }
+
+    async function handleShare(pdf: LocalPdf) {
+        setContextPdf(null);
+        try {
+            const isAvailable = await Sharing.isAvailableAsync();
+            if (!isAvailable) {
+                showSnack("Sharing is not available on this device");
+                return;
+            }
+            await Sharing.shareAsync(pdf.uri, {
+                mimeType: "application/pdf",
+                dialogTitle: `Share ${pdf.original_filename}`,
+            });
+        } catch {
+            showSnack("Failed to share PDF");
+        }
     }
 
     const filteredPdfs = useMemo(() => {
@@ -343,6 +361,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                     <Dialog.Title>{contextPdf?.original_filename}</Dialog.Title>
                     <Dialog.Content>
                         <List.Item title="Rename" left={(p) => <List.Icon {...p} icon="pencil" />} onPress={() => { if (contextPdf) openRename(contextPdf); }} />
+                        <List.Item title="Share" left={(p) => <List.Icon {...p} icon="share-variant" />} onPress={() => { if (contextPdf) handleShare(contextPdf); }} />
                         <List.Item title="Delete" left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
                         <List.Item title="Details" left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setDetailsPdf(pdf); } }} />
                     </Dialog.Content>
