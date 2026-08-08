@@ -43,7 +43,7 @@ jobs:
           echo "Waiting for EAS build to complete..."
           for i in $(seq 1 120); do
             eas build:list --platform android --limit 1 --json > build-info.json 2>/dev/null
-            STATUS=$(node -e "try { const b=require('./build-info.json'); console.log(b[0]?.status || '') } catch(e) { console.log('error') }")
+            STATUS=$(node -e "try { const b=require('./build-info.json'); console.log((b[0]?.status || '').toLowerCase()) } catch(e) { console.log('error') }")
             echo "  iteration $i: status=$STATUS"
             if [ "$STATUS" = "finished" ]; then
               break
@@ -55,10 +55,10 @@ jobs:
             sleep 30
           done
 
-          # Download the APK
+          # Download the APK (--build-id implies platform, no --platform flag)
           BUILD_ID=$(node -e "try { const b=require('./build-info.json'); console.log(b[0]?.id || '') } catch(e) { console.log('') }")
           echo "Build ID: $BUILD_ID"
-          eas build:download --build-id "$BUILD_ID" --platform android
+          eas build:download --build-id "$BUILD_ID"
           mv build-*.apk pdfeditor-mobile.apk
           ls -la pdfeditor-mobile.apk
 
