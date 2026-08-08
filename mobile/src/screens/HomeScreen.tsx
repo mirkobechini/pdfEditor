@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { View, FlatList, TouchableOpacity, RefreshControl } from "react-native";
-import { Text, Card, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List, Dialog, TextInput, Searchbar, Snackbar, IconButton } from "react-native-paper";
+import { Text, Card, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List, Dialog, TextInput, Searchbar, Snackbar, IconButton, Checkbox } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -38,10 +38,46 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [snackbarMsg, setSnackbarMsg] = useState("");
     const [snackbarVisible, setSnackbarVisible] = useState(false);
+    const [multiSelect, setMultiSelect] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     function showSnack(msg: string) {
         setSnackbarMsg(msg);
         setSnackbarVisible(true);
+    }
+
+    function toggleSelect(id: string) {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }
+
+    function enterMultiSelect() {
+        setMultiSelect(true);
+        setSelectedIds(new Set());
+    }
+
+    function exitMultiSelect() {
+        setMultiSelect(false);
+        setSelectedIds(new Set());
+    }
+
+    async function handleBatchDelete() {
+        for (const id of selectedIds) {
+            const pdf = pdfs.find((p) => p.id === id);
+            if (!pdf) continue;
+            try {
+                const file = new File(pdf.uri);
+                if (file.exists) file.delete();
+            } catch { /* ignore */ }
+            await deleteLocalPdf(id);
+        }
+        showSnack(`Deleted ${selectedIds.size} PDF(s)`);
+        exitMultiSelect();
+        await loadPdfs();
     }
 
     const filteredPdfs = useMemo(() => {
@@ -131,12 +167,19 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["bottom"]}>
-            <Searchbar
-                placeholder="Search PDFs"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                style={{ margin: 16, marginBottom: 0 }}
-            />
+            <View style={{ flexDirection: "row", alignItems: "center", marginRight: 16 }}>
+                <Searchbar
+                    placeholder="Search PDFs"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    style={{ flex: 1, margin: 16, marginBottom: 0 }}
+                />
+                {!multiSelect ? (
+                    <IconButton icon="checkbox-multiple-marked-outline" onPress={enterMultiSelect} />
+                ) : (
+                    <IconButton icon="close" onPress={exitMultiSelect} />
+                )}
+            </View>
             {loading ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <ActivityIndicator size="large" />
@@ -154,46 +197,66 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                     contentContainerStyle={{ padding: 16 }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                     renderItem={({ item }) => {
-                        const renderRightActions = () => (
-                            <View style={{ justifyContent: "center", alignItems: "center", backgroundColor: theme.colors.error, marginBottom: 12, borderRadius: 12, width: 80 }}>
-                                <TouchableOpacity
-                                    onPress={() => handleDelete(item)}
-                                    style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 16 }}
-                                >
-                                    <IconButton icon="delete" iconColor={theme.colors.onError} size={24} />
-                                    <Text style={{ color: theme.colors.onError, fontSize: 12 }}>Delete</Text>
-                                </TouchableOpacity>
-                            </View>
-                        );
+                        const isSelected = selectedIds.has(item.id);
+                        const renderRightActions = () => {
+                            if (multiSelect) return <View />;
+                            return (
+                                <View style={{ justifyContent: "center", alignItems: "center", backgroundColor: theme.colors.error, marginBottom: 12, borderRadius: 12, width: 80 }}>
+                                    <TouchableOpacity
+                                        onPress={() => handleDelete(item)}
+                                        style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 16 }}
+                                    >
+                                        <IconButton icon="delete" iconColor={theme.colors.onError} size={24} />
+                                        <Text style={{ color: theme.colors.onError, fontSize: 12 }}>Delete</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            );
+                        };
                         return (
                             <Swipeable renderRightActions={renderRightActions}>
                                 <TouchableOpacity
-                                    onPress={() =>
-                                        navigation.navigate("PdfViewer", {
-                                            pdfId: item.id,
-                                            title: item.original_filename,
-                                        })
-                                    }
-                                    onLongPress={() => setContextPdf(item)}
+                                    onPress={() => {
+                                        if (multiSelect) {
+                                            toggleSelect(item.id);
+                                        } else {
+                                            navigation.navigate("PdfViewer", {
+                                                pdfId: item.id,
+                                                title: item.original_filename,
+                                            });
+                                        }
+                                    }}
+                                    onLongPress={() => {
+                                        if (!multiSelect) {
+                                            enterMultiSelect();
+                                            toggleSelect(item.id);
+                                        }
+                                    }}
                                 >
                                     <Card style={{ marginBottom: 12, backgroundColor: theme.colors.surface }}>
                                         <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                            {multiSelect && (
+                                                <Checkbox
+                                                    status={isSelected ? "checked" : "unchecked"}
+                                                    onPress={() => toggleSelect(item.id)}
+                                                    color={theme.colors.primary}
+                                                />
+                                            )}
                                             <View
                                                 style={{
                                                     width: 48,
                                                     height: 60,
                                                     borderRadius: 6,
-                                                    backgroundColor: theme.colors.primaryContainer,
+                                                    backgroundColor: isSelected ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
                                                     justifyContent: "center",
                                                     alignItems: "center",
                                                     margin: 12,
                                                 }}
                                             >
-                                                <IconButton icon="file-pdf-box" iconColor={theme.colors.onPrimaryContainer} size={28} />
+                                                <IconButton icon="file-pdf-box" iconColor={isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant} size={28} />
                                                 <Text
                                                     style={{
                                                         fontSize: 10,
-                                                        color: theme.colors.onPrimaryContainer,
+                                                        color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant,
                                                         fontWeight: "700",
                                                         marginTop: -6,
                                                     }}
@@ -218,17 +281,36 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                 />
             )}
 
-            <FAB
-                icon="plus"
-                style={{
-                    position: "absolute",
-                    right: 16,
-                    bottom: 16 + insets.bottom,
-                    backgroundColor: theme.colors.primary,
-                }}
-                color={theme.colors.onPrimary}
-                onPress={() => setShowMenu(true)}
-            />
+            {multiSelect ? (
+                <View style={{ position: "absolute", right: 0, left: 0, bottom: 0, backgroundColor: theme.colors.primaryContainer, flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 8, paddingBottom: 8 + insets.bottom }}>
+                    <Text style={{ color: theme.colors.onPrimaryContainer, fontWeight: "600" }}>
+                        {selectedIds.size} selected
+                    </Text>
+                    <View style={{ flexDirection: "row", gap: 8 }}>
+                        <Button textColor={theme.colors.onPrimaryContainer} onPress={() => setSelectedIds(new Set(filteredPdfs.map((p) => p.id)))}>
+                            Select All
+                        </Button>
+                        <Button textColor={theme.colors.error} onPress={handleBatchDelete} disabled={selectedIds.size === 0}>
+                            Delete
+                        </Button>
+                        <Button textColor={theme.colors.onPrimaryContainer} onPress={exitMultiSelect}>
+                            Cancel
+                        </Button>
+                    </View>
+                </View>
+            ) : (
+                <FAB
+                    icon="plus"
+                    style={{
+                        position: "absolute",
+                        right: 16,
+                        bottom: 16 + insets.bottom,
+                        backgroundColor: theme.colors.primary,
+                    }}
+                    color={theme.colors.onPrimary}
+                    onPress={() => setShowMenu(true)}
+                />
+            )}
 
             <Portal>
                 <Modal visible={showMenu} onDismiss={() => setShowMenu(false)} contentContainerStyle={{ backgroundColor: theme.colors.surface, margin: 24, borderRadius: 12 }}>
