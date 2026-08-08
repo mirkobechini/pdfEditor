@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, FlatList, TouchableOpacity } from "react-native";
+import { View, FlatList, TouchableOpacity, RefreshControl } from "react-native";
 import { Text, Card, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List, Dialog, TextInput } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -25,6 +25,19 @@ export default function HomeScreen() {
     const [renameText, setRenameText] = useState("");
     const [renameTarget, setRenameTarget] = useState<LocalPdf | null>(null);
     const [detailsPdf, setDetailsPdf] = useState<LocalPdf | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
+
+    async function onRefresh() {
+        setRefreshing(true);
+        try {
+            const local = await loadLocalPdfs();
+            setPdfs(local);
+        } catch {
+            setPdfs([]);
+        } finally {
+            setRefreshing(false);
+        }
+    }
 
     // Reload PDFs when screen is focused
     useFocusEffect(
@@ -105,6 +118,7 @@ export default function HomeScreen() {
                     data={pdfs}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={{ padding: 16 }}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                     renderItem={({ item }) => (
                         <TouchableOpacity
                             onPress={() =>
