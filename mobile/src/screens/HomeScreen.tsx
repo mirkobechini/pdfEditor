@@ -168,14 +168,39 @@ export default function HomeScreen() {
                                     onLongPress={() => setContextPdf(item)}
                                 >
                                     <Card style={{ marginBottom: 12, backgroundColor: theme.colors.surface }}>
-                                        <Card.Content>
-                                            <Text variant="titleMedium" style={{ fontWeight: "600" }}>
-                                                {item.original_filename}
-                                            </Text>
-                                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                                                {formatSize(item.file_size)}
-                                            </Text>
-                                        </Card.Content>
+                                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                            <View
+                                                style={{
+                                                    width: 48,
+                                                    height: 60,
+                                                    borderRadius: 6,
+                                                    backgroundColor: theme.colors.primaryContainer,
+                                                    justifyContent: "center",
+                                                    alignItems: "center",
+                                                    margin: 12,
+                                                }}
+                                            >
+                                                <IconButton icon="file-pdf-box" iconColor={theme.colors.onPrimaryContainer} size={28} />
+                                                <Text
+                                                    style={{
+                                                        fontSize: 10,
+                                                        color: theme.colors.onPrimaryContainer,
+                                                        fontWeight: "700",
+                                                        marginTop: -6,
+                                                    }}
+                                                >
+                                                    {item.page_count ?? "?"} p.
+                                                </Text>
+                                            </View>
+                                            <View style={{ flex: 1, paddingRight: 12 }}>
+                                                <Text variant="titleMedium" style={{ fontWeight: "600" }} numberOfLines={1}>
+                                                    {item.original_filename}
+                                                </Text>
+                                                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                                                    {formatSize(item.file_size)}
+                                                </Text>
+                                            </View>
+                                        </View>
                                     </Card>
                                 </TouchableOpacity>
                             </Swipeable>
