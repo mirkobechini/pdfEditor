@@ -29,10 +29,10 @@
 
 ## ⬇️ Quick download
 
-| Platform | Latest version |
-| ----------- | ---------------------------------------------------------------------------------- |
-| 🖥️ Desktop  | [Download v0.1.34](https://github.com/mirkobechini/pdfEditor/releases/latest)       |
-| 📱 Mobile   | [Download v0.1.0](https://github.com/mirkobechini/pdfEditor/releases) (APK Android) |
+| Platform   | Latest version                                                                      |
+| ---------- | ----------------------------------------------------------------------------------- |
+| 🖥️ Desktop | [Download v0.1.34](https://github.com/mirkobechini/pdfEditor/releases/latest)       |
+| 📱 Mobile  | [Download v0.1.0](https://github.com/mirkobechini/pdfEditor/releases) (APK Android) |
 
 ## 🛠️ Tech stack
 
@@ -61,14 +61,14 @@
 
 ## 📚 Documentation
 
-| File | Content |
-|------|-----------|
-| [📋 BRIEF](./BRIEF.md) | Vision, roadmap and general decisions |
-| [🏗️ ADR](./ADR.md) | Architecture decisions (web, desktop, backend) |
-| [📱 ADR Mobile](./mobile/ADR.md) | Mobile architecture decisions |
-| [📜 CHANGELOG](./CHANGELOG.md) | Complete release history |
-| [🐞 KNOWN_ISSUES](./KNOWN_ISSUES.md) | Open bugs and technical debt |
-| [📖 LESSONS_LEARNED](./LESSONS_LEARNED.md) | Lessons learned during development |
+| File                                       | Content                                        |
+| ------------------------------------------ | ---------------------------------------------- |
+| [📋 BRIEF](./BRIEF.md)                     | Vision, roadmap and general decisions          |
+| [🏗️ ADR](./ADR.md)                         | Architecture decisions (web, desktop, backend) |
+| [📱 ADR Mobile](./mobile/ADR.md)           | Mobile architecture decisions                  |
+| [📜 CHANGELOG](./CHANGELOG.md)             | Complete release history                       |
+| [🐞 KNOWN_ISSUES](./KNOWN_ISSUES.md)       | Open bugs and technical debt                   |
+| [📖 LESSONS_LEARNED](./LESSONS_LEARNED.md) | Lessons learned during development             |
 
 ## 📄 License
 
