@@ -14,6 +14,7 @@ import { StorageAccessFramework } from "expo-file-system/legacy";
 import { Swipeable } from "react-native-gesture-handler";
 import { setBadgeCountAsync } from "expo-notifications";
 import * as Sharing from "expo-sharing";
+import { useTranslation } from "react-i18next";
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Main">;
 
@@ -25,6 +26,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const theme = useTheme();
     const navigation = useNavigation<HomeNavProp>();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
     const { pickAndSavePdf, loadLocalPdfs, loading: storageLoading } = usePdfStorage();
     const { user } = useAuth();
     const userId = user?.id || "";
@@ -231,6 +233,9 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                 ) : pdfs.length > 0 && multiSelect ? (
                     <IconButton icon="close" onPress={exitMultiSelect} />
                 ) : null}
+                {!multiSelect && (
+                    <IconButton icon="wrench" onPress={() => navigation.navigate("Tools")} />
+                )}
             </View>
             {loading ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

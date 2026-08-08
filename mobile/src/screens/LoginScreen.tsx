@@ -6,13 +6,15 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useAuth } from "../shared/auth";
+import { useTranslation } from "react-i18next";
 
 type LoginNavProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 
 export default function LoginScreen() {
-    const { login, register, guestLogin, loading } = useAuth();
+    const { login, register, guestLogin, actionLoading } = useAuth();
     const theme = useTheme();
     const navigation = useNavigation<LoginNavProp>();
+    const { t } = useTranslation();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [fullName, setFullName] = useState("");
@@ -112,8 +114,8 @@ export default function LoginScreen() {
                         <Button
                             mode="contained"
                             onPress={handleSubmit}
-                            loading={loading}
-                            disabled={loading}
+                            loading={actionLoading}
+                            disabled={actionLoading}
                             style={{ marginBottom: 12, borderRadius: 8 }}
                             contentStyle={{ paddingVertical: 6 }}
                         >
@@ -155,8 +157,8 @@ export default function LoginScreen() {
                             <Button
                                 mode="outlined"
                                 onPress={guestLogin}
-                                loading={loading}
-                                disabled={loading}
+                                loading={actionLoading}
+                                disabled={actionLoading}
                                 style={{ borderRadius: 8 }}
                                 contentStyle={{ paddingVertical: 6 }}
                             >
@@ -167,15 +169,10 @@ export default function LoginScreen() {
                 </ScrollView>
             </KeyboardAvoidingView>
 
-            {/* Loading overlay — form visible in background, spinner in foreground */}
-            {loading && (
-                <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
-                    <View style={{ backgroundColor: "rgba(255,255,255,0.9)", padding: 32, borderRadius: 16, alignItems: "center", elevation: 4 }}>
-                        <ActivityIndicator size="large" color={theme.colors.primary} />
-                        <Text style={{ marginTop: 16, color: theme.colors.primary, fontWeight: "600" }}>
-                            Signing in...
-                        </Text>
-                    </View>
+            {/* Loading overlay — form visible in background with semi-transparent black veil */}
+            {actionLoading && (
+                <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
                 </View>
             )}
         </SafeAreaView>

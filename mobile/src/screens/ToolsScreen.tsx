@@ -8,6 +8,7 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
 import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf } from "../services/pdfService";
+import { useTranslation } from "react-i18next";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 
@@ -15,6 +16,7 @@ export default function ToolsScreen() {
     const theme = useTheme();
     const navigation = useNavigation<ToolsNavProp>();
     const { loadLocalPdfs } = usePdfStorage();
+    const { t } = useTranslation();
     const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
     const [operation, setOperation] = useState<string | null>(null);
