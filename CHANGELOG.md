@@ -16,6 +16,7 @@
 - ✅ **UX: Multi-select in Home (M8)** — Modalità multi-selezione con checkbox, Select All, batch delete, action bar.
 - ✅ **UX: Share PDF (M7)** — Condivisione via Android share sheet con expo-sharing nel context menu.
 - ✅ **UX: Splash screen (M10)** — Sfondo arancione #F97316 in app.json, adattato anche adaptive icon background.
+- ✅ **Task 2: Password protect/unlock (F4)** — Migrato a @cantoo/pdf-lib@2.8.1 con supporto encryption. UI Password/Unlock in ToolsScreen con dialog (protect: conferma password, unlock: singola). Fix showResult recursion bug.
 - ✅ **F5: Reusable components** — PdfListItem, GuestBanner, SyncStatusBadge in mobile/src/components/.
 - ✅ **Docs allineate** — .specs/plans/feature-mobile-improvements.md, CHANGELOG.md
 
