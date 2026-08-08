@@ -73,4 +73,4 @@ Migliorie UX e funzionalità mancanti dopo il completamento del MVP mobile.
 
 [x] Completata — Task 1 (F3 Metadata), 3 (F6 SyncQueue), 4 (M2 Refresh), 5 (M1 Snackbar Tools), 6 (M5 Search), 7 (M6 Thumbnail), 8 (M1 Snackbar), 9 (M4 Swipe), 10 (F9 Bottom tabs), M3 (Badge), M7 (Share), M8 (Multi-select), M10 (Splash), F5 (Components)
 [x] Completata — Task 2 (F4 Password) — @cantoo/pdf-lib@2.8.1 con encrypt support
-[ ] Non iniziata — M9 (Animations)
+[x] Rimosso — M9 coperto nativamente da React Navigation
