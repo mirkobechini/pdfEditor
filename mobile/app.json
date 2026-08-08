@@ -25,10 +25,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "splash": {
-      "backgroundColor": "#F97316",
-      "resizeMode": "contain"
-    },
     "plugins": [
       "expo-sqlite",
       [
@@ -44,7 +40,8 @@
         }
       ],
       "expo-font",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-splash-screen"
     ],
     "extra": {
       "eas": {
