@@ -12,10 +12,9 @@
     "android": {
       "package": "com.mirkobechini.pdfeditor",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FF944E",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundImage": "./assets/android-icon-background.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -25,6 +24,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "splash": {
+      "backgroundColor": "#F97316",
+      "resizeMode": "contain"
     },
     "plugins": [
       "expo-sqlite",
@@ -40,7 +43,8 @@
           "cameraPermission": "Allow PdfEditor to access your camera to scan documents."
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-sharing"
     ],
     "extra": {
       "eas": {

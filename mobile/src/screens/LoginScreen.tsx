@@ -1,12 +1,18 @@
 import React, { useState } from "react";
 import { View, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
-import { Text, TextInput, Button, Surface, useTheme, IconButton, ActivityIndicator, Portal, Modal } from "react-native-paper";
+import { Text, TextInput, Button, Surface, useTheme, IconButton, ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useAuth } from "../shared/auth";
+
+type LoginNavProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 
 export default function LoginScreen() {
     const { login, register, guestLogin, loading } = useAuth();
     const theme = useTheme();
+    const navigation = useNavigation<LoginNavProp>();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [fullName, setFullName] = useState("");
@@ -66,15 +72,11 @@ export default function LoginScreen() {
                         </Text>
 
                         {error ? (
-                            <Text
-                                style={{
-                                    color: theme.colors.error,
-                                    marginBottom: 16,
-                                    textAlign: "center",
-                                }}
-                            >
-                                {error}
-                            </Text>
+                            <View style={{ backgroundColor: "#FFE0E0", padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                                <Text style={{ color: "#B00020", textAlign: "center" }}>
+                                    {error}
+                                </Text>
+                            </View>
                         ) : null}
 
                         {isRegister && (
@@ -124,12 +126,23 @@ export default function LoginScreen() {
                                 setIsRegister(!isRegister);
                                 setError("");
                             }}
-                            style={{ marginBottom: 12 }}
+                            style={{ marginBottom: 8 }}
                         >
                             {isRegister
                                 ? "Already have an account? Sign In"
                                 : "Don't have an account? Register"}
                         </Button>
+
+                        {!isRegister && (
+                            <Button
+                                mode="text"
+                                onPress={() => navigation.navigate("ForgotPassword")}
+                                style={{ marginBottom: 12 }}
+                                labelStyle={{ fontSize: 13 }}
+                            >
+                                Forgot Password?
+                            </Button>
+                        )}
 
                         <View
                             style={{
@@ -154,17 +167,17 @@ export default function LoginScreen() {
                 </ScrollView>
             </KeyboardAvoidingView>
 
-            {/* Loading overlay — visible during login/register/guest */}
-            <Portal>
-                <Modal visible={loading} dismissable={false} onDismiss={() => { }} contentContainerStyle={{ backgroundColor: "transparent", alignItems: "center", justifyContent: "center" }}>
-                    <View style={{ backgroundColor: theme.colors.surface, padding: 24, borderRadius: 12, alignItems: "center" }}>
+            {/* Loading overlay — form visible in background, spinner in foreground */}
+            {loading && (
+                <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
+                    <View style={{ backgroundColor: "rgba(255,255,255,0.9)", padding: 32, borderRadius: 16, alignItems: "center", elevation: 4 }}>
                         <ActivityIndicator size="large" color={theme.colors.primary} />
-                        <Text style={{ marginTop: 12, color: theme.colors.onSurface }}>
-                            {loading ? "Signing in..." : ""}
+                        <Text style={{ marginTop: 16, color: theme.colors.primary, fontWeight: "600" }}>
+                            Signing in...
                         </Text>
                     </View>
-                </Modal>
-            </Portal>
+                </View>
+            )}
         </SafeAreaView>
     );
 }

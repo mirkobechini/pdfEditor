@@ -223,109 +223,183 @@ gh pr merge --merge --delete-branch
 #    git branch -d feature/<issue-number>-<short-description>
 # 3. Branch remote eliminato: gh pr merge --delete-branch lo fa automaticamente
 
-### 7. Release — push to main + tag
+### 7. Release — pre-release checklist
 
-After ALL PRs for a release are merged to `dev`:
+> ⚠️ **MAI procedere con una release senza esplicita richiesta del developer.**
+> Anche se tutto è pronto, l'agente aspetta che il developer dica "fai la release".
 
-1. **Preflight** (obbligatorio): esegui `bash desktop/preflight.sh` o `.\desktop\preflight.ps1` per verificare npm ci, next build, import backend e allineamento versioni (~3min).
+#### 7.1 Security audit (bloccante)
 
-2. **Build locale obbligatoria** (PRIMA del tag GitHub):
-   ```bash
-   # Windows (PowerShell)
-   cd desktop
-   .\build-sidecar.ps1
-   cd frontend && npm run build && cd ..
-   cd src-tauri
-   npm --prefix ../frontend exec tauri build -- --ci
-   ```
-   Verificare che:
-   - La build locale completi senza errori
-   - L'installer `.exe` venga generato in `desktop/src-tauri/target/release/bundle/nsis/`
-   - L'app si avvii e funzioni correttamente
-   - Solo SE la build locale è OK → procedere col tag GitHub
+Prima di ogni release, eseguire gli audit di sicurezza del proprio stack tecnologico.
+Trovare tutte le vulnerabilità **critical** e **high**. Ogni vulnerabilità va:
+- **Fixata** (bump della dipendenza), oppure
+- **Accettata con motivo** documentato in `KNOWN_ISSUES.md` (es: "sub-dip non fixabile", "devDependency", "falso positivo")
 
-3. **Bump versione**: usa `node scripts/bump-version.js X.Y.Z` per aggiornare TUTTI i 9 file con versione.
+| Stack     | Comando                         | Bloccante? | Esempio documento accettazione                     |
+| --------- | ------------------------------- | ---------- | --------------------------------------------------- |
+| Node.js   | `npm audit` (o `yarn audit`)    | ✅ critical/high | `KNOWN_ISSUES.md` sezione Dipendenze con warning    |
+| Python    | `pip-audit`                     | ✅ critical/high | `KNOWN_ISSUES.md` sezione Dipendenze con warning    |
+| Rust      | `cargo audit`                   | ✅ high         | `KNOWN_ISSUES.md` sezione Dipendenze con warning    |
+| Go        | `govulncheck`                   | ✅ high         | `KNOWN_ISSUES.md` sezione Dipendenze con warning    |
+| PHP       | `composer audit`                | ✅ critical/high | `KNOWN_ISSUES.md` sezione Dipendenze con warning    |
 
-4. **Aggiorna CHANGELOG.md**: aggiungi entry per la nuova release con tutte le feature/bug fix inclusi.
+> Se lo stack non è supportato da uno strumento automatico, eseguire un controllo manuale delle dipendenze note.
 
-5. **Merge dev → main**:
-   ```bash
-   git checkout main
-   git merge dev --no-ff -m "merge: dev into main (vX.Y.Z)"
-   git push origin main
-   ```
+#### 7.2 Platform-specific release steps
 
-6. **Tag + push** (triggera la release CI che builda per Windows, macOS, Linux):
-   ```bash
-   git tag vX.Y.Z && git push origin vX.Y.Z
-   ```
+Adattare i passi alle piattaforme del progetto corrente. Eseguire SOLO quelle applicabili.
 
-7. **Monitora la CI**: `gh run list --workflow release.yml -L 3` — la build richiede ~10-15min.
+**Webapp** (se presente):
+- Build: `npm run build` / `next build` / `vite build` / equivalente
+- Test suite completo: `pytest` / `vitest` / `jest` / equivalente
+- Deploy preview (se disponibile)
 
-8. **Verifica la release**: controlla che `gh release list --limit 3` mostri `PdfEditor vX.Y.Z` pubblicata.
+**Desktop** (se presente):
+- Build locale: eseguire il bundler della piattaforma (Tauri, Electron, PyInstaller, ecc.)
+- Verificare che l'installer/binario venga generato correttamente
+- Testare avvio e funzionalità base
 
-9. **Ritorna su dev** per il prossimo ciclo.
+**Mobile** (se presente):
+- TypeScript/type check: `npx tsc --noEmit` / `dart analyze` / equivalente
+- Test: `npx jest` / `flutter test` / equivalente
+- Build cloud o locale (EAS, Xcode, Android Studio, eas build, ecc.)
 
-**Regole per la release:**
+#### 7.3 Version bump
 
-- **BUILD LOCALE PRIMA DEL TAG**: ogni release DEVE essere buildata e testata in locale PRIMA di creare il tag GitHub. La CI su GitHub serve solo per generare gli installer per macOS e Linux, non per scoprire errori di build.
-- Se la build locale fallisce → fix su `dev`, non procedere
-- Se la CI della release fallisce: fix su `dev`, ri-mergia su `main`, **elimina il tag fallito** (`git tag -d vX.Y.Z && git push origin --delete vX.Y.Z`), ricrea il tag, pusha
-- Non forzare mai commit diretti su `main` — solo merge da `dev`
-- Preflight cattura errori comuni: lock file desync (`@swc/helpers`), import mancanti, versioni disallineate
+**Regola d'oro: la versione è PER PIATTAFORMA.** Il web/desktop e il mobile hanno versioni **indipendenti** (es. web `0.1.34`, mobile `0.1.0`). Non usare mai la versione di una piattaforma per un'altra.
 
-# If still open, close manually:
+Aggiornare la versione in tutti i file che la dichiarano. Usare script automatico (`scripts/bump-version.js`) se disponibile, altrimenti manuale.
 
-# gh issue close <issue-number> --comment "Resolved by PR #<pr-number>."
+**Web/Desktop** → `node scripts/bump-version.js X.Y.Z` aggiorna:
+- `frontend/package.json`
+- `desktop/frontend/package.json`
+- `desktop/frontend/package-lock.json`
+- `desktop/src-tauri/tauri.conf.json`
+- `desktop/src-tauri/Cargo.toml`
+- `desktop/frontend/src/app/startup/page.tsx`
+- `desktop/frontend/messages/en.json` + `it.json`
+- `backend/pyproject.toml`
 
-# Switch back to dev and sync
+**Mobile** → lo stesso script ora aggiorna anche:
+- `mobile/package.json`
+- `mobile/app.json` (`version` + `expo.version`)
 
-git checkout dev
-git pull origin dev
+Sorgenti tipiche (se manuale) da controllare:
+- `package.json` (root + ogni sub-package)
+- `Cargo.toml` (Rust)
+- `pyproject.toml` / `setup.cfg` (Python)
+- `app.json` / `expo.version` (mobile)
+- `tauri.conf.json` / `Info.plist` / `AndroidManifest.xml` (desktop)
 
-# Delete local branch (remote already deleted by --delete-branch)
+#### 7.4 CHANGELOG
 
-git branch -d feature/<issue-number>-<short-description>
+Aggiungere entry per la nuova release. Includere:
+- Nuove feature
+- Bug fix
+- Breaking changes
+- Dipendenze aggiornate
 
-````
+#### 7.5 Merge dev → main + tag
 
-> ⚠️ Use `--merge` (not `--squash`) to preserve atomic commit history on `dev`. GitHub should auto-close the issue because the PR body contains `closes #N`. However, this occasionally fails. **Always verify** with `gh issue list` after merge. If still open, close manually with `gh issue close <number>`.
+```bash
+git checkout main
+git merge dev --no-ff -m "merge: dev into main (vX.Y.Z)"
+git push origin main
+git tag vX.Y.Z && git push origin vX.Y.Z
+```
 
-> ⚠️ **CRITICO — CI prima del merge**: Non mergiare MAI una PR su `dev` senza che CI sia passata. Se CI fallisce:
->
-> 1. Leggi il log dell'errore
-> 2. Fixa, committa, push sul branch feature corrente
-> 3. Aspetta che CI ripassi
-> 4. Solo quando CI è verde, procedi con il merge
+---
 
-### 7. After merge — update progress & close issue
+## 8. Mobile app workflow
 
-After the PR is merged:
+Il mobile ha un flusso diverso da web/desktop: la build finale richiede spesso un servizio cloud (EAS, App Center, CI custom) o una macchina specifica (Xcode, Android Studio). Il test utente è tipicamente post-merge.
 
-1. **Update ADR.md**: se la feature introduce una nuova dipendenza, vincolo o scelta architetturale, aggiornare le rispettive sezioni. Spostare la feature da "Da implementare" a "Completate".
-2. **Update `.specs/plans/feature-[nome].md`**: impostare Status a `[x] Completata`, aggiungere data e note.
-3. **Commit the updates**: `git add ADR.md .specs/plans/ && git commit -m "docs: update ADR and specs for completed issue-#N" && git push origin dev`
-4. **Close the issue**: `gh issue close <number> --comment "Risolto da PR #<pr-number>."`
-5. **Verify**: `gh issue list --limit 3 | grep "#<number>"` — se ancora aperta, chiudere manualmente
-6. **Ask for approval**: briefly describe what was done and ask _"May I proceed with the next issue?"_ — do NOT start the next issue without user confirmation.
+### 8.1 Differenze principali dal flusso standard
 
-## Hotfix workflow
+| Aspetto                    | Web/Desktop                     | Mobile                                    |
+| -------------------------- | ------------------------------- | ----------------------------------------- |
+| Build locale               | `npm run build` / equivalente   | Type check + lint (no build finale locale) |
+| Build finale               | Locale o CI                     | Cloud (EAS, App Center) o locale          |
+| Test PR                    | CI su GitHub                    | Type check + test suite                   |
+| Test utente                | Prima del merge (preview)       | **Dopo il merge** (build → installazione) |
+| Version alignment          | N file (script dedicato)        | `package.json` + `app.json` / `pubspec`   |
 
-For urgent fixes directly on `dev` or `main`:
+### 8.2 Flusso mobile generico
 
 ```bash
 git checkout dev
-git checkout -b hotfix/<issue-number>-<short-description>
-# fix + commit + push
-git commit -m "fix(scope): short description"
-git push origin hotfix/<issue-number>-<short-description>
-gh pr create --base dev --title "fix(scope): short description" --body "closes #N"
-# wait for CI, then merge
-gh pr merge --merge --delete-branch
-git checkout dev
-git pull origin dev
-git branch -d hotfix/<issue-number>-<short-description>
+git checkout -b feature/<issue-number>-<short-description>
+git push origin feature/<issue-number>-<short-description>
+
+# 1. Implementazione + commit atomici
+# Stessa regola: un commit per file logico
+git add ... && git commit -m "feat(mobile): ..."
+git push origin feature/<issue-number>-<short-description>
+
+# 2. Type check / build check (obbligatorio)
+npx tsc --noEmit              # TypeScript
+# oppure: dart analyze        # Flutter
+# oppure: ./gradlew assemble   # Android nativo
+
+# 3. Test (se presenti)
+npm test
+
+# 4. PR → merge → branch cleanup
+# Stessa procedura del flusso standard (step 6)
+
+# 5. ⚠️ DOPO il merge su dev:
+#    - Creare una build (cloud o locale)
+#    - L'utente testa su dispositivo
+#    - Se ci sono bug → nuova issue/branch → fix → PR → merge → nuova build
+
+# 6. RELEASE: solo quando il developer dice esplicitamente "fai la release"
 ```
+
+### 8.3 Regole specifiche mobile
+
+1. **Type/compilation check obbligatorio** prima di ogni commit mobile. Se non passa, non si committa.
+2. **Test obbligatori** solo se esistono. Se non ci sono test per la nuova feature, documentare il motivo.
+3. **Build finale DOPO il merge**, non prima. Build cloud tipicamente richiedono 15-40 min, il branch intanto cambierebbe.
+4. **Version alignment**: `mobile/package.json` e `mobile/app.json` (expo.version) devono essere allineati. `scripts/bump-version.js` li aggiorna entrambi. **La versione mobile è INDIPENDENTE da web/desktop** — non usare la versione del web per una release mobile (lezione appresa 2026-08-07: tag `v0.1.34-build9` errato, corretto in `v0.1.0-mobile`).
+5. **Limitazioni del runtime**: alcune funzionalità JS/TS potrebbero non funzionare standalone (es. dynamic import, moduli Node-only). Verificare prima di usare.
+6. **KNOWN_ISSUES.md** va aggiornato con le limitazioni mobile scoperte.
+7. **CHANGELOG.md** va aggiornato con le feature mobile completate.
+
+### 8.4 Esempi per framework comuni
+
+**React Native / Expo:**
+```bash
+# Type check
+npx tsc --noEmit
+# Test
+npx jest
+# Build cloud (EAS)
+npx eas-cli build --platform android --profile preview
+```
+
+**Flutter:**
+```bash
+# Type check
+dart analyze
+# Test
+flutter test
+# Build
+flutter build apk
+```
+
+**Android nativo (Kotlin/Java):**
+```bash
+# Build check
+./gradlew assembleDebug
+# Test
+./gradlew test
+# Build release
+./gradlew assembleRelease
+```
+
+> ⚠️ **Attenzione a `.easignore`** (Expo): i pattern devono essere ancorati con `/` (es. `/shared/`, `/*.png`) per non escludere accidentalmente file dentro `mobile/`. Errore comune: pattern senza `/` matchano a qualsiasi profondità.
+
+---
 
 ## Hotfix workflow
 
@@ -365,3 +439,4 @@ When GitHub Actions runners deprecate a Node.js version (e.g. Node.js 20 → Nod
 4. **Commit** with message: `chore(ci): update actions to Node 24 runtime`.
 
 > ⚠️ Always check the latest available version on the GitHub Marketplace before updating — versions listed above may be outdated.
+````

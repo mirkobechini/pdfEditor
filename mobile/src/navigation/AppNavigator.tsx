@@ -5,19 +5,19 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../shared/auth";
 
 import LoginScreen from "../screens/LoginScreen";
-import HomeScreen from "../screens/HomeScreen";
+import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
+import MainTabs from "./MainTabs";
 import PdfViewerScreen from "../screens/PdfViewerScreen";
 import ScannerScreen from "../screens/ScannerScreen";
 import ToolsScreen from "../screens/ToolsScreen";
-import SettingsScreen from "../screens/SettingsScreen";
 
 export type RootStackParamList = {
     Login: undefined;
-    Home: undefined;
+    ForgotPassword: undefined;
+    Main: undefined;
     PdfViewer: { pdfId: string; title?: string };
     Scanner: undefined;
     Tools: undefined;
-    Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -43,9 +43,9 @@ export default function AppNavigator() {
                 {user ? (
                     <>
                         <Stack.Screen
-                            name="Home"
-                            component={HomeScreen}
-                            options={{ title: "PdfEditor" }}
+                            name="Main"
+                            component={MainTabs}
+                            options={{ headerShown: false }}
                         />
                         <Stack.Screen
                             name="PdfViewer"
@@ -62,18 +62,20 @@ export default function AppNavigator() {
                             component={ToolsScreen}
                             options={{ title: "PDF Tools" }}
                         />
-                        <Stack.Screen
-                            name="Settings"
-                            component={SettingsScreen}
-                            options={{ title: "Settings" }}
-                        />
                     </>
                 ) : (
-                    <Stack.Screen
-                        name="Login"
-                        component={LoginScreen}
-                        options={{ headerShown: false }}
-                    />
+                    <>
+                        <Stack.Screen
+                            name="Login"
+                            component={LoginScreen}
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name="ForgotPassword"
+                            component={ForgotPasswordScreen}
+                            options={{ title: "Reset Password" }}
+                        />
+                    </>
                 )}
             </Stack.Navigator>
         </NavigationContainer>

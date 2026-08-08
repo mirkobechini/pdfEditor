@@ -14,22 +14,22 @@ _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `d
 - [x] **Fase 2** — Web app su cloud (Deploy su Render, Neon PostgreSQL, Cloudflare R2)
 - [x] **Fase 1c** — Desktop Tauri v2 (refactoring: frontend desktop separato)
 - [ ] **Fase 1d** — Desktop UI "PDF Harmony Suite" (design Lovable)
-- [ ] **Fase 3** — Cloud sync
-- [ ] **Fase 4** — Mobile app React Native
+- [x] **Fase 3** — Cloud sync ✅
+- [x] **Fase 4** — Mobile app React Native ✅ (MVP completato — issue #611; migliorie post-MVP in corso — issue #618)
 
 ## Stack scelto
 
-| Livello                | Tecnologia               | Ruolo                                                                                                                                               |
-| ---------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Frontend**           | React + TailwindCSS      | UI condivisa tra web, desktop e mobile                                                                                                              |
-| **Web app**            | Next.js (app router)     | Versione browser, PWA installabile                                                                                                                  |
-| **Desktop**            | Tauri v2 (Rust)          | App nativa leggera (~5MB UI + ~30-50MB sidecar FastAPI), frontend Next.js dedicato (`desktop/frontend/`), layout personalizzato "PDF Harmony Suite" |
-| **Mobile**             | React Native (Expo bare) | App nativa iOS/Android, logica React condivisa                                                                                                      |
-| **Backend**            | FastAPI (Python)         | Auth, elaborazione PDF, cloud sync                                                                                                                  |
-| **PDF modifica testo** | PyMuPDF (fitz)           | Modifica testo, estrazione, manipolazione                                                                                                           |
-| **PDF viewer**         | PDF.js (Mozilla)         | Render lato client                                                                                                                                  |
-| **Database offline**   | SQLite                   | Stessa struttura del cloud, sync bidirezionale                                                                                                      |
-| **Database cloud**     | PostgreSQL               | Produzione, sincronizzato con SQLite locale                                                                                                         |
+| Livello                | Tecnologia                  | Ruolo                                                                                                                                               |
+| ---------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Frontend**           | React + TailwindCSS         | UI condivisa tra web, desktop e mobile                                                                                                              |
+| **Web app**            | Next.js (app router)        | Versione browser, PWA installabile                                                                                                                  |
+| **Desktop**            | Tauri v2 (Rust)             | App nativa leggera (~5MB UI + ~30-50MB sidecar FastAPI), frontend Next.js dedicato (`desktop/frontend/`), layout personalizzato "PDF Harmony Suite" |
+| **Mobile**             | React Native (Expo managed) | App nativa iOS/Android, logica React condivisa. Vedi [`mobile/ADR.md`](./mobile/ADR.md)                                                             |
+| **Backend**            | FastAPI (Python)            | Auth, elaborazione PDF, cloud sync                                                                                                                  |
+| **PDF modifica testo** | PyMuPDF (fitz)              | Modifica testo, estrazione, manipolazione                                                                                                           |
+| **PDF viewer**         | PDF.js (Mozilla)            | Render lato client                                                                                                                                  |
+| **Database offline**   | SQLite                      | Stessa struttura del cloud, sync bidirezionale                                                                                                      |
+| **Database cloud**     | PostgreSQL                  | Produzione, sincronizzato con SQLite locale                                                                                                         |
 
 ## Roadmap (ordine di implementazione)
 
@@ -42,8 +42,8 @@ _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `d
    - **Fase 1c**: Tauri wrapper (overlay) — ✅ DEPRECATO
    - **Fase 1d**: Frontend desktop separato con design "PDF Harmony Suite"
 3. **Web app (Fase 2)** — Next.js + FastAPI cloud. Stessa UI, backend remoto
-4. **Cloud sync (Fase 3)** — Sync bidirezionale SQLite ↔ PostgreSQL
-5. **Mobile app (Fase 4)** — React Native. Stesse API cloud
+4. **Cloud sync (Fase 3)** — Sync bidirezionale SQLite ↔ PostgreSQL ✅ Completato
+5. **Mobile app (Fase 4)** — React Native (Expo managed). Stesse API cloud. ✅ MVP completato (issue #611)
 
 > Ogni fase parte SOLO dopo che la precedente è stata approvata dall'utente.
 
@@ -61,10 +61,11 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 
 ### 3. React Native: UI ≠ condivisa, logica sì
 
-- **Logica condivisibile**: hook personalizzati (usePdfFiles, useAuth), API client, contesti, utility
-- **UI separata**: componenti HTML (Next.js) vs componenti nativi (React Native). Non copia-incollare
+- **Logica condivisibile**: API client (`shared/src/`), auth context, error-map, types — copiati in `mobile/src/shared/`
+- **UI separata**: componenti React Native Paper (mobile) vs TailwindCSS (web). Non copia-incollare
 - `react-native-web` valutabile per ridurre il gap
-- **Expo bare workflow** (Dev Client) — accesso completo ai moduli nativi senza migrazioni future. WebView, file system e SQLite nativi già coperti
+- **Expo managed workflow** (NON bare) — sviluppo rapido, EAS Build per APK cloud. Niente Xcode/Android Studio obbligatorio. Il BRIEF originale diceva "bare workflow" ma la realtà è managed: Expo SDK 57 gestisce i moduli nativi.
+- Attenzione: **dynamic import** (`await import()`) non funziona in APK standalone — usare sempre import statici.
 
 ### 4. SQLite ↔ PostgreSQL sync
 
@@ -78,8 +79,9 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 
 ### 5. PDF.js su React Native
 
-- Mobile viewer via **WebView** che carica PDF.js
-- Stessa libreria, stesso rendering, UX accettabile
+- Mobile viewer usa **`react-native-pdf`** (nativo) invece di PDF.js via WebView come ipotizzato inizialmente
+- Scroll e zoom integrati, più performante di WebView
+- `react-native-blob-util` come dipendenza per il caricamento binario
 
 ### 6. Tauri v2 sidecar per FastAPI locale
 
@@ -95,6 +97,8 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - **API**: l'endpoint di apertura accetta un campo `password` opzionale; se omessa e il file è protetto, risponde con 403 + flag
 - **Cache**: la password viene tenuta in memoria per la sessione (non salvata su disco)
 - **Fallback**: se la password è errata, l'API restituisce errore e l'utente può riprovare
+
+> ⚠️ **Nota mobile (2026-08-07):** `pdf-lib@1.17.1` (usato sul mobile) **non supporta** encryption/decryption. La feature "Password protect/unlock" è in pausa per mancanza di libreria compatibile con React Native. Vedi `mobile/ADR.md` e `.specs/plans/feature-mobile-improvements.md`.
 
 ### 8. Undo/redo per modifiche PDF
 

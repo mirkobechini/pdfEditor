@@ -9,9 +9,18 @@ graph TD
         TAURI[Tauri v2 Shell<br/>~5MB binary]
     end
 
+    subgraph Client_Mobile[Client - Mobile]
+        MOBILE[React Native / Expo<br/>mobile/src/]
+        MOBILE_SHARED[mobile/src/shared/<br/>api · auth · types · error-map]
+        PDF_SERVICE[pdfService<br/>pdf-lib offline editing]
+        LOCAL_DB[localDb<br/>SQLite metadata]
+    end
+
     subgraph Client_Libs[Librerie Client]
         PDFJS[PDF.js Viewer<br/>cdnjs]
+        RN_PDF[react-native-pdf<br/>mobile viewer]
         NEXT_INTL[next-intl<br/>i18n italiano/inglese]
+        RN_PAPER[React Native Paper<br/>mobile UI components]
     end
 
     subgraph Backend[Backend FastAPI - Python]
@@ -37,6 +46,14 @@ graph TD
     TAURI --> DESKTOP_FE
     TAURI -->|Sidecar localhost:7723| API
 
+    MOBILE --> MOBILE_SHARED
+    MOBILE --> PDF_SERVICE
+    MOBILE --> LOCAL_DB
+    MOBILE --> RN_PDF
+    MOBILE --> RN_PAPER
+    MOBILE_SHARED -->|REST/JSON + JWT (auth only)| API
+    PDF_SERVICE --> LOCAL_DB
+
     NEXT --> PDFJS
     NEXT --> NEXT_INTL
 
@@ -48,6 +65,8 @@ graph TD
     API --> UNDO
 
     PDF_SVC --> DB
+    PDF_SVC --> S3
+    PDF_SVC --> FS
     PDF_SVC --> FS
     PDF_SVC --> S3
     AUTH --> DB

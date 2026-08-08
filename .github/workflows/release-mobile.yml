@@ -1,0 +1,97 @@
+name: Build & Release Mobile APK
+
+on:
+  push:
+    tags:
+      - "v*-mobile" # e.g. v0.1.0-mobile, v0.2.0-mobile
+
+permissions:
+  contents: read
+
+jobs:
+  build-mobile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "mobile/package-lock.json"
+
+      - name: Install dependencies
+        run: cd mobile && npm ci
+
+      - name: Expo doctor (check package compatibility)
+        run: cd mobile && npx expo-doctor 2>&1 || echo "expo doctor warnings (non-blocking)"
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v9
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK with EAS
+        run: cd mobile && eas build --platform android --profile production --non-interactive --no-wait
+
+      - name: Download APK from EAS
+        run: |
+          cd mobile
+          # Wait for the build to finish (EAS builds take 15-40 min)
+          echo "Waiting for EAS build to complete..."
+          for i in $(seq 1 120); do
+            eas build:list --platform android --limit 1 --json > build-info.json 2>/dev/null
+            STATUS=$(node -e "try { const b=require('./build-info.json'); console.log((b[0]?.status || '').toLowerCase()) } catch(e) { console.log('error') }")
+            echo "  iteration $i: status=$STATUS"
+            if [ "$STATUS" = "finished" ]; then
+              break
+            fi
+            if [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
+              echo "EAS build failed with status: $STATUS"
+              exit 1
+            fi
+            sleep 30
+          done
+
+          # Download the APK (--build-id implies platform, no --platform flag)
+          BUILD_ID=$(node -e "try { const b=require('./build-info.json'); console.log(b[0]?.id || '') } catch(e) { console.log('') }")
+          echo "Build ID: $BUILD_ID"
+          # eas build:download outputs the download path to stdout
+          OUTPUT=$(eas build:download --build-id "$BUILD_ID" --non-interactive 2>&1)
+          echo "$OUTPUT"
+          # Find the APK path from the output and copy it
+          APK_PATH=$(echo "$OUTPUT" | grep -oP '/tmp/runner/.*?\.apk' | head -1)
+          if [ -n "$APK_PATH" ]; then
+            cp "$APK_PATH" pdfeditor-mobile.apk
+            ls -la pdfeditor-mobile.apk
+          else
+            echo "Could not find downloaded APK path in output"
+            exit 1
+          fi
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "## PdfEditor Mobile App" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "APK buildato con EAS Build (profile: release)." >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "See [CHANGELOG.md](./CHANGELOG.md) for details." >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "PdfEditor Mobile ${{ github.ref_name }}"
+          body: ${{ steps.notes.outputs.notes }}
+          draft: false
+          prerelease: false
+          files: |
+            mobile/pdfeditor-mobile.apk

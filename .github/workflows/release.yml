@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*" # e.g. v0.1.0, v0.2.0
+      - "!v*-mobile" # exclude mobile tags (handled by release-mobile.yml)
 
 permissions:
   contents: read
@@ -254,45 +255,3 @@ jobs:
             **/*.dmg
             **/*.AppImage
             **/*.deb
-            **/*.apk
-            **/*.aab
-
-  build-mobile:
-    needs: [wait-for-ci]
-    if: github.ref_type == 'tag'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: "mobile/package-lock.json"
-
-      - name: Install dependencies
-        run: cd mobile && npm ci
-
-      - name: Setup EAS
-        uses: expo/expo-github-action@v9
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Build APK with EAS
-        run: cd mobile && eas build --platform android --profile release --non-interactive --no-wait
-
-      - name: Download APK from EAS
-        run: |
-          cd mobile
-          # Wait for build to complete and download artifact
-          eas build:list --platform android --limit 1 --json > build-info.json
-          BUILD_ID=$(node -e "const b=require('./build-info.json'); console.log(b[0]?.id)")
-          eas build:download $BUILD_ID --output=pdfeditor-mobile.apk
-
-      - name: Upload APK to Release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ github.ref_name }}
-          files: mobile/pdfeditor-mobile.apk

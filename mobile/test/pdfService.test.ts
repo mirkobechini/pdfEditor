@@ -2,7 +2,7 @@
  * Test pdf-lib operations in memory.
  * Tests the core PDF editing logic without expo-file-system dependency.
  */
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument } from "@cantoo/pdf-lib";
 
 async function createTestPdf(text: string): Promise<Uint8Array> {
   const doc = await PDFDocument.create();

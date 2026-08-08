@@ -291,7 +291,7 @@
       "goToApp": "Go to App"
     },
     "hero": {
-      "badge": "New: Edit text in PDFs",
+      "badge": "New: Password protect & Unlock",
       "title": "Your PDF editor",
       "subtitle": "simple, fast, offline",
       "description": "Merge, split, reorder and edit your PDFs directly from your browser. Free, secure and ad-free.",
@@ -303,7 +303,7 @@
     },
     "features": {
       "title": "Everything you need",
-      "description": "Professional tools to manage your PDFs without installing anything.",
+      "description": "Professional tools to manage your PDFs across web, desktop and mobile.",
       "merge": {
         "title": "Merge PDFs",
         "description": "Combine multiple documents into a single file. Drag and drop in the order you prefer."
@@ -318,7 +318,7 @@
       },
       "edittext": {
         "title": "Edit Text",
-        "description": "Correct or update text directly in the PDF. Like a word processor."
+        "description": "Search and replace text within your PDF documents (coming soon)."
       },
       "unlock": {
         "title": "Unlock PDFs",

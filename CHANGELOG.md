@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-08-08
+
+- ✅ **Task 3: Hook useSyncQueue (F6)** — Hook per coda sync offline con persistenza AsyncStorage, processing FIFO, retry, enqueue/processQueue/clearQueue.
+- ✅ **Task 4: Pull-to-refresh in HomeScreen (M2)** — RefreshControl su FlatList per ricaricare lista PDF con swipe down.
+- 🧹 **Pulizia GitHub** — Branch remoti/locali eliminati (~40→4), release vecchie eliminate (20→5), tag residui rimossi.
+- 📝 **README** — creato in inglese con badge, tech stack per layer, features a elenco puntato.
+- ✅ **UX: Bottom tabs navigation (F9)** — Home + Settings tabs con MainTabs.tsx, navigazione refactored.
+- ✅ **UX: Search bar in Home (M5)** — Searchbar React Native Paper + filteredPdfs via useMemo.
+- ✅ **UX: Snackbar in Tools (M1)** — Risultati operazioni mostrati come Snackbar invece di testo statico.
+- ✅ **UX: Swipe-to-delete in Home (M4)** — Swipeable (react-native-gesture-handler) per eliminare PDF velocemente.
+- ✅ **UX: Snackbar in Home** — Feedback visivo dopo eliminazione PDF.
+- ✅ **UX: Preview thumbnail in Home (M6)** — Icona PDF + conteggio pagine come thumbnail visivo in ogni card.
+- ✅ **UX: Badge count on app icon (M3)** — expo-notifications setBadgeCountAsync + tabBarBadge in MainTabs.
+- ✅ **UX: Multi-select in Home (M8)** — Modalità multi-selezione con checkbox, Select All, batch delete, action bar.
+- ✅ **UX: Share PDF (M7)** — Condivisione via Android share sheet con expo-sharing nel context menu.
+- ✅ **UX: Splash screen (M10)** — Sfondo arancione #F97316 in app.json, adattato anche adaptive icon background.
+- ✅ **Task 2: Password protect/unlock (F4)** — Migrato a @cantoo/pdf-lib@2.8.1 con supporto encryption. UI Password/Unlock in ToolsScreen con dialog (protect: conferma password, unlock: singola). Fix showResult recursion bug.
+- ✅ **F5: Reusable components** — PdfListItem, GuestBanner, SyncStatusBadge in mobile/src/components/.
+- ✅ **Docs allineate** — .specs/plans/feature-mobile-improvements.md, CHANGELOG.md
+
+## 2026-08-07
+
+- ✅ **Task 1: Metadata editing (F3)** — Dialog per modificare titolo/autore in ToolsScreen. `updateMetadata` già esistente in pdfService, aggiunta UI.
+- ⏸ **Task 2: Password protect/unlock (F4)** — Messo in pausa. UI e funzioni `protectPdf`/`unlockPdf` scritte ma non attivabili: `pdf-lib@1.17.1` non supporta encryption. Soluzione alternativa (`@cantoo/pdf-lib` fork) ha compatibilità React Native da verificare. Vedi `.specs/plans/feature-mobile-improvements.md` per dettagli.
+- 📝 **Documentazione allineata:**
+  - Creato `mobile/ADR.md` — ADR dedicato al mobile con tutte le decisioni, architettura, salvataggio offline, limiti (Task 2 in pausa), roadmap.
+  - `ADR.md` (root) — sezione 4 mobile sostituita con riferimento a `mobile/ADR.md`.
+  - `BRIEF.md` — corretto: Expo managed (non bare), Fase 3/4 ✅ completate, viewer mobile (react-native-pdf), nota password mobile.
+  - `architecture.mmd` — aggiunto blocco `Client_Mobile` con tutte le dipendenze (pdfService, localDb, shared, RN Paper, react-native-pdf).
+  - `AGENTS.md` — Onboarding ora legge anche `mobile/ADR.md` per feature mobile-specific.
+  - `KNOWN_ISSUES.md` — aggiunta sezione 📱 Mobile con 5 voci (M0-M4: niente sync, .easignore, dynamic import, viewer cache, password in pausa).
+  - `AGENT_FLOW.md` — aggiunte sezioni 8 (Mobile workflow), 9 (Version alignment mobile), con regole, EAS Build, differenze dal flusso standard.
+
 ## 2026-08-06
 
 - ✅ **Fix mobile MVP bugs** — Issue #614: icona app (1024x1024), password visibility toggle, loading overlay login, errori login visibili, offline restore utente reale, page_count calcolato da pdf-lib, secondo PDF fix (refreshKey), split interattivo (scegli pagine), reorder (pulsanti su/giù), import statici pdfService, expo-font peer dep, ADR/docs aggiornati.
