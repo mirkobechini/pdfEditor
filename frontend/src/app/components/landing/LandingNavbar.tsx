@@ -29,6 +29,9 @@ export default function LandingNavbar() {
                     <a href="#how-it-works" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                         {t("howItWorks")}
                     </a>
+                    <Link href="/download" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
+                        {t("download")}
+                    </Link>
                 </div>
 
                 {/* Actions */}
