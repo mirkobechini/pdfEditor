@@ -36,10 +36,15 @@ function getPdfDir(): Directory {
 export async function mergePdfs(
   pdfIds: string[],
   fileName?: string,
+  userId?: string,
 ): Promise<LocalPdf | null> {
   if (pdfIds.length < 2) return null;
   try {
     const mergedPdf = await PDFDocument.create();
+
+    // Get source PDF to inherit user_id
+    const firstSource = await getLocalPdfById(pdfIds[0]);
+    const sourceUserId = firstSource?.user_id || userId || "";
 
     for (const id of pdfIds) {
       const pdf = await getLocalPdfById(id);
@@ -65,6 +70,7 @@ export async function mergePdfs(
       : `merged_${now.slice(0, 10)}.pdf`;
     const result: LocalPdf = {
       id,
+      user_id: sourceUserId,
       original_filename: safeName,
       file_size: pdfBytes.length,
       page_count: mergedPdf.getPageCount(),
@@ -162,6 +168,7 @@ export async function reorderPages(
       : `reordered_${now.slice(0, 10)}.pdf`;
     const result: LocalPdf = {
       id,
+      user_id: pdf.user_id ?? "",
       original_filename: safeName,
       file_size: pdfBytes.length,
       page_count: newPdf.getPageCount(),
@@ -208,6 +215,7 @@ export async function removePages(
       : `removed-pages_${now.slice(0, 10)}.pdf`;
     const result: LocalPdf = {
       id,
+      user_id: pdf.user_id ?? "",
       original_filename: safeName,
       file_size: pdfBytes.length,
       page_count: newPdf.getPageCount(),
@@ -244,6 +252,7 @@ export async function updateMetadata(
     const now = new Date().toISOString();
     const updated = {
       ...pdf,
+      user_id: pdf.user_id ?? "",
       title: title ?? pdf.title,
       author: author ?? pdf.author,
       updated_at: now,

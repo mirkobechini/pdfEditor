@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
+import { useAuth } from "../shared/auth";
 import { getLocalPdfById, savePdfLocally, deleteLocalPdf } from "../services/localDb";
 import { File } from "expo-file-system";
 
@@ -17,6 +18,8 @@ export default function HomeScreen() {
     const navigation = useNavigation<HomeNavProp>();
     const insets = useSafeAreaInsets();
     const { pickAndSavePdf, loadLocalPdfs, loading: storageLoading } = usePdfStorage();
+    const { user } = useAuth();
+    const userId = user?.id || "";
     const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
     const [showMenu, setShowMenu] = useState(false);
@@ -30,7 +33,7 @@ export default function HomeScreen() {
     async function onRefresh() {
         setRefreshing(true);
         try {
-            const local = await loadLocalPdfs();
+            const local = await loadLocalPdfs(userId);
             setPdfs(local);
         } catch {
             setPdfs([]);
@@ -43,13 +46,13 @@ export default function HomeScreen() {
     useFocusEffect(
         useCallback(() => {
             loadPdfs();
-        }, [])
+        }, [userId])
     );
 
     async function loadPdfs() {
         setLoading(true);
         try {
-            const local = await loadLocalPdfs();
+            const local = await loadLocalPdfs(userId);
             setPdfs(local);
         } catch {
             setPdfs([]);
@@ -60,7 +63,7 @@ export default function HomeScreen() {
 
     async function handleUpload() {
         setShowMenu(false);
-        const pdf = await pickAndSavePdf();
+        const pdf = await pickAndSavePdf(userId);
         if (pdf) {
             navigation.navigate("PdfViewer", {
                 pdfId: pdf.id,

@@ -88,6 +88,7 @@ export interface AuthResponse {
 
 export interface LocalPdf {
   id: string;
+  user_id?: string; // empty for guest, user id for logged-in users
   original_filename: string;
   file_size: number;
   page_count: number;

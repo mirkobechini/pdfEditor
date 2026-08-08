@@ -7,7 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf } from "../services/pdfService";
+import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata } from "../services/pdfService";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 
@@ -32,8 +32,6 @@ export default function ToolsScreen() {
     const [nameInput, setNameInput] = useState("");
     // Metadata dialog state
     const [metadataDialog, setMetadataDialog] = useState<{ pdfId: string; pdfName: string; title: string; author: string } | null>(null);
-    // Password dialog state
-    const [passwordDialog, setPasswordDialog] = useState<{ pdfId: string; pdfName: string; mode: "protect" | "unlock"; password: string; confirmPassword: string; error: string } | null>(null);
 
     useEffect(() => {
         loadLocalPdfs().then(setPdfs).finally(() => setLoading(false));
@@ -125,56 +123,6 @@ export default function ToolsScreen() {
         const result_pdf = await updateMetadata(pdfId, title || undefined, author || undefined);
         if (result_pdf) setResult(`Metadata updated for ${result_pdf.original_filename}`);
         else setResult("Metadata update failed");
-        setLoading(false);
-        await reloadPdfs();
-    }
-
-    // ─── Password ───────────────────────────────────────────────
-
-    function openProtectDialog(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf) return;
-        setPasswordDialog({
-            pdfId,
-            pdfName: pdf.original_filename,
-            mode: "protect",
-            password: "",
-            confirmPassword: "",
-            error: "",
-        });
-    }
-
-    function openUnlockDialog(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf) return;
-        setPasswordDialog({
-            pdfId,
-            pdfName: pdf.original_filename,
-            mode: "unlock",
-            password: "",
-            confirmPassword: "",
-            error: "",
-        });
-    }
-
-    async function savePassword() {
-        if (!passwordDialog) return;
-        const { pdfId, mode, password } = passwordDialog;
-        if (mode === "protect" && password.length < 4) {
-            setPasswordDialog((prev) => prev ? { ...prev, error: "Password must be at least 4 characters" } : null);
-            return;
-        }
-        if (mode === "protect" && password !== passwordDialog.confirmPassword) {
-            setPasswordDialog((prev) => prev ? { ...prev, error: "Passwords do not match" } : null);
-            return;
-        }
-        setPasswordDialog(null);
-        setLoading(true);
-        const result_pdf = mode === "protect"
-            ? await protectPdf(pdfId, password)
-            : await unlockPdf(pdfId, password);
-        if (result_pdf) setResult(`${mode === "protect" ? "Protected" : "Unlocked"} ${result_pdf.original_filename}`);
-        else setResult(`Failed to ${mode} PDF`);
         setLoading(false);
         await reloadPdfs();
     }
@@ -309,12 +257,6 @@ export default function ToolsScreen() {
                     <Button mode="contained" compact onPress={() => { setOperation("metadata"); setSelectedIds([]); }}>
                         Metadata
                     </Button>
-                    <Button mode="contained" compact onPress={() => { setOperation("password"); setSelectedIds([]); }}>
-                        Password
-                    </Button>
-                    <Button mode="contained" compact onPress={() => { setOperation("unlock"); setSelectedIds([]); }}>
-                        Unlock
-                    </Button>
                 </View>
             </View>
 
@@ -358,8 +300,6 @@ export default function ToolsScreen() {
                                     else if (operation === "reorder") openReorderDialog(item.id);
                                     else if (operation === "remove") openRemoveDialog(item.id);
                                     else if (operation === "metadata") openMetadataDialog(item.id);
-                                    else if (operation === "password") openProtectDialog(item.id);
-                                    else if (operation === "unlock") openUnlockDialog(item.id);
                                 }}
                             >
                                 <Card.Content>
@@ -492,41 +432,6 @@ export default function ToolsScreen() {
                     <Dialog.Actions>
                         <Button onPress={() => setMetadataDialog(null)}>Cancel</Button>
                         <Button onPress={saveMetadata}>Save</Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
-
-            {/* Password Dialog — protect or unlock */}
-            <Portal>
-                <Dialog visible={passwordDialog !== null} onDismiss={() => setPasswordDialog(null)}>
-                    <Dialog.Title>{passwordDialog?.mode === "protect" ? "Protect" : "Unlock"} "{passwordDialog?.pdfName}"</Dialog.Title>
-                    <Dialog.Content>
-                        {passwordDialog?.error ? (
-                            <Text style={{ color: theme.colors.error, marginBottom: 8 }}>{passwordDialog.error}</Text>
-                        ) : null}
-                        <TextInput
-                            label={passwordDialog?.mode === "protect" ? "New password" : "Password"}
-                            mode="outlined"
-                            secureTextEntry
-                            value={passwordDialog?.password || ""}
-                            onChangeText={(t) => setPasswordDialog((prev) => prev ? { ...prev, password: t, error: "" } : null)}
-                            style={{ marginBottom: 12 }}
-                        />
-                        {passwordDialog?.mode === "protect" ? (
-                            <TextInput
-                                label="Confirm password"
-                                mode="outlined"
-                                secureTextEntry
-                                value={passwordDialog?.confirmPassword || ""}
-                                onChangeText={(t) => setPasswordDialog((prev) => prev ? { ...prev, confirmPassword: t, error: "" } : null)}
-                            />
-                        ) : null}
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button onPress={() => setPasswordDialog(null)}>Cancel</Button>
-                        <Button onPress={savePassword} disabled={!passwordDialog?.password}>
-                            {passwordDialog?.mode === "protect" ? "Protect" : "Unlock"}
-                        </Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

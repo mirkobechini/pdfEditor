@@ -13,6 +13,7 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS pdfs (
         id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL DEFAULT '',
         original_filename TEXT NOT NULL,
         file_size INTEGER NOT NULL DEFAULT 0,
         page_count INTEGER NOT NULL DEFAULT 0,
@@ -23,6 +24,14 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
     `);
+    // Migration: add user_id column if missing (for existing DBs)
+    try {
+      await db.execAsync(
+        "ALTER TABLE pdfs ADD COLUMN user_id TEXT NOT NULL DEFAULT ''",
+      );
+    } catch {
+      // Column already exists — ignore
+    }
   }
   return db;
 }
@@ -30,10 +39,11 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
 export async function savePdfLocally(pdf: LocalPdf): Promise<void> {
   const database = await getDb();
   await database.runAsync(
-    `INSERT OR REPLACE INTO pdfs (id, original_filename, file_size, page_count, title, author, uri, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO pdfs (id, user_id, original_filename, file_size, page_count, title, author, uri, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       pdf.id,
+      pdf.user_id ?? "",
       pdf.original_filename,
       pdf.file_size,
       pdf.page_count,
@@ -46,12 +56,17 @@ export async function savePdfLocally(pdf: LocalPdf): Promise<void> {
   );
 }
 
-export async function getLocalPdfs(): Promise<LocalPdf[]> {
+export async function getLocalPdfs(userId?: string): Promise<LocalPdf[]> {
   const database = await getDb();
-  const rows = await database.getAllAsync<LocalPdf>(
+  if (userId) {
+    return await database.getAllAsync<LocalPdf>(
+      "SELECT * FROM pdfs WHERE user_id = ? ORDER BY updated_at DESC",
+      [userId],
+    );
+  }
+  return await database.getAllAsync<LocalPdf>(
     "SELECT * FROM pdfs ORDER BY updated_at DESC",
   );
-  return rows;
 }
 
 export async function getLocalPdfById(id: string): Promise<LocalPdf | null> {
@@ -61,6 +76,14 @@ export async function getLocalPdfById(id: string): Promise<LocalPdf | null> {
     [id],
   );
   return row ?? null;
+}
+
+export async function getLocalPdfsByUser(userId: string): Promise<LocalPdf[]> {
+  const database = await getDb();
+  return await database.getAllAsync<LocalPdf>(
+    "SELECT * FROM pdfs WHERE user_id = ? ORDER BY updated_at DESC",
+    [userId],
+  );
 }
 
 export async function deleteLocalPdf(id: string): Promise<void> {
