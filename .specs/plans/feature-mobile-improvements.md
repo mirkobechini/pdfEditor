@@ -19,17 +19,17 @@ Migliorie UX e funzionalità mancanti dopo il completamento del MVP mobile.
 
 ### ❌ Feature mancanti dal piano originale
 
-| #   | Cosa                                                      | Priorità | Note                                      |
-| --- | --------------------------------------------------------- | -------- | ----------------------------------------- |
-| F1  | Sync cloud push/pull                                      | Media    | Sync bidirezionale PDF (Fase 4b)          |
-| F2  | EAS CI Integration                                        | Bassa    | Build automatica su tag release           |
-| F3  | Metadata editing (titolo/autore)                          | Media    | pdf-lib supporta, manca UI                |
-| F4  | Password protect/unlock PDF                               | Media    | pdf-lib supporta, manca UI                |
-| F5  | Componenti UI (PdfListItem, GuestBanner, SyncStatusBadge) | Bassa    | Da estrarre da screens                    |
-| F6  | Hook useSyncQueue                                         | Media    | Per coda sync offline                     |
-| F7  | Test componenti UI                                        | Bassa    | Bloccato da @testing-library/react-native |
-| F8  | Rework UI completo (Penpot)                               | Alta     | UI da rifare col design                   |
-| F9  | Bottom tabs navigation                                    | Bassa    | Invece di solo stack                      |
+| #   | Cosa                                                      | Priorità | Note                                                                                                                                         |
+| --- | --------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| F1  | Sync cloud push/pull                                      | Media    | **Da pianificare meglio.** Sync bidirezionale su tutte le piattaforme (web, desktop, mobile). I guest NON hanno cloud sync. Vedi nota sotto. |
+| F2  | EAS CI Integration                                        | Bassa    | Build automatica su tag release                                                                                                              |
+| F3  | Metadata editing (titolo/autore)                          | Media    | pdf-lib supporta, manca UI                                                                                                                   |
+| F4  | Password protect/unlock PDF                               | Media    | pdf-lib supporta, manca UI                                                                                                                   |
+| F5  | Componenti UI (PdfListItem, GuestBanner, SyncStatusBadge) | Bassa    | Da estrarre da screens                                                                                                                       |
+| F6  | Hook useSyncQueue                                         | Media    | Per coda sync offline                                                                                                                        |
+| F7  | Test componenti UI                                        | Bassa    | Bloccato da @testing-library/react-native                                                                                                    |
+| F8  | Rework UI completo (Penpot)                               | Alta     | UI da rifare col design                                                                                                                      |
+| F9  | Bottom tabs navigation                                    | Bassa    | Invece di solo stack                                                                                                                         |
 
 ### 💡 Migliorie UX proposte
 
@@ -54,10 +54,11 @@ Migliorie UX e funzionalità mancanti dopo il completamento del MVP mobile.
 2. **Password protect/unlock PDF** (F4) — ⏸ **In pausa** — vedi note sotto
 3. **Hook useSyncQueue** (F6) — sync in background — ✅ **Completata** (2026-08-08)
 4. **Refresh-to-reload in Home** (M2) — pull-to-refresh — ✅ **Completata** (2026-08-08)
-5. **Search/filter in Home** (M5) — barra di ricerca
-6. **Preview thumbnail in Home** (M6) — miniatura prima pagina
-7. **Toast/notifiche** (M1) — Snackbar al posto di "result"
-8. **Swipe to delete** (M4) — con conferma
+5. **UX Tools Opzione A** — Tool-first: prima seleziona il tool, poi i PDF. Tool selezionato evidenziato in arancione. — ✅ **Completata** (2026-08-08)
+6. **Search/filter in Home** (M5) — barra di ricerca
+7. **Preview thumbnail in Home** (M6) — miniatura prima pagina
+8. **Toast/notifiche** (M1) — Snackbar al posto di "result"
+9. **Swipe to delete** (M4) — con conferma
 
 ---
 

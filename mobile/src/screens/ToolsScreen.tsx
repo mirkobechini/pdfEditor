@@ -242,19 +242,49 @@ export default function ToolsScreen() {
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: theme.colors.surfaceVariant }}>
                 <Text variant="titleMedium" style={{ marginBottom: 12 }}>PDF Tools</Text>
                 <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                    <Button mode="contained" compact onPress={() => { setOperation("merge"); setSelectedIds([]); }}>
+                    <Button
+                        mode={operation === "merge" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "merge" ? theme.colors.primary : undefined}
+                        textColor={operation === "merge" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("merge"); setSelectedIds([]); }}
+                    >
                         Merge
                     </Button>
-                    <Button mode="contained" compact onPress={() => { setOperation("split"); setSelectedIds([]); }}>
+                    <Button
+                        mode={operation === "split" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "split" ? theme.colors.primary : undefined}
+                        textColor={operation === "split" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("split"); setSelectedIds([]); }}
+                    >
                         Split
                     </Button>
-                    <Button mode="contained" compact onPress={() => { setOperation("reorder"); setSelectedIds([]); }}>
+                    <Button
+                        mode={operation === "reorder" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "reorder" ? theme.colors.primary : undefined}
+                        textColor={operation === "reorder" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("reorder"); setSelectedIds([]); }}
+                    >
                         Reorder
                     </Button>
-                    <Button mode="contained" compact onPress={() => { setOperation("remove"); setSelectedIds([]); }}>
+                    <Button
+                        mode={operation === "remove" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "remove" ? theme.colors.primary : undefined}
+                        textColor={operation === "remove" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("remove"); setSelectedIds([]); }}
+                    >
                         Remove pages
                     </Button>
-                    <Button mode="contained" compact onPress={() => { setOperation("metadata"); setSelectedIds([]); }}>
+                    <Button
+                        mode={operation === "metadata" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "metadata" ? theme.colors.primary : undefined}
+                        textColor={operation === "metadata" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("metadata"); setSelectedIds([]); }}
+                    >
                         Metadata
                     </Button>
                 </View>
@@ -275,7 +305,13 @@ export default function ToolsScreen() {
                 </View>
             ) : null}
 
-            {loading ? (
+            {!operation ? (
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
+                    <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}>
+                        Select a tool above, then choose a PDF to work with.
+                    </Text>
+                </View>
+            ) : loading ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <ActivityIndicator size="large" />
                 </View>

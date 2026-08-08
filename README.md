@@ -2,7 +2,7 @@
 
 **Edit, view and manage PDF files — cross-platform, offline-first, open source.**
 
-[![Desktop latest](https://img.shields.io/github/v/release/mirkobechini/pdfEditor?label=desktop&logo=windows&filter=v*.*.*)](https://github.com/mirkobechini/pdfEditor/releases)
+[![Desktop latest](https://img.shields.io/github/v/release/mirkobechini/pdfEditor?label=desktop&logo=windows&filter=!*-mobile)](https://github.com/mirkobechini/pdfEditor/releases)
 [![Mobile latest](https://img.shields.io/github/v/release/mirkobechini/pdfEditor?filter=*-mobile&label=mobile&logo=android)](https://github.com/mirkobechini/pdfEditor/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 
