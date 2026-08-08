@@ -10,6 +10,7 @@ import { usePdfStorage } from "../hooks/usePdfStorage";
 import { useAuth } from "../shared/auth";
 import { getLocalPdfById, savePdfLocally, deleteLocalPdf } from "../services/localDb";
 import { File } from "expo-file-system";
+import { StorageAccessFramework } from "expo-file-system/legacy";
 import { Swipeable } from "react-native-gesture-handler";
 import { setBadgeCountAsync } from "expo-notifications";
 import * as Sharing from "expo-sharing";
@@ -95,6 +96,39 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
             });
         } catch {
             showSnack("Failed to share PDF");
+        }
+    }
+
+    async function handleDownload(pdf: LocalPdf) {
+        setContextPdf(null);
+        try {
+            const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+            if (!permissions.granted) {
+                showSnack("Permission denied");
+                return;
+            }
+            const name = pdf.original_filename.endsWith(".pdf")
+                ? pdf.original_filename.replace(/\.pdf$/i, "")
+                : pdf.original_filename;
+            const safUri = await StorageAccessFramework.createFileAsync(
+                permissions.directoryUri,
+                name,
+                "application/pdf"
+            );
+            const file = new File(pdf.uri);
+            const bytes = await file.arrayBuffer();
+            let binary = "";
+            const arr = new Uint8Array(bytes);
+            for (let i = 0; i < arr.length; i++) {
+                binary += String.fromCharCode(arr[i]);
+            }
+            const base64 = btoa(binary);
+            await StorageAccessFramework.writeAsStringAsync(safUri, base64, {
+                encoding: "base64",
+            });
+            showSnack(`Downloaded: ${pdf.original_filename}`);
+        } catch {
+            showSnack("Failed to download PDF");
         }
     }
 
@@ -362,6 +396,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                     <Dialog.Content>
                         <List.Item title="Rename" left={(p) => <List.Icon {...p} icon="pencil" />} onPress={() => { if (contextPdf) openRename(contextPdf); }} />
                         <List.Item title="Share" left={(p) => <List.Icon {...p} icon="share-variant" />} onPress={() => { if (contextPdf) handleShare(contextPdf); }} />
+                        <List.Item title="Download" left={(p) => <List.Icon {...p} icon="download" />} onPress={() => { if (contextPdf) handleDownload(contextPdf); }} />
                         <List.Item title="Delete" left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
                         <List.Item title="Details" left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setDetailsPdf(pdf); } }} />
                     </Dialog.Content>

@@ -13,6 +13,7 @@ interface AuthContextValue {
     register: (email: string, password: string, fullName: string) => Promise<void>;
     guestLogin: () => Promise<void>;
     logout: () => Promise<void>;
+    forgotPassword: (email: string) => Promise<void>;
     setUser: (user: User | null) => void;
 }
 
@@ -153,8 +154,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    const forgotPassword = useCallback(async (email: string) => {
+        await api.forgotPassword(email);
+    }, []);
+
     return (
-        <AuthContext.Provider value={{ user, loading: loading || actionLoading, login, register, guestLogin, logout, setUser }}>
+        <AuthContext.Provider value={{ user, loading: loading || actionLoading, login, register, guestLogin, logout, forgotPassword, setUser }}>
             {children}
         </AuthContext.Provider>
     );

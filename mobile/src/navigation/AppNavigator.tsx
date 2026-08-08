@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../shared/auth";
 
 import LoginScreen from "../screens/LoginScreen";
+import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
 import MainTabs from "./MainTabs";
 import PdfViewerScreen from "../screens/PdfViewerScreen";
 import ScannerScreen from "../screens/ScannerScreen";
@@ -12,6 +13,7 @@ import ToolsScreen from "../screens/ToolsScreen";
 
 export type RootStackParamList = {
     Login: undefined;
+    ForgotPassword: undefined;
     Main: undefined;
     PdfViewer: { pdfId: string; title?: string };
     Scanner: undefined;
@@ -62,11 +64,18 @@ export default function AppNavigator() {
                         />
                     </>
                 ) : (
-                    <Stack.Screen
-                        name="Login"
-                        component={LoginScreen}
-                        options={{ headerShown: false }}
-                    />
+                    <>
+                        <Stack.Screen
+                            name="Login"
+                            component={LoginScreen}
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen
+                            name="ForgotPassword"
+                            component={ForgotPasswordScreen}
+                            options={{ title: "Reset Password" }}
+                        />
+                    </>
                 )}
             </Stack.Navigator>
         </NavigationContainer>

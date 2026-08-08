@@ -164,6 +164,29 @@ export class ApiClient {
     await this._fetch(`${this.baseUrl}/auth/logout`, { method: "POST" });
   }
 
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const res = await this._fetch(`${this.baseUrl}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<UserResponse> {
+    const res = await this._fetch(`${this.baseUrl}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, new_password: newPassword }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
   // ─── PDF endpoints ───────────────────────────────────────────────
 
   async uploadPdf(

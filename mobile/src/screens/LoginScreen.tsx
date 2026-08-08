@@ -2,11 +2,17 @@ import React, { useState } from "react";
 import { View, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { Text, TextInput, Button, Surface, useTheme, IconButton, ActivityIndicator } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useAuth } from "../shared/auth";
+
+type LoginNavProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 
 export default function LoginScreen() {
     const { login, register, guestLogin, loading } = useAuth();
     const theme = useTheme();
+    const navigation = useNavigation<LoginNavProp>();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [fullName, setFullName] = useState("");
@@ -120,12 +126,23 @@ export default function LoginScreen() {
                                 setIsRegister(!isRegister);
                                 setError("");
                             }}
-                            style={{ marginBottom: 12 }}
+                            style={{ marginBottom: 8 }}
                         >
                             {isRegister
                                 ? "Already have an account? Sign In"
                                 : "Don't have an account? Register"}
                         </Button>
+
+                        {!isRegister && (
+                            <Button
+                                mode="text"
+                                onPress={() => navigation.navigate("ForgotPassword")}
+                                style={{ marginBottom: 12 }}
+                                labelStyle={{ fontSize: 13 }}
+                            >
+                                Forgot Password?
+                            </Button>
+                        )}
 
                         <View
                             style={{
