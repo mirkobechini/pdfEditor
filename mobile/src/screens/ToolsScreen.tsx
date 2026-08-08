@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
-import { Text, Card, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton, TextInput } from "react-native-paper";
+import { Text, Card, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton, TextInput, Snackbar } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -20,6 +20,12 @@ export default function ToolsScreen() {
     const [operation, setOperation] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [result, setResult] = useState("");
+    const [snackbarVisible, setSnackbarVisible] = useState(false);
+
+    function showResult(msg: string) {
+        showResult(msg);
+        setSnackbarVisible(true);
+    }
 
     // Split dialog state
     const [splitDialog, setSplitDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number; selectedPages: number[] } | null>(null);
@@ -43,7 +49,7 @@ export default function ToolsScreen() {
     }, [loadLocalPdfs]);
 
     async function handleMerge() {
-        if (selectedIds.length < 2) { setResult("Select at least 2 PDFs"); return; }
+        if (selectedIds.length < 2) { showResult("Select at least 2 PDFs"); return; }
         // Ask for file name before merging
         setNameDialog({ type: "merge", data: { ids: [...selectedIds] } });
     }
@@ -55,10 +61,10 @@ export default function ToolsScreen() {
         setLoading(true);
         const merged = await mergePdfs(ids, fileName);
         if (merged) {
-            setResult(`Merged into: ${merged.original_filename}`);
+            showResult(`Merged into: ${merged.original_filename}`);
             setSelectedIds([]);
             await reloadPdfs();
-        } else setResult("Merge failed");
+        } else showResult("Merge failed");
         setLoading(false);
     }
 
@@ -121,8 +127,8 @@ export default function ToolsScreen() {
         setMetadataDialog(null);
         setLoading(true);
         const result_pdf = await updateMetadata(pdfId, title || undefined, author || undefined);
-        if (result_pdf) setResult(`Metadata updated for ${result_pdf.original_filename}`);
-        else setResult("Metadata update failed");
+        if (result_pdf) showResult(`Metadata updated for ${result_pdf.original_filename}`);
+        else showResult("Metadata update failed");
         setLoading(false);
         await reloadPdfs();
     }
@@ -171,7 +177,7 @@ export default function ToolsScreen() {
 
         const allRanges = [...selectedRanges, ...remainingRanges];
         const results = await splitPdf(pdfId, allRanges, fileName);
-        setResult(`Split into ${results.length} PDFs`);
+        showResult(`Split into ${results.length} PDFs`);
         setLoading(false);
         await reloadPdfs();
     }
@@ -211,8 +217,8 @@ export default function ToolsScreen() {
         setLoading(true);
 
         const reordered = await reorderPages(pdfId, pageOrder, fileName);
-        if (reordered) setResult(`Reordered: ${reordered.original_filename}`);
-        else setResult("Reorder failed");
+        if (reordered) showResult(`Reordered: ${reordered.original_filename}`);
+        else showResult("Reorder failed");
         setLoading(false);
         await reloadPdfs();
     }
@@ -225,8 +231,8 @@ export default function ToolsScreen() {
         if (selectedPages.length === 0) return;
         setLoading(true);
         const result_pdf = await removePages(pdfId, selectedPages, fileName);
-        if (result_pdf) setResult(`Removed pages: ${result_pdf.original_filename}`);
-        else setResult("Remove pages failed");
+        if (result_pdf) showResult(`Removed pages: ${result_pdf.original_filename}`);
+        else showResult("Remove pages failed");
         setLoading(false);
         await reloadPdfs();
     }
@@ -299,10 +305,14 @@ export default function ToolsScreen() {
             )}
 
             {result ? (
-                <View style={{ padding: 16 }}>
-                    <Text style={{ color: theme.colors.primary }}>{result}</Text>
-                    <Button onPress={() => setResult("")} style={{ marginTop: 8 }}>Clear</Button>
-                </View>
+                <Snackbar
+                    visible={snackbarVisible}
+                    onDismiss={() => setSnackbarVisible(false)}
+                    duration={3000}
+                    action={{ label: "OK", onPress: () => setSnackbarVisible(false) }}
+                >
+                    {result}
+                </Snackbar>
             ) : null}
 
             {!operation ? (

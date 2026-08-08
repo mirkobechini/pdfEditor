@@ -40,7 +40,7 @@ export default function ScannerScreen() {
     async function handleConvert() {
         const pdf = await convertToPdf(fileName || undefined);
         if (pdf) {
-            navigation.navigate("Home");
+            navigation.navigate("Main");
         }
     }
 

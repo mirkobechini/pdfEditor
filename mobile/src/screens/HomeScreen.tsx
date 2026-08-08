@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { View, FlatList, TouchableOpacity, RefreshControl } from "react-native";
-import { Text, Card, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List, Dialog, TextInput } from "react-native-paper";
+import { Text, Card, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List, Dialog, TextInput, Searchbar, Snackbar, IconButton } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -10,8 +10,9 @@ import { usePdfStorage } from "../hooks/usePdfStorage";
 import { useAuth } from "../shared/auth";
 import { getLocalPdfById, savePdfLocally, deleteLocalPdf } from "../services/localDb";
 import { File } from "expo-file-system";
+import { Swipeable } from "react-native-gesture-handler";
 
-type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Home">;
+type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Main">;
 
 export default function HomeScreen() {
     const theme = useTheme();
@@ -29,6 +30,20 @@ export default function HomeScreen() {
     const [renameTarget, setRenameTarget] = useState<LocalPdf | null>(null);
     const [detailsPdf, setDetailsPdf] = useState<LocalPdf | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [snackbarMsg, setSnackbarMsg] = useState("");
+    const [snackbarVisible, setSnackbarVisible] = useState(false);
+
+    function showSnack(msg: string) {
+        setSnackbarMsg(msg);
+        setSnackbarVisible(true);
+    }
+
+    const filteredPdfs = useMemo(() => {
+        if (!searchQuery.trim()) return pdfs;
+        const q = searchQuery.toLowerCase();
+        return pdfs.filter((p) => p.original_filename.toLowerCase().includes(q));
+    }, [pdfs, searchQuery]);
 
     async function onRefresh() {
         setRefreshing(true);
@@ -86,6 +101,7 @@ export default function HomeScreen() {
         } catch { /* ignore */ }
         await deleteLocalPdf(pdf.id);
         await loadPdfs();
+        showSnack(`Deleted ${pdf.original_filename}`);
     }
 
     function openRename(pdf: LocalPdf) {
@@ -106,6 +122,12 @@ export default function HomeScreen() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["bottom"]}>
+            <Searchbar
+                placeholder="Search PDFs"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                style={{ margin: 16, marginBottom: 0 }}
+            />
             {loading ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <ActivityIndicator size="large" />
@@ -118,32 +140,47 @@ export default function HomeScreen() {
                 </View>
             ) : (
                 <FlatList
-                    data={pdfs}
+                    data={filteredPdfs}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={{ padding: 16 }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            onPress={() =>
-                                navigation.navigate("PdfViewer", {
-                                    pdfId: item.id,
-                                    title: item.original_filename,
-                                })
-                            }
-                            onLongPress={() => setContextPdf(item)}
-                        >
-                            <Card style={{ marginBottom: 12, backgroundColor: theme.colors.surface }}>
-                                <Card.Content>
-                                    <Text variant="titleMedium" style={{ fontWeight: "600" }}>
-                                        {item.original_filename}
-                                    </Text>
-                                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                                        {formatSize(item.file_size)}
-                                    </Text>
-                                </Card.Content>
-                            </Card>
-                        </TouchableOpacity>
-                    )}
+                    renderItem={({ item }) => {
+                        const renderRightActions = () => (
+                            <View style={{ justifyContent: "center", alignItems: "center", backgroundColor: theme.colors.error, marginBottom: 12, borderRadius: 12, width: 80 }}>
+                                <TouchableOpacity
+                                    onPress={() => handleDelete(item)}
+                                    style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 16 }}
+                                >
+                                    <IconButton icon="delete" iconColor={theme.colors.onError} size={24} />
+                                    <Text style={{ color: theme.colors.onError, fontSize: 12 }}>Delete</Text>
+                                </TouchableOpacity>
+                            </View>
+                        );
+                        return (
+                            <Swipeable renderRightActions={renderRightActions}>
+                                <TouchableOpacity
+                                    onPress={() =>
+                                        navigation.navigate("PdfViewer", {
+                                            pdfId: item.id,
+                                            title: item.original_filename,
+                                        })
+                                    }
+                                    onLongPress={() => setContextPdf(item)}
+                                >
+                                    <Card style={{ marginBottom: 12, backgroundColor: theme.colors.surface }}>
+                                        <Card.Content>
+                                            <Text variant="titleMedium" style={{ fontWeight: "600" }}>
+                                                {item.original_filename}
+                                            </Text>
+                                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                                                {formatSize(item.file_size)}
+                                            </Text>
+                                        </Card.Content>
+                                    </Card>
+                                </TouchableOpacity>
+                            </Swipeable>
+                        );
+                    }}
                 />
             )}
 
@@ -229,6 +266,15 @@ export default function HomeScreen() {
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
+
+            <Snackbar
+                visible={snackbarVisible}
+                onDismiss={() => setSnackbarVisible(false)}
+                duration={3000}
+                action={{ label: "OK", onPress: () => setSnackbarVisible(false) }}
+            >
+                {snackbarMsg}
+            </Snackbar>
         </SafeAreaView>
     );
 }

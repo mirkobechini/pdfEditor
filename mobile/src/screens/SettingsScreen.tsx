@@ -3,15 +3,10 @@ import { View } from "react-native";
 import { Text, List, useTheme, Button } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useAuth } from "../shared/auth";
-
-type SettingsNavProp = NativeStackNavigationProp<RootStackParamList, "Settings">;
 
 export default function SettingsScreen() {
     const theme = useTheme();
-    const navigation = useNavigation<SettingsNavProp>();
     const { user, logout } = useAuth();
 
     return (

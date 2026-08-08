@@ -1,24 +1,21 @@
 import React from "react";
-import { View, ActivityIndicator, TouchableOpacity } from "react-native";
-import { NavigationContainer, useNavigation } from "@react-navigation/native";
+import { View, ActivityIndicator } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { IconButton } from "react-native-paper";
 import { useAuth } from "../shared/auth";
 
 import LoginScreen from "../screens/LoginScreen";
-import HomeScreen from "../screens/HomeScreen";
+import MainTabs from "./MainTabs";
 import PdfViewerScreen from "../screens/PdfViewerScreen";
 import ScannerScreen from "../screens/ScannerScreen";
 import ToolsScreen from "../screens/ToolsScreen";
-import SettingsScreen from "../screens/SettingsScreen";
 
 export type RootStackParamList = {
     Login: undefined;
-    Home: undefined;
+    Main: undefined;
     PdfViewer: { pdfId: string; title?: string };
     Scanner: undefined;
     Tools: undefined;
-    Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -44,27 +41,9 @@ export default function AppNavigator() {
                 {user ? (
                     <>
                         <Stack.Screen
-                            name="Home"
-                            component={HomeScreen}
-                            options={({ navigation }) => ({
-                                title: "PdfEditor",
-                                headerRight: () => (
-                                    <View style={{ flexDirection: "row" }}>
-                                        <IconButton
-                                            icon="file-document-multiple"
-                                            size={22}
-                                            iconColor="#FFFFFF"
-                                            onPress={() => navigation.navigate("Tools")}
-                                        />
-                                        <IconButton
-                                            icon="cog"
-                                            size={22}
-                                            iconColor="#FFFFFF"
-                                            onPress={() => navigation.navigate("Settings")}
-                                        />
-                                    </View>
-                                ),
-                            })}
+                            name="Main"
+                            component={MainTabs}
+                            options={{ headerShown: false }}
                         />
                         <Stack.Screen
                             name="PdfViewer"
@@ -80,11 +59,6 @@ export default function AppNavigator() {
                             name="Tools"
                             component={ToolsScreen}
                             options={{ title: "PDF Tools" }}
-                        />
-                        <Stack.Screen
-                            name="Settings"
-                            component={SettingsScreen}
-                            options={{ title: "Settings" }}
                         />
                     </>
                 ) : (
