@@ -9,8 +9,14 @@
 - ✅ **UX: Bottom tabs navigation (F9)** — Home + Settings tabs con MainTabs.tsx, navigazione refactored.
 - ✅ **UX: Search bar in Home (M5)** — Searchbar React Native Paper + filteredPdfs via useMemo.
 - ✅ **UX: Snackbar in Tools (M1)** — Risultati operazioni mostrati come Snackbar invece di testo statico.
-- ✅ **UX: Swipe-to-delete in Home (M4)** — Swipeable su Swipeable (react-native-gesture-handler) per eliminare PDF velocemente.
+- ✅ **UX: Swipe-to-delete in Home (M4)** — Swipeable (react-native-gesture-handler) per eliminare PDF velocemente.
 - ✅ **UX: Snackbar in Home** — Feedback visivo dopo eliminazione PDF.
+- ✅ **UX: Preview thumbnail in Home (M6)** — Icona PDF + conteggio pagine come thumbnail visivo in ogni card.
+- ✅ **UX: Badge count on app icon (M3)** — expo-notifications setBadgeCountAsync + tabBarBadge in MainTabs.
+- ✅ **UX: Multi-select in Home (M8)** — Modalità multi-selezione con checkbox, Select All, batch delete, action bar.
+- ✅ **UX: Share PDF (M7)** — Condivisione via Android share sheet con expo-sharing nel context menu.
+- ✅ **UX: Splash screen (M10)** — Sfondo arancione #F97316 in app.json, adattato anche adaptive icon background.
+- ✅ **F5: Reusable components** — PdfListItem, GuestBanner, SyncStatusBadge in mobile/src/components/.
 - ✅ **Docs allineate** — .specs/plans/feature-mobile-improvements.md, CHANGELOG.md
 
 ## 2026-08-07

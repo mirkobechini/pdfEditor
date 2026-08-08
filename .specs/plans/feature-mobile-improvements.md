@@ -25,7 +25,7 @@ Migliorie UX e funzionalità mancanti dopo il completamento del MVP mobile.
 | F2  | EAS CI Integration                                        | Bassa    | Build automatica su tag release                                                                                                              |
 | F3  | Metadata editing (titolo/autore)                          | Media    | pdf-lib supporta, manca UI                                                                                                                   |
 | F4  | Password protect/unlock PDF                               | Media    | pdf-lib supporta, manca UI                                                                                                                   |
-| F5  | Componenti UI (PdfListItem, GuestBanner, SyncStatusBadge) | Bassa    | Da estrarre da screens                                                                                                                       |
+| F5  | Componenti UI (PdfListItem, GuestBanner, SyncStatusBadge) | Bassa    | ✅ Completata                                                                                                                       |
 | F6  | Hook useSyncQueue                                         | Media    | Per coda sync offline                                                                                                                        |
 | F7  | Test componenti UI                                        | Bassa    | Bloccato da @testing-library/react-native                                                                                                    |
 | F8  | Rework UI completo (Penpot)                               | Alta     | UI da rifare col design                                                                                                                      |
@@ -37,14 +37,14 @@ Migliorie UX e funzionalità mancanti dopo il completamento del MVP mobile.
 | --- | ------------------------------ | --------------------------------------- |
 | M1  | Toast/notifica dopo operazioni | Invece di testo "result" in ToolsScreen |
 | M2  | Refresh-to-reload in Home      | Pull down per ricaricare lista PDF      |
-| M3  | Badge count su icona           | Mostrare numero PDF nella lista         |
+| M3  | Badge count su icona           | Mostrare numero PDF nella lista         | ✅ Completata  |
 | M4  | Swipe-to-delete in Home        | Swipe left per eliminare veloce         |
 | M5  | Search/filtro in Home          | Cercare PDF per nome                    |
-| M6  | Preview thumbnail in Home      | Miniatura prima pagina nella lista      |
-| M7  | Share PDF                      | Condividere via Android share sheet     |
-| M8  | Multi-select in Home           | Per operazioni batch                    |
+| M6  | Preview thumbnail in Home      | Miniatura prima pagina nella lista      | ✅ Completata  |
+| M7  | Share PDF                      | Condividere via Android share sheet     | ✅ Completata  |
+| M8  | Multi-select in Home           | Per operazioni batch                    | ✅ Completata  |
 | M9  | Animazioni transizioni         | Transizioni più fluide                  |
-| M10 | Splash screen personalizzata   | Invece di schermo bianco all'avvio      |
+| M10 | Splash screen personalizzata   | Invece di schermo bianco all'avvio      | ✅ Completata  |
 
 ---
 
@@ -100,6 +100,6 @@ Object literal may only specify known properties, and 'password' does not exist 
 
 ## Status
 
-[x] Completata — Task 1 (F3 Metadata), 3 (F6 SyncQueue), 4 (M2 Refresh), 5 (M1 Snackbar Tools), 6 (M5 Search), 8 (M1 Snackbar), 9 (M4 Swipe), 10 (F9 Bottom tabs)
+[x] Completata — Task 1 (F3 Metadata), 3 (F6 SyncQueue), 4 (M2 Refresh), 5 (M1 Snackbar Tools), 6 (M5 Search), 7 (M6 Thumbnail), 8 (M1 Snackbar), 9 (M4 Swipe), 10 (F9 Bottom tabs), M3 (Badge), M7 (Share), M8 (Multi-select), M10 (Splash), F5 (Components)
 [ ] In pausa — Task 2 (F4 Password)
-[ ] Non iniziata — Task 7 (M6 Preview thumbnail)
+[ ] Non iniziata — M9 (Animations)
