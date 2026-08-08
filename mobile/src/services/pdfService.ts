@@ -2,7 +2,7 @@
  * Local PDF editing operations using pdf-lib.
  * All operations work offline — no backend needed.
  */
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument } from "@cantoo/pdf-lib";
 import { File, Directory, Paths } from "expo-file-system";
 import { writeAsStringAsync, EncodingType } from "expo-file-system/legacy";
 import { getLocalPdfById, savePdfLocally } from "./localDb";

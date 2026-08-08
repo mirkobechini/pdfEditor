@@ -6,7 +6,7 @@ import { useState, useRef, useCallback } from "react";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import * as FileSystem from "expo-file-system/legacy";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument } from "@cantoo/pdf-lib";
 import { savePdfLocally } from "../services/localDb";
 import type { LocalPdf } from "../shared/types";
 

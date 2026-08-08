@@ -7,7 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata } from "../services/pdfService";
+import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf } from "../services/pdfService";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 
@@ -23,7 +23,7 @@ export default function ToolsScreen() {
     const [snackbarVisible, setSnackbarVisible] = useState(false);
 
     function showResult(msg: string) {
-        showResult(msg);
+        setResult(msg);
         setSnackbarVisible(true);
     }
 
@@ -38,6 +38,10 @@ export default function ToolsScreen() {
     const [nameInput, setNameInput] = useState("");
     // Metadata dialog state
     const [metadataDialog, setMetadataDialog] = useState<{ pdfId: string; pdfName: string; title: string; author: string } | null>(null);
+    // Password dialog state
+    const [passwordDialog, setPasswordDialog] = useState<{ pdfId: string; pdfName: string; mode: "protect" | "unlock" } | null>(null);
+    const [passwordInput, setPasswordInput] = useState("");
+    const [passwordConfirm, setPasswordConfirm] = useState("");
 
     useEffect(() => {
         loadLocalPdfs().then(setPdfs).finally(() => setLoading(false));
@@ -237,6 +241,39 @@ export default function ToolsScreen() {
         await reloadPdfs();
     }
 
+    function openPasswordDialog(pdfId: string, mode: "protect" | "unlock") {
+        setPasswordDialog({ pdfId, pdfName: pdfs.find((p) => p.id === pdfId)?.original_filename || "PDF", mode });
+        setPasswordInput("");
+        setPasswordConfirm("");
+    }
+
+    async function executeProtect() {
+        if (!passwordDialog || passwordDialog.mode !== "protect") return;
+        if (passwordInput.length < 4) { showResult("Password must be at least 4 characters"); return; }
+        if (passwordInput !== passwordConfirm) { showResult("Passwords do not match"); return; }
+        const { pdfId } = passwordDialog;
+        setPasswordDialog(null);
+        setLoading(true);
+        const result_pdf = await protectPdf(pdfId, passwordInput);
+        if (result_pdf) showResult(`Protected: ${result_pdf.original_filename}`);
+        else showResult("Protect failed — file may already be encrypted");
+        setLoading(false);
+        await reloadPdfs();
+    }
+
+    async function executeUnlock() {
+        if (!passwordDialog || passwordDialog.mode !== "unlock") return;
+        if (!passwordInput) { showResult("Enter the password"); return; }
+        const { pdfId } = passwordDialog;
+        setPasswordDialog(null);
+        setLoading(true);
+        const result_pdf = await unlockPdf(pdfId, passwordInput);
+        if (result_pdf) showResult(`Unlocked: ${result_pdf.original_filename}`);
+        else showResult("Wrong password or file is not encrypted");
+        setLoading(false);
+        await reloadPdfs();
+    }
+
     function toggleSelect(id: string) {
         setSelectedIds((prev) =>
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
@@ -293,6 +330,24 @@ export default function ToolsScreen() {
                     >
                         Metadata
                     </Button>
+                    <Button
+                        mode={operation === "protect" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "protect" ? theme.colors.primary : undefined}
+                        textColor={operation === "protect" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("protect"); setSelectedIds([]); }}
+                    >
+                        Password
+                    </Button>
+                    <Button
+                        mode={operation === "unlock" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "unlock" ? theme.colors.primary : undefined}
+                        textColor={operation === "unlock" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("unlock"); setSelectedIds([]); }}
+                    >
+                        Unlock
+                    </Button>
                 </View>
             </View>
 
@@ -346,6 +401,8 @@ export default function ToolsScreen() {
                                     else if (operation === "reorder") openReorderDialog(item.id);
                                     else if (operation === "remove") openRemoveDialog(item.id);
                                     else if (operation === "metadata") openMetadataDialog(item.id);
+                                    else if (operation === "protect") openPasswordDialog(item.id, "protect");
+                                    else if (operation === "unlock") openPasswordDialog(item.id, "unlock");
                                 }}
                             >
                                 <Card.Content>
@@ -478,6 +535,43 @@ export default function ToolsScreen() {
                     <Dialog.Actions>
                         <Button onPress={() => setMetadataDialog(null)}>Cancel</Button>
                         <Button onPress={saveMetadata}>Save</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Password Dialog — protect or unlock */}
+            <Portal>
+                <Dialog visible={passwordDialog !== null} onDismiss={() => setPasswordDialog(null)}>
+                    <Dialog.Title>{passwordDialog?.mode === "protect" ? "Set Password" : "Unlock PDF"}</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium" style={{ marginBottom: 16 }}>
+                            {passwordDialog?.mode === "protect"
+                                ? `Set a password to protect "${passwordDialog?.pdfName}"`
+                                : `Enter the password to unlock "${passwordDialog?.pdfName}"`}
+                        </Text>
+                        <TextInput
+                            label="Password"
+                            value={passwordInput}
+                            onChangeText={setPasswordInput}
+                            mode="outlined"
+                            secureTextEntry
+                            style={{ marginBottom: 12 }}
+                        />
+                        {passwordDialog?.mode === "protect" && (
+                            <TextInput
+                                label="Confirm password"
+                                value={passwordConfirm}
+                                onChangeText={setPasswordConfirm}
+                                mode="outlined"
+                                secureTextEntry
+                            />
+                        )}
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setPasswordDialog(null)}>Cancel</Button>
+                        <Button onPress={passwordDialog?.mode === "protect" ? executeProtect : executeUnlock}>
+                            {passwordDialog?.mode === "protect" ? "Protect" : "Unlock"}
+                        </Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

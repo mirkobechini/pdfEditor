@@ -6,7 +6,7 @@
 import { useState, useCallback } from "react";
 import * as DocumentPicker from "expo-document-picker";
 import { Paths, File, Directory } from "expo-file-system";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument } from "@cantoo/pdf-lib";
 import {
   savePdfLocally,
   getLocalPdfs,
