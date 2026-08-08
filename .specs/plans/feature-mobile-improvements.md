@@ -29,7 +29,7 @@ Migliorie UX e funzionalità mancanti dopo il completamento del MVP mobile.
 | F6  | Hook useSyncQueue                                         | Media    | Per coda sync offline                                                                                                                        |
 | F7  | Test componenti UI                                        | Bassa    | Bloccato da @testing-library/react-native                                                                                                    |
 | F8  | Rework UI completo (Penpot)                               | Alta     | UI da rifare col design                                                                                                                      |
-| F9  | Bottom tabs navigation                                    | Bassa    | Invece di solo stack                                                                                                                         |
+| F9  | Bottom tabs navigation                                    | Bassa    | ✅ Completata                                                                                                                         |
 
 ### 💡 Migliorie UX proposte
 
@@ -55,10 +55,11 @@ Migliorie UX e funzionalità mancanti dopo il completamento del MVP mobile.
 3. **Hook useSyncQueue** (F6) — sync in background — ✅ **Completata** (2026-08-08)
 4. **Refresh-to-reload in Home** (M2) — pull-to-refresh — ✅ **Completata** (2026-08-08)
 5. **UX Tools Opzione A** — Tool-first: prima seleziona il tool, poi i PDF. Tool selezionato evidenziato in arancione. — ✅ **Completata** (2026-08-08)
-6. **Search/filter in Home** (M5) — barra di ricerca
+6. **Search/filter in Home** (M5) — barra di ricerca — ✅ **Completata** (2026-08-08)
 7. **Preview thumbnail in Home** (M6) — miniatura prima pagina
-8. **Toast/notifiche** (M1) — Snackbar al posto di "result"
-9. **Swipe to delete** (M4) — con conferma
+8. **Toast/notifiche** (M1) — Snackbar al posto di "result" — ✅ **Completata** (2026-08-08)
+9. **Swipe to delete** (M4) — swipe per eliminare veloce con conferma — ✅ **Completata** (2026-08-08)
+10. **Bottom tabs navigation** (F9) — Home + Settings tabs — ✅ **Completata** (2026-08-08)
 
 ---
 
@@ -99,4 +100,6 @@ Object literal may only specify known properties, and 'password' does not exist 
 
 ## Status
 
-[ ] In corso — Task 1 completata, Task 2 in pausa
+[x] Completata — Task 1 (F3 Metadata), 3 (F6 SyncQueue), 4 (M2 Refresh), 5 (M1 Snackbar Tools), 6 (M5 Search), 8 (M1 Snackbar), 9 (M4 Swipe), 10 (F9 Bottom tabs)
+[ ] In pausa — Task 2 (F4 Password)
+[ ] Non iniziata — Task 7 (M6 Preview thumbnail)
