@@ -40,9 +40,10 @@ export default function LoginScreen() {
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={{ flex: 1 }}
-            >                <ScrollView
-                contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24 }}
             >
+                <ScrollView
+                    contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24 }}
+                >
                     <Surface
                         style={{
                             padding: 32,
