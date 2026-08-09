@@ -11,10 +11,6 @@
     },
     "android": {
       "package": "com.mirkobechini.pdfeditor",
-      "adaptiveIcon": {
-        "backgroundColor": "#FF944E",
-        "foregroundImage": "./assets/icona-originale.png"
-      },
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
