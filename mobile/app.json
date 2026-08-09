@@ -13,8 +13,7 @@
       "package": "com.mirkobechini.pdfeditor",
       "adaptiveIcon": {
         "backgroundColor": "#FF944E",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png"
+        "foregroundImage": "./assets/icona-originale.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
