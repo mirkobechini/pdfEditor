@@ -63,6 +63,11 @@ interface UseCloudSyncReturn {
   importPdfs: (
     pdfIds: string[],
   ) => Promise<{ imported: number; errors: string[] }>;
+  /** Delete a PDF with sync-aware options */
+  deletePdf: (
+    pdfId: string,
+    option: "local" | "cloud" | "both",
+  ) => Promise<boolean>;
   /** Resolve a conflict: upload local version or download cloud version */
   resolveConflict: (
     pdfId: string,
@@ -334,6 +339,52 @@ export function useCloudSync(): UseCloudSyncReturn {
     [isGuest, syncEnabled, uploadPdf, downloadPdf],
   );
 
+  const deletePdf = useCallback(
+    async (
+      pdfId: string,
+      option: "local" | "cloud" | "both",
+    ): Promise<boolean> => {
+      try {
+        setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
+        const pdf = await getLocalPdfById(pdfId);
+
+        if (option === "local" || option === "both") {
+          // Delete local file + DB row
+          if (pdf) {
+            try {
+              const file = new File(pdf.uri);
+              if (await file.exists) await file.delete();
+            } catch {
+              /* ignore */
+            }
+          }
+          await deleteLocalPdf(pdfId);
+        }
+
+        if ((option === "cloud" || option === "both") && !isGuest) {
+          // Delete from cloud
+          try {
+            await api.deletePdf(pdfId);
+          } catch (err) {
+            console.log("[useCloudSync] cloud delete failed", pdfId, err);
+          }
+        }
+
+        setStatus((prev) => {
+          const next = { ...prev };
+          delete next[pdfId];
+          return next;
+        });
+        return true;
+      } catch (err) {
+        console.log("[useCloudSync] deletePdf failed", pdfId, err);
+        setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
+        return false;
+      }
+    },
+    [isGuest],
+  );
+
   const getPendingChanges = useCallback(async (): Promise<{
     uploads: PendingChange[];
     downloads: PendingChange[];
@@ -528,6 +579,7 @@ export function useCloudSync(): UseCloudSyncReturn {
     uploadPdf,
     downloadPdf,
     importPdfs,
+    deletePdf,
     resolveConflict,
     syncAll,
     getPendingChanges,

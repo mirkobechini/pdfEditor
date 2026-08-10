@@ -134,6 +134,7 @@
     "cancel": "Cancel",
     "close": "Close",
     "save": "Save",
+    "delete": "Delete",
     "loading": "Loading...",
     "networkError": "Network error. Check your connection.",
     "unknownError": "An unexpected error occurred. Please try again.",
@@ -199,6 +200,13 @@
     "desc": "These PDFs are only on this device. Select which ones to add to your cloud account:",
     "noOrphans": "No local PDFs to import.",
     "import": "Import {{count}}"
+  },
+  "deleteSync": {
+    "title": "Delete PDF",
+    "desc": "\"{{name}}\" is synced to the cloud. What do you want to delete?",
+    "local": "Only on this device",
+    "cloud": "Only from cloud",
+    "both": "From both (device + cloud)"
   },
   "onboarding": {
     "welcomeTitle": "Welcome to Editor",

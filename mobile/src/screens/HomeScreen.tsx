@@ -16,6 +16,7 @@ import { setBadgeCountAsync } from "expo-notifications";
 import * as Sharing from "expo-sharing";
 import { useTranslation } from "react-i18next";
 import { useCloudSync } from "../hooks/useCloudSync";
+import DeleteSyncDialog, { type DeleteSyncOption } from "./DeleteSyncDialog";
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Main">;
 
@@ -30,8 +31,9 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const { t } = useTranslation();
     const { pickAndSavePdf, loadLocalPdfs, loading: storageLoading } = usePdfStorage();
     const { user } = useAuth();
-    const { status: syncStatus, syncEnabled, progress, isSyncing } = useCloudSync();
+    const { status: syncStatus, syncEnabled, progress, isSyncing, deletePdf } = useCloudSync();
     const userId = user?.id || "";
+    const [deleteTarget, setDeleteTarget] = React.useState<LocalPdf | null>(null);
     const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
     const [showMenu, setShowMenu] = useState(false);
@@ -196,6 +198,12 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
 
     async function handleDelete(pdf: LocalPdf) {
         setContextPdf(null);
+        // If PDF is cloud-synced and sync is enabled, ask what to delete
+        if (syncEnabled && pdf.cloud_synced === 1) {
+            setDeleteTarget(pdf);
+            return;
+        }
+        // Otherwise simple local delete
         try {
             const file = new File(pdf.uri);
             if (file.exists) file.delete();
@@ -474,6 +482,21 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
             >
                 {snackbarMsg}
             </Snackbar>
+
+            <DeleteSyncDialog
+                visible={deleteTarget !== null}
+                pdfName={deleteTarget?.original_filename || ""}
+                onDismiss={() => setDeleteTarget(null)}
+                onDelete={async (option: DeleteSyncOption) => {
+                    if (!deleteTarget) return;
+                    const ok = await deletePdf(deleteTarget.id, option);
+                    setDeleteTarget(null);
+                    await loadPdfs();
+                    if (ok) {
+                        showSnack(t("home.deleted", { name: deleteTarget.original_filename }));
+                    }
+                }}
+            />
         </SafeAreaView>
     );
 }

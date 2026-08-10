@@ -134,6 +134,7 @@
     "cancel": "Annulla",
     "close": "Chiudi",
     "save": "Salva",
+    "delete": "Elimina",
     "loading": "Caricamento...",
     "networkError": "Errore di rete. Controlla la connessione.",
     "unknownError": "Si è verificato un errore imprevisto. Riprova.",
@@ -199,6 +200,13 @@
     "desc": "Questi PDF sono solo su questo dispositivo. Seleziona quali aggiungere al tuo account cloud:",
     "noOrphans": "Nessun PDF locale da importare.",
     "import": "Importa {{count}}"
+  },
+  "deleteSync": {
+    "title": "Elimina PDF",
+    "desc": "\"{{name}}\" è sincronizzato sul cloud. Cosa vuoi eliminare?",
+    "local": "Solo su questo dispositivo",
+    "cloud": "Solo dal cloud",
+    "both": "Da entrambi (dispositivo + cloud)"
   },
   "onboarding": {
     "welcomeTitle": "Benvenuto in Editor",
