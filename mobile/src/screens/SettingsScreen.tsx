@@ -212,11 +212,15 @@ export default function SettingsScreen() {
                 <Dialog visible={syncErrorDialog} onDismiss={() => setSyncErrorDialog(false)}>
                     <Dialog.Title>{t("cloud.syncErrors")}</Dialog.Title>
                     <Dialog.Content>
-                        {syncErrorDetail.map((err, i) => (
-                            <Text key={i} variant="bodyMedium" style={{ color: theme.colors.error, marginBottom: 4 }}>
-                                • {err}
-                            </Text>
-                        ))}
+                        {syncErrorDetail.map((err, i) => {
+                            const [key, name] = err.split(":");
+                            const label = name ? t(key, { name }) : t(err);
+                            return (
+                                <Text key={i} variant="bodyMedium" style={{ color: theme.colors.error, marginBottom: 4 }}>
+                                    • {label}
+                                </Text>
+                            );
+                        })}
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setSyncErrorDialog(false)}>{t("common.close")}</Button>
@@ -228,7 +232,7 @@ export default function SettingsScreen() {
                 visible={syncResultVisible}
                 onDismiss={() => setSyncResultVisible(false)}
                 duration={4000}
-                action={{ label: "OK", onPress: () => setSyncResultVisible(false) }}
+                action={{ label: t("common.ok"), onPress: () => setSyncResultVisible(false) }}
             >
                 {syncResult}
             </Snackbar>

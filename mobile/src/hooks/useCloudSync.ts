@@ -311,7 +311,7 @@ export function useCloudSync(): UseCloudSyncReturn {
         try {
           const file = new File(pdf.uri);
           if (!(await file.exists)) {
-            errors.push(`${pdf.original_filename}: file not found on disk`);
+            errors.push(`cloud.syncErrorFileNotFound:${pdf.original_filename}`);
             continue;
           }
           await api.uploadPdf(
@@ -323,7 +323,7 @@ export function useCloudSync(): UseCloudSyncReturn {
           setStatus((prev) => ({ ...prev, [pdf.id]: "synced" }));
           uploaded++;
         } catch (err) {
-          errors.push(`${pdf.original_filename}: upload failed`);
+          errors.push(`cloud.syncErrorUploadFailed:${pdf.original_filename}`);
           setStatus((prev) => ({ ...prev, [pdf.id]: "error" }));
         }
       }
@@ -354,7 +354,7 @@ export function useCloudSync(): UseCloudSyncReturn {
                 const ok = await downloadPdf(cloudPdf.id);
                 if (ok) downloaded++;
               } catch {
-                errors.push(`${cloudPdf.original_filename}: download failed`);
+                errors.push(`cloud.syncErrorDownloadFailed:${cloudPdf.original_filename}`);
               }
             } else if (
               local.cloud_synced === 1 &&
@@ -379,7 +379,7 @@ export function useCloudSync(): UseCloudSyncReturn {
           }
         }
       } catch {
-        errors.push("Failed to fetch cloud PDF list");
+        errors.push("cloud.syncErrorListFailed");
       }
     } finally {
       setProgress(null);
