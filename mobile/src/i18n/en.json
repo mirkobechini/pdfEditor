@@ -180,6 +180,17 @@
     "syncErrorDownloadFailed": "{{name}}: download failed",
     "syncErrorListFailed": "Failed to fetch cloud PDF list"
   },
+  "conflict": {
+    "title": "{{count}} PDFs in conflict",
+    "simpleView": "Simple view",
+    "detailedView": "Detailed view",
+    "localVersion": "Local version",
+    "cloudVersion": "Cloud version",
+    "chooseVersion": "Choose which version to keep:",
+    "keepLocal": "Keep local",
+    "keepCloud": "Keep cloud",
+    "applyAll": "Apply all"
+  },
   "onboarding": {
     "welcomeTitle": "Welcome to Editor",
     "welcomeDesc": "View, edit, merge and sync your PDFs securely. Your files stay on your device until you choose to sync them to the cloud.",

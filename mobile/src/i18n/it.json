@@ -180,6 +180,17 @@
     "syncErrorDownloadFailed": "{{name}}: download fallito",
     "syncErrorListFailed": "Impossibile recuperare la lista PDF dal cloud"
   },
+  "conflict": {
+    "title": "{{count}} PDF in conflitto",
+    "simpleView": "Vista semplificata",
+    "detailedView": "Vista dettagliata",
+    "localVersion": "Versione locale",
+    "cloudVersion": "Versione cloud",
+    "chooseVersion": "Scegli quale versione tenere:",
+    "keepLocal": "Tieni locale",
+    "keepCloud": "Tieni cloud",
+    "applyAll": "Applica tutto"
+  },
   "onboarding": {
     "welcomeTitle": "Benvenuto in Editor",
     "welcomeDesc": "Visualizza, modifica, unisci e sincronizza i tuoi PDF in sicurezza. I tuoi file restano sul dispositivo finché non scegli di sincronizzarli sul cloud.",

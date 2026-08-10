@@ -6,7 +6,8 @@ import { useAuth } from "../shared/auth";
 import Constants from "expo-constants";
 import { useTranslation } from "react-i18next";
 import { useAppSettings } from "../shared/AppSettingsContext";
-import { useCloudSync, type SyncMode } from "../hooks/useCloudSync";
+import { useCloudSync, type SyncMode, type SyncConflict } from "../hooks/useCloudSync";
+import ConflictDialog from "./ConflictDialog";
 
 export default function SettingsScreen() {
     const theme = useTheme();
@@ -14,7 +15,7 @@ export default function SettingsScreen() {
     const appVersion = Constants.expoConfig?.version || "0.1.0";
     const { t } = useTranslation();
     const { themeMode, setThemeMode, locale, setLocale } = useAppSettings();
-    const { syncEnabled, setSyncEnabled, syncMode, setSyncMode, syncOnStartup, setSyncOnStartup, isSyncing, isOnline, syncAll } = useCloudSync();
+    const { syncEnabled, setSyncEnabled, syncMode, setSyncMode, syncOnStartup, setSyncOnStartup, isSyncing, isOnline, syncAll, resolveConflict } = useCloudSync();
     const [themeDialog, setThemeDialog] = React.useState(false);
     const [langDialog, setLangDialog] = React.useState(false);
     const [syncModeDialog, setSyncModeDialog] = React.useState(false);
@@ -22,6 +23,8 @@ export default function SettingsScreen() {
     const [syncResultVisible, setSyncResultVisible] = React.useState(false);
     const [syncErrorDetail, setSyncErrorDetail] = React.useState<string[]>([]);
     const [syncErrorDialog, setSyncErrorDialog] = React.useState(false);
+    const [conflicts, setConflicts] = React.useState<SyncConflict[]>([]);
+    const [conflictDialogVisible, setConflictDialogVisible] = React.useState(false);
 
     const themeLabel = themeMode === "system" ? t("settings.themeSystem") : themeMode === "light" ? t("settings.themeLight") : t("settings.themeDark");
     const langLabel = locale === "system" ? t("settings.languageSystem") : locale === "it" ? t("settings.languageIt") : t("settings.languageEn");
@@ -105,10 +108,15 @@ export default function SettingsScreen() {
                                 left={(props) => <List.Icon {...props} icon="cloud-upload" />}
                                 onPress={async () => {
                                     const result = await syncAll();
+                                    // Show conflicts dialog first if any
+                                    if (result.conflicts.length > 0) {
+                                        setConflicts(result.conflicts);
+                                        setConflictDialogVisible(true);
+                                    }
                                     if (result.errors.length > 0) {
                                         setSyncErrorDetail(result.errors);
                                         setSyncErrorDialog(true);
-                                    } else {
+                                    } else if (result.conflicts.length === 0) {
                                         const msg = t("cloud.syncResult", { uploaded: result.uploaded, downloaded: result.downloaded, conflicts: result.conflicts.length });
                                         setSyncResult(msg);
                                         setSyncResultVisible(true);
@@ -239,6 +247,17 @@ export default function SettingsScreen() {
             >
                 {syncResult}
             </Snackbar>
+
+            <ConflictDialog
+                visible={conflictDialogVisible}
+                conflicts={conflicts}
+                onDismiss={() => setConflictDialogVisible(false)}
+                onResolve={async (resolutions) => {
+                    for (const [pdfId, resolution] of Object.entries(resolutions)) {
+                        await resolveConflict(pdfId, resolution as "local" | "cloud");
+                    }
+                }}
+            />
         </SafeAreaView>
     );
 }

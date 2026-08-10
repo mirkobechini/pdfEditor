@@ -59,6 +59,11 @@ interface UseCloudSyncReturn {
   uploadPdf: (pdfId: string) => Promise<boolean>;
   /** Download a single PDF from cloud */
   downloadPdf: (pdfId: string) => Promise<boolean>;
+  /** Resolve a conflict: upload local version or download cloud version */
+  resolveConflict: (
+    pdfId: string,
+    resolution: "local" | "cloud",
+  ) => Promise<boolean>;
   /** Full bidirectional sync */
   syncAll: () => Promise<{
     uploaded: number;
@@ -258,6 +263,29 @@ export function useCloudSync(): UseCloudSyncReturn {
     [isGuest, syncEnabled, user?.id],
   );
 
+  const resolveConflict = useCallback(
+    async (pdfId: string, resolution: "local" | "cloud"): Promise<boolean> => {
+      if (isGuest || !syncEnabled) return false;
+      try {
+        setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
+        if (resolution === "local") {
+          // Upload local version to cloud (overwrites cloud version)
+          const ok = await uploadPdf(pdfId);
+          return ok;
+        } else {
+          // Download cloud version, overwriting local
+          // Delete local PDF then download cloud version
+          const ok = await downloadPdf(pdfId);
+          return ok;
+        }
+      } catch (err) {
+        setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
+        return false;
+      }
+    },
+    [isGuest, syncEnabled, uploadPdf, downloadPdf],
+  );
+
   const getPendingChanges = useCallback(async (): Promise<{
     uploads: PendingChange[];
     downloads: PendingChange[];
@@ -451,6 +479,7 @@ export function useCloudSync(): UseCloudSyncReturn {
   return {
     uploadPdf,
     downloadPdf,
+    resolveConflict,
     syncAll,
     getPendingChanges,
     status,
