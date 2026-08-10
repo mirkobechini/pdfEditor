@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useAppSettings } from "../shared/AppSettingsContext";
 import { useCloudSync, type SyncMode, type SyncConflict } from "../hooks/useCloudSync";
 import ConflictDialog from "./ConflictDialog";
+import ImportPdfDialog from "./ImportPdfDialog";
 
 export default function SettingsScreen() {
     const theme = useTheme();
@@ -15,7 +16,7 @@ export default function SettingsScreen() {
     const appVersion = Constants.expoConfig?.version || "0.1.0";
     const { t } = useTranslation();
     const { themeMode, setThemeMode, locale, setLocale } = useAppSettings();
-    const { syncEnabled, setSyncEnabled, syncMode, setSyncMode, syncOnStartup, setSyncOnStartup, isSyncing, isOnline, syncAll, resolveConflict } = useCloudSync();
+    const { syncEnabled, setSyncEnabled, syncMode, setSyncMode, syncOnStartup, setSyncOnStartup, isSyncing, isOnline, syncAll, resolveConflict, importPdfs } = useCloudSync();
     const [themeDialog, setThemeDialog] = React.useState(false);
     const [langDialog, setLangDialog] = React.useState(false);
     const [syncModeDialog, setSyncModeDialog] = React.useState(false);
@@ -25,6 +26,7 @@ export default function SettingsScreen() {
     const [syncErrorDialog, setSyncErrorDialog] = React.useState(false);
     const [conflicts, setConflicts] = React.useState<SyncConflict[]>([]);
     const [conflictDialogVisible, setConflictDialogVisible] = React.useState(false);
+    const [importDialogVisible, setImportDialogVisible] = React.useState(false);
 
     const themeLabel = themeMode === "system" ? t("settings.themeSystem") : themeMode === "light" ? t("settings.themeLight") : t("settings.themeDark");
     const langLabel = locale === "system" ? t("settings.languageSystem") : locale === "it" ? t("settings.languageIt") : t("settings.languageEn");
@@ -101,6 +103,12 @@ export default function SettingsScreen() {
                                 title={t("cloud.connection")}
                                 description={isOnline ? t("cloud.online") : t("cloud.offline")}
                                 left={(props) => <List.Icon {...props} icon={isOnline ? "wifi" : "wifi-off"} />}
+                            />
+                            <List.Item
+                                title={t("cloud.manageLocal")}
+                                description={t("cloud.manageLocalDesc")}
+                                left={(props) => <List.Icon {...props} icon="folder-upload" />}
+                                onPress={() => setImportDialogVisible(true)}
                             />
                             <List.Item
                                 title={t("cloud.syncNow")}
@@ -255,6 +263,21 @@ export default function SettingsScreen() {
                 onResolve={async (resolutions) => {
                     for (const [pdfId, resolution] of Object.entries(resolutions)) {
                         await resolveConflict(pdfId, resolution as "local" | "cloud");
+                    }
+                }}
+            />
+
+            <ImportPdfDialog
+                visible={importDialogVisible}
+                onDismiss={() => setImportDialogVisible(false)}
+                onImport={async (pdfIds) => {
+                    const result = await importPdfs(pdfIds);
+                    if (result.errors.length > 0) {
+                        setSyncErrorDetail(result.errors);
+                        setSyncErrorDialog(true);
+                    } else {
+                        setSyncResult(t("cloud.importResult", { count: result.imported }));
+                        setSyncResultVisible(true);
                     }
                 }}
             />

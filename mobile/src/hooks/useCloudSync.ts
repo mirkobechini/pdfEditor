@@ -59,6 +59,10 @@ interface UseCloudSyncReturn {
   uploadPdf: (pdfId: string) => Promise<boolean>;
   /** Download a single PDF from cloud */
   downloadPdf: (pdfId: string) => Promise<boolean>;
+  /** Import orphan PDFs into the user's cloud account */
+  importPdfs: (
+    pdfIds: string[],
+  ) => Promise<{ imported: number; errors: string[] }>;
   /** Resolve a conflict: upload local version or download cloud version */
   resolveConflict: (
     pdfId: string,
@@ -207,6 +211,50 @@ export function useCloudSync(): UseCloudSyncReturn {
       }
     },
     [isGuest, syncEnabled],
+  );
+
+  const importPdfs = useCallback(
+    async (
+      pdfIds: string[],
+    ): Promise<{ imported: number; errors: string[] }> => {
+      if (isGuest || !syncEnabled || !user?.id) {
+        return { imported: 0, errors: ["Not authenticated"] };
+      }
+      let imported = 0;
+      const errors: string[] = [];
+      for (const pdfId of pdfIds) {
+        try {
+          setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
+          const pdf = await getLocalPdfById(pdfId);
+          if (!pdf) throw new Error("PDF not found locally");
+
+          // Assign user_id to the orphan PDF
+          await savePdfLocally({
+            ...pdf,
+            user_id: user.id,
+            updated_at: new Date().toISOString(),
+          });
+
+          // Upload to cloud
+          const file = new File(pdf.uri);
+          if (!(await file.exists)) throw new Error("File not found on disk");
+          await api.uploadPdf(
+            pdf.uri,
+            pdf.original_filename,
+            "application/pdf",
+          );
+          await markPdfCloudSynced(pdfId);
+          setStatus((prev) => ({ ...prev, [pdfId]: "synced" }));
+          imported++;
+        } catch (err) {
+          console.log("[useCloudSync] import failed", pdfId, err);
+          errors.push(`cloud.syncErrorUploadFailed:${pdfId}`);
+          setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
+        }
+      }
+      return { imported, errors };
+    },
+    [isGuest, syncEnabled, user?.id],
   );
 
   const downloadPdf = useCallback(
@@ -479,6 +527,7 @@ export function useCloudSync(): UseCloudSyncReturn {
   return {
     uploadPdf,
     downloadPdf,
+    importPdfs,
     resolveConflict,
     syncAll,
     getPendingChanges,

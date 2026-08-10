@@ -172,6 +172,9 @@
     "syncNow": "Sincronizza ora",
     "syncNowDesc": "Avvia sync",
     "syncNowInProgress": "In corso...",
+    "manageLocal": "Gestisci PDF locali",
+    "manageLocalDesc": "Importa i PDF solo su dispositivo nel tuo account cloud",
+    "importResult": "Importati {{count}} PDF sul cloud",
     "syncResult": "Upload: {{uploaded}}, Download: {{downloaded}}, Conflitti: {{conflicts}}",
     "syncErrors": "Errori sync",
     "syncErrorTokenExpired": "La tua sessione è scaduta. Accedi di nuovo per sincronizzare.",
@@ -190,6 +193,12 @@
     "keepLocal": "Tieni locale",
     "keepCloud": "Tieni cloud",
     "applyAll": "Applica tutto"
+  },
+  "importPdf": {
+    "title": "Importa PDF locali",
+    "desc": "Questi PDF sono solo su questo dispositivo. Seleziona quali aggiungere al tuo account cloud:",
+    "noOrphans": "Nessun PDF locale da importare.",
+    "import": "Importa {{count}}"
   },
   "onboarding": {
     "welcomeTitle": "Benvenuto in Editor",
