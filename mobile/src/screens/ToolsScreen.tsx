@@ -8,6 +8,7 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
 import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf } from "../services/pdfService";
+import { useTranslation } from "react-i18next";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 
@@ -15,6 +16,7 @@ export default function ToolsScreen() {
     const theme = useTheme();
     const navigation = useNavigation<ToolsNavProp>();
     const { loadLocalPdfs } = usePdfStorage();
+    const { t } = useTranslation();
     const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
     const [operation, setOperation] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export default function ToolsScreen() {
     }, [loadLocalPdfs]);
 
     async function handleMerge() {
-        if (selectedIds.length < 2) { showResult("Select at least 2 PDFs"); return; }
+        if (selectedIds.length < 2) { showResult(t("tools.selectMin2")); return; }
         // Ask for file name before merging
         setNameDialog({ type: "merge", data: { ids: [...selectedIds] } });
     }
@@ -65,10 +67,10 @@ export default function ToolsScreen() {
         setLoading(true);
         const merged = await mergePdfs(ids, fileName);
         if (merged) {
-            showResult(`Merged into: ${merged.original_filename}`);
+            showResult(t("tools.mergeResult", { name: merged.original_filename }));
             setSelectedIds([]);
             await reloadPdfs();
-        } else showResult("Merge failed");
+        } else showResult(t("tools.mergeFailed"));
         setLoading(false);
     }
 
@@ -131,8 +133,8 @@ export default function ToolsScreen() {
         setMetadataDialog(null);
         setLoading(true);
         const result_pdf = await updateMetadata(pdfId, title || undefined, author || undefined);
-        if (result_pdf) showResult(`Metadata updated for ${result_pdf.original_filename}`);
-        else showResult("Metadata update failed");
+        if (result_pdf) showResult(t("tools.metadataResult", { name: result_pdf.original_filename }));
+        else showResult(t("tools.metadataFailed"));
         setLoading(false);
         await reloadPdfs();
     }
@@ -181,7 +183,7 @@ export default function ToolsScreen() {
 
         const allRanges = [...selectedRanges, ...remainingRanges];
         const results = await splitPdf(pdfId, allRanges, fileName);
-        showResult(`Split into ${results.length} PDFs`);
+        showResult(t("tools.splitResult", { count: results.length }));
         setLoading(false);
         await reloadPdfs();
     }
@@ -221,8 +223,8 @@ export default function ToolsScreen() {
         setLoading(true);
 
         const reordered = await reorderPages(pdfId, pageOrder, fileName);
-        if (reordered) showResult(`Reordered: ${reordered.original_filename}`);
-        else showResult("Reorder failed");
+        if (reordered) showResult(t("tools.reorderResult", { name: reordered.original_filename }));
+        else showResult(t("tools.reorderFailed"));
         setLoading(false);
         await reloadPdfs();
     }
@@ -235,8 +237,8 @@ export default function ToolsScreen() {
         if (selectedPages.length === 0) return;
         setLoading(true);
         const result_pdf = await removePages(pdfId, selectedPages, fileName);
-        if (result_pdf) showResult(`Removed pages: ${result_pdf.original_filename}`);
-        else showResult("Remove pages failed");
+        if (result_pdf) showResult(t("tools.removeResult", { name: result_pdf.original_filename }));
+        else showResult(t("tools.removeFailed"));
         setLoading(false);
         await reloadPdfs();
     }
@@ -249,27 +251,27 @@ export default function ToolsScreen() {
 
     async function executeProtect() {
         if (!passwordDialog || passwordDialog.mode !== "protect") return;
-        if (passwordInput.length < 4) { showResult("Password must be at least 4 characters"); return; }
-        if (passwordInput !== passwordConfirm) { showResult("Passwords do not match"); return; }
+        if (passwordInput.length < 4) { showResult(t("tools.passwordShort")); return; }
+        if (passwordInput !== passwordConfirm) { showResult(t("tools.passwordMismatch")); return; }
         const { pdfId } = passwordDialog;
         setPasswordDialog(null);
         setLoading(true);
         const result_pdf = await protectPdf(pdfId, passwordInput);
-        if (result_pdf) showResult(`Protected: ${result_pdf.original_filename}`);
-        else showResult("Protect failed — file may already be encrypted");
+        if (result_pdf) showResult(t("tools.protectResult", { name: result_pdf.original_filename }));
+        else showResult(t("tools.protectFailed"));
         setLoading(false);
         await reloadPdfs();
     }
 
     async function executeUnlock() {
         if (!passwordDialog || passwordDialog.mode !== "unlock") return;
-        if (!passwordInput) { showResult("Enter the password"); return; }
+        if (!passwordInput) { showResult(t("tools.enterPassword")); return; }
         const { pdfId } = passwordDialog;
         setPasswordDialog(null);
         setLoading(true);
         const result_pdf = await unlockPdf(pdfId, passwordInput);
-        if (result_pdf) showResult(`Unlocked: ${result_pdf.original_filename}`);
-        else showResult("Wrong password or file is not encrypted");
+        if (result_pdf) showResult(t("tools.unlockResult", { name: result_pdf.original_filename }));
+        else showResult(t("tools.unlockFailed"));
         setLoading(false);
         await reloadPdfs();
     }
@@ -283,7 +285,7 @@ export default function ToolsScreen() {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["bottom"]}>
             <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: theme.colors.surfaceVariant }}>
-                <Text variant="titleMedium" style={{ marginBottom: 12 }}>PDF Tools</Text>
+                <Text variant="titleMedium" style={{ marginBottom: 12 }}>{t("tools.title")}</Text>
                 <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
                     <Button
                         mode={operation === "merge" ? "contained" : "outlined"}
@@ -292,7 +294,7 @@ export default function ToolsScreen() {
                         textColor={operation === "merge" ? "#fff" : theme.colors.primary}
                         onPress={() => { setOperation("merge"); setSelectedIds([]); }}
                     >
-                        Merge
+                        {t("tools.merge")}
                     </Button>
                     <Button
                         mode={operation === "split" ? "contained" : "outlined"}
@@ -301,7 +303,7 @@ export default function ToolsScreen() {
                         textColor={operation === "split" ? "#fff" : theme.colors.primary}
                         onPress={() => { setOperation("split"); setSelectedIds([]); }}
                     >
-                        Split
+                        {t("tools.split")}
                     </Button>
                     <Button
                         mode={operation === "reorder" ? "contained" : "outlined"}
@@ -310,7 +312,7 @@ export default function ToolsScreen() {
                         textColor={operation === "reorder" ? "#fff" : theme.colors.primary}
                         onPress={() => { setOperation("reorder"); setSelectedIds([]); }}
                     >
-                        Reorder
+                        {t("tools.reorder")}
                     </Button>
                     <Button
                         mode={operation === "remove" ? "contained" : "outlined"}
@@ -319,7 +321,7 @@ export default function ToolsScreen() {
                         textColor={operation === "remove" ? "#fff" : theme.colors.primary}
                         onPress={() => { setOperation("remove"); setSelectedIds([]); }}
                     >
-                        Remove pages
+                        {t("tools.remove")}
                     </Button>
                     <Button
                         mode={operation === "metadata" ? "contained" : "outlined"}
@@ -328,7 +330,7 @@ export default function ToolsScreen() {
                         textColor={operation === "metadata" ? "#fff" : theme.colors.primary}
                         onPress={() => { setOperation("metadata"); setSelectedIds([]); }}
                     >
-                        Metadata
+                        {t("tools.metadata")}
                     </Button>
                     <Button
                         mode={operation === "protect" ? "contained" : "outlined"}
@@ -337,7 +339,7 @@ export default function ToolsScreen() {
                         textColor={operation === "protect" ? "#fff" : theme.colors.primary}
                         onPress={() => { setOperation("protect"); setSelectedIds([]); }}
                     >
-                        Password
+                        {t("tools.password")}
                     </Button>
                     <Button
                         mode={operation === "unlock" ? "contained" : "outlined"}
@@ -346,7 +348,7 @@ export default function ToolsScreen() {
                         textColor={operation === "unlock" ? "#fff" : theme.colors.primary}
                         onPress={() => { setOperation("unlock"); setSelectedIds([]); }}
                     >
-                        Unlock
+                        {t("tools.unlock")}
                     </Button>
                 </View>
             </View>
@@ -354,7 +356,7 @@ export default function ToolsScreen() {
             {operation === "merge" && selectedIds.length >= 2 && (
                 <View style={{ padding: 16 }}>
                     <Button mode="contained" onPress={handleMerge} loading={loading} disabled={loading}>
-                        Merge {selectedIds.length} PDFs
+                        {t("tools.mergeAction", { count: selectedIds.length })}
                     </Button>
                 </View>
             )}
@@ -364,7 +366,7 @@ export default function ToolsScreen() {
                     visible={snackbarVisible}
                     onDismiss={() => setSnackbarVisible(false)}
                     duration={3000}
-                    action={{ label: "OK", onPress: () => setSnackbarVisible(false) }}
+                    action={{ label: t("common.ok"), onPress: () => setSnackbarVisible(false) }}
                 >
                     {result}
                 </Snackbar>
@@ -373,7 +375,7 @@ export default function ToolsScreen() {
             {!operation ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
                     <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}>
-                        Select a tool above, then choose a PDF to work with.
+                        {t("tools.selectTool")}
                     </Text>
                 </View>
             ) : loading ? (
@@ -410,7 +412,7 @@ export default function ToolsScreen() {
                                         {item.original_filename}
                                     </Text>
                                     <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                                        {item.page_count} pages • {(item.file_size / 1024).toFixed(0)} KB
+                                        {t("tools.pagesInfo", { count: item.page_count, size: (item.file_size / 1024).toFixed(0) })}
                                     </Text>
                                 </Card.Content>
                             </TouchableOpacity>
@@ -422,10 +424,10 @@ export default function ToolsScreen() {
             {/* Split Dialog — choose pages to extract */}
             <Portal>
                 <Dialog visible={splitDialog !== null} onDismiss={() => setSplitDialog(null)}>
-                    <Dialog.Title>Split "{splitDialog?.pdfName}"</Dialog.Title>
+                    <Dialog.Title>{t("tools.splitTitle", { name: splitDialog?.pdfName || "" })}</Dialog.Title>
                     <Dialog.Content>
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                            Select pages to extract into a new PDF:
+                            {t("tools.splitSelectPages")}
                         </Text>
                         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
                             {splitDialog && Array.from({ length: splitDialog.totalPages }, (_, i) => i + 1).map((page) => (
@@ -452,9 +454,9 @@ export default function ToolsScreen() {
                         </View>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setSplitDialog(null)}>Cancel</Button>
+                        <Button onPress={() => setSplitDialog(null)}>{t("common.cancel")}</Button>
                         <Button onPress={() => { if (splitDialog) { const data = { ...splitDialog }; setSplitDialog(null); setNameDialog({ type: "split", data }); } }} disabled={!splitDialog || splitDialog.selectedPages.length === 0}>
-                            Extract {splitDialog?.selectedPages.length || 0} pages
+                            {t("tools.splitExtract", { count: splitDialog?.selectedPages.length || 0 })}
                         </Button>
                     </Dialog.Actions>
                 </Dialog>
@@ -463,10 +465,10 @@ export default function ToolsScreen() {
             {/* Reorder Dialog — move pages up/down */}
             <Portal>
                 <Dialog visible={reorderDialog !== null} onDismiss={() => setReorderDialog(null)}>
-                    <Dialog.Title>Reorder "{reorderDialog?.pdfName}"</Dialog.Title>
+                    <Dialog.Title>{t("tools.reorderTitle", { name: reorderDialog?.pdfName || "" })}</Dialog.Title>
                     <Dialog.Content>
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                            Rearrange pages by moving them up or down:
+                            {t("tools.reorderInstructions")}
                         </Text>
                         {reorderDialog && reorderDialog.pageOrder.map((page, index) => (
                             <View key={page} style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
@@ -477,8 +479,8 @@ export default function ToolsScreen() {
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setReorderDialog(null)}>Cancel</Button>
-                        <Button onPress={() => { if (reorderDialog) { const data = { ...reorderDialog }; setReorderDialog(null); setNameDialog({ type: "reorder", data }); } }}>Reorder</Button>
+                        <Button onPress={() => setReorderDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={() => { if (reorderDialog) { const data = { ...reorderDialog }; setReorderDialog(null); setNameDialog({ type: "reorder", data }); } }}>{t("tools.reorder")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
@@ -486,10 +488,10 @@ export default function ToolsScreen() {
             {/* Remove Pages Dialog — choose pages to remove */}
             <Portal>
                 <Dialog visible={removeDialog !== null} onDismiss={() => setRemoveDialog(null)}>
-                    <Dialog.Title>Remove pages from "{removeDialog?.pdfName}"</Dialog.Title>
+                    <Dialog.Title>{t("tools.removeTitle", { name: removeDialog?.pdfName || "" })}</Dialog.Title>
                     <Dialog.Content>
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                            Select pages to remove:
+                            {t("tools.removeSelectPages")}
                         </Text>
                         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
                             {removeDialog && Array.from({ length: removeDialog.totalPages }, (_, i) => i + 1).map((page) => (
@@ -516,9 +518,9 @@ export default function ToolsScreen() {
                         </View>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setRemoveDialog(null)}>Cancel</Button>
+                        <Button onPress={() => setRemoveDialog(null)}>{t("common.cancel")}</Button>
                         <Button onPress={() => { if (removeDialog) { const data = { ...removeDialog }; setRemoveDialog(null); setNameDialog({ type: "remove", data }); } }} disabled={!removeDialog || removeDialog.selectedPages.length === 0}>
-                            Remove {removeDialog?.selectedPages.length || 0} pages
+                            {t("tools.removeAction", { count: removeDialog?.selectedPages.length || 0 })}
                         </Button>
                     </Dialog.Actions>
                 </Dialog>
@@ -527,14 +529,14 @@ export default function ToolsScreen() {
             {/* Metadata Dialog — edit title and author */}
             <Portal>
                 <Dialog visible={metadataDialog !== null} onDismiss={() => setMetadataDialog(null)}>
-                    <Dialog.Title>Edit metadata</Dialog.Title>
+                    <Dialog.Title>{t("tools.metadataTitle")}</Dialog.Title>
                     <Dialog.Content>
-                        <TextInput label="Title" value={metadataDialog?.title || ""} onChangeText={(t) => setMetadataDialog((prev) => prev ? { ...prev, title: t } : null)} mode="outlined" style={{ marginBottom: 12 }} />
-                        <TextInput label="Author" value={metadataDialog?.author || ""} onChangeText={(a) => setMetadataDialog((prev) => prev ? { ...prev, author: a } : null)} mode="outlined" />
+                        <TextInput label={t("tools.metadataLabelTitle")} value={metadataDialog?.title || ""} onChangeText={(v) => setMetadataDialog((prev) => prev ? { ...prev, title: v } : null)} mode="outlined" style={{ marginBottom: 12 }} />
+                        <TextInput label={t("tools.metadataLabelAuthor")} value={metadataDialog?.author || ""} onChangeText={(v) => setMetadataDialog((prev) => prev ? { ...prev, author: v } : null)} mode="outlined" />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setMetadataDialog(null)}>Cancel</Button>
-                        <Button onPress={saveMetadata}>Save</Button>
+                        <Button onPress={() => setMetadataDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={saveMetadata}>{t("common.save")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
@@ -542,15 +544,15 @@ export default function ToolsScreen() {
             {/* Password Dialog — protect or unlock */}
             <Portal>
                 <Dialog visible={passwordDialog !== null} onDismiss={() => setPasswordDialog(null)}>
-                    <Dialog.Title>{passwordDialog?.mode === "protect" ? "Set Password" : "Unlock PDF"}</Dialog.Title>
+                    <Dialog.Title>{passwordDialog?.mode === "protect" ? t("tools.protectTitle") : t("tools.unlockTitle")}</Dialog.Title>
                     <Dialog.Content>
                         <Text variant="bodyMedium" style={{ marginBottom: 16 }}>
                             {passwordDialog?.mode === "protect"
-                                ? `Set a password to protect "${passwordDialog?.pdfName}"`
-                                : `Enter the password to unlock "${passwordDialog?.pdfName}"`}
+                                ? t("tools.passwordProtectHint", { name: passwordDialog?.pdfName || "" })
+                                : t("tools.passwordUnlockHint", { name: passwordDialog?.pdfName || "" })}
                         </Text>
                         <TextInput
-                            label="Password"
+                            label={t("tools.passwordHint")}
                             value={passwordInput}
                             onChangeText={setPasswordInput}
                             mode="outlined"
@@ -559,7 +561,7 @@ export default function ToolsScreen() {
                         />
                         {passwordDialog?.mode === "protect" && (
                             <TextInput
-                                label="Confirm password"
+                                label={t("tools.confirmPassword")}
                                 value={passwordConfirm}
                                 onChangeText={setPasswordConfirm}
                                 mode="outlined"
@@ -568,9 +570,9 @@ export default function ToolsScreen() {
                         )}
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setPasswordDialog(null)}>Cancel</Button>
+                        <Button onPress={() => setPasswordDialog(null)}>{t("common.cancel")}</Button>
                         <Button onPress={passwordDialog?.mode === "protect" ? executeProtect : executeUnlock}>
-                            {passwordDialog?.mode === "protect" ? "Protect" : "Unlock"}
+                            {passwordDialog?.mode === "protect" ? t("tools.protect") : t("tools.unlockAction")}
                         </Button>
                     </Dialog.Actions>
                 </Dialog>
@@ -579,10 +581,10 @@ export default function ToolsScreen() {
             {/* Name Dialog — ask for file name before executing */}
             <Portal>
                 <Dialog visible={nameDialog !== null} onDismiss={() => setNameDialog(null)}>
-                    <Dialog.Title>Name your PDF</Dialog.Title>
+                    <Dialog.Title>{t("tools.namePdfTitle")}</Dialog.Title>
                     <Dialog.Content>
                         <TextInput
-                            label="File name (optional)"
+                            label={t("tools.fileNameOptional")}
                             mode="outlined"
                             autoFocus
                             value={nameInput}
@@ -590,7 +592,7 @@ export default function ToolsScreen() {
                         />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setNameDialog(null)}>Cancel</Button>
+                        <Button onPress={() => setNameDialog(null)}>{t("common.cancel")}</Button>
                         <Button onPress={() => {
                             const type = nameDialog?.type;
                             const data = nameDialog?.data;
@@ -601,7 +603,7 @@ export default function ToolsScreen() {
                             else if (type === "split") executeSplit(fileName);
                             else if (type === "reorder") executeReorder(fileName);
                             else if (type === "remove") executeRemove(fileName);
-                        }}>Save</Button>
+                        }}>{t("common.save")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

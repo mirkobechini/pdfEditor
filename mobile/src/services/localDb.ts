@@ -58,14 +58,16 @@ export async function savePdfLocally(pdf: LocalPdf): Promise<void> {
 
 export async function getLocalPdfs(userId?: string): Promise<LocalPdf[]> {
   const database = await getDb();
-  if (userId) {
+  // When no userId (guest or empty), return ALL PDFs (include legacy without user_id)
+  if (!userId) {
     return await database.getAllAsync<LocalPdf>(
-      "SELECT * FROM pdfs WHERE user_id = ? ORDER BY updated_at DESC",
-      [userId],
+      "SELECT * FROM pdfs ORDER BY updated_at DESC",
     );
   }
+  // When userId is set, return PDFs for that user OR legacy PDFs without user_id
   return await database.getAllAsync<LocalPdf>(
-    "SELECT * FROM pdfs ORDER BY updated_at DESC",
+    "SELECT * FROM pdfs WHERE user_id = ? OR user_id IS NULL OR user_id = '' ORDER BY updated_at DESC",
+    [userId],
   );
 }
 

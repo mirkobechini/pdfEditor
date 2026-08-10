@@ -9,6 +9,7 @@ const REMEMBER_USER_KEY = "pdfeditor_remember_user";
 interface AuthContextValue {
     user: User | null;
     loading: boolean;
+    actionLoading: boolean;
     login: (email: string, password: string, remember?: boolean) => Promise<void>;
     register: (email: string, password: string, fullName: string) => Promise<void>;
     guestLogin: () => Promise<void>;
@@ -159,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, loading: loading || actionLoading, login, register, guestLogin, logout, forgotPassword, setUser }}>
+        <AuthContext.Provider value={{ user, loading, actionLoading, login, register, guestLogin, logout, forgotPassword, setUser }}>
             {children}
         </AuthContext.Provider>
     );

@@ -1,33 +1,40 @@
 import React from "react";
-import { useColorScheme } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "./src/shared/auth";
+import { AppSettingsProvider, useAppSettings } from "./src/shared/AppSettingsContext";
 import AppNavigator from "./src/navigation/AppNavigator";
 import * as Icons from "@expo/vector-icons";
-import { lightTheme, darkTheme } from "./src/theme";
+import "./src/i18n";
 
-export default function App() {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === "dark" ? darkTheme : lightTheme;
+function AppContent() {
+  const { theme } = useAppSettings();
 
   return (
+    <PaperProvider
+      theme={theme}
+      settings={{
+        icon: (props) => <Icons.MaterialCommunityIcons {...props} />,
+      }}
+    >
+      <SafeAreaProvider>
+        <AuthProvider>
+          <StatusBar style="auto" />
+          <AppNavigator />
+        </AuthProvider>
+      </SafeAreaProvider>
+    </PaperProvider>
+  );
+}
+
+export default function App() {
+  return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <PaperProvider
-        theme={theme}
-        settings={{
-          icon: (props) => <Icons.MaterialCommunityIcons {...props} />,
-        }}
-      >
-        <SafeAreaProvider>
-          <AuthProvider>
-            <StatusBar style="auto" />
-            <AppNavigator />
-          </AuthProvider>
-        </SafeAreaProvider>
-      </PaperProvider>
+      <AppSettingsProvider>
+        <AppContent />
+      </AppSettingsProvider>
     </GestureHandlerRootView>
   );
 }
