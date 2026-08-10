@@ -6,10 +6,10 @@ Permettere all'utente mobile di sincronizzare i propri PDF con il cloud backend 
 
 ---
 
-## Status: ✅ COMPLETATA (da testare su APK)
+## Status: ✅ COMPLETATA
 
 Tutti i componenti implementati:
-- ✅ C1 — Onboarding wizard (6 step)
+- ✅ C1 — Onboarding wizard (5 step: benvenuto, tema, lingua, cloud, pronto)
 - ✅ C2 — useCloudSync hook + sync bidirezionale
 - ✅ C3 — Settings sezione Cloud
 - ✅ Conflitti — ConflictDialog (vista semplice/dettagliata)
@@ -17,7 +17,11 @@ Tutti i componenti implementati:
 - ✅ Delete sync — DeleteSyncDialog (locale/cloud/entrambi)
 - ✅ Home badge sync + progress bar
 - ✅ Auto sync all'avvio + background (AppState)
+- ✅ Sync per-PDF (menu contestuale: "Carica su cloud" / "Rimuovi dal cloud")
+- ✅ Dialog post-upload (chiede se sincronizzare subito)
+- ✅ CSRF persistente in AsyncStorage
 - ✅ i18n EN/IT completo
+- ✅ Fix Directory.create (try/catch su tutti i create)
 
 ## Work remaining (da fare in altre issue)
 - JWT token refresh automatico → `.specs/active/feature-jwt-token-refresh.md`

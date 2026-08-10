@@ -22,6 +22,10 @@
 - 🔄 **Trigger automatici** — Sync all'avvio (condizionale) + in background (AppState).
 - 🐛 **Fix upload blob** — RN 0.86 richiede vero `Blob` nel FormData (non più `{uri,name,type}` hack).
 - 🔐 **Gestione token scaduto** — Messaggio chiaro "sessione scaduta" quando il JWT expira.
+- ☁️ **Sync per-PDF** — Menu contestuale (long press) con "Carica su cloud" / "Rimuovi dal cloud" per ogni PDF.
+- 💬 **Dialog post-upload** — Dopo aver caricato un PDF, chiede se sincronizzarlo subito sul cloud.
+- 🔑 **CSRF persistente** — Token CSRF salvato in AsyncStorage e ripristinato al riavvio (fix CSRF validation failed).
+- 🛡️ **Directory.create sicuro** — `try/catch` su tutti i `create()` per evitare crash quando la cartella esiste già.
 
 - 🚀 **Mobile release v0.2.0-mobile** — Seconda release mobile APK (EAS Build)
 - ✅ **UX: Bottom tabs navigation (F9)** — Home + Settings tabs con MainTabs.tsx, navigazione refactored.
