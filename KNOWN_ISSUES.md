@@ -100,11 +100,11 @@
 **Descrizione:** Pattern senza `/` iniziale matchavano a qualsiasi profondità, escludendo `mobile/src/shared/` → Metro non trovava auth/api. Fix: ancorare tutti i pattern con `/` (es. `/shared/`, `/*.png`).
 **Stato:** Risolto (Build #5). Documentato in `mobile/ADR.md`.
 
-### M0 — Nessun sync cloud PDF mobile
+### M0 — Sync cloud PDF mobile ✅ (parziale)
 
-**File:** `mobile/src/services/localDb.ts`, `mobile/src/hooks/usePdfStorage.ts`
-**Descrizione:** I PDF locali (in `Paths.document/pdfs/`) sono solo sul dispositivo, non collegati a `user_id`, **non caricati sul cloud**. Alla disinstallazione/cancellazione dati si perdono. Sync è feature futura (F1).
-**Stato:** Noto, accettato per MVP. Nessun backup cloud.
+**File:** `mobile/src/hooks/useCloudSync.ts`, `mobile/src/screens/SettingsScreen.tsx`, `mobile/src/screens/HomeScreen.tsx`
+**Descrizione:** Sync bidirezionale implementato (upload/download/conflitti), onboarding wizard, dialog conflitti/import/delete, badge sync in Home, progress bar, trigger all'avvio e background.
+**Stato:** ✅ Implementato (issue #619). **Nota:** token JWT scade dopo 1h — refresh automatico pianificato in `.specs/active/feature-jwt-token-refresh.md`.
 
 ## 📊 Coverage gaps (non bloccanti)
 

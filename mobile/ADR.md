@@ -110,7 +110,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 
 - **`react-native-pdf` cache**: il viewer non rimonta automaticamente per un secondo PDF — serve `key={refreshKey}` incrementata in `useEffect([pdfId])` dopo aver settato `pdfUri`.
 - **pdf-lib non supporta**: estrazione testo, form icing, annotazioni. Solo manipolazione strutturale (pagine, metadati, merge/split).
-- **Nessun sync cloud**: PDF locali non caricati sul cloud (feature futura).
+- **Sync cloud attivo**: i PDF si sincronizzano col cloud (upload/download bidirezionale). Il sync richiede login reale (guest esclusi). Token JWT scade dopo 1h → refresh automatico pianificato (`.specs/active/feature-jwt-token-refresh.md`).
 - **Tema scuro non completo**: error container in LoginScreen/ForgotPasswordScreen ha `#FFE0E0` hardcoded (non si adatta a dark mode).
 - **Replace text**: Rotto su TUTTE le piattaforme (non solo mobile). Vedi FEATURE_COMPARISON.md.
 
@@ -118,11 +118,10 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 
 ## Cosa NON è in scope (per ora)
 
-- Sync cloud push/pull dei PDF (F1 — pianificato)
+- JWT refresh automatico (pianificato — vedi `.specs/active/feature-jwt-token-refresh.md`)
+- Modalità sync auto/ibrido/chiedi collegati alle operazioni (solo "differito" attivo)
 - EAS CI Integration (F2 — pianificato)
-- Password protect/unlock (F4 — in pausa, vedi sopra)
 - Rework UI completo con design Penpot (F8 — priorità alta futura)
-- Bottom tabs navigation (F9)
 - Annotazioni PDF (drawing, highlight, commenti)
 
 ---
@@ -135,6 +134,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 | **Fase 4b — EAS CI Integration** | Collegare EAS Build a GitHub Actions per build automatica su tag release      | ⬜ In piano (F2)           |
 | **Migliorie post-MVP**           | Metadata (✅), password (✅), sync hook, refresh, search, thumbnail, snackbar | Completati (issue #618)    |
 | **Issue #622**                   | B1-B3 + S1-S2 (i18n, tema, bug fix)                                           | ✅ Completata              |
+| **Issue #619**                   | Cloud sync + onboarding wizard + dialog conflitti/import/delete               | ✅ Completata              |
 
 ---
 

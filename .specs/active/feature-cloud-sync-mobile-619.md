@@ -6,6 +6,27 @@ Permettere all'utente mobile di sincronizzare i propri PDF con il cloud backend 
 
 ---
 
+## Status: ✅ COMPLETATA (da testare su APK)
+
+Tutti i componenti implementati:
+- ✅ C1 — Onboarding wizard (6 step)
+- ✅ C2 — useCloudSync hook + sync bidirezionale
+- ✅ C3 — Settings sezione Cloud
+- ✅ Conflitti — ConflictDialog (vista semplice/dettagliata)
+- ✅ Import selettivo — ImportPdfDialog
+- ✅ Delete sync — DeleteSyncDialog (locale/cloud/entrambi)
+- ✅ Home badge sync + progress bar
+- ✅ Auto sync all'avvio + background (AppState)
+- ✅ i18n EN/IT completo
+
+## Work remaining (da fare in altre issue)
+- JWT token refresh automatico → `.specs/active/feature-jwt-token-refresh.md`
+- Modalità sync "auto/ibrido/chiedi" non ancora collegati alle operazioni di modifica PDF (solo "differito" attivo)
+- "Non chiedere più" nei dialog delete/conflitti (persistenza preferenza) non implementato
+- Upload cloud: FileReader blob → verificare su APK reale
+
+---
+
 ## Contesto
 
 Al momento i PDF sono salvati solo localmente sul dispositivo (`Paths.document/pdfs/` + tabella SQLite `pdfs`). Alla disinstallazione/cancellazione dati si perdono tutti i PDF. Il sync cloud (F1) è pianificato dalla roadmap ma mai implementato.

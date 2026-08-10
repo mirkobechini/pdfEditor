@@ -9,6 +9,20 @@
 - 🐛 **Header navigazione tradotti** — "PDF Tools", "Scanner", "Forgot Password" now use i18n.
 - 📝 **Issue #622 completata** — Mobile bug fixes + Settings improvements (B1-B3, S1-S2).
 
+### Cloud sync mobile (issue #619)
+
+- ☁️ **Cloud sync PDF** — Nuovo `useCloudSync` hook con sync bidirezionale (upload/download), rilevamento conflitti, gestione offline, preferenze (differito/auto/ibrido/chiedi).
+- 🧭 **Onboarding wizard** — 6 step alla prima installazione (benvenuto, permessi, tema, lingua, cloud, pronto). Flag `onboarding_completed` in AsyncStorage.
+- ⚙️ **Settings sezione Cloud** — Toggle sync, modalità sync, sync all'avvio, stato connessione, "Sincronizza ora".
+- 🔍 **Badge sync in Home** — Icona cloud verde (synced) / gialla (pending) / rossa (error) in ogni card PDF.
+- 📊 **Progress bar sync** — "Sync in corso... (3/12)" durante la sincronizzazione.
+- ⚔️ **ConflictDialog** — Risoluzione conflitti con vista semplice/dettagliata, scelta locale/cloud.
+- 📥 **ImportPdfDialog** — Import selettivo dei PDF locali orfani nel cloud (checklist).
+- 🗑️ **DeleteSyncDialog** — Cancellazione con scelta: solo dispositivo / solo cloud / entrambi.
+- 🔄 **Trigger automatici** — Sync all'avvio (condizionale) + in background (AppState).
+- 🐛 **Fix upload blob** — RN 0.86 richiede vero `Blob` nel FormData (non più `{uri,name,type}` hack).
+- 🔐 **Gestione token scaduto** — Messaggio chiaro "sessione scaduta" quando il JWT expira.
+
 - 🚀 **Mobile release v0.2.0-mobile** — Seconda release mobile APK (EAS Build)
 - ✅ **UX: Bottom tabs navigation (F9)** — Home + Settings tabs con MainTabs.tsx, navigazione refactored.
 - ✅ **UX: Search bar in Home (M5)** — Searchbar React Native Paper + filteredPdfs via useMemo.
