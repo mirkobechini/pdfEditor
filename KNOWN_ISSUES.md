@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-08-07
+> **Aggiornato:** 2026-08-10
 
 ---
 
@@ -76,12 +76,11 @@
 
 ## 📱 Bug/limitazioni mobile
 
-### M4 — Password protect/unlock PDF non implementabile (F4) — IN PAUSA
+### M4 — Password protect/unlock PDF (F4) ✅
 
-**File:** `mobile/src/services/pdfService.ts` (funzioni scritte ma non attive), `mobile/src/screens/ToolsScreen.tsx`
-**Descrizione:** `pdf-lib@1.17.1` (unica versione ufficiale) **non supporta** encryption/decryption. Il tipo `PDFDocument` non ha `encrypt()` né l'opzione `password` in `load()`. Compile error garantito.
-**Opzioni:** Fork `@cantoo/pdf-lib` (2.8.1) supporta encryption ma ha dipendenza Node-only (`node-html-better-parser`) che rischia il bundle Metro/EAS. Crittografia manuale troppo complessa.
-**Stato:** ⏸ In pausa. UI e funzioni già scritte in codice ma non attivabili. Dettagli in `mobile/ADR.md` + `.specs/plans/feature-mobile-improvements.md`.
+**File:** `mobile/src/services/pdfService.ts`, `mobile/src/screens/ToolsScreen.tsx`
+**Descrizione:** Implementato con `@cantoo/pdf-lib@2.8.1` che supporta encryption/decryption. UI in ToolsScreen con dialog per protect (conferma password) e unlock (password singola). Funzionante in APK standalone.
+**Stato:** ✅ Risolto (issue #622).
 
 ### M3 — `react-native-pdf` non rimonta il viewer per un secondo PDF
 

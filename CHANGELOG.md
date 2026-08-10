@@ -1,6 +1,13 @@
 # Changelog
 
-## 2026-08-08
+## 2026-08-10
+
+- 🎨 **i18n completa su tutte le schermate mobile** — HomeScreen, ToolsScreen, LoginScreen, ForgotPasswordScreen, SettingsScreen, navigazione (bottom tabs + header). Opzione "System language" (rilevamento automatico da expo-localization) + Italiano / English nel selettore.
+- 🌗 **Tema live switching** — Tema chiaro/scuro/system con cambio immediato, persistito in AsyncStorage, senza refresh.
+- 🐛 **Login overlay fix** — Separato `actionLoading` da `loading` in auth context: l'overlay (velo nero + ActivityIndicator) ora si mostra correttamente durante login/register.
+- 🐛 **Encoding fix** — Corretta doppia codifica UTF-8 in `it.json` (caratteri accentati).
+- 🐛 **Header navigazione tradotti** — "PDF Tools", "Scanner", "Forgot Password" now use i18n.
+- 📝 **Issue #622 completata** — Mobile bug fixes + Settings improvements (B1-B3, S1-S2).
 
 - 🚀 **Mobile release v0.2.0-mobile** — Seconda release mobile APK (EAS Build)
 - ✅ **UX: Bottom tabs navigation (F9)** — Home + Settings tabs con MainTabs.tsx, navigazione refactored.
