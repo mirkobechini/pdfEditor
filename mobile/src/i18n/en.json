@@ -44,7 +44,13 @@
     "detailsCreated": "Created",
     "detailsUpdated": "Updated",
     "uploadDesc": "Pick a PDF file from your device",
-    "scanDesc": "Take a photo and convert to PDF"
+    "scanDesc": "Take a photo and convert to PDF",
+    "syncToCloud": "Sync to cloud",
+    "removeFromCloud": "Remove from cloud",
+    "syncedToCloud": "{{name}} synced to cloud",
+    "removedFromCloud": "{{name}} removed from cloud",
+    "syncAfterUploadTitle": "Sync to cloud?",
+    "syncAfterUploadDesc": "Do you want to upload \"{{name}}\" to the cloud?"
   },
   "tools": {
     "title": "PDF Tools",
@@ -135,6 +141,8 @@
     "close": "Close",
     "save": "Save",
     "delete": "Delete",
+    "yes": "Yes",
+    "no": "No",
     "loading": "Loading...",
     "networkError": "Network error. Check your connection.",
     "unknownError": "An unexpected error occurred. Please try again.",

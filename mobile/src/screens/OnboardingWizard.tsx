@@ -17,7 +17,6 @@ import { useOnboarding } from "../shared/OnboardingContext";
 
 type WizardStep =
     | "welcome"
-    | "permissions"
     | "theme"
     | "language"
     | "cloud"
@@ -43,36 +42,11 @@ export default function OnboardingWizard() {
                         <Text variant="bodyMedium" style={{ textAlign: "center", color: theme.colors.onSurfaceVariant, marginBottom: 24 }}>
                             {t("onboarding.welcomeDesc")}
                         </Text>
-                        <Button mode="contained" onPress={() => setStep("permissions")} style={{ borderRadius: 8 }} contentStyle={{ paddingVertical: 6 }}>
+                        <Button mode="contained" onPress={() => setStep("theme")} style={{ borderRadius: 8 }} contentStyle={{ paddingVertical: 6 }}>
                             {t("onboarding.start")}
                         </Button>
                         <Button mode="text" onPress={completeOnboarding} style={{ marginTop: 8 }}>
                             {t("onboarding.skip")}
-                        </Button>
-                    </Surface>
-                );
-
-            case "permissions":
-                return (
-                    <Surface style={{ padding: 32, borderRadius: 16, elevation: 4, backgroundColor: theme.colors.surface }}>
-                        <Text variant="headlineSmall" style={{ fontWeight: "bold", color: theme.colors.primary, marginBottom: 12 }}>
-                            {t("onboarding.permissionsTitle")}
-                        </Text>
-                        <List.Item
-                            title={t("onboarding.permissionCamera")}
-                            description={t("onboarding.permissionCameraDesc")}
-                            left={(props) => <List.Icon {...props} icon="camera" />}
-                        />
-                        <List.Item
-                            title={t("onboarding.permissionNotifications")}
-                            description={t("onboarding.permissionNotificationsDesc")}
-                            left={(props) => <List.Icon {...props} icon="bell" />}
-                        />
-                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 16 }}>
-                            {t("onboarding.permissionsNote")}
-                        </Text>
-                        <Button mode="contained" onPress={() => setStep("theme")} style={{ borderRadius: 8 }} contentStyle={{ paddingVertical: 6 }}>
-                            {t("onboarding.continue")}
                         </Button>
                     </Surface>
                 );

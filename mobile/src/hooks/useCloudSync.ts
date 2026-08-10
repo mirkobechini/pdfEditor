@@ -283,7 +283,13 @@ export function useCloudSync(): UseCloudSyncReturn {
           reader.readAsDataURL(blob);
         });
 
-        if (!(await pdfDir.exists)) await pdfDir.create();
+        if (!(await pdfDir.exists)) {
+          try {
+            await pdfDir.create();
+          } catch {
+            // Directory may have been created concurrently — ignore
+          }
+        }
 
         const file = new File(destUri);
         await file.write(base64, "base64");

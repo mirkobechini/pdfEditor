@@ -38,7 +38,11 @@ export function usePdfStorage() {
 
         // Create pdfs directory in documents folder
         const pdfDir = new Directory(Paths.document, "pdfs");
-        pdfDir.create();
+        try {
+          pdfDir.create();
+        } catch {
+          // Directory already exists — ignore
+        }
 
         // Create destination file
         const destFile = new File(pdfDir, `${id}.pdf`);

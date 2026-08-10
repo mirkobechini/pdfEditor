@@ -44,7 +44,13 @@
     "detailsCreated": "Creato",
     "detailsUpdated": "Aggiornato",
     "uploadDesc": "Scegli un file PDF dal dispositivo",
-    "scanDesc": "Scatta una foto e converti in PDF"
+    "scanDesc": "Scatta una foto e converti in PDF",
+    "syncToCloud": "Carica su cloud",
+    "removeFromCloud": "Rimuovi dal cloud",
+    "syncedToCloud": "{{name}} caricato sul cloud",
+    "removedFromCloud": "{{name}} rimosso dal cloud",
+    "syncAfterUploadTitle": "Caricare sul cloud?",
+    "syncAfterUploadDesc": "Vuoi caricare \"{{name}}\" sul cloud?"
   },
   "tools": {
     "title": "Strumenti PDF",
@@ -135,6 +141,8 @@
     "close": "Chiudi",
     "save": "Salva",
     "delete": "Elimina",
+    "yes": "Sì",
+    "no": "No",
     "loading": "Caricamento...",
     "networkError": "Errore di rete. Controlla la connessione.",
     "unknownError": "Si è verificato un errore imprevisto. Riprova.",

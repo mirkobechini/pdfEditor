@@ -29,7 +29,13 @@ async function writePdfBytes(uri: string, bytes: Uint8Array): Promise<void> {
 
 function getPdfDir(): Directory {
   const dir = new Directory(Paths.document, "pdfs");
-  if (!dir.exists) dir.create();
+  if (!dir.exists) {
+    try {
+      dir.create();
+    } catch {
+      // Directory already exists — ignore
+    }
+  }
   return dir;
 }
 

@@ -3,7 +3,7 @@ import { ScrollView, View } from "react-native";
 import { Dialog, Portal, Text, Button, useTheme, Checkbox } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import type { LocalPdf } from "../shared/types";
-import { getOrphanPdfs } from "../services/localDb";
+import { getOrphanPdfs, getUnsyncedPdfs } from "../services/localDb";
 
 interface ImportPdfDialogProps {
     visible: boolean;
@@ -22,12 +22,18 @@ export default function ImportPdfDialog({
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [importing, setImporting] = useState(false);
 
-    // Load orphan PDFs when dialog opens
+    // Load PDFs to import when dialog opens (orphans + unsynced)
     useEffect(() => {
         if (visible) {
             (async () => {
-                const orphans = await getOrphanPdfs();
-                setOrphanPdfs(orphans);
+                const [orphans, unsynced] = await Promise.all([
+                    getOrphanPdfs(),
+                    getUnsyncedPdfs(),
+                ]);
+                // Merge, dedupe by id
+                const map = new Map<string, LocalPdf>();
+                for (const p of [...orphans, ...unsynced]) map.set(p.id, p);
+                setOrphanPdfs(Array.from(map.values()));
                 setSelected(new Set());
             })();
         }

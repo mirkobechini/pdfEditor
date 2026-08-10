@@ -31,9 +31,11 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const { t } = useTranslation();
     const { pickAndSavePdf, loadLocalPdfs, loading: storageLoading } = usePdfStorage();
     const { user } = useAuth();
-    const { status: syncStatus, syncEnabled, progress, isSyncing, deletePdf } = useCloudSync();
+    const { status: syncStatus, syncEnabled, syncMode, progress, isSyncing, deletePdf, uploadPdf } = useCloudSync();
     const userId = user?.id || "";
     const [deleteTarget, setDeleteTarget] = React.useState<LocalPdf | null>(null);
+    const [syncingPdf, setSyncingPdf] = React.useState(false);
+    const [syncAfterUpload, setSyncAfterUpload] = React.useState<{ pdfId: string; pdfName: string } | null>(null);
     const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
     const [showMenu, setShowMenu] = useState(false);
@@ -183,10 +185,14 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         setShowMenu(false);
         const pdf = await pickAndSavePdf(userId);
         if (pdf) {
-            navigation.navigate("PdfViewer", {
-                pdfId: pdf.id,
-                title: pdf.original_filename,
-            });
+            if (syncEnabled) {
+                setSyncAfterUpload({ pdfId: pdf.id, pdfName: pdf.original_filename });
+            } else {
+                navigation.navigate("PdfViewer", {
+                    pdfId: pdf.id,
+                    title: pdf.original_filename,
+                });
+            }
         }
     }
 
@@ -347,17 +353,16 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                                     <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                                                         {formatSize(item.file_size)}
                                                     </Text>
-                                                    {syncStatus[item.id] === "synced" && (
-                                                        <IconButton icon="cloud-check" size={16} iconColor="#4CAF50" style={{ margin: 0 }} />
-                                                    )}
-                                                    {syncStatus[item.id] === "pending" && (
-                                                        <IconButton icon="cloud-sync" size={16} iconColor="#FFC107" style={{ margin: 0 }} />
-                                                    )}
-                                                    {syncStatus[item.id] === "error" && (
-                                                        <IconButton icon="cloud-alert" size={16} iconColor="#F44336" style={{ margin: 0 }} />
-                                                    )}
-                                                    {syncEnabled === false && (
+                                                    {syncEnabled === false ? (
                                                         <IconButton icon="cloud-off-outline" size={16} iconColor="#9E9E9E" style={{ margin: 0 }} />
+                                                    ) : syncStatus[item.id] === "pending" ? (
+                                                        <IconButton icon="cloud-sync" size={16} iconColor="#FFC107" style={{ margin: 0 }} />
+                                                    ) : syncStatus[item.id] === "error" ? (
+                                                        <IconButton icon="cloud-alert" size={16} iconColor="#F44336" style={{ margin: 0 }} />
+                                                    ) : syncStatus[item.id] === "synced" || item.cloud_synced === 1 ? (
+                                                        <IconButton icon="cloud-check" size={16} iconColor="#4CAF50" style={{ margin: 0 }} />
+                                                    ) : (
+                                                        <IconButton icon="cloud-outline" size={16} iconColor="#9E9E9E" style={{ margin: 0 }} />
                                                     )}
                                                 </View>
                                             </View>
@@ -434,6 +439,11 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                         <List.Item title={t("home.rename")} left={(p) => <List.Icon {...p} icon="pencil" />} onPress={() => { if (contextPdf) openRename(contextPdf); }} />
                         <List.Item title={t("home.share")} left={(p) => <List.Icon {...p} icon="share-variant" />} onPress={() => { if (contextPdf) handleShare(contextPdf); }} />
                         <List.Item title={t("home.download")} left={(p) => <List.Icon {...p} icon="download" />} onPress={() => { if (contextPdf) handleDownload(contextPdf); }} />
+                        {syncEnabled && contextPdf && contextPdf.cloud_synced === 1 ? (
+                            <List.Item title={t("home.removeFromCloud")} left={(p) => <List.Icon {...p} icon="cloud-remove" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { await deletePdf(contextPdf.id, "cloud"); await loadPdfs(); showSnack(t("home.removedFromCloud", { name: contextPdf.original_filename })); } finally { setSyncingPdf(false); } } }} />
+                        ) : syncEnabled && contextPdf ? (
+                            <List.Item title={t("home.syncToCloud")} left={(p) => <List.Icon {...p} icon="cloud-upload" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { const ok = await uploadPdf(contextPdf.id); if (ok) { await loadPdfs(); showSnack(t("home.syncedToCloud", { name: contextPdf.original_filename })); } } finally { setSyncingPdf(false); } } }} />
+                        ) : null}
                         <List.Item title={t("home.delete")} left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
                         <List.Item title={t("home.details")} left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setDetailsPdf(pdf); } }} />
                     </Dialog.Content>
@@ -497,6 +507,41 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                     }
                 }}
             />
+
+            {/* Sync after upload dialog */}
+            <Portal>
+                <Dialog visible={syncAfterUpload !== null} onDismiss={() => { setSyncAfterUpload(null); }}>
+                    <Dialog.Title>{t("home.syncAfterUploadTitle")}</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium" style={{ marginBottom: 16 }}>
+                            {t("home.syncAfterUploadDesc", { name: syncAfterUpload?.pdfName || "" })}
+                        </Text>
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => {
+                            const pdfId = syncAfterUpload?.pdfId;
+                            const pdfName = syncAfterUpload?.pdfName;
+                            setSyncAfterUpload(null);
+                            if (pdfId) navigation.navigate("PdfViewer", { pdfId, title: pdfName || "" });
+                        }}>
+                            {t("common.no")}
+                        </Button>
+                        <Button onPress={() => {
+                            const pdfId = syncAfterUpload?.pdfId;
+                            const pdfName = syncAfterUpload?.pdfName;
+                            setSyncAfterUpload(null);
+                            if (pdfId) {
+                                uploadPdf(pdfId).then(() => {
+                                    loadPdfs();
+                                    navigation.navigate("PdfViewer", { pdfId, title: pdfName || "" });
+                                });
+                            }
+                        }}>
+                            {t("common.yes")}
+                        </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
         </SafeAreaView>
     );
 }
