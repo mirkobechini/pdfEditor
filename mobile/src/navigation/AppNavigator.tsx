@@ -1,8 +1,8 @@
 import React from "react";
-import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../shared/auth";
+import { useTranslation } from "react-i18next";
 
 import LoginScreen from "../screens/LoginScreen";
 import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
@@ -24,12 +24,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
     const { user, loading } = useAuth();
-
-    if (loading) return (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
-            <ActivityIndicator size="large" color="#F97316" />
-        </View>
-    );
+    const { t } = useTranslation();
 
     return (
         <NavigationContainer>
@@ -50,17 +45,17 @@ export default function AppNavigator() {
                         <Stack.Screen
                             name="PdfViewer"
                             component={PdfViewerScreen}
-                            options={{ title: "PDF Viewer" }}
+                            options={{ title: t("home.title") + " - " + t("home.detailsTitle") }}
                         />
                         <Stack.Screen
                             name="Scanner"
                             component={ScannerScreen}
-                            options={{ title: "Scanner" }}
+                            options={{ title: t("home.scan") }}
                         />
                         <Stack.Screen
                             name="Tools"
                             component={ToolsScreen}
-                            options={{ title: "PDF Tools" }}
+                            options={{ title: t("tools.title") }}
                         />
                     </>
                 ) : (
@@ -73,7 +68,7 @@ export default function AppNavigator() {
                         <Stack.Screen
                             name="ForgotPassword"
                             component={ForgotPasswordScreen}
-                            options={{ title: "Reset Password" }}
+                            options={{ title: t("auth.forgotPassword") }}
                         />
                     </>
                 )}

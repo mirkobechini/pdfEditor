@@ -21,7 +21,7 @@ const AppSettingsContext = createContext<AppSettingsContextValue | null>(null);
 export function AppSettingsProvider({ children }: { children: React.ReactNode }) {
     const colorScheme = useColorScheme();
     const [themeMode, setThemeModeState] = useState<ThemeMode>("system");
-    const [locale, setLocaleState] = useState("en");
+    const [locale, setLocaleState] = useState("system");
 
     useEffect(() => {
         AsyncStorage.getItem(THEME_MODE_KEY).then((saved) => {
@@ -30,9 +30,23 @@ export function AppSettingsProvider({ children }: { children: React.ReactNode })
             }
         });
         AsyncStorage.getItem(LOCALE_KEY).then((saved) => {
-            if (saved === "it" || saved === "en") {
+            if (saved === "system" || saved === "it" || saved === "en") {
                 setLocaleState(saved);
-                import("../i18n").then((i18n) => i18n.default.changeLanguage(saved));
+                if (saved === "system") {
+                    // Use system language
+                    import("../i18n").then((m) => {
+                        const sysLang = m.getSystemLanguage();
+                        m.default.changeLanguage(sysLang);
+                    });
+                } else {
+                    import("../i18n").then((m) => m.default.changeLanguage(saved));
+                }
+            } else {
+                // First launch — use system language
+                import("../i18n").then((m) => {
+                    const sysLang = m.getSystemLanguage();
+                    m.default.changeLanguage(sysLang);
+                });
             }
         });
     }, []);
@@ -49,7 +63,12 @@ export function AppSettingsProvider({ children }: { children: React.ReactNode })
         setLocaleState(lng);
         await AsyncStorage.setItem(LOCALE_KEY, lng);
         const i18nModule = await import("../i18n");
-        i18nModule.default.changeLanguage(lng);
+        if (lng === "system") {
+            const sysLang = i18nModule.getSystemLanguage();
+            i18nModule.default.changeLanguage(sysLang);
+        } else {
+            i18nModule.default.changeLanguage(lng);
+        }
     }, []);
 
     return (

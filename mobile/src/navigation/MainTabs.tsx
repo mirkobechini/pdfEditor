@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { IconButton, useTheme } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 import HomeScreen from "../screens/HomeScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 
@@ -8,6 +9,7 @@ const Tab = createBottomTabNavigator();
 
 export default function MainTabs() {
     const theme = useTheme();
+    const { t } = useTranslation();
     const [pdfCount, setPdfCount] = useState(0);
 
     return (
@@ -28,8 +30,8 @@ export default function MainTabs() {
                 name="HomeTab"
                 children={() => <HomeScreen onPdfCountChange={setPdfCount} />}
                 options={{
-                    title: "PdfEditor",
-                    tabBarLabel: "Home",
+                    title: t("home.title"),
+                    tabBarLabel: t("home.title"),
                     tabBarBadge: pdfCount > 0 ? pdfCount : undefined,
                     tabBarIcon: ({ color, size }) => (
                         <IconButton icon="file-document" size={size} iconColor={color} />
@@ -40,8 +42,8 @@ export default function MainTabs() {
                 name="SettingsTab"
                 component={SettingsScreen}
                 options={{
-                    title: "Settings",
-                    tabBarLabel: "Settings",
+                    title: t("settings.title"),
+                    tabBarLabel: t("settings.title"),
                     tabBarIcon: ({ color, size }) => (
                         <IconButton icon="cog" size={size} iconColor={color} />
                     ),

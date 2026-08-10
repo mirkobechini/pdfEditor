@@ -17,7 +17,7 @@ export default function SettingsScreen() {
     const [langDialog, setLangDialog] = React.useState(false);
 
     const themeLabel = themeMode === "system" ? t("settings.themeSystem") : themeMode === "light" ? t("settings.themeLight") : t("settings.themeDark");
-    const langLabel = locale === "it" ? t("settings.languageIt") : t("settings.languageEn");
+    const langLabel = locale === "system" ? t("settings.languageSystem") : locale === "it" ? t("settings.languageIt") : t("settings.languageEn");
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["bottom"]}>
@@ -70,6 +70,7 @@ export default function SettingsScreen() {
                     <Dialog.Title>{t("settings.language")}</Dialog.Title>
                     <Dialog.Content>
                         <RadioButton.Group onValueChange={(val) => { setLocale(val); setLangDialog(false); }} value={locale}>
+                            <RadioButton.Item label={t("settings.languageSystem")} value="system" />
                             <RadioButton.Item label={t("settings.languageIt")} value="it" />
                             <RadioButton.Item label={t("settings.languageEn")} value="en" />
                         </RadioButton.Group>
