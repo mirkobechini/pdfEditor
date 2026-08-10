@@ -9,6 +9,7 @@ Permettere all'utente mobile di sincronizzare i propri PDF con il cloud backend 
 ## Status: ✅ COMPLETATA
 
 Tutti i componenti implementati:
+
 - ✅ C1 — Onboarding wizard (5 step: benvenuto, tema, lingua, cloud, pronto)
 - ✅ C2 — useCloudSync hook + sync bidirezionale
 - ✅ C3 — Settings sezione Cloud
@@ -24,6 +25,7 @@ Tutti i componenti implementati:
 - ✅ Fix Directory.create (try/catch su tutti i create)
 
 ## Work remaining (da fare in altre issue)
+
 - JWT token refresh automatico → `.specs/active/feature-jwt-token-refresh.md`
 - Modalità sync "auto/ibrido/chiedi" non ancora collegati alle operazioni di modifica PDF (solo "differito" attivo)
 - "Non chiedere più" nei dialog delete/conflitti (persistenza preferenza) non implementato
