@@ -97,4 +97,6 @@ export interface LocalPdf {
   uri: string; // local file URI in expo-file-system
   created_at: string;
   updated_at: string;
+  cloud_synced?: number; // 0 = not synced, 1 = synced
+  cloud_synced_at?: string | null; // ISO timestamp of last successful sync
 }
