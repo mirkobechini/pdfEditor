@@ -54,23 +54,24 @@
 
 ## Mobile (React Native / Expo)
 
-| Area                              | Test                                        | Coverage | Note                                                                          |
-| --------------------------------- | ------------------------------------------- | -------- | ----------------------------------------------------------------------------- |
-| API client                        | `api.test.ts`                               | ✅       | 15 test: login, register, guest, getMe, listPdfs, upload, CSRF, token, errori |
-| Auth context                      | `auth.test.ts`                              | ✅       | Login, register, guest, logout, session restore, token persistence            |
-| DB locale                         | `localDb.test.ts`                           | ✅       | 9 test: save/get/delete, cloud_synced helper, orphan/unsynced queries         |
-| PDF service                       | `pdfService.test.ts`, `pdfService2.test.ts` | ✅       | Merge, split, reorder, remove pages, protect/unlock, metadata                 |
-| Error mapping                     | `error-map.test.ts`                         | ✅       | 13 test: mappatura errori API → i18n                                          |
-| Cloud sync API                    | `cloudSyncApi.test.ts`                      | ✅       | 4 test: uploadPdf, listPdfs, getPdf, deletePdf via API                        |
-| AppSettingsContext                | `AppSettingsContext.test.tsx`               | ✅       | 4 test: theme mode persistenza, 4 test: locale persistenza                    |
-| OnboardingContext                 | `OnboardingContext.test.tsx`                | ✅       | 5 test: completed default, true, false, completeOnboarding, resetOnboarding   |
-| useCloudSync hook                 | —                                           | ❌       | Richiede mock di NetInfo, FileSystem — coperto parzialmente da cloudSyncApi   |
-| SettingsScreen                    | —                                           | ❌       | Non testato (UI components)                                                   |
-| HomeScreen                        | —                                           | ❌       | Non testato (UI components)                                                   |
-| Dialog (conflict, import, delete) | —                                           | ❌       | Non testati (UI components)                                                   |
-| OnboardingWizard                  | —                                           | ❌       | Non testato (UI components)                                                   |
+| Area                              | Test                                        | Coverage | Note                                                                                                                                                                                 |
+| --------------------------------- | ------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| API client                        | `api.test.ts`                               | ✅       | **30 test**: login, register, guest, getMe, listPdfs, upload, download, merge, split, reorder, remove, metadata, unlock, protect, forgotPassword, resetPassword, CSRF, token, errori |
+| Auth context                      | `auth.test.ts`                              | ✅       | 7 test: login, register, guest, logout, session restore, token persistence                                                                                                           |
+| Auth storage logic                | `AuthStorage.test.ts`                       | ✅       | 9 test: token persistence, user cache, CSRF token persistenza                                                                                                                        |
+| DB locale                         | `localDb.test.ts`                           | ✅       | 9 test: save/get/delete, cloud_synced helper, orphan/unsynced queries                                                                                                                |
+| PDF service                       | `pdfService.test.ts`, `pdfService2.test.ts` | ✅       | 7 test: merge, split, reorder, remove pages, metadata                                                                                                                                |
+| Error mapping                     | `error-map.test.ts`                         | ✅       | 13 test: mappatura errori API → i18n                                                                                                                                                 |
+| Cloud sync API                    | `cloudSyncApi.test.ts`                      | ✅       | 4 test: uploadPdf, listPdfs, getPdf, deletePdf via API                                                                                                                               |
+| AppSettingsContext                | `AppSettingsContext.test.tsx`               | ✅       | 8 test: theme mode persistenza, locale persistenza                                                                                                                                   |
+| OnboardingContext                 | `OnboardingContext.test.tsx`                | ✅       | 5 test: completed default, true, false, completeOnboarding, resetOnboarding                                                                                                          |
+| useCloudSync hook                 | —                                           | ❌       | Richiede mock di NetInfo, FileSystem — coperto parzialmente da cloudSyncApi                                                                                                          |
+| SettingsScreen                    | —                                           | ❌       | Non testato (UI components)                                                                                                                                                          |
+| HomeScreen                        | —                                           | ❌       | Non testato (UI components)                                                                                                                                                          |
+| Dialog (conflict, import, delete) | —                                           | ❌       | Non testati (UI components)                                                                                                                                                          |
+| OnboardingWizard                  | —                                           | ❌       | Non testato (UI components)                                                                                                                                                          |
 
-**Totale: 70 test**
+**Totale: 90 test**
 
 ---
 
@@ -80,11 +81,8 @@
 | ---------------------------------- | ------------------------- | -------- |
 | useCloudSync hook                  | Issue #619 work remaining | Media    |
 | Dialog UI (conflict/import/delete) | Issue #619 work remaining | Bassa    |
-| SettingsScreen                     | Da pianificare            | Bassa    |
-| HomeScreen                         | Da pianificare            | Bassa    |
-| OnboardingWizard                   | Da pianificare            | Bassa    |
-| AppSettingsContext                 | Da pianificare            | Bassa    |
-| OnboardingContext                  | Da pianificare            | Bassa    |
+| SettingsScreen / HomeScreen        | Da pianificare            | Bassa    |
+| OnboardingWizard (UI)              | Da pianificare            | Bassa    |
 | Desktop Tauri Rust                 | Da pianificare            | Bassa    |
 | E2E cross-origin (Playwright)      | T2 in KNOWN_ISSUES.md     | Media    |
 

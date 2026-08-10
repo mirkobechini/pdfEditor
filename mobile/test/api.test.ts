@@ -218,28 +218,6 @@ describe("ApiClient", () => {
   describe("uploadPdf", () => {
     it("fetches file, creates blob, POSTs to /pdfs/upload", async () => {
       client.setToken("t");
-      const blob = new Blob(["fake-pdf-content"], { type: "application/pdf" });
-      // Mock fetch to return the file content
-      mockFetch.mockResolvedValueOnce(
-        mockJsonResponse({ id: "p-new", original_filename: "doc.pdf" }),
-      );
-
-      // The uploadPdf now does: fetch(fileUri) → blob → formData.append("file", blob, fileName)
-      // We need to mock the first fetch to return the file content
-      const fileFetchMock = jest.fn().mockResolvedValue({
-        blob: () => Promise.resolve(blob),
-      });
-      const originalFetch = globalThis.fetch;
-      // Simulate: uploadPdf fetches the file, then calls api._fetch
-      // For simplicity, we mock the file fetch to return a blob
-      const fileFetch = jest.fn().mockResolvedValue({
-        blob: () => Promise.resolve(blob),
-      });
-
-      // Override global fetch for the first call (file read), second call (upload)
-      // The uploadPdf method does: const res = await fetch(fileUri); const blob = await res.blob();
-      // then: const uploadRes = await this._fetch(url, ...)
-      // We'll mock both calls
       const fileBlob = new Blob(["fake"]);
       mockFetch
         .mockReset()
@@ -261,13 +239,209 @@ describe("ApiClient", () => {
         "application/pdf",
       );
       expect(result.id).toBe("p-new");
-      // First call should be file fetch
       expect(mockFetch).toHaveBeenNthCalledWith(1, "file:///test.pdf");
-      // Second call should be upload
       expect(mockFetch).toHaveBeenNthCalledWith(
         2,
         `${BASE}/pdfs/upload`,
         expect.objectContaining({ method: "POST" }),
+      );
+    });
+  });
+
+  // ─── Download PDF ───────────────────────────────────────────────
+
+  describe("downloadPdf", () => {
+    it("sends GET to /pdfs/{id}/download and returns blob", async () => {
+      client.setToken("t");
+      const blob = new Blob(["pdf-content"], { type: "application/pdf" });
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        blob: () => Promise.resolve(blob),
+      });
+
+      const result = await client.downloadPdf("p1");
+      expect(result).toBeInstanceOf(Blob);
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/pdfs/p1/download`,
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: "Bearer t",
+          }),
+        }),
+      );
+    });
+  });
+
+  // ─── Merge / Split / Reorder / Remove ───────────────────────────
+
+  describe("mergePdfs", () => {
+    it("sends POST to /pdfs/merge with pdf_ids", async () => {
+      client.setToken("t");
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "merged-1", page_count: 5 }),
+      );
+      const result = await client.mergePdfs(["p1", "p2"], "merged.pdf");
+      expect(result.id).toBe("merged-1");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/pdfs/merge`,
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("p1"),
+        }),
+      );
+    });
+  });
+
+  describe("splitPdf", () => {
+    it("sends POST to /pdfs/{id}/split with mode", async () => {
+      client.setToken("t");
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse([{ id: "split-1" }, { id: "split-2" }]),
+      );
+      const result = await client.splitPdf("p1", "every");
+      expect(result).toHaveLength(2);
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/pdfs/p1/split`,
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("every"),
+        }),
+      );
+    });
+  });
+
+  describe("reorderPages", () => {
+    it("sends POST to /pdfs/{id}/reorder with page_order", async () => {
+      client.setToken("t");
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "reordered-1", page_count: 3 }),
+      );
+      const result = await client.reorderPages("p1", [3, 1, 2]);
+      expect(result.id).toBe("reordered-1");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/pdfs/p1/reorder`,
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("[3,1,2]"),
+        }),
+      );
+    });
+  });
+
+  describe("removePages", () => {
+    it("sends POST to /pdfs/{id}/remove-pages with page_numbers", async () => {
+      client.setToken("t");
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "removed-1", page_count: 2 }),
+      );
+      const result = await client.removePages("p1", [1]);
+      expect(result.id).toBe("removed-1");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/pdfs/p1/remove-pages`,
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("[1]"),
+        }),
+      );
+    });
+  });
+
+  // ─── Metadata ───────────────────────────────────────────────────
+
+  describe("getMetadata", () => {
+    it("sends GET to /pdfs/{id}/metadata", async () => {
+      client.setToken("t");
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ title: "Doc", author: "Me" }),
+      );
+      const meta = await client.getMetadata("p1");
+      expect(meta.title).toBe("Doc");
+    });
+  });
+
+  describe("updateMetadata", () => {
+    it("sends PUT to /pdfs/{id}/metadata", async () => {
+      client.setToken("t");
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "p1", title: "New Title" }),
+      );
+      const result = await client.updateMetadata("p1", { title: "New Title" });
+      expect(result.title).toBe("New Title");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/pdfs/p1/metadata`,
+        expect.objectContaining({ method: "PUT" }),
+      );
+    });
+  });
+
+  // ─── Password ───────────────────────────────────────────────────
+
+  describe("unlockPdf", () => {
+    it("sends POST to /pdfs/{id}/unlock with password", async () => {
+      client.setToken("t");
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "p1", page_count: 3 }),
+      );
+      const result = await client.unlockPdf("p1", "secret");
+      expect(result.id).toBe("p1");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/pdfs/p1/unlock`,
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("secret"),
+        }),
+      );
+    });
+  });
+
+  describe("protectPdf", () => {
+    it("sends POST to /pdfs/{id}/protect with password", async () => {
+      client.setToken("t");
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "p1", page_count: 3 }),
+      );
+      const result = await client.protectPdf("p1", "secret");
+      expect(result.id).toBe("p1");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/pdfs/p1/protect`,
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("secret"),
+        }),
+      );
+    });
+  });
+
+  // ─── Auth endpoints ─────────────────────────────────────────────
+
+  describe("forgotPassword", () => {
+    it("sends POST to /auth/forgot-password", async () => {
+      mockFetch.mockResolvedValueOnce(mockJsonResponse({}));
+      await client.forgotPassword("a@b.com");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/auth/forgot-password`,
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("a@b.com"),
+        }),
+      );
+    });
+  });
+
+  describe("resetPassword", () => {
+    it("sends POST to /auth/reset-password with token", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "u1", email: "a@b.com" }),
+      );
+      const result = await client.resetPassword("reset-token", "new-pw");
+      expect(result.email).toBe("a@b.com");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/auth/reset-password`,
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining("reset-token"),
+        }),
       );
     });
   });
