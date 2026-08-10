@@ -5,6 +5,7 @@
  * connectivity awareness, and sync mode preferences.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { File, Directory, Paths } from "expo-file-system";
@@ -130,6 +131,39 @@ export function useCloudSync(): UseCloudSyncReturn {
       setIsOnline(state.isConnected ?? true);
     });
     return () => unsubscribe();
+  }, []);
+
+  const syncAllRef = useRef<() => Promise<void>>(async () => {});
+  useEffect(() => {
+    syncAllRef.current = async () => {
+      await syncAll();
+    };
+  }, [syncAll]);
+
+  // Auto sync on startup (if enabled and pref set)
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      if (cancelled) return;
+      const startupPref = await AsyncStorage.getItem(SYNC_STARTUP_KEY);
+      if (startupPref === "false") return;
+      await syncAllRef.current();
+    }, 1500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync in background when app goes to background
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "background") {
+        syncAllRef.current();
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   const setSyncEnabled = useCallback(async (val: boolean) => {
@@ -323,7 +357,21 @@ export function useCloudSync(): UseCloudSyncReturn {
           setStatus((prev) => ({ ...prev, [pdf.id]: "synced" }));
           uploaded++;
         } catch (err) {
-          errors.push(`cloud.syncErrorUploadFailed:${pdf.original_filename}`);
+          console.log(
+            "[useCloudSync] upload failed",
+            pdf.original_filename,
+            err,
+          );
+          // Token expired or invalid credentials
+          if (
+            String(err).includes("INVALID_CREDENTIALS") ||
+            String(err).includes("401") ||
+            String(err).includes("expired")
+          ) {
+            errors.push("cloud.syncErrorTokenExpired");
+          } else {
+            errors.push(`cloud.syncErrorUploadFailed:${pdf.original_filename}`);
+          }
           setStatus((prev) => ({ ...prev, [pdf.id]: "error" }));
         }
       }
@@ -380,8 +428,16 @@ export function useCloudSync(): UseCloudSyncReturn {
             }
           }
         }
-      } catch {
-        errors.push("cloud.syncErrorListFailed");
+      } catch (err) {
+        console.log("[useCloudSync] listPdfs failed", err);
+        if (
+          String(err).includes("INVALID_CREDENTIALS") ||
+          String(err).includes("401")
+        ) {
+          errors.push("cloud.syncErrorTokenExpired");
+        } else {
+          errors.push("cloud.syncErrorListFailed");
+        }
       }
     } finally {
       setProgress(null);

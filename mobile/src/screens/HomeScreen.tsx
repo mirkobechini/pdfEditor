@@ -15,6 +15,7 @@ import { Swipeable } from "react-native-gesture-handler";
 import { setBadgeCountAsync } from "expo-notifications";
 import * as Sharing from "expo-sharing";
 import { useTranslation } from "react-i18next";
+import { useCloudSync } from "../hooks/useCloudSync";
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Main">;
 
@@ -29,6 +30,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const { t } = useTranslation();
     const { pickAndSavePdf, loadLocalPdfs, loading: storageLoading } = usePdfStorage();
     const { user } = useAuth();
+    const { status: syncStatus, syncEnabled, progress, isSyncing } = useCloudSync();
     const userId = user?.id || "";
     const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
@@ -237,6 +239,14 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                     <IconButton icon="wrench" onPress={() => navigation.navigate("Tools")} />
                 )}
             </View>
+            {isSyncing && progress && (
+                <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 4, gap: 8 }}>
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
+                        Sync in corso... ({progress.current}/{progress.total})
+                    </Text>
+                </View>
+            )}
             {loading ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <ActivityIndicator size="large" />
@@ -325,9 +335,23 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                                 <Text variant="titleMedium" style={{ fontWeight: "600" }} numberOfLines={1}>
                                                     {item.original_filename}
                                                 </Text>
-                                                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                                                    {formatSize(item.file_size)}
-                                                </Text>
+                                                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                                                        {formatSize(item.file_size)}
+                                                    </Text>
+                                                    {syncStatus[item.id] === "synced" && (
+                                                        <IconButton icon="cloud-check" size={16} iconColor="#4CAF50" style={{ margin: 0 }} />
+                                                    )}
+                                                    {syncStatus[item.id] === "pending" && (
+                                                        <IconButton icon="cloud-sync" size={16} iconColor="#FFC107" style={{ margin: 0 }} />
+                                                    )}
+                                                    {syncStatus[item.id] === "error" && (
+                                                        <IconButton icon="cloud-alert" size={16} iconColor="#F44336" style={{ margin: 0 }} />
+                                                    )}
+                                                    {syncEnabled === false && (
+                                                        <IconButton icon="cloud-off-outline" size={16} iconColor="#9E9E9E" style={{ margin: 0 }} />
+                                                    )}
+                                                </View>
                                             </View>
                                         </View>
                                     </Card>

@@ -195,17 +195,22 @@ export class ApiClient {
     mimeType: string,
   ): Promise<PdfDocument> {
     const formData = new FormData();
-    formData.append("file", {
-      uri: fileUri,
-      name: fileName,
-      type: mimeType,
-    } as unknown as Blob);
-    const res = await this._fetch(`${this.baseUrl}/pdfs/upload`, {
-      method: "POST",
-      body: formData,
-    });
-    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
-    return res.json();
+    // Expo SDK 57 / RN 0.86 requires a real Blob, not the legacy {uri,name,type} hack
+    try {
+      const res = await fetch(fileUri);
+      const blob = await res.blob();
+      formData.append("file", blob, fileName);
+      const uploadRes = await this._fetch(`${this.baseUrl}/pdfs/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!uploadRes.ok)
+        throw new Error(await ApiClient.extractErrorResponse(uploadRes));
+      return uploadRes.json();
+    } catch (e) {
+      console.error("[api] uploadPdf failed:", e);
+      throw e;
+    }
   }
 
   async listPdfs(skip = 0, limit = 100): Promise<PdfListResponse> {

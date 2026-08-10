@@ -105,12 +105,13 @@ export default function SettingsScreen() {
                                 left={(props) => <List.Icon {...props} icon="cloud-upload" />}
                                 onPress={async () => {
                                     const result = await syncAll();
-                                    const msg = t("cloud.syncResult", { uploaded: result.uploaded, downloaded: result.downloaded, conflicts: result.conflicts.length });
-                                    setSyncResult(msg);
-                                    setSyncResultVisible(true);
                                     if (result.errors.length > 0) {
                                         setSyncErrorDetail(result.errors);
                                         setSyncErrorDialog(true);
+                                    } else {
+                                        const msg = t("cloud.syncResult", { uploaded: result.uploaded, downloaded: result.downloaded, conflicts: result.conflicts.length });
+                                        setSyncResult(msg);
+                                        setSyncResultVisible(true);
                                     }
                                 }}
                                 disabled={isSyncing || !isOnline}
