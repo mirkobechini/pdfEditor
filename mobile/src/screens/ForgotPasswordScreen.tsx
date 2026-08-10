@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useAuth } from "../shared/auth";
+import { useTranslation } from "react-i18next";
 
 type ForgotNavProp = NativeStackNavigationProp<RootStackParamList, "ForgotPassword">;
 
@@ -13,6 +14,7 @@ export default function ForgotPasswordScreen() {
     const theme = useTheme();
     const navigation = useNavigation<ForgotNavProp>();
     const { forgotPassword } = useAuth();
+    const { t } = useTranslation();
     const [email, setEmail] = useState("");
     const [sent, setSent] = useState(false);
     const [error, setError] = useState("");
@@ -41,7 +43,7 @@ export default function ForgotPasswordScreen() {
                             PdfEditor
                         </Text>
                         <Text variant="bodyMedium" style={{ textAlign: "center", color: theme.colors.onSurfaceVariant, marginBottom: 32 }}>
-                            {sent ? "Check your email" : "Reset your password"}
+                            {sent ? t("auth.checkEmail") : t("auth.forgotPassword")}
                         </Text>
 
                         {error ? (
@@ -53,16 +55,16 @@ export default function ForgotPasswordScreen() {
                         {sent ? (
                             <>
                                 <Text variant="bodyMedium" style={{ textAlign: "center", marginBottom: 24 }}>
-                                    If an account with that email exists, we've sent a password reset link.
+                                    {t("auth.resetSent")}
                                 </Text>
                                 <Button mode="contained" onPress={() => navigation.navigate("Login")} style={{ borderRadius: 8 }} contentStyle={{ paddingVertical: 6 }}>
-                                    Back to Sign In
+                                    {t("auth.backToSignIn")}
                                 </Button>
                             </>
                         ) : (
                             <>
                                 <TextInput
-                                    label="Email"
+                                    label={t("auth.email")}
                                     value={email}
                                     onChangeText={setEmail}
                                     mode="outlined"
@@ -78,13 +80,13 @@ export default function ForgotPasswordScreen() {
                                     style={{ marginBottom: 12, borderRadius: 8 }}
                                     contentStyle={{ paddingVertical: 6 }}
                                 >
-                                    Send Reset Link
+                                    {t("auth.sendReset")}
                                 </Button>
                                 <Button
                                     mode="text"
                                     onPress={() => navigation.goBack()}
                                 >
-                                    Back to Sign In
+                                    {t("auth.backToSignIn")}
                                 </Button>
                             </>
                         )}

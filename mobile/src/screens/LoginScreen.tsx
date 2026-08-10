@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useAuth } from "../shared/auth";
+import { mapError } from "../shared/error-map";
 import { useTranslation } from "react-i18next";
 
 type LoginNavProp = NativeStackNavigationProp<RootStackParamList, "Login">;
@@ -31,7 +32,10 @@ export default function LoginScreen() {
                 await login(email, password, true);
             }
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Login failed");
+            const key = mapError(e);
+            const ns = key.split(".")[0];
+            const k = key.split(".")[1];
+            setError(ns === "common" ? t(key) : t(key));
         }
     };
 
@@ -61,7 +65,7 @@ export default function LoginScreen() {
                                 marginBottom: 8,
                             }}
                         >
-                            PdfEditor
+                            {t("home.title")}
                         </Text>
                         <Text
                             variant="bodyMedium"
@@ -71,7 +75,7 @@ export default function LoginScreen() {
                                 marginBottom: 32,
                             }}
                         >
-                            {isRegister ? "Create your account" : "Sign in to continue"}
+                            {isRegister ? t("auth.createAccount") : t("auth.signInToContinue")}
                         </Text>
 
                         {error ? (
@@ -84,7 +88,7 @@ export default function LoginScreen() {
 
                         {isRegister && (
                             <TextInput
-                                label="Full Name"
+                                label={t("auth.fullName")}
                                 value={fullName}
                                 onChangeText={setFullName}
                                 mode="outlined"
@@ -93,7 +97,7 @@ export default function LoginScreen() {
                         )}
 
                         <TextInput
-                            label="Email"
+                            label={t("auth.email")}
                             value={email}
                             onChangeText={setEmail}
                             mode="outlined"
@@ -103,7 +107,7 @@ export default function LoginScreen() {
                         />
 
                         <TextInput
-                            label="Password"
+                            label={t("auth.password")}
                             value={password}
                             onChangeText={setPassword}
                             mode="outlined"
@@ -115,12 +119,12 @@ export default function LoginScreen() {
                         <Button
                             mode="contained"
                             onPress={handleSubmit}
-                            loading={actionLoading}
+                            loading={false}
                             disabled={actionLoading}
                             style={{ marginBottom: 12, borderRadius: 8 }}
                             contentStyle={{ paddingVertical: 6 }}
                         >
-                            {isRegister ? "Register" : "Sign In"}
+                            {isRegister ? t("auth.register") : t("auth.signIn")}
                         </Button>
 
                         <Button
@@ -132,8 +136,8 @@ export default function LoginScreen() {
                             style={{ marginBottom: 8 }}
                         >
                             {isRegister
-                                ? "Already have an account? Sign In"
-                                : "Don't have an account? Register"}
+                                ? t("auth.alreadyAccount")
+                                : t("auth.noAccount")}
                         </Button>
 
                         {!isRegister && (
@@ -143,7 +147,7 @@ export default function LoginScreen() {
                                 style={{ marginBottom: 12 }}
                                 labelStyle={{ fontSize: 13 }}
                             >
-                                Forgot Password?
+                                {t("auth.forgotPassword")}
                             </Button>
                         )}
 
@@ -158,12 +162,12 @@ export default function LoginScreen() {
                             <Button
                                 mode="outlined"
                                 onPress={guestLogin}
-                                loading={actionLoading}
+                                loading={false}
                                 disabled={actionLoading}
                                 style={{ borderRadius: 8 }}
                                 contentStyle={{ paddingVertical: 6 }}
                             >
-                                Continue as Guest
+                                {t("auth.guest")}
                             </Button>
                         </View>
                     </Surface>

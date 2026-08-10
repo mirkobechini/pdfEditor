@@ -79,7 +79,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
             } catch { /* ignore */ }
             await deleteLocalPdf(id);
         }
-        showSnack(`Deleted ${selectedIds.size} PDF(s)`);
+        showSnack(t("home.deletedBatch", { count: selectedIds.size }));
         exitMultiSelect();
         await loadPdfs();
     }
@@ -89,7 +89,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         try {
             const isAvailable = await Sharing.isAvailableAsync();
             if (!isAvailable) {
-                showSnack("Sharing is not available on this device");
+                showSnack(t("home.sharingNotAvailable"));
                 return;
             }
             await Sharing.shareAsync(pdf.uri, {
@@ -97,7 +97,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                 dialogTitle: `Share ${pdf.original_filename}`,
             });
         } catch {
-            showSnack("Failed to share PDF");
+            showSnack(t("home.shareFailed"));
         }
     }
 
@@ -106,7 +106,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         try {
             const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
             if (!permissions.granted) {
-                showSnack("Permission denied");
+                showSnack(t("home.permissionDenied"));
                 return;
             }
             const name = pdf.original_filename.endsWith(".pdf")
@@ -128,9 +128,9 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
             await StorageAccessFramework.writeAsStringAsync(safUri, base64, {
                 encoding: "base64",
             });
-            showSnack(`Downloaded: ${pdf.original_filename}`);
+            showSnack(t("home.downloaded", { name: pdf.original_filename }));
         } catch {
-            showSnack("Failed to download PDF");
+            showSnack(t("home.downloadFailed"));
         }
     }
 
@@ -200,7 +200,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         } catch { /* ignore */ }
         await deleteLocalPdf(pdf.id);
         await loadPdfs();
-        showSnack(`Deleted ${pdf.original_filename}`);
+        showSnack(t("home.deleted", { name: pdf.original_filename }));
     }
 
     function openRename(pdf: LocalPdf) {
@@ -223,7 +223,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["bottom"]}>
             <View style={{ flexDirection: "row", alignItems: "center", marginRight: 16 }}>
                 <Searchbar
-                    placeholder="Search PDFs"
+                    placeholder={t("home.search")}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     style={{ flex: 1, margin: 16, marginBottom: 0 }}
@@ -244,7 +244,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
             ) : pdfs.length === 0 ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
                     <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}>
-                        No PDFs yet. Tap the + button to upload a PDF or use the Scanner.
+                        {t("home.noPdfs")}
                     </Text>
                 </View>
             ) : (
@@ -264,7 +264,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                         style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 16 }}
                                     >
                                         <IconButton icon="delete" iconColor={theme.colors.onError} size={24} />
-                                        <Text style={{ color: theme.colors.onError, fontSize: 12 }}>Delete</Text>
+                                        <Text style={{ color: theme.colors.onError, fontSize: 12 }}>{t("home.delete")}</Text>
                                     </TouchableOpacity>
                                 </View>
                             );
@@ -341,17 +341,17 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
             {multiSelect ? (
                 <View style={{ position: "absolute", right: 0, left: 0, bottom: 0, backgroundColor: theme.colors.primaryContainer, flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 8, paddingBottom: 8 + insets.bottom }}>
                     <Text style={{ color: theme.colors.onPrimaryContainer, fontWeight: "600" }}>
-                        {selectedIds.size} selected
+                        {t("home.selected", { count: selectedIds.size })}
                     </Text>
                     <View style={{ flexDirection: "row", gap: 8 }}>
                         <Button textColor={theme.colors.onPrimaryContainer} onPress={() => setSelectedIds(new Set(filteredPdfs.map((p) => p.id)))}>
-                            Select All
+                            {t("home.selectAll")}
                         </Button>
                         <Button textColor={theme.colors.error} onPress={handleBatchDelete} disabled={selectedIds.size === 0}>
-                            Delete
+                            {t("home.delete")}
                         </Button>
                         <Button textColor={theme.colors.onPrimaryContainer} onPress={exitMultiSelect}>
-                            Cancel
+                            {t("common.cancel")}
                         </Button>
                     </View>
                 </View>
@@ -373,17 +373,17 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                 <Modal visible={showMenu} onDismiss={() => setShowMenu(false)} contentContainerStyle={{ backgroundColor: theme.colors.surface, margin: 24, borderRadius: 12 }}>
                     <List.Section>
                         <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>
-                            Add PDF
+                            {t("home.addPdf")}
                         </List.Subheader>
                         <List.Item
-                            title="Upload from device"
-                            description="Pick a PDF file from your device"
+                            title={t("home.upload")}
+                            description={t("home.uploadDesc")}
                             left={(props) => <List.Icon {...props} icon="file-upload" />}
                             onPress={handleUpload}
                         />
                         <List.Item
-                            title="Scan with camera"
-                            description="Take a photo and convert to PDF"
+                            title={t("home.scan")}
+                            description={t("home.scanDesc")}
                             left={(props) => <List.Icon {...props} icon="camera" />}
                             onPress={() => {
                                 setShowMenu(false);
@@ -399,14 +399,14 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                 <Dialog visible={contextPdf !== null && !renameDialog} onDismiss={() => setContextPdf(null)}>
                     <Dialog.Title>{contextPdf?.original_filename}</Dialog.Title>
                     <Dialog.Content>
-                        <List.Item title="Rename" left={(p) => <List.Icon {...p} icon="pencil" />} onPress={() => { if (contextPdf) openRename(contextPdf); }} />
-                        <List.Item title="Share" left={(p) => <List.Icon {...p} icon="share-variant" />} onPress={() => { if (contextPdf) handleShare(contextPdf); }} />
-                        <List.Item title="Download" left={(p) => <List.Icon {...p} icon="download" />} onPress={() => { if (contextPdf) handleDownload(contextPdf); }} />
-                        <List.Item title="Delete" left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
-                        <List.Item title="Details" left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setDetailsPdf(pdf); } }} />
+                        <List.Item title={t("home.rename")} left={(p) => <List.Icon {...p} icon="pencil" />} onPress={() => { if (contextPdf) openRename(contextPdf); }} />
+                        <List.Item title={t("home.share")} left={(p) => <List.Icon {...p} icon="share-variant" />} onPress={() => { if (contextPdf) handleShare(contextPdf); }} />
+                        <List.Item title={t("home.download")} left={(p) => <List.Icon {...p} icon="download" />} onPress={() => { if (contextPdf) handleDownload(contextPdf); }} />
+                        <List.Item title={t("home.delete")} left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
+                        <List.Item title={t("home.details")} left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setDetailsPdf(pdf); } }} />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setContextPdf(null)}>Close</Button>
+                        <Button onPress={() => setContextPdf(null)}>{t("common.close")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
@@ -414,13 +414,13 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
             {/* Rename dialog */}
             <Portal>
                 <Dialog visible={renameDialog} onDismiss={() => setRenameDialog(false)}>
-                    <Dialog.Title>Rename PDF</Dialog.Title>
+                    <Dialog.Title>{t("home.renameTitle")}</Dialog.Title>
                     <Dialog.Content>
-                        <TextInput label="File name" value={renameText} onChangeText={setRenameText} mode="outlined" autoFocus />
+                        <TextInput label={t("home.fileName")} value={renameText} onChangeText={setRenameText} mode="outlined" autoFocus />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setRenameDialog(false)}>Cancel</Button>
-                        <Button onPress={confirmRename}>Rename</Button>
+                        <Button onPress={() => setRenameDialog(false)}>{t("common.cancel")}</Button>
+                        <Button onPress={confirmRename}>{t("home.rename")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
@@ -428,16 +428,16 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
             {/* Details dialog */}
             <Portal>
                 <Dialog visible={detailsPdf !== null} onDismiss={() => setDetailsPdf(null)}>
-                    <Dialog.Title>PDF Details</Dialog.Title>
+                    <Dialog.Title>{t("home.detailsTitle")}</Dialog.Title>
                     <Dialog.Content>
-                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>Name: </Text>{detailsPdf?.original_filename}</Text>
-                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>Size: </Text>{detailsPdf ? formatSize(detailsPdf.file_size) : ""}</Text>
-                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>Pages: </Text>{detailsPdf?.page_count}</Text>
-                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>Created: </Text>{detailsPdf ? new Date(detailsPdf.created_at).toLocaleDateString() : ""}</Text>
-                        <Text variant="bodyMedium"><Text style={{ fontWeight: "700" }}>Updated: </Text>{detailsPdf ? new Date(detailsPdf.updated_at).toLocaleDateString() : ""}</Text>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsName")}: </Text>{detailsPdf?.original_filename}</Text>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsSize")}: </Text>{detailsPdf ? formatSize(detailsPdf.file_size) : ""}</Text>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsPages")}: </Text>{detailsPdf?.page_count}</Text>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsCreated")}: </Text>{detailsPdf ? new Date(detailsPdf.created_at).toLocaleDateString() : ""}</Text>
+                        <Text variant="bodyMedium"><Text style={{ fontWeight: "700" }}>{t("home.detailsUpdated")}: </Text>{detailsPdf ? new Date(detailsPdf.updated_at).toLocaleDateString() : ""}</Text>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setDetailsPdf(null)}>Close</Button>
+                        <Button onPress={() => setDetailsPdf(null)}>{t("common.close")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
@@ -446,7 +446,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                 visible={snackbarVisible}
                 onDismiss={() => setSnackbarVisible(false)}
                 duration={3000}
-                action={{ label: "OK", onPress: () => setSnackbarVisible(false) }}
+                action={{ label: t("common.ok"), onPress: () => setSnackbarVisible(false) }}
             >
                 {snackbarMsg}
             </Snackbar>
