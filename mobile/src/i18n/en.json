@@ -179,5 +179,23 @@
     "syncErrorUploadFailed": "{{name}}: upload failed",
     "syncErrorDownloadFailed": "{{name}}: download failed",
     "syncErrorListFailed": "Failed to fetch cloud PDF list"
+  },
+  "onboarding": {
+    "welcomeTitle": "Welcome to Editor",
+    "welcomeDesc": "View, edit, merge and sync your PDFs securely. Your files stay on your device until you choose to sync them to the cloud.",
+    "start": "Get started",
+    "skip": "Skip",
+    "continue": "Continue",
+    "permissionsTitle": "Permissions",
+    "permissionCamera": "Camera",
+    "permissionCameraDesc": "Used to scan documents into PDF",
+    "permissionNotifications": "Notifications",
+    "permissionNotificationsDesc": "Used to show PDF count badge on the app icon",
+    "permissionsNote": "You'll be asked for each permission the first time you use the feature.",
+    "cloudDesc": "Sync your PDFs to the cloud so you never lose them. You can change this anytime in Settings.",
+    "cloudNote": "Sync starts after login. Guests don't have cloud access.",
+    "doneTitle": "You're all set!",
+    "doneDesc": "Your preferences have been saved. You can change them anytime in Settings.",
+    "startApp": "Start using Editor"
   }
 }
