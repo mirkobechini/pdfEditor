@@ -9,6 +9,7 @@ import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { File, Directory, Paths } from "expo-file-system";
+import { writeAsStringAsync } from "expo-file-system/legacy";
 import { api } from "../shared/api";
 import type { LocalPdf } from "../shared/types";
 import {
@@ -237,7 +238,7 @@ export function useCloudSync(): UseCloudSyncReturn {
         const blob = await api.downloadPdf(pdfId);
         const localId = generateId();
         const pdfDir = new Directory(Paths.document, "pdfs");
-        const destUri = pdfDir.path + "/" + localId + ".pdf";
+        const destUri = pdfDir.uri + localId + ".pdf";
 
         // Convert blob to base64 and write
         const reader = new FileReader();
@@ -258,8 +259,7 @@ export function useCloudSync(): UseCloudSyncReturn {
           }
         }
 
-        const file = new File(destUri);
-        await file.write(base64, "base64");
+        await writeAsStringAsync(destUri, base64, { encoding: "base64" });
 
         // Get cloud PDF metadata
         const cloudPdf = await api.getPdf(pdfId);
@@ -383,8 +383,8 @@ export function useCloudSync(): UseCloudSyncReturn {
     // Cloud PDFs not present locally
     try {
       const cloudList = await api.listPdfs(0, 1000);
-      if (cloudList?.pdfs) {
-        for (const cloudPdf of cloudList.pdfs) {
+      if (cloudList?.items) {
+        for (const cloudPdf of cloudList.items) {
           const local = await getLocalPdfById(cloudPdf.id);
           if (!local) {
             downloads.push({
@@ -483,12 +483,12 @@ export function useCloudSync(): UseCloudSyncReturn {
       });
       try {
         const cloudList = await api.listPdfs(0, 1000);
-        if (cloudList?.pdfs) {
-          const totalSteps = unsyncedLocal.length + cloudList.pdfs.length;
+        if (cloudList?.items) {
+          const totalSteps = unsyncedLocal.length + cloudList.items.length;
           setProgress({ current: unsyncedLocal.length, total: totalSteps });
 
-          for (let i = 0; i < cloudList.pdfs.length; i++) {
-            const cloudPdf = cloudList.pdfs[i];
+          for (let i = 0; i < cloudList.items.length; i++) {
+            const cloudPdf = cloudList.items[i];
             setProgress({
               current: unsyncedLocal.length + i + 1,
               total: totalSteps,
