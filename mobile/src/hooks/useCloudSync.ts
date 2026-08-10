@@ -354,7 +354,9 @@ export function useCloudSync(): UseCloudSyncReturn {
                 const ok = await downloadPdf(cloudPdf.id);
                 if (ok) downloaded++;
               } catch {
-                errors.push(`cloud.syncErrorDownloadFailed:${cloudPdf.original_filename}`);
+                errors.push(
+                  `cloud.syncErrorDownloadFailed:${cloudPdf.original_filename}`,
+                );
               }
             } else if (
               local.cloud_synced === 1 &&

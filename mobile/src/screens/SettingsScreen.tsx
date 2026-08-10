@@ -35,7 +35,7 @@ export default function SettingsScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["bottom"]}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={[]}>
             <ScrollView>
                 <List.Section>
                     <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>
@@ -55,32 +55,9 @@ export default function SettingsScreen() {
                     />
                 </List.Section>
 
-                <List.Section>
-                    <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>
-                        {t("settings.app")}
-                    </List.Subheader>
-                    <List.Item
-                        title={t("settings.language")}
-                        description={langLabel}
-                        left={(props) => <List.Icon {...props} icon="translate" />}
-                        onPress={() => setLangDialog(true)}
-                    />
-                    <List.Item
-                        title={t("settings.theme")}
-                        description={themeLabel}
-                        left={(props) => <List.Icon {...props} icon="theme-light-dark" />}
-                        onPress={() => setThemeDialog(true)}
-                    />
-                    <List.Item
-                        title={t("settings.version")}
-                        description={appVersion}
-                        left={(props) => <List.Icon {...props} icon="information" />}
-                    />
-                </List.Section>
-
                 <View style={{ height: 1, backgroundColor: theme.colors.surfaceVariant, marginHorizontal: 16 }} />
 
-                {/* Cloud Section */}
+                {/* Cloud Section — subito dopo Account per visibilità */}
                 <List.Section>
                     <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>
                         {t("cloud.title")}
@@ -140,6 +117,31 @@ export default function SettingsScreen() {
                             />
                         </>
                     )}
+                </List.Section>
+
+                <View style={{ height: 1, backgroundColor: theme.colors.surfaceVariant, marginHorizontal: 16 }} />
+
+                <List.Section>
+                    <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>
+                        {t("settings.app")}
+                    </List.Subheader>
+                    <List.Item
+                        title={t("settings.language")}
+                        description={langLabel}
+                        left={(props) => <List.Icon {...props} icon="translate" />}
+                        onPress={() => setLangDialog(true)}
+                    />
+                    <List.Item
+                        title={t("settings.theme")}
+                        description={themeLabel}
+                        left={(props) => <List.Icon {...props} icon="theme-light-dark" />}
+                        onPress={() => setThemeDialog(true)}
+                    />
+                    <List.Item
+                        title={t("settings.version")}
+                        description={appVersion}
+                        left={(props) => <List.Icon {...props} icon="information" />}
+                    />
                 </List.Section>
             </ScrollView>
 
