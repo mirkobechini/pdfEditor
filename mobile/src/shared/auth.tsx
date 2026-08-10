@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const REMEMBER_TOKEN_KEY = "pdfeditor_remember_token";
 const REMEMBER_USER_KEY = "pdfeditor_remember_user";
+const CSRF_TOKEN_KEY = "pdfeditor_csrf_token";
 
 interface AuthContextValue {
     user: User | null;
@@ -36,6 +37,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const remembered = await AsyncStorage.getItem(REMEMBER_TOKEN_KEY);
                 if (remembered && !cancelled) {
                     api.setToken(remembered);
+                }
+                // Restore CSRF token too (needed for POST/PUT/DELETE)
+                const csrf = await AsyncStorage.getItem(CSRF_TOKEN_KEY);
+                if (csrf && !cancelled) {
+                    api.setCsrfToken(csrf);
                 }
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 5000);
@@ -89,6 +95,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const res = await api.login(email, password);
             api.setToken(res.access_token);
+            if (res.csrf_token) {
+                api.setCsrfToken(res.csrf_token);
+                await AsyncStorage.setItem(CSRF_TOKEN_KEY, res.csrf_token);
+            }
             if (remember) {
                 await AsyncStorage.setItem(REMEMBER_TOKEN_KEY, res.access_token);
             } else {
@@ -110,6 +120,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const res = await api.register(email, password, fullName);
             api.setToken(res.access_token);
+            if (res.csrf_token) {
+                api.setCsrfToken(res.csrf_token);
+                await AsyncStorage.setItem(CSRF_TOKEN_KEY, res.csrf_token);
+            }
             const u = await api.getMe();
             await AsyncStorage.setItem(REMEMBER_USER_KEY, JSON.stringify(u));
             setUser(u);
@@ -123,6 +137,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const res = await api.guestLogin();
             api.setToken(res.access_token);
+            if (res.csrf_token) {
+                api.setCsrfToken(res.csrf_token);
+                await AsyncStorage.setItem(CSRF_TOKEN_KEY, res.csrf_token);
+            }
             // Save guest token too so it persists across app restarts
             await AsyncStorage.setItem(REMEMBER_TOKEN_KEY, res.access_token);
             try {
@@ -151,6 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
                 await AsyncStorage.removeItem(REMEMBER_TOKEN_KEY);
                 await AsyncStorage.removeItem(REMEMBER_USER_KEY);
+                await AsyncStorage.removeItem(CSRF_TOKEN_KEY);
             } catch { /* ignore */ }
         }
     }, []);

@@ -38,7 +38,11 @@ export function usePdfStorage() {
 
         // Create pdfs directory in documents folder
         const pdfDir = new Directory(Paths.document, "pdfs");
-        pdfDir.create();
+        try {
+          pdfDir.create();
+        } catch {
+          // Directory already exists — ignore
+        }
 
         // Create destination file
         const destFile = new File(pdfDir, `${id}.pdf`);
@@ -51,8 +55,10 @@ export function usePdfStorage() {
         const buffer = await destFile.arrayBuffer();
         const pdfDoc = await PDFDocument.load(new Uint8Array(buffer));
         const pageCount = pdfDoc.getPageCount();
+        const creationDate = pdfDoc.getCreationDate();
 
         const now = new Date().toISOString();
+        const created_at = creationDate ? creationDate.toISOString() : now;
 
         const localPdf: LocalPdf = {
           id,
@@ -63,7 +69,7 @@ export function usePdfStorage() {
             : (asset.size ?? 0),
           page_count: pageCount,
           uri: destFile.uri,
-          created_at: now,
+          created_at: created_at,
           updated_at: now,
         };
 

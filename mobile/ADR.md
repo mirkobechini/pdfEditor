@@ -66,21 +66,23 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 
 ## Decisioni architetturali
 
-| Scelta                                            | Alternativa                    | Motivo                                                                                                             |
-| ------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------------- |
-| Expo **managed** workflow                         | Expo bare, React Native CLI    | BRIEF diceva "bare", ma la realtà è managed: sviluppo rapido, niente Xcode/Android Studio obbligatorio, EAS Build. |
-| `react-native-pdf` (nativo)                       | PDF.js via WebView             | BRIEF proponeva PDF.js via WebView, ma si è scelto il viewer nativo (scroll/zoom integrati, più performante).      |
-| `pdf-lib` lato client per editing                 | API backend cloud              | Operazioni offline senza dipendere dal cloud. Il cloud resta per auth e sync (futuro).                             |
-| `expo-file-system` SDK 57 API                     | Solo `expo-file-system/legacy` | SDK 57 usa `Paths`, `File`, `Directory`. Legacy solo dove indispensabile (Scanner, pdfService write).              |
-| Import **statici** (mai dynamic import)           | `await import()` in runtime    | Dynamic import **non funziona in APK standalone** — rompe pdfService e Scanner. Lezione appresa in build test.     |
-| `.easignore` pattern ancorati con `/`             | Pattern senza `/`              | Pattern senza `/` iniziale matchavano a qualsiasi profondità, escludendo `mobile/src/shared/`.                     |
-| `@react-native-async-storage/async-storage`       | `expo-secure-store`            | Semplice per JWT + cache utente offline. Import statico.                                                           |
-| Auth cloud (`pdfeditor-api.mirkobechini.com`)     | Auth locale (sidecar)          | Il mobile non ha sidecar: per auth dipende dal cloud. Operazioni PDF restano offline.                              |
-| `react-native-blob-util`                          | `expo-file-system` only        | Usato dove serve encoding/decoding binario (react-native-pdf dipende da esso).                                     |
-| `i18next` + `react-i18next` + `expo-localization` | next-intl (web)                | i18n leggero per React Native, con rilevamento lingua sistema tramite expo-localization.                           |
-| `react-native-paper` MD3 tema dinamico            | Temi separati custom           | Paper Provider con tema live-switching (light/dark/system) gestito da AppSettingsContextuseCallback/useMemo.       |
-| Auth: `loading` separato da `actionLoading`       | `loading: actionLoading        |                                                                                                                    | loading` | Separazione evita che l'overlay di login venga coperto dalla schermata di caricamento della navigazione. |
-| AsyncStorage per tema + lingua persistenza        | Expo SecureStore               | Dati non sensibili (preferenze UI), persistenza semplice e veloce.                                                 |
+| Scelta                                               | Alternativa                    | Motivo                                                                                                                                    |
+| ---------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| Expo **managed** workflow                            | Expo bare, React Native CLI    | BRIEF diceva "bare", ma la realtà è managed: sviluppo rapido, niente Xcode/Android Studio obbligatorio, EAS Build.                        |
+| `react-native-pdf` (nativo)                          | PDF.js via WebView             | BRIEF proponeva PDF.js via WebView, ma si è scelto il viewer nativo (scroll/zoom integrati, più performante).                             |
+| `pdf-lib` lato client per editing                    | API backend cloud              | Operazioni offline senza dipendere dal cloud. Il cloud resta per auth e sync (futuro).                                                    |
+| `expo-file-system` SDK 57 API                        | Solo `expo-file-system/legacy` | SDK 57 usa `Paths`, `File`, `Directory`. Legacy solo dove indispensabile (Scanner, pdfService write).                                     |
+| Import **statici** (mai dynamic import)              | `await import()` in runtime    | Dynamic import **non funziona in APK standalone** — rompe pdfService e Scanner. Lezione appresa in build test.                            |
+| `.easignore` pattern ancorati con `/`                | Pattern senza `/`              | Pattern senza `/` iniziale matchavano a qualsiasi profondità, escludendo `mobile/src/shared/`.                                            |
+| `@react-native-async-storage/async-storage`          | `expo-secure-store`            | Semplice per JWT + cache utente offline. Import statico.                                                                                  |
+| Auth cloud (`pdfeditor-api.mirkobechini.com`)        | Auth locale (sidecar)          | Il mobile non ha sidecar: per auth dipende dal cloud. Operazioni PDF restano offline.                                                     |
+| `react-native-blob-util`                             | `expo-file-system` only        | Usato dove serve encoding/decoding binario (react-native-pdf dipende da esso).                                                            |
+| `i18next` + `react-i18next` + `expo-localization`    | next-intl (web)                | i18n leggero per React Native, con rilevamento lingua sistema tramite expo-localization.                                                  |
+| `react-native-paper` MD3 tema dinamico               | Temi separati custom           | Paper Provider con tema live-switching (light/dark/system) gestito da AppSettingsContextuseCallback/useMemo.                              |
+| Auth: `loading` separato da `actionLoading`          | `loading: actionLoading        |                                                                                                                                           | loading` | Separazione evita che l'overlay di login venga coperto dalla schermata di caricamento della navigazione. |
+| AsyncStorage per tema + lingua + sync preferenze     | Expo SecureStore               | Dati non sensibili, persistenza semplice. Include CSRF token, sync mode, sync on startup.                                                 |
+| CSRF token persistito in AsyncStorage                | Solo cookie                    | Su RN i cookie non funzionano come su web. Il CSRF token salvato in storage viene ripristinato al riavvio (fix 403 CSRF).                 |
+| Sync per-PDF (menu contestuale + dialog post-upload) | Sync automatico globale        | Ogni PDF può essere caricato/rimosso dal cloud singolarmente dal menu long press. Dopo l'upload un dialog chiede se sincronizzare subito. |
 
 ---
 
@@ -90,9 +92,9 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 2. **Metadati**: `getPageCount()` da `pdf-lib` → salvato in tabella SQLite `pdfs` (`expo-sqlite`, `pdfeditor.db`).
 3. **Editing offline**: `pdfService.ts` legge il file (`new File(uri).arrayBuffer()`), lo modifica con `pdf-lib`, lo riscrive con `expo-file-system/legacy` `writeAsStringAsync(base64)`.
 4. **Accesso**: `getLocalPdfs()`/`getLocalPdfById()` leggono la tabella `pdfs`. `getLocalPdfs()` restituisce TUTTI i PDF quando `userId` è vuoto/guest (legacy compatibilità).
-5. **Nessun sync cloud**: i PDF locali sono **solo sul dispositivo**. Non sono collegati a `user_id` e **non vengono caricati sul cloud**. Il sync è pianificato come feature futura (F1).
+5. **Sync cloud (F1 implementato)**: i PDF possono essere sincronizzati sul cloud (singolarmente dal menu contestuale o in blocco da Settings). Il sync è bidirezionale. Il sync richiede login reale (guest esclusi).
 
-> ⚠️ **Conseguenza**: alla disinstallazione o alla cancellazione dati, PDF e metadati vanno persi (nessun backup su cloud).
+> ⚠️ **Conseguenza**: alla disinstallazione o alla cancellazione dati, PDF e metadati vanno persi (nessun backup cloud automatico — il sync va abilitato manualmente).
 
 ---
 
@@ -100,8 +102,8 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 
 - **Cloud-only**: `api.ts` punta a `https://pdfeditor-api.mirkobechini.com` con `CLOUD_API_URL`.
 - **Flussi**: email/password (login/register) + **guest** (login senza credenziali).
-- **Persistenza**: JWT salvato in AsyncStorage (`REMEMBER_TOKEN_KEY`), utente in cache (`REMEMBER_USER_KEY`).
-- **Offline restore**: al riavvio, se il token è scaduto ma l'utente è in cache, ripristina l'utente reale (non solo guest).
+- **Persistenza**: JWT salvato in AsyncStorage (`REMEMBER_TOKEN_KEY`), CSRF token in `CSRF_TOKEN_KEY`, utente in cache (`REMEMBER_USER_KEY`).
+- **Offline restore**: al riavvio, ripristina JWT + CSRF token + utente in cache. Se il token è scaduto ma l'utente è in cache, mostra l'utente reale (non solo guest).
 - **Stati**: `loading` (restore iniziale) separato da `actionLoading` (login/register/guest) — evita che l'overlay di login copra il restore.
 
 ---
@@ -110,7 +112,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 
 - **`react-native-pdf` cache**: il viewer non rimonta automaticamente per un secondo PDF — serve `key={refreshKey}` incrementata in `useEffect([pdfId])` dopo aver settato `pdfUri`.
 - **pdf-lib non supporta**: estrazione testo, form icing, annotazioni. Solo manipolazione strutturale (pagine, metadati, merge/split).
-- **Nessun sync cloud**: PDF locali non caricati sul cloud (feature futura).
+- **Sync cloud attivo**: i PDF si sincronizzano col cloud (upload/download bidirezionale). Il sync richiede login reale (guest esclusi). Token JWT scade dopo 1h → refresh automatico pianificato (`.specs/active/feature-jwt-token-refresh.md`).
 - **Tema scuro non completo**: error container in LoginScreen/ForgotPasswordScreen ha `#FFE0E0` hardcoded (non si adatta a dark mode).
 - **Replace text**: Rotto su TUTTE le piattaforme (non solo mobile). Vedi FEATURE_COMPARISON.md.
 
@@ -118,11 +120,10 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 
 ## Cosa NON è in scope (per ora)
 
-- Sync cloud push/pull dei PDF (F1 — pianificato)
+- JWT refresh automatico (pianificato — vedi `.specs/active/feature-jwt-token-refresh.md`)
+- Modalità sync auto/ibrido/chiedi collegati alle operazioni (solo "differito" attivo)
 - EAS CI Integration (F2 — pianificato)
-- Password protect/unlock (F4 — in pausa, vedi sopra)
 - Rework UI completo con design Penpot (F8 — priorità alta futura)
-- Bottom tabs navigation (F9)
 - Annotazioni PDF (drawing, highlight, commenti)
 
 ---
@@ -135,6 +136,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 | **Fase 4b — EAS CI Integration** | Collegare EAS Build a GitHub Actions per build automatica su tag release      | ⬜ In piano (F2)           |
 | **Migliorie post-MVP**           | Metadata (✅), password (✅), sync hook, refresh, search, thumbnail, snackbar | Completati (issue #618)    |
 | **Issue #622**                   | B1-B3 + S1-S2 (i18n, tema, bug fix)                                           | ✅ Completata              |
+| **Issue #619**                   | Cloud sync + onboarding wizard + dialog conflitti/import/delete               | ✅ Completata              |
 
 ---
 

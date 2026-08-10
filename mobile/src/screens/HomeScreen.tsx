@@ -8,13 +8,15 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
 import { useAuth } from "../shared/auth";
-import { getLocalPdfById, savePdfLocally, deleteLocalPdf } from "../services/localDb";
+import { getLocalPdfById, savePdfLocally, deleteLocalPdf, togglePdfSyncExclude } from "../services/localDb";
 import { File } from "expo-file-system";
 import { StorageAccessFramework } from "expo-file-system/legacy";
 import { Swipeable } from "react-native-gesture-handler";
 import { setBadgeCountAsync } from "expo-notifications";
 import * as Sharing from "expo-sharing";
 import { useTranslation } from "react-i18next";
+import { useCloudSync } from "../hooks/useCloudSync";
+import DeleteSyncDialog, { type DeleteSyncOption } from "./DeleteSyncDialog";
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Main">;
 
@@ -29,7 +31,11 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const { t } = useTranslation();
     const { pickAndSavePdf, loadLocalPdfs, loading: storageLoading } = usePdfStorage();
     const { user } = useAuth();
+    const { status: syncStatus, syncEnabled, syncMode, progress, isSyncing, deletePdf, uploadPdf } = useCloudSync();
     const userId = user?.id || "";
+    const [deleteTarget, setDeleteTarget] = React.useState<LocalPdf | null>(null);
+    const [syncingPdf, setSyncingPdf] = React.useState(false);
+    const [syncAfterUpload, setSyncAfterUpload] = React.useState<{ pdfId: string; pdfName: string } | null>(null);
     const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
     const [showMenu, setShowMenu] = useState(false);
@@ -179,10 +185,14 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         setShowMenu(false);
         const pdf = await pickAndSavePdf(userId);
         if (pdf) {
-            navigation.navigate("PdfViewer", {
-                pdfId: pdf.id,
-                title: pdf.original_filename,
-            });
+            if (syncEnabled) {
+                setSyncAfterUpload({ pdfId: pdf.id, pdfName: pdf.original_filename });
+            } else {
+                navigation.navigate("PdfViewer", {
+                    pdfId: pdf.id,
+                    title: pdf.original_filename,
+                });
+            }
         }
     }
 
@@ -194,6 +204,12 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
 
     async function handleDelete(pdf: LocalPdf) {
         setContextPdf(null);
+        // If PDF is cloud-synced and sync is enabled, ask what to delete
+        if (syncEnabled && pdf.cloud_synced === 1) {
+            setDeleteTarget(pdf);
+            return;
+        }
+        // Otherwise simple local delete
         try {
             const file = new File(pdf.uri);
             if (file.exists) file.delete();
@@ -237,6 +253,14 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                     <IconButton icon="wrench" onPress={() => navigation.navigate("Tools")} />
                 )}
             </View>
+            {isSyncing && progress && (
+                <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 4, gap: 8 }}>
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
+                        Sync in corso... ({progress.current}/{progress.total})
+                    </Text>
+                </View>
+            )}
             {loading ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <ActivityIndicator size="large" />
@@ -283,10 +307,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                         }
                                     }}
                                     onLongPress={() => {
-                                        if (!multiSelect) {
-                                            enterMultiSelect();
-                                            toggleSelect(item.id);
-                                        }
+                                        if (!multiSelect) setContextPdf(item);
                                     }}
                                 >
                                     <Card style={{ marginBottom: 12, backgroundColor: theme.colors.surface }}>
@@ -325,9 +346,24 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                                 <Text variant="titleMedium" style={{ fontWeight: "600" }} numberOfLines={1}>
                                                     {item.original_filename}
                                                 </Text>
-                                                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                                                    {formatSize(item.file_size)}
-                                                </Text>
+                                                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                                                        {formatSize(item.file_size)}
+                                                    </Text>
+                                                    {syncEnabled === false ? (
+                                                        <IconButton icon="cloud-off-outline" size={16} iconColor="#9E9E9E" style={{ margin: 0 }} />
+                                                    ) : syncStatus[item.id] === "pending" ? (
+                                                        <IconButton icon="cloud-sync" size={16} iconColor="#FFC107" style={{ margin: 0 }} />
+                                                    ) : syncStatus[item.id] === "error" ? (
+                                                        <IconButton icon="cloud-alert" size={16} iconColor="#F44336" style={{ margin: 0 }} />
+                                                    ) : item.cloud_synced_exclude === 1 ? (
+                                                        <IconButton icon="cloud-off-outline" size={16} iconColor="#9E9E9E" style={{ margin: 0 }} />
+                                                    ) : syncStatus[item.id] === "synced" || item.cloud_synced === 1 ? (
+                                                        <IconButton icon="cloud-check" size={16} iconColor="#4CAF50" style={{ margin: 0 }} />
+                                                    ) : (
+                                                        <IconButton icon="cloud-outline" size={16} iconColor="#9E9E9E" style={{ margin: 0 }} />
+                                                    )}
+                                                </View>
                                             </View>
                                         </View>
                                     </Card>
@@ -402,6 +438,14 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                         <List.Item title={t("home.rename")} left={(p) => <List.Icon {...p} icon="pencil" />} onPress={() => { if (contextPdf) openRename(contextPdf); }} />
                         <List.Item title={t("home.share")} left={(p) => <List.Icon {...p} icon="share-variant" />} onPress={() => { if (contextPdf) handleShare(contextPdf); }} />
                         <List.Item title={t("home.download")} left={(p) => <List.Icon {...p} icon="download" />} onPress={() => { if (contextPdf) handleDownload(contextPdf); }} />
+                        {syncEnabled && contextPdf && contextPdf.cloud_synced === 1 ? (
+                            <List.Item title={t("home.removeFromCloud")} left={(p) => <List.Icon {...p} icon="cloud-remove" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { await deletePdf(contextPdf.id, "cloud"); await loadPdfs(); showSnack(t("home.removedFromCloud", { name: contextPdf.original_filename })); } finally { setSyncingPdf(false); } } }} />
+                        ) : syncEnabled && contextPdf && contextPdf.cloud_synced !== 1 && contextPdf.cloud_synced_exclude !== 1 ? (
+                            <List.Item title={t("home.syncToCloud")} left={(p) => <List.Icon {...p} icon="cloud-upload" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { const ok = await uploadPdf(contextPdf.id); if (ok) { await loadPdfs(); showSnack(t("home.syncedToCloud", { name: contextPdf.original_filename })); } } finally { setSyncingPdf(false); } } }} />
+                        ) : null}
+                        {syncEnabled && contextPdf && (
+                            <List.Item title={contextPdf.cloud_synced_exclude === 1 ? t("home.includeInSync") : t("home.excludeFromSync")} left={(p) => <List.Icon {...p} icon={contextPdf.cloud_synced_exclude === 1 ? "cloud-sync" : "cloud-off-outline"} />} onPress={async () => { if (contextPdf) { const newVal = contextPdf.cloud_synced_exclude === 1 ? false : true; await togglePdfSyncExclude(contextPdf.id, newVal); setContextPdf(null); await loadPdfs(); showSnack(newVal ? t("home.excludedFromSync", { name: contextPdf.original_filename }) : t("home.includedInSync", { name: contextPdf.original_filename })); } }} />
+                        )}
                         <List.Item title={t("home.delete")} left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
                         <List.Item title={t("home.details")} left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setDetailsPdf(pdf); } }} />
                     </Dialog.Content>
@@ -450,6 +494,56 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
             >
                 {snackbarMsg}
             </Snackbar>
+
+            <DeleteSyncDialog
+                visible={deleteTarget !== null}
+                pdfName={deleteTarget?.original_filename || ""}
+                onDismiss={() => setDeleteTarget(null)}
+                onDelete={async (option: DeleteSyncOption) => {
+                    if (!deleteTarget) return;
+                    const ok = await deletePdf(deleteTarget.id, option);
+                    setDeleteTarget(null);
+                    await loadPdfs();
+                    if (ok) {
+                        showSnack(t("home.deleted", { name: deleteTarget.original_filename }));
+                    }
+                }}
+            />
+
+            {/* Sync after upload dialog */}
+            <Portal>
+                <Dialog visible={syncAfterUpload !== null} onDismiss={() => { setSyncAfterUpload(null); }}>
+                    <Dialog.Title>{t("home.syncAfterUploadTitle")}</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium" style={{ marginBottom: 16 }}>
+                            {t("home.syncAfterUploadDesc", { name: syncAfterUpload?.pdfName || "" })}
+                        </Text>
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => {
+                            const pdfId = syncAfterUpload?.pdfId;
+                            const pdfName = syncAfterUpload?.pdfName;
+                            setSyncAfterUpload(null);
+                            if (pdfId) navigation.navigate("PdfViewer", { pdfId, title: pdfName || "" });
+                        }}>
+                            {t("common.no")}
+                        </Button>
+                        <Button onPress={() => {
+                            const pdfId = syncAfterUpload?.pdfId;
+                            const pdfName = syncAfterUpload?.pdfName;
+                            setSyncAfterUpload(null);
+                            if (pdfId) {
+                                uploadPdf(pdfId).then(() => {
+                                    loadPdfs();
+                                    navigation.navigate("PdfViewer", { pdfId, title: pdfName || "" });
+                                });
+                            }
+                        }}>
+                            {t("common.yes")}
+                        </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
         </SafeAreaView>
     );
 }

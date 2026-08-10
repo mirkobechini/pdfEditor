@@ -206,5 +206,69 @@ describe("ApiClient", () => {
       client.setToken("test-token");
       expect(client.getToken()).toBe("test-token");
     });
+
+    it("setCsrfToken/getCsrfToken roundtrip", () => {
+      client.setCsrfToken("csrf-abc");
+      expect((client as any)._csrfToken).toBe("csrf-abc");
+    });
+  });
+
+  // ─── Upload PDF (Blob-based) ────────────────────────────────────
+
+  describe("uploadPdf", () => {
+    it("fetches file, creates blob, POSTs to /pdfs/upload", async () => {
+      client.setToken("t");
+      const blob = new Blob(["fake-pdf-content"], { type: "application/pdf" });
+      // Mock fetch to return the file content
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "p-new", original_filename: "doc.pdf" }),
+      );
+
+      // The uploadPdf now does: fetch(fileUri) → blob → formData.append("file", blob, fileName)
+      // We need to mock the first fetch to return the file content
+      const fileFetchMock = jest.fn().mockResolvedValue({
+        blob: () => Promise.resolve(blob),
+      });
+      const originalFetch = globalThis.fetch;
+      // Simulate: uploadPdf fetches the file, then calls api._fetch
+      // For simplicity, we mock the file fetch to return a blob
+      const fileFetch = jest.fn().mockResolvedValue({
+        blob: () => Promise.resolve(blob),
+      });
+
+      // Override global fetch for the first call (file read), second call (upload)
+      // The uploadPdf method does: const res = await fetch(fileUri); const blob = await res.blob();
+      // then: const uploadRes = await this._fetch(url, ...)
+      // We'll mock both calls
+      const fileBlob = new Blob(["fake"]);
+      mockFetch
+        .mockReset()
+        .mockResolvedValueOnce({ blob: () => Promise.resolve(fileBlob) }) // file read
+        .mockResolvedValueOnce(
+          mockJsonResponse({
+            id: "p-new",
+            original_filename: "doc.pdf",
+            file_size: 100,
+            page_count: 1,
+            created_at: "",
+            updated_at: "",
+          }),
+        );
+
+      const result = await client.uploadPdf(
+        "file:///test.pdf",
+        "doc.pdf",
+        "application/pdf",
+      );
+      expect(result.id).toBe("p-new");
+      // First call should be file fetch
+      expect(mockFetch).toHaveBeenNthCalledWith(1, "file:///test.pdf");
+      // Second call should be upload
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        `${BASE}/pdfs/upload`,
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
   });
 });

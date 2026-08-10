@@ -5,6 +5,7 @@ import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "./src/shared/auth";
 import { AppSettingsProvider, useAppSettings } from "./src/shared/AppSettingsContext";
+import { OnboardingProvider } from "./src/shared/OnboardingContext";
 import AppNavigator from "./src/navigation/AppNavigator";
 import * as Icons from "@expo/vector-icons";
 import "./src/i18n";
@@ -20,10 +21,12 @@ function AppContent() {
       }}
     >
       <SafeAreaProvider>
-        <AuthProvider>
-          <StatusBar style="auto" />
-          <AppNavigator />
-        </AuthProvider>
+        <OnboardingProvider>
+          <AuthProvider>
+            <StatusBar style="auto" />
+            <AppNavigator />
+          </AuthProvider>
+        </OnboardingProvider>
       </SafeAreaProvider>
     </PaperProvider>
   );
