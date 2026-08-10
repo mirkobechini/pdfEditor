@@ -17,6 +17,10 @@ import {
   getLocalPdfs,
   getLocalPdfById,
   deleteLocalPdf,
+  markPdfCloudSynced,
+  markPdfCloudUnsynced,
+  getUnsyncedPdfs,
+  getOrphanPdfs,
 } from "../src/services/localDb";
 import type { LocalPdf } from "../src/shared/types";
 
@@ -58,7 +62,7 @@ describe("localDb", () => {
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("test-1");
     expect(mockDb.getAllAsync).toHaveBeenCalledWith(
-      expect.stringContaining("SELECT * FROM pdfs"),
+      expect.stringContaining("COALESCE"),
     );
   });
 
@@ -81,6 +85,48 @@ describe("localDb", () => {
     expect(mockDb.runAsync).toHaveBeenCalledWith(
       expect.stringContaining("DELETE"),
       ["test-1"],
+    );
+  });
+
+  // ─── Cloud sync helpers ─────────────────────────────────────────
+
+  it("markPdfCloudSynced sets cloud_synced=1", async () => {
+    mockDb.runAsync.mockResolvedValue(undefined);
+    await markPdfCloudSynced("test-1");
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE"),
+      expect.arrayContaining(["test-1"]),
+    );
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("cloud_synced = 1"),
+      expect.anything(),
+    );
+  });
+
+  it("markPdfCloudUnsynced sets cloud_synced=0", async () => {
+    mockDb.runAsync.mockResolvedValue(undefined);
+    await markPdfCloudUnsynced("test-1");
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("cloud_synced = 0"),
+      expect.anything(),
+    );
+  });
+
+  it("getUnsyncedPdfs filters by cloud_synced=0", async () => {
+    mockDb.getAllAsync.mockResolvedValue([samplePdf]);
+    const result = await getUnsyncedPdfs();
+    expect(result).toHaveLength(1);
+    expect(mockDb.getAllAsync).toHaveBeenCalledWith(
+      expect.stringContaining("cloud_synced IS NULL OR cloud_synced = 0"),
+    );
+  });
+
+  it("getOrphanPdfs filters by empty user_id", async () => {
+    mockDb.getAllAsync.mockResolvedValue([samplePdf]);
+    const result = await getOrphanPdfs();
+    expect(result).toHaveLength(1);
+    expect(mockDb.getAllAsync).toHaveBeenCalledWith(
+      expect.stringContaining("user_id IS NULL"),
     );
   });
 });
