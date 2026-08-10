@@ -147,39 +147,6 @@ export function useCloudSync(): UseCloudSyncReturn {
     return () => unsubscribe();
   }, []);
 
-  const syncAllRef = useRef<() => Promise<void>>(async () => {});
-  useEffect(() => {
-    syncAllRef.current = async () => {
-      await syncAll();
-    };
-  }, [syncAll]);
-
-  // Auto sync on startup (if enabled and pref set)
-  useEffect(() => {
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      if (cancelled) return;
-      const startupPref = await AsyncStorage.getItem(SYNC_STARTUP_KEY);
-      if (startupPref === "false") return;
-      await syncAllRef.current();
-    }, 1500);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Sync in background when app goes to background
-  useEffect(() => {
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state === "background") {
-        syncAllRef.current();
-      }
-    });
-    return () => sub.remove();
-  }, []);
-
   const setSyncEnabled = useCallback(async (val: boolean) => {
     setSyncEnabledState(val);
     await AsyncStorage.setItem(SYNC_ENABLED_KEY, String(val));
@@ -580,6 +547,39 @@ export function useCloudSync(): UseCloudSyncReturn {
 
     return { uploaded, downloaded, conflicts, errors };
   }, [isGuest, syncEnabled, isOnline, downloadPdf]);
+
+  // Auto sync on startup (after syncAll is defined)
+  const syncAllRef = useRef<() => Promise<void>>(async () => {});
+  useEffect(() => {
+    syncAllRef.current = async () => {
+      await syncAll();
+    };
+  }, [syncAll]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      if (cancelled) return;
+      const startupPref = await AsyncStorage.getItem(SYNC_STARTUP_KEY);
+      if (startupPref === "false") return;
+      await syncAllRef.current();
+    }, 1500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync in background when app goes to background
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "background") {
+        syncAllRef.current();
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   return {
     uploadPdf,
