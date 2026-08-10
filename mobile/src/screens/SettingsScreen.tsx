@@ -20,15 +20,17 @@ export default function SettingsScreen() {
     const [syncModeDialog, setSyncModeDialog] = React.useState(false);
     const [syncResult, setSyncResult] = React.useState("");
     const [syncResultVisible, setSyncResultVisible] = React.useState(false);
+    const [syncErrorDetail, setSyncErrorDetail] = React.useState<string[]>([]);
+    const [syncErrorDialog, setSyncErrorDialog] = React.useState(false);
 
     const themeLabel = themeMode === "system" ? t("settings.themeSystem") : themeMode === "light" ? t("settings.themeLight") : t("settings.themeDark");
     const langLabel = locale === "system" ? t("settings.languageSystem") : locale === "it" ? t("settings.languageIt") : t("settings.languageEn");
     const syncModeLabel = (mode: SyncMode): string => {
         switch (mode) {
-            case "differito": return "Differito (sync manuale)";
-            case "auto": return "Auto (tutte le modifiche)";
-            case "ibrido": return "Ibrido (Wi-Fi solo)";
-            case "chiedi": return "Chiedi ogni volta";
+            case "differito": return t("cloud.syncModeDifferito");
+            case "auto": return t("cloud.syncModeAuto");
+            case "ibrido": return t("cloud.syncModeIbrido");
+            case "chiedi": return t("cloud.syncModeChiedi");
         }
     };
 
@@ -74,62 +76,71 @@ export default function SettingsScreen() {
                         description={appVersion}
                         left={(props) => <List.Icon {...props} icon="information" />}
                     />
-                    {/* Cloud Section */}
-                    <List.Section>
-                        <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>
-                            Cloud
-                        </List.Subheader>
-                        <List.Item
-                            title="Sync cloud"
-                            description={syncEnabled ? (isSyncing ? "Sync in corso..." : "Attivo") : "Disattivo"}
-                            left={(props) => <List.Icon {...props} icon="cloud" />}
-                            right={(props) => (
-                                <Switch
-                                    value={syncEnabled}
-                                    onValueChange={setSyncEnabled}
-                                    color={theme.colors.primary}
-                                />
-                            )}
-                        />
-                        {syncEnabled && (
-                            <>
-                                <List.Item
-                                    title="Modalità sync"
-                                    description={syncModeLabel(syncMode)}
-                                    left={(props) => <List.Icon {...props} icon="sync" />}
-                                    onPress={() => setSyncModeDialog(true)}
-                                />
-                                <List.Item
-                                    title="Sync all'avvio"
-                                    description={syncOnStartup ? "Attivo" : "Disattivo"}
-                                    left={(props) => <List.Icon {...props} icon="restart" />}
-                                    right={(props) => (
-                                        <Switch
-                                            value={syncOnStartup}
-                                            onValueChange={setSyncOnStartup}
-                                            color={theme.colors.primary}
-                                        />
-                                    )}
-                                />
-                                <List.Item
-                                    title="Connessione"
-                                    description={isOnline ? "Online" : "Offline"}
-                                    left={(props) => <List.Icon {...props} icon={isOnline ? "wifi" : "wifi-off"} />}
-                                />
-                                <List.Item
-                                    title="Sincronizza ora"
-                                    description={isSyncing ? "In corso..." : "Avvia sync"}
-                                    left={(props) => <List.Icon {...props} icon="cloud-upload" />}
-                                    onPress={async () => {
-                                        const result = await syncAll();
-                                        setSyncResult(`Upload: ${result.uploaded}, Download: ${result.downloaded}, Conflitti: ${result.conflicts.length}, Errori: ${result.errors.length}`);
-                                        setSyncResultVisible(true);
-                                    }}
-                                    disabled={isSyncing || !isOnline}
-                                />
-                            </>
+                </List.Section>
+
+                <View style={{ height: 1, backgroundColor: theme.colors.surfaceVariant, marginHorizontal: 16 }} />
+
+                {/* Cloud Section */}
+                <List.Section>
+                    <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>
+                        {t("cloud.title")}
+                    </List.Subheader>
+                    <List.Item
+                        title={t("cloud.syncCloud")}
+                        description={syncEnabled ? (isSyncing ? t("cloud.syncing") : t("cloud.enabled")) : t("cloud.disabled")}
+                        left={(props) => <List.Icon {...props} icon="cloud" />}
+                        right={(props) => (
+                            <Switch
+                                value={syncEnabled}
+                                onValueChange={setSyncEnabled}
+                                color={theme.colors.primary}
+                            />
                         )}
-                    </List.Section>
+                    />
+                    {syncEnabled && (
+                        <>
+                            <List.Item
+                                title={t("cloud.syncMode")}
+                                description={syncModeLabel(syncMode)}
+                                left={(props) => <List.Icon {...props} icon="sync" />}
+                                onPress={() => setSyncModeDialog(true)}
+                            />
+                            <List.Item
+                                title={t("cloud.syncOnStartup")}
+                                description={syncOnStartup ? t("cloud.syncOnStartupOn") : t("cloud.syncOnStartupOff")}
+                                left={(props) => <List.Icon {...props} icon="restart" />}
+                                right={(props) => (
+                                    <Switch
+                                        value={syncOnStartup}
+                                        onValueChange={setSyncOnStartup}
+                                        color={theme.colors.primary}
+                                    />
+                                )}
+                            />
+                            <List.Item
+                                title={t("cloud.connection")}
+                                description={isOnline ? t("cloud.online") : t("cloud.offline")}
+                                left={(props) => <List.Icon {...props} icon={isOnline ? "wifi" : "wifi-off"} />}
+                            />
+                            <List.Item
+                                title={t("cloud.syncNow")}
+                                description={isSyncing ? t("cloud.syncNowInProgress") : t("cloud.syncNowDesc")}
+                                left={(props) => <List.Icon {...props} icon="cloud-upload" />}
+                                onPress={async () => {
+                                    const result = await syncAll();
+                                    const msg = t("cloud.syncResult", { uploaded: result.uploaded, downloaded: result.downloaded, conflicts: result.conflicts.length });
+                                    setSyncResult(msg);
+                                    setSyncResultVisible(true);
+                                    if (result.errors.length > 0) {
+                                        setSyncErrorDetail(result.errors);
+                                        setSyncErrorDialog(true);
+                                    }
+                                }}
+                                disabled={isSyncing || !isOnline}
+                            />
+                        </>
+                    )}
+                </List.Section>
             </ScrollView>
 
             {/* Language Dialog */}
@@ -169,17 +180,46 @@ export default function SettingsScreen() {
             {/* Sync Mode Dialog */}
             <Portal>
                 <Dialog visible={syncModeDialog} onDismiss={() => setSyncModeDialog(false)}>
-                    <Dialog.Title>Modalità sync</Dialog.Title>
+                    <Dialog.Title>{t("cloud.syncModeTitle")}</Dialog.Title>
                     <Dialog.Content>
                         <RadioButton.Group onValueChange={(val) => { setSyncMode(val as SyncMode); setSyncModeDialog(false); }} value={syncMode}>
-                            <RadioButton.Item label="Differito (default)" value="differito" />
-                            <RadioButton.Item label="Auto" value="auto" />
-                            <RadioButton.Item label="Ibrido" value="ibrido" />
-                            <RadioButton.Item label="Chiedi ogni volta" value="chiedi" />
+                            <RadioButton.Item label={t("cloud.syncModeDifferito")} value="differito" />
+                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 16, marginTop: -8, marginBottom: 8 }}>
+                                {t("cloud.syncModeDifferitoDesc")}
+                            </Text>
+                            <RadioButton.Item label={t("cloud.syncModeAuto")} value="auto" />
+                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 16, marginTop: -8, marginBottom: 8 }}>
+                                {t("cloud.syncModeAutoDesc")}
+                            </Text>
+                            <RadioButton.Item label={t("cloud.syncModeIbrido")} value="ibrido" />
+                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 16, marginTop: -8, marginBottom: 8 }}>
+                                {t("cloud.syncModeIbridoDesc")}
+                            </Text>
+                            <RadioButton.Item label={t("cloud.syncModeChiedi")} value="chiedi" />
+                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 16, marginTop: -8, marginBottom: 8 }}>
+                                {t("cloud.syncModeChiediDesc")}
+                            </Text>
                         </RadioButton.Group>
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setSyncModeDialog(false)}>{t("common.cancel")}</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Sync Error Dialog */}
+            <Portal>
+                <Dialog visible={syncErrorDialog} onDismiss={() => setSyncErrorDialog(false)}>
+                    <Dialog.Title>{t("cloud.syncErrors")}</Dialog.Title>
+                    <Dialog.Content>
+                        {syncErrorDetail.map((err, i) => (
+                            <Text key={i} variant="bodyMedium" style={{ color: theme.colors.error, marginBottom: 4 }}>
+                                • {err}
+                            </Text>
+                        ))}
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setSyncErrorDialog(false)}>{t("common.close")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
