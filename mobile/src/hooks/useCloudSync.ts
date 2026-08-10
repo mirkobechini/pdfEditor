@@ -7,7 +7,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
-import { File } from "expo-file-system";
+import { File, Directory, Paths } from "expo-file-system";
 import { api } from "../shared/api";
 import type { LocalPdf } from "../shared/types";
 import {
@@ -177,9 +177,8 @@ export function useCloudSync(): UseCloudSyncReturn {
         setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
         const blob = await api.downloadPdf(pdfId);
         const localId = generateId();
-        const pdfDir =
-          (await import("expo-file-system")).Paths.document + "pdfs/";
-        const destUri = pdfDir + localId + ".pdf";
+        const pdfDir = new Directory(Paths.document, "pdfs");
+        const destUri = pdfDir.path + "/" + localId + ".pdf";
 
         // Convert blob to base64 and write
         const reader = new FileReader();
@@ -192,11 +191,9 @@ export function useCloudSync(): UseCloudSyncReturn {
           reader.readAsDataURL(blob);
         });
 
-        const { File: ExpoFile, Directory } = await import("expo-file-system");
-        const dir = new Directory(pdfDir);
-        if (!(await dir.exists)) await dir.create();
+        if (!(await pdfDir.exists)) await pdfDir.create();
 
-        const file = new ExpoFile(destUri);
+        const file = new File(destUri);
         await file.write(base64, "base64");
 
         // Get cloud PDF metadata
