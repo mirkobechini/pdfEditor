@@ -8,7 +8,7 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
 import { useAuth } from "../shared/auth";
-import { getLocalPdfById, savePdfLocally, deleteLocalPdf } from "../services/localDb";
+import { getLocalPdfById, savePdfLocally, deleteLocalPdf, togglePdfSyncExclude } from "../services/localDb";
 import { File } from "expo-file-system";
 import { StorageAccessFramework } from "expo-file-system/legacy";
 import { Swipeable } from "react-native-gesture-handler";
@@ -307,10 +307,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                         }
                                     }}
                                     onLongPress={() => {
-                                        if (!multiSelect) {
-                                            enterMultiSelect();
-                                            toggleSelect(item.id);
-                                        }
+                                        if (!multiSelect) setContextPdf(item);
                                     }}
                                 >
                                     <Card style={{ marginBottom: 12, backgroundColor: theme.colors.surface }}>
@@ -359,6 +356,8 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                                         <IconButton icon="cloud-sync" size={16} iconColor="#FFC107" style={{ margin: 0 }} />
                                                     ) : syncStatus[item.id] === "error" ? (
                                                         <IconButton icon="cloud-alert" size={16} iconColor="#F44336" style={{ margin: 0 }} />
+                                                    ) : item.cloud_synced_exclude === 1 ? (
+                                                        <IconButton icon="cloud-off-outline" size={16} iconColor="#9E9E9E" style={{ margin: 0 }} />
                                                     ) : syncStatus[item.id] === "synced" || item.cloud_synced === 1 ? (
                                                         <IconButton icon="cloud-check" size={16} iconColor="#4CAF50" style={{ margin: 0 }} />
                                                     ) : (
@@ -441,9 +440,12 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                         <List.Item title={t("home.download")} left={(p) => <List.Icon {...p} icon="download" />} onPress={() => { if (contextPdf) handleDownload(contextPdf); }} />
                         {syncEnabled && contextPdf && contextPdf.cloud_synced === 1 ? (
                             <List.Item title={t("home.removeFromCloud")} left={(p) => <List.Icon {...p} icon="cloud-remove" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { await deletePdf(contextPdf.id, "cloud"); await loadPdfs(); showSnack(t("home.removedFromCloud", { name: contextPdf.original_filename })); } finally { setSyncingPdf(false); } } }} />
-                        ) : syncEnabled && contextPdf ? (
+                        ) : syncEnabled && contextPdf && contextPdf.cloud_synced !== 1 && contextPdf.cloud_synced_exclude !== 1 ? (
                             <List.Item title={t("home.syncToCloud")} left={(p) => <List.Icon {...p} icon="cloud-upload" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { const ok = await uploadPdf(contextPdf.id); if (ok) { await loadPdfs(); showSnack(t("home.syncedToCloud", { name: contextPdf.original_filename })); } } finally { setSyncingPdf(false); } } }} />
                         ) : null}
+                        {syncEnabled && contextPdf && (
+                            <List.Item title={contextPdf.cloud_synced_exclude === 1 ? t("home.includeInSync") : t("home.excludeFromSync")} left={(p) => <List.Icon {...p} icon={contextPdf.cloud_synced_exclude === 1 ? "cloud-sync" : "cloud-off-outline"} />} onPress={async () => { if (contextPdf) { const newVal = contextPdf.cloud_synced_exclude === 1 ? false : true; await togglePdfSyncExclude(contextPdf.id, newVal); setContextPdf(null); await loadPdfs(); showSnack(newVal ? t("home.excludedFromSync", { name: contextPdf.original_filename }) : t("home.includedInSync", { name: contextPdf.original_filename })); } }} />
+                        )}
                         <List.Item title={t("home.delete")} left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
                         <List.Item title={t("home.details")} left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setDetailsPdf(pdf); } }} />
                     </Dialog.Content>

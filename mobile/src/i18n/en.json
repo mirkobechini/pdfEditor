@@ -50,7 +50,11 @@
     "syncedToCloud": "{{name}} synced to cloud",
     "removedFromCloud": "{{name}} removed from cloud",
     "syncAfterUploadTitle": "Sync to cloud?",
-    "syncAfterUploadDesc": "Do you want to upload \"{{name}}\" to the cloud?"
+    "syncAfterUploadDesc": "Do you want to upload \"{{name}}\" to the cloud?",
+    "excludeFromSync": "Exclude from sync",
+    "includeInSync": "Include in sync",
+    "excludedFromSync": "{{name}} excluded from sync",
+    "includedInSync": "{{name}} included in sync"
   },
   "tools": {
     "title": "PDF Tools",

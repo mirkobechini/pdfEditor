@@ -50,7 +50,11 @@
     "syncedToCloud": "{{name}} caricato sul cloud",
     "removedFromCloud": "{{name}} rimosso dal cloud",
     "syncAfterUploadTitle": "Caricare sul cloud?",
-    "syncAfterUploadDesc": "Vuoi caricare \"{{name}}\" sul cloud?"
+    "syncAfterUploadDesc": "Vuoi caricare \"{{name}}\" sul cloud?",
+    "excludeFromSync": "Escludi dal sync",
+    "includeInSync": "Includi nel sync",
+    "excludedFromSync": "{{name}} escluso dal sync",
+    "includedInSync": "{{name}} incluso nel sync"
   },
   "tools": {
     "title": "Strumenti PDF",

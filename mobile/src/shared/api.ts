@@ -103,7 +103,8 @@ export class ApiClient {
     try {
       return await fetch(url, {
         ...options,
-        credentials: "include",
+        // No credentials: include — RN doesn't handle cookies like a browser.
+        // We rely on Authorization header + X-CSRF-Token header instead.
         headers,
         signal: controller.signal,
       });
