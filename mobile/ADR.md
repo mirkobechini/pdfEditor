@@ -129,12 +129,12 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 
 ## Roadmap mobile
 
-| Fase                             | Descrizione                                                                  | Stato                      |
-| -------------------------------- | ---------------------------------------------------------------------------- | -------------------------- |
-| **Fase 4 — MVP**                 | Setup Expo + auth + upload + viewer + scanner + editing pdf-lib + EAS APK    | ✅ Completata (issue #611) |
-| **Fase 4b — EAS CI Integration** | Collegare EAS Build a GitHub Actions per build automatica su tag release     | ⬜ In piano (F2)           |
+| Fase                             | Descrizione                                                                   | Stato                      |
+| -------------------------------- | ----------------------------------------------------------------------------- | -------------------------- |
+| **Fase 4 — MVP**                 | Setup Expo + auth + upload + viewer + scanner + editing pdf-lib + EAS APK     | ✅ Completata (issue #611) |
+| **Fase 4b — EAS CI Integration** | Collegare EAS Build a GitHub Actions per build automatica su tag release      | ⬜ In piano (F2)           |
 | **Migliorie post-MVP**           | Metadata (✅), password (✅), sync hook, refresh, search, thumbnail, snackbar | Completati (issue #618)    |
-| **Issue #622**                   | B1-B3 + S1-S2 (i18n, tema, bug fix)                                          | ✅ Completata              |
+| **Issue #622**                   | B1-B3 + S1-S2 (i18n, tema, bug fix)                                           | ✅ Completata              |
 
 ---
 
