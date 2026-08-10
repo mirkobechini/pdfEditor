@@ -18,6 +18,14 @@ Tutti i componenti implementati:
 - ✅ Delete sync — DeleteSyncDialog (locale/cloud/entrambi)
 - ✅ Home badge sync + progress bar
 - ✅ Auto sync all'avvio + background (AppState)
+- ✅ Sync per-PDF (menu contestuale: "Carica su cloud" / "Rimuovi dal cloud" / "Escludi dal sync")
+- ✅ Dialog post-upload (chiede se sincronizzare subito)
+- ✅ Esclusione per-PDF dal sync (colonna cloud_synced_exclude, icona grigia sbarrata)
+- ✅ CSRF persistente in AsyncStorage (rimosso credentials:include per RN)
+- ✅ Data creazione PDF letta da metadati pdf-lib (non più "now")
+- ✅ Fix Directory.create (try/catch su tutti i create)
+- ✅ i18n EN/IT completo
+- ✅ Test: 30+ test mobile (localDb, api, auth, pdfService, error-map)
 - ✅ Sync per-PDF (menu contestuale: "Carica su cloud" / "Rimuovi dal cloud")
 - ✅ Dialog post-upload (chiede se sincronizzare subito)
 - ✅ CSRF persistente in AsyncStorage
