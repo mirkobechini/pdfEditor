@@ -101,7 +101,7 @@
 ```bash
 # Backend (Python) — pytest
 cd backend
-pytest -q
+python -m pytest -q
 
 # Frontend web (Next.js) — vitest
 cd frontend
@@ -112,5 +112,16 @@ cd mobile
 npx jest
 ```
 
+### Full suite (tutte le piattaforme)
+
+```bash
+# Bash (macOS/Linux/Git Bash)
+bash run-all-tests.sh
+
+# PowerShell (Windows)
+.\run-all-tests.ps1
+```
+
 ### Desktop (Tauri)
+
 Non ha test specifici. Le funzionalità desktop sono testate indirettamente dai test frontend web (stessa codebase Next.js).
