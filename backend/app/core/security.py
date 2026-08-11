@@ -34,3 +34,16 @@ def decode_access_token(token: str) -> dict | None:
         return jwt.decode(token, settings.effective_secret_key, algorithms=[settings.ALGORITHM])
     except jwt.InvalidTokenError:
         return None
+
+
+def decode_access_token_ignore_exp(token: str) -> dict | None:
+    """Decode JWT token ignoring expiration (for refresh endpoint)."""
+    try:
+        return jwt.decode(
+            token,
+            settings.effective_secret_key,
+            algorithms=[settings.ALGORITHM],
+            options={"verify_exp": False},
+        )
+    except jwt.InvalidTokenError:
+        return None
