@@ -281,6 +281,31 @@
     "onlyPdfAllowed": "Only PDF files are allowed.",
     "unsupportedFileType": "Unsupported file type."
   },
+  "download": {
+    "title": "Download PdfEditor",
+    "subtitle": "Available on desktop (Windows, macOS, Linux) and mobile (Android). All platforms are free and open source.",
+    "loading": "Loading releases...",
+    "desktopTitle": "Desktop App",
+    "mobileTitle": "Mobile App",
+    "windows": "Windows",
+    "windowsDesc": "Windows 10 / 11, 64-bit",
+    "macos": "macOS",
+    "macosDesc": "macOS 10.15+, Apple Silicon",
+    "macosIntelNote": "Intel Macs: use the DMG or build from source",
+    "linux": "Linux",
+    "linuxDesc": "AppImage & DEB, 64-bit",
+    "android": "Android",
+    "androidDesc": "Android APK (direct download)",
+    "downloadInstaller": "Download Installer",
+    "downloadMsi": "Download MSI",
+    "downloadDmg": "Download DMG",
+    "downloadAppImage": "Download AppImage",
+    "downloadDeb": "Download DEB",
+    "downloadApk": "Download APK",
+    "notAvailable": "Not available",
+    "recentChanges": "Recent Changes",
+    "noChangelog": "No changelog available for this release."
+  },
   "landing": {
     "navbar": {
       "features": "Features",
@@ -288,7 +313,8 @@
       "pricing": "Pricing",
       "login": "Sign In",
       "register": "Sign Up Free",
-      "goToApp": "Go to App"
+      "goToApp": "Go to App",
+      "download": "Download"
     },
     "hero": {
       "badge": "New: Password protect & Unlock",

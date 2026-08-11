@@ -158,7 +158,7 @@ export default function GoogleLoginButton({ resetKey }: GoogleLoginButtonProps) 
         <div className="mb-4">
             <button
                 type="button"
-                onClick={() => setError("Google login verrà collegato nel prossimo step backend+OAuth")}
+                onClick={() => setError("Google login non ancora disponibile su desktop")}
                 className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-transparent py-3 text-sm font-semibold text-[#f4f1ee] transition-colors hover:bg-white/5"
             >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">

@@ -283,6 +283,31 @@
     "onlyPdfAllowed": "Sono ammessi solo file PDF.",
     "unsupportedFileType": "Tipo di file non supportato."
   },
+  "download": {
+    "title": "Scarica PdfEditor",
+    "subtitle": "Disponibile su desktop (Windows, macOS, Linux) e mobile (Android). Tutte le piattaforme sono gratuite e open source.",
+    "loading": "Caricamento release...",
+    "desktopTitle": "App Desktop",
+    "mobileTitle": "App Mobile",
+    "windows": "Windows",
+    "windowsDesc": "Windows 10 / 11, 64-bit",
+    "macos": "macOS",
+    "macosDesc": "macOS 10.15+, Apple Silicon",
+    "macosIntelNote": "Mac Intel: usa il DMG o compila da sorgente",
+    "linux": "Linux",
+    "linuxDesc": "AppImage e DEB, 64-bit",
+    "android": "Android",
+    "androidDesc": "APK Android (download diretto)",
+    "downloadInstaller": "Scarica Installer",
+    "downloadMsi": "Scarica MSI",
+    "downloadDmg": "Scarica DMG",
+    "downloadAppImage": "Scarica AppImage",
+    "downloadDeb": "Scarica DEB",
+    "downloadApk": "Scarica APK",
+    "notAvailable": "Non disponibile",
+    "recentChanges": "Novità",
+    "noChangelog": "Nessun changelog disponibile per questa release."
+  },
   "landing": {
     "navbar": {
       "download": "Scarica",

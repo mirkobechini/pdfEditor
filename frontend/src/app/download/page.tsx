@@ -1,11 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
-import HeaderControls from "../components/HeaderControls";
-import MonkeyLogo from "../components/MonkeyLogo";
-import { useAuth } from "../lib/auth";
+import LandingNavbar from "../components/landing/LandingNavbar";
 
 interface ReleaseAsset {
     name: string;
@@ -15,6 +12,7 @@ interface ReleaseAsset {
 interface ReleaseInfo {
     tag_name: string;
     name: string;
+    body: string;
     assets: ReleaseAsset[];
 }
 
@@ -22,7 +20,6 @@ const GITHUB_API = "https://api.github.com/repos/mirkobechini/pdfEditor/releases
 
 export default function DownloadPage() {
     const t = useTranslations("download");
-    const { user } = useAuth();
     const [latestDesktop, setLatestDesktop] = useState<ReleaseInfo | null>(null);
     const [latestMobile, setLatestMobile] = useState<ReleaseInfo | null>(null);
     const [loading, setLoading] = useState(true);
@@ -38,6 +35,7 @@ export default function DownloadPage() {
                     setLatestDesktop({
                         tag_name: desktop.tag_name,
                         name: desktop.name,
+                        body: desktop.body || "",
                         assets: desktop.assets.map((a: any) => ({
                             name: a.name,
                             browser_download_url: a.browser_download_url,
@@ -50,6 +48,7 @@ export default function DownloadPage() {
                     setLatestMobile({
                         tag_name: mobile.tag_name,
                         name: mobile.name,
+                        body: mobile.body || "",
                         assets: mobile.assets.map((a: any) => ({
                             name: a.name,
                             browser_download_url: a.browser_download_url,
@@ -71,31 +70,7 @@ export default function DownloadPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-            {/* Navbar */}
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
-                <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 hover:opacity-75">
-                        <MonkeyLogo />
-                        <span className="text-lg font-bold">PdfEditor</span>
-                    </Link>
-                    <div className="flex items-center gap-3">
-                        {user ? (
-                            <Link href="/app" className="text-sm font-medium px-4 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white">
-                                Go to App
-                            </Link>
-                        ) : (
-                            <>
-                                <Link href="/login" className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-orange-600">
-                                    Sign In
-                                </Link>
-                                <Link href="/register" className="text-sm font-medium px-4 py-2 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white">
-                                    Sign Up Free
-                                </Link>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </nav>
+            <LandingNavbar />
 
             <main className="pt-16 max-w-5xl mx-auto px-4 py-12">
                 {/* Header */}
@@ -248,45 +223,33 @@ export default function DownloadPage() {
                         <section className="mb-20">
                             <div className="flex items-center gap-3 mb-8">
                                 <span className="text-3xl">📋</span>
-                                <h2 className="text-2xl font-bold">Recent Changes</h2>
+                                <h2 className="text-2xl font-bold">{t("recentChanges")}</h2>
                             </div>
                             <div className="grid md:grid-cols-2 gap-8">
                                 {/* Desktop Changelog */}
-                                <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <span className="text-lg">🖥️</span>
-                                        <h3 className="text-lg font-semibold">Desktop {latestDesktop?.tag_name}</h3>
+                                {latestDesktop && (
+                                    <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <span className="text-lg">🖥️</span>
+                                            <h3 className="text-lg font-semibold">{t("desktopTitle")} {latestDesktop.tag_name}</h3>
+                                        </div>
+                                        <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed">
+                                            {latestDesktop.body || t("noChangelog")}
+                                        </div>
                                     </div>
-                                    <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                        <li>✅ Merge, split, reorder PDF pages</li>
-                                        <li>✅ Password protect and unlock PDFs</li>
-                                        <li>✅ Undo/Redo support</li>
-                                        <li>✅ Replace text in PDFs</li>
-                                        <li>✅ Extract text from PDFs</li>
-                                        <li>✅ Import/Export multiple formats</li>
-                                        <li>✅ Google OAuth login</li>
-                                        <li>🔧 Bug fixes and performance improvements</li>
-                                    </ul>
-                                </div>
+                                )}
                                 {/* Mobile Changelog */}
-                                <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <span className="text-lg">📱</span>
-                                        <h3 className="text-lg font-semibold">Mobile {latestMobile?.tag_name}</h3>
+                                {latestMobile && (
+                                    <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <span className="text-lg">📱</span>
+                                            <h3 className="text-lg font-semibold">{t("mobileTitle")} {latestMobile.tag_name}</h3>
+                                        </div>
+                                        <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed">
+                                            {latestMobile.body || t("noChangelog")}
+                                        </div>
                                     </div>
-                                    <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                                        <li>✅ Merge, split, reorder, remove pages</li>
-                                        <li>✅ Password protect and unlock PDFs</li>
-                                        <li>✅ Metadata editing (title, author)</li>
-                                        <li>✅ PDF viewer with zoom</li>
-                                        <li>✅ Camera scanner → PDF</li>
-                                        <li>✅ Share PDF via Android share sheet</li>
-                                        <li>✅ Search, swipe-to-delete, multi-select</li>
-                                        <li>✅ Bottom tabs navigation</li>
-                                        <li>✅ Download PDF to device</li>
-                                        <li>✅ Forgot/reset password</li>
-                                    </ul>
-                                </div>
+                                )}
                             </div>
                         </section>
 
