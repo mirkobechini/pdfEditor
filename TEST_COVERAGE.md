@@ -69,13 +69,15 @@
 | AppSettingsContext                | `AppSettingsContext.test.tsx` | ✅       | 8 test: theme mode persistenza, locale persistenza                                                                                                                                   |
 | OnboardingContext                 | `OnboardingContext.test.tsx`  | ✅       | 5 test: completed default, true, false, completeOnboarding, resetOnboarding                                                                                                          |
 | usePdfStorage logic               | `usePdfStorage.test.ts`       | ✅       | 3 test: loadLocalPdfs, removeLocalPdf, savePdfLocally                                                                                                                                |
+| useSyncQueue logic                | `useSyncQueue.test.ts`        | ✅       | 7 test: loadQueue, saveQueue, enqueue, removeItem, clearQueue                                                                                                                        |
+| i18n configuration                | `i18n.test.ts`                | ✅       | 5 test: getSystemLanguage EN/IT/fallback, supportedLanguages                                                                                                                          |
 | useCloudSync hook                 | —                             | ❌       | Richiede mock di NetInfo, FileSystem — coperto parzialmente da cloudSyncApi                                                                                                          |
 | SettingsScreen                    | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 | HomeScreen                        | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 | Dialog (conflict, import, delete) | —                             | ❌       | Non testati (UI components)                                                                                                                                                          |
 | OnboardingWizard                  | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 
-**Totale: 117 test**
+**Totale: 129 test**
 
 ---
 
