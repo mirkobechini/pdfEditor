@@ -18,55 +18,55 @@
 
 ## Tabella comparativa
 
-| Funzionalità                    | Web | Desktop | Mobile | Note                                                |
-| ------------------------------- | --- | ------- | ------ | --------------------------------------------------- |
-| **PDF CRUD**                    |     |         |        |                                                     |
-| Upload PDF                      | ✅  | ✅      | ✅     | Mobile: da file system o scanner                    |
-| List PDFs                       | ✅  | ✅      | ✅     |                                                     |
-| Download PDF                    | ✅  | ✅      | ✅     | SAF storage access framework                        |
-| Delete PDF                      | ✅  | ✅      | ✅     | Mobile: swipe-to-delete + multi-select              |
-| **Editing PDF**                 |     |         |        |                                                     |
-| Merge PDF                       | ✅  | ✅      | ✅     |                                                     |
-| Split PDF                       | ✅  | ✅      | ✅     | Mobile: split interattivo (scegli pagine)           |
-| Reorder pagine                  | ✅  | ✅      | ✅     | Mobile: pulsanti su/giù                             |
-| Remove pagine                   | ✅  | ✅      | ✅     |                                                     |
-| Replace text                    | ❌  | ❌      | ❌     | Non funziona su nessuna piattaforma                 |
-| Password protect                | ✅  | ✅      | ✅     | Mobile: @cantoo/pdf-lib (fork con encrypt)          |
-| Unlock PDF                      | ✅  | ✅      | ✅     |                                                     |
-| Undo/Redo                       | ✅  | ✅      | ❌     | Solo backend (history)                              |
-| **Metadata**                    |     |         |        |                                                     |
-| View metadata                   | ✅  | ✅      | ✅     | Mobile: dialog dettagli                             |
-| Edit metadata                   | ✅  | ✅      | ✅     |                                                     |
-| **Import/Export**               |     |         |        |                                                     |
-| Import file                     | ✅  | ✅      | ❌     |                                                     |
-| Export PDF                      | ✅  | ✅      | ❌     |                                                     |
-| **Testo**                       |     |         |        |                                                     |
-| Extract text                    | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                              |
-| **Auth**                        |     |         |        |                                                     |
-| Email/password                  | ✅  | ✅      | ✅     |                                                     |
-| Guest mode                      | ✅  | ✅      | ✅     |                                                     |
-| Google OAuth                    | ✅  | ❌      | ❌     | Desktop: commentato, non attivo                     |
-| Forgot/reset password           | ✅  | ✅      | ✅     |                                                     |
-| JWT token refresh               | ✅  | ✅      | ✅     | Automatico su 401 (issue #623)                      |
-| **UX Mobile-specifiche**        |     |         |        |                                                     |
-| Scanner camera                  | ❌  | ❌      | ✅     | expo-camera                                         |
-| Share PDF                       | ❌  | ❌      | ✅     | expo-sharing                                        |
-| Badge count icona               | ❌  | ❌      | ✅     | expo-notifications                                  |
-| Multi-select                    | ❌  | ❌      | ✅     | Checkbox + batch delete                             |
-| Splash screen                   | ❌  | ❌      | ✅     | Sfondo arancione                                    |
-| Pull-to-refresh                 | ❌  | ❌      | ✅     | RefreshControl                                      |
-| Search/filtro                   | ❌  | ❌      | ✅     | Searchbar + useMemo                                 |
-| Swipe-to-delete                 | ❌  | ❌      | ✅     | react-native-gesture-handler                        |
-| Snackbar notifiche              | ❌  | ❌      | ✅     | React Native Paper                                  |
-| Bottom tabs                     | ❌  | ❌      | ✅     | Home + Settings                                     |
-| **UX Web/Desktop**              |     |         |        |                                                     |
-| Bug reports                     | ✅  | ✅      | ❌     |                                                     |
-| License management              | ✅  | ✅      | ❌     | Solo backend                                        |
-| Admin panel                     | ✅  | ✅      | ❌     | Solo backend                                        |
-| **Non implementato su nessuna** |     |         |        |                                                     |
-| Compressione PDF                | ❌  | ❌      | ❌     | Solo in roadmap                                     |
+| Funzionalità                    | Web | Desktop | Mobile | Note                                                                                                                      |
+| ------------------------------- | --- | ------- | ------ | ------------------------------------------------------------------------------------------------------------------------- |
+| **PDF CRUD**                    |     |         |        |                                                                                                                           |
+| Upload PDF                      | ✅  | ✅      | ✅     | Mobile: da file system o scanner                                                                                          |
+| List PDFs                       | ✅  | ✅      | ✅     |                                                                                                                           |
+| Download PDF                    | ✅  | ✅      | ✅     | SAF storage access framework                                                                                              |
+| Delete PDF                      | ✅  | ✅      | ✅     | Mobile: swipe-to-delete + multi-select                                                                                    |
+| **Editing PDF**                 |     |         |        |                                                                                                                           |
+| Merge PDF                       | ✅  | ✅      | ✅     |                                                                                                                           |
+| Split PDF                       | ✅  | ✅      | ✅     | Mobile: split interattivo (scegli pagine)                                                                                 |
+| Reorder pagine                  | ✅  | ✅      | ✅     | Mobile: pulsanti su/giù                                                                                                   |
+| Remove pagine                   | ✅  | ✅      | ✅     |                                                                                                                           |
+| Replace text                    | ❌  | ❌      | ❌     | Non funziona su nessuna piattaforma                                                                                       |
+| Password protect                | ✅  | ✅      | ✅     | Mobile: @cantoo/pdf-lib (fork con encrypt)                                                                                |
+| Unlock PDF                      | ✅  | ✅      | ✅     |                                                                                                                           |
+| Undo/Redo                       | ✅  | ✅      | ❌     | Solo backend (history)                                                                                                    |
+| **Metadata**                    |     |         |        |                                                                                                                           |
+| View metadata                   | ✅  | ✅      | ✅     | Mobile: dialog dettagli                                                                                                   |
+| Edit metadata                   | ✅  | ✅      | ✅     |                                                                                                                           |
+| **Import/Export**               |     |         |        |                                                                                                                           |
+| Import file                     | ✅  | ✅      | ❌     |                                                                                                                           |
+| Export PDF                      | ✅  | ✅      | ❌     |                                                                                                                           |
+| **Testo**                       |     |         |        |                                                                                                                           |
+| Extract text                    | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                                    |
+| **Auth**                        |     |         |        |                                                                                                                           |
+| Email/password                  | ✅  | ✅      | ✅     |                                                                                                                           |
+| Guest mode                      | ✅  | ✅      | ✅     |                                                                                                                           |
+| Google OAuth                    | ✅  | ❌      | ❌     | Desktop: commentato, non attivo                                                                                           |
+| Forgot/reset password           | ✅  | ✅      | ✅     |                                                                                                                           |
+| JWT token refresh               | ✅  | ✅      | ✅     | Automatico su 401 (issue #623)                                                                                            |
+| **UX Mobile-specifiche**        |     |         |        |                                                                                                                           |
+| Scanner camera                  | ❌  | ❌      | ✅     | expo-camera                                                                                                               |
+| Share PDF                       | ❌  | ❌      | ✅     | expo-sharing                                                                                                              |
+| Badge count icona               | ❌  | ❌      | ✅     | expo-notifications                                                                                                        |
+| Multi-select                    | ❌  | ❌      | ✅     | Checkbox + batch delete                                                                                                   |
+| Splash screen                   | ❌  | ❌      | ✅     | Sfondo arancione                                                                                                          |
+| Pull-to-refresh                 | ❌  | ❌      | ✅     | RefreshControl                                                                                                            |
+| Search/filtro                   | ❌  | ❌      | ✅     | Searchbar + useMemo                                                                                                       |
+| Swipe-to-delete                 | ❌  | ❌      | ✅     | react-native-gesture-handler                                                                                              |
+| Snackbar notifiche              | ❌  | ❌      | ✅     | React Native Paper                                                                                                        |
+| Bottom tabs                     | ❌  | ❌      | ✅     | Home + Settings                                                                                                           |
+| **UX Web/Desktop**              |     |         |        |                                                                                                                           |
+| Bug reports                     | ✅  | ✅      | ❌     |                                                                                                                           |
+| License management              | ✅  | ✅      | ❌     | Solo backend                                                                                                              |
+| Admin panel                     | ✅  | ✅      | ❌     | Solo backend                                                                                                              |
+| **Non implementato su nessuna** |     |         |        |                                                                                                                           |
+| Compressione PDF                | ❌  | ❌      | ❌     | Solo in roadmap                                                                                                           |
 | Cloud sync                      | ❌  | ❌      | ✅     | Mobile: bidirezionale con useCloudSync (issue #619). Desktop: pianificato (`.specs/active/feature-cloud-sync-desktop.md`) |
-| Rework UI Penpot                | ❌  | ❌      | ❌     | Design da fare                                      |
+| Rework UI Penpot                | ❌  | ❌      | ❌     | Design da fare                                                                                                            |
 
 ---
 
