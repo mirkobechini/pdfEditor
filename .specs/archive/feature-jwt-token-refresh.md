@@ -165,4 +165,4 @@ mobile/src/hooks/useCloudSync.ts    # già gestisce INVALID_CREDENTIALS
 
 ## Status
 
-[ ] Non iniziata
+[x] ✅ COMPLETATA (2026-08-11)
