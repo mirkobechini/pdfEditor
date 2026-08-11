@@ -2,7 +2,20 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-08-10
+> **Aggiornato:** 2026-08-11
+
+---
+
+## Riepilogo
+
+| Piattaforma                    | Test runner | Test    | Coverage   | Stato |
+| ------------------------------ | ----------- | ------- | ---------- | ----- |
+| **Backend** (FastAPI/Python)   | pytest      | **369** | ~94%       | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **363** | ~75%       | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **179** | ~77% lines | ✅    |
+| **Desktop** (Tauri)            | —           | **0**   | —          | ❌    |
+
+> ℹ️ **Desktop**: nessun test specifico. Le funzionalità desktop sono testate indirettamente dai test frontend web (stessa codebase Next.js). Il sidecar e il Rust Tauri non hanno test.
 
 ---
 
@@ -40,15 +53,7 @@
 | Auth UI       | `test_login` | ✅       | 22 test login + remember-me |
 | Componenti UI | Vari         | ✅       | ~75% coverage               |
 
-**Totale: 363+ test, ~75% coverage**
-
----
-
-## Desktop (Tauri v2)
-
-| Area                      | Test | Coverage | Note                                                                                                                                            |
-| ------------------------- | ---- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Nessun test specifico** | —    | ❌       | Le funzionalità desktop sono testate indirettamente dai test frontend web (stessa codebase Next.js). Il sidecar e il Rust Tauri non hanno test. |
+**Totale: 363 test, ~75% coverage**
 
 ---
 
@@ -77,7 +82,7 @@
 | Dialog (conflict, import, delete) | —                             | ❌       | Non testati (UI components)                                                                                                                                                          |
 | OnboardingWizard                  | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 
-**Totale: 190 test**
+**Totale: 179 test**
 
 ---
 
