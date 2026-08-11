@@ -29,7 +29,7 @@
 | Health                                | `test_health.py`                                  | ✅       | Endpoint health                                                |
 | Errori                                | `test_validation_errors.py`, `test_edge_cases.py` | ✅       | Errori, edge cases                                             |
 
-**Totale: 359+ test, ~94% coverage**
+**Totale: 362 test, ~94% coverage**
 
 ---
 
@@ -54,19 +54,30 @@
 
 ## Mobile (React Native / Expo)
 
-| Area                              | Test                                        | Coverage | Note                                                                          |
-| --------------------------------- | ------------------------------------------- | -------- | ----------------------------------------------------------------------------- |
-| API client                        | `api.test.ts`                               | ✅       | 15 test: login, register, guest, getMe, listPdfs, upload, CSRF, token, errori |
-| Auth context                      | `auth.test.ts`                              | ✅       | Login, register, guest, logout, session restore, token persistence            |
-| DB locale                         | `localDb.test.ts`                           | ✅       | 9 test: save/get/delete, cloud_synced helper, orphan/unsynced queries         |
-| PDF service                       | `pdfService.test.ts`, `pdfService2.test.ts` | ✅       | Merge, split, reorder, remove pages, protect/unlock, metadata                 |
-| Error mapping                     | `error-map.test.ts`                         | ✅       | Mappatura errori API → i18n                                                   |
-| useCloudSync hook                 | —                                           | ❌       | Non testato (richiede mock di netinfo, AsyncStorage, fetch)                   |
-| SettingsScreen                    | —                                           | ❌       | Non testato (UI components)                                                   |
-| HomeScreen                        | —                                           | ❌       | Non testato (UI components)                                                   |
-| Dialog (conflict, import, delete) | —                                           | ❌       | Non testati (UI components)                                                   |
+| Area                              | Test                          | Coverage | Note                                                                                                                                                                                 |
+| --------------------------------- | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| API client                        | `api.test.ts`                 | ✅       | **30 test**: login, register, guest, getMe, listPdfs, upload, download, merge, split, reorder, remove, metadata, unlock, protect, forgotPassword, resetPassword, CSRF, token, errori |
+| Auth integration                  | `auth.test.ts`                | ✅       | 7 test: login, register, guest, logout, session restore, token persistence                                                                                                           |
+| Auth storage logic                | `AuthStorage.test.ts`         | ✅       | 9 test: token persistence, user cache, CSRF token persistenza                                                                                                                        |
+| Auth provider logic               | `AuthProvider.test.ts`        | ✅       | 10 test: restoreSession, login flow, register, guestLogin, logout, forgotPassword                                                                                                    |
+| DB locale                         | `localDb.test.ts`             | ✅       | 9 test: save/get/delete, cloud_synced helper, orphan/unsynced queries                                                                                                                |
+| PDF service (pdf-lib)             | `pdfService.test.ts`          | ✅       | 7 test: merge, split, reorder, metadata in memory                                                                                                                                    |
+| PDF service (full)                | `pdfServiceFull.test.ts`      | ✅       | 15 test: mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, isPdfEncrypted, protectPdf, unlockPdf                                                                       |
+| PDF service (remove)              | `pdfService2.test.ts`         | ✅       | 2 test: removePages null cases                                                                                                                                                       |
+| Error mapping                     | `error-map.test.ts`           | ✅       | 13 test: mappatura errori API → i18n                                                                                                                                                 |
+| Cloud sync API                    | `cloudSyncApi.test.ts`        | ✅       | 4 test: uploadPdf, listPdfs, getPdf, deletePdf via API                                                                                                                               |
+| AppSettingsContext                | `AppSettingsContext.test.tsx` | ✅       | 8 test: theme mode persistenza, locale persistenza                                                                                                                                   |
+| OnboardingContext                 | `OnboardingContext.test.tsx`  | ✅       | 5 test: completed default, true, false, completeOnboarding, resetOnboarding                                                                                                          |
+| usePdfStorage logic               | `usePdfStorage.test.ts`       | ✅       | 3 test: loadLocalPdfs, removeLocalPdf, savePdfLocally                                                                                                                                |
+| useSyncQueue logic                | `useSyncQueue.test.ts`        | ✅       | 7 test: loadQueue, saveQueue, enqueue, removeItem, clearQueue                                                                                                                        |
+| i18n configuration                | `i18n.test.ts`                | ✅       | 5 test: getSystemLanguage EN/IT/fallback, supportedLanguages                                                                                                                         |
+| useCloudSync hook                 | —                             | ❌       | Richiede mock di NetInfo, FileSystem — coperto parzialmente da cloudSyncApi                                                                                                          |
+| SettingsScreen                    | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
+| HomeScreen                        | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
+| Dialog (conflict, import, delete) | —                             | ❌       | Non testati (UI components)                                                                                                                                                          |
+| OnboardingWizard                  | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 
-**Totale: 30+ test**
+**Totale: 190 test**
 
 ---
 
@@ -76,8 +87,8 @@
 | ---------------------------------- | ------------------------- | -------- |
 | useCloudSync hook                  | Issue #619 work remaining | Media    |
 | Dialog UI (conflict/import/delete) | Issue #619 work remaining | Bassa    |
-| SettingsScreen                     | Da pianificare            | Bassa    |
-| HomeScreen                         | Da pianificare            | Bassa    |
+| SettingsScreen / HomeScreen        | Da pianificare            | Bassa    |
+| OnboardingWizard (UI)              | Da pianificare            | Bassa    |
 | Desktop Tauri Rust                 | Da pianificare            | Bassa    |
 | E2E cross-origin (Playwright)      | T2 in KNOWN_ISSUES.md     | Media    |
 
@@ -85,16 +96,32 @@
 
 ## Come eseguire i test
 
-```bash
-# Backend (Python)
-cd backend
-pytest -q
+> ⚠️ **Non esiste un unico comando "full suite"** — ogni piattaforma ha il proprio test runner e va eseguita separatamente.
 
-# Frontend web (Next.js)
+```bash
+# Backend (Python) — pytest
+cd backend
+python -m pytest -q
+
+# Frontend web (Next.js) — vitest
 cd frontend
 npx vitest run
 
-# Mobile (Expo/React Native)
+# Mobile (Expo/React Native) — jest
 cd mobile
 npx jest
 ```
+
+### Full suite (tutte le piattaforme)
+
+```bash
+# Bash (macOS/Linux/Git Bash)
+bash run-all-tests.sh
+
+# PowerShell (Windows)
+.\run-all-tests.ps1
+```
+
+### Desktop (Tauri)
+
+Non ha test specifici. Le funzionalità desktop sono testate indirettamente dai test frontend web (stessa codebase Next.js).
