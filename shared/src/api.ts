@@ -23,6 +23,7 @@ export class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
   private _csrfToken: string | null = null;
+  private _isRefreshing = false;
 
   constructor(baseUrl?: string) {
     this.baseUrl = baseUrl ?? getApiBaseUrl();
@@ -95,11 +96,36 @@ export class ApiClient {
       ...this.getHeaders(),
       ...((options.headers as Record<string, string>) || {}),
     };
-    return fetch(url, {
+    const res = await fetch(url, {
       ...options,
       credentials: "include",
       headers,
     });
+
+    // Auto-refresh on 401/INVALID_CREDENTIALS
+    if (res.status === 401 && !this._isRefreshing) {
+      const body = await res.clone().json().catch(() => null);
+      const detail = body?.detail || "";
+      if (detail === "INVALID_CREDENTIALS" || detail.includes("expired")) {
+        this._isRefreshing = true;
+        const refreshed = await this.refreshToken().catch(() => null);
+        this._isRefreshing = false;
+        if (refreshed) {
+          // Retry the original request with the new token
+          const retryHeaders = {
+            ...this.getHeaders(),
+            ...((options.headers as Record<string, string>) || {}),
+          };
+          return fetch(url, {
+            ...options,
+            credentials: "include",
+            headers: retryHeaders,
+          });
+        }
+      }
+    }
+
+    return res;
   }
 
   // ─── PDF endpoints ───────────────────────────────────────────────
@@ -475,6 +501,24 @@ export class ApiClient {
       }
     } catch {
       // Non-critical
+    }
+  }
+
+  async refreshToken(): Promise<{ access_token: string; csrf_token: string } | null> {
+    try {
+      // Use raw fetch to avoid triggering the auto-refresh loop
+      const res = await fetch(`${this.baseUrl}/auth/refresh`, {
+        method: "POST",
+        headers: this.getHeaders(),
+        credentials: "include",
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+      this.setToken(data.access_token);
+      return data;
+    } catch {
+      return null;
     }
   }
 
