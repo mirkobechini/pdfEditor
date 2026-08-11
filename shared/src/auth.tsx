@@ -31,6 +31,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
+    // Set up token refresh callback to persist new tokens
+    api.onTokenRefreshed = (token: string, csrfToken: string) => {
+      if (isTauri()) {
+        import("./tauri").then(({ tauriInvoke }) => {
+          tauriInvoke("store_jwt", { token }).catch(() => { });
+        });
+      } else {
+        localStorage.setItem(REMEMBER_TOKEN_KEY, token);
+      }
+    };
+    // On refresh failure: clear stored token and force logout
+    api.onTokenRefreshFailed = () => {
+      api.setToken(null);
+      api.setCsrfToken?.(null);
+      setUser(null);
+      localStorage.removeItem(REMEMBER_TOKEN_KEY);
+    };
     async function restoreSession() {
       // Check localStorage first (web remember-me)
       const remembered = localStorage.getItem(REMEMBER_TOKEN_KEY);

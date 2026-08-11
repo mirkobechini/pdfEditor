@@ -24,6 +24,10 @@ export class ApiClient {
   private token: string | null = null;
   private _csrfToken: string | null = null;
   private _isRefreshing = false;
+  /** Callback invoked when a token refresh succeeds */
+  onTokenRefreshed: ((token: string, csrfToken: string) => void) | null = null;
+  /** Callback invoked when a token refresh fails */
+  onTokenRefreshFailed: (() => void) | null = null;
 
   constructor(baseUrl?: string) {
     this.baseUrl = baseUrl ?? getApiBaseUrl();
@@ -104,7 +108,10 @@ export class ApiClient {
 
     // Auto-refresh on 401/INVALID_CREDENTIALS
     if (res.status === 401 && !this._isRefreshing) {
-      const body = await res.clone().json().catch(() => null);
+      const body = await res
+        .clone()
+        .json()
+        .catch(() => null);
       const detail = body?.detail || "";
       if (detail === "INVALID_CREDENTIALS" || detail.includes("expired")) {
         this._isRefreshing = true;
@@ -504,7 +511,10 @@ export class ApiClient {
     }
   }
 
-  async refreshToken(): Promise<{ access_token: string; csrf_token: string } | null> {
+  async refreshToken(): Promise<{
+    access_token: string;
+    csrf_token: string;
+  } | null> {
     try {
       // Use raw fetch to avoid triggering the auto-refresh loop
       const res = await fetch(`${this.baseUrl}/auth/refresh`, {
@@ -516,8 +526,15 @@ export class ApiClient {
       const data = await res.json();
       if (data.csrf_token) this.setCsrfToken(data.csrf_token);
       this.setToken(data.access_token);
+      // Notify auth context to persist the new token
+      if (this.onTokenRefreshed) {
+        this.onTokenRefreshed(data.access_token, data.csrf_token || "");
+      }
       return data;
     } catch {
+      if (this.onTokenRefreshFailed) {
+        this.onTokenRefreshFailed();
+      }
       return null;
     }
   }
