@@ -101,7 +101,7 @@
 
 ## Come eseguire i test
 
-> ⚠️ **Non esiste un unico comando "full suite"** — ogni piattaforma ha il proprio test runner e va eseguita separatamente.
+### Singola piattaforma
 
 ```bash
 # Backend (Python) — pytest
@@ -117,7 +117,7 @@ cd mobile
 npx jest
 ```
 
-### Full suite (tutte le piattaforme)
+### Full suite (tutte le piattaforme in sequenza)
 
 ```bash
 # Bash (macOS/Linux/Git Bash)
@@ -129,4 +129,4 @@ bash run-all-tests.sh
 
 ### Desktop (Tauri)
 
-Non ha test specifici. Le funzionalità desktop sono testate indirettamente dai test frontend web (stessa codebase Next.js).
+Non ha test specifici. Le funzionalità desktop sono testate indirettamente dai test frontend web (stessa codebase Next.js). Il sidecar e il Rust Tauri non hanno test.

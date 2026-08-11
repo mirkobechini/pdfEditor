@@ -13,7 +13,7 @@
 
 ### 🧪 Mobile test coverage (issue #621)
 
-- **190 test mobile** (+137 rispetto a 53) — copertura totale su `localDb`, `error-map`, `i18n`
+- **179 test mobile** (+126 rispetto a 53) — copertura totale su `localDb`, `error-map`, `i18n`
 - **Nuovi file di test:** `AppSettingsContext`, `OnboardingContext`, `AuthStorage`, `AuthProvider`, `pdfServiceFull`, `usePdfStorage`, `useSyncQueue`, `i18n`, `cloudSyncApi`
 - **Full suite runner:** `bash run-all-tests.sh` / `.\run-all-tests.ps1` per lanciare tutti i test in sequenza
 - **Coverage:** `api.ts` 100% lines, `pdfService.ts` 89% lines, overall 88.55% statements
