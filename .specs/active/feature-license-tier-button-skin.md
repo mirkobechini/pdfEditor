@@ -1,7 +1,7 @@
 # Feature Plan: License Tier Button Skin — Indicatore Feature Bloccate
 
 **Status:** Planning
-**Priority:** Low (attivabile solo dopo Stripe/abbonamenti)
+**Priority:** Low (attivabile solo dopo Stripe/abbonamenti — o in alternativa con donazioni)
 **Complexity:** Low
 **Estimated Time:** 1 giorno
 
@@ -22,6 +22,8 @@ Quando gli abbonamenti Stripe saranno attivi, serve un sistema che:
 3. Porti l'utente alla pagina di billing/upgrade
 
 **Importante**: questa skin si attiverà solo quando `DISABLE_LICENSE_ENFORCEMENT=False` (cioè quando gli abbonamenti saranno attivi). Per ora il flag è `True` (tutto aperto).
+
+> ⚠️ **Nota 2026-08-11:** Se si sceglie la strada delle donazioni invece di Stripe, questo piano perde senso (nessuna feature bloccata). Resta come riferimento per una futura monetizzazione strutturata.
 
 ## Design
 

@@ -65,7 +65,7 @@
 | Admin panel                     | ✅  | ✅      | ❌     | Solo backend                                        |
 | **Non implementato su nessuna** |     |         |        |                                                     |
 | Compressione PDF                | ❌  | ❌      | ❌     | Solo in roadmap                                     |
-| Cloud sync                      | ❌  | ❌      | ✅     | Mobile: bidirezionale con useCloudSync (issue #619) |
+| Cloud sync                      | ❌  | ❌      | ✅     | Mobile: bidirezionale con useCloudSync (issue #619). Desktop: pianificato (`.specs/active/feature-cloud-sync-desktop.md`) |
 | Rework UI Penpot                | ❌  | ❌      | ❌     | Design da fare                                      |
 
 ---
