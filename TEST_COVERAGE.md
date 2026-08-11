@@ -29,7 +29,7 @@
 | Health                                | `test_health.py`                                  | ✅       | Endpoint health                                                |
 | Errori                                | `test_validation_errors.py`, `test_edge_cases.py` | ✅       | Errori, edge cases                                             |
 
-**Totale: 362 test, ~94% coverage**
+**Totale: 369 test, ~94% coverage**
 
 ---
 

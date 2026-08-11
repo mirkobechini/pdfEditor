@@ -104,7 +104,7 @@
 
 **File:** `mobile/src/hooks/useCloudSync.ts`, `mobile/src/screens/SettingsScreen.tsx`, `mobile/src/screens/HomeScreen.tsx`
 **Descrizione:** Sync bidirezionale implementato (upload/download/conflitti), onboarding wizard, dialog conflitti/import/delete, badge sync in Home, progress bar, trigger all'avvio e background.
-**Stato:** ✅ Implementato (issue #619). **Nota:** token JWT scade dopo 1h — refresh automatico pianificato in `.specs/active/feature-jwt-token-refresh.md`.
+**Stato:** ✅ Implementato (issue #619). **Nota:** token JWT scade dopo 1h — refresh automatico implementato in issue #623 (endpoint `/auth/refresh` + retry automatico su tutte le piattaforme).
 
 ## 📊 Coverage gaps (non bloccanti)
 
