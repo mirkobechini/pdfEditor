@@ -13,48 +13,67 @@ interface ReleaseAsset {
 interface ReleaseInfo {
     tag_name: string;
     name: string;
-    body: string;
     assets: ReleaseAsset[];
 }
 
+interface ChangelogEntry {
+    version: string;
+    date: string;
+    changes: string[];
+}
+
+interface ChangelogData {
+    desktop: ChangelogEntry[];
+    mobile: ChangelogEntry[];
+}
+
 const GITHUB_API = "https://api.github.com/repos/mirkobechini/pdfEditor/releases";
+const CHANGELOG_URL = "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev/changelog.json";
 
 export default function DownloadPage() {
     const t = useTranslations("download");
     const [latestDesktop, setLatestDesktop] = useState<ReleaseInfo | null>(null);
     const [latestMobile, setLatestMobile] = useState<ReleaseInfo | null>(null);
+    const [changelog, setChangelog] = useState<ChangelogData | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        async function fetchReleases() {
+        async function fetchData() {
             try {
-                const res = await fetch(GITHUB_API);
-                const releases: any[] = await res.json();
-                // Latest non-mobile (desktop)
-                const desktop = releases.find((r) => !r.tag_name.includes("-mobile"));
+                // Fetch releases for download links
+                const [releasesRes, changelogRes] = await Promise.all([
+                    fetch(GITHUB_API),
+                    fetch(CHANGELOG_URL).catch(() => null),
+                ]);
+
+                // Parse releases
+                const releases: any[] = await releasesRes.json();
+                const desktop = releases.find((r: any) => !r.tag_name.includes("-mobile"));
                 if (desktop) {
                     setLatestDesktop({
                         tag_name: desktop.tag_name,
                         name: desktop.name,
-                        body: desktop.body || "",
                         assets: desktop.assets.map((a: any) => ({
                             name: a.name,
                             browser_download_url: a.browser_download_url,
                         })),
                     });
                 }
-                // Latest mobile
-                const mobile = releases.find((r) => r.tag_name.includes("-mobile"));
+                const mobile = releases.find((r: any) => r.tag_name.includes("-mobile"));
                 if (mobile) {
                     setLatestMobile({
                         tag_name: mobile.tag_name,
                         name: mobile.name,
-                        body: mobile.body || "",
                         assets: mobile.assets.map((a: any) => ({
                             name: a.name,
                             browser_download_url: a.browser_download_url,
                         })),
                     });
+                }
+
+                // Parse changelog
+                if (changelogRes?.ok) {
+                    setChangelog(await changelogRes.json());
                 }
             } catch {
                 // ignore
@@ -62,7 +81,7 @@ export default function DownloadPage() {
                 setLoading(false);
             }
         }
-        fetchReleases();
+        fetchData();
     }, []);
 
     function getDesktopAsset(suffix: string): ReleaseAsset | undefined {
@@ -228,27 +247,51 @@ export default function DownloadPage() {
                             </div>
                             <div className="grid md:grid-cols-2 gap-8">
                                 {/* Desktop Changelog */}
-                                {latestDesktop && (
+                                {changelog?.desktop && (
                                     <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                                         <div className="flex items-center gap-2 mb-4">
                                             <span className="text-lg">🖥️</span>
-                                            <h3 className="text-lg font-semibold">{t("desktopTitle")} {latestDesktop.tag_name}</h3>
+                                            <h3 className="text-lg font-semibold">{t("desktopTitle")}</h3>
                                         </div>
-                                        <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed">
-                                            {latestDesktop.body || t("noChangelog")}
-                                        </div>
+                                        {changelog.desktop.map((entry) => (
+                                            <div key={entry.version} className="mb-4 last:mb-0">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 font-medium">
+                                                        {entry.version}
+                                                    </span>
+                                                    <span className="text-xs text-gray-400">{entry.date}</span>
+                                                </div>
+                                                <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-300">
+                                                    {entry.changes.map((change, i) => (
+                                                        <li key={i}>{change}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                                 {/* Mobile Changelog */}
-                                {latestMobile && (
+                                {changelog?.mobile && (
                                     <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                                         <div className="flex items-center gap-2 mb-4">
                                             <span className="text-lg">📱</span>
-                                            <h3 className="text-lg font-semibold">{t("mobileTitle")} {latestMobile.tag_name}</h3>
+                                            <h3 className="text-lg font-semibold">{t("mobileTitle")}</h3>
                                         </div>
-                                        <div className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed">
-                                            {latestMobile.body || t("noChangelog")}
-                                        </div>
+                                        {changelog.mobile.map((entry) => (
+                                            <div key={entry.version} className="mb-4 last:mb-0">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 font-medium">
+                                                        {entry.version}
+                                                    </span>
+                                                    <span className="text-xs text-gray-400">{entry.date}</span>
+                                                </div>
+                                                <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-300">
+                                                    {entry.changes.map((change, i) => (
+                                                        <li key={i}>{change}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>

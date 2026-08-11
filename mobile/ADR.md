@@ -142,6 +142,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 ---
 
 > 📋 **Storico completo dei fix:** Vedi [`CHANGELOG.md`](../CHANGELOG.md).
+> 📦 **Novità strutturate per la download page:** Vedi [`changelog.json`](../changelog.json).
 > 🐞 **Bug aperti e debito tecnico:** Vedi [`KNOWN_ISSUES.md`](../KNOWN_ISSUES.md).
 > 📖 **Lezioni apprese:** Vedi [`LESSONS_LEARNED.md`](../LESSONS_LEARNED.md).
 > 📝 **Feature pianificate:** Vedi [`.specs/plans/feature-mobile-improvements.md`](../.specs/plans/feature-mobile-improvements.md).

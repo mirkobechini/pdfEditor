@@ -172,6 +172,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | **Fase 4b — EAS CI Integration**            | Collegare EAS Build a GitHub Actions per build automatica su tag release.                                              |                                 ⬜ In piano                                 |
 
 > 📋 **Storico completo dei fix:** Vedi [`CHANGELOG.md`](./CHANGELOG.md).
+> 📦 **Novità strutturate per la download page:** Vedi [`changelog.json`](./changelog.json) — file JSON con versioni e cambiamenti per desktop e mobile, fetchato dinamicamente dalla download page.
 > 🐞 **Bug aperti e debito tecnico:** Vedi [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md).
 > 📖 **Lezioni apprese:** Vedi [`LESSONS_LEARNED.md`](./LESSONS_LEARNED.md).
 > 📝 **Feature pianificate:** Vedi `.specs/plans/`.

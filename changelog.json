@@ -1,0 +1,63 @@
+{
+  "desktop": [
+    {
+      "version": "v0.2.0",
+      "date": "2026-08-11",
+      "changes": [
+        "🔑 JWT token refresh automatico — login ogni ora non più necessario",
+        "🧪 179 test mobile (+126), copertura 100% su localDb, error-map, i18n",
+        "🏃 Full suite runner: bash run-all-tests.sh / .\\run-all-tests.ps1",
+        "🔧 Bug fixes e miglioramenti di stabilità"
+      ]
+    },
+    {
+      "version": "v0.1.0",
+      "date": "2026-07-21",
+      "changes": [
+        "🚀 Prima release desktop (Tauri v2 + sidecar PyInstaller)",
+        "🖥️ Merge, split, reorder, remove pagine PDF",
+        "🔒 Password protect e unlock PDF",
+        "↩️ Undo/Redo supportato",
+        "📝 Replace text e Extract text",
+        "📥 Import/Export formati multipli",
+        "🔧 Bug fixes e performance improvements"
+      ]
+    }
+  ],
+  "mobile": [
+    {
+      "version": "v0.2.0-mobile",
+      "date": "2026-08-11",
+      "changes": [
+        "☁️ Cloud sync bidirezionale (upload/download, conflitti, offline)",
+        "🧭 Onboarding wizard alla prima installazione",
+        "🔑 JWT token refresh automatico",
+        "⚙️ Settings con sync mode, tema, lingua",
+        "🔍 Badge sync in Home (synced/pending/error)",
+        "🗑️ DeleteSyncDialog: locale/cloud/entrambi",
+        "⚔️ ConflictDialog per risoluzione conflitti sync",
+        "📥 ImportPdfDialog per import selettivo PDF nel cloud",
+        "🔧 Bug fixes e miglioramenti"
+      ]
+    },
+    {
+      "version": "v0.1.0-mobile",
+      "date": "2026-08-10",
+      "changes": [
+        "🚀 Prima release mobile APK (EAS Build)",
+        "🎨 i18n completa su tutte le schermate (EN/IT)",
+        "🌗 Tema live switching (chiaro/scuro/system)",
+        "📱 Merge, split, reorder, remove pagine PDF",
+        "🔒 Password protect e unlock PDF",
+        "📄 Metadata editing (titolo, autore)",
+        "📖 PDF viewer con zoom",
+        "📷 Scanner fotocamera → PDF",
+        "📤 Share PDF via Android share sheet",
+        "🔍 Search bar, swipe-to-delete, multi-select",
+        "📋 Bottom tabs navigation (Home + Settings)",
+        "⬇️ Download PDF sul dispositivo",
+        "🔐 Forgot/reset password"
+      ]
+    }
+  ]
+}
