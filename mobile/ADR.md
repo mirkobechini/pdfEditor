@@ -113,7 +113,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 
 - **`react-native-pdf` cache**: il viewer non rimonta automaticamente per un secondo PDF — serve `key={refreshKey}` incrementata in `useEffect([pdfId])` dopo aver settato `pdfUri`.
 - **pdf-lib non supporta**: estrazione testo, form icing, annotazioni. Solo manipolazione strutturale (pagine, metadati, merge/split).
-- **Sync cloud attivo**: i PDF si sincronizzano col cloud (upload/download bidirezionale). Il sync richiede login reale (guest esclusi). Token JWT scade dopo 1h → refresh automatico pianificato (`.specs/active/feature-jwt-token-refresh.md`).
+- **Sync cloud attivo**: i PDF si sincronizzano col cloud (upload/download bidirezionale). Il sync richiede login reale (guest esclusi). Token JWT scade dopo 1h → refresh automatico implementato (issue #623, endpoint `/auth/refresh` + retry automatico).
 - **Tema scuro non completo**: error container in LoginScreen/ForgotPasswordScreen ha `#FFE0E0` hardcoded (non si adatta a dark mode).
 - **Replace text**: Rotto su TUTTE le piattaforme (non solo mobile). Vedi FEATURE_COMPARISON.md.
 
@@ -121,7 +121,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 
 ## Cosa NON è in scope (per ora)
 
-- JWT refresh automatico (pianificato — vedi `.specs/active/feature-jwt-token-refresh.md`)
+- JWT refresh automatico (✅ implementato — issue #623, endpoint `/auth/refresh` + retry automatico su tutte le piattaforme)
 - Modalità sync auto/ibrido/chiedi collegati alle operazioni (solo "differito" attivo)
 - EAS CI Integration (F2 — pianificato)
 - Rework UI completo con design Penpot (F8 — priorità alta futura)
