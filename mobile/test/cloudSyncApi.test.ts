@@ -9,10 +9,11 @@ globalThis.fetch = mockFetch as any;
 
 const BASE = "https://pdfeditor-api.mirkobechini.com";
 
-function ok(body: unknown) {
+function ok(body: unknown, status = 200) {
   return Promise.resolve({
-    ok: true,
-    status: 200,
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: status === 204 ? "No Content" : "OK",
     json: () => Promise.resolve(body),
     blob: () =>
       Promise.resolve(new Blob(["fake"], { type: "application/pdf" })),
