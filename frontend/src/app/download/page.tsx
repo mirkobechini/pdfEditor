@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import LandingNavbar from "../components/landing/LandingNavbar";
 
