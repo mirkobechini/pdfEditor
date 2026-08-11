@@ -83,7 +83,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile √
 | AsyncStorage per tema + lingua + sync preferenze     | Expo SecureStore               | Dati non sensibili, persistenza semplice. Include CSRF token, sync mode, sync on startup.                                                 |
 | CSRF token persistito in AsyncStorage                | Solo cookie                    | Su RN i cookie non funzionano come su web. Il CSRF token salvato in storage viene ripristinato al riavvio (fix 403 CSRF).                 |
 | Sync per-PDF (menu contestuale + dialog post-upload) | Sync automatico globale        | Ogni PDF pu√≤ essere caricato/rimosso dal cloud singolarmente dal menu long press. Dopo l'upload un dialog chiede se sincronizzare subito. |
-| Test con Jest (jest-expo)                            | @testing-library/react-native  | `@testing-library/react-native` incompatibile con questa versione di RN (TurboModule). I test coprono logica pura (API, DB, hook).         |
+| Test con Jest (jest-expo)                            | @testing-library/react-native  | `@testing-library/react-native` incompatibile con questa versione di RN (TurboModule). I test coprono logica pura (API, DB, hook).        |
 
 ---
 
