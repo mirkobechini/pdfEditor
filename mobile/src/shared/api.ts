@@ -29,6 +29,11 @@ export class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
   private _csrfToken: string | null = null;
+  private _isRefreshing = false;
+  /** Callback invoked when a token refresh succeeds */
+  onTokenRefreshed: ((token: string, csrfToken: string) => void) | null = null;
+  /** Callback invoked when a token refresh fails */
+  onTokenRefreshFailed: (() => void) | null = null;
 
   constructor(baseUrl?: string) {
     this.baseUrl = baseUrl ?? CLOUD_API_URL;
@@ -101,13 +106,41 @@ export class ApiClient {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      return await fetch(url, {
+      const res = await fetch(url, {
         ...options,
         // No credentials: include — RN doesn't handle cookies like a browser.
         // We rely on Authorization header + X-CSRF-Token header instead.
         headers,
         signal: controller.signal,
       });
+
+      // Auto-refresh on 401/INVALID_CREDENTIALS
+      if (res.status === 401 && !this._isRefreshing) {
+        const body = await res
+          .clone()
+          .json()
+          .catch(() => null);
+        const detail = body?.detail || "";
+        if (detail === "INVALID_CREDENTIALS" || detail.includes("expired")) {
+          this._isRefreshing = true;
+          const refreshed = await this.refreshToken().catch(() => null);
+          this._isRefreshing = false;
+          if (refreshed) {
+            // Retry the original request with the new token
+            const retryHeaders = {
+              ...this.getHeaders(),
+              ...((options.headers as Record<string, string>) || {}),
+            };
+            return fetch(url, {
+              ...options,
+              headers: retryHeaders,
+              signal: controller.signal,
+            });
+          }
+        }
+      }
+
+      return res;
     } finally {
       clearTimeout(timeout);
     }
@@ -357,6 +390,33 @@ export class ApiClient {
     });
     if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
+  }
+
+  async refreshToken(): Promise<{
+    access_token: string;
+    csrf_token: string;
+  } | null> {
+    try {
+      // Use raw fetch to avoid triggering the auto-refresh loop
+      const res = await fetch(`${this.baseUrl}/auth/refresh`, {
+        method: "POST",
+        headers: this.getHeaders(),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+      this.setToken(data.access_token);
+      // Notify auth context to persist the new token
+      if (this.onTokenRefreshed) {
+        this.onTokenRefreshed(data.access_token, data.csrf_token || "");
+      }
+      return data;
+    } catch {
+      if (this.onTokenRefreshFailed) {
+        this.onTokenRefreshFailed();
+      }
+      return null;
+    }
   }
 }
 
