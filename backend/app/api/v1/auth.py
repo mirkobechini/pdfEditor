@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -7,7 +8,7 @@ import httpx
 from app.api.deps import get_db
 from app.core.config import settings
 from app.core.limiter import limiter
-from app.core.security import create_access_token
+from app.core.security import create_access_token, decode_access_token_ignore_exp
 from app.models.user import User
 from app.schemas.auth import (
     ForgotPasswordRequest,
@@ -139,6 +140,68 @@ def login(
         content=TokenResponse(access_token=token, csrf_token=csrf_token).model_dump(mode="json"),
     )
     _set_token_cookie(response, token)
+    set_csrf_cookie(response, csrf_token, request=request)
+    return response
+
+
+@router.post("/refresh", response_model=TokenResponse)
+@limiter.limit("10/minute")
+def refresh_token(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> TokenResponse:
+    """Refresh an expired JWT token. Returns a new token if the old one
+    is not older than REFRESH_TOKEN_MAX_AGE_DAYS (30 days)."""
+    token = _get_token(request)
+    if not token:
+        raise error_response(
+            ErrorCode.NOT_AUTHENTICATED,
+            "No token provided",
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    # Decode ignoring expiration to get user id + exp claim
+    payload = decode_access_token_ignore_exp(token)
+    if not payload:
+        raise error_response(
+            ErrorCode.INVALID_CREDENTIALS,
+            "Invalid token",
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    user_id = payload.get("sub")
+
+    # Check token age: reject if older than REFRESH_TOKEN_MAX_AGE_DAYS
+    exp = payload.get("exp")
+    if exp:
+        token_age = datetime.now(timezone.utc) - datetime.fromtimestamp(exp, tz=timezone.utc)
+        if token_age > timedelta(days=settings.REFRESH_TOKEN_MAX_AGE_DAYS):
+            raise error_response(
+                ErrorCode.INVALID_CREDENTIALS,
+                "REFRESH_TOKEN_EXPIRED",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+
+    # Validate user still exists and is active
+    from app.repositories.user_repo import UserRepository
+
+    repo = UserRepository(db)
+    user = repo.get_by_id(user_id)
+    if not user or not user.is_active:
+        raise error_response(
+            ErrorCode.NOT_AUTHENTICATED,
+            "User not found or inactive",
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    # Issue new token
+    new_token = create_access_token(data={"sub": user.id})
+    csrf_token = generate_csrf_token()
+    response = JSONResponse(
+        content=TokenResponse(access_token=new_token, csrf_token=csrf_token).model_dump(mode="json"),
+    )
+    _set_token_cookie(response, new_token)
     set_csrf_cookie(response, csrf_token, request=request)
     return response
 

@@ -32,6 +32,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (!cancelled) setLoading(false);
         }, 4000);
 
+        // Set up token refresh callback to persist new tokens
+        api.onTokenRefreshed = async (token: string, csrfToken: string) => {
+            await AsyncStorage.setItem(REMEMBER_TOKEN_KEY, token);
+            if (csrfToken) {
+                await AsyncStorage.setItem(CSRF_TOKEN_KEY, csrfToken);
+            }
+        };
+
+        // On refresh failure: clear stored token and force logout
+        api.onTokenRefreshFailed = async () => {
+            api.setToken(null);
+            api.setCsrfToken(null);
+            setUser(null);
+            await AsyncStorage.removeItem(REMEMBER_TOKEN_KEY);
+            await AsyncStorage.removeItem(REMEMBER_USER_KEY);
+            await AsyncStorage.removeItem(CSRF_TOKEN_KEY);
+        };
+
         async function restoreSession() {
             try {
                 const remembered = await AsyncStorage.getItem(REMEMBER_TOKEN_KEY);

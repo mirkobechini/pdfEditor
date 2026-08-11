@@ -404,6 +404,126 @@ class TestCsrfRefresh:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
+class TestTokenRefresh:
+    """Test suite for POST /auth/refresh — JWT token refresh."""
+
+    URL = "/auth/refresh"
+
+    def _register_and_login(self, client, email="refresh@test.com"):
+        """Register a user and return the token."""
+        client.post(
+            "/auth/register",
+            json={"email": email, "password": "Password123", "full_name": "Refresh Test"},
+        )
+        client.cookies.clear()
+        resp = client.post(
+            "/auth/login",
+            json={"email": email, "password": "Password123"},
+        )
+        return resp.json()["access_token"]
+
+    def test_refresh_with_valid_token(self, client):
+        """POST /auth/refresh with valid token should return new token."""
+        token = self._register_and_login(client)
+
+        response = client.post(
+            self.URL,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+        assert "csrf_token" in data
+        assert len(data["csrf_token"]) == 64
+
+    def test_refresh_with_cookie(self, client):
+        """POST /auth/refresh with cookie should work too."""
+        self._register_and_login(client)
+
+        response = client.post(self.URL)
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "access_token" in data
+
+    def test_refresh_sets_new_cookie(self, client):
+        """POST /auth/refresh should set new httpOnly cookie."""
+        self._register_and_login(client)
+
+        response = client.post(self.URL)
+        assert response.status_code == status.HTTP_200_OK
+
+        # New cookie should be set
+        assert "access_token" in client.cookies
+        assert client.cookies["access_token"] != ""
+
+        # New cookie should work for subsequent requests
+        me_resp = client.get("/auth/me")
+        assert me_resp.status_code == status.HTTP_200_OK
+
+    def test_refresh_with_expired_token(self, client):
+        """POST /auth/refresh with expired token should return new token."""
+        from app.core.security import create_access_token
+        from datetime import timedelta
+
+        # Create a token that expired 1 minute ago
+        expired_token = create_access_token(
+            data={"sub": "nonexistent"},
+            expires_delta=timedelta(minutes=-1),
+        )
+
+        response = client.post(
+            self.URL,
+            headers={"Authorization": f"Bearer {expired_token}"},
+        )
+        # Token is expired but user doesn't exist — should fail
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_refresh_with_invalid_token(self, client):
+        """POST /auth/refresh with invalid token should return 401."""
+        response = client.post(
+            self.URL,
+            headers={"Authorization": "Bearer invalid-token"},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_refresh_without_token(self, client):
+        """POST /auth/refresh without token should return 401."""
+        response = client.post(self.URL)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_refresh_for_inactive_user(self, client, db_engine):
+        """POST /auth/refresh for inactive user should return 401."""
+        from app.core.security import create_access_token
+        from app.models.user import User
+        from app.repositories.user_repo import UserRepository
+        from sqlalchemy.orm import sessionmaker
+
+        SessionLocal = sessionmaker(bind=db_engine)
+        db = SessionLocal()
+        try:
+            repo = UserRepository(db)
+            user = User(
+                email="inactive@test.com",
+                hashed_password="hash",
+                full_name="Inactive User",
+                is_active=False,
+            )
+            repo.create(user)
+            db.commit()
+            user_id = user.id
+        finally:
+            db.close()
+
+        token = create_access_token(data={"sub": user_id})
+
+        response = client.post(
+            self.URL,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
 class TestUnlinkGoogle:
     """Test suite for POST /auth/unlink/google."""
 
