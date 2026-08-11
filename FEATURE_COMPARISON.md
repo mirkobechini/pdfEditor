@@ -1,6 +1,6 @@
 # Feature Comparison: Web vs Desktop vs Mobile
 
-> **Ultimo aggiornamento:** 2026-08-08 (aggiornato)
+> **Ultimo aggiornamento:** 2026-08-11
 > Questo file traccia le differenze funzionali tra le tre piattaforme di PdfEditor.
 
 ---
@@ -18,54 +18,55 @@
 
 ## Tabella comparativa
 
-| Funzionalità                    | Web | Desktop | Mobile | Note                                       |
-| ------------------------------- | --- | ------- | ------ | ------------------------------------------ |
-| **PDF CRUD**                    |     |         |        |                                            |
-| Upload PDF                      | ✅  | ✅      | ✅     | Mobile: da file system o scanner           |
-| List PDFs                       | ✅  | ✅      | ✅     |                                            |
-| Download PDF                    | ✅  | ✅      | ✅     | SAF storage access framework               |
-| Delete PDF                      | ✅  | ✅      | ✅     | Mobile: swipe-to-delete + multi-select     |
-| **Editing PDF**                 |     |         |        |                                            |
-| Merge PDF                       | ✅  | ✅      | ✅     |                                            |
-| Split PDF                       | ✅  | ✅      | ✅     | Mobile: split interattivo (scegli pagine)  |
-| Reorder pagine                  | ✅  | ✅      | ✅     | Mobile: pulsanti su/giù                    |
-| Remove pagine                   | ✅  | ✅      | ✅     |                                            |
-| Replace text                    | ❌  | ❌      | ❌     | Non funziona su nessuna piattaforma        |
-| Password protect                | ✅  | ✅      | ✅     | Mobile: @cantoo/pdf-lib (fork con encrypt) |
-| Unlock PDF                      | ✅  | ✅      | ✅     |                                            |
-| Undo/Redo                       | ✅  | ✅      | ❌     | Solo backend (history)                     |
-| **Metadata**                    |     |         |        |                                            |
-| View metadata                   | ✅  | ✅      | ✅     | Mobile: dialog dettagli                    |
-| Edit metadata                   | ✅  | ✅      | ✅     |                                            |
-| **Import/Export**               |     |         |        |                                            |
-| Import file                     | ✅  | ✅      | ❌     |                                            |
-| Export PDF                      | ✅  | ✅      | ❌     |                                            |
-| **Testo**                       |     |         |        |                                            |
-| Extract text                    | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                     |
-| **Auth**                        |     |         |        |                                            |
-| Email/password                  | ✅  | ✅      | ✅     |                                            |
-| Guest mode                      | ✅  | ✅      | ✅     |                                            |
-| Google OAuth                    | ✅  | ❌      | ❌     | Desktop: commentato, non attivo            |
-| Forgot/reset password           | ✅  | ✅      | ✅     |                                            |
-| **UX Mobile-specifiche**        |     |         |        |                                            |
-| Scanner camera                  | ❌  | ❌      | ✅     | expo-camera                                |
-| Share PDF                       | ❌  | ❌      | ✅     | expo-sharing                               |
-| Badge count icona               | ❌  | ❌      | ✅     | expo-notifications                         |
-| Multi-select                    | ❌  | ❌      | ✅     | Checkbox + batch delete                    |
-| Splash screen                   | ❌  | ❌      | ✅     | Sfondo arancione                           |
-| Pull-to-refresh                 | ❌  | ❌      | ✅     | RefreshControl                             |
-| Search/filtro                   | ❌  | ❌      | ✅     | Searchbar + useMemo                        |
-| Swipe-to-delete                 | ❌  | ❌      | ✅     | react-native-gesture-handler               |
-| Snackbar notifiche              | ❌  | ❌      | ✅     | React Native Paper                         |
-| Bottom tabs                     | ❌  | ❌      | ✅     | Home + Settings                            |
-| **UX Web/Desktop**              |     |         |        |                                            |
-| Bug reports                     | ✅  | ✅      | ❌     |                                            |
-| License management              | ✅  | ✅      | ❌     | Solo backend                               |
-| Admin panel                     | ✅  | ✅      | ❌     | Solo backend                               |
-| **Non implementato su nessuna** |     |         |        |                                            |
-| Compressione PDF                | ❌  | ❌      | ❌     | Solo in roadmap                            |
-| Cloud sync                      | ❌  | ❌      | ❌     | Hook useSyncQueue pronto su mobile         |
-| Rework UI Penpot                | ❌  | ❌      | ❌     | Design da fare                             |
+| Funzionalità                    | Web | Desktop | Mobile | Note                                                |
+| ------------------------------- | --- | ------- | ------ | --------------------------------------------------- |
+| **PDF CRUD**                    |     |         |        |                                                     |
+| Upload PDF                      | ✅  | ✅      | ✅     | Mobile: da file system o scanner                    |
+| List PDFs                       | ✅  | ✅      | ✅     |                                                     |
+| Download PDF                    | ✅  | ✅      | ✅     | SAF storage access framework                        |
+| Delete PDF                      | ✅  | ✅      | ✅     | Mobile: swipe-to-delete + multi-select              |
+| **Editing PDF**                 |     |         |        |                                                     |
+| Merge PDF                       | ✅  | ✅      | ✅     |                                                     |
+| Split PDF                       | ✅  | ✅      | ✅     | Mobile: split interattivo (scegli pagine)           |
+| Reorder pagine                  | ✅  | ✅      | ✅     | Mobile: pulsanti su/giù                             |
+| Remove pagine                   | ✅  | ✅      | ✅     |                                                     |
+| Replace text                    | ❌  | ❌      | ❌     | Non funziona su nessuna piattaforma                 |
+| Password protect                | ✅  | ✅      | ✅     | Mobile: @cantoo/pdf-lib (fork con encrypt)          |
+| Unlock PDF                      | ✅  | ✅      | ✅     |                                                     |
+| Undo/Redo                       | ✅  | ✅      | ❌     | Solo backend (history)                              |
+| **Metadata**                    |     |         |        |                                                     |
+| View metadata                   | ✅  | ✅      | ✅     | Mobile: dialog dettagli                             |
+| Edit metadata                   | ✅  | ✅      | ✅     |                                                     |
+| **Import/Export**               |     |         |        |                                                     |
+| Import file                     | ✅  | ✅      | ❌     |                                                     |
+| Export PDF                      | ✅  | ✅      | ❌     |                                                     |
+| **Testo**                       |     |         |        |                                                     |
+| Extract text                    | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                              |
+| **Auth**                        |     |         |        |                                                     |
+| Email/password                  | ✅  | ✅      | ✅     |                                                     |
+| Guest mode                      | ✅  | ✅      | ✅     |                                                     |
+| Google OAuth                    | ✅  | ❌      | ❌     | Desktop: commentato, non attivo                     |
+| Forgot/reset password           | ✅  | ✅      | ✅     |                                                     |
+| JWT token refresh               | ✅  | ✅      | ✅     | Automatico su 401 (issue #623)                     |
+| **UX Mobile-specifiche**        |     |         |        |                                                     |
+| Scanner camera                  | ❌  | ❌      | ✅     | expo-camera                                         |
+| Share PDF                       | ❌  | ❌      | ✅     | expo-sharing                                        |
+| Badge count icona               | ❌  | ❌      | ✅     | expo-notifications                                  |
+| Multi-select                    | ❌  | ❌      | ✅     | Checkbox + batch delete                             |
+| Splash screen                   | ❌  | ❌      | ✅     | Sfondo arancione                                    |
+| Pull-to-refresh                 | ❌  | ❌      | ✅     | RefreshControl                                      |
+| Search/filtro                   | ❌  | ❌      | ✅     | Searchbar + useMemo                                 |
+| Swipe-to-delete                 | ❌  | ❌      | ✅     | react-native-gesture-handler                        |
+| Snackbar notifiche              | ❌  | ❌      | ✅     | React Native Paper                                  |
+| Bottom tabs                     | ❌  | ❌      | ✅     | Home + Settings                                     |
+| **UX Web/Desktop**              |     |         |        |                                                     |
+| Bug reports                     | ✅  | ✅      | ❌     |                                                     |
+| License management              | ✅  | ✅      | ❌     | Solo backend                                        |
+| Admin panel                     | ✅  | ✅      | ❌     | Solo backend                                        |
+| **Non implementato su nessuna** |     |         |        |                                                     |
+| Compressione PDF                | ❌  | ❌      | ❌     | Solo in roadmap                                     |
+| Cloud sync                      | ❌  | ❌      | ✅     | Mobile: bidirezionale con useCloudSync (issue #619) |
+| Rework UI Penpot                | ❌  | ❌      | ❌     | Design da fare                                      |
 
 ---
 
@@ -74,7 +75,7 @@
 ### Web (`frontend/`)
 
 - **Stack:** Next.js (static export) + backend FastAPI cloud
-- **Auth:** Email/password, guest, Google OAuth
+- **Auth:** Email/password, guest, Google OAuth, JWT refresh automatico ✅
 - **Operazioni:** Tutte via API cloud (PyMuPDF sul backend)
 - **Undo/Redo:** Supportato (history sul backend)
 - **Solo web:** Google OAuth funzionante, admin panel, license management, bug reports
@@ -82,7 +83,7 @@
 ### Desktop (`desktop/`)
 
 - **Stack:** Tauri v2 + Next.js static export + sidecar FastAPI (PyInstaller)
-- **Auth:** Email/password, guest (Google OAuth commentato nel codice)
+- **Auth:** Email/password, guest (Google OAuth commentato nel codice), JWT refresh automatico ✅
 - **Operazioni:** Sidecar locale (PyMuPDF) + cloud per auth
 - **Undo/Redo:** Supportato (history sul sidecar)
 - **Rispetto a web:** Stessa UI, Google OAuth non attivo
@@ -90,11 +91,12 @@
 ### Mobile (`mobile/`)
 
 - **Stack:** Expo SDK 57 (managed), React Native Paper, pdf-lib locale
-- **Auth:** Email/password, guest (no Google OAuth), forgot/reset password ✅
+- **Auth:** Email/password, guest (no Google OAuth), forgot/reset password ✅, JWT refresh automatico ✅
 - **Operazioni:** Tutte locali con @cantoo/pdf-lib (nessun backend necessario)
+- **Cloud sync:** ✅ Bidirezionale con useCloudSync (upload/download, conflitti, offline)
 - **Undo/Redo:** Non supportato (pdf-lib non ha history)
 - **Download PDF:** ✅ tramite SAF (Storage Access Framework)
-- **Solo mobile:** Scanner, Share, Badge, Multi-select, Splash, Pull-to-refresh, Search, Swipe, Snackbar, Bottom tabs
+- **Solo mobile:** Scanner, Share, Badge, Multi-select, Splash, Pull-to-refresh, Search, Swipe, Snackbar, Bottom tabs, Onboarding wizard, Sync badges
 - **Manca rispetto a web/desktop:** Replace text, Extract text, Import/Export, Undo/Redo, Google OAuth, Bug reports
 
 ---
