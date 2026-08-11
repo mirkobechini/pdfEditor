@@ -77,7 +77,7 @@
 | Dialog (conflict, import, delete) | —                             | ❌       | Non testati (UI components)                                                                                                                                                          |
 | OnboardingWizard                  | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 
-**Totale: 129 test**
+**Totale: 190 test**
 
 ---
 
@@ -96,16 +96,21 @@
 
 ## Come eseguire i test
 
+> ⚠️ **Non esiste un unico comando "full suite"** — ogni piattaforma ha il proprio test runner e va eseguita separatamente.
+
 ```bash
-# Backend (Python)
+# Backend (Python) — pytest
 cd backend
 pytest -q
 
-# Frontend web (Next.js)
+# Frontend web (Next.js) — vitest
 cd frontend
 npx vitest run
 
-# Mobile (Expo/React Native)
+# Mobile (Expo/React Native) — jest
 cd mobile
 npx jest
 ```
+
+### Desktop (Tauri)
+Non ha test specifici. Le funzionalità desktop sono testate indirettamente dai test frontend web (stessa codebase Next.js).
