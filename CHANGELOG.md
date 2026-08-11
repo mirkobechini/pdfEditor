@@ -2,6 +2,15 @@
 
 ## 2026-08-11
 
+### 🔑 JWT token refresh automatico (issue #623)
+
+- **Backend:** Nuovo endpoint `POST /auth/refresh` — decodifica token scaduto, verifica età (< 30 giorni), emette nuovo token + CSRF
+- **Shared API (web/desktop):** `refreshToken()` + auto-retry in `_fetch` su 401/INVALID_CREDENTIALS
+- **Shared Auth:** Callback `onTokenRefreshed`/`onTokenRefreshFailed` per persistenza localStorage/Tauri store
+- **Mobile API:** Stessa logica adattata per React Native (nessun cookie)
+- **Mobile Auth:** Callback per persistenza AsyncStorage + logout su refresh fallito
+- **Test:** 6 nuovi test backend per refresh token (369 totali backend, 179 mobile)
+
 ### 🧪 Mobile test coverage (issue #621)
 
 - **190 test mobile** (+137 rispetto a 53) — copertura totale su `localDb`, `error-map`, `i18n`

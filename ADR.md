@@ -1,7 +1,7 @@
 # Architecture Decision Record
 
 **Progetto:** PdfEditor
-**Data:** 2026-06-25 (ultimo aggiornamento 2026-08-10)
+**Data:** 2026-06-25 (ultimo aggiornamento 2026-08-11)
 **Versioni ADR incluse:** v0.1.24 → v0.2.0-mobile (12 release)
 **Autore:** Mirko Bechini
 
