@@ -21,6 +21,7 @@ Evitare che l'utente mobile debba rifare il login ogni ora quando il token JWT s
 - **Opzione B**: aggiungere un endpoint `/auth/refresh` che emette un nuovo token quando quello corrente scade
 - Il mobile, al ricevere un `401`/`INVALID_CREDENTIALS`, chiama automaticamente `/auth/refresh` e riprova la richiesta
 - Se il refresh fallisce (es. token troppo vecchio o revocato), l'utente deve rifare login
+- **Il refresh beneficia anche web e desktop**: il codice auth è condiviso tra web/desktop (`shared/src/api.ts` + `shared/src/auth.tsx`) e mobile (`mobile/src/shared/api.ts` + `mobile/src/shared/auth.tsx`). Con un'unica implementazione backend e modifiche parallele nei due client, si risolve su tutte e tre le piattaforme.
 
 ---
 
@@ -84,9 +85,9 @@ def refresh_token(request: Request, response: Response, ...):
 
 **Config:** aggiungere `REFRESH_TOKEN_MAX_AGE_DAYS: int = 30` in `backend/app/core/config.py`
 
-### R2 — Mobile: `api.ts` con retry automatico
+### R2 — Shared API (web/desktop): `shared/src/api.ts` con retry automatico
 
-**File:** `mobile/src/shared/api.ts`
+**File:** `shared/src/api.ts`
 
 - Aggiungere metodo `refreshToken(): Promise<{ access_token: string; csrf_token: string }>`
 - Modificare `_fetch` per:
@@ -95,29 +96,24 @@ def refresh_token(request: Request, response: Response, ...):
   3. Se il refresh fallisce: lanciare l'errore originale (e la UI mostra "sessione scaduta")
 - Usare un flag `isRefreshing` per evitare refresh concorrenti (più richieste fallite insieme)
 
-**Schema:**
+### R3 — Shared Auth (web/desktop): `shared/src/auth.tsx` — persistenza nuovo token
 
-```ts
-async refreshToken(): Promise<{ access_token: string; csrf_token: string }> {
-    const res = await this._fetch(`${this.baseUrl}/auth/refresh`, {
-        method: "POST",
-        headers: this.getHeaders(),
-    });
-    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
-    const data = await res.json();
-    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
-    this.setToken(data.access_token);
-    return data;
-}
-```
+**File:** `shared/src/auth.tsx`
 
-### R3 — Mobile: `auth.tsx` — persistenza nuovo token
+- Dopo un refresh riuscito, aggiornare `localStorage` (`REMEMBER_TOKEN_KEY`) con il nuovo token
+- Se il refresh fallisce e l'utente ha un token salvato: invalidare il token salvato e forzare il logout pulito (utente torna al login)
+
+### R4 — Mobile API: `mobile/src/shared/api.ts` con retry automatico
+
+**File:** `mobile/src/shared/api.ts`
+
+- Stessa logica di R2, adattata per mobile (nessun cookie, solo Authorization header + CSRF header)
+
+### R5 — Mobile Auth: `mobile/src/shared/auth.tsx` — persistenza nuovo token
 
 **File:** `mobile/src/shared/auth.tsx`
 
-- Dopo un refresh riuscito, aggiornare `AsyncStorage` (`REMEMBER_TOKEN_KEY`) con il nuovo token
-- Esporre `refreshToken()` nel context (o un callback che `api.ts` può chiamare per aggiornare lo storage)
-- Se il refresh fallisce e l'utente ha un token salvato: invalidare il token salvato e forzare il logout pulito (utente torna al login)
+- Stessa logica di R3, adattata per mobile (AsyncStorage invece di localStorage)
 
 ---
 
@@ -129,8 +125,10 @@ backend/app/core/config.py          # R1 — REFRESH_TOKEN_MAX_AGE_DAYS
 backend/app/api/v1/auth.py          # R1 — POST /auth/refresh
 backend/app/schemas/auth.py         # R1 — riuso TokenResponse
 backend/tests/test_auth.py          # R1 — test refresh endpoint
-mobile/src/shared/api.ts            # R2 — refreshToken + retry in _fetch
-mobile/src/shared/auth.tsx          # R3 — persistenza nuovo token + logout on fail
+shared/src/api.ts                   # R2 — refreshToken + retry in _fetch (web/desktop)
+shared/src/auth.tsx                 # R3 — persistenza nuovo token + logout on fail (web/desktop)
+mobile/src/shared/api.ts            # R4 — refreshToken + retry in _fetch (mobile)
+mobile/src/shared/auth.tsx          # R5 — persistenza nuovo token + logout on fail (mobile)
 mobile/src/hooks/useCloudSync.ts    # già gestisce INVALID_CREDENTIALS
 ```
 
@@ -157,9 +155,11 @@ mobile/src/hooks/useCloudSync.ts    # già gestisce INVALID_CREDENTIALS
 ## Ordine esecuzione
 
 1. **R1** — Backend: `decode_access_token_ignore_exp` + config + endpoint `/auth/refresh` + test
-2. **R2** — Mobile: `api.ts` con `refreshToken()` + retry in `_fetch`
-3. **R3** — Mobile: `auth.tsx` persistenza + logout su refresh fallito
-4. Build + test end-to-end
+2. **R2** — Shared API (web/desktop): `shared/src/api.ts` con `refreshToken()` + retry in `_fetch`
+3. **R3** — Shared Auth (web/desktop): `shared/src/auth.tsx` persistenza + logout su refresh fallito
+4. **R4** — Mobile API: `mobile/src/shared/api.ts` con `refreshToken()` + retry in `_fetch`
+5. **R5** — Mobile Auth: `mobile/src/shared/auth.tsx` persistenza + logout su refresh fallito
+6. Build + test end-to-end
 
 ---
 

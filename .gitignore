@@ -28,6 +28,9 @@ backend/storage/pdfs/*.pdf
 .coverage
 coverage.xml
 .pytest_cache/
+coverage/
+lcov.info
+lcov-report/
 
 # Databases
 *.db
