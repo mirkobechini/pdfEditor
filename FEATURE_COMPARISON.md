@@ -47,7 +47,7 @@
 | Guest mode                      | ✅  | ✅      | ✅     |                                                     |
 | Google OAuth                    | ✅  | ❌      | ❌     | Desktop: commentato, non attivo                     |
 | Forgot/reset password           | ✅  | ✅      | ✅     |                                                     |
-| JWT token refresh               | ✅  | ✅      | ✅     | Automatico su 401 (issue #623)                     |
+| JWT token refresh               | ✅  | ✅      | ✅     | Automatico su 401 (issue #623)                      |
 | **UX Mobile-specifiche**        |     |         |        |                                                     |
 | Scanner camera                  | ❌  | ❌      | ✅     | expo-camera                                         |
 | Share PDF                       | ❌  | ❌      | ✅     | expo-sharing                                        |
