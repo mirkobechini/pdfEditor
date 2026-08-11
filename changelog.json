@@ -9,19 +9,6 @@
         "🏃 Full suite runner: bash run-all-tests.sh / .\\run-all-tests.ps1",
         "🔧 Bug fixes e miglioramenti di stabilità"
       ]
-    },
-    {
-      "version": "v0.1.0",
-      "date": "2026-07-21",
-      "changes": [
-        "🚀 Prima release desktop (Tauri v2 + sidecar PyInstaller)",
-        "🖥️ Merge, split, reorder, remove pagine PDF",
-        "🔒 Password protect e unlock PDF",
-        "↩️ Undo/Redo supportato",
-        "📝 Replace text e Extract text",
-        "📥 Import/Export formati multipli",
-        "🔧 Bug fixes e performance improvements"
-      ]
     }
   ],
   "mobile": [
@@ -38,25 +25,6 @@
         "⚔️ ConflictDialog per risoluzione conflitti sync",
         "📥 ImportPdfDialog per import selettivo PDF nel cloud",
         "🔧 Bug fixes e miglioramenti"
-      ]
-    },
-    {
-      "version": "v0.1.0-mobile",
-      "date": "2026-08-10",
-      "changes": [
-        "🚀 Prima release mobile APK (EAS Build)",
-        "🎨 i18n completa su tutte le schermate (EN/IT)",
-        "🌗 Tema live switching (chiaro/scuro/system)",
-        "📱 Merge, split, reorder, remove pagine PDF",
-        "🔒 Password protect e unlock PDF",
-        "📄 Metadata editing (titolo, autore)",
-        "📖 PDF viewer con zoom",
-        "📷 Scanner fotocamera → PDF",
-        "📤 Share PDF via Android share sheet",
-        "🔍 Search bar, swipe-to-delete, multi-select",
-        "📋 Bottom tabs navigation (Home + Settings)",
-        "⬇️ Download PDF sul dispositivo",
-        "🔐 Forgot/reset password"
       ]
     }
   ]

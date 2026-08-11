@@ -306,7 +306,14 @@ Aggiungere entry per la nuova release. Includere:
 - Breaking changes
 - Dipendenze aggiornate
 
-#### 7.5 Merge dev → main + tag
+#### 7.5 Update changelog.json
+
+Aggiornare `changelog.json` nella root del repo con le novità della release (strutturato per desktop/mobile). Questo file è fetchato dinamicamente dalla download page (`/download`). Aggiungere un nuovo entry in cima all'array della piattaforma corrispondente con:
+- `version`: tag della release (es. `v0.2.0`)
+- `date`: data della release (es. `2026-08-11`)
+- `changes`: array di stringhe con le novità, una per riga (es. `"✅ JWT token refresh automatico"`)
+
+#### 7.6 Merge dev → main + tag
 
 ```bash
 git checkout main
@@ -371,6 +378,7 @@ npm test
 5. **Limitazioni del runtime**: alcune funzionalità JS/TS potrebbero non funzionare standalone (es. dynamic import, moduli Node-only). Verificare prima di usare.
 6. **KNOWN_ISSUES.md** va aggiornato con le limitazioni mobile scoperte.
 7. **CHANGELOG.md** va aggiornato con le feature mobile completate.
+8. **changelog.json** va aggiornato con le novità della release mobile (aggiungere entry in `mobile[]`).
 
 ### 8.4 Esempi per framework comuni
 
