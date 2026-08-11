@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-11
+
+### 🧪 Mobile test coverage (issue #621)
+
+- **190 test mobile** (+137 rispetto a 53) — copertura totale su `localDb`, `error-map`, `i18n`
+- **Nuovi file di test:** `AppSettingsContext`, `OnboardingContext`, `AuthStorage`, `AuthProvider`, `pdfServiceFull`, `usePdfStorage`, `useSyncQueue`, `i18n`, `cloudSyncApi`
+- **Full suite runner:** `bash run-all-tests.sh` / `.\run-all-tests.ps1` per lanciare tutti i test in sequenza
+- **Coverage:** `api.ts` 100% lines, `pdfService.ts` 89% lines, overall 88.55% statements
+
 ## 2026-08-10
 
 - 🎨 **i18n completa su tutte le schermate mobile** — HomeScreen, ToolsScreen, LoginScreen, ForgotPasswordScreen, SettingsScreen, navigazione (bottom tabs + header). Opzione "System language" (rilevamento automatico da expo-localization) + Italiano / English nel selettore.
