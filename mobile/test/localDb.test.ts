@@ -21,6 +21,9 @@ import {
   markPdfCloudUnsynced,
   getUnsyncedPdfs,
   getOrphanPdfs,
+  togglePdfSyncExclude,
+  getSyncedPdfs,
+  getLocalPdfsByUser,
 } from "../src/services/localDb";
 import type { LocalPdf } from "../src/shared/types";
 
@@ -127,6 +130,55 @@ describe("localDb", () => {
     expect(result).toHaveLength(1);
     expect(mockDb.getAllAsync).toHaveBeenCalledWith(
       expect.stringContaining("user_id IS NULL"),
+    );
+  });
+
+  // ─── Additional helpers ─────────────────────────────────────────
+
+  it("getLocalPdfs with userId filters by user", async () => {
+    mockDb.getAllAsync.mockResolvedValue([samplePdf]);
+    const result = await getLocalPdfs("user-1");
+    expect(result).toHaveLength(1);
+    expect(mockDb.getAllAsync).toHaveBeenCalledWith(
+      expect.stringContaining("user_id = ?"),
+      ["user-1"],
+    );
+  });
+
+  it("togglePdfSyncExclude sets cloud_synced_exclude=1", async () => {
+    mockDb.runAsync.mockResolvedValue(undefined);
+    await togglePdfSyncExclude("test-1", true);
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("cloud_synced_exclude = ?"),
+      [1, "test-1"],
+    );
+  });
+
+  it("togglePdfSyncExclude sets cloud_synced_exclude=0", async () => {
+    mockDb.runAsync.mockResolvedValue(undefined);
+    await togglePdfSyncExclude("test-1", false);
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("cloud_synced_exclude = ?"),
+      [0, "test-1"],
+    );
+  });
+
+  it("getSyncedPdfs returns synced PDFs", async () => {
+    mockDb.getAllAsync.mockResolvedValue([samplePdf]);
+    const result = await getSyncedPdfs();
+    expect(result).toHaveLength(1);
+    expect(mockDb.getAllAsync).toHaveBeenCalledWith(
+      expect.stringContaining("cloud_synced = 1"),
+    );
+  });
+
+  it("getLocalPdfsByUser filters by user_id", async () => {
+    mockDb.getAllAsync.mockResolvedValue([samplePdf]);
+    const result = await getLocalPdfsByUser("user-1");
+    expect(result).toHaveLength(1);
+    expect(mockDb.getAllAsync).toHaveBeenCalledWith(
+      expect.stringContaining("WHERE user_id = ?"),
+      ["user-1"],
     );
   });
 });

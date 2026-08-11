@@ -193,6 +193,72 @@ describe("ApiClient", () => {
       const msg = await ApiClient.extractError(res);
       expect(msg).toBe("Wrong password");
     });
+
+    it("handles AbortError (DOMException)", async () => {
+      const err = new DOMException("The operation was aborted", "AbortError");
+      const msg = await ApiClient.extractError(err);
+      expect(msg).toBe(
+        "Connection timeout. The server is waking up, please try again in a moment.",
+      );
+    });
+
+    it("handles TypeError network request failed", async () => {
+      const err = new TypeError("Network request failed");
+      const msg = await ApiClient.extractError(err);
+      expect(msg).toBe("Connection error. Check your internet connection.");
+    });
+
+    it("handles plain Error object", async () => {
+      const msg = await ApiClient.extractError(new Error("Something broke"));
+      expect(msg).toBe("Something broke");
+    });
+
+    it("handles non-Error, non-object fallback", async () => {
+      const msg = await ApiClient.extractError("just a string");
+      expect(msg).toBe("An unexpected error occurred");
+    });
+
+    it("handles array detail in error response", async () => {
+      const res = {
+        status: 422,
+        statusText: "Unprocessable",
+        json: () =>
+          Promise.resolve({
+            detail: [{ msg: "field required" }],
+          }),
+      } as Response;
+      const msg = await ApiClient.extractError(res);
+      expect(msg).toBe("field required");
+    });
+
+    it("handles non-object body in error response", async () => {
+      const res = {
+        status: 500,
+        statusText: "Internal Server Error",
+        json: () => Promise.resolve("raw string body"),
+      } as Response;
+      const msg = await ApiClient.extractError(res);
+      expect(msg).toBe('"raw string body"');
+    });
+
+    it("handles JSON parse failure in error response", async () => {
+      const res = {
+        status: 500,
+        statusText: "Internal Server Error",
+        json: () => Promise.reject(new Error("parse failed")),
+      } as Response;
+      const msg = await ApiClient.extractError(res);
+      expect(msg).toBe("Internal Server Error");
+    });
+
+    it("handles real Response object (instanceof Response)", async () => {
+      const res = new Response(JSON.stringify({ detail: "Not found" }), {
+        status: 404,
+        statusText: "Not Found",
+      });
+      const msg = await ApiClient.extractError(res);
+      expect(msg).toBe("Not found");
+    });
   });
 
   // ─── Token management ────────────────────────────────────────────
@@ -245,6 +311,25 @@ describe("ApiClient", () => {
         `${BASE}/pdfs/upload`,
         expect.objectContaining({ method: "POST" }),
       );
+    });
+
+    it("throws when upload response is not ok", async () => {
+      client.setToken("t");
+      const fileBlob = new Blob(["fake"]);
+      mockFetch
+        .mockReset()
+        .mockResolvedValueOnce({ blob: () => Promise.resolve(fileBlob) }) // file read
+        .mockResolvedValueOnce(
+          Promise.resolve({
+            ok: false,
+            status: 400,
+            json: () => Promise.resolve({ detail: "Upload failed" }),
+          }),
+        );
+
+      await expect(
+        client.uploadPdf("file:///test.pdf", "doc.pdf", "application/pdf"),
+      ).rejects.toThrow();
     });
   });
 
