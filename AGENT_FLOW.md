@@ -65,6 +65,12 @@ Prima di creare/modificare/cancellare QUALSIASI file, l'agente DEVE verificare m
   4. Lanciare **EAS Build** (`npx eas build --platform android --profile preview --wait`) per generare un APK installabile
   5. **Non creare la PR** — comunicare al developer che l'APK è pronto e chiedere di testarlo
   6. Solo dopo approvazione del developer → creare PR e procedere con merge su dev
+- **Desktop development: build locale prima della PR.** Quando si lavora sul desktop, prima di creare la PR:
+  1. Completare tutti i commit del task
+  2. Eseguire `npm run build` (frontend) per verificare che la compilazione sia corretta
+  3. Se la build fallisce → fixare e ricominciare dal passo 1
+  4. **Non creare la PR** — comunicare al developer che la build è pronta e chiedere di testare
+  5. Solo dopo approvazione del developer → creare PR e procedere con merge su dev
 - **🚨 RELEASE: MAI procedere con una release senza esplicita richiesta del developer.** Anche se tutte le feature sono pronte, i test passano e la documentazione è aggiornata — l'agente NON deve bumpare la versione, fare merge su main o creare un tag senza che il developer dica esplicitamente _"fai la release"_ o _"procedi con la release"_. Questa è la regola più importante: **la release è una decisione del developer, non dell'agente.**
 
 ---

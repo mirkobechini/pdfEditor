@@ -47,7 +47,7 @@
     "splitInvalidRange": "Intervallo pagine non valido",
     "internalError": "Errore interno imprevisto",
     "unknownError": "Errore imprevisto",
-    "version": "v0.2.0",
+    "version": "v0.1.35",
     "license": "Open Source License"
   },
   "pdf": {

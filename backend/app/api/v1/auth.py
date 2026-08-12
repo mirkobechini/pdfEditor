@@ -451,7 +451,7 @@ async def google_desktop_callback(
         )
 
     # Redirect to sidecar with the JWT token
-    sidecar_url = f"http://127.0.0.1:7723/auth/google/desktop-token-receive?token={jwt_token}"
+    sidecar_url = f"http://127.0.0.1:7723/auth/desktop-token-receive?token={jwt_token}"
     return RedirectResponse(url=sidecar_url)
 
 
