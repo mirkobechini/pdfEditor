@@ -1,0 +1,185 @@
+import React, { useState } from "react";
+import { View, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { Text, TextInput, Button, Surface, useTheme, IconButton, ActivityIndicator } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/AppNavigator";
+import { useAuth } from "../shared/auth";
+import { mapError } from "../shared/error-map";
+import { useTranslation } from "react-i18next";
+
+type LoginNavProp = NativeStackNavigationProp<RootStackParamList, "Login">;
+
+export default function LoginScreen() {
+    const { login, register, guestLogin, actionLoading } = useAuth();
+    const theme = useTheme();
+    const navigation = useNavigation<LoginNavProp>();
+    const { t } = useTranslation();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [fullName, setFullName] = useState("");
+    const [isRegister, setIsRegister] = useState(false);
+    const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+
+    const handleSubmit = async () => {
+        setError("");
+        try {
+            if (isRegister) {
+                await register(email, password, fullName);
+            } else {
+                await login(email, password, true);
+            }
+        } catch (e) {
+            const key = mapError(e);
+            const ns = key.split(".")[0];
+            const k = key.split(".")[1];
+            setError(ns === "common" ? t(key) : t(key));
+        }
+    };
+
+    return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                style={{ flex: 1 }}
+            >
+                <ScrollView
+                    contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24 }}
+                >
+                    <Surface
+                        style={{
+                            padding: 32,
+                            borderRadius: 16,
+                            elevation: 4,
+                            backgroundColor: theme.colors.surface,
+                        }}
+                    >
+                        <Text
+                            variant="headlineLarge"
+                            style={{
+                                textAlign: "center",
+                                fontWeight: "bold",
+                                color: theme.colors.primary,
+                                marginBottom: 8,
+                            }}
+                        >
+                            {t("home.title")}
+                        </Text>
+                        <Text
+                            variant="bodyMedium"
+                            style={{
+                                textAlign: "center",
+                                color: theme.colors.onSurfaceVariant,
+                                marginBottom: 32,
+                            }}
+                        >
+                            {isRegister ? t("auth.createAccount") : t("auth.signInToContinue")}
+                        </Text>
+
+                        {error ? (
+                            <View style={{ backgroundColor: "#FFE0E0", padding: 12, borderRadius: 8, marginBottom: 16 }}>
+                                <Text style={{ color: "#B00020", textAlign: "center" }}>
+                                    {error}
+                                </Text>
+                            </View>
+                        ) : null}
+
+                        {isRegister && (
+                            <TextInput
+                                label={t("auth.fullName")}
+                                value={fullName}
+                                onChangeText={setFullName}
+                                mode="outlined"
+                                style={{ marginBottom: 16 }}
+                            />
+                        )}
+
+                        <TextInput
+                            label={t("auth.email")}
+                            value={email}
+                            onChangeText={setEmail}
+                            mode="outlined"
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            style={{ marginBottom: 16 }}
+                        />
+
+                        <TextInput
+                            label={t("auth.password")}
+                            value={password}
+                            onChangeText={setPassword}
+                            mode="outlined"
+                            secureTextEntry={!showPassword}
+                            right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} />}
+                            style={{ marginBottom: 24 }}
+                        />
+
+                        <Button
+                            mode="contained"
+                            onPress={handleSubmit}
+                            loading={false}
+                            disabled={actionLoading}
+                            style={{ marginBottom: 12, borderRadius: 8 }}
+                            contentStyle={{ paddingVertical: 6 }}
+                        >
+                            {isRegister ? t("auth.register") : t("auth.signIn")}
+                        </Button>
+
+                        <Button
+                            mode="text"
+                            onPress={() => {
+                                setIsRegister(!isRegister);
+                                setError("");
+                            }}
+                            style={{ marginBottom: 8 }}
+                        >
+                            {isRegister
+                                ? t("auth.alreadyAccount")
+                                : t("auth.noAccount")}
+                        </Button>
+
+                        {!isRegister && (
+                            <Button
+                                mode="text"
+                                onPress={() => navigation.navigate("ForgotPassword")}
+                                style={{ marginBottom: 12 }}
+                                labelStyle={{ fontSize: 13 }}
+                            >
+                                {t("auth.forgotPassword")}
+                            </Button>
+                        )}
+
+                        <View
+                            style={{
+                                borderTopWidth: 1,
+                                borderTopColor: theme.colors.surfaceVariant,
+                                paddingTop: 16,
+                                marginTop: 8,
+                            }}
+                        >
+                            <Button
+                                mode="outlined"
+                                onPress={guestLogin}
+                                loading={false}
+                                disabled={actionLoading}
+                                style={{ borderRadius: 8 }}
+                                contentStyle={{ paddingVertical: 6 }}
+                            >
+                                {t("auth.guest")}
+                            </Button>
+                        </View>
+                    </Surface>
+                </ScrollView>
+            </KeyboardAvoidingView>
+
+            {/* Loading overlay — form visible in background with semi-transparent black veil */}
+            {actionLoading && (
+                <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                </View>
+            )}
+        </SafeAreaView>
+    );
+}

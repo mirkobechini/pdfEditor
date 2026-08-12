@@ -8,7 +8,9 @@ Sei un agente di sviluppo software. Questo file va letto **prima di qualsiasi a
 
 Controlla se esiste il file `ADR.md` nella root del repository.
 
-**Se ADR.md esiste:**
+- **`ADR.md`** (root) — copre backend, web, desktop e le scelte cross-platform.
+- **`mobile/ADR.md`** — copre ESCLUSIVAMENTE le decisioni dell'app mobile (React Native/Expo). Se operi in `mobile/`, leggilo in aggiunta o in alternativa all'ADR root per le scelte mobile-specifiche.
+  **Se ADR.md esiste:**
 
 - Leggilo per intero prima di qualsiasi operazione
 - Tutto il codice che scrivi deve rispettare lo stack e i vincoli dichiarati nell'ADR
@@ -23,20 +25,20 @@ Controlla se esiste il file `ADR.md` nella root del repository.
 - Genera un ADR.md seguendo il template documentato e mostralo all'utente per approvazione
 - Attendi l'approvazione prima di procedere con qualsiasi task di sviluppo
 
-### 2. Verifica .specs/plans/
+### 2. Verifica .specs/
 
-Controlla se esiste la cartella `.specs/plans/` nel repository.
+Controlla se esiste la cartella `.specs/` nel repository.
 
-**Se .specs/plans/ esiste:**
+**Se .specs/active/ esiste:**
 
-- Leggi tutti i file `.md` presenti
-- Questi sono i task di sviluppo pianificati e lo storico delle decisioni
-- Prima di iniziare un nuovo task, verifica che non sia già pianificato in questa cartella
+- Leggi tutti i file `.md` in `.specs/active/` — sono i task ancora da fare
+- Vedi `.specs/README.md` per la lista completa
+- Prima di iniziare un nuovo task, verifica che non sia già pianificato in `.specs/active/`
 
-  **Se .specs/plans/ NON esiste:**
+  **Se .specs/active/ NON esiste:**
 
-- Creala quando viene pianificata la prima feature futura
-- Ogni feature futura ha il suo file: `.specs/plans/feature-[nome].md`
+- Vedi `.specs/archive/` per lo storico dei task completati
+- Crea un nuovo file in `.specs/active/` per la nuova feature/bug
 
 ## Progetto vuoto — nessun codice esistente
 
@@ -132,7 +134,7 @@ mmdc -i architecture.mmd -o architecture.svg
 
 ### Step 3 — Decomposizione in feature
 
-Dall'ADR, identifica i componenti principali. Per ogni componente, crea un file `.specs/plans/feature-[nome-componente].md` con questa struttura:
+Dall'ADR, identifica i componenti principali. Per ogni componente, crea un file `.specs/active/feature-[nome-componente].md` con questa struttura:
 `# Feature: [Nome Componente]
 
 Alla fine di ogni file, inserisci l'implementazione proposta step by step tipo tutorial
@@ -188,13 +190,13 @@ Dopo ogni feature completata, verifica se l'ADR deve essere aggiornato:
 - Vincolo nuovo emerso → aggiornare "Vincoli"
 - Scelta architetturale fatta durante lo sviluppo → aggiornare "Decisioni architetturali"
 - Feature completata che era in "Feature future pianificate" → spostarla in "Componenti principali"
+- **Se la feature è mobile-specifica** → aggiornare `mobile/ADR.md`, non l'ADR root
 
-### Aggiornamento .specs/plans/
+### Aggiornamento .specs/active/
 
 Quando una feature è completata:
 
-- Aggiornare lo Status nel file `.specs/plans/feature-[nome].md` a `[x] Completata`
-- Aggiungere una riga "Completata il: [data]" e "Note: [eventuali deviazioni dal piano]"
+- Spostare il file da `.specs/active/` a `.specs/archive/`
 
 ## Istruzioni che non cambiano mai
 
@@ -203,4 +205,4 @@ Quando una feature è completata:
 - Non usare librerie non dichiarate nell'ADR senza approvazione
 - Se il brief di una feature contraddice l'ADR, segnalarlo prima di eseguire
 - Il tuo lavoro principale è eseguire — le decisioni architetturali appartengono al developer
-- **Prima di aprire una issue per un bug, leggere SEMPRE il codice reale.** Non aprire issue basandosi solo su KNOWN_ISSUES.md, ADR.md, o `.specs/plans/` — questi file potrebbero essere datati. Verificare sempre contro il codice sorgente.
+- **Prima di aprire una issue per un bug, leggere SEMPRE il codice reale.** Non aprire issue basandosi solo su KNOWN_ISSUES.md, ADR.md, o `.specs/archive/` — questi file potrebbero essere datati. Verificare sempre contro il codice sorgente.

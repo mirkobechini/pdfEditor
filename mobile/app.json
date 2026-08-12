@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "PdfEditor",
+    "slug": "mobile",
+    "version": "0.2.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.mirkobechini.pdfeditor",
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sqlite",
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow PdfEditor to access your camera to scan documents."
+        }
+      ],
+      "expo-font",
+      "expo-sharing",
+      "expo-splash-screen",
+      "expo-localization"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b32fb915-ff2f-42ca-81e4-cd311a4602b3"
+      }
+    }
+  }
+}

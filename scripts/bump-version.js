@@ -22,6 +22,9 @@ const FILES = [
     { path: "desktop/frontend/package.json", type: "json", key: "version" },
     { path: "desktop/src-tauri/tauri.conf.json", type: "json", key: "version" },
     { path: "desktop/frontend/package-lock.json", type: "json", key: "version" },
+    // Mobile (Expo) — package.json + app.json (expo.version)
+    { path: "mobile/package.json", type: "json", key: "version" },
+    { path: "mobile/app.json", type: "json", key: "version", nestedKey: "expo" },
     // TOML files
     { path: "desktop/src-tauri/Cargo.toml", type: "regex", pattern: /^(version\s*=\s*)"\d+\.\d+\.\d+"/m, replacement: `$1"${newVer}"` },
     // TSX files
@@ -44,11 +47,23 @@ for (const file of FILES) {
 
     if (file.type === "json") {
         const json = JSON.parse(content);
-        if (!json[file.key]) {
-            console.warn(`  ⚠️  No "${file.key}" in ${file.path}`);
-            continue;
+        if (file.nestedKey) {
+            if (!json[file.nestedKey]) {
+                console.warn(`  ⚠️  No "${file.nestedKey}" in ${file.path}`);
+                continue;
+            }
+            if (!json[file.nestedKey][file.key]) {
+                console.warn(`  ⚠️  No "${file.nestedKey}.${file.key}" in ${file.path}`);
+                continue;
+            }
+            json[file.nestedKey][file.key] = newVer;
+        } else {
+            if (!json[file.key]) {
+                console.warn(`  ⚠️  No "${file.key}" in ${file.path}`);
+                continue;
+            }
+            json[file.key] = newVer;
         }
-        json[file.key] = newVer;
         fs.writeFileSync(fullPath, JSON.stringify(json, null, 2) + "\n");
         console.log(`  ✅ ${file.path} → ${newVer}`);
         count++;

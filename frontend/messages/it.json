@@ -283,8 +283,34 @@
     "onlyPdfAllowed": "Sono ammessi solo file PDF.",
     "unsupportedFileType": "Tipo di file non supportato."
   },
+  "download": {
+    "title": "Scarica PdfEditor",
+    "subtitle": "Disponibile su desktop (Windows, macOS, Linux) e mobile (Android). Tutte le piattaforme sono gratuite e open source.",
+    "loading": "Caricamento release...",
+    "desktopTitle": "App Desktop",
+    "mobileTitle": "App Mobile",
+    "windows": "Windows",
+    "windowsDesc": "Windows 10 / 11, 64-bit",
+    "macos": "macOS",
+    "macosDesc": "macOS 10.15+, Apple Silicon",
+    "macosIntelNote": "Mac Intel: usa il DMG o compila da sorgente",
+    "linux": "Linux",
+    "linuxDesc": "AppImage e DEB, 64-bit",
+    "android": "Android",
+    "androidDesc": "APK Android (download diretto)",
+    "downloadInstaller": "Scarica Installer",
+    "downloadMsi": "Scarica MSI",
+    "downloadDmg": "Scarica DMG",
+    "downloadAppImage": "Scarica AppImage",
+    "downloadDeb": "Scarica DEB",
+    "downloadApk": "Scarica APK",
+    "notAvailable": "Non disponibile",
+    "recentChanges": "Novità",
+    "noChangelog": "Nessun changelog disponibile per questa release."
+  },
   "landing": {
     "navbar": {
+      "download": "Scarica",
       "features": "Funzionalità",
       "howItWorks": "Come funziona",
       "pricing": "Prezzi",
@@ -293,7 +319,7 @@
       "goToApp": "Vai all'App"
     },
     "hero": {
-      "badge": "Nuovo: Modifica testo nei PDF",
+      "badge": "Nuovo: Proteggi e sblocca con password",
       "title": "Il tuo editor PDF",
       "subtitle": "semplice, veloce, offline",
       "description": "Unisci, dividi, riordina e modifica i tuoi PDF direttamente dal browser. Gratuito, sicuro e senza pubblicità.",
@@ -305,7 +331,7 @@
     },
     "features": {
       "title": "Tutto quello che ti serve",
-      "description": "Strumenti professionali per gestire i tuoi PDF, senza installare nulla.",
+      "description": "Strumenti professionali per gestire i tuoi PDF su web, desktop e mobile.",
       "merge": {
         "title": "Unisci PDF",
         "description": "Combina più documenti in un unico file. Trascina e rilascia nell'ordine che preferisci."
@@ -320,7 +346,7 @@
       },
       "edittext": {
         "title": "Modifica Testo",
-        "description": "Correggi o aggiorna il testo direttamente nel PDF. Come un word processor."
+        "description": "Cerca e sostituisci testo all'interno dei tuoi documenti PDF (in arrivo)."
       },
       "unlock": {
         "title": "Sblocca PDF",

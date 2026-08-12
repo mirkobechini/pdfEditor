@@ -23,6 +23,8 @@ Con l'arrivo della Fase 2 (web app su cloud), serve un sistema di abbonamenti pe
 - Emettere fatture/ricevute
 - Gestire cancellazioni e rinnovi
 
+> ⚠️ **Nota 2026-08-11:** Con l'aggiunta del mobile (offline-first) e del desktop (sidecar locale), un sistema di abbonamenti completo è più complesso del previsto (tier diversi per piattaforma, licensing offline). **Alternativa in valutazione:** sostituire con un sistema di donazioni/offerte volontarie (Patreon, PayPal, GitHub Sponsors) con link nell'app, senza modificare il modello dati. I piani Stripe e license-tier-button-skin restano come riferimento per una futura monetizzazione strutturata.
+
 ## Stripe MCP Server
 
 Stripe fornisce un **MCP server ufficiale** accessibile via:

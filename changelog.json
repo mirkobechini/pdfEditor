@@ -1,0 +1,31 @@
+{
+  "desktop": [
+    {
+      "version": "v0.2.0",
+      "date": "2026-08-11",
+      "changes": [
+        "🔑 JWT token refresh automatico — login ogni ora non più necessario",
+        "🧪 179 test mobile (+126), copertura 100% su localDb, error-map, i18n",
+        "🏃 Full suite runner: bash run-all-tests.sh / .\\run-all-tests.ps1",
+        "🔧 Bug fixes e miglioramenti di stabilità"
+      ]
+    }
+  ],
+  "mobile": [
+    {
+      "version": "v0.2.0-mobile",
+      "date": "2026-08-11",
+      "changes": [
+        "☁️ Cloud sync bidirezionale (upload/download, conflitti, offline)",
+        "🧭 Onboarding wizard alla prima installazione",
+        "🔑 JWT token refresh automatico",
+        "⚙️ Settings con sync mode, tema, lingua",
+        "🔍 Badge sync in Home (synced/pending/error)",
+        "🗑️ DeleteSyncDialog: locale/cloud/entrambi",
+        "⚔️ ConflictDialog per risoluzione conflitti sync",
+        "📥 ImportPdfDialog per import selettivo PDF nel cloud",
+        "🔧 Bug fixes e miglioramenti"
+      ]
+    }
+  ]
+}

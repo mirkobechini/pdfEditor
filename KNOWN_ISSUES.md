@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-08-03
+> **Aggiornato:** 2026-08-11
 
 ---
 
@@ -74,6 +74,38 @@
 
 ---
 
+## 📱 Bug/limitazioni mobile
+
+### M4 — Password protect/unlock PDF (F4) ✅
+
+**File:** `mobile/src/services/pdfService.ts`, `mobile/src/screens/ToolsScreen.tsx`
+**Descrizione:** Implementato con `@cantoo/pdf-lib@2.8.1` che supporta encryption/decryption. UI in ToolsScreen con dialog per protect (conferma password) e unlock (password singola). Funzionante in APK standalone.
+**Stato:** ✅ Risolto (issue #622).
+
+### M3 — `react-native-pdf` non rimonta il viewer per un secondo PDF
+
+**File:** `mobile/src/screens/PdfViewerScreen.tsx`
+**Descrizione:** Il viewer non si aggiorna quando si apre un secondo PDF perché il componente non viene rimontato. Fix: `key={refreshKey}` incrementata in `useEffect([pdfId])` **dopo** aver settato `pdfUri`.
+**Stato:** Risolto (Build #6). Documentato come pattern obbligatorio.
+
+### M2 — Dynamic import non funziona in APK standalone
+
+**File:** `mobile/src/services/pdfService.ts`, `mobile/src/screens/ScannerScreen.tsx`
+**Descrizione:** `await import("expo-file-system")` a runtime non risolve in APK standalone — rompe pdfService e Scanner. **Regola:** SEMPRE import statici.
+**Stato:** Risolto (Build #6). Lezione in `LESSONS_LEARNED.md`.
+
+### M1 — `.easignore` pattern non ancorati escludevano `mobile/src/shared/`
+
+**File:** `.easignore` (root)
+**Descrizione:** Pattern senza `/` iniziale matchavano a qualsiasi profondità, escludendo `mobile/src/shared/` → Metro non trovava auth/api. Fix: ancorare tutti i pattern con `/` (es. `/shared/`, `/*.png`).
+**Stato:** Risolto (Build #5). Documentato in `mobile/ADR.md`.
+
+### M0 — Sync cloud PDF mobile ✅ (parziale)
+
+**File:** `mobile/src/hooks/useCloudSync.ts`, `mobile/src/screens/SettingsScreen.tsx`, `mobile/src/screens/HomeScreen.tsx`
+**Descrizione:** Sync bidirezionale implementato (upload/download/conflitti), onboarding wizard, dialog conflitti/import/delete, badge sync in Home, progress bar, trigger all'avvio e background.
+**Stato:** ✅ Implementato (issue #619). **Nota:** token JWT scade dopo 1h — refresh automatico implementato in issue #623 (endpoint `/auth/refresh` + retry automatico su tutte le piattaforme).
+
 ## 📊 Coverage gaps (non bloccanti)
 
 | Area                         | Coverage         | Bloccante? | Note                                          |
@@ -99,13 +131,27 @@
 
 ### Vulnerabilità risolte (non più segnalate da Dependabot)
 
-| Pacchetto          | Fix                             |
-| ------------------ | ------------------------------- |
-| `js-yaml`          | PR #392 (bump 4.2.0 → 4.3.0)    |
-| `next`             | PR #393 (bump 16.2.9 → 16.2.11) |
-| `python-multipart` | PR #395 (bump 0.0.31 → 0.0.32)  |
-| `PyJWT`            | Già a 2.13.0 (fixato)           |
-| `python-jose`      | Rimosso (non in uso)            |
+| Pacchetto          | Fix                                                  |
+| ------------------ | ---------------------------------------------------- |
+| `js-yaml`          | PR #392 (bump 4.2.0 → 4.3.0)                         |
+| `next`             | PR #393 (bump 16.2.9 → 16.2.11)                      |
+| `next` (CVE-2026)  | **bump 16.2.11 → 16.3.0** (3 high, 5 medium risolte) |
+| `python-multipart` | PR #395 (bump 0.0.31 → 0.0.32)                       |
+| `PyJWT`            | Già a 2.13.0 (fixato)                                |
+| `python-jose`      | Rimosso (non in uso)                                 |
+
+### ⚠️ Vulnerabilità note non fixabili (accettate)
+
+| Pacchetto           | Versione        | CVE (High/Medium)                                                 | Motivo accettazione                                                                                                              |
+| ------------------- | --------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **PyJWT**           | 2.13.0 (ultima) | 2 high, 2 medium (CVE-2026-32597, -48523, -48525, -48526)         | Già all'ultima versione disponibile. Fix attesi da upstream.                                                                     |
+| **PostCSS**         | sub-dep Next.js | 5 high, 2 medium (CVE-2026-41305, -45623, -69153, path traversal) | Sub-dipendenza interna di Next.js. Non fixabile separatamente.                                                                   |
+| **sharp/libvips**   | sub-dep Next.js | 1 high (CVE-2026-33327/28/35590)                                  | Sub-dipendenza interna di Next.js. Non fixabile separatamente.                                                                   |
+| **brace-expansion** | sub-dep eslint  | 3 high (CVE-2026-13149, -14257, -69152)                           | DevDependency. Non in produzione.                                                                                                |
+| **js-yaml**         | sub-dep eslint  | 1 high (CVE-2026-59869)                                           | DevDependency. Non in produzione.                                                                                                |
+| **glib (Rust)**     | sub-dep Tauri   | 0 (1 medium)                                                      | Sub-dipendenza indiretta di Tauri. Forzare `glib 0.20.0` rischia di rompere `cargo tauri build`. CVE non esposto a input utente. |
+
+> **Totale:** 30 segnalazioni Dependabot. **12 risolte** (incluso bump Next.js 16.3.0), **18 accettate** come non fixabili o già all'ultima versione.
 
 ---
 

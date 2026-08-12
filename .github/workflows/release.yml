@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*" # e.g. v0.1.0, v0.2.0
+      - "!v*-mobile" # exclude mobile tags (handled by release-mobile.yml)
 
 permissions:
   contents: read
@@ -29,15 +30,15 @@ jobs:
           fi
           echo "Waiting for CI checks on main (commit: $SHA)..."
           for i in $(seq 1 30); do
-            RESULT=$(gh api repos/${REPO}/commits/${SHA}/check-runs --jq '[.check_runs[] | select(.name == "backend" or .name == "frontend") | .conclusion // "pending"] | join(",")' 2>/dev/null)
-            echo "  iteration $i: backend+frontend conclusions: $RESULT"
+            RESULT=$(gh api repos/${REPO}/commits/${SHA}/check-runs --jq '[.check_runs[] | select(.name == "backend" or .name == "frontend" or .name == "mobile-test") | .conclusion // "pending"] | join(",")' 2>/dev/null)
+              echo "  iteration $i: backend+frontend+mobile conclusions: $RESULT"
             # Check for failure
             if echo "$RESULT" | grep -q "failure"; then
               echo "CI failed on main, aborting release."
               exit 1
             fi
             # Both success? Good to go
-            if echo "$RESULT" | grep -q "success,success"; then
+            if echo "$RESULT" | grep -q "success,success,success"; then
               echo "CI passed on main, proceeding with build."
               exit 0
             fi

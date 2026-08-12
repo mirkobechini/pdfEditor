@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_MAX_AGE_DAYS: int = 30
 
     @field_validator("SECRET_KEY", mode="before")
     @classmethod

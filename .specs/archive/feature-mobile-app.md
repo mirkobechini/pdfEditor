@@ -120,7 +120,7 @@ mobile/
 
 ## Status
 
-[ ] Non iniziata
+[x] Completata (MVP v0.1.0 mobile — 2026-08-03)
 
 ## Subtask (ordine di implementazione)
 

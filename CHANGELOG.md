@@ -1,5 +1,101 @@
 # Changelog
 
+## 2026-08-11
+
+### 🔑 JWT token refresh automatico (issue #623)
+
+- **Backend:** Nuovo endpoint `POST /auth/refresh` — decodifica token scaduto, verifica età (< 30 giorni), emette nuovo token + CSRF
+- **Shared API (web/desktop):** `refreshToken()` + auto-retry in `_fetch` su 401/INVALID_CREDENTIALS
+- **Shared Auth:** Callback `onTokenRefreshed`/`onTokenRefreshFailed` per persistenza localStorage/Tauri store
+- **Mobile API:** Stessa logica adattata per React Native (nessun cookie)
+- **Mobile Auth:** Callback per persistenza AsyncStorage + logout su refresh fallito
+- **Test:** 6 nuovi test backend per refresh token (369 totali backend, 179 mobile)
+
+### 🧪 Mobile test coverage (issue #621)
+
+- **179 test mobile** (+126 rispetto a 53) — copertura totale su `localDb`, `error-map`, `i18n`
+- **Nuovi file di test:** `AppSettingsContext`, `OnboardingContext`, `AuthStorage`, `AuthProvider`, `pdfServiceFull`, `usePdfStorage`, `useSyncQueue`, `i18n`, `cloudSyncApi`
+- **Full suite runner:** `bash run-all-tests.sh` / `.\run-all-tests.ps1` per lanciare tutti i test in sequenza
+- **Coverage:** `api.ts` 100% lines, `pdfService.ts` 89% lines, overall 88.55% statements
+
+## 2026-08-10
+
+- 🎨 **i18n completa su tutte le schermate mobile** — HomeScreen, ToolsScreen, LoginScreen, ForgotPasswordScreen, SettingsScreen, navigazione (bottom tabs + header). Opzione "System language" (rilevamento automatico da expo-localization) + Italiano / English nel selettore.
+- 🌗 **Tema live switching** — Tema chiaro/scuro/system con cambio immediato, persistito in AsyncStorage, senza refresh.
+- 🐛 **Login overlay fix** — Separato `actionLoading` da `loading` in auth context: l'overlay (velo nero + ActivityIndicator) ora si mostra correttamente durante login/register.
+- 🐛 **Encoding fix** — Corretta doppia codifica UTF-8 in `it.json` (caratteri accentati).
+- 🐛 **Header navigazione tradotti** — "PDF Tools", "Scanner", "Forgot Password" now use i18n.
+- 📝 **Issue #622 completata** — Mobile bug fixes + Settings improvements (B1-B3, S1-S2).
+
+### Cloud sync mobile (issue #619)
+
+- ☁️ **Cloud sync PDF** — Nuovo `useCloudSync` hook con sync bidirezionale (upload/download), rilevamento conflitti, gestione offline, preferenze (differito/auto/ibrido/chiedi).
+- 🧭 **Onboarding wizard** — 6 step alla prima installazione (benvenuto, permessi, tema, lingua, cloud, pronto). Flag `onboarding_completed` in AsyncStorage.
+- ⚙️ **Settings sezione Cloud** — Toggle sync, modalità sync, sync all'avvio, stato connessione, "Sincronizza ora".
+- 🔍 **Badge sync in Home** — Icona cloud verde (synced) / gialla (pending) / rossa (error) in ogni card PDF.
+- 📊 **Progress bar sync** — "Sync in corso... (3/12)" durante la sincronizzazione.
+- ⚔️ **ConflictDialog** — Risoluzione conflitti con vista semplice/dettagliata, scelta locale/cloud.
+- 📥 **ImportPdfDialog** — Import selettivo dei PDF locali orfani nel cloud (checklist).
+- 🗑️ **DeleteSyncDialog** — Cancellazione con scelta: solo dispositivo / solo cloud / entrambi.
+- 🔄 **Trigger automatici** — Sync all'avvio (condizionale) + in background (AppState).
+- 🐛 **Fix upload blob** — RN 0.86 richiede vero `Blob` nel FormData (non più `{uri,name,type}` hack).
+- 🔐 **Gestione token scaduto** — Messaggio chiaro "sessione scaduta" quando il JWT expira.
+- ☁️ **Sync per-PDF** — Menu contestuale (long press) con "Carica su cloud" / "Rimuovi dal cloud" per ogni PDF.
+- 💬 **Dialog post-upload** — Dopo aver caricato un PDF, chiede se sincronizzarlo subito sul cloud.
+- 🔑 **CSRF persistente** — Token CSRF salvato in AsyncStorage e ripristinato al riavvio (fix CSRF validation failed).
+- 🛡️ **Directory.create sicuro** — `try/catch` su tutti i `create()` per evitare crash quando la cartella esiste già.
+
+- 🚀 **Mobile release v0.2.0-mobile** — Seconda release mobile APK (EAS Build)
+- ✅ **UX: Bottom tabs navigation (F9)** — Home + Settings tabs con MainTabs.tsx, navigazione refactored.
+- ✅ **UX: Search bar in Home (M5)** — Searchbar React Native Paper + filteredPdfs via useMemo.
+- ✅ **UX: Snackbar in Tools (M1)** — Risultati operazioni mostrati come Snackbar invece di testo statico.
+- ✅ **UX: Swipe-to-delete in Home (M4)** — Swipeable (react-native-gesture-handler) per eliminare PDF velocemente.
+- ✅ **UX: Snackbar in Home** — Feedback visivo dopo eliminazione PDF.
+- ✅ **UX: Preview thumbnail in Home (M6)** — Icona PDF + conteggio pagine come thumbnail visivo in ogni card.
+- ✅ **UX: Badge count on app icon (M3)** — expo-notifications setBadgeCountAsync + tabBarBadge in MainTabs.
+- ✅ **UX: Multi-select in Home (M8)** — Modalità multi-selezione con checkbox, Select All, batch delete, action bar.
+- ✅ **UX: Share PDF (M7)** — Condivisione via Android share sheet con expo-sharing nel context menu.
+- ✅ **UX: Splash screen (M10)** — Sfondo arancione in splash screen (via expo-splash-screen plugin).
+- ✅ **Task 2: Password protect/unlock (F4)** — Migrato a @cantoo/pdf-lib@2.8.1 con supporto encryption. UI Password/Unlock in ToolsScreen con dialog (protect: conferma password, unlock: singola).
+- ✅ **Task 3: Hook useSyncQueue (F6)** — Hook per coda sync offline con persistenza AsyncStorage.
+- ✅ **Task 4: Pull-to-refresh in HomeScreen (M2)** — RefreshControl su FlatList.
+- ✅ **Download PDF su mobile** — SAF StorageAccessFramework per salvare PDF su dispositivo.
+- ✅ **Forgot/reset password su mobile** — Nuovo ForgotPasswordScreen, API + auth context, link in LoginScreen.
+- ✅ **F5: Reusable components** — PdfListItem, GuestBanner, SyncStatusBadge.
+- 🧹 **Pulizia GitHub** — Branch eliminato, tag v0.2.0-mobile ricreato dopo fix splash screen.
+- 🔧 **Fix splash screen validation** — Rimosso campo `splash` da app.json (non valido in SDK 57), installato expo-splash-screen.
+- 🧹 **Riorganizzazione .specs/** — 156 file → `active/` (15 da fare) + `archive/` (141 completati).
+- 📝 **FEATURE_COMPARISON.md** — Nuovo file con tabella feature cross-platform.
+- 📝 **Pagina /download** — Download page con GitHub release fetcher dinamico.
+- 📝 **Landing page aggiornata** — Navbar link Download, badge hero corretto, edit text description "coming soon".
+
+## 2026-08-07
+
+- ✅ **Task 1: Metadata editing (F3)** — Dialog per modificare titolo/autore in ToolsScreen. `updateMetadata` già esistente in pdfService, aggiunta UI.
+- ⏸ **Task 2: Password protect/unlock (F4)** — Messo in pausa. UI e funzioni `protectPdf`/`unlockPdf` scritte ma non attivabili: `pdf-lib@1.17.1` non supporta encryption. Soluzione alternativa (`@cantoo/pdf-lib` fork) ha compatibilità React Native da verificare. Vedi `.specs/plans/feature-mobile-improvements.md` per dettagli.
+- 📝 **Documentazione allineata:**
+  - Creato `mobile/ADR.md` — ADR dedicato al mobile con tutte le decisioni, architettura, salvataggio offline, limiti (Task 2 in pausa), roadmap.
+  - `ADR.md` (root) — sezione 4 mobile sostituita con riferimento a `mobile/ADR.md`.
+  - `BRIEF.md` — corretto: Expo managed (non bare), Fase 3/4 ✅ completate, viewer mobile (react-native-pdf), nota password mobile.
+  - `architecture.mmd` — aggiunto blocco `Client_Mobile` con tutte le dipendenze (pdfService, localDb, shared, RN Paper, react-native-pdf).
+  - `AGENTS.md` — Onboarding ora legge anche `mobile/ADR.md` per feature mobile-specific.
+  - `KNOWN_ISSUES.md` — aggiunta sezione 📱 Mobile con 5 voci (M0-M4: niente sync, .easignore, dynamic import, viewer cache, password in pausa).
+  - `AGENT_FLOW.md` — aggiunte sezioni 8 (Mobile workflow), 9 (Version alignment mobile), con regole, EAS Build, differenze dal flusso standard.
+
+## 2026-08-06
+
+- ✅ **Fix mobile MVP bugs** — Issue #614: icona app (1024x1024), password visibility toggle, loading overlay login, errori login visibili, offline restore utente reale, page_count calcolato da pdf-lib, secondo PDF fix (refreshKey), split interattivo (scegli pagine), reorder (pulsanti su/giù), import statici pdfService, expo-font peer dep, ADR/docs aggiornati.
+- ✅ **Build #6** — APK con tutti i fix del branch `feature/614-mobile-bug-fixes`.
+
+## 2026-08-04
+
+- ✅ **Mobile app MVP completata** — Issue #611: Expo SDK 57, React Native Paper, navigazione stack, auth (guest + email/password), upload PDF locale, PDF viewer con zoom, scanner fotocamera → PDF, editing base (merge/split/reorder/metadata) con pdf-lib.
+- ✅ **Mobile Test CI** — Workflow `test-mobile.yml` per TypeScript check su push/PR.
+- ✅ **Mobile Build workflow** — Workflow `build-mobile-apk.yml` per build APD su GitHub runner.
+- ✅ **Mobile tests** — 40 test (error-map 13 + api 13 + auth 7 + pdfService 7). Coverage ~30%.
+- ✅ **Fix error-map EMAIL_NOT_FOUND** — Separato da `Invalid email or password` (bug trovato dai test).
+- ✅ **Fix build rischi** — Rimosso nativewind (non usato), rimosso react-native-reanimated/plugin (opzionale).
+
 ## 2026-08-03
 
 - ✅ **Fix: ghost PDF permanent deletion** — Tutti i PDF vengono verificati all'avvio via HEAD request. Se fallisce (404), il record viene cancellato dal DB, non solo dalla UI.

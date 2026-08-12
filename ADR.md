@@ -1,13 +1,15 @@
 # Architecture Decision Record
 
 **Progetto:** PdfEditor
-**Data:** 2026-06-25 (ultimo aggiornamento 2026-08-03)
-**Versioni ADR incluse:** v0.1.24 → v0.1.33 (11 release)
+**Data:** 2026-06-25 (ultimo aggiornamento 2026-08-11)
+**Versioni ADR incluse:** v0.1.24 → v0.2.0-mobile (12 release)
 **Autore:** Mirko Bechini
 
 ## Decisione
 
-Applicazione cross-platform per la modifica e gestione di file PDF, con funzionalità di visualizzazione, annotazione, conversione, modifica testo e manipolazione avanzata. Architettura modulare che copre web (Next.js), desktop (Tauri v2), mobile (React Native) e backend (FastAPI).
+Applicazione cross-platform per la modifica e gestione di file PDF, con funzionalità di visualizzazione, annotazione, conversione, modifica testo e manipolazione avanzata. Architettura modulare che copre web (Next.js), desktop (Tauri v2), **mobile (React Native — vedi [`mobile/ADR.md`](./mobile/ADR.md))** e backend (FastAPI).
+
+> **Confronto feature tra piattaforme:** Vedi [`FEATURE_COMPARISON.md`](./FEATURE_COMPARISON.md)
 
 ## Contesto
 
@@ -116,14 +118,16 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ---
 
-## 4. Mobile (React Native) — futuro, Fase 4
+## 4. Mobile (React Native / Expo) — Fase 4 (MVP completato + bug fix)
 
-| Scelta                            | Alternativa                   | Motivo                                                             |
-| --------------------------------- | ----------------------------- | ------------------------------------------------------------------ |
-| React Native / Expo bare workflow | Flutter, Kotlin Multiplatform | Logica React condivisa con web/desktop.                            |
-| PDF.js via WebView                | PDF nativo                    | Riutilizzo viewer esistente.                                       |
-| SSO Google login                  | —                             | Già implementato su web/desktop.                                   |
-| Phone scanner → PDF               | —                             | Feature pianificata. Vedi `.specs/plans/feature-phone-scanner.md`. |
+> 📱 **Le decisioni mobile sono documentate in [`mobile/ADR.md`](./mobile/ADR.md).**
+> Questo file contiene solo il riferimento. Le scelte architetturali specifiche del mobile (Expo managed, pdf-lib offline, react-native-pdf, auth cloud-only, salvataggio offline, EAS Build) sono trattate nel documento dedicato.
+
+| Scelta                                      | Riferimento                                                     |
+| ------------------------------------------- | --------------------------------------------------------------- |
+| Stack mobile completo                       | [`mobile/ADR.md`](./mobile/ADR.md)                              |
+| Task 2 — Password protect/unlock (in pausa) | `mobile/ADR.md` + `.specs/plans/feature-mobile-improvements.md` |
+| Feature pianificate post-MVP                | `.specs/plans/feature-mobile-improvements.md`                   |
 
 ---
 
@@ -151,7 +155,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Cosa NON è in scope (per ora)
 
-- Mobile React Native (Fase 4 — futuro)
+- Mobile React Native (Fase 4) — ✅ **MVP completato** — vedi [`mobile/ADR.md`](./mobile/ADR.md)
 - Integrazione pagamenti Stripe (pianificata — vedi `.specs/plans/feature-stripe-mcp-subscriptions.md`)
 - SSO Apple / Samsung (previsto come bonus futuro)
 - react-native-web (valutabile, non deciso)
@@ -159,14 +163,16 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Roadmap
 
-| Fase                                   | Descrizione                                                                                                            |           Stato            |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | :------------------------: |
-| **Fase 1c — Desktop app (Tauri v2)**   | Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI. SQLite locale. Installer per Windows/macOS/Linux. |  ✅ Completata (v0.1.20)   |
-| **Fase 2 — Web app su cloud**          | Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export.                  | ✅ Completata (2026-07-10) |
-| **Fase 3 — Cloud sync**                | Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti.                                      |       ✅ Completata        |
-| **Fase 4 — Mobile app (React Native)** | Setup React Native (Expo bare workflow). Logica React condivisa. UI nativa. Store deployment.                          |         ⬜ Futuro          |
+| Fase                                        | Descrizione                                                                                                            |                                    Stato                                    |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------: |
+| **Fase 1c — Desktop app (Tauri v2)**        | Setup Tauri + Next.js build statica. PyInstaller per bundle FastAPI. SQLite locale. Installer per Windows/macOS/Linux. |                           ✅ Completata (v0.1.20)                           |
+| **Fase 2 — Web app su cloud**               | Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export.                  |                         ✅ Completata (2026-07-10)                          |
+| **Fase 3 — Cloud sync**                     | Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti.                                      |                                ✅ Completata                                |
+| **Fase 4 — Mobile app (React Native/Expo)** | Setup Expo + auth + upload + viewer + scanner + editing pdf-lib + EAS Build APK.                                       | ✅ Completata (MVP mobile) — dettagli in [`mobile/ADR.md`](./mobile/ADR.md) |
+| **Fase 4b — EAS CI Integration**            | Collegare EAS Build a GitHub Actions per build automatica su tag release.                                              |                                 ⬜ In piano                                 |
 
 > 📋 **Storico completo dei fix:** Vedi [`CHANGELOG.md`](./CHANGELOG.md).
+> 📦 **Novità strutturate per la download page:** Vedi [`changelog.json`](./changelog.json) — file JSON con versioni e cambiamenti per desktop e mobile, fetchato dinamicamente dalla download page.
 > 🐞 **Bug aperti e debito tecnico:** Vedi [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md).
 > 📖 **Lezioni apprese:** Vedi [`LESSONS_LEARNED.md`](./LESSONS_LEARNED.md).
 > 📝 **Feature pianificate:** Vedi `.specs/plans/`.
