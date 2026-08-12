@@ -179,8 +179,8 @@ export default function EditorPage() {
         return d.toLocaleDateString();
     }
     return (
-        <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col overflow-hidden">
-            <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0 overflow-hidden">
+        <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col">
+            <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0">
                 <aside className="flex flex-col border-r border-white/10 bg-[#1f1914]">
                     <div className="p-4">
                         <button onClick={handleOpenLocal} className="w-full cursor-pointer rounded-[14px] bg-[#f7871f] py-2.5 text-sm font-medium text-white shadow-sm shadow-[#f7871f]/30 transition hover:bg-[#ce5a00]">
@@ -320,7 +320,7 @@ export default function EditorPage() {
                     </div>
                 </main>
 
-                <aside className="flex flex-col bg-[#201a15] p-5 overflow-hidden">
+                <aside className="flex flex-col bg-[#201a15] p-5">
                     <h3 className="mb-4 text-xs font-bold uppercase tracking-widest">Page Metadata</h3>
                     <div className="mt-4 space-y-3 border-b border-white/10 pb-5">
                         {selectedDoc ? (
