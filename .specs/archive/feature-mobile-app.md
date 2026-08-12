@@ -79,6 +79,7 @@ mobile/
 ## Decisioni architetturali
 
 ### Auth offline-first
+
 - All'avvio, l'app carica il JWT da AsyncStorage
 - Se presente, tenta `GET /auth/me` sul cloud
 - Se fallisce (offline), usa i dati utente in cache
@@ -86,11 +87,13 @@ mobile/
 - Email/password: `POST /auth/login` al cloud, salva JWT
 
 ### Storage locale
+
 - PDF scaricati → `expo-file-system` documentDirectory
 - Metadati PDF e stato utente → SQLite via `expo-sqlite`
 - JWT → AsyncStorage (con expo-secure-store in futuro)
 
 ### pdf-lib per editing locale
+
 - Merge: unisce array di PDF in uno
 - Split: estrae range di pagine in nuovo PDF
 - Reorder: riorganizza pagine
@@ -98,11 +101,13 @@ mobile/
 - Password: setta/rimuove password
 
 ### Scanner → PDF
+
 - `expo-camera` per catturare foto
 - `expo-image-manipulator` per crop/ritaglio automatico
 - `pdf-lib` per embeddare le immagini in un nuovo PDF
 
 ### Sync (post-MVP)
+
 - Coda in SQLite: ogni modifica locale viene registrata con timestamp
 - Quando c'è rete, la coda viene processata: push al cloud, pull modifiche remote
 - Stessa logica UUID + timestamp del sync desktop
