@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import HeaderControls from "../HeaderControls";
@@ -10,7 +9,6 @@ import MonkeyLogo from "../MonkeyLogo";
 export default function LandingNavbar() {
     const t = useTranslations("landing.navbar");
     const { user } = useAuth();
-    const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
@@ -23,12 +21,12 @@ export default function LandingNavbar() {
 
                 {/* Nav links — desktop only */}
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600 dark:text-gray-400">
-                    <a href="#features" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
+                    <Link href="/#features" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                         {t("features")}
-                    </a>
-                    <a href="#how-it-works" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
+                    </Link>
+                    <Link href="/#how-it-works" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                         {t("howItWorks")}
-                    </a>
+                    </Link>
                     <Link href="/download" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                         {t("download")}
                     </Link>

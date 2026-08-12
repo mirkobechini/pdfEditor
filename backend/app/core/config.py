@@ -32,6 +32,15 @@ class Settings(BaseSettings):
             return secrets.token_urlsafe(48)
         return v
 
+    @field_validator("JWT_SECRET_KEY", mode="before")
+    @classmethod
+    def generate_jwt_secret_if_empty(cls, v: str) -> str:
+        """Auto-generate JWT secret key if empty, same as SECRET_KEY."""
+        if not v or not v.strip():
+            import secrets
+            return secrets.token_urlsafe(48)
+        return v
+
     # CORS origins (production should restrict this)
     ALLOWED_ORIGINS: str = "http://localhost:3000,tauri://localhost,http://tauri.localhost,https://tauri.localhost"
 
