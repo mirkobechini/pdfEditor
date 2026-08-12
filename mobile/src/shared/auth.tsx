@@ -10,6 +10,7 @@ const CSRF_TOKEN_KEY = "pdfeditor_csrf_token";
 interface AuthContextValue {
     user: User | null;
     loading: boolean;
+    isOffline: boolean;
     actionLoading: boolean;
     login: (email: string, password: string, remember?: boolean) => Promise<void>;
     register: (email: string, password: string, fullName: string) => Promise<void>;
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true); // initial restore
+    const [isOffline, setIsOffline] = useState(false);
     const [actionLoading, setActionLoading] = useState(false); // login/register/guest
 
     useEffect(() => {
@@ -34,20 +36,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Set up token refresh callback to persist new tokens
         api.onTokenRefreshed = async (token: string, csrfToken: string) => {
+            setIsOffline(false);
             await AsyncStorage.setItem(REMEMBER_TOKEN_KEY, token);
             if (csrfToken) {
                 await AsyncStorage.setItem(CSRF_TOKEN_KEY, csrfToken);
             }
         };
 
-        // On refresh failure: clear stored token and force logout
+        // On refresh failure: enter offline mode instead of force logout
         api.onTokenRefreshFailed = async () => {
-            api.setToken(null);
-            api.setCsrfToken(null);
-            setUser(null);
-            await AsyncStorage.removeItem(REMEMBER_TOKEN_KEY);
-            await AsyncStorage.removeItem(REMEMBER_USER_KEY);
-            await AsyncStorage.removeItem(CSRF_TOKEN_KEY);
+            setIsOffline(true);
+            // Keep the current token — it may still work for local operations
+            // The user can still access local PDFs in offline mode
         };
 
         async function restoreSession() {
@@ -197,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, loading, actionLoading, login, register, guestLogin, logout, forgotPassword, setUser }}>
+        <AuthContext.Provider value={{ user, loading, isOffline, actionLoading, login, register, guestLogin, logout, forgotPassword, setUser }}>
             {children}
         </AuthContext.Provider>
     );
