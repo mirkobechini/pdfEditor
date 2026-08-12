@@ -16,6 +16,35 @@ def _get_base_path() -> str:
     return os.path.dirname(os.path.abspath(__file__))
 
 
+def _get_app_data_dir() -> str:
+    """Return the persistent app data directory (survives reinstalls)."""
+    if sys.platform == "win32":
+        base = os.environ.get("APPDATA", os.path.expanduser("~"))
+        return os.path.join(base, "PdfEditor")
+    return os.path.join(os.path.expanduser("~"), ".local", "share", "PdfEditor")
+
+
+def _ensure_app_dirs():
+    """Create persistent data directories and set env vars BEFORE Settings import.
+    
+    This ensures the SQLite database and PDF storage survive reinstalls.
+    """
+    data_dir = _get_app_data_dir()
+    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(os.path.join(data_dir, "storage", "pdfs"), exist_ok=True)
+    os.makedirs(os.path.join(data_dir, "storage", "snapshots"), exist_ok=True)
+    
+    # Set env vars before Settings is imported (override .env defaults)
+    # This ensures the app data dir is used even if .env.desktop has a relative path
+    db_path = os.path.join(data_dir, "pdfeditor.db").replace(os.sep, "/")
+    os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
+    os.environ["UPLOAD_DIR"] = os.path.join(data_dir, "storage", "pdfs")
+    
+    print(f"[sidecar] App data dir: {data_dir}")
+    print(f"[sidecar] Database: {db_path}")
+    print(f"[sidecar] Storage: {os.environ.get('UPLOAD_DIR')}")
+
+
 def _ensure_env():
     """Seed .env from bundled default if not present.
     Must run BEFORE any app imports because Settings reads .env at import time."""
@@ -32,8 +61,9 @@ def _ensure_env():
         print(f"[sidecar] Using existing .env")
 
 
-# Ensure .env exists before any app imports
+# Ensure .env exists and data dirs are set before any app imports
 _ensure_env()
+_ensure_app_dirs()
 
 import uvicorn  # noqa: E402
 
