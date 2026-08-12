@@ -1,11 +1,24 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-08-11
+> **Aggiornato:** 2026-08-12
 
 ---
 
 ## 🔴 Bug aperti
+
+### K5 — Auth offline: dopo login Google, l'app non funziona senza connessione
+
+**File:** `shared/src/auth.tsx`, `shared/src/api.ts`  
+**Descrizione:** Dopo login Google (online), se la connessione cade e il JWT scade (60 min), l'utente non può più usare l'app — neanche per i PDF locali. Manca il salvataggio del profilo utente + JWT in cache locale per uso offline.
+
+**Soluzione prevista:**
+
+1. Salvare profilo + JWT + refresh token in SQLite/AsyncStorage dopo login
+2. Se offline e JWT scaduto → modalità offline (solo PDF locali)
+3. Alla riconnessione → refresh automatico JWT + ripresa sync
+
+**Stato:** Da implementare (pianificato con issue #627).
 
 ### K4 — Settings: antialiasing/densità nessun effetto visibile
 

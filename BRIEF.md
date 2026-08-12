@@ -127,6 +127,16 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - **Complessità**: media — si integra nel service layer di generazione PDF, non nella logica di modifica
 - **Test**: aggiungere un test di validazione struttura tagged per ogni operazione di output
 
+### 11. Auth offline — funzionamento senza connessione
+
+Dopo il login Google (online), l'app deve funzionare anche offline:
+
+1. **Salvataggio locale**: dopo login Google riuscito, salvare profilo utente + JWT + refresh token in SQLite/AsyncStorage locale
+2. **Modalità offline**: se il JWT è scaduto e non c'è connessione, l'app entra in "modalità offline" — l'utente può comunque usare l'app con i PDF locali (grazie al cloud sync già implementato)
+3. **Riconnessione**: alla prossima connessione, refresh automatico del JWT e ripresa del sync
+
+Questo vale per desktop (Tauri store plugin) e mobile (AsyncStorage). Il cloud sync già gestisce il merge dei PDF tra locale e remoto.
+
 ## Componenti principali
 
 - Visualizzazione dei file PDF
