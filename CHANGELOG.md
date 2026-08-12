@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-08-12
+
+### 🔧 Desktop Google login configurato (issue #627)
+
+- **Backend:** `JWT_SECRET_KEY` auto-generato se vuoto (come già `SECRET_KEY`)
+- **Desktop:** Unificato `binaries/.env` con `.env.desktop` (aggiunto `SIDECAR_PORT`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID`)
+- **Desktop:** Logging aggiunto in `run_backend.py` per debugging connessione
+- **Fix:** `PUBLIC_URL` config per Google OAuth redirect (usava URL interno Render invece del dominio personalizzato)
+
+### 🔓 Auth offline dopo login Google (issue #629)
+
+- **Shared Auth:** Aggiunto stato `isOffline` — se JWT scade e non c'è connessione, entra in modalità offline
+- **Shared Auth:** `onTokenRefreshFailed` non fa più force logout, entra in modalità offline
+- **Shared Auth:** Google login ora persiste il token localmente (localStorage/Tauri store/AsyncStorage)
+- **Mobile Auth:** Mantiene profilo utente in cache per uso offline
+
+### 🖥️ Google Login Button visibile su desktop (issue #631)
+
+- **Desktop:** Decommentato `GoogleLoginButton` nella login page (era commentato, quindi invisibile)
+
+### 🧹 Pulizia
+
+- **Release:** Eliminate v0.1.30, v0.1.31, v0.1.32, v0.1.33 (release + tag)
+- **Versione desktop:** Corretta da 0.2.0 a 0.1.35 (bump errato, feature erano mobile)
+
 ## 2026-08-11
 
 ### 🔑 JWT token refresh automatico (issue #623)
