@@ -27,4 +27,4 @@ Risolvere il 403 CSRF durante l'upload PDF su sidecar Tauri. Il cookie CSRF non 
 
 ## Status
 
-[ ] Non iniziata
+[x] Fix implementato — da testare con build v0.1.35
