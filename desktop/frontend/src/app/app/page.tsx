@@ -179,7 +179,7 @@ export default function EditorPage() {
         return d.toLocaleDateString();
     }
     return (
-        <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col">
+        <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col overflow-hidden">
             <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0">
                 <aside className="flex flex-col border-r border-white/10 bg-[#1f1914]">
                     <div className="p-4">
