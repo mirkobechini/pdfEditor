@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { getApiBaseUrl } from "../../shared/tauri";
 
 const API_BASE = getApiBaseUrl();
@@ -17,6 +18,7 @@ interface Step {
 
 export default function StartupPage() {
     const router = useRouter();
+    const tc = useTranslations("common");
     const [steps, setSteps] = React.useState<Step[]>([
         { id: "backend", label: "Avvio del backend in locale...", status: "running" },
         { id: "database", label: "Connessione al database SQLite...", status: "pending" },
@@ -177,7 +179,7 @@ export default function StartupPage() {
                 )}
 
                 <p className="mt-10 text-center text-[10px] text-[#8e8175]">
-                    v0.2.0 · AGPL-3.0
+                    {tc("version")} · AGPL-3.0
                 </p>
             </div>
         </div>
