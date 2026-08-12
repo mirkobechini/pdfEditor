@@ -43,7 +43,8 @@
     "windows": {
       "nsis": {
         "installMode": "currentUser",
-        "installerHooks": "installer.nsh"
+        "installerHooks": "installer.nsh",
+        "displayInstallMode": "never"
       }
     },
     "macOS": {
