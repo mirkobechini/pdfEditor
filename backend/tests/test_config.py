@@ -26,12 +26,14 @@ class TestSettingsValidation:
         assert len(s.SECRET_KEY) >= 32
 
     def test_effective_secret_key_fallback(self):
-        """effective_secret_key should fall back to SECRET_KEY."""
-        s = Settings(_env_file=None, SECRET_KEY="mykey", JWT_SECRET_KEY="")
-        assert s.effective_secret_key == "mykey"
+        """effective_secret_key should return JWT_SECRET_KEY (auto-generated if empty)."""
+        s = Settings(_env_file=None, SECRET_KEY="mykey")
+        assert s.JWT_SECRET_KEY != ""
+        assert len(s.JWT_SECRET_KEY) >= 32
+        assert s.effective_secret_key == s.JWT_SECRET_KEY
 
     def test_effective_secret_key_jwt_priority(self):
-        """effective_secret_key should prefer JWT_SECRET_KEY."""
+        """effective_secret_key should prefer JWT_SECRET_KEY when explicitly set."""
         s = Settings(_env_file=None, SECRET_KEY="old", JWT_SECRET_KEY="new")
         assert s.effective_secret_key == "new"
 
