@@ -72,6 +72,13 @@
 **Descrizione:** Il nuovo sistema di build usa `@tauri-apps/cli` via npm. Se il pacchetto non è installato (es. `npm ci` fallito), la build fallisce.
 **Risoluzione prevista:** Il preflight job in CI verifica che `npm ci` + `next build` funzionino prima di avviare la build Tauri.
 
+### T5 — Dipendenze transitive con vulnerabilità non fixabili
+
+| Pacchetto     | Versione | Vulnerabilità                 | Motivo                                                               |
+| ------------- | -------- | ----------------------------- | -------------------------------------------------------------------- |
+| `image-size`  | ≤2.0.2   | DoS in ICNS/JXL/HEIF parser   | Nessun fix disponibile                                               |
+| `glib` (Rust) | 0.18.5   | Unsoundness in VariantStrIter | Fix in 0.20.0, bloccato da crate intermedie (gtk/atk non aggiornate) |
+
 ---
 
 ## 📱 Bug/limitazioni mobile
