@@ -366,7 +366,8 @@ def google_desktop_login(request: Request):
     """
     import secrets
     state = secrets.token_urlsafe(32)
-    redirect_uri = f"{request.base_url}auth/google/desktop-callback"
+    base = settings.PUBLIC_URL or str(request.base_url).rstrip("/")
+    redirect_uri = f"{base}/auth/google/desktop-callback"
 
     # Store state for later verification
     _desktop_oauth_store[state] = {"used": False, "token": None}
@@ -416,7 +417,8 @@ async def google_desktop_callback(
 
     # Exchange code for tokens
     token_url = "https://oauth2.googleapis.com/token"
-    redirect_uri = f"{request.base_url}auth/google/desktop-callback"
+    base = settings.PUBLIC_URL or str(request.base_url).rstrip("/")
+    redirect_uri = f"{base}/auth/google/desktop-callback"
     data = {
         "code": code,
         "client_id": settings.GOOGLE_CLIENT_ID,

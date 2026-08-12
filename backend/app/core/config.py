@@ -32,6 +32,15 @@ class Settings(BaseSettings):
             return secrets.token_urlsafe(48)
         return v
 
+    @field_validator("JWT_SECRET_KEY", mode="before")
+    @classmethod
+    def generate_jwt_secret_if_empty(cls, v: str) -> str:
+        """Auto-generate JWT secret key if empty, same as SECRET_KEY."""
+        if not v or not v.strip():
+            import secrets
+            return secrets.token_urlsafe(48)
+        return v
+
     # CORS origins (production should restrict this)
     ALLOWED_ORIGINS: str = "http://localhost:3000,tauri://localhost,http://tauri.localhost,https://tauri.localhost"
 
@@ -46,6 +55,7 @@ class Settings(BaseSettings):
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""  # Set in .env for production
     GOOGLE_CLIENT_SECRET: str = ""  # Set in .env for production
+    PUBLIC_URL: str = ""  # Custom domain for OAuth redirect URIs (e.g. https://pdfeditor-api.mirkobechini.com)
 
     # Database — use as_posix() to get forward slashes for SQLAlchemy URI
     DATABASE_URL: str = f"sqlite:///{(BACKEND_DIR / 'pdf_editor.db').as_posix()}"

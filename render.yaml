@@ -24,6 +24,8 @@ services:
         sync: false # Imposta manualmente (R2 API token secret)
       - key: S3_REGION
         value: auto
+      - key: PUBLIC_URL
+        value: https://pdfeditor-api.mirkobechini.com
 
   - type: static_site
     name: pdeditor-frontend

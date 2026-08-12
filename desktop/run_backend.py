@@ -22,9 +22,14 @@ def _ensure_env():
     base_path = _get_base_path()
     bundled_env = os.path.join(base_path, ".env.desktop")
     target_env = os.path.join(os.getcwd(), ".env")
+    print(f"[sidecar] Base path: {base_path}")
+    print(f"[sidecar] Bundled env: {bundled_env} exists={os.path.exists(bundled_env)}")
+    print(f"[sidecar] Target env: {target_env} exists={os.path.exists(target_env)}")
     if not os.path.exists(target_env) and os.path.exists(bundled_env):
         shutil.copy2(bundled_env, target_env)
-        print(f"[sidecar] Created default .env")
+        print(f"[sidecar] Created default .env from .env.desktop")
+    elif os.path.exists(target_env):
+        print(f"[sidecar] Using existing .env")
 
 
 # Ensure .env exists before any app imports
