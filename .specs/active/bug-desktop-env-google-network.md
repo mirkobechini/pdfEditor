@@ -1,6 +1,6 @@
 # Bug: Desktop — Google login non configurato + errore di rete + guest fallisce
 
-**Status:** In progress (PR #628)
+**Status:** ✅ Completato (issue #627, #629, #631)
 **Priority:** CRITICAL (Bloccante per uso desktop)
 
 ## Problema

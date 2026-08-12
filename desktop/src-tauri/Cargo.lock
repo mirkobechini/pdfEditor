@@ -2499,7 +2499,7 @@ dependencies = [
 
 [[package]]
 name = "pdf-editor-desktop"
-version = "0.2.0"
+version = "0.1.35"
 dependencies = [
  "log",
  "nix",
