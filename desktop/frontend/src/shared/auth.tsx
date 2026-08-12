@@ -10,6 +10,7 @@ const REMEMBER_TOKEN_KEY = "pdfeditor_remember_token";
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
+  isOffline: boolean;
   login: (email: string, password: string, remember?: boolean) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   googleLogin: (idToken: string) => Promise<void>;
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isOffline, setIsOffline] = useState(false);
   const _pendingAuthRef = React.useRef(false);
 
   // On mount: restore session from httpOnly cookie (browser sends it automatically)
@@ -31,6 +33,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
+    // Set up token refresh callback to persist new tokens
+    api.onTokenRefreshed = (token: string, csrfToken: string) => {
+      setIsOffline(false);
+      if (isTauri()) {
+        import("./tauri").then(({ tauriInvoke }) => {
+          tauriInvoke("store_jwt", { token }).catch(() => { });
+        });
+      } else {
+        localStorage.setItem(REMEMBER_TOKEN_KEY, token);
+      }
+    };
+    // On refresh failure: enter offline mode instead of force logout
+    api.onTokenRefreshFailed = () => {
+      setIsOffline(true);
+      // Keep the current token — it may still work for local operations
+      // The user can still access local PDFs in offline mode
+    };
     async function restoreSession() {
       // Check localStorage first (web remember-me)
       const remembered = localStorage.getItem(REMEMBER_TOKEN_KEY);
@@ -47,22 +66,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      const token = api.getToken();
+      if (!token) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
       try {
         const u = await api.getMe();
         if (!cancelled) {
           setUser(u);
+          setIsOffline(false);
           api.refreshCsrf();
           return;
         }
       } catch {
         // Sidecar non pronto o utente non in SQLite locale — prova cloud
-        const token = api.getToken();
         if (token) {
           cloudApi.setToken(token);
           try {
             const u = await cloudApi.getMe();
             if (!cancelled) {
               setUser(u);
+              setIsOffline(false);
               // Sync user to sidecar so local getMe/CSRF work
               await api.syncUser(u);
               // Refresh CSRF for both sidecar and cloud
@@ -71,10 +97,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               return;
             }
           } catch {
-            // Neanche il cloud risponde — offline
+            // Neanche il cloud risponde — offline mode
+            setIsOffline(true);
+            // Keep the user from cache if we have one, otherwise null
           }
         }
-        localStorage.removeItem(REMEMBER_TOKEN_KEY);
       } finally {
         if (!cancelled && !_pendingAuthRef.current) {
           setLoading(false);
@@ -160,24 +187,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Already a JWT — set it directly
         api.setToken(token);
         cloudApi.setToken(token);
+        // Persist token locally for offline use
+        if (isTauri()) {
+          const { tauriInvoke } = await import("./tauri");
+          await tauriInvoke("store_jwt", { token }).catch(() => { });
+        } else {
+          localStorage.setItem(REMEMBER_TOKEN_KEY, token);
+        }
         try {
           const u = await api.getMe();
           setUser(u);
+          setIsOffline(false);
         } catch {
           const u = await cloudApi.getMe();
           setUser(u);
+          setIsOffline(false);
         }
       } else {
         // Google id_token — exchange via cloud API
         const res = await cloudApi.googleLogin(token);
         api.setToken(res.access_token);
         cloudApi.setToken(res.access_token);
+        // Persist token locally for offline use
+        if (isTauri()) {
+          const { tauriInvoke } = await import("./tauri");
+          await tauriInvoke("store_jwt", { token: res.access_token }).catch(() => { });
+        } else {
+          localStorage.setItem(REMEMBER_TOKEN_KEY, res.access_token);
+        }
         try {
           const u = await api.getMe();
           setUser(u);
+          setIsOffline(false);
         } catch {
           const u = await cloudApi.getMe();
           setUser(u);
+          setIsOffline(false);
           await api.syncUser(u);
         }
       }
@@ -218,12 +263,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       api.setToken(null);
       api.setCsrfToken?.(null);
       setUser(null);
+      setIsOffline(false);
       localStorage.removeItem(REMEMBER_TOKEN_KEY);
     }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, googleLogin, guestLogin, logout, setUser, isDesktop: isTauri() }}>
+    <AuthContext.Provider value={{ user, loading, isOffline, login, register, googleLogin, guestLogin, logout, setUser, isDesktop: isTauri() }}>
       {children}
     </AuthContext.Provider>
   );
