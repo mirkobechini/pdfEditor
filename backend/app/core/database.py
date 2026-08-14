@@ -14,6 +14,10 @@ sqlite3.register_adapter(datetime.datetime, lambda dt: dt.isoformat())
 db_path = Path(settings.DATABASE_URL.replace("sqlite:///", ""))
 db_path.parent.mkdir(parents=True, exist_ok=True)
 
+# Ensure the PDF storage directory exists (important for PyInstaller bundles)
+storage_path = Path(settings.UPLOAD_DIR)
+storage_path.mkdir(parents=True, exist_ok=True)
+
 # Configure engine based on database type
 if "postgresql" in settings.DATABASE_URL:
     # PostgreSQL with psycopg v3 — connection pooling for production

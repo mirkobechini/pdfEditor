@@ -65,7 +65,6 @@ Write-Host "Running PyInstaller..." -ForegroundColor Yellow
     --hidden-import "app.services" `
     --hidden-import "app.api.v1" `
     --add-data "$ProjectRoot\desktop\.env.desktop;." `
-    --runtime-tmpdir "." `
     $EntryPoint
 
 # Clean up temp build files

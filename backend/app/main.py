@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 import logging
 import signal
+import sys
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -120,12 +121,16 @@ def _cleanup_on_shutdown():
 
 
 def _validate_settings():
-    """Validate critical configuration at startup."""
+    """Validate critical configuration at startup.
+    Skips production-only checks when running in PyInstaller bundle (desktop)."""
     if not settings.effective_secret_key:
         raise RuntimeError(
             "SECRET_KEY or JWT_SECRET_KEY must be set in .env. "
             "Without a secret key, JWT tokens can be forged."
         )
+    # Skip production-only checks when running in PyInstaller bundle (desktop)
+    if hasattr(sys, "_MEIPASS"):
+        return
     if not settings.DEBUG and settings.SUPER_ADMIN_EMAIL == "admin@pdfeditor.local":
         raise RuntimeError(
             "SUPER_ADMIN_EMAIL is still set to the default 'admin@pdfeditor.local'. "

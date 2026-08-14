@@ -50,3 +50,5 @@ desktop/frontend/.next/
 desktop/src-tauri/target/
 desktop/src-tauri/binaries/*.exe
 desktop/src-tauri/binaries/*.dll
+desktop/src-tauri/binaries/_MEI*/
+desktop/src-tauri/binaries/_MEI*/
