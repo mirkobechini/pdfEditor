@@ -1,10 +1,24 @@
 from pathlib import Path
+import os
+import sys
 
 from pydantic import ConfigDict, field_validator
 from pydantic_settings import BaseSettings
 
 # Backend root = 3 levels up from app/core/config.py
 BACKEND_DIR = Path(__file__).parent.parent.parent
+
+
+def _get_app_data_dir() -> Path:
+    """Return the persistent app data directory for PyInstaller bundles.
+    Falls back to BACKEND_DIR when running in development."""
+    if hasattr(sys, "_MEIPASS"):
+        if sys.platform == "win32":
+            base = Path(os.environ.get("APPDATA", Path.home()))
+        else:
+            base = Path.home() / ".local" / "share"
+        return base / "PdfEditor"
+    return BACKEND_DIR
 
 
 class Settings(BaseSettings):
@@ -58,7 +72,7 @@ class Settings(BaseSettings):
     PUBLIC_URL: str = ""  # Custom domain for OAuth redirect URIs (e.g. https://pdfeditor-api.mirkobechini.com)
 
     # Database — use as_posix() to get forward slashes for SQLAlchemy URI
-    DATABASE_URL: str = f"sqlite:///{(BACKEND_DIR / 'pdf_editor.db').as_posix()}"
+    DATABASE_URL: str = f"sqlite:///{(_get_app_data_dir() / 'pdfeditor.db').as_posix()}"
 
     @field_validator("DATABASE_URL", mode="after")
     @classmethod
@@ -69,8 +83,8 @@ class Settings(BaseSettings):
             return v.replace("postgresql://", "postgresql+psycopg://", 1)
         return v
 
-    # Storage — absolute path to backend/storage/pdfs
-    UPLOAD_DIR: str = (BACKEND_DIR / "storage" / "pdfs").as_posix()
+    # Storage — absolute path to storage/pdfs
+    UPLOAD_DIR: str = (_get_app_data_dir() / "storage" / "pdfs").as_posix()
     MAX_UPLOAD_SIZE_MB: int = 50
     MAX_PAGE_COUNT: int = 500
 

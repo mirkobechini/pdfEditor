@@ -1,5 +1,6 @@
 import datetime
 import sqlite3
+from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
@@ -8,6 +9,10 @@ from app.core.config import settings
 
 # Register datetime adapter for SQLite to suppress Python 3.12+ deprecation warning
 sqlite3.register_adapter(datetime.datetime, lambda dt: dt.isoformat())
+
+# Ensure the database directory exists (important for PyInstaller bundles)
+db_path = Path(settings.DATABASE_URL.replace("sqlite:///", ""))
+db_path.parent.mkdir(parents=True, exist_ok=True)
 
 # Configure engine based on database type
 if "postgresql" in settings.DATABASE_URL:
