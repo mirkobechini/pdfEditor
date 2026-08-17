@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 import sys
 
-from pydantic import ConfigDict, field_validator, ValidationInfo
+from pydantic import ConfigDict, field_validator
 from pydantic_settings import BaseSettings
 
 # Backend root = 3 levels up from app/core/config.py
@@ -83,21 +83,8 @@ class Settings(BaseSettings):
             return v.replace("postgresql://", "postgresql+psycopg://", 1)
         return v
 
-    # Storage — derived from DATABASE_URL to keep DB and PDFs together
-    UPLOAD_DIR: str = ""
-
-    @field_validator("UPLOAD_DIR", mode="after")
-    @classmethod
-    def default_upload_dir(cls, v: str, info: ValidationInfo) -> str:
-        """Derive storage path from DATABASE_URL, so PDFs stay with the DB."""
-        if v:
-            return v
-        db_url = info.data.get("DATABASE_URL", "")
-        if db_url.startswith("sqlite:///"):
-            db_path = Path(db_url.replace("sqlite:///", ""))
-            return str(db_path.parent / "storage" / "pdfs")
-        # Fallback for PostgreSQL
-        return str(_get_app_data_dir() / "storage" / "pdfs")
+    # Storage — absolute path, same base as the database
+    UPLOAD_DIR: str = (_get_app_data_dir() / "storage" / "pdfs").as_posix()
     MAX_UPLOAD_SIZE_MB: int = 50
     MAX_PAGE_COUNT: int = 500
 
