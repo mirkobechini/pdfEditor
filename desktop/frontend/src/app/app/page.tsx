@@ -99,22 +99,30 @@ export default function EditorPage() {
             .then(async (res) => {
                 const items = res.items || [];
                 // Verify all docs exist on disk (remove ghosts)
+                // Retry up to 3 times with delay to wait for sidecar readiness
                 const verified: PdfDocument[] = [];
                 for (const doc of items) {
-                    try {
-                        const headRes = await fetch(`${API_BASE}/pdfs/${doc.id}/download`, {
-                            method: "HEAD",
-                            credentials: "include",
-                            headers: { "Authorization": `Bearer ${(api as any).token}` },
-                        });
-                        if (headRes.ok) {
-                            verified.push(doc);
-                        } else {
-                            // Ghost PDF: remove from DB too
-                            api.deletePdf(doc.id).catch(() => { });
+                    let exists = false;
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                        try {
+                            const headRes = await fetch(`${API_BASE}/pdfs/${doc.id}/download`, {
+                                method: "HEAD",
+                                credentials: "include",
+                                headers: { "Authorization": `Bearer ${(api as any).token}` },
+                            });
+                            if (headRes.ok) {
+                                exists = true;
+                                break;
+                            }
+                        } catch {
+                            // Sidecar not ready yet — wait and retry
+                            await new Promise((r) => setTimeout(r, 1000));
                         }
-                    } catch {
-                        // Network error or 404 — remove from DB
+                    }
+                    if (exists) {
+                        verified.push(doc);
+                    } else {
+                        // Ghost PDF: remove from DB too
                         api.deletePdf(doc.id).catch(() => { });
                     }
                 }
