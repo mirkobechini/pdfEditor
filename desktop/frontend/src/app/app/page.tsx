@@ -95,46 +95,51 @@ export default function EditorPage() {
     }
 
     React.useEffect(() => {
-        api.listPdfs(0, 10)
-            .then(async (res) => {
-                const items = res.items || [];
-                // Verify all docs exist on disk (remove ghosts)
-                // Retry up to 3 times with delay to wait for sidecar readiness
-                const verified: PdfDocument[] = [];
-                for (const doc of items) {
-                    let exists = false;
-                    for (let attempt = 0; attempt < 3; attempt++) {
-                        try {
-                            const headRes = await fetch(`${API_BASE}/pdfs/${doc.id}/download`, {
-                                method: "HEAD",
-                                credentials: "include",
-                                headers: { "Authorization": `Bearer ${(api as any).token}` },
-                            });
-                            if (headRes.ok) {
-                                exists = true;
-                                break;
+        let cancelled = false;
+        let retries = 0;
+        const maxRetries = 10;
+
+        async function loadDocs() {
+            while (retries < maxRetries && !cancelled) {
+                try {
+                    const res = await api.listPdfs(0, 10);
+                    const items = res.items || [];
+                    const verified: PdfDocument[] = [];
+                    for (const doc of items) {
+                        let exists = false;
+                        for (let attempt = 0; attempt < 3; attempt++) {
+                            try {
+                                const headRes = await fetch(`${API_BASE}/pdfs/${doc.id}/download`, {
+                                    method: "HEAD",
+                                    credentials: "include",
+                                    headers: { "Authorization": `Bearer ${(api as any).token}` },
+                                });
+                                if (headRes.ok) { exists = true; break; }
+                            } catch {
+                                await new Promise((r) => setTimeout(r, 1000));
                             }
-                        } catch {
-                            // Sidecar not ready yet — wait and retry
-                            await new Promise((r) => setTimeout(r, 1000));
+                        }
+                        if (exists) {
+                            verified.push(doc);
+                        } else {
+                            api.deletePdf(doc.id).catch(() => { });
                         }
                     }
-                    if (exists) {
-                        verified.push(doc);
-                    } else {
-                        // Ghost PDF: remove from DB too
-                        api.deletePdf(doc.id).catch(() => { });
+                    if (!cancelled) {
+                        setDocs(verified);
+                        if (verified.length > 0) setSelectedDoc(verified[0]);
+                        setLoading(false);
                     }
+                    return;
+                } catch {
+                    retries++;
+                    await new Promise((r) => setTimeout(r, 2000));
                 }
-                setDocs(verified);
-                if (verified.length > 0) {
-                    setSelectedDoc(verified[0]);
-                }
-            })
-            .catch(() => {
-                // Sidecar not ready — show empty list
-            })
-            .finally(() => setLoading(false));
+            }
+            if (!cancelled) setLoading(false);
+        }
+        loadDocs();
+        return () => { cancelled = true; };
     }, []);
 
     // Load PDF blob URL when a document is selected
