@@ -395,10 +395,10 @@ class PdfService:
         source = fitz.open(stream=content, filetype="pdf")
         try:
             new_meta = dict(source.metadata)
-            # Update only provided fields
+            # Update only provided fields — null/empty clears the field
             for key in ("title", "author", "subject", "keywords"):
-                if key in updates and updates[key] is not None:
-                    new_meta[key] = updates[key]
+                if key in updates:
+                    new_meta[key] = updates[key] if updates[key] else ""
 
             source.set_metadata(new_meta)
             out_bytes = source.tobytes()
