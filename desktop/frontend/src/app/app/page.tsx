@@ -371,15 +371,13 @@ export default function EditorPage() {
                 pdfId={selectedDoc?.id ?? ""}
                 pdfName={selectedDoc?.original_filename ?? ""}
                 onClose={() => setMetadataOpen(false)}
-                onSaved={() => {
-                    // Refresh the selected doc metadata by re-selecting it
-                    if (selectedDoc) {
-                        const id = selectedDoc.id;
-                        api.getPdf(id).then((updated) => {
-                            setDocs((prev) => prev.map((d) => d.id === id ? updated : d));
-                            setSelectedDoc(updated);
-                        }).catch(() => { });
-                    }
+                onSaved={(updatedDoc) => {
+                    setDocs((prev) => {
+                        const oldId = selectedDoc?.id;
+                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
+                        return [updatedDoc, ...prev];
+                    });
+                    setSelectedDoc(updatedDoc);
                 }}
             />
 

@@ -2,14 +2,14 @@
 
 import React from "react";
 import { api } from "../shared/api";
-import type { Metadata } from "../shared/types";
+import type { Metadata, PdfDocument } from "../shared/types";
 
 interface MetadataModalProps {
     open: boolean;
     pdfId: string;
     pdfName: string;
     onClose: () => void;
-    onSaved: () => void;
+    onSaved: (updatedDoc: PdfDocument) => void;
 }
 
 export default function MetadataModal({ open, pdfId, pdfName, onClose, onSaved }: MetadataModalProps) {
@@ -38,8 +38,8 @@ export default function MetadataModal({ open, pdfId, pdfName, onClose, onSaved }
         setSaving(true);
         setError(null);
         try {
-            await api.updateMetadata(pdfId, fields);
-            onSaved();
+            const updated = await api.updateMetadata(pdfId, fields);
+            onSaved(updated);
             onClose();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to save metadata");
