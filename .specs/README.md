@@ -22,11 +22,9 @@ Questa directory contiene tutta la documentazione di pianificazione del progetto
 
 | File                                   | Tipo    | Priorità | Piattaforma |
 | -------------------------------------- | ------- | -------- | ----------- |
-| `feature-desktop-real-features.md`     | Feature | ALTA     | Desktop     |
 | `feature-cloud-sync-desktop.md`        | Feature | ALTA     | Desktop     |
 | `feature-google-oauth-desktop-page.md` | Feature | MEDIA    | Desktop     |
 | `bug-login-401-neon.md`                | Bug     | ALTA     | Web/Dekstop |
-| `bug-webapp-ui-fixes.md`               | Bug     | MEDIA    | Web         |
 | `bug-settings-antialiasing-density.md` | Bug     | BASSA    | Desktop     |
 | `feature-pdf-compression.md`           | Feature | MEDIA    | Web/Dekstop |
 | `feature-email-confirmation.md`        | Feature | MEDIA    | Web         |
@@ -36,6 +34,5 @@ Questa directory contiene tutta la documentazione di pianificazione del progetto
 | `feature-ui-ux-improvements.md`        | Feature | BASSA    | Web         |
 | `feature-license-tier-button-skin.md`  | Feature | BASSA    | Web/Dekstop |
 | `feature-inline-text-editor.md`        | Feature | BASSA    | Web/Dekstop |
-| `feature-audit-mock-pages.md`          | Feature | BASSA    | Web/Dekstop |
 | `tech-e2e-tests.md`                    | Tech    | MEDIA    | Tutte       |
 | `tech-password-cache-global.md`        | Tech    | BASSA    | Backend     |
