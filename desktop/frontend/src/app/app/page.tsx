@@ -22,15 +22,19 @@ export default function EditorPage() {
     const [zoom, setZoom] = React.useState(1);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [dragOver, setDragOver] = React.useState(false);
+    const [uploadError, setUploadError] = React.useState<string | null>(null);
 
     async function handleUploadFile(file: File) {
         if (!file.name.toLowerCase().endsWith(".pdf")) return;
+        setUploadError(null);
         try {
             const uploaded = await api.uploadPdf(file);
             setDocs((prev) => [uploaded, ...prev]);
             setSelectedDoc(uploaded);
         } catch (err) {
-            console.error("Upload failed:", err);
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error("Upload failed:", msg);
+            setUploadError(msg);
         }
     }
 
@@ -200,6 +204,9 @@ export default function EditorPage() {
                             Open Local PDF
                         </button>
                         <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileInputChange} />
+                        {uploadError && (
+                            <p className="mt-2 text-[11px] text-red-400 break-words">{uploadError}</p>
+                        )}
                     </div>
 
                     <div className="flex-1 overflow-y-auto border-y border-white/8 px-5 py-5">

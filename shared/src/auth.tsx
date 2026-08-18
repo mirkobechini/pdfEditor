@@ -117,10 +117,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     _pendingAuthRef.current = true;
     setLoading(true);
     try {
-      // Login via cloud (Neon) — SQLite locale non ha utenti registrati
-      const res = await cloudApi.login(email, password);
+      let res: { access_token: string; csrf_token?: string } | null = null;
+
+      if (isTauri()) {
+        // Desktop: prova login locale (SQLite) prima
+        try {
+          res = await api.login(email, password);
+        } catch {
+          // Utente non in SQLite locale — prova cloud
+          res = null;
+        }
+        if (!res) {
+          // Login via cloud
+          res = await cloudApi.login(email, password);
+          if (res) {
+            // Sync utente cloud in SQLite locale per la prossima volta
+            api.setToken(res.access_token);
+            const u = await cloudApi.getMe();
+            await api.syncUser(u);
+          }
+        }
+      } else {
+        // Web: login sempre via cloud
+        res = await cloudApi.login(email, password);
+      }
+
+      if (!res) throw new Error("Login failed");
+
       api.setToken(res.access_token);
       cloudApi.setToken(res.access_token);
+
       if (remember) {
         if (isTauri()) {
           const { tauriInvoke } = await import("./tauri");
@@ -131,20 +157,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         localStorage.removeItem(REMEMBER_TOKEN_KEY);
       }
-      try {
-        const u = await api.getMe();
-        setUser(u);
-      } catch {
-        // Fallback: getMe via cloud
-        const u = await cloudApi.getMe();
-        setUser(u);
-        // Sync cloud user into local sidecar so getMe/CSRF work next time
-        await api.syncUser(u);
-        // Refresh CSRF for both sidecar and cloud
-        api.refreshCsrf();
-        cloudApi.refreshCsrf();
-      }
-      // Refresh CSRF for both sidecar and cloud
+
+      const u = await api.getMe();
+      setUser(u);
       api.refreshCsrf();
       cloudApi.refreshCsrf();
     } finally {
@@ -157,18 +172,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     _pendingAuthRef.current = true;
     setLoading(true);
     try {
-      // Register via cloud (Neon)
+      // Register sempre via cloud (Neon)
       const res = await cloudApi.register(email, password, fullName);
       api.setToken(res.access_token);
       cloudApi.setToken(res.access_token);
+
+      if (isTauri()) {
+        // Desktop: sync utente cloud in SQLite locale
+        const u = await cloudApi.getMe();
+        await api.syncUser(u);
+      }
+
       try {
         const u = await api.getMe();
         setUser(u);
       } catch {
         const u = await cloudApi.getMe();
-        setUser(u); await api.syncUser(u);
+        setUser(u);
       }
-      // Refresh CSRF for both sidecar and cloud
       api.refreshCsrf();
       cloudApi.refreshCsrf();
     } finally {

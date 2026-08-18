@@ -112,7 +112,7 @@ export class ApiClient {
         .clone()
         .json()
         .catch(() => null);
-      const detail = body?.detail || "";
+      const detail = typeof body?.detail === "string" ? body.detail : "";
       if (detail === "INVALID_CREDENTIALS" || detail.includes("expired")) {
         this._isRefreshing = true;
         const refreshed = await this.refreshToken().catch(() => null);
