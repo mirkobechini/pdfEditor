@@ -20,20 +20,22 @@ Questa directory contiene tutta la documentazione di pianificazione del progetto
 
 ## Active (da fare)
 
-| File                                          | Tipo    | Priorità |
-| --------------------------------------------- | ------- | -------- |
-| `bug-desktop-env-google-network.md`           | Bug     | CRITICAL |
-| `bug-google-login-desktop-hidden.md`          | Bug     | ALTA     |
-| `bug-guest-solo-desktop.md`                   | Bug     | ALTA     |
-| `bug-webapp-ui-fixes.md`                      | Bug     | MEDIA    |
-| `feature-pdf-compression.md`                  | Feature | MEDIA    |
-| `feature-email-confirmation.md`               | Feature | MEDIA    |
-| `feature-keep-warm-backend.md`                | Feature | BASSA    |
-| `feature-stripe-mcp-subscriptions.md`         | Feature | BASSA    |
-| `feature-ai-pdf-editing.md`                   | Feature | BASSA    |
-| `feature-ui-ux-improvements.md`               | Feature | BASSA    |
-| `feature-license-tier-button-skin.md`         | Feature | BASSA    |
-| `feature-inline-text-editor.md`               | Feature | BASSA    |
-| `feature-authenticated-landing-navigation.md` | Feature | BASSA    |
-| `feature-audit-mock-pages.md`                 | Feature | BASSA    |
-| `hotfix-post-merge-d84befd-stabilization.md`  | Hotfix  | —        |
+| File                                   | Tipo    | Priorità | Piattaforma |
+| -------------------------------------- | ------- | -------- | ----------- |
+| `feature-desktop-real-features.md`     | Feature | ALTA     | Desktop     |
+| `feature-cloud-sync-desktop.md`        | Feature | ALTA     | Desktop     |
+| `feature-google-oauth-desktop-page.md` | Feature | MEDIA    | Desktop     |
+| `bug-login-401-neon.md`                | Bug     | ALTA     | Web/Dekstop |
+| `bug-webapp-ui-fixes.md`               | Bug     | MEDIA    | Web         |
+| `bug-settings-antialiasing-density.md` | Bug     | BASSA    | Desktop     |
+| `feature-pdf-compression.md`           | Feature | MEDIA    | Web/Dekstop |
+| `feature-email-confirmation.md`        | Feature | MEDIA    | Web         |
+| `feature-keep-warm-backend.md`         | Feature | BASSA    | Web/Dekstop |
+| `feature-stripe-mcp-subscriptions.md`  | Feature | BASSA    | Web/Dekstop |
+| `feature-ai-pdf-editing.md`            | Feature | BASSA    | Web/Dekstop |
+| `feature-ui-ux-improvements.md`        | Feature | BASSA    | Web         |
+| `feature-license-tier-button-skin.md`  | Feature | BASSA    | Web/Dekstop |
+| `feature-inline-text-editor.md`        | Feature | BASSA    | Web/Dekstop |
+| `feature-audit-mock-pages.md`          | Feature | BASSA    | Web/Dekstop |
+| `tech-e2e-tests.md`                    | Tech    | MEDIA    | Tutte       |
+| `tech-password-cache-global.md`        | Tech    | BASSA    | Backend     |

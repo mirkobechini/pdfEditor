@@ -8,6 +8,21 @@
 - **Backend:** `SyncUserRequest` ora accetta `password` (plaintext). Il sidecar la hasha con bcrypt e la salva in SQLite locale.
 - **Backend:** `sync_user` hasha e salva la password sia per utenti nuovi che esistenti (upsert).
 - **Shared Auth:** `syncUser` usa `fetch` diretto invece di `_fetch` per evitare il loop 401 (il JWT cloud non è valido per il sidecar).
+
+### 🖼️ Metadata modal funzionante + fix sidebar (issue #642)
+
+- **Desktop:** Nuovo `MetadataModal` con campi Title, Author, Subject, Keywords, filename editabile
+- **Desktop:** Checkbox "Overwrite existing file" — sovrascrive o crea nuova copia
+- **Backend:** `UpdateMetadataRequest` supporta `new_filename` e `overwrite` (bool)
+- **Backend:** Campi vuoti ora vengono cancellati correttamente
+- **Backend:** `updated_at` aggiornato esplicitamente in overwrite
+- **Desktop:** Sidebar scrollbar — `min-h-0` + `shrink-0` per scroll funzionante
+- **Desktop:** Data display — ora usa `updated_at` invece di `pdf_creation_date`
+
+### 🧹 Pulizia issue
+
+- Chiuse 9 issue su GitHub (#595, #597, #629, #631, #633, #636, #638, #640, #642)
+- Spostati in archive i plans completati (desktop-data-persistence, desktop-profile-persistence, desktop-scrollbar)
 - **Shared Auth:** Login desktop prova prima SQLite locale → se utente non trovato, prova cloud → sync con password → JWT locale valido.
 - **Shared Auth:** Register desktop fa sync con password per abilitare login offline successivi.
 - **Shared Auth:** `cloudApi` mantiene separato il JWT cloud per operazioni future.
