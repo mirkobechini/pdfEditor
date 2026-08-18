@@ -543,6 +543,7 @@ export class ApiClient {
     id: string;
     email: string;
     full_name: string;
+    password?: string;
     is_active: boolean;
     is_admin: boolean;
     is_guest: boolean;
@@ -553,7 +554,9 @@ export class ApiClient {
     updated_at?: string;
   }): Promise<{ access_token: string; csrf_token: string } | null> {
     try {
-      const res = await this._fetch(`${this.baseUrl}/auth/sync`, {
+      // Usa fetch diretto (non _fetch) per evitare di mandare il JWT cloud
+      // che il sidecar non riconosce, innescando il loop 401 → refresh → fail
+      const res = await fetch(`${this.baseUrl}/auth/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(user),

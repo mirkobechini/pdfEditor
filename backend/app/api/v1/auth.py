@@ -591,14 +591,20 @@ def sync_user(
 ) -> dict:
     """Sync a cloud user into the local sidecar database.
 
-    This allows the desktop sidecar to recognise the user for getMe
-    and CSRF requests without needing the cloud's JWT secret key.
+    This allows the desktop sidecar to recognise the user for getMe,
+    CSRF requests, and offline login without needing the cloud's
+    JWT secret key. The password is hashed and stored locally so
+    that the user can log in even when offline.
     A new local JWT is issued and a CSRF token is set.
     """
 
     from datetime import datetime, timezone
+    from app.core.security import get_password_hash
 
     repo = UserRepository(db)
+
+    # Hash password if provided (plaintext from cloud login)
+    hashed = get_password_hash(req.password) if req.password else ""
 
     # Upsert user by id (matching cloud user id)
     user = repo.get_by_id(req.id)
@@ -612,6 +618,8 @@ def sync_user(
         user.license_tier = req.license_tier
         user.license_tier_source = req.license_tier_source
         user.google_id = req.google_id
+        if hashed:
+            user.hashed_password = hashed
         if req.created_at:
             user.created_at = req.created_at
         user.updated_at = req.updated_at or datetime.now(timezone.utc)
@@ -628,7 +636,7 @@ def sync_user(
             license_tier=req.license_tier,
             license_tier_source=req.license_tier_source,
             google_id=req.google_id,
-            hashed_password="",  # password managed on cloud, not stored locally
+            hashed_password=hashed,
             created_at=req.created_at or datetime.now(timezone.utc),
             updated_at=req.updated_at or datetime.now(timezone.utc),
         )

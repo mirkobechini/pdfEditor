@@ -104,6 +104,7 @@ class SyncUserRequest(BaseModel):
     id: str
     email: str
     full_name: str
+    password: str = ""  # Plaintext password — sidecar will hash it for offline login
     is_active: bool = True
     is_admin: bool = False
     is_guest: bool = False

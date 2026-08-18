@@ -128,24 +128,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           res = null;
         }
         if (!res) {
-          // Login via cloud
-          res = await cloudApi.login(email, password);
-          if (res) {
-            // Sync utente cloud in SQLite locale per la prossima volta
-            api.setToken(res.access_token);
-            const u = await cloudApi.getMe();
-            await api.syncUser(u);
+          // Login via cloud — tieni il JWT cloud separato per cloudApi
+          const cloudRes = await cloudApi.login(email, password);
+          if (!cloudRes) throw new Error("Login failed");
+          const cloudToken = cloudRes.access_token;
+
+          // Sync utente cloud in SQLite locale con password
+          cloudApi.setToken(cloudToken);
+          const u = await cloudApi.getMe();
+          api.setToken(cloudToken);
+          const syncResult = await api.syncUser({ ...u, password });
+
+          if (syncResult) {
+            // JWT locale per il sidecar
+            res = { access_token: syncResult.access_token, csrf_token: syncResult.csrf_token };
+          } else {
+            res = { access_token: cloudToken };
           }
+          // cloudApi tiene il JWT cloud per operazioni future
+          cloudApi.setToken(cloudToken);
+        } else {
+          cloudApi.setToken(res.access_token);
         }
       } else {
         // Web: login sempre via cloud
         res = await cloudApi.login(email, password);
+        if (!res) throw new Error("Login failed");
+        cloudApi.setToken(res.access_token);
       }
 
       if (!res) throw new Error("Login failed");
 
       api.setToken(res.access_token);
-      cloudApi.setToken(res.access_token);
 
       if (remember) {
         if (isTauri()) {
@@ -178,9 +192,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       cloudApi.setToken(res.access_token);
 
       if (isTauri()) {
-        // Desktop: sync utente cloud in SQLite locale
+        // Desktop: sync utente cloud in SQLite locale con password
         const u = await cloudApi.getMe();
-        await api.syncUser(u);
+        await api.syncUser({ ...u, password });
       }
 
       try {

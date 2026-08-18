@@ -21,6 +21,36 @@ def _get_app_data_dir() -> Path:
     return BACKEND_DIR
 
 
+def _load_or_generate_jwt_secret() -> str:
+    """Load JWT secret from a persistent file, or generate and save one.
+
+    In cloud deployment, JWT_SECRET_KEY is set via .env and takes precedence.
+    On desktop (PyInstaller bundle), the secret is persisted to a file so
+    that JWT tokens survive sidecar restarts.
+    """
+    import secrets
+
+    app_data = _get_app_data_dir()
+    secret_file = app_data / "secret.key"
+
+    # Try to load existing secret
+    if secret_file.exists():
+        try:
+            return secret_file.read_text().strip()
+        except OSError:
+            pass
+
+    # Generate new secret and persist it
+    secret = secrets.token_urlsafe(48)
+    try:
+        app_data.mkdir(parents=True, exist_ok=True)
+        secret_file.write_text(secret)
+    except OSError:
+        pass  # Non-critical — will generate a new one next time
+
+    return secret
+
+
 class Settings(BaseSettings):
     APP_NAME: str = "PdfEditor API"
     VERSION: str = "0.1.0"
@@ -49,10 +79,14 @@ class Settings(BaseSettings):
     @field_validator("JWT_SECRET_KEY", mode="before")
     @classmethod
     def generate_jwt_secret_if_empty(cls, v: str) -> str:
-        """Auto-generate JWT secret key if empty, same as SECRET_KEY."""
+        """Auto-generate JWT secret key if empty.
+
+        In cloud deployment, JWT_SECRET_KEY is set explicitly in .env.
+        On desktop (PyInstaller bundle), uses a persistent secret stored
+        in %APPDATA%/PdfEditor/secret.key so JWT tokens survive restarts.
+        """
         if not v or not v.strip():
-            import secrets
-            return secrets.token_urlsafe(48)
+            return _load_or_generate_jwt_secret()
         return v
 
     # CORS origins (production should restrict this)
