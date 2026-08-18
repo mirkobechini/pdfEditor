@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
 import { useLocaleSetter } from "../../lib/i18n";
+import { usePreferences } from "../../lib/preferences";
 
 const sections = [
     { id: "general", label: "general" },
@@ -101,48 +102,15 @@ export default function SettingsPage() {
     const ts = useTranslations("settings");
     const { user } = useAuth();
     const setLocale = useLocaleSetter();
+    const { prefs, updatePrefs } = usePreferences();
     const [activeTab, setActiveTab] = React.useState<SectionId>("general");
-    const [theme, setTheme] = React.useState("dark");
-    const [language, setLanguage] = React.useState("it");
-    const [defaultZoom, setDefaultZoom] = React.useState(100);
-    const [antialiasing, setAntialiasing] = React.useState(true);
-    const [density, setDensity] = React.useState("comfortable");
-    const [saving, setSaving] = React.useState(false);
     const [appVersion, setAppVersion] = React.useState("");
 
-    // Load preferences on mount and apply them
+    // Read version from common i18n
     React.useEffect(() => {
-        api.getPreferences().then((prefs) => {
-            setTheme(prefs.theme);
-            setLanguage(prefs.language);
-            setDefaultZoom(prefs.default_zoom);
-            setAntialiasing(prefs.antialiasing);
-            setDensity(prefs.density);
-            // Apply antialiasing
-            document.body.style.setProperty("-webkit-font-smoothing", prefs.antialiasing ? "antialiased" : "auto");
-            // Apply density
-            document.documentElement.dataset.density = prefs.density;
-        });
-        // Read version from common i18n
         const tc = (window as any).__NEXT_INTL_MESSAGES?.common?.version;
         if (tc) setAppVersion(tc);
     }, []);
-
-    function savePreference(update: { theme?: string; language?: string; default_zoom?: number; antialiasing?: boolean; density?: string }) {
-        setSaving(true);
-        // Apply immediately to UI before saving to backend
-        if (update.antialiasing !== undefined) {
-            setAntialiasing(update.antialiasing);
-            document.body.style.setProperty("-webkit-font-smoothing", update.antialiasing ? "antialiased" : "auto");
-        }
-        if (update.density !== undefined) {
-            setDensity(update.density);
-            document.documentElement.dataset.density = update.density;
-        }
-        if (update.default_zoom !== undefined) setDefaultZoom(update.default_zoom);
-        // Save to backend
-        api.updatePreferences(update).finally(() => setSaving(false));
-    }
 
     function renderTabContent() {
         switch (activeTab) {
@@ -155,11 +123,11 @@ export default function SettingsPage() {
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
                                     <p className="text-[16px] font-semibold text-white">{ts("language")}</p>
-                                    <p className="text-[14px] text-[#9d9184]">{language === "it" ? "Italiano" : "English"}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{prefs.language === "it" ? "Italiano" : "English"}</p>
                                 </div>
                                 <select
-                                    value={language}
-                                    onChange={(e) => { const newLang = e.target.value; setLanguage(newLang); setLocale(newLang as "it" | "en"); savePreference({ language: newLang }); }}
+                                    value={prefs.language}
+                                    onChange={(e) => { const newLang = e.target.value; updatePrefs({ language: newLang }); setLocale(newLang as "it" | "en"); }}
                                     className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
                                 >
                                     <option value="it">Italiano</option>
@@ -190,8 +158,8 @@ export default function SettingsPage() {
                                     <p className="text-[14px] text-[#9d9184]">{ts("densityDesc")}</p>
                                 </div>
                                 <select
-                                    value={density}
-                                    onChange={(e) => { setDensity(e.target.value); savePreference({ density: e.target.value }); }}
+                                    value={prefs.density}
+                                    onChange={(e) => updatePrefs({ density: e.target.value })}
                                     className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
                                 >
                                     <option value="compact">Compatto</option>
@@ -205,10 +173,10 @@ export default function SettingsPage() {
                                     <p className="text-[14px] text-[#9d9184]">{ts("antialiasingDesc")}</p>
                                 </div>
                                 <button
-                                    onClick={() => { setAntialiasing(!antialiasing); savePreference({ antialiasing: !antialiasing }); }}
-                                    className={`h-6 w-11 rounded-full relative transition-colors cursor-pointer ${antialiasing ? "bg-[#f7871f]" : "bg-white/20"}`}
+                                    onClick={() => updatePrefs({ antialiasing: !prefs.antialiasing })}
+                                    className={`h-6 w-11 rounded-full relative transition-colors cursor-pointer ${prefs.antialiasing ? "bg-[#f7871f]" : "bg-white/20"}`}
                                 >
-                                    <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${antialiasing ? "right-0.5" : "left-0.5"}`} />
+                                    <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${prefs.antialiasing ? "right-0.5" : "left-0.5"}`} />
                                 </button>
                             </div>
                         </div>
@@ -226,8 +194,8 @@ export default function SettingsPage() {
                                     <p className="text-[14px] text-[#9d9184]">{ts("defaultZoomDesc")}</p>
                                 </div>
                                 <select
-                                    value={defaultZoom}
-                                    onChange={(e) => { const v = parseInt(e.target.value); setDefaultZoom(v); savePreference({ default_zoom: v }); }}
+                                    value={prefs.default_zoom}
+                                    onChange={(e) => { const v = parseInt(e.target.value); updatePrefs({ default_zoom: v }); }}
                                     className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
                                 >
                                     {[75, 100, 125, 150, 200].map((z) => (
