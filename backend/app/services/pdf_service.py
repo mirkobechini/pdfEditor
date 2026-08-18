@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 import time
+from datetime import datetime, timezone
 
 from app.core.config import settings
 from app.core.storage import (
@@ -413,6 +414,7 @@ class PdfService:
             file_uuid = save_pdf(out_bytes)
             pdf.storage_filename = f"{file_uuid}.pdf"
             pdf.file_size = len(out_bytes)
+            pdf.updated_at = datetime.now(timezone.utc)
             if new_filename:
                 pdf.original_filename = new_filename
             return self.repo.update(pdf)

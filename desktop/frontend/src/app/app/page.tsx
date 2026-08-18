@@ -179,8 +179,8 @@ export default function EditorPage() {
     return (
         <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col overflow-hidden">
             <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0">
-                <aside className="flex flex-col border-r border-white/10 bg-[#1f1914]">
-                    <div className="p-4">
+                <aside className="flex flex-col border-r border-white/10 bg-[#1f1914] min-h-0">
+                    <div className="p-4 shrink-0">
                         <button onClick={handleOpenLocal} className="w-full cursor-pointer rounded-[14px] bg-[#f7871f] py-2.5 text-sm font-medium text-white shadow-sm shadow-[#f7871f]/30 transition hover:bg-[#ce5a00]">
                             Open Local PDF
                         </button>
@@ -190,7 +190,7 @@ export default function EditorPage() {
                         )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto border-y border-white/8 px-5 py-5">
+                    <div className="flex-1 overflow-y-auto border-y border-white/8 px-5 py-5 min-h-0">
                         <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-[#918476]">Recent documents</p>
                         {loading ? (
                             <div className="space-y-3">
