@@ -112,11 +112,12 @@ export default function SettingsPage() {
     const [changelogOpen, setChangelogOpen] = React.useState(false);
     const [bugReportOpen, setBugReportOpen] = React.useState(false);
     const [docsOpen, setDocsOpen] = React.useState(false);
-    const [changelogContent, setChangelogContent] = React.useState("");
+    const [changelogData, setChangelogData] = React.useState<{ version: string; date: string; changes: string[] }[] | null>(null);
     const [bugTitle, setBugTitle] = React.useState("");
     const [bugDesc, setBugDesc] = React.useState("");
     const [bugSending, setBugSending] = React.useState(false);
     const [bugError, setBugError] = React.useState("");
+    const [bugDone, setBugDone] = React.useState(false);
 
     // Read version from common i18n
     React.useEffect(() => {
@@ -296,7 +297,7 @@ export default function SettingsPage() {
                         }} />
 
                         <section className="mt-7 flex items-center gap-3 flex-wrap">
-                            <button onClick={() => { setChangelogOpen(true); fetch("/CHANGELOG.md").then(r => r.text()).then(setChangelogContent).catch(() => setChangelogContent("Changelog non disponibile.")); }} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("releaseNotes")}</button>
+                            <button onClick={() => { setChangelogOpen(true); fetch("https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev/changelog.json").then(r => r.json()).then(d => setChangelogData(d?.desktop || [])).catch(() => setChangelogData([])); }} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("releaseNotes")}</button>
                             <button onClick={() => setBugReportOpen(true)} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("reportBug")}</button>
                             <button onClick={() => setDocsOpen(true)} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("documentation")}</button>
                         </section>
@@ -348,8 +349,26 @@ export default function SettingsPage() {
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto"><path d="M18 6L6 18M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto text-sm text-[#c4b8ab] whitespace-pre-wrap font-mono">
-                            {changelogContent || "Caricamento in corso..."}
+                        <div className="flex-1 overflow-y-auto space-y-4">
+                            {changelogData === null ? (
+                                <p className="text-sm text-[#9a8d80]">Caricamento in corso...</p>
+                            ) : changelogData.length === 0 ? (
+                                <p className="text-sm text-[#9a8d80]">Changelog non disponibile.</p>
+                            ) : (
+                                changelogData.map((entry) => (
+                                    <div key={entry.version} className="rounded-xl border border-white/10 bg-[#1f1914] p-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-xs px-2 py-0.5 rounded-full bg-[#3e2717] text-[#f7871f] font-medium">{entry.version}</span>
+                                            <span className="text-xs text-[#7e7267]">{entry.date}</span>
+                                        </div>
+                                        <ul className="space-y-1">
+                                            {entry.changes.map((change, i) => (
+                                                <li key={i} className="text-sm text-[#c4b8ab]">{change}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))
+                            )}
                         </div>
                         <button onClick={() => setChangelogOpen(false)} className="mt-4 self-end rounded-xl bg-[#f7871f] px-5 py-2 text-sm font-semibold text-white">Chiudi</button>
                     </div>
@@ -361,31 +380,39 @@ export default function SettingsPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
                     <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-base font-bold text-white">{ts("reportBug")}</h2>
-                            <button onClick={() => { setBugReportOpen(false); setBugError(""); }} className="h-8 w-8 rounded-lg text-[#9a8d80] hover:bg-white/10 transition-colors">
+                            <h2 className="text-base font-bold text-white">{bugDone ? "Grazie!" : ts("reportBug")}</h2>
+                            <button onClick={() => { setBugReportOpen(false); setBugError(""); setBugDone(false); }} className="h-8 w-8 rounded-lg text-[#9a8d80] hover:bg-white/10 transition-colors">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto"><path d="M18 6L6 18M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        <div className="space-y-4">
-                            <input value={bugTitle} onChange={(e) => setBugTitle(e.target.value)} placeholder="Titolo del bug" className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none focus:border-[#f7871f]/50" />
-                            <textarea value={bugDesc} onChange={(e) => setBugDesc(e.target.value)} placeholder="Descrizione del problema..." rows={5} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none focus:border-[#f7871f]/50 resize-none" />
-                            {bugError && <p className="text-xs text-red-400">{bugError}</p>}
-                            <div className="flex gap-3">
-                                <button onClick={() => { setBugReportOpen(false); setBugError(""); }} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] hover:bg-white/5">Annulla</button>
-                                <button onClick={async () => {
-                                    if (!bugTitle.trim() || !bugDesc.trim()) { setBugError("Compila tutti i campi."); return; }
-                                    setBugSending(true); setBugError("");
-                                    try {
-                                        await api.createBugReport(bugTitle.trim(), bugDesc.trim(), "desktop-settings");
-                                        setBugReportOpen(false); setBugTitle(""); setBugDesc("");
-                                    } catch (err) {
-                                        setBugError(err instanceof Error ? err.message : "Invio fallito");
-                                    } finally { setBugSending(false); }
-                                }} disabled={bugSending} className="flex-1 rounded-xl bg-[#f7871f] py-2.5 text-sm font-semibold text-white disabled:opacity-50">
-                                    {bugSending ? "Invio..." : "Invia"}
-                                </button>
+                        {bugDone ? (
+                            <div>
+                                <p className="text-sm text-[#48c769] mb-6">Segnalazione inviata con successo. Grazie per il contributo!</p>
+                                <button onClick={() => { setBugReportOpen(false); setBugDone(false); }} className="w-full rounded-xl bg-[#f7871f] py-2.5 text-sm font-semibold text-white">Chiudi</button>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <input value={bugTitle} onChange={(e) => setBugTitle(e.target.value)} placeholder="Titolo del bug" className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none focus:border-[#f7871f]/50" />
+                                <textarea value={bugDesc} onChange={(e) => setBugDesc(e.target.value)} placeholder="Descrizione del problema..." rows={5} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none focus:border-[#f7871f]/50 resize-none" />
+                                {bugError && <p className="text-xs text-red-400">{bugError}</p>}
+                                <div className="flex gap-3">
+                                    <button onClick={() => { setBugReportOpen(false); setBugError(""); }} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] hover:bg-white/5">Annulla</button>
+                                    <button onClick={async () => {
+                                        if (!bugTitle.trim() || !bugDesc.trim()) { setBugError("Compila tutti i campi."); return; }
+                                        setBugSending(true); setBugError("");
+                                        try {
+                                            await api.createBugReport(bugTitle.trim(), bugDesc.trim(), "desktop-settings");
+                                            setBugDone(true);
+                                            setBugTitle(""); setBugDesc("");
+                                        } catch (err) {
+                                            setBugError(err instanceof Error ? err.message : "Invio fallito");
+                                        } finally { setBugSending(false); }
+                                    }} disabled={bugSending} className="flex-1 rounded-xl bg-[#f7871f] py-2.5 text-sm font-semibold text-white disabled:opacity-50">
+                                        {bugSending ? "Invio..." : "Invia"}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
