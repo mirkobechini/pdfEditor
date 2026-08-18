@@ -291,7 +291,6 @@ export default function SettingsPage() {
                             <button onClick={() => openUrl("https://github.com/mirkobechini/pdfEditor/releases")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("releaseNotes")}</button>
                             <button onClick={() => openUrl("https://github.com/mirkobechini/pdfEditor/issues/new")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("reportBug")}</button>
                             <button onClick={() => openUrl("https://github.com/mirkobechini/pdfEditor")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("documentation")}</button>
-                            <button onClick={() => openUrl("https://github.com/mirkobechini/pdfEditor/blob/main/LICENSE")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("licenses")}</button>
                         </section>
                     </div>
                 );
