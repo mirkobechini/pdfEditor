@@ -99,6 +99,8 @@ class UpdateMetadataRequest(BaseModel):
     author: str | None = None
     subject: str | None = None
     keywords: str | None = None
+    new_filename: str | None = None
+    overwrite: bool = False
 
 
 class BugReportRequest(BaseModel):
