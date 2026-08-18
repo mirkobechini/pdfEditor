@@ -10,11 +10,13 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
     const content = (
-        <I18nProvider>
-            <AuthProvider>
-                <PreferencesProvider>{children}</PreferencesProvider>
-            </AuthProvider>
-        </I18nProvider>
+        <PreferencesProvider>
+            <I18nProvider>
+                <AuthProvider>
+                    {children}
+                </AuthProvider>
+            </I18nProvider>
+        </PreferencesProvider>
     );
     if (!GOOGLE_CLIENT_ID) return content;
     return (
