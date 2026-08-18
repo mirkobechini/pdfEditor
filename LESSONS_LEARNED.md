@@ -23,7 +23,7 @@ Il sidecar PyInstaller rigenerava `JWT_SECRET_KEY` casuale a ogni avvio (perché
 
 **Regola:** Quando si sync un utente dal cloud al sidecar locale, includere la password (plaintext) e hasharla lato sidecar. Così il login offline funziona dopo il primo sync.
 
-## syncUser non deve usare _fetch (evita loop 401)
+## syncUser non deve usare \_fetch (evita loop 401)
 
 > **Lezione appresa (2026-08-18):**
 

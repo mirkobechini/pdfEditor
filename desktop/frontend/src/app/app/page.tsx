@@ -106,32 +106,11 @@ export default function EditorPage() {
         async function loadDocs() {
             while (retries < maxRetries && !cancelled) {
                 try {
-                    const res = await api.listPdfs(0, 10);
+                    const res = await api.listPdfs(0, 100);
                     const items = res.items || [];
-                    const verified: PdfDocument[] = [];
-                    for (const doc of items) {
-                        let exists = false;
-                        for (let attempt = 0; attempt < 3; attempt++) {
-                            try {
-                                const headRes = await fetch(`${API_BASE}/pdfs/${doc.id}/download`, {
-                                    method: "HEAD",
-                                    credentials: "include",
-                                    headers: { "Authorization": `Bearer ${(api as any).token}` },
-                                });
-                                if (headRes.ok) { exists = true; break; }
-                            } catch {
-                                await new Promise((r) => setTimeout(r, 1000));
-                            }
-                        }
-                        if (exists) {
-                            verified.push(doc);
-                        } else {
-                            api.deletePdf(doc.id).catch(() => { });
-                        }
-                    }
                     if (!cancelled) {
-                        setDocs(verified);
-                        if (verified.length > 0) setSelectedDoc(verified[0]);
+                        setDocs(items);
+                        if (items.length > 0) setSelectedDoc(items[0]);
                         setLoading(false);
                     }
                     return;
