@@ -8,19 +8,21 @@ import { getApiBaseUrl, isTauri, tauriInvoke } from "../../shared/tauri";
 import PdfViewer from "../../components/PdfViewer";
 import MetadataModal from "../../components/MetadataModal";
 import GuestConvertBanner from "../components/GuestConvertBanner";
+import { usePreferences } from "../../lib/preferences";
 import type { PdfDocument } from "../../shared/types";
 
 const API_BASE = getApiBaseUrl();
 
 export default function EditorPage() {
     const { user } = useAuth();
+    const { prefs } = usePreferences();
     const [docs, setDocs] = React.useState<PdfDocument[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [selectedDoc, setSelectedDoc] = React.useState<PdfDocument | null>(null);
     const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
     const [currentPage, setCurrentPage] = React.useState(1);
     const [totalPages, setTotalPages] = React.useState(0);
-    const [zoom, setZoom] = React.useState(1);
+    const [zoom, setZoom] = React.useState(prefs.default_zoom / 100);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [dragOver, setDragOver] = React.useState(false);
     const [uploadError, setUploadError] = React.useState<string | null>(null);
@@ -45,6 +47,11 @@ export default function EditorPage() {
     React.useEffect(() => {
         api.refreshCsrf();
     }, []);
+
+    // Sync zoom when preferences change (settings page)
+    React.useEffect(() => {
+        setZoom(prefs.default_zoom / 100);
+    }, [prefs.default_zoom]);
 
     // Document-level drag-and-drop for Tauri webview
     React.useEffect(() => {
