@@ -7,6 +7,17 @@
 
 ## 🔴 Bug aperti
 
+### K6 — Disinstallazione non cancella dati utente in %APPDATA%
+
+**File:** `desktop/src-tauri/installer.nsh`  
+**Descrizione:** L'uninstall di NSIS cancella solo i file in `C:\Program Files\PdfEditor/`, non i dati utente in `%APPDATA%/PdfEditor/` (PDF, DB SQLite, secret.key). Reinstallando l'app, i vecchi PDF e utenti sono ancora presenti.
+
+**Comportamento:** Voluto — è lo standard Windows (Chrome, Discord, Spotify fanno lo stesso). I dati utente sono separati dall'applicazione.
+
+**Se in futuro si volesse cambiare:** Aggiungere una MessageBox in `NSIS_HOOK_PREUNINSTALL` che chiede "Vuoi cancellare anche i tuoi PDF e dati utente?" e, se confermato, cancella `%APPDATA%/PdfEditor/`.
+
+**Stato:** Non pianificato.
+
 ### K5 — Auth offline: dopo login Google, l'app non funziona senza connessione
 
 **File:** `shared/src/auth.tsx`, `shared/src/api.ts`  
