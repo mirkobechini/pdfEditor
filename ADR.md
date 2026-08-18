@@ -1,7 +1,7 @@
 # Architecture Decision Record
 
 **Progetto:** PdfEditor
-**Data:** 2026-06-25 (ultimo aggiornamento 2026-08-11)
+**Data:** 2026-06-25 (ultimo aggiornamento 2026-08-18)
 **Versioni ADR incluse:** v0.1.24 → v0.2.0-mobile (12 release)
 **Autore:** Mirko Bechini
 
@@ -83,12 +83,15 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 | Scelta                                             | Alternativa               | Motivo                                                                                                                                                                                                          |
 | -------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth cloud su Neon per registrazione/login desktop | Auth solo locale (SQLite) | SQLite locale parte vuoto — nessun utente. Il frontend desktop chiama `https://pdeditor-backend.onrender.com/auth/*` per login/register. Le operazioni PDF restano sul sidecar locale.                          |
+| Auth cloud su Neon per registrazione/login desktop | Auth solo locale (SQLite) | SQLite locale parte vuoto — nessun utente. Il frontend desktop chiama `https://pdeditor-backend.onrender.com/auth/*` per login/register. Le operazioni PDF restano sul sidecar locale. |
 | Fallback auth: locale → cloud                      | Solo cloud                | `GET /auth/me` prova prima il sidecar locale (127.0.0.1:7723), se fallisce prova il cloud. Così l'app funziona offline se il JWT è in cache.                                                                    |
 | Auth offline via Tauri store plugin                | Solo online               | JWT cached in auth.json. App funzionante offline dopo primo login.                                                                                                                                              |
 | Modalità offline quando JWT scade                  | Force logout              | Se il refresh token fallisce (nessuna connessione), l'app entra in modalità offline invece di fare logout. L'utente può comunque usare i PDF locali. Alla riconnessione, refresh automatico del JWT.            |
 | Sync user cloud → sidecar via `POST /auth/sync`    | Solo cloud con re-login   | Quando l'utente fa login via cloud, il frontend chiama `/auth/sync` sul sidecar per salvare l'utente in SQLite locale e ottenere un JWT locale + CSRF. Così `getMe()` e `refreshCsrf()` funzionano sul sidecar. |
-| Sync user cloud → sidecar via `POST /auth/sync`    | Solo cloud con re-login   | Quando l'utente fa login via cloud, il frontend chiama `/auth/sync` sul sidecar per salvare l'utente in SQLite locale e ottenere un JWT locale + CSRF. Così `getMe()` e `refreshCsrf()` funzionano sul sidecar. |
+| **JWT_SECRET_KEY persistente su file**             | **Chiave random a ogni avvio** | **La chiave JWT è salvata in `%APPDATA%/PdfEditor/secret.key` (o `~/.local/share/PdfEditor/secret.key` su Linux). Generata una volta, riutilizzata ai riavvii. I token JWT sopravvivono ai riavvii del sidecar. (PR #640)** |
+| **Sync password per login offline**                | **Solo JWT locale**       | **`POST /auth/sync` ora accetta `password` (plaintext). Il sidecar la hasha con bcrypt e la salva in SQLite locale. Così l'utente può fare login offline dopo il primo sync dal cloud. (PR #640)** |
+| **Login desktop: locale → cloud → sync**           | **Sempre cloud**          | **Login prova prima SQLite locale. Se utente non trovato (prima volta), prova cloud → sync con password → JWT locale. Login successivi funzionano offline. (PR #640)** |
+| **syncUser usa fetch diretto**                     | **`_fetch` con auto-refresh** | **`syncUser` usa `fetch` diretto invece di `_fetch` per evitare il loop 401: il JWT cloud non è valido per il sidecar, quindi `_fetch` tentava refresh → falliva → `syncUser` ritornava `null`. (PR #640)** |
 | CSRF cookie: `secure` dinamico                     | `secure=True` sempre      | `set_csrf_cookie()` rileva automaticamente se la connessione è HTTP (sidecar locale) e usa `secure=False, samesite="lax"` invece di `secure=True, samesite="none"`.                                             |
 | Guest access                                       | Solo registrazione        | Utenti guest temporanei (is_guest flag). Convertibili in account completo. Sempre lato sidecar locale.                                                                                                          |
 | Cloud sync (Fase 3) integrata                      | Sync posticipato          | UUID PK già implementati. Endpoint sync backend + UI sync frontend.                                                                                                                                             |

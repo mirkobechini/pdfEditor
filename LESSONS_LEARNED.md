@@ -1,7 +1,35 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-08-07
+> **Aggiornato:** 2026-08-18
+
+---
+
+## JWT_SECRET_KEY deve essere persistente per sidecar desktop
+
+> **Lezione appresa (2026-08-18):**
+
+Il sidecar PyInstaller rigenerava `JWT_SECRET_KEY` casuale a ogni avvio (perché `.env.desktop` non la specificava e `config.py` usava `secrets.token_urlsafe(48)`). Questo invalidava tutti i JWT emessi nella sessione precedente, causando "Invalid or expired token" dopo ogni riavvio.
+
+**Sintomo:** L'upload PDF funzionava, ma dopo aver chiuso e riaperto l'app, tutti i PDF sparivano (il token non era più valido per `getMe` e `listPdfs`).
+
+**Regola:** In un'applicazione desktop con sidecar, la chiave JWT deve essere **persistente su file** (es. `%APPDATA%/PdfEditor/secret.key`), non rigenerata a ogni avvio. La generazione avviene una volta sola, poi viene riletta.
+
+## Sync utente cloud → sidecar deve includere password per login offline
+
+> **Lezione appresa (2026-08-18):**
+
+`POST /auth/sync` creava l'utente in SQLite locale con `hashed_password=""`, quindi il login locale falliva sempre (password vuota non verifica). L'utente doveva rifare login via cloud ogni volta.
+
+**Regola:** Quando si sync un utente dal cloud al sidecar locale, includere la password (plaintext) e hasharla lato sidecar. Così il login offline funziona dopo il primo sync.
+
+## syncUser non deve usare _fetch (evita loop 401)
+
+> **Lezione appresa (2026-08-18):**
+
+`syncUser` usava `_fetch` che aggiunge l'Authorization header con il JWT corrente. Se il JWT era del cloud (non valido per il sidecar), il sidecar rispondeva 401, `_fetch` tentava refresh (falliva), e `syncUser` ritornava `null` silenziosamente.
+
+**Regola:** Endpoint che non richiedono autenticazione (come `/auth/sync`) devono usare `fetch` diretto, non `_fetch`, per evitare il loop 401 → refresh → fail.
 
 ---
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-08-18
+
+### 🔐 JWT persistente e login offline desktop (issue #640)
+
+- **Backend:** `JWT_SECRET_KEY` ora è persistente — salvata in `%APPDATA%/PdfEditor/secret.key` invece di essere rigenerata casualmente a ogni avvio del sidecar. I token JWT sopravvivono ai riavvii.
+- **Backend:** `SyncUserRequest` ora accetta `password` (plaintext). Il sidecar la hasha con bcrypt e la salva in SQLite locale.
+- **Backend:** `sync_user` hasha e salva la password sia per utenti nuovi che esistenti (upsert).
+- **Shared Auth:** `syncUser` usa `fetch` diretto invece di `_fetch` per evitare il loop 401 (il JWT cloud non è valido per il sidecar).
+- **Shared Auth:** Login desktop prova prima SQLite locale → se utente non trovato, prova cloud → sync con password → JWT locale valido.
+- **Shared Auth:** Register desktop fa sync con password per abilitare login offline successivi.
+- **Shared Auth:** `cloudApi` mantiene separato il JWT cloud per operazioni future.
+
+### 🧹 Pulizia
+
+- **Git:** Ignorati `desktop/frontend/src/shared/` (generato da prebuild) e `desktop/frontend/out/`
+- **Git:** Rimossi dal tracking i file generati in `desktop/frontend/src/shared/`
+
 ## 2026-08-12
 
 ### 🔧 Desktop Google login configurato (issue #627)
