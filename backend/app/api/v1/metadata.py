@@ -33,8 +33,10 @@ def update_pdf_metadata(
 ) -> PdfResponse:
     """Update PDF metadata. Only provided fields are changed."""
     updates = req.model_dump(exclude_none=True)
-    if not updates:
-        raise error_response(ErrorCode.VALIDATION_ERROR, "At least one metadata field must be provided", status_code=status.HTTP_400_BAD_REQUEST)
+    # Remove control fields before checking if there's actual metadata to update
+    has_meta = any(k in updates for k in ("title", "author", "subject", "keywords"))
+    if not has_meta and not updates.get("new_filename"):
+        raise error_response(ErrorCode.VALIDATION_ERROR, "At least one metadata field or a new filename must be provided", status_code=status.HTTP_400_BAD_REQUEST)
 
     try:
         pdf = service.update_metadata(pdf_id, current_user.id, updates)

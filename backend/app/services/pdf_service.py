@@ -377,7 +377,12 @@ class PdfService:
     def update_metadata(
         self, pdf_id: str, user_id: str, updates: dict
     ) -> PdfDocument:
-        """Update PDF metadata. Creates a new file preserving original content."""
+        """Update PDF metadata.
+
+        If overwrite=True, updates the existing PDF in-place (same DB record).
+        Otherwise, creates a new document preserving the original.
+        If new_filename is provided, uses it as the filename.
+        """
         self._create_snapshot(pdf_id, user_id)
         import fitz
 
@@ -400,17 +405,33 @@ class PdfService:
         finally:
             source.close()
 
-        file_uuid = save_pdf(out_bytes)
-        new_name = f"{pdf.original_filename.replace('.pdf', '')}_metadata_updated.pdf"
+        overwrite = updates.pop("overwrite", False)
+        new_filename = updates.pop("new_filename", None)
 
-        new_pdf = PdfDocument(
-            original_filename=new_name,
-            storage_filename=f"{file_uuid}.pdf",
-            file_size=len(out_bytes),
-            page_count=pdf.page_count,
-            user_id=user_id,
-        )
-        return self.repo.create(new_pdf)
+        if overwrite:
+            # Update existing PDF in-place
+            file_uuid = save_pdf(out_bytes)
+            pdf.storage_filename = f"{file_uuid}.pdf"
+            pdf.file_size = len(out_bytes)
+            if new_filename:
+                pdf.original_filename = new_filename
+            return self.repo.update(pdf)
+        else:
+            # Create new document
+            file_uuid = save_pdf(out_bytes)
+            if new_filename:
+                new_name = new_filename
+            else:
+                new_name = f"{pdf.original_filename.replace('.pdf', '')}_metadata_updated.pdf"
+
+            new_pdf = PdfDocument(
+                original_filename=new_name,
+                storage_filename=f"{file_uuid}.pdf",
+                file_size=len(out_bytes),
+                page_count=pdf.page_count,
+                user_id=user_id,
+            )
+            return self.repo.create(new_pdf)
 
     def export_pdf(
         self, pdf_id: str, user_id: str, fmt: str

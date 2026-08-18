@@ -342,7 +342,10 @@ export class ApiClient {
 
   async updateMetadata(
     id: string,
-    metadata: Partial<Metadata>,
+    metadata: Partial<Metadata> & {
+      new_filename?: string;
+      overwrite?: boolean;
+    },
   ): Promise<PdfDocument> {
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
       method: "PUT",
