@@ -25,6 +25,7 @@ export default function EditorPage() {
     const [dragOver, setDragOver] = React.useState(false);
     const [uploadError, setUploadError] = React.useState<string | null>(null);
     const [metadataOpen, setMetadataOpen] = React.useState(false);
+    const [deleteConfirm, setDeleteConfirm] = React.useState<string | null>(null);
 
     async function handleUploadFile(file: File) {
         if (!file.name.toLowerCase().endsWith(".pdf")) return;
@@ -205,21 +206,34 @@ export default function EditorPage() {
                                 {docs.map((doc) => (
                                     <div
                                         key={doc.id}
-                                        onClick={() => setSelectedDoc(doc)}
                                         className={`doc-item rounded-2xl border p-3 cursor-pointer transition ${selectedDoc?.id === doc.id ? "border-white/10 bg-white/[0.03]" : "border-transparent hover:bg-white/[0.02]"
                                             }`}
                                     >
                                         <div className="flex items-start gap-3">
-                                            <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold ${selectedDoc?.id === doc.id ? "bg-[#3e2717] text-[#f7871f]" : "bg-white/8 text-[#8f8377]"
-                                                }`}>
-                                                PDF
+                                            <div
+                                                onClick={() => setSelectedDoc(doc)}
+                                                className="flex items-start gap-3 flex-1 min-w-0"
+                                            >
+                                                <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold shrink-0 ${selectedDoc?.id === doc.id ? "bg-[#3e2717] text-[#f7871f]" : "bg-white/8 text-[#8f8377]"
+                                                    }`}>
+                                                    PDF
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-[14px] font-semibold leading-tight text-[#f3ede7] truncate">{doc.original_filename}</p>
+                                                    <p className="mt-1 font-mono text-[10px] text-[#7e7267]">
+                                                        {formatFileSize(doc.file_size)} · {formatDate(doc.updated_at)}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-[14px] font-semibold leading-tight text-[#f3ede7] truncate">{doc.original_filename}</p>
-                                                <p className="mt-1 font-mono text-[10px] text-[#7e7267]">
-                                                    {formatFileSize(doc.file_size)} · {formatDate(doc.updated_at)}
-                                                </p>
-                                            </div>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setDeleteConfirm(doc.id); }}
+                                                className="mt-1 h-7 w-7 rounded-lg text-[#7e7267] hover:bg-red-500/10 hover:text-red-400 transition-colors shrink-0"
+                                                title="Delete PDF"
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
+                                                    <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                                </svg>
+                                            </button>
                                         </div>
                                     </div>
                                 ))}
@@ -380,6 +394,45 @@ export default function EditorPage() {
                     setSelectedDoc(updatedDoc);
                 }}
             />
+
+            {/* Delete confirmation dialog */}
+            {deleteConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl">
+                        <h2 className="text-base font-bold text-white mb-2">Delete PDF</h2>
+                        <p className="text-sm text-[#9a8d80] mb-6">
+                            Are you sure you want to delete this PDF? This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setDeleteConfirm(null)}
+                                className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    const id = deleteConfirm;
+                                    setDeleteConfirm(null);
+                                    try {
+                                        await api.deletePdf(id);
+                                        setDocs((prev) => prev.filter((d) => d.id !== id));
+                                        if (selectedDoc?.id === id) {
+                                            setSelectedDoc(null);
+                                            setPdfUrl(null);
+                                        }
+                                    } catch (err) {
+                                        console.error("Delete failed:", err);
+                                    }
+                                }}
+                                className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <footer className="h-10 shrink-0 border-t border-white/10 bg-[#0b0a09] px-5 text-[10px] text-[#7f7468]">
                 <div className="mx-auto flex h-full max-w-[1880px] items-center justify-between">
