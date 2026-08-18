@@ -7,6 +7,7 @@ import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
 import { useLocaleSetter } from "../../lib/i18n";
 import { usePreferences } from "../../lib/preferences";
+import { isTauri, tauriInvoke } from "../../shared/tauri";
 
 const sections = [
     { id: "general", label: "general" },
@@ -68,7 +69,7 @@ const licenseRows: readonly AboutRow[] = [
     },
 ];
 
-function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[] }) {
+function AboutSection({ title, rows, onAction }: { title: string; rows: readonly AboutRow[]; onAction?: (id: string) => void }) {
     return (
         <section className="mt-6">
             <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#9d9184]">{title}</p>
@@ -85,7 +86,10 @@ function AboutSection({ title, rows }: { title: string; rows: readonly AboutRow[
                         </div>
 
                         {row.type === "action" ? (
-                            <button className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">
+                            <button
+                                onClick={() => onAction?.(row.id)}
+                                className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white"
+                            >
                                 {row.value}
                             </button>
                         ) : (
@@ -111,6 +115,14 @@ export default function SettingsPage() {
         const tc = (window as any).__NEXT_INTL_MESSAGES?.common?.version;
         if (tc) setAppVersion(tc);
     }, []);
+
+    function openUrl(url: string) {
+        if (isTauri()) {
+            tauriInvoke("plugin:opener|open_url", { url });
+        } else {
+            window.open(url, "_blank");
+        }
+    }
 
     function renderTabContent() {
         switch (activeTab) {
@@ -271,12 +283,15 @@ export default function SettingsPage() {
                         </section>
 
                         <AboutSection title={ts("pdfEngine")} rows={runtimeRows} />
-                        <AboutSection title={ts("appLicense")} rows={licenseRows} />
+                        <AboutSection title={ts("appLicense")} rows={licenseRows} onAction={(id) => {
+                            if (id === "third_party") openUrl("https://github.com/mirkobechini/pdfEditor/blob/main/desktop/src-tauri/licenses.json");
+                        }} />
 
                         <section className="mt-7 flex items-center gap-3">
-                            <button onClick={() => window.open("https://github.com/mirkobechini/pdfEditor/releases", "_blank")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("releaseNotes")}</button>
-                            <button onClick={() => window.open("https://github.com/mirkobechini/pdfEditor/issues/new", "_blank")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("reportBug")}</button>
-                            <button onClick={() => window.open("https://github.com/mirkobechini/pdfEditor", "_blank")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("documentation")}</button>
+                            <button onClick={() => openUrl("https://github.com/mirkobechini/pdfEditor/releases")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("releaseNotes")}</button>
+                            <button onClick={() => openUrl("https://github.com/mirkobechini/pdfEditor/issues/new")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("reportBug")}</button>
+                            <button onClick={() => openUrl("https://github.com/mirkobechini/pdfEditor")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("documentation")}</button>
+                            <button onClick={() => openUrl("https://github.com/mirkobechini/pdfEditor/blob/main/LICENSE")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-4 py-2 text-[13px] font-semibold text-white">{ts("licenses")}</button>
                         </section>
                     </div>
                 );
