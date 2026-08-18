@@ -7,33 +7,10 @@
         "Desktop: eliminazione PDF dalla lista documenti",
         "Desktop: metadata modal funzionante (overwrite/save-as)",
         "Desktop: JWT persistente e login offline",
-        "Desktop: sidebar scrollbar fix",
         "Desktop: PreferencesProvider per settings istantanee",
         "Desktop: About section con modali Release Notes, Bug Report, Docs",
         "Backend: sync password per login offline desktop",
         "Docs: ADR, CHANGELOG, LESSONS_LEARNED aggiornati"
-      ]
-    },
-    {
-      "version": "v0.1.33",
-      "date": "2026-08-12",
-      "changes": [
-        "Desktop: Google OAuth redirect flow funzionante",
-        "Desktop: persistenza profilo/login Google",
-        "Desktop: pagina profilo con account collegati",
-        "Desktop: scrollbar PDF viewer fix (finestra massimizzata)",
-        "Desktop: Google login button visibile"
-      ]
-    },
-    {
-      "version": "v0.1.30",
-      "date": "2026-08-11",
-      "changes": [
-        "Desktop: sidecar PyInstaller con percorsi AppData",
-        "Desktop: startup screen migliorata",
-        "Desktop: Auth offline (isOffline state)",
-        "Backend: JWT refresh automatico",
-        "Backend: CSRF fix per Tauri webview"
       ]
     }
   ],
@@ -42,15 +19,9 @@
       "version": "v0.2.0-mobile",
       "date": "2026-08-11",
       "changes": [
-        "☁️ Cloud sync bidirezionale (upload/download, conflitti, offline)",
-        "🧭 Onboarding wizard alla prima installazione",
-        "🔑 JWT token refresh automatico",
-        "⚙️ Settings con sync mode, tema, lingua",
-        "🔍 Badge sync in Home (synced/pending/error)",
-        "🗑️ DeleteSyncDialog: locale/cloud/entrambi",
-        "⚔️ ConflictDialog per risoluzione conflitti sync",
-        "📥 ImportPdfDialog per import selettivo PDF nel cloud",
-        "🔧 Bug fixes e miglioramenti"
+        "Cloud sync bidirezionale (upload/download, conflitti, offline)",
+        "Onboarding wizard alla prima installazione",
+        "179 test mobile, copertura 100% su localDb, error-map, i18n"
       ]
     }
   ]
