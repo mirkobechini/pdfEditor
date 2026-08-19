@@ -69,7 +69,7 @@ class PdfMergeSplitService:
         )
         return self.repo.create(pdf)
 
-    def split_by_ranges(self, pdf_id: str, user_id: str, ranges: list[str], output_filename: str | None = None) -> list[PdfDocument]:
+    def split_by_ranges(self, pdf_id: str, user_id: str, ranges: list[str], output_filename: str | None = None, output_filenames: list[str] | None = None) -> list[PdfDocument]:
         """Split a PDF by page ranges."""
         pdf = self._get_user_pdf(pdf_id, user_id)
         content = self._get_file_content(pdf)
@@ -91,7 +91,11 @@ class PdfMergeSplitService:
                 out_bytes = output.tobytes()
                 output.close()
                 file_uuid = save_pdf(out_bytes)
-                if output_filename:
+                if output_filenames and i < len(output_filenames) and output_filenames[i]:
+                    range_name = output_filenames[i].strip()
+                    if not range_name.lower().endswith(".pdf"):
+                        range_name += ".pdf"
+                elif output_filename:
                     base = output_filename.replace(".pdf", "")
                     range_name = f"{base}_part_{i + 1}.pdf"
                 else:
