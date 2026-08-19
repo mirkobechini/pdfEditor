@@ -285,9 +285,11 @@ export class ApiClient {
     id: string,
     pageNumbers: number[],
     outputFilename?: string,
+    overwrite?: boolean,
   ): Promise<PdfDocument> {
     const body: Record<string, unknown> = { page_numbers: pageNumbers };
     if (outputFilename) body.output_filename = outputFilename;
+    if (overwrite) body.overwrite = true;
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/remove-pages`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },

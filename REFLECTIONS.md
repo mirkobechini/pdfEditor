@@ -1,7 +1,7 @@
 # Reflections — Week 1
 
 > **Scopo:** Documentare lezioni apprese durante lo sviluppo, problemi emersi, regole per evitare ripetizioni.
-> **Aggiornato:** 2026-08-03
+> **Aggiornato:** 2026-08-19
 
 ---
 
@@ -27,34 +27,46 @@
 
 ## Il codice fa quello che ho chiesto?
 
-**Parzialmente** — il backend è sostanzialmente completo, il frontend ha delle lacune rispetto alla roadmap.
+**Parzialmente** — il backend è sostanzialmente completo, il frontend desktop ha fatto progressi significativi.
 
 ### Backend (Fase 1a) — ✅ Per lo più sì
 
 Tutte le API richieste dal brief sono state implementate: upload/download con validazione magic bytes, merge/split con PyMuPDF, riordino e rimozione pagine, modifica testo (replace + extract), modifica metadati, conversione PDF ↔ DOCX/XLSX/PNG/JPG/TXT/SVG, autenticazione JWT, SSO Google, modelli licensing e bug reporting.
 
-**Problemi critici:**
+**Problemi critici risolti:**
 
 1. **✅ Enforcement licenze** — Implementato con `verify_feature_access()` in `deps.py`. Protegge tutti gli endpoint PDF avanzati. PR #62.
-2. **⚠️ Nessuna autenticazione sugli endpoint PDF** — upload, merge, split, reorder... sono tutti pubblici. Potrebbe essere voluto per uso desktop offline, ma non è specificato.
+2. **✅ Autenticazione endpoint PDF** — Tutti gli endpoint richiedono `get_current_user()`.
 3. **⚠️ BugReportService bypassa il repository pattern** — usa query dirette invece dei repository come fanno AuthService e PdfService.
 
-### Frontend (Fase 1b) — ❌ Parzialmente
+### Desktop (Fase 1d/1e) — ✅ In gran parte completato
 
-| Richiesta                                      | Stato                                                                                            |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Setup Next.js app router + React + TailwindCSS | ✅                                                                                               |
-| Porting prototipo HTML a componenti React      | ✅                                                                                               |
-| Sidebar (upload, elimina, rinomina)            | ✅                                                                                               |
-| Toolbar navigazione + zoom + azioni            | ✅                                                                                               |
-| Viewer PDF.js via CDN                          | ✅                                                                                               |
-| **Dark mode toggle**                           | **✅ Completato (PR #60)** — localStorage persist + system preference fallback                   |
-| Design responsive                              | ✅                                                                                               |
-| Merge/split/riordino/rimozione (pdf-lib)       | ✅                                                                                               |
-| **Pulsante segnalazione bug**                  | **✅ Completato (PR #56)**                                                                       |
-| **Dashboard admin**                            | **❌ Non implementata**                                                                          |
-| **UI autenticazione (login/register)**         | **✅ Completato (PR #58)**                                                                       |
-| **i18n con next-intl**                         | **⚠️** `next-intl` è installato ma **non usato** — è stato implementato un `I18nProvider` custom |
+| Feature | Stato |
+|---|---|
+| Upload PDF (locale + drag&drop) | ✅ |
+| PDF viewer (zoom, navigazione pagine) | ✅ |
+| Lista documenti recenti | ✅ |
+| Persistenza dati tra aggiornamenti | ✅ |
+| Auth offline (JWT persistente + sync password) | ✅ |
+| Google login | ✅ |
+| Pagina profilo | ✅ |
+| Settings (PreferencesProvider, lingua, densità, antialiasing) | ✅ |
+| About (Release Notes, Bug Report, Documentation modali) | ✅ |
+| Metadata modal (overwrite/save-as) | ✅ |
+| Remove Pages modal (anteprime, checkbox, filename, overwrite) | ✅ |
+| Delete PDF dalla lista | ✅ |
+| Rename inline (doppio click sul nome) | ✅ |
+| Sidebar scrollbar fix | ✅ |
+| **Merge/Split/Reorder dialog** | ❌ Ancora mock |
+| **Protect/Unlock dialog** | ❌ Ancora mock |
+| **Replace Text dialog** | ❌ Ancora mock |
+| **Cloud sync desktop** | ❌ Non iniziato |
+
+### Mobile (Fase 4) — ✅ MVP completato
+
+Cloud sync bidirezionale, onboarding wizard, 179 test con copertura 100% su localDb, error-map, i18n.
+
+---
 
 ## L'agente ha rispettato lo stack?
 

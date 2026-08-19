@@ -13,7 +13,8 @@ _Aggiornato automaticamente dall'agente alla chiusura di ogni issue (merge in `d
 - [x] **Fase 1b** — Frontend Next.js (bug report ✅, auth UI ✅, dark mode ✅, header controls ✅, dialog refactor ✅)
 - [x] **Fase 2** — Web app su cloud (Deploy su Render, Neon PostgreSQL, Cloudflare R2)
 - [x] **Fase 1c** — Desktop Tauri v2 (refactoring: frontend desktop separato)
-- [ ] **Fase 1d** — Desktop UI "PDF Harmony Suite" (design Lovable)
+- [x] **Fase 1d** — Desktop UI "PDF Harmony Suite" (design Lovable) ✅ Completato
+- [x] **Fase 1e** — Desktop funzionalità reali (Metadata, Remove Pages, Delete, Settings, About modali) ✅
 - [x] **Fase 3** — Cloud sync ✅
 - [x] **Fase 4** — Mobile app React Native ✅ (MVP completato — issue #611; migliorie post-MVP in corso — issue #618)
 

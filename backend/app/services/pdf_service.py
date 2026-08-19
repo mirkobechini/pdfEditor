@@ -202,7 +202,7 @@ class PdfService:
         )
         return self.repo.create(new_pdf)
 
-    def remove_pages(self, pdf_id: str, user_id: str, page_numbers: list[int], output_filename: str | None = None) -> PdfDocument:
+    def remove_pages(self, pdf_id: str, user_id: str, page_numbers: list[int], output_filename: str | None = None, overwrite: bool = False) -> PdfDocument:
         """Remove specific pages from a PDF. page_numbers is 1-based."""
         self._create_snapshot(pdf_id, user_id)
         import fitz
@@ -240,6 +240,14 @@ class PdfService:
             new_name = output_filename if output_filename.endswith(".pdf") else output_filename + ".pdf"
         else:
             new_name = f"{pdf.original_filename.replace('.pdf', '')}_pages_removed.pdf"
+
+        if overwrite:
+            pdf.storage_filename = f"{file_uuid}.pdf"
+            pdf.file_size = len(out_bytes)
+            pdf.page_count = len(keep_pages)
+            pdf.original_filename = new_name
+            pdf.updated_at = datetime.now(timezone.utc)
+            return self.repo.update(pdf)
 
         new_pdf = PdfDocument(
             original_filename=new_name,

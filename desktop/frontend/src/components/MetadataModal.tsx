@@ -47,15 +47,11 @@ export default function MetadataModal({ open, pdfId, pdfName, onClose, onSaved }
                 new_filename: newFilename !== pdfName ? newFilename : undefined,
                 overwrite,
             };
-            console.log("DEBUG save payload:", JSON.stringify(payload));
             const updated = await api.updateMetadata(pdfId, payload);
-            console.log("DEBUG save result:", updated.id, updated.original_filename);
             onSaved(updated);
             onClose();
         } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            console.error("DEBUG save error:", msg);
-            setError(msg);
+            setError(err instanceof Error ? err.message : "Failed to save metadata");
         } finally {
             setSaving(false);
         }

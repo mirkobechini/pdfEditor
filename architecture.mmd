@@ -7,6 +7,9 @@ graph TD
         DESKTOP_FE[Next.js Desktop<br/>desktop/frontend/]
         SHARED[shared/ package<br/>auth · api · error-map · types]
         TAURI[Tauri v2 Shell<br/>~5MB binary]
+        SIDECAR[FastAPI Sidecar<br/>PyInstaller ~60MB<br/>SQLite locale · Porta 7723]
+        PREFERENCES[PreferencesProvider<br/>Settings istantanee cross-page]
+        METADATA[MetadataModal · RemovePagesModal<br/>Inline rename · Delete PDF]
     end
 
     subgraph Client_Mobile[Client - Mobile]
@@ -28,6 +31,47 @@ graph TD
         AUTH[Auth Service<br/>JWT + SSO Google]
         PDF_SVC[PDF Service<br/>PyMuPDF elaboration]
         CONV[Conversion Service<br/>DOCX/XLSX/PNG/JPG/TXT/SVG]
+        SYNC[Sync Service<br/>SQLite ↔ PostgreSQL]
+        SETTINGS[Preferences API<br/>GET/PUT /settings]
+        BUG_REPORT[Bug Report API<br/>POST /bugs]
+    end
+
+    subgraph Storage[Storage Layer]
+        SQLITE[(SQLite<br/>Desktop offline)]
+        PG[(PostgreSQL<br/>Neon Cloud)]
+        R2[(Cloudflare R2<br/>PDF storage)]
+        LOCAL_FS[(File System<br/>%APPDATA%/PdfEditor/)]
+    end
+
+    subgraph Auth[Auth Providers]
+        GOOGLE[Google SSO<br/>OAuth 2.0]
+        JWT[JWT · bcrypt<br/>httpOnly cookie]
+    end
+
+    NEXT -->|REST API| API
+    DESKTOP_FE -->|REST API| SIDECAR
+    DESKTOP_FE -->|Auth only| API
+    MOBILE -->|REST API| API
+    TAURI -->|sidecar| SIDECAR
+    SHARED -.->|copied at build| DESKTOP_FE
+    SHARED -.->|copied at build| MOBILE_SHARED
+    API --> AUTH
+    API --> PDF_SVC
+    API --> CONV
+    API --> SYNC
+    API --> SETTINGS
+    API --> BUG_REPORT
+    AUTH --> GOOGLE
+    AUTH --> JWT
+    PDF_SVC --> SQLITE
+    PDF_SVC --> LOCAL_FS
+    SYNC --> SQLITE
+    SYNC --> PG
+    API --> R2
+    SIDECAR --> SQLITE
+    SIDECAR --> LOCAL_FS
+    MOBILE --> LOCAL_DB
+    MOBILE --> PDF_SERVICE
         LIC[License Enforcer<br/>Feature gating per tier]
         BUG[Bug Report Service]
         UNDO[Undo/Redo Engine<br/>max 10 snapshot/sessione]
