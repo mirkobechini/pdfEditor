@@ -32,6 +32,7 @@ export default function EditorPage() {
     const [removePagesOpen, setRemovePagesOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
     const [renameValue, setRenameValue] = React.useState("");
+    const [pdfRefreshKey, setPdfRefreshKey] = React.useState(0);
 
     async function handleUploadFile(file: File) {
         if (!file.name.toLowerCase().endsWith(".pdf")) return;
@@ -168,7 +169,7 @@ export default function EditorPage() {
             cancelled = true;
             if (currentUrl) URL.revokeObjectURL(currentUrl);
         };
-    }, [selectedDoc?.id]);
+    }, [selectedDoc?.id, pdfRefreshKey]);
 
     function formatFileSize(bytes: number): string {
         if (bytes < 1024) return bytes + " B";
@@ -438,6 +439,7 @@ export default function EditorPage() {
                         return [updatedDoc, ...prev];
                     });
                     setSelectedDoc(updatedDoc);
+                    setPdfRefreshKey((k) => k + 1);
                 }}
             />
 
@@ -453,6 +455,7 @@ export default function EditorPage() {
                         return [updatedDoc, ...prev];
                     });
                     setSelectedDoc(updatedDoc);
+                    setPdfRefreshKey((k) => k + 1);
                 }}
             />
 
