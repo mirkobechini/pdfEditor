@@ -1,6 +1,20 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
+import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    useSortable,
+    rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
 
@@ -14,6 +28,39 @@ interface ReorderPagesModalProps {
     onSaved: (updatedDoc: PdfDocument) => void;
 }
 
+function SortablePage({ pageNum, thumb, pos }: { pageNum: number; thumb?: string; pos: number }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id: pageNum,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            className={`relative rounded-xl border-2 overflow-hidden transition-all cursor-grab active:cursor-grabbing select-none touch-none ${isDragging
+                ? "opacity-50 border-[#f7871f] ring-2 ring-[#f7871f]/30 scale-95 z-50"
+                : "border-white/10 hover:border-white/20"
+                }`}
+        >
+            {thumb ? (
+                <img src={thumb} alt={`Page ${pageNum}`} className="w-full h-auto block pointer-events-none" />
+            ) : (
+                <div className="aspect-[3/4] flex items-center justify-center bg-[#1f1914] text-[#7e7267] text-xs">Loading...</div>
+            )}
+            <div className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-semibold pointer-events-none">
+                {pos + 1}
+            </div>
+        </div>
+    );
+}
+
 export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pdfUrl, onClose, onSaved }: ReorderPagesModalProps) {
     const [order, setOrder] = React.useState<number[]>([]);
     const [thumbnails, setThumbnails] = React.useState<Record<number, string>>({});
@@ -22,7 +69,10 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
     const [error, setError] = React.useState<string | null>(null);
     const [newFilename, setNewFilename] = React.useState(pdfName);
     const [overwrite, setOverwrite] = React.useState(false);
-    const [dragIndex, setDragIndex] = React.useState<number | null>(null);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    );
 
     // Load thumbnails when modal opens
     React.useEffect(() => {
@@ -61,35 +111,20 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
         load();
     }, [open, pdfUrl, totalPages, pdfName]);
 
-    const moveUp = useCallback((idx: number) => {
-        if (idx <= 0) return;
-        setOrder((prev) => { const n = [...prev];[n[idx - 1], n[idx]] = [n[idx], n[idx - 1]]; return n; });
-    }, []);
+    function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
 
-    const moveDown = useCallback((idx: number) => {
+        const oldIndex = order.indexOf(active.id as number);
+        const newIndex = order.indexOf(over.id as number);
+        if (oldIndex === -1 || newIndex === -1) return;
+
         setOrder((prev) => {
-            if (idx >= prev.length - 1) return prev;
-            const n = [...prev];[n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; return n;
+            const n = [...prev];
+            const [removed] = n.splice(oldIndex, 1);
+            n.splice(newIndex, 0, removed);
+            return n;
         });
-    }, []);
-
-    function handleMouseDown(pos: number) {
-        if (dragIndex === null) {
-            // First click: select page to move
-            setDragIndex(pos);
-        } else if (dragIndex === pos) {
-            // Click same page: deselect
-            setDragIndex(null);
-        } else {
-            // Click another page: move selected page here
-            setOrder((prev) => {
-                const n = [...prev];
-                const [removed] = n.splice(dragIndex, 1);
-                n.splice(pos, 0, removed);
-                return n;
-            });
-            setDragIndex(null);
-        }
     }
 
     async function handleSave() {
@@ -124,44 +159,20 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
                     </div>
                 ) : (
                     <div className="flex-1 overflow-y-auto mb-4">
-                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
-                            {order.map((pageNum, pos) => {
-                                const thumb = thumbnails[pageNum];
-                                return (
-                                    <div
-                                        key={`${pageNum}-${pos}`}
-                                        className={`relative rounded-xl border-2 overflow-hidden transition-all cursor-pointer select-none ${dragIndex === pos
-                                            ? "border-[#f7871f] ring-2 ring-[#f7871f]/30 scale-95 opacity-60"
-                                            : dragIndex !== null && pos !== dragIndex
-                                                ? "hover:border-[#f7871f]/60"
-                                                : "border-white/10 hover:border-white/20"
-                                            }`}
-                                        onClick={() => handleMouseDown(pos)}
-                                    >
-                                        {thumb ? (
-                                            <img src={thumb} alt={`Page ${pageNum}`} className="w-full h-auto block" />
-                                        ) : (
-                                            <div className="aspect-[3/4] flex items-center justify-center bg-[#1f1914] text-[#7e7267] text-xs">Loading...</div>
-                                        )}
-                                        <div className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-semibold">
-                                            {pos + 1}
-                                        </div>
-                                        <div className="absolute top-1 right-1 flex gap-0.5">
-                                            <button
-                                                className="bg-black/50 text-white text-[10px] px-1 hover:bg-black/70 rounded-l"
-                                                onClick={(e) => { e.stopPropagation(); moveUp(pos); }}
-                                                disabled={pos === 0}
-                                            >▲</button>
-                                            <button
-                                                className="bg-black/50 text-white text-[10px] px-1 hover:bg-black/70 rounded-r"
-                                                onClick={(e) => { e.stopPropagation(); moveDown(pos); }}
-                                                disabled={pos === order.length - 1}
-                                            >▼</button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                            <SortableContext items={order} strategy={rectSortingStrategy}>
+                                <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                                    {order.map((pageNum, pos) => (
+                                        <SortablePage
+                                            key={pageNum}
+                                            pageNum={pageNum}
+                                            thumb={thumbnails[pageNum]}
+                                            pos={pos}
+                                        />
+                                    ))}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
                     </div>
                 )}
 
