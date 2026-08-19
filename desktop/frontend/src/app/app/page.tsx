@@ -472,9 +472,11 @@ export default function EditorPage() {
                 pdfUrl={pdfUrl}
                 onClose={() => setRemovePagesOpen(false)}
                 onSaved={(updatedDoc) => {
+                    // If same ID → overwrite (replace), if different ID → new copy (keep both)
                     setDocs((prev) => {
-                        const oldId = selectedDoc?.id;
-                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
+                        if (updatedDoc.id === selectedDoc?.id) {
+                            return prev.map((d) => d.id === updatedDoc.id ? updatedDoc : d);
+                        }
                         return [updatedDoc, ...prev];
                     });
                     setSelectedDoc(updatedDoc);
@@ -491,8 +493,9 @@ export default function EditorPage() {
                 onClose={() => setReorderOpen(false)}
                 onSaved={(updatedDoc) => {
                     setDocs((prev) => {
-                        const oldId = selectedDoc?.id;
-                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
+                        if (updatedDoc.id === selectedDoc?.id) {
+                            return prev.map((d) => d.id === updatedDoc.id ? updatedDoc : d);
+                        }
                         return [updatedDoc, ...prev];
                     });
                     setSelectedDoc(updatedDoc);
@@ -522,8 +525,9 @@ export default function EditorPage() {
                 onClose={() => setLockOpen(false)}
                 onSaved={(updatedDoc) => {
                     setDocs((prev) => {
-                        const oldId = selectedDoc?.id;
-                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
+                        if (updatedDoc.id === selectedDoc?.id) {
+                            return prev.map((d) => d.id === updatedDoc.id ? updatedDoc : d);
+                        }
                         return [updatedDoc, ...prev];
                     });
                     setSelectedDoc(updatedDoc);
@@ -538,8 +542,9 @@ export default function EditorPage() {
                 onClose={() => setMetadataOpen(false)}
                 onSaved={(updatedDoc) => {
                     setDocs((prev) => {
-                        const oldId = selectedDoc?.id;
-                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
+                        if (updatedDoc.id === selectedDoc?.id) {
+                            return prev.map((d) => d.id === updatedDoc.id ? updatedDoc : d);
+                        }
                         return [updatedDoc, ...prev];
                     });
                     setSelectedDoc(updatedDoc);

@@ -46,8 +46,11 @@ export class ApiClient {
     try {
       const body = await res.json();
       // New format: {code, detail} from backend error_response helper
-      if (body && typeof body === "object" && body.code && body.detail) {
-        return ApiClient.translateError(body.code, body.detail);
+      // FastAPI wraps it as {detail: {code, detail}}, so check both levels
+      const errDetail =
+        body.detail && typeof body.detail === "object" ? body.detail : body;
+      if (errDetail && errDetail.code && errDetail.detail) {
+        return ApiClient.translateError(errDetail.code, errDetail.detail);
       }
       if (typeof body.detail === "string") return body.detail;
       if (Array.isArray(body.detail))
