@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React from "react";
 import {
     DndContext,
     closestCenter,
@@ -28,14 +28,16 @@ interface ReorderPagesModalProps {
     onSaved: (updatedDoc: PdfDocument) => void;
 }
 
-function SortablePage({ pageNum, thumb, pos }: { pageNum: number; thumb?: string; pos: number }) {
+const SortablePage = React.memo(function SortablePage({ pageNum, thumb, pos }: { pageNum: number; thumb?: string; pos: number }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: pageNum,
     });
 
     const style = {
         transform: CSS.Transform.toString(transform),
-        transition,
+        // No transition while dragging (avoids trailing/jank), smooth shift after drop
+        transition: isDragging ? "none" : transition,
+        willChange: "transform",
     };
 
     return (
@@ -44,13 +46,18 @@ function SortablePage({ pageNum, thumb, pos }: { pageNum: number; thumb?: string
             style={style}
             {...attributes}
             {...listeners}
-            className={`relative rounded-xl border-2 overflow-hidden transition-all cursor-grab active:cursor-grabbing select-none touch-none ${isDragging
+            className={`relative rounded-xl border-2 overflow-hidden cursor-grab active:cursor-grabbing select-none touch-none ${isDragging
                 ? "opacity-50 border-[#f7871f] ring-2 ring-[#f7871f]/30 scale-95 z-50"
                 : "border-white/10 hover:border-white/20"
                 }`}
         >
             {thumb ? (
-                <img src={thumb} alt={`Page ${pageNum}`} className="w-full h-auto block pointer-events-none" />
+                <img
+                    src={thumb}
+                    alt={`Page ${pageNum}`}
+                    draggable={false}
+                    className="w-full h-auto block pointer-events-none"
+                />
             ) : (
                 <div className="aspect-[3/4] flex items-center justify-center bg-[#1f1914] text-[#7e7267] text-xs">Loading...</div>
             )}
@@ -59,7 +66,7 @@ function SortablePage({ pageNum, thumb, pos }: { pageNum: number; thumb?: string
             </div>
         </div>
     );
-}
+});
 
 export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pdfUrl, onClose, onSaved }: ReorderPagesModalProps) {
     const [order, setOrder] = React.useState<number[]>([]);
@@ -92,17 +99,14 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
                 const results: Record<number, string> = {};
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
-                    const viewport = page.getViewport({ scale: 0.3 });
+                    const viewport = page.getViewport({ scale: 0.2 });
                     const canvas = document.createElement("canvas");
-                    const dpr = window.devicePixelRatio || 1;
-                    canvas.width = viewport.width * dpr;
-                    canvas.height = viewport.height * dpr;
-                    canvas.style.width = `${viewport.width}px`;
-                    canvas.style.height = `${viewport.height}px`;
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
                     const ctx = canvas.getContext("2d")!;
-                    ctx.scale(dpr, dpr);
                     await page.render({ canvasContext: ctx, viewport }).promise;
-                    results[i] = canvas.toDataURL("image/png");
+                    // JPEG at 0.2 scale = ~10-20x lighter than PNG, huge win for drag perf
+                    results[i] = canvas.toDataURL("image/jpeg", 0.7);
                 }
                 setThumbnails(results);
             } catch { /* ignore */ }
@@ -159,7 +163,14 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
                     </div>
                 ) : (
                     <div className="flex-1 overflow-y-auto mb-4">
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        {/* autoScroll disabled: the runaway scroll on the grid edge was unusable.
+                            Wheel/trackpad scrolling still works while dragging. */}
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                            autoScroll={false}
+                        >
                             <SortableContext items={order} strategy={rectSortingStrategy}>
                                 <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                                     {order.map((pageNum, pos) => (
@@ -173,6 +184,9 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
                                 </div>
                             </SortableContext>
                         </DndContext>
+                        <p className="mt-3 text-center text-[11px] text-[#6f6358]">
+                            Drag pages to reorder · scroll to see more pages while dragging
+                        </p>
                     </div>
                 )}
 
