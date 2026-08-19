@@ -30,6 +30,8 @@ export default function EditorPage() {
     const [metadataOpen, setMetadataOpen] = React.useState(false);
     const [deleteConfirm, setDeleteConfirm] = React.useState<string | null>(null);
     const [removePagesOpen, setRemovePagesOpen] = React.useState(false);
+    const [renameId, setRenameId] = React.useState<string | null>(null);
+    const [renameValue, setRenameValue] = React.useState("");
 
     async function handleUploadFile(file: File) {
         if (!file.name.toLowerCase().endsWith(".pdf")) return;
@@ -228,7 +230,33 @@ export default function EditorPage() {
                                                     PDF
                                                 </div>
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="text-[14px] font-semibold leading-tight text-[#f3ede7] truncate">{doc.original_filename}</p>
+                                                    {renameId === doc.id ? (
+                                                        <input
+                                                            value={renameValue}
+                                                            onChange={(e) => setRenameValue(e.target.value)}
+                                                            onBlur={() => setRenameId(null)}
+                                                            onKeyDown={async (e) => {
+                                                                if (e.key === "Enter") {
+                                                                    setRenameId(null);
+                                                                    if (renameValue.trim() && renameValue !== doc.original_filename) {
+                                                                        try {
+                                                                            await api.updateMetadata(doc.id, { new_filename: renameValue.trim() });
+                                                                            setDocs((prev) => prev.map((d) => d.id === doc.id ? { ...d, original_filename: renameValue.trim() } : d));
+                                                                        } catch { /* ignore */ }
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="w-full rounded-lg border border-[#f7871f]/50 bg-[#1f1914] px-2 py-1 text-[14px] font-semibold text-white outline-none"
+                                                            autoFocus
+                                                        />
+                                                    ) : (
+                                                        <p
+                                                            className="text-[14px] font-semibold leading-tight text-[#f3ede7] truncate cursor-text"
+                                                            onDoubleClick={() => { setRenameId(doc.id); setRenameValue(doc.original_filename); }}
+                                                        >
+                                                            {doc.original_filename}
+                                                        </p>
+                                                    )}
                                                     <p className="mt-1 font-mono text-[10px] text-[#7e7267]">
                                                         {formatFileSize(doc.file_size)} · {formatDate(doc.updated_at)}
                                                     </p>
@@ -401,6 +429,7 @@ export default function EditorPage() {
                 pdfId={selectedDoc?.id ?? ""}
                 pdfName={selectedDoc?.original_filename ?? ""}
                 totalPages={selectedDoc?.page_count ?? 0}
+                pdfUrl={pdfUrl}
                 onClose={() => setRemovePagesOpen(false)}
                 onSaved={(updatedDoc) => {
                     setDocs((prev) => {
