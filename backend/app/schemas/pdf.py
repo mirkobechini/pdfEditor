@@ -45,6 +45,7 @@ class SplitRequest(BaseModel):
     mode: str  # "range" or "every"
     ranges: list[str] | None = None  # e.g. ["1-3", "5-7"] — required when mode="range"
     output_filename: str | None = None  # User-chosen filename; fallback to auto-generated
+    output_filenames: list[str] | None = None  # One filename per resulting part (e.g. 2 for split in 2)
 
 
 class SplitResponse(BaseModel):
