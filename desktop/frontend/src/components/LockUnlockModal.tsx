@@ -92,6 +92,7 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
                                 type={showPassword ? "text" : "password"}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") { isProtected ? handleUnlock() : handleLock(); } }}
                                 placeholder={isProtected ? "Enter password" : "Enter new password"}
                                 className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 pr-10 text-sm text-white placeholder-[#5a4f44] outline-none transition focus:border-[#f7871f]/50"
                             />
@@ -124,6 +125,7 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
                                     type={showPassword ? "text" : "password"}
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === "Enter") handleLock(); }}
                                     placeholder="Re-enter password"
                                     className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 pr-10 text-sm text-white placeholder-[#5a4f44] outline-none transition focus:border-[#f7871f]/50"
                                 />

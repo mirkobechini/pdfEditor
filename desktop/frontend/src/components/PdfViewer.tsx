@@ -31,6 +31,7 @@ export default function PdfViewer({
     const pdfDocRef = React.useRef<any>(null);
     const renderTaskRef = React.useRef<{ cancel: () => void } | null>(null);
     const renderKeyRef = React.useRef(0);
+    const generationRef = React.useRef(0);
 
     // Load PDF.js on mount
     React.useEffect(() => {
@@ -55,15 +56,19 @@ export default function PdfViewer({
         if (!fileUrl || !pdfJsLoaded) return;
 
         let cancelled = false;
+        const generation = ++renderKeyRef.current;
         const loadPdf = async () => {
             try {
                 const pdf = await (window as any).pdfjsLib.getDocument(fileUrl).promise;
                 if (cancelled) return;
-                pdfDocRef.current = pdf;
-                onTotalPagesChange(pdf.numPages);
-                onPageChange(1);
-                onZoomChange(1);
-                setLoadVersion((v) => v + 1);
+                // Only set pdfDocRef if this is still the current generation
+                if (generation === renderKeyRef.current) {
+                    pdfDocRef.current = pdf;
+                    onTotalPagesChange(pdf.numPages);
+                    onPageChange(1);
+                    onZoomChange(1);
+                    setLoadVersion((v) => v + 1);
+                }
             } catch (err) {
                 console.error("Failed to load PDF:", err);
             }
@@ -72,7 +77,8 @@ export default function PdfViewer({
 
         return () => {
             cancelled = true;
-            pdfDocRef.current = null;
+            // Don't null out pdfDocRef here — the render effect may fire
+            // before the new load completes, causing a blank canvas.
             if (renderTaskRef.current) {
                 renderTaskRef.current.cancel();
             }
