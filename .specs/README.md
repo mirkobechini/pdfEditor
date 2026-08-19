@@ -25,7 +25,6 @@ Questa directory contiene tutta la documentazione di pianificazione del progetto
 | `feature-cloud-sync-desktop.md`        | Feature | ALTA     | Desktop     |
 | `feature-google-oauth-desktop-page.md` | Feature | MEDIA    | Desktop     |
 | `bug-login-401-neon.md`                | Bug     | ALTA     | Web/Dekstop |
-| `bug-settings-antialiasing-density.md` | Bug     | BASSA    | Desktop     |
 | `feature-pdf-compression.md`           | Feature | MEDIA    | Web/Dekstop |
 | `feature-email-confirmation.md`        | Feature | MEDIA    | Web         |
 | `feature-keep-warm-backend.md`         | Feature | BASSA    | Web/Dekstop |
