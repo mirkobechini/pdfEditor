@@ -154,7 +154,7 @@ class PdfService:
         delete_pdf(file_uuid)
         return True
 
-    def reorder(self, pdf_id: str, user_id: str, page_order: list[int], output_filename: str | None = None) -> PdfDocument:
+    def reorder(self, pdf_id: str, user_id: str, page_order: list[int], output_filename: str | None = None, overwrite: bool = False) -> PdfDocument:
         """Reorder pages of a PDF. page_order is 1-based."""
         self._create_snapshot(pdf_id, user_id)
         import fitz
@@ -192,6 +192,14 @@ class PdfService:
             new_name = output_filename if output_filename.endswith(".pdf") else output_filename + ".pdf"
         else:
             new_name = f"{pdf.original_filename.replace('.pdf', '')}_reordered.pdf"
+
+        if overwrite:
+            pdf.storage_filename = f"{file_uuid}.pdf"
+            pdf.file_size = len(out_bytes)
+            pdf.page_count = len(page_order)
+            pdf.original_filename = new_name
+            pdf.updated_at = datetime.now(timezone.utc)
+            return self.repo.update(pdf)
 
         new_pdf = PdfDocument(
             original_filename=new_name,

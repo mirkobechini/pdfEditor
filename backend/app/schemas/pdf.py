@@ -58,6 +58,7 @@ class ReorderRequest(BaseModel):
 
     page_order: list[int]
     output_filename: str | None = None  # User-chosen filename; fallback to auto-generated
+    overwrite: bool = False
 
 
 class RemovePagesRequest(BaseModel):

@@ -269,9 +269,11 @@ export class ApiClient {
     id: string,
     pageOrder: number[],
     outputFilename?: string,
+    overwrite?: boolean,
   ): Promise<PdfDocument> {
     const body: Record<string, unknown> = { page_order: pageOrder };
     if (outputFilename) body.output_filename = outputFilename;
+    if (overwrite) body.overwrite = true;
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/reorder`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },

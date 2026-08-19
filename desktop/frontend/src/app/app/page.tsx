@@ -8,6 +8,7 @@ import { getApiBaseUrl, isTauri, tauriInvoke } from "../../shared/tauri";
 import PdfViewer from "../../components/PdfViewer";
 import MetadataModal from "../../components/MetadataModal";
 import RemovePagesModal from "../../components/RemovePagesModal";
+import ReorderPagesModal from "../../components/ReorderPagesModal";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
 import type { PdfDocument } from "../../shared/types";
@@ -30,6 +31,7 @@ export default function EditorPage() {
     const [metadataOpen, setMetadataOpen] = React.useState(false);
     const [deleteConfirm, setDeleteConfirm] = React.useState<string | null>(null);
     const [removePagesOpen, setRemovePagesOpen] = React.useState(false);
+    const [reorderOpen, setReorderOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
     const [renameValue, setRenameValue] = React.useState("");
     const [pdfRefreshKey, setPdfRefreshKey] = React.useState(0);
@@ -334,9 +336,16 @@ export default function EditorPage() {
                                 <span className="w-10 text-center">{Math.round(zoom * 100)}%</span>
                                 <button onClick={() => setZoom(Math.min(3, zoom + 0.25))} className="h-7 w-7 rounded hover:bg-white/6">+</button>
                             </div>
-                            {"Merge Split Reorder".split(" ").map((item) => (
+                            {"Merge Split".split(" ").map((item) => (
                                 <button key={item} className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white">{item}</button>
                             ))}
+                            <button
+                                onClick={() => setReorderOpen(true)}
+                                disabled={!selectedDoc}
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                Reorder
+                            </button>
                             <button
                                 onClick={() => setRemovePagesOpen(true)}
                                 disabled={!selectedDoc}
@@ -432,6 +441,24 @@ export default function EditorPage() {
                 totalPages={selectedDoc?.page_count ?? 0}
                 pdfUrl={pdfUrl}
                 onClose={() => setRemovePagesOpen(false)}
+                onSaved={(updatedDoc) => {
+                    setDocs((prev) => {
+                        const oldId = selectedDoc?.id;
+                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
+                        return [updatedDoc, ...prev];
+                    });
+                    setSelectedDoc(updatedDoc);
+                    setPdfRefreshKey((k) => k + 1);
+                }}
+            />
+
+            <ReorderPagesModal
+                open={reorderOpen}
+                pdfId={selectedDoc?.id ?? ""}
+                pdfName={selectedDoc?.original_filename ?? ""}
+                totalPages={selectedDoc?.page_count ?? 0}
+                pdfUrl={pdfUrl}
+                onClose={() => setReorderOpen(false)}
                 onSaved={(updatedDoc) => {
                     setDocs((prev) => {
                         const oldId = selectedDoc?.id;

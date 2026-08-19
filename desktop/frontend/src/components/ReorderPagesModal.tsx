@@ -116,7 +116,7 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
         setSaving(true);
         setError(null);
         try {
-            const updated = await api.reorderPages(pdfId, order, newFilename !== pdfName ? newFilename : undefined);
+            const updated = await api.reorderPages(pdfId, order, newFilename !== pdfName ? newFilename : undefined, overwrite);
             onSaved(updated);
             onClose();
         } catch (err) {
