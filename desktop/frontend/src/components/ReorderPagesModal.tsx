@@ -64,20 +64,25 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
 
     const moveUp = useCallback((idx: number) => {
         if (idx <= 0) return;
-        setOrder((prev) => { const n = [...prev]; [n[idx - 1], n[idx]] = [n[idx], n[idx - 1]]; return n; });
+        setOrder((prev) => { const n = [...prev];[n[idx - 1], n[idx]] = [n[idx], n[idx - 1]]; return n; });
     }, []);
 
     const moveDown = useCallback((idx: number) => {
         setOrder((prev) => {
             if (idx >= prev.length - 1) return prev;
-            const n = [...prev]; [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; return n;
+            const n = [...prev];[n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; return n;
         });
     }, []);
 
-    function handleDragStart(pos: number) { setDragIndex(pos); }
-    function handleDragOver(e: React.DragEvent, pos: number) { e.preventDefault(); setDropIndex(pos); }
+    function handleDragStart(e: React.DragEvent, pos: number) {
+        e.dataTransfer.setData("text/plain", String(pos));
+        e.dataTransfer.effectAllowed = "move";
+        setDragIndex(pos);
+    }
+    function handleDragOver(e: React.DragEvent, pos: number) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDropIndex(pos); }
     function handleDragLeave() { setDropIndex(null); }
-    function handleDrop(pos: number) {
+    function handleDrop(e: React.DragEvent, pos: number) {
+        e.preventDefault();
         if (dragIndex === null || dragIndex === pos) return;
         setOrder((prev) => {
             const n = [...prev];
@@ -135,10 +140,10 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
                                                 : "border-white/10 hover:border-white/20"
                                             }`}
                                         draggable
-                                        onDragStart={() => handleDragStart(pos)}
+                                        onDragStart={(e) => handleDragStart(e, pos)}
                                         onDragOver={(e) => handleDragOver(e, pos)}
                                         onDragLeave={handleDragLeave}
-                                        onDrop={() => handleDrop(pos)}
+                                        onDrop={(e) => handleDrop(e, pos)}
                                         onDragEnd={handleDragEnd}
                                     >
                                         {thumb ? (
