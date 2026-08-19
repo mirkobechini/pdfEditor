@@ -24,6 +24,7 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
     const [overwrite, setOverwrite] = React.useState(false);
     const [dragIndex, setDragIndex] = React.useState<number | null>(null);
     const [dropIndex, setDropIndex] = React.useState<number | null>(null);
+    const dragRef = React.useRef<{ startY: number; dragIdx: number; heights: number[] } | null>(null);
 
     // Load thumbnails when modal opens
     React.useEffect(() => {
@@ -74,26 +75,49 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
         });
     }, []);
 
-    function handleDragStart(e: React.DragEvent, pos: number) {
-        e.dataTransfer.setData("text/plain", String(pos));
-        e.dataTransfer.effectAllowed = "move";
-        setDragIndex(pos);
-    }
-    function handleDragOver(e: React.DragEvent, pos: number) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDropIndex(pos); }
-    function handleDragLeave() { setDropIndex(null); }
-    function handleDrop(e: React.DragEvent, pos: number) {
+    function handleMouseDown(e: React.MouseEvent, pos: number) {
         e.preventDefault();
-        if (dragIndex === null || dragIndex === pos) return;
-        setOrder((prev) => {
-            const n = [...prev];
-            const [removed] = n.splice(dragIndex, 1);
-            n.splice(pos, 0, removed);
-            return n;
-        });
-        setDragIndex(null);
+        const container = e.currentTarget.closest('[data-reorder-grid]');
+        if (!container) return;
+        const items = container.querySelectorAll('[data-reorder-item]');
+        const heights: number[] = [];
+        items.forEach((el) => heights.push(el.getBoundingClientRect().height + 12)); // 12 = gap
+        dragRef.current = { startY: e.clientY, dragIdx: pos, heights };
+        setDragIndex(pos);
         setDropIndex(null);
+
+        function onMouseMove(ev: MouseEvent) {
+            if (!dragRef.current) return;
+            const dy = ev.clientY - dragRef.current.startY;
+            let acc = 0;
+            for (let i = 0; i < dragRef.current.heights.length; i++) {
+                if (i === dragRef.current.dragIdx) continue;
+                const half = dragRef.current.heights[i] / 2;
+                if (dy > 0 && dy > acc + half) { setDropIndex(i); break; }
+                if (dy < 0 && dy < -(acc + half)) { setDropIndex(i); break; }
+                acc += dragRef.current.heights[i];
+            }
+        }
+
+        function onMouseUp() {
+            if (dragRef.current && dragIndex !== null && dropIndex !== null && dropIndex !== dragIndex) {
+                setOrder((prev) => {
+                    const n = [...prev];
+                    const [removed] = n.splice(dragIndex, 1);
+                    n.splice(dropIndex, 0, removed);
+                    return n;
+                });
+            }
+            dragRef.current = null;
+            setDragIndex(null);
+            setDropIndex(null);
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+        }
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
     }
-    function handleDragEnd() { setDragIndex(null); setDropIndex(null); }
 
     async function handleSave() {
         if (order.length < 2) { setError("At least 2 pages required"); return; }
@@ -126,26 +150,21 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
                         <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#f7871f] border-t-transparent" />
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-y-auto mb-4">
+                    <div className="flex-1 overflow-y-auto mb-4" data-reorder-grid>
                         <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                             {order.map((pageNum, pos) => {
                                 const thumb = thumbnails[pageNum];
                                 return (
                                     <div
                                         key={`${pageNum}-${pos}`}
-                                        className={`relative rounded-xl border-2 overflow-hidden transition-all cursor-grab active:cursor-grabbing ${dragIndex === pos
+                                        data-reorder-item
+                                        className={`relative rounded-xl border-2 overflow-hidden transition-all cursor-grab active:cursor-grabbing select-none ${dragIndex === pos
                                             ? "opacity-50 border-[#f7871f] scale-95"
                                             : dropIndex === pos
                                                 ? "border-[#f7871f]"
                                                 : "border-white/10 hover:border-white/20"
                                             }`}
-                                        draggable
-                                        onDragStart={(e) => handleDragStart(e, pos)}
-                                        onDragOver={(e) => handleDragOver(e, pos)}
-                                        onDragLeave={handleDragLeave}
-                                        onDrop={(e) => handleDrop(e, pos)}
-                                        onDragEnd={handleDragEnd}
-                                        style={{ WebkitUserDrag: "element" } as React.CSSProperties}
+                                        onMouseDown={(e) => handleMouseDown(e, pos)}
                                     >
                                         {thumb ? (
                                             <img src={thumb} alt={`Page ${pageNum}`} className="w-full h-auto block" />
