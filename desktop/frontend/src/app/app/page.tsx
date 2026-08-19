@@ -7,6 +7,7 @@ import { useAuth } from "../../shared/auth";
 import { getApiBaseUrl, isTauri, tauriInvoke } from "../../shared/tauri";
 import PdfViewer from "../../components/PdfViewer";
 import MetadataModal from "../../components/MetadataModal";
+import RemovePagesModal from "../../components/RemovePagesModal";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
 import type { PdfDocument } from "../../shared/types";
@@ -28,6 +29,7 @@ export default function EditorPage() {
     const [uploadError, setUploadError] = React.useState<string | null>(null);
     const [metadataOpen, setMetadataOpen] = React.useState(false);
     const [deleteConfirm, setDeleteConfirm] = React.useState<string | null>(null);
+    const [removePagesOpen, setRemovePagesOpen] = React.useState(false);
 
     async function handleUploadFile(file: File) {
         if (!file.name.toLowerCase().endsWith(".pdf")) return;
@@ -303,9 +305,16 @@ export default function EditorPage() {
                                 <span className="w-10 text-center">{Math.round(zoom * 100)}%</span>
                                 <button onClick={() => setZoom(Math.min(3, zoom + 0.25))} className="h-7 w-7 rounded hover:bg-white/6">+</button>
                             </div>
-                            {"Merge Split Reorder Remove".split(" ").map((item) => (
+                            {"Merge Split Reorder".split(" ").map((item) => (
                                 <button key={item} className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white">{item}</button>
                             ))}
+                            <button
+                                onClick={() => setRemovePagesOpen(true)}
+                                disabled={!selectedDoc}
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                Remove
+                            </button>
                             <button
                                 onClick={() => setMetadataOpen(true)}
                                 disabled={!selectedDoc}
@@ -386,6 +395,22 @@ export default function EditorPage() {
                     </div>
                 </aside>
             </div>
+
+            <RemovePagesModal
+                open={removePagesOpen}
+                pdfId={selectedDoc?.id ?? ""}
+                pdfName={selectedDoc?.original_filename ?? ""}
+                totalPages={selectedDoc?.page_count ?? 0}
+                onClose={() => setRemovePagesOpen(false)}
+                onSaved={(updatedDoc) => {
+                    setDocs((prev) => {
+                        const oldId = selectedDoc?.id;
+                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
+                        return [updatedDoc, ...prev];
+                    });
+                    setSelectedDoc(updatedDoc);
+                }}
+            />
 
             <MetadataModal
                 open={metadataOpen}
