@@ -56,13 +56,13 @@ export default function PdfViewer({
         if (!fileUrl || !pdfJsLoaded) return;
 
         let cancelled = false;
-        const generation = ++renderKeyRef.current;
+        const generation = ++generationRef.current;
         const loadPdf = async () => {
             try {
                 const pdf = await (window as any).pdfjsLib.getDocument(fileUrl).promise;
                 if (cancelled) return;
                 // Only set pdfDocRef if this is still the current generation
-                if (generation === renderKeyRef.current) {
+                if (generation === generationRef.current) {
                     pdfDocRef.current = pdf;
                     onTotalPagesChange(pdf.numPages);
                     onPageChange(1);
