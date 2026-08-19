@@ -252,10 +252,12 @@ export class ApiClient {
     mode: "every" | "range",
     ranges?: string[],
     outputFilename?: string,
+    outputFilenames?: string[],
   ) {
     const body: Record<string, unknown> = { mode };
     if (ranges) body.ranges = ranges;
     if (outputFilename) body.output_filename = outputFilename;
+    if (outputFilenames) body.output_filenames = outputFilenames;
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/split`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
