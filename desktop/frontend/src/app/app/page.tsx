@@ -10,6 +10,7 @@ import MetadataModal from "../../components/MetadataModal";
 import RemovePagesModal from "../../components/RemovePagesModal";
 import ReorderPagesModal from "../../components/ReorderPagesModal";
 import SplitPagesModal from "../../components/SplitPagesModal";
+import LockUnlockModal from "../../components/LockUnlockModal";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
 import type { PdfDocument } from "../../shared/types";
@@ -34,6 +35,7 @@ export default function EditorPage() {
     const [removePagesOpen, setRemovePagesOpen] = React.useState(false);
     const [reorderOpen, setReorderOpen] = React.useState(false);
     const [splitOpen, setSplitOpen] = React.useState(false);
+    const [lockOpen, setLockOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
     const [renameValue, setRenameValue] = React.useState("");
     const [pdfRefreshKey, setPdfRefreshKey] = React.useState(0);
@@ -444,7 +446,16 @@ export default function EditorPage() {
                         >
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">SPLIT</p>
                         </button>
-                        {["OCR", "LOCK"].map((k) => (
+                        <button
+                            onClick={() => setLockOpen(true)}
+                            disabled={!selectedDoc}
+                            className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">
+                                {selectedDoc?.is_password_protected ? "UNLOCK" : "LOCK"}
+                            </p>
+                        </button>
+                        {["OCR"].map((k) => (
                             <button key={k} disabled className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">{k}</p>
                             </button>
@@ -499,6 +510,23 @@ export default function EditorPage() {
                 onSaved={(newDocs) => {
                     setDocs((prev) => [...newDocs, ...prev]);
                     setSelectedDoc(newDocs[0]);
+                    setPdfRefreshKey((k) => k + 1);
+                }}
+            />
+
+            <LockUnlockModal
+                open={lockOpen}
+                pdfId={selectedDoc?.id ?? ""}
+                pdfName={selectedDoc?.original_filename ?? ""}
+                isProtected={selectedDoc?.is_password_protected ?? false}
+                onClose={() => setLockOpen(false)}
+                onSaved={(updatedDoc) => {
+                    setDocs((prev) => {
+                        const oldId = selectedDoc?.id;
+                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
+                        return [updatedDoc, ...prev];
+                    });
+                    setSelectedDoc(updatedDoc);
                     setPdfRefreshKey((k) => k + 1);
                 }}
             />
