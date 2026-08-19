@@ -9,6 +9,7 @@ import {
     useSensors,
     type DragEndEvent,
 } from "@dnd-kit/core";
+import type { DragStartEvent } from "@dnd-kit/core";
 import {
     SortableContext,
     useSortable,
@@ -76,10 +77,49 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
     const [error, setError] = React.useState<string | null>(null);
     const [newFilename, setNewFilename] = React.useState(pdfName);
     const [overwrite, setOverwrite] = React.useState(false);
+    const scrollRef = React.useRef<HTMLDivElement>(null);
+    const [dragging, setDragging] = React.useState(false);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
     );
+
+    // Freeze scrolling of the grid container while dragging so the page can't
+    // "run away" and the list never scrolls infinitely under the pointer.
+    React.useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        if (dragging) {
+            el.style.overflow = "hidden";
+        } else {
+            el.style.overflow = "auto";
+        }
+    }, [dragging]);
+
+    function handleDragStart(event: DragStartEvent) {
+        setDragging(true);
+    }
+
+    function handleDragEnd(event: DragEndEvent) {
+        setDragging(false);
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = order.indexOf(active.id as number);
+        const newIndex = order.indexOf(over.id as number);
+        if (oldIndex === -1 || newIndex === -1) return;
+
+        setOrder((prev) => {
+            const n = [...prev];
+            const [removed] = n.splice(oldIndex, 1);
+            n.splice(newIndex, 0, removed);
+            return n;
+        });
+    }
+
+    function handleDragCancel() {
+        setDragging(false);
+    }
 
     // Load thumbnails when modal opens
     React.useEffect(() => {
@@ -115,22 +155,6 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
         load();
     }, [open, pdfUrl, totalPages, pdfName]);
 
-    function handleDragEnd(event: DragEndEvent) {
-        const { active, over } = event;
-        if (!over || active.id === over.id) return;
-
-        const oldIndex = order.indexOf(active.id as number);
-        const newIndex = order.indexOf(over.id as number);
-        if (oldIndex === -1 || newIndex === -1) return;
-
-        setOrder((prev) => {
-            const n = [...prev];
-            const [removed] = n.splice(oldIndex, 1);
-            n.splice(newIndex, 0, removed);
-            return n;
-        });
-    }
-
     async function handleSave() {
         if (order.length < 2) { setError("At least 2 pages required"); return; }
         setSaving(true); setError(null);
@@ -162,13 +186,15 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
                         <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#f7871f] border-t-transparent" />
                     </div>
                 ) : (
-                    <div className="flex-1 overflow-y-auto mb-4">
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto mb-4">
                         {/* autoScroll disabled: the runaway scroll on the grid edge was unusable.
                             Wheel/trackpad scrolling still works while dragging. */}
                         <DndContext
                             sensors={sensors}
                             collisionDetection={closestCenter}
+                            onDragStart={handleDragStart}
                             onDragEnd={handleDragEnd}
+                            onDragCancel={handleDragCancel}
                             autoScroll={false}
                         >
                             <SortableContext items={order} strategy={rectSortingStrategy}>
@@ -185,7 +211,7 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
                             </SortableContext>
                         </DndContext>
                         <p className="mt-3 text-center text-[11px] text-[#6f6358]">
-                            Drag pages to reorder · scroll to see more pages while dragging
+                            Drag pages to reorder · scroll is locked while dragging
                         </p>
                     </div>
                 )}
