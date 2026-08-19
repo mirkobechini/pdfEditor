@@ -23,6 +23,7 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
     const [newFilename, setNewFilename] = React.useState(pdfName);
     const [overwrite, setOverwrite] = React.useState(false);
     const [dragIndex, setDragIndex] = React.useState<number | null>(null);
+    const [dropIndex, setDropIndex] = React.useState<number | null>(null);
 
     // Load thumbnails when modal opens
     React.useEffect(() => {
@@ -73,24 +74,26 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
         });
     }, []);
 
-    function handlePageClick(pos: number) {
-        if (dragIndex === null) {
-            // First click: select page to move
-            setDragIndex(pos);
-        } else if (dragIndex === pos) {
-            // Click same page: deselect
-            setDragIndex(null);
-        } else {
-            // Second click: move selected page here
-            setOrder((prev) => {
-                const n = [...prev];
-                const [removed] = n.splice(dragIndex, 1);
-                n.splice(pos, 0, removed);
-                return n;
-            });
-            setDragIndex(null);
-        }
+    function handleDragStart(e: React.DragEvent, pos: number) {
+        e.dataTransfer.setData("text/plain", String(pos));
+        e.dataTransfer.effectAllowed = "move";
+        setDragIndex(pos);
     }
+    function handleDragOver(e: React.DragEvent, pos: number) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDropIndex(pos); }
+    function handleDragLeave() { setDropIndex(null); }
+    function handleDrop(e: React.DragEvent, pos: number) {
+        e.preventDefault();
+        if (dragIndex === null || dragIndex === pos) return;
+        setOrder((prev) => {
+            const n = [...prev];
+            const [removed] = n.splice(dragIndex, 1);
+            n.splice(pos, 0, removed);
+            return n;
+        });
+        setDragIndex(null);
+        setDropIndex(null);
+    }
+    function handleDragEnd() { setDragIndex(null); setDropIndex(null); }
 
     async function handleSave() {
         if (order.length < 2) { setError("At least 2 pages required"); return; }
@@ -130,13 +133,19 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
                                 return (
                                     <div
                                         key={`${pageNum}-${pos}`}
-                                        className={`relative rounded-xl border-2 overflow-hidden transition-all cursor-pointer ${dragIndex === pos
-                                            ? "border-[#f7871f] ring-2 ring-[#f7871f]/30 scale-95"
-                                            : dragIndex !== null
-                                                ? "border-[#f7871f]/40 hover:border-[#f7871f]"
+                                        className={`relative rounded-xl border-2 overflow-hidden transition-all cursor-grab active:cursor-grabbing ${dragIndex === pos
+                                            ? "opacity-50 border-[#f7871f] scale-95"
+                                            : dropIndex === pos
+                                                ? "border-[#f7871f]"
                                                 : "border-white/10 hover:border-white/20"
                                             }`}
-                                        onClick={() => handlePageClick(pos)}
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, pos)}
+                                        onDragOver={(e) => handleDragOver(e, pos)}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={(e) => handleDrop(e, pos)}
+                                        onDragEnd={handleDragEnd}
+                                        style={{ WebkitUserDrag: "element" } as React.CSSProperties}
                                     >
                                         {thumb ? (
                                             <img src={thumb} alt={`Page ${pageNum}`} className="w-full h-auto block" />
