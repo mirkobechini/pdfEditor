@@ -14,123 +14,99 @@ interface ReorderPagesModalProps {
     onSaved: (updatedDoc: PdfDocument) => void;
 }
 
-function PageThumb({ pdfUrl, pageNum, index, onMoveUp, onMoveDown, isFirst, isLast }: {
-    pdfUrl: string;
-    pageNum: number;
-    index: number;
-    onMoveUp: (idx: number) => void;
-    onMoveDown: (idx: number) => void;
-    isFirst: boolean;
-    isLast: boolean;
-}) {
-    const canvasRef = React.useRef<HTMLCanvasElement>(null);
-    const [loaded, setLoaded] = React.useState(false);
-
-    React.useEffect(() => {
-        if (!canvasRef.current || !pdfUrl) return;
-        let cancelled = false;
-        async function render() {
-            const pdfjs = (window as any).pdfjsLib;
-            if (!pdfjs) return;
-            try {
-                const pdf = await pdfjs.getDocument(pdfUrl).promise;
-                if (cancelled) return;
-                const page = await pdf.getPage(pageNum);
-                if (cancelled) return;
-                const viewport = page.getViewport({ scale: 0.25 });
-                const canvas = canvasRef.current!;
-                canvas.width = viewport.width;
-                canvas.height = viewport.height;
-                const ctx = canvas.getContext("2d")!;
-                await page.render({ canvasContext: ctx, viewport }).promise;
-                if (!cancelled) setLoaded(true);
-            } catch { /* ignore */ }
-        }
-        render();
-        return () => { cancelled = true; };
-    }, [pdfUrl, pageNum]);
-
-    return (
-        <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-[#1f1914] p-2">
-            <div className="flex flex-col gap-1">
-                <button onClick={() => onMoveUp(index)} disabled={isFirst} className="h-5 w-5 rounded text-[#7e7267] hover:text-white disabled:opacity-20 transition-colors">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto"><path d="M18 15l-6-6-6 6" /></svg>
-                </button>
-                <span className="text-[10px] text-center text-[#7e7267] font-mono">{index + 1}</span>
-                <button onClick={() => onMoveDown(index)} disabled={isLast} className="h-5 w-5 rounded text-[#7e7267] hover:text-white disabled:opacity-20 transition-colors">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto"><path d="M6 9l6 6 6-6" /></svg>
-                </button>
-            </div>
-            <div className="relative rounded-lg overflow-hidden w-20">
-                <canvas ref={canvasRef} className="block w-full" />
-                {!loaded && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-[#1f1914]">
-                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#f7871f] border-t-transparent" />
-                    </div>
-                )}
-            </div>
-            <span className="text-[11px] text-[#c4b8ab] font-mono shrink-0">P.{pageNum}</span>
-        </div>
-    );
-}
-
 export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pdfUrl, onClose, onSaved }: ReorderPagesModalProps) {
     const [order, setOrder] = React.useState<number[]>([]);
+    const [thumbnails, setThumbnails] = React.useState<Record<number, string>>({});
+    const [loading, setLoading] = React.useState(false);
     const [saving, setSaving] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [newFilename, setNewFilename] = React.useState(pdfName);
     const [overwrite, setOverwrite] = React.useState(false);
+    const [dragIndex, setDragIndex] = React.useState<number | null>(null);
+    const [dropIndex, setDropIndex] = React.useState<number | null>(null);
 
+    // Load thumbnails when modal opens
     React.useEffect(() => {
-        if (open) {
-            setOrder(Array.from({ length: totalPages }, (_, i) => i + 1));
-            setError(null);
-            setNewFilename(pdfName);
-            setOverwrite(false);
+        if (!open || !pdfUrl) return;
+        setOrder(Array.from({ length: totalPages }, (_, i) => i + 1));
+        setError(null);
+        setNewFilename(pdfName);
+        setOverwrite(false);
+        setThumbnails({});
+        setLoading(true);
+
+        async function load() {
+            const pdfjs = (window as any).pdfjsLib;
+            if (!pdfjs) { setLoading(false); return; }
+            try {
+                const pdf = await pdfjs.getDocument(pdfUrl).promise;
+                const results: Record<number, string> = {};
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 0.3 });
+                    const canvas = document.createElement("canvas");
+                    const dpr = window.devicePixelRatio || 1;
+                    canvas.width = viewport.width * dpr;
+                    canvas.height = viewport.height * dpr;
+                    canvas.style.width = `${viewport.width}px`;
+                    canvas.style.height = `${viewport.height}px`;
+                    const ctx = canvas.getContext("2d")!;
+                    ctx.scale(dpr, dpr);
+                    await page.render({ canvasContext: ctx, viewport }).promise;
+                    results[i] = canvas.toDataURL("image/png");
+                }
+                setThumbnails(results);
+            } catch { /* ignore */ }
+            setLoading(false);
         }
-    }, [open, totalPages, pdfName]);
+        load();
+    }, [open, pdfUrl, totalPages, pdfName]);
 
     const moveUp = useCallback((idx: number) => {
         if (idx <= 0) return;
-        setOrder((prev) => {
-            const next = [...prev];
-            [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-            return next;
-        });
+        setOrder((prev) => { const n = [...prev]; [n[idx - 1], n[idx]] = [n[idx], n[idx - 1]]; return n; });
     }, []);
 
     const moveDown = useCallback((idx: number) => {
         setOrder((prev) => {
             if (idx >= prev.length - 1) return prev;
-            const next = [...prev];
-            [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-            return next;
+            const n = [...prev]; [n[idx], n[idx + 1]] = [n[idx + 1], n[idx]]; return n;
         });
     }, []);
 
+    function handleDragStart(pos: number) { setDragIndex(pos); }
+    function handleDragOver(e: React.DragEvent, pos: number) { e.preventDefault(); setDropIndex(pos); }
+    function handleDragLeave() { setDropIndex(null); }
+    function handleDrop(pos: number) {
+        if (dragIndex === null || dragIndex === pos) return;
+        setOrder((prev) => {
+            const n = [...prev];
+            const [removed] = n.splice(dragIndex, 1);
+            n.splice(pos, 0, removed);
+            return n;
+        });
+        setDragIndex(null);
+        setDropIndex(null);
+    }
+    function handleDragEnd() { setDragIndex(null); setDropIndex(null); }
+
     async function handleSave() {
-        if (order.length < 2) {
-            setError("At least 2 pages required");
-            return;
-        }
-        setSaving(true);
-        setError(null);
+        if (order.length < 2) { setError("At least 2 pages required"); return; }
+        setSaving(true); setError(null);
         try {
             const updated = await api.reorderPages(pdfId, order, newFilename !== pdfName ? newFilename : undefined, overwrite);
             onSaved(updated);
             onClose();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to reorder pages");
-        } finally {
-            setSaving(false);
-        }
+        } finally { setSaving(false); }
     }
 
     if (!open) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-            <div className="w-full max-w-lg max-h-[85vh] rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl flex flex-col">
+            <div className="w-full max-w-2xl max-h-[85vh] rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl flex flex-col">
                 <div className="flex items-center justify-between mb-4 shrink-0">
                     <h2 className="text-base font-bold text-white">Reorder Pages</h2>
                     <button onClick={onClose} className="h-8 w-8 rounded-lg text-[#9a8d80] hover:bg-white/10 transition-colors">
@@ -140,20 +116,55 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
 
                 <p className="mb-4 text-xs text-[#8d8175] shrink-0">{pdfName} ({totalPages} pages)</p>
 
-                {pdfUrl && (
-                    <div className="flex-1 overflow-y-auto space-y-2 mb-4 pr-1">
-                        {order.map((pageNum, idx) => (
-                            <PageThumb
-                                key={`${pageNum}-${idx}`}
-                                pdfUrl={pdfUrl}
-                                pageNum={pageNum}
-                                index={idx}
-                                onMoveUp={moveUp}
-                                onMoveDown={moveDown}
-                                isFirst={idx === 0}
-                                isLast={idx === order.length - 1}
-                            />
-                        ))}
+                {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                        <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#f7871f] border-t-transparent" />
+                    </div>
+                ) : (
+                    <div className="flex-1 overflow-y-auto mb-4">
+                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                            {order.map((pageNum, pos) => {
+                                const thumb = thumbnails[pageNum];
+                                return (
+                                    <div
+                                        key={`${pageNum}-${pos}`}
+                                        className={`relative rounded-xl border-2 overflow-hidden transition-all cursor-grab active:cursor-grabbing ${dragIndex === pos
+                                            ? "opacity-50 border-[#f7871f] scale-95"
+                                            : dropIndex === pos
+                                                ? "border-[#f7871f]"
+                                                : "border-white/10 hover:border-white/20"
+                                            }`}
+                                        draggable
+                                        onDragStart={() => handleDragStart(pos)}
+                                        onDragOver={(e) => handleDragOver(e, pos)}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={() => handleDrop(pos)}
+                                        onDragEnd={handleDragEnd}
+                                    >
+                                        {thumb ? (
+                                            <img src={thumb} alt={`Page ${pageNum}`} className="w-full h-auto block" />
+                                        ) : (
+                                            <div className="aspect-[3/4] flex items-center justify-center bg-[#1f1914] text-[#7e7267] text-xs">Loading...</div>
+                                        )}
+                                        <div className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-semibold">
+                                            {pos + 1}
+                                        </div>
+                                        <div className="absolute top-1 right-1 flex gap-0.5">
+                                            <button
+                                                className="bg-black/50 text-white text-[10px] px-1 hover:bg-black/70 rounded-l"
+                                                onClick={(e) => { e.stopPropagation(); moveUp(pos); }}
+                                                disabled={pos === 0}
+                                            >▲</button>
+                                            <button
+                                                className="bg-black/50 text-white text-[10px] px-1 hover:bg-black/70 rounded-r"
+                                                onClick={(e) => { e.stopPropagation(); moveDown(pos); }}
+                                                disabled={pos === order.length - 1}
+                                            >▼</button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
 
