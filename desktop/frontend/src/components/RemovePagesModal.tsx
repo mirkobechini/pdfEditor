@@ -74,14 +74,18 @@ export default function RemovePagesModal({ open, pdfId, pdfName, totalPages, pdf
     const [selectedPages, setSelectedPages] = React.useState<Set<number>>(new Set());
     const [saving, setSaving] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
+    const [newFilename, setNewFilename] = React.useState(pdfName);
+    const [overwrite, setOverwrite] = React.useState(false);
 
     React.useEffect(() => {
         if (open) {
             setPageInput("");
             setSelectedPages(new Set());
             setError(null);
+            setNewFilename(pdfName);
+            setOverwrite(false);
         }
-    }, [open]);
+    }, [open, pdfName]);
 
     function togglePage(page: number) {
         setSelectedPages((prev) => {
@@ -129,7 +133,7 @@ export default function RemovePagesModal({ open, pdfId, pdfName, totalPages, pdf
         setSaving(true);
         setError(null);
         try {
-            const updated = await api.removePages(pdfId, pages);
+            const updated = await api.removePages(pdfId, pages, newFilename !== pdfName ? newFilename : undefined, overwrite);
             onSaved(updated);
             onClose();
         } catch (err) {
@@ -181,6 +185,20 @@ export default function RemovePagesModal({ open, pdfId, pdfName, totalPages, pdf
                             placeholder="e.g. 1,3,5-8"
                         />
                         <p className="mt-1 text-[10px] text-[#7e7267]">Single: 1,3,5 &middot; Range: 5-8 &middot; Max: {totalPages}</p>
+                    </div>
+
+                    {/* Filename + overwrite */}
+                    <div>
+                        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#8d8175]">Filename</label>
+                        <input
+                            value={newFilename}
+                            onChange={(e) => setNewFilename(e.target.value)}
+                            className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none transition focus:border-[#f7871f]/50"
+                        />
+                    </div>
+                    <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
+                        <input type="checkbox" id="remove-overwrite" checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} className="h-4 w-4 accent-[#f7871f]" />
+                        <label htmlFor="remove-overwrite" className="text-xs text-[#c4b8ab] cursor-pointer select-none">Overwrite existing file (instead of creating a copy)</label>
                     </div>
 
                     {error && <p className="text-xs text-red-400">{error}</p>}
