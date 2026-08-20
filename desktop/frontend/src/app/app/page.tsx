@@ -41,6 +41,25 @@ export default function EditorPage() {
     const [pdfRefreshKey, setPdfRefreshKey] = React.useState(0);
     const pdfUrlRef = React.useRef<string | null>(null);
 
+    async function handleDownload() {
+        if (!selectedDoc) return;
+        try {
+            const blob = await api.downloadPdf(selectedDoc.id);
+            const arrayBuf = await blob.arrayBuffer();
+            const data = Array.from(new Uint8Array(arrayBuf));
+            const saved = await tauriInvoke<string>("dialog_save", {
+                defaultName: selectedDoc.original_filename,
+                data,
+            });
+            if (saved) {
+                // Brief feedback — could be a toast in the future
+                console.log("PDF salvato in:", saved);
+            }
+        } catch (err) {
+            console.error("Download failed:", err);
+        }
+    }
+
     async function handleUploadFile(file: File) {
         if (!file.name.toLowerCase().endsWith(".pdf")) return;
         setUploadError(null);
@@ -357,6 +376,13 @@ export default function EditorPage() {
                                 className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                             >
                                 Split
+                            </button>
+                            <button
+                                onClick={handleDownload}
+                                disabled={!selectedDoc}
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                Download
                             </button>
                             <button
                                 onClick={() => setReorderOpen(true)}
