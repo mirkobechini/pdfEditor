@@ -186,6 +186,36 @@ fn dialog_open(app: tauri::AppHandle, default_path: Option<String>) -> Result<Op
     }
 }
 
+/// Open a native save dialog and write the provided bytes to the chosen path.
+/// Returns the path where the file was saved, or None if cancelled.
+#[tauri::command]
+fn dialog_save(app: tauri::AppHandle, default_name: String, data: Vec<u8>) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    use std::fs;
+
+    // Make sure the filename ends with .pdf
+    let name = if default_name.ends_with(".pdf") {
+        default_name
+    } else {
+        format!("{}.pdf", default_name)
+    };
+
+    let mut builder = app.dialog()
+        .file()
+        .add_filter("PDF", &["pdf"])
+        .set_file_name(&name);
+
+    match builder.blocking_save_file() {
+        Some(file_path) => {
+            let path = file_path.into_path().map_err(|e| format!("Failed to resolve path: {}", e))?;
+            fs::write(&path, &data).map_err(|e| format!("Failed to write file: {}", e))?;
+            log::info!("PDF salvato in: {:?}", path);
+            Ok(Some(path.to_string_lossy().to_string()))
+        }
+        None => Ok(None),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -295,6 +325,7 @@ pub fn run() {
             delete_jwt,
             read_file_binary,
             dialog_open,
+            dialog_save,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
