@@ -31,7 +31,7 @@ export default function PdfViewer({
     const pdfDocRef = React.useRef<any>(null);
     const renderTaskRef = React.useRef<{ cancel: () => void } | null>(null);
     const renderKeyRef = React.useRef(0);
-    const generationRef = React.useRef(0);
+    const loadedUrlRef = React.useRef<string | null>(null);
 
     // Load PDF.js on mount
     React.useEffect(() => {
@@ -56,19 +56,16 @@ export default function PdfViewer({
         if (!fileUrl || !pdfJsLoaded) return;
 
         let cancelled = false;
-        const generation = ++generationRef.current;
         const loadPdf = async () => {
             try {
                 const pdf = await (window as any).pdfjsLib.getDocument(fileUrl).promise;
                 if (cancelled) return;
-                // Only set pdfDocRef if this is still the current generation
-                if (generation === generationRef.current) {
-                    pdfDocRef.current = pdf;
-                    onTotalPagesChange(pdf.numPages);
-                    onPageChange(1);
-                    onZoomChange(1);
-                    setLoadVersion((v) => v + 1);
-                }
+                pdfDocRef.current = pdf;
+                loadedUrlRef.current = fileUrl;
+                onTotalPagesChange(pdf.numPages);
+                onPageChange(1);
+                onZoomChange(1);
+                setLoadVersion((v) => v + 1);
             } catch (err) {
                 console.error("Failed to load PDF:", err);
             }
@@ -77,17 +74,18 @@ export default function PdfViewer({
 
         return () => {
             cancelled = true;
-            // Don't null out pdfDocRef here — the render effect may fire
-            // before the new load completes, causing a blank canvas.
+            // Cancel any in-flight render
             if (renderTaskRef.current) {
                 renderTaskRef.current.cancel();
             }
         };
     }, [fileUrl, pdfJsLoaded]);
 
-    // Render page when page or zoom changes
+    // Render page when page, zoom, or loaded document changes
     React.useEffect(() => {
         if (!pdfDocRef.current || !canvasRef.current) return;
+        // Guard: don't render with a stale pdfDoc (fileUrl changed but not loaded yet)
+        if (loadedUrlRef.current !== fileUrl) return;
 
         const key = ++renderKeyRef.current;
         const renderPage = async () => {
@@ -131,7 +129,7 @@ export default function PdfViewer({
             }
         };
         renderPage();
-    }, [currentPage, zoom, loadVersion]);
+    }, [currentPage, zoom, loadVersion, fileUrl]);
 
     if (!fileUrl) {
         return (
