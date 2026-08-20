@@ -86,6 +86,7 @@ export class ApiClient {
       RESET_TOKEN_INVALID: "Token di reset non valido",
       RESET_TOKEN_EXPIRED: "Token di reset scaduto",
       SEARCH_TEXT_EMPTY: "Testo di ricerca vuoto",
+      PDF_LOCKED: "PDF protetto da password. Sbloccalo per visualizzarlo.",
       INTERNAL_ERROR: "Errore interno del server",
     };
     return messages[code] || fallback;

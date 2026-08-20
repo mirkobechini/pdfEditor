@@ -199,6 +199,48 @@ class TestDownload:
         response = client.get("/pdfs/non-existent-id/download", headers=free_headers)
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
+    def test_download_protected_without_unlock(self, client, free_headers):
+        """Download a password-protected PDF without unlocking should return 403 PDF_LOCKED."""
+        from tests.conftest import upload_pdf
+        import fitz
+        # Create a password-protected PDF
+        doc = fitz.open()
+        doc.insert_page(-1, width=612, height=792)
+        protected = doc.tobytes(encryption=fitz.PDF_ENCRYPT_AES_256, user_pw="Test1234")
+        doc.close()
+        pdf_id = upload_pdf(client, free_headers, protected)
+
+        response = client.get(f"/pdfs/{pdf_id}/download", headers=free_headers)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        data = response.json()
+        assert data["detail"]["code"] == "PDF_LOCKED"
+
+    def test_download_protected_after_unlock(self, client, free_headers):
+        """Download a password-protected PDF after unlocking should return decrypted content."""
+        from tests.conftest import upload_pdf
+        import fitz
+        # Create a password-protected PDF
+        doc = fitz.open()
+        doc.insert_page(-1, width=612, height=792)
+        protected = doc.tobytes(encryption=fitz.PDF_ENCRYPT_AES_256, user_pw="Test1234")
+        doc.close()
+        pdf_id = upload_pdf(client, free_headers, protected)
+
+        # First unlock it
+        unlock_resp = client.post(
+            f"/pdfs/{pdf_id}/unlock",
+            headers=free_headers,
+            json={"password": "Test1234"},
+        )
+        assert unlock_resp.status_code == status.HTTP_200_OK
+
+        # Now download should work
+        response = client.get(f"/pdfs/{pdf_id}/download", headers=free_headers)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.headers["content-type"] == "application/pdf"
+        # Content should be a valid PDF (decrypted) — not the encrypted bytes
+        assert response.content.startswith(b"%PDF")
+
     def test_download_pdf_s3_backend(self, client, sample_pdf_content, free_headers, monkeypatch):
         """Should download a PDF when storage backend is S3."""
         from tests.conftest import upload_pdf

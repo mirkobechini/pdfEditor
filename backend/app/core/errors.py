@@ -41,6 +41,7 @@ class ErrorCode:
     BUG_NOT_FOUND = "BUG_NOT_FOUND"
     BUG_VOTE_NOT_FOUND = "BUG_VOTE_NOT_FOUND"
     INTERNAL_ERROR = "INTERNAL_ERROR"
+    PDF_LOCKED = "PDF_LOCKED"
 
 
 def error_response(
