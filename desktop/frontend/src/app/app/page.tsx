@@ -148,6 +148,9 @@ export default function EditorPage() {
     }, []);
 
     // Load PDF blob URL when a document is selected
+    // IMPORTANT: NEVER revoke blob URLs manually — PDF.js reads them
+    // asynchronously in a web worker. Revoking before the worker finishes
+    // causes ERR_FILE_NOT_FOUND and a blank canvas.
     React.useEffect(() => {
         if (!selectedDoc) {
             setPdfUrl(null);
@@ -160,14 +163,9 @@ export default function EditorPage() {
             .then((blob) => {
                 if (cancelled) return;
                 const url = URL.createObjectURL(blob);
-                // Revoke the PREVIOUS blob URL only after the new one is ready
-                const prev = pdfUrlRef.current;
-                if (prev) URL.revokeObjectURL(prev);
-                pdfUrlRef.current = url;
                 setPdfUrl(url);
             })
             .catch(() => {
-                // Download failed — file missing on disk. Remove ghost document from list.
                 if (!cancelled && docId) {
                     setDocs((prev) => prev.filter((d) => d.id !== docId));
                     setSelectedDoc(null);
@@ -176,19 +174,10 @@ export default function EditorPage() {
 
         return () => {
             cancelled = true;
-            // Do NOT revoke the blob URL here! PDF.js worker may still be reading it.
+            // Do NOT revoke the blob URL here — the PDF.js worker may still
+            // be reading it. Blobs are released when the browser decides.
         };
     }, [selectedDoc?.id, pdfRefreshKey]);
-
-    // Revoke the last blob URL when the component unmounts (prevents memory leak)
-    React.useEffect(() => {
-        return () => {
-            if (pdfUrlRef.current) {
-                URL.revokeObjectURL(pdfUrlRef.current);
-                pdfUrlRef.current = null;
-            }
-        };
-    }, []);
 
     function formatFileSize(bytes: number): string {
         if (bytes < 1024) return bytes + " B";
@@ -401,7 +390,6 @@ export default function EditorPage() {
                                 <div className="absolute inset-0 overflow-auto p-6 [&>div:first-child]:min-h-full">
                                     <div className="mx-auto min-h-full w-full max-w-[760px] bg-[#f6f6f6]">
                                         <PdfViewer
-                                            key={selectedDoc?.id || "none"}
                                             fileUrl={pdfUrl}
                                             currentPage={currentPage}
                                             totalPages={totalPages}
