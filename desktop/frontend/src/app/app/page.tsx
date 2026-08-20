@@ -165,8 +165,14 @@ export default function EditorPage() {
                 const url = URL.createObjectURL(blob);
                 setPdfUrl(url);
             })
-            .catch(() => {
-                if (!cancelled && docId) {
+            .catch((err) => {
+                if (cancelled) return;
+                // If the PDF is password-protected, don't delete it — show the locked overlay
+                if (err?.message?.includes("protetto da password") || selectedDoc?.is_password_protected) {
+                    setPdfUrl(null);
+                    return;
+                }
+                if (docId) {
                     setDocs((prev) => prev.filter((d) => d.id !== docId));
                     setSelectedDoc(null);
                 }
@@ -399,6 +405,30 @@ export default function EditorPage() {
                                             onZoomChange={setZoom}
                                         />
                                     </div>
+                                </div>
+                            ) : selectedDoc?.is_password_protected ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
+                                    {/* Lock icon */}
+                                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#f7871f]/10 ring-1 ring-[#f7871f]/20">
+                                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f7871f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                        </svg>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-base font-semibold text-white">PDF protetto da password</p>
+                                        <p className="mt-1 text-sm text-[#8d8175]">Inserisci la password per visualizzare questo documento</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setLockOpen(true)}
+                                        className="inline-flex items-center gap-2 rounded-xl bg-[#f7871f] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ce5a00]"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                        </svg>
+                                        Sblocca PDF
+                                    </button>
                                 </div>
                             ) : (
                                 <div className="flex h-full items-center justify-center text-[#7e7267] text-sm">
