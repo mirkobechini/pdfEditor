@@ -39,6 +39,7 @@ export default function EditorPage() {
     const [renameId, setRenameId] = React.useState<string | null>(null);
     const [renameValue, setRenameValue] = React.useState("");
     const [pdfRefreshKey, setPdfRefreshKey] = React.useState(0);
+    const pdfUrlRef = React.useRef<string | null>(null);
 
     async function handleUploadFile(file: File) {
         if (!file.name.toLowerCase().endsWith(".pdf")) return;
@@ -154,13 +155,15 @@ export default function EditorPage() {
         }
 
         let cancelled = false;
-        let currentUrl: string | null = null;
         const docId = selectedDoc?.id;
         api.downloadPdf(docId!)
             .then((blob) => {
                 if (cancelled) return;
                 const url = URL.createObjectURL(blob);
-                currentUrl = url;
+                // Revoke the PREVIOUS blob URL only after the new one is ready
+                const prev = pdfUrlRef.current;
+                if (prev) URL.revokeObjectURL(prev);
+                pdfUrlRef.current = url;
                 setPdfUrl(url);
             })
             .catch(() => {
@@ -173,9 +176,19 @@ export default function EditorPage() {
 
         return () => {
             cancelled = true;
-            if (currentUrl) URL.revokeObjectURL(currentUrl);
+            // Do NOT revoke the blob URL here! PDF.js worker may still be reading it.
         };
     }, [selectedDoc?.id, pdfRefreshKey]);
+
+    // Revoke the last blob URL when the component unmounts (prevents memory leak)
+    React.useEffect(() => {
+        return () => {
+            if (pdfUrlRef.current) {
+                URL.revokeObjectURL(pdfUrlRef.current);
+                pdfUrlRef.current = null;
+            }
+        };
+    }, []);
 
     function formatFileSize(bytes: number): string {
         if (bytes < 1024) return bytes + " B";
