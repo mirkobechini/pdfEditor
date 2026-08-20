@@ -31,7 +31,6 @@ export default function PdfViewer({
     const pdfDocRef = React.useRef<any>(null);
     const renderTaskRef = React.useRef<{ cancel: () => void } | null>(null);
     const renderKeyRef = React.useRef(0);
-    const loadedUrlRef = React.useRef<string | null>(null);
 
     // Load PDF.js on mount
     React.useEffect(() => {
@@ -61,7 +60,6 @@ export default function PdfViewer({
                 const pdf = await (window as any).pdfjsLib.getDocument(fileUrl).promise;
                 if (cancelled) return;
                 pdfDocRef.current = pdf;
-                loadedUrlRef.current = fileUrl;
                 onTotalPagesChange(pdf.numPages);
                 onPageChange(1);
                 onZoomChange(1);
@@ -74,18 +72,16 @@ export default function PdfViewer({
 
         return () => {
             cancelled = true;
-            // Cancel any in-flight render
+            pdfDocRef.current = null;
             if (renderTaskRef.current) {
                 renderTaskRef.current.cancel();
             }
         };
     }, [fileUrl, pdfJsLoaded]);
 
-    // Render page when page, zoom, or loaded document changes
+    // Render page when page or zoom changes
     React.useEffect(() => {
         if (!pdfDocRef.current || !canvasRef.current) return;
-        // Guard: don't render with a stale pdfDoc (fileUrl changed but not loaded yet)
-        if (loadedUrlRef.current !== fileUrl) return;
 
         const key = ++renderKeyRef.current;
         const renderPage = async () => {
@@ -129,7 +125,7 @@ export default function PdfViewer({
             }
         };
         renderPage();
-    }, [currentPage, zoom, loadVersion, fileUrl]);
+    }, [currentPage, zoom, loadVersion]);
 
     if (!fileUrl) {
         return (
@@ -140,13 +136,13 @@ export default function PdfViewer({
     }
 
     return (
-        <div className="relative flex w-full items-start justify-center">
+        <div className="relative flex h-full w-full items-start justify-center overflow-auto p-4">
             {rendering && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#f6f6f6]/80">
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0f0d0b]/80">
                     <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#f7871f] border-t-transparent" />
                 </div>
             )}
-            <canvas ref={canvasRef} className="shadow-lg" />
+            <canvas ref={canvasRef} className="shadow-2xl" />
         </div>
     );
 }
