@@ -21,7 +21,7 @@ export default function MergeModal({ open, pdfId, pdfName, onClose, onSaved }: M
 
     React.useEffect(() => {
         if (!open) return;
-        setSelected(new Set([pdfId]));
+        setSelected(new Set(pdfId ? [pdfId] : []));
         setOutputFilename("");
         setError(null);
         api.listPdfs(0, 100).then((res) => {
