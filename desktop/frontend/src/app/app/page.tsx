@@ -154,16 +154,14 @@ export default function EditorPage() {
         }
 
         let cancelled = false;
+        let currentUrl: string | null = null;
         const docId = selectedDoc?.id;
         api.downloadPdf(docId!)
             .then((blob) => {
                 if (cancelled) return;
                 const url = URL.createObjectURL(blob);
-                // Revoke previous URL safely via functional updater
-                setPdfUrl((prev) => {
-                    if (prev) URL.revokeObjectURL(prev);
-                    return url;
-                });
+                currentUrl = url;
+                setPdfUrl(url);
             })
             .catch(() => {
                 // Download failed — file missing on disk. Remove ghost document from list.
@@ -175,6 +173,7 @@ export default function EditorPage() {
 
         return () => {
             cancelled = true;
+            if (currentUrl) URL.revokeObjectURL(currentUrl);
         };
     }, [selectedDoc?.id, pdfRefreshKey]);
 
@@ -389,6 +388,7 @@ export default function EditorPage() {
                                 <div className="absolute inset-0 overflow-auto p-6 [&>div:first-child]:min-h-full">
                                     <div className="mx-auto min-h-full w-full max-w-[760px] bg-[#f6f6f6]">
                                         <PdfViewer
+                                            key={pdfUrl}
                                             fileUrl={pdfUrl}
                                             currentPage={currentPage}
                                             totalPages={totalPages}
