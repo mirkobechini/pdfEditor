@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.storage import save_pdf, get_pdf_path
 from app.models.pdf import PdfDocument
 from app.repositories.pdf_repo import PdfRepository
+from app.services.pdf_service import _get_cached_password
 
 
 class PdfMergeSplitService:
@@ -23,7 +24,20 @@ class PdfMergeSplitService:
     def _get_file_content(self, pdf: PdfDocument) -> bytes | None:
         file_uuid = pdf.storage_filename.replace(".pdf", "")
         path = get_pdf_path(file_uuid)
-        return path.read_bytes() if path else None
+        if not path:
+            return None
+        content = path.read_bytes()
+        # Decrypt if password-protected and cached password is available
+        if pdf.is_password_protected:
+            password = _get_cached_password(pdf.id)
+            if not password:
+                raise ValueError(f"PDF {pdf.id} is password protected. Please unlock it first.")
+            doc = fitz.open(stream=content, filetype="pdf")
+            if doc.needs_pass:
+                doc.authenticate(password)
+            content = doc.tobytes()
+            doc.close()
+        return content
 
     def merge(self, pdf_ids: list[str], user_id: str, output_filename: str | None = None) -> PdfDocument:
         """Merge multiple PDFs into one."""

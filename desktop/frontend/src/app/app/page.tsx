@@ -10,6 +10,7 @@ import MetadataModal from "../../components/MetadataModal";
 import RemovePagesModal from "../../components/RemovePagesModal";
 import ReorderPagesModal from "../../components/ReorderPagesModal";
 import SplitPagesModal from "../../components/SplitPagesModal";
+import MergeModal from "../../components/MergeModal";
 import LockUnlockModal from "../../components/LockUnlockModal";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
@@ -35,6 +36,7 @@ export default function EditorPage() {
     const [removePagesOpen, setRemovePagesOpen] = React.useState(false);
     const [reorderOpen, setReorderOpen] = React.useState(false);
     const [splitOpen, setSplitOpen] = React.useState(false);
+    const [mergeOpen, setMergeOpen] = React.useState(false);
     const [lockOpen, setLockOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
     const [renameValue, setRenameValue] = React.useState("");
@@ -367,9 +369,13 @@ export default function EditorPage() {
                                 <span className="w-10 text-center">{Math.round(zoom * 100)}%</span>
                                 <button onClick={() => setZoom(Math.min(3, zoom + 0.25))} className="h-7 w-7 rounded hover:bg-white/6">+</button>
                             </div>
-                            {"Merge".split(" ").map((item) => (
-                                <button key={item} className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white">{item}</button>
-                            ))}
+                            <button
+                                onClick={() => setMergeOpen(true)}
+                                disabled={!selectedDoc}
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                Merge
+                            </button>
                             <button
                                 onClick={() => setSplitOpen(true)}
                                 disabled={!selectedDoc}
@@ -503,7 +509,11 @@ export default function EditorPage() {
 
                     <h4 className="mt-6 mb-4 text-xs font-bold uppercase tracking-widest">Fast Actions</h4>
                     <div className="mt-4 grid grid-cols-2 gap-3">
-                        <button disabled className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed">
+                        <button
+                            onClick={() => setMergeOpen(true)}
+                            disabled={!selectedDoc}
+                            className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">MERGE</p>
                         </button>
                         <button
@@ -556,6 +566,22 @@ export default function EditorPage() {
                 totalPages={selectedDoc?.page_count ?? 0}
                 pdfUrl={pdfUrl}
                 onClose={() => setReorderOpen(false)}
+                onSaved={(updatedDoc) => {
+                    setDocs((prev) => {
+                        const oldId = selectedDoc?.id;
+                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
+                        return [updatedDoc, ...prev];
+                    });
+                    setSelectedDoc(updatedDoc);
+                    setPdfRefreshKey((k) => k + 1);
+                }}
+            />
+
+            <MergeModal
+                open={mergeOpen}
+                pdfId={selectedDoc?.id ?? ""}
+                pdfName={selectedDoc?.original_filename ?? ""}
+                onClose={() => setMergeOpen(false)}
                 onSaved={(updatedDoc) => {
                     setDocs((prev) => {
                         const oldId = selectedDoc?.id;
