@@ -154,14 +154,17 @@ export default function EditorPage() {
             return;
         }
 
+        // Immediately clear current URL so PdfViewer remounts fresh
+        setPdfUrl(null);
+        if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
+        pdfUrlRef.current = null;
+
         let cancelled = false;
         const docId = selectedDoc?.id;
         api.downloadPdf(docId!)
             .then((blob) => {
                 if (cancelled) return;
                 const url = URL.createObjectURL(blob);
-                // Revoke the previous blob URL (if any) before setting the new one
-                if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
                 pdfUrlRef.current = url;
                 setPdfUrl(url);
             })
