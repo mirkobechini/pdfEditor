@@ -35,6 +35,23 @@ Sostituire il bottone mock "LOCK" nella sidebar Fast Actions con un modale funzi
 - Unlock funzionante con cache password in memoria
 - Refresh della lista documenti e del viewer dopo l'operazione
 
+## Note per implementazioni future
+
+### Overlay PDF protetto da password (TODO)
+
+Quando un PDF è protetto (`is_password_protected = true`) e NON è stato ancora sbloccato, il download endpoint restituisce `403 PDF_LOCKED`. Invece di mostrare un viewer bianco, bisogna mostrare un overlay con:
+
+- Icona lucchetto
+- Messaggio "PDF protetto da password"
+- Bottone "Unlock" che apre il LockUnlockModal
+- Dopo unlock, ricaricare il PDF (refresh del viewer)
+
+**Va implementato su**:
+
+- [ ] Desktop (`desktop/frontend/src/app/app/page.tsx`)
+- [ ] Webapp (`frontend/src/app/app/page.tsx`)
+- [ ] Mobile (`mobile/`)
+
 ## Status
 
 [ ] Non iniziata
