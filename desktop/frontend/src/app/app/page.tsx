@@ -39,7 +39,6 @@ export default function EditorPage() {
     const [renameId, setRenameId] = React.useState<string | null>(null);
     const [renameValue, setRenameValue] = React.useState("");
     const [pdfRefreshKey, setPdfRefreshKey] = React.useState(0);
-    const pdfUrlRef = React.useRef<string | null>(null);
 
     async function handleUploadFile(file: File) {
         if (!file.name.toLowerCase().endsWith(".pdf")) return;
@@ -154,18 +153,14 @@ export default function EditorPage() {
             return;
         }
 
-        // Immediately clear current URL so PdfViewer remounts fresh
-        setPdfUrl(null);
-        if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
-        pdfUrlRef.current = null;
-
         let cancelled = false;
+        let currentUrl: string | null = null;
         const docId = selectedDoc?.id;
         api.downloadPdf(docId!)
             .then((blob) => {
                 if (cancelled) return;
                 const url = URL.createObjectURL(blob);
-                pdfUrlRef.current = url;
+                currentUrl = url;
                 setPdfUrl(url);
             })
             .catch(() => {
@@ -178,6 +173,7 @@ export default function EditorPage() {
 
         return () => {
             cancelled = true;
+            if (currentUrl) URL.revokeObjectURL(currentUrl);
         };
     }, [selectedDoc?.id, pdfRefreshKey]);
 
@@ -392,7 +388,6 @@ export default function EditorPage() {
                                 <div className="absolute inset-0 overflow-auto p-6 [&>div:first-child]:min-h-full">
                                     <div className="mx-auto min-h-full w-full max-w-[760px] bg-[#f6f6f6]">
                                         <PdfViewer
-                                            key={pdfUrl}
                                             fileUrl={pdfUrl}
                                             currentPage={currentPage}
                                             totalPages={totalPages}
@@ -451,16 +446,7 @@ export default function EditorPage() {
                         >
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">SPLIT</p>
                         </button>
-                        <button
-                            onClick={() => setLockOpen(true)}
-                            disabled={!selectedDoc}
-                            className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">
-                                {selectedDoc?.is_password_protected ? "UNLOCK" : "LOCK"}
-                            </p>
-                        </button>
-                        {["OCR"].map((k) => (
+                        {["OCR", "LOCK"].map((k) => (
                             <button key={k} disabled className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">{k}</p>
                             </button>
@@ -477,11 +463,9 @@ export default function EditorPage() {
                 pdfUrl={pdfUrl}
                 onClose={() => setRemovePagesOpen(false)}
                 onSaved={(updatedDoc) => {
-                    // If same ID → overwrite (replace), if different ID → new copy (keep both)
                     setDocs((prev) => {
-                        if (updatedDoc.id === selectedDoc?.id) {
-                            return prev.map((d) => d.id === updatedDoc.id ? updatedDoc : d);
-                        }
+                        const oldId = selectedDoc?.id;
+                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
                         return [updatedDoc, ...prev];
                     });
                     setSelectedDoc(updatedDoc);
@@ -498,9 +482,8 @@ export default function EditorPage() {
                 onClose={() => setReorderOpen(false)}
                 onSaved={(updatedDoc) => {
                     setDocs((prev) => {
-                        if (updatedDoc.id === selectedDoc?.id) {
-                            return prev.map((d) => d.id === updatedDoc.id ? updatedDoc : d);
-                        }
+                        const oldId = selectedDoc?.id;
+                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
                         return [updatedDoc, ...prev];
                     });
                     setSelectedDoc(updatedDoc);
@@ -530,9 +513,8 @@ export default function EditorPage() {
                 onClose={() => setLockOpen(false)}
                 onSaved={(updatedDoc) => {
                     setDocs((prev) => {
-                        if (updatedDoc.id === selectedDoc?.id) {
-                            return prev.map((d) => d.id === updatedDoc.id ? updatedDoc : d);
-                        }
+                        const oldId = selectedDoc?.id;
+                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
                         return [updatedDoc, ...prev];
                     });
                     setSelectedDoc(updatedDoc);
@@ -547,9 +529,8 @@ export default function EditorPage() {
                 onClose={() => setMetadataOpen(false)}
                 onSaved={(updatedDoc) => {
                     setDocs((prev) => {
-                        if (updatedDoc.id === selectedDoc?.id) {
-                            return prev.map((d) => d.id === updatedDoc.id ? updatedDoc : d);
-                        }
+                        const oldId = selectedDoc?.id;
+                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
                         return [updatedDoc, ...prev];
                     });
                     setSelectedDoc(updatedDoc);
