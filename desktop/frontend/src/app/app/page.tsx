@@ -388,6 +388,7 @@ export default function EditorPage() {
                                 <div className="absolute inset-0 overflow-auto p-6 [&>div:first-child]:min-h-full">
                                     <div className="mx-auto min-h-full w-full max-w-[760px] bg-[#f6f6f6]">
                                         <PdfViewer
+                                            key={selectedDoc?.id || "none"}
                                             fileUrl={pdfUrl}
                                             currentPage={currentPage}
                                             totalPages={totalPages}
@@ -446,7 +447,16 @@ export default function EditorPage() {
                         >
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">SPLIT</p>
                         </button>
-                        {["OCR", "LOCK"].map((k) => (
+                        <button
+                            onClick={() => setLockOpen(true)}
+                            disabled={!selectedDoc}
+                            className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">
+                                {selectedDoc?.is_password_protected ? "UNLOCK" : "LOCK"}
+                            </p>
+                        </button>
+                        {["OCR"].map((k) => (
                             <button key={k} disabled className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">{k}</p>
                             </button>
