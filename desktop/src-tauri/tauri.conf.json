@@ -20,7 +20,8 @@
         "height": 1080,
         "minWidth": 1700,
         "minHeight": 900,
-        "center": true
+        "center": true,
+        "devtools": true
       }
     ],
     "security": {

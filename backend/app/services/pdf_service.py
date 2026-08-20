@@ -142,6 +142,23 @@ class PdfService:
         file_uuid = pdf.storage_filename.replace(".pdf", "")
         return get_file_content(file_uuid)
 
+    def get_decrypted_content(self, pdf: PdfDocument) -> bytes:
+        """Read and decrypt a password-protected PDF using cached password.
+        Raises ValueError if no cached password is available."""
+        content = self.get_file_content(pdf)
+        if not content:
+            raise ValueError(f"PDF {pdf.id} file not found on disk")
+        password = _get_cached_password(pdf.id)
+        if not password:
+            raise ValueError("PDF is password protected. Please unlock it first.")
+        import fitz
+        doc = fitz.open(stream=content, filetype="pdf")
+        if doc.needs_pass:
+            doc.authenticate(password)
+        result = doc.tobytes()
+        doc.close()
+        return result
+
     def delete(self, pdf_id: str, user_id: str) -> bool:
         """Delete a PDF from DB and disk. Returns True if deleted."""
         try:

@@ -41,16 +41,16 @@ export class ApiClient {
   static async extractError(res: Response): Promise<string> {
     // Rate limit — user-friendly message
     if (res.status === 429) {
-      return JSON.stringify({
-        code: "RATE_LIMIT",
-        detail: "Too many requests",
-      });
+      return "Troppe richieste. Riprova più tardi.";
     }
     try {
       const body = await res.json();
       // New format: {code, detail} from backend error_response helper
-      if (body && typeof body === "object" && body.code && body.detail) {
-        return JSON.stringify(body);
+      // FastAPI wraps it as {detail: {code, detail}}, so check both levels
+      const errDetail =
+        body.detail && typeof body.detail === "object" ? body.detail : body;
+      if (errDetail && errDetail.code && errDetail.detail) {
+        return ApiClient.translateError(errDetail.code, errDetail.detail);
       }
       if (typeof body.detail === "string") return body.detail;
       if (Array.isArray(body.detail))
@@ -59,6 +59,37 @@ export class ApiClient {
     } catch {
       return res.statusText;
     }
+  }
+
+  /** Map backend error codes to user-friendly Italian messages. */
+  private static translateError(code: string, fallback: string): string {
+    const messages: Record<string, string> = {
+      INVALID_CREDENTIALS: "Password errata",
+      WRONG_PASSWORD: "Password errata",
+      EMAIL_NOT_FOUND: "Email non trovata",
+      EMAIL_ALREADY_REGISTERED: "Email già registrata",
+      PASSWORD_TOO_WEAK: "Password troppo debole",
+      PDF_NOT_FOUND: "PDF non trovato",
+      PDF_FILE_NOT_FOUND: "File PDF non trovato sul disco",
+      UPLOAD_TOO_LARGE: "File troppo grande",
+      INVALID_PDF: "PDF non valido",
+      INVALID_FILE_TYPE: "Tipo di file non supportato",
+      VALIDATION_ERROR: "Dati non validi",
+      MERGE_TOO_FEW: "Servono almeno 2 PDF per unire",
+      SPLIT_INVALID_RANGE: "Intervallo pagine non valido",
+      NOT_AUTHENTICATED: "Non autenticato",
+      FORBIDDEN: "Accesso negato",
+      NOT_FOUND: "Risorsa non trovata",
+      RATE_LIMIT: "Troppe richieste. Riprova più tardi.",
+      GOOGLE_AUTH_FAILED: "Autenticazione Google fallita",
+      CONVERSION_FAILED: "Conversione fallita",
+      RESET_TOKEN_INVALID: "Token di reset non valido",
+      RESET_TOKEN_EXPIRED: "Token di reset scaduto",
+      SEARCH_TEXT_EMPTY: "Testo di ricerca vuoto",
+      PDF_LOCKED: "PDF protetto da password. Sbloccalo per visualizzarlo.",
+      INTERNAL_ERROR: "Errore interno del server",
+    };
+    return messages[code] || fallback;
   }
 
   private getHeaders(): Record<string, string> {

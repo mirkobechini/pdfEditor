@@ -10,6 +10,7 @@ import MetadataModal from "../../components/MetadataModal";
 import RemovePagesModal from "../../components/RemovePagesModal";
 import ReorderPagesModal from "../../components/ReorderPagesModal";
 import SplitPagesModal from "../../components/SplitPagesModal";
+import LockUnlockModal from "../../components/LockUnlockModal";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
 import type { PdfDocument } from "../../shared/types";
@@ -34,9 +35,11 @@ export default function EditorPage() {
     const [removePagesOpen, setRemovePagesOpen] = React.useState(false);
     const [reorderOpen, setReorderOpen] = React.useState(false);
     const [splitOpen, setSplitOpen] = React.useState(false);
+    const [lockOpen, setLockOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
     const [renameValue, setRenameValue] = React.useState("");
     const [pdfRefreshKey, setPdfRefreshKey] = React.useState(0);
+    const pdfUrlRef = React.useRef<string | null>(null);
 
     async function handleUploadFile(file: File) {
         if (!file.name.toLowerCase().endsWith(".pdf")) return;
@@ -145,6 +148,9 @@ export default function EditorPage() {
     }, []);
 
     // Load PDF blob URL when a document is selected
+    // IMPORTANT: NEVER revoke blob URLs manually — PDF.js reads them
+    // asynchronously in a web worker. Revoking before the worker finishes
+    // causes ERR_FILE_NOT_FOUND and a blank canvas.
     React.useEffect(() => {
         if (!selectedDoc) {
             setPdfUrl(null);
@@ -152,18 +158,21 @@ export default function EditorPage() {
         }
 
         let cancelled = false;
-        let currentUrl: string | null = null;
         const docId = selectedDoc?.id;
         api.downloadPdf(docId!)
             .then((blob) => {
                 if (cancelled) return;
                 const url = URL.createObjectURL(blob);
-                currentUrl = url;
                 setPdfUrl(url);
             })
-            .catch(() => {
-                // Download failed — file missing on disk. Remove ghost document from list.
-                if (!cancelled && docId) {
+            .catch((err) => {
+                if (cancelled) return;
+                // If the PDF is password-protected, don't delete it — show the locked overlay
+                if (err?.message?.includes("protetto da password") || selectedDoc?.is_password_protected) {
+                    setPdfUrl(null);
+                    return;
+                }
+                if (docId) {
                     setDocs((prev) => prev.filter((d) => d.id !== docId));
                     setSelectedDoc(null);
                 }
@@ -171,7 +180,8 @@ export default function EditorPage() {
 
         return () => {
             cancelled = true;
-            if (currentUrl) URL.revokeObjectURL(currentUrl);
+            // Do NOT revoke the blob URL here — the PDF.js worker may still
+            // be reading it. Blobs are released when the browser decides.
         };
     }, [selectedDoc?.id, pdfRefreshKey]);
 
@@ -396,6 +406,30 @@ export default function EditorPage() {
                                         />
                                     </div>
                                 </div>
+                            ) : selectedDoc?.is_password_protected ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
+                                    {/* Lock icon */}
+                                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#f7871f]/10 ring-1 ring-[#f7871f]/20">
+                                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f7871f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                        </svg>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-base font-semibold text-white">PDF protetto da password</p>
+                                        <p className="mt-1 text-sm text-[#8d8175]">Inserisci la password per visualizzare questo documento</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setLockOpen(true)}
+                                        className="inline-flex items-center gap-2 rounded-xl bg-[#f7871f] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ce5a00]"
+                                    >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                        </svg>
+                                        Sblocca PDF
+                                    </button>
+                                </div>
                             ) : (
                                 <div className="flex h-full items-center justify-center text-[#7e7267] text-sm">
                                     Seleziona o apri un PDF per iniziare
@@ -444,7 +478,16 @@ export default function EditorPage() {
                         >
                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">SPLIT</p>
                         </button>
-                        {["OCR", "LOCK"].map((k) => (
+                        <button
+                            onClick={() => setLockOpen(true)}
+                            disabled={!selectedDoc}
+                            className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">
+                                {selectedDoc?.is_password_protected ? "UNLOCK" : "LOCK"}
+                            </p>
+                        </button>
+                        {["OCR"].map((k) => (
                             <button key={k} disabled className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed">
                                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">{k}</p>
                             </button>
@@ -499,6 +542,23 @@ export default function EditorPage() {
                 onSaved={(newDocs) => {
                     setDocs((prev) => [...newDocs, ...prev]);
                     setSelectedDoc(newDocs[0]);
+                    setPdfRefreshKey((k) => k + 1);
+                }}
+            />
+
+            <LockUnlockModal
+                open={lockOpen}
+                pdfId={selectedDoc?.id ?? ""}
+                pdfName={selectedDoc?.original_filename ?? ""}
+                isProtected={selectedDoc?.is_password_protected ?? false}
+                onClose={() => setLockOpen(false)}
+                onSaved={(updatedDoc) => {
+                    setDocs((prev) => {
+                        const oldId = selectedDoc?.id;
+                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
+                        return [updatedDoc, ...prev];
+                    });
+                    setSelectedDoc(updatedDoc);
                     setPdfRefreshKey((k) => k + 1);
                 }}
             />

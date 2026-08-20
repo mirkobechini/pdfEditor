@@ -101,7 +101,19 @@ def download_pdf(
             detail="PDF not found",
         )
 
-    content = service.get_file_content(pdf)
+    # If the PDF is password-protected, try to decrypt with cached password
+    if pdf.is_password_protected:
+        try:
+            content = service.get_decrypted_content(pdf)
+        except ValueError:
+            raise error_response(
+                ErrorCode.PDF_LOCKED,
+                "PDF is password protected. Please unlock it first.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+    else:
+        content = service.get_file_content(pdf)
+
     if not content:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
