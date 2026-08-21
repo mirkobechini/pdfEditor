@@ -330,3 +330,38 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_sidecar_port() {
+        assert_eq!(get_sidecar_port(), 7723);
+    }
+
+    #[test]
+    fn test_read_file_binary_nonexistent() {
+        let result = read_file_binary("/nonexistent/path/file.pdf".to_string());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_read_file_binary_success() {
+        use std::io::Write;
+        let dir = std::env::temp_dir().join("pdfeditor_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("test_read.pdf");
+        let mut f = std::fs::File::create(&path).unwrap();
+        f.write_all(b"%PDF-test-content").unwrap();
+        drop(f);
+
+        let result = read_file_binary(path.to_string_lossy().to_string());
+        assert!(result.is_ok());
+        let bytes = result.unwrap();
+        assert_eq!(bytes, b"%PDF-test-content");
+
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_dir(&dir).unwrap();
+    }
+}

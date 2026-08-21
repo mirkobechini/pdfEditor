@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-08-11
+> **Aggiornato:** 2026-08-20
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
-| **Backend** (FastAPI/Python)   | pytest      | **369** | ~94%       | ✅    |
+| **Backend** (FastAPI/Python)   | pytest      | **371** | **88%**    | ✅    |
 | **Webapp** (Next.js/React)     | vitest      | **363** | ~75%       | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **179** | ~77% lines | ✅    |
 | **Desktop** (Tauri)            | —           | **0**   | —          | ❌    |
@@ -90,6 +90,7 @@
 
 | Gap                                | Issue/Plan                | Priorità |
 | ---------------------------------- | ------------------------- | -------- |
+| Desktop: tutti i test              | **Prossimo task**         | 🔴 Alta  |
 | useCloudSync hook                  | Issue #619 work remaining | Media    |
 | Dialog UI (conflict/import/delete) | Issue #619 work remaining | Bassa    |
 | SettingsScreen / HomeScreen        | Da pianificare            | Bassa    |
