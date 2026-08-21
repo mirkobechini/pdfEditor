@@ -1,9 +1,10 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import SplitPagesModal from "../SplitPagesModal";
 
 const mockOnClose = vi.fn();
 const mockOnSaved = vi.fn();
+const mockSplitPdf = vi.fn();
 
 const baseProps = {
   open: true,
@@ -17,13 +18,14 @@ const baseProps = {
 
 vi.mock("../../shared/api", () => ({
   api: {
-    splitPdf: vi.fn().mockResolvedValue({ items: [{ id: "s1" }, { id: "s2" }] }),
+    splitPdf: (...args: any[]) => mockSplitPdf(...args),
   },
 }));
 
 describe("SplitPagesModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSplitPdf.mockResolvedValue({ items: [{ id: "s1" }, { id: "s2" }] });
   });
 
   it("renders page count", () => {
@@ -51,5 +53,29 @@ describe("SplitPagesModal", () => {
   it("does not render when open is false", () => {
     const { container } = render(<SplitPagesModal {...baseProps} open={false} />);
     expect(container.innerHTML).toBe("");
+  });
+
+  it("calls splitPdf on Split click", async () => {
+    render(<SplitPagesModal {...baseProps} />);
+    const pageButtons = screen.getAllByRole("button");
+    const page3Btn = pageButtons.find(b => b.textContent === "3");
+    if (page3Btn) fireEvent.click(page3Btn);
+    const splitBtn = screen.getByText("Split");
+    fireEvent.click(splitBtn);
+    await waitFor(() => {
+      expect(mockSplitPdf).toHaveBeenCalled();
+    });
+  });
+
+  it("shows error on splitPdf failure", async () => {
+    mockSplitPdf.mockRejectedValueOnce(new Error("Split failed"));
+    render(<SplitPagesModal {...baseProps} />);
+    const pageButtons = screen.getAllByRole("button");
+    const page3Btn = pageButtons.find(b => b.textContent === "3");
+    if (page3Btn) fireEvent.click(page3Btn);
+    fireEvent.click(screen.getByText("Split"));
+    await waitFor(() => {
+      expect(screen.getByText("Split failed")).toBeInTheDocument();
+    });
   });
 });

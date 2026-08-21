@@ -24,4 +24,24 @@ describe("PasswordInput", () => {
         fireEvent.click(eyeBtn);
         expect(input).toHaveAttribute("type", "password");
     });
+
+    it("calls onChange when typing", () => {
+        const onChange = vi.fn();
+        render(<PasswordInput {...baseProps} onChange={onChange} />);
+        const input = screen.getByPlaceholderText("Enter password");
+        fireEvent.change(input, { target: { value: "test" } });
+        expect(onChange).toHaveBeenCalledWith("test");
+    });
+
+    it("renders with custom id", () => {
+        render(<PasswordInput {...baseProps} id="custom-id" />);
+        const input = screen.getByPlaceholderText("Enter password");
+        expect(input).toHaveAttribute("id", "custom-id");
+    });
+
+    it("renders with required attribute", () => {
+        render(<PasswordInput {...baseProps} required />);
+        const input = screen.getByPlaceholderText("Enter password");
+        expect(input).toHaveAttribute("required");
+    });
 });

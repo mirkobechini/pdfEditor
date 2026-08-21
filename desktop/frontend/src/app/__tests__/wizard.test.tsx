@@ -1,8 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import WizardPage from "../wizard/page";
 
 const mockPush = vi.fn();
+const mockTauriInvoke = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
@@ -10,7 +11,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("../../shared/tauri", () => ({
   isTauri: () => true,
-  tauriInvoke: vi.fn(),
+  tauriInvoke: (...args: any[]) => mockTauriInvoke(...args),
 }));
 
 describe("WizardPage", () => {
@@ -35,5 +36,19 @@ describe("WizardPage", () => {
     render(<WizardPage />);
     expect(screen.getByText("Continua")).toBeInTheDocument();
     expect(screen.getByText("Salta")).toBeInTheDocument();
+  });
+
+  it("disables Continua when checkbox unchecked", () => {
+    render(<WizardPage />);
+    const continuaBtn = screen.getByText("Continua");
+    expect(continuaBtn).toBeDisabled();
+  });
+
+  it("enables Continua when checkbox checked", () => {
+    render(<WizardPage />);
+    const checkbox = screen.getByRole("checkbox");
+    fireEvent.click(checkbox);
+    const continuaBtn = screen.getByText("Continua");
+    expect(continuaBtn).not.toBeDisabled();
   });
 });

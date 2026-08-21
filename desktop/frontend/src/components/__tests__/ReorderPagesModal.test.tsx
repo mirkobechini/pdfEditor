@@ -1,9 +1,10 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ReorderPagesModal from "../ReorderPagesModal";
 
 const mockOnClose = vi.fn();
 const mockOnSaved = vi.fn();
+const mockReorderPages = vi.fn();
 
 const baseProps = {
     open: true,
@@ -17,13 +18,14 @@ const baseProps = {
 
 vi.mock("../../shared/api", () => ({
     api: {
-        reorderPages: vi.fn().mockResolvedValue({ id: "p1", original_filename: "reordered.pdf" }),
+        reorderPages: (...args: any[]) => mockReorderPages(...args),
     },
 }));
 
 describe("ReorderPagesModal", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockReorderPages.mockResolvedValue({ id: "p1", original_filename: "reordered.pdf" });
     });
 
     it("renders page count", () => {
@@ -50,5 +52,23 @@ describe("ReorderPagesModal", () => {
     it("does not render when open is false", () => {
         const { container } = render(<ReorderPagesModal {...baseProps} open={false} />);
         expect(container.innerHTML).toBe("");
+    });
+
+    it("calls reorderPages on Reorder click", async () => {
+        render(<ReorderPagesModal {...baseProps} />);
+        const reorderBtn = screen.getByText("Reorder");
+        fireEvent.click(reorderBtn);
+        await waitFor(() => {
+            expect(mockReorderPages).toHaveBeenCalled();
+        });
+    });
+
+    it("shows error on reorderPages failure", async () => {
+        mockReorderPages.mockRejectedValueOnce(new Error("Reorder failed"));
+        render(<ReorderPagesModal {...baseProps} />);
+        fireEvent.click(screen.getByText("Reorder"));
+        await waitFor(() => {
+            expect(screen.getByText("Reorder failed")).toBeInTheDocument();
+        });
     });
 });
