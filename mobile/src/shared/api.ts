@@ -234,10 +234,13 @@ export class ApiClient {
       const res = await fetch(fileUri);
       const blob = await res.blob();
       formData.append("file", blob, fileName);
-      const uploadRes = await this._fetch(`${this.baseUrl}/pdfs/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const uploadRes = await this._fetch(
+        `${this.baseUrl}/pdfs/upload?upload_source=mobile`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
       if (!uploadRes.ok)
         throw new Error(await ApiClient.extractErrorResponse(uploadRes));
       return uploadRes.json();
