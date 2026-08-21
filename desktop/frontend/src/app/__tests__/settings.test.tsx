@@ -226,4 +226,10 @@ describe("SettingsPage", () => {
     expect(screen.getByText("advancedTitle")).toBeInTheDocument();
     expect(screen.getByText("advancedDesc")).toBeInTheDocument();
   });
+
+  it("shows Bundled items in about tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("about"));
+    expect(screen.getByText("Processo API locale")).toBeInTheDocument();
+  });
 });

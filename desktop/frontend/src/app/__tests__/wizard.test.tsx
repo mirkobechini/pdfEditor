@@ -191,4 +191,17 @@ describe("WizardPage", () => {
     fireEvent.change(input, { target: { value: "D:\\MyPDFs" } });
     expect(input).toHaveValue("D:\\MyPDFs");
   });
+
+  it("shows Cerca e organizza description on step 2", () => {
+    render(<WizardPage />);
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByText("Continua"));
+    expect(screen.getByText("Cerca e organizza automaticamente i PDF")).toBeInTheDocument();
+  });
+
+  it("shows pdfeditor icon in sidebar", () => {
+    render(<WizardPage />);
+    const icon = document.querySelector('.bg-\\[\\#f7871f\\]');
+    expect(icon).toBeInTheDocument();
+  });
 });
