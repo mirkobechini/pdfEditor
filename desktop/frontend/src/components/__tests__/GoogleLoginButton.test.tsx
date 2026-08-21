@@ -64,4 +64,11 @@ describe("GoogleLoginButton", () => {
 
     process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = originalEnv;
   });
+
+  it("clears error on resetKey change", async () => {
+    const { rerender } = render(<GoogleLoginButton resetKey={0} />);
+    await screen.findByRole("button");
+    rerender(<GoogleLoginButton resetKey={1} />);
+    await screen.findByRole("button");
+  });
 });

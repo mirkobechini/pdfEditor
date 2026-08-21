@@ -45,4 +45,15 @@ describe("PdfViewer", () => {
     const canvas = document.querySelector("canvas");
     expect(canvas).toBeInTheDocument();
   });
+
+  it("calls onTotalPagesChange when PDF loads", async () => {
+    const onTotalPagesChange = vi.fn();
+    (window as any).pdfjsLib = {
+      GlobalWorkerOptions: { workerSrc: "" },
+      getDocument: vi.fn().mockReturnValue({ promise: Promise.resolve({ numPages: 3 }) }),
+    };
+    render(<PdfViewer {...defaultProps} fileUrl="blob:test" onTotalPagesChange={onTotalPagesChange} />);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(onTotalPagesChange).toHaveBeenCalledWith(3);
+  });
 });
