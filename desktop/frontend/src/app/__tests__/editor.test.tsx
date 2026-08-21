@@ -465,4 +465,17 @@ describe("EditorPage", () => {
     await screen.findByText("doc2.pdf");
     expect(screen.getByText("Fast Actions")).toBeInTheDocument();
   });
+
+  it("shows Recent documents label", async () => {
+    render(<EditorPage />);
+    await screen.findByText("doc2.pdf");
+    expect(screen.getByText("Recent documents")).toBeInTheDocument();
+  });
+
+  it("shows page count in metadata", async () => {
+    render(<EditorPage />);
+    await screen.findByText("doc2.pdf");
+    const pageLabels = screen.getAllByText("Pages");
+    expect(pageLabels.length).toBeGreaterThanOrEqual(1);
+  });
 });

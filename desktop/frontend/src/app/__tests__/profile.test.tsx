@@ -5,23 +5,21 @@ import ProfilePage from "../profile/page";
 const mockLogout = vi.fn();
 const mockSetUser = vi.fn();
 const mockUnlinkGoogle = vi.fn();
-const mockDeleteAccount = vi.fn();
-const mockPush = vi.fn();
 
 vi.mock("next/navigation", () => ({
-    useRouter: () => ({ push: mockPush }),
+    useRouter: () => ({ push: vi.fn() }),
 }));
 
 vi.mock("../../shared/api", () => ({
     api: {
         unlinkGoogle: (...args: any[]) => mockUnlinkGoogle(...args),
-        deleteAccount: (...args: any[]) => mockDeleteAccount(...args),
+        deleteAccount: vi.fn(),
     },
 }));
 
 vi.mock("../../shared/auth", () => ({
     useAuth: () => ({
-        user: { id: "u1", email: "test@test.com", full_name: "Test User" },
+        user: { id: "u1", email: "test@test.com", full_name: "Test User", license_tier: "free", is_guest: false, is_active: true, google_id: "g123" },
         loading: false,
         logout: (...args: any[]) => mockLogout(...args),
         setUser: (...args: any[]) => mockSetUser(...args),
@@ -48,13 +46,28 @@ describe("ProfilePage", () => {
         expect(screen.getByText("Logout")).toBeInTheDocument();
     });
 
-    it("renders settings link", () => {
+    it("renders Impostazioni link", () => {
         render(<ProfilePage />);
         expect(screen.getByText("Impostazioni")).toBeInTheDocument();
     });
 
-    it("renders editor link", () => {
+    it("renders Editor link", () => {
         render(<ProfilePage />);
         expect(screen.getByText("Editor")).toBeInTheDocument();
+    });
+
+    it("renders Servizi Collegati", () => {
+        render(<ProfilePage />);
+        expect(screen.getByText("Servizi Collegati")).toBeInTheDocument();
+    });
+
+    it("renders Scollega button", () => {
+        render(<ProfilePage />);
+        expect(screen.getByText("Scollega")).toBeInTheDocument();
+    });
+
+    it("renders Piano info", () => {
+        render(<ProfilePage />);
+        expect(screen.getByText("Piano")).toBeInTheDocument();
     });
 });

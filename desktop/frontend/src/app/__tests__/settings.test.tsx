@@ -173,4 +173,36 @@ describe("SettingsPage", () => {
     const italianoElements = screen.getAllByText("Italiano");
     expect(italianoElements.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("shows about section details", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("about"));
+    expect(screen.getByText("Visualizza")).toBeInTheDocument();
+    expect(screen.getByText("AGPL-3.0")).toBeInTheDocument();
+  });
+
+  it("shows third party licenses button in about tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("about"));
+    expect(screen.getByText("Elenco completo delle dipendenze")).toBeInTheDocument();
+  });
+
+  it("shows Codice sorgente in about tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("about"));
+    expect(screen.getByText("Codice sorgente disponibile su richiesta")).toBeInTheDocument();
+  });
+
+  it("shows Tauri and FastAPI version in about tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("about"));
+    expect(screen.getByText("Tauri 2.1")).toBeInTheDocument();
+    expect(screen.getByText("FastAPI • Python 3.12")).toBeInTheDocument();
+  });
+
+  it("shows Bundle nativo in about tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("about"));
+    expect(screen.getByText("Bundle nativo firmato e notarizzato")).toBeInTheDocument();
+  });
 });
