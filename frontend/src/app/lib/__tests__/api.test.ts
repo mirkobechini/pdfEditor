@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { api, ApiClient } from "../api";
+import { api, ApiClient, startKeepWarm, stopKeepWarm } from "../api";
 
 // We need to test the static method extractError
 // and verify the class structure
@@ -311,5 +311,57 @@ describe("ApiClient", () => {
 
       await expect(api.refreshCsrf()).resolves.toBeUndefined();
     });
+  });
+});
+
+describe("keepWarm", () => {
+  let mockFetch: any;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockFetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    globalThis.fetch = mockFetch as any;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("startKeepWarm pings /health immediately", () => {
+    startKeepWarm();
+    expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("/health"));
+    stopKeepWarm();
+  });
+
+  it("startKeepWarm pings /health every 5 minutes", () => {
+    startKeepWarm();
+    vi.advanceTimersByTime(5 * 60 * 1000);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    stopKeepWarm();
+  });
+
+  it("stopKeepWarm clears the interval", () => {
+    startKeepWarm();
+    stopKeepWarm();
+    vi.advanceTimersByTime(10 * 60 * 1000);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("startKeepWarm does not start duplicate timers", () => {
+    startKeepWarm();
+    startKeepWarm();
+    vi.advanceTimersByTime(5 * 60 * 1000);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    stopKeepWarm();
+  });
+
+  it("ignores network errors silently", async () => {
+    mockFetch = vi.fn().mockRejectedValue(new Error("Network error"));
+    globalThis.fetch = mockFetch as any;
+    startKeepWarm();
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+    expect(mockFetch).toHaveBeenCalled();
+    stopKeepWarm();
   });
 });
