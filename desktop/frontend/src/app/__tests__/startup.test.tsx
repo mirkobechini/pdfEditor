@@ -42,4 +42,14 @@ describe("StartupPage", () => {
         expect(screen.getByText("Avvio del backend in locale...")).toBeInTheDocument();
         expect(screen.getByText("Avvio di PdfEditor")).toBeInTheDocument();
     });
+
+    it("renders database step", () => {
+        render(<StartupPage />);
+        expect(screen.getByText("Connessione al database SQLite...")).toBeInTheDocument();
+    });
+
+    it("renders API step", () => {
+        render(<StartupPage />);
+        expect(screen.getByText("Verifica API e servizi...")).toBeInTheDocument();
+    });
 });

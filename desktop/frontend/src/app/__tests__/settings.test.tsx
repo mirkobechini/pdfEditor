@@ -205,4 +205,25 @@ describe("SettingsPage", () => {
     fireEvent.click(screen.getByText("about"));
     expect(screen.getByText("Bundle nativo firmato e notarizzato")).toBeInTheDocument();
   });
+
+  it("shows default zoom slider in editor tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("editor"));
+    expect(screen.getByText("editorTitle")).toBeInTheDocument();
+    expect(screen.getByText("editorDesc")).toBeInTheDocument();
+  });
+
+  it("shows shortcuts list in shortcuts tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("shortcuts"));
+    expect(screen.getByText("shortcutsTitle")).toBeInTheDocument();
+    expect(screen.getByText("shortcutsDesc")).toBeInTheDocument();
+  });
+
+  it("shows advanced options in advanced tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("advanced"));
+    expect(screen.getByText("advancedTitle")).toBeInTheDocument();
+    expect(screen.getByText("advancedDesc")).toBeInTheDocument();
+  });
 });
