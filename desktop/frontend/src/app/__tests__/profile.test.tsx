@@ -42,4 +42,19 @@ describe("ProfilePage", () => {
         render(<ProfilePage />);
         expect(screen.getByText("Test User")).toBeInTheDocument();
     });
+
+    it("renders Logout button", () => {
+        render(<ProfilePage />);
+        expect(screen.getByText("Logout")).toBeInTheDocument();
+    });
+
+    it("renders settings link", () => {
+        render(<ProfilePage />);
+        expect(screen.getByText("Impostazioni")).toBeInTheDocument();
+    });
+
+    it("renders editor link", () => {
+        render(<ProfilePage />);
+        expect(screen.getByText("Editor")).toBeInTheDocument();
+    });
 });

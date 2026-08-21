@@ -36,4 +36,10 @@ describe("StartupPage", () => {
         const spinner = document.querySelector(".animate-spin");
         expect(spinner).toBeInTheDocument();
     });
+
+    it("renders startup steps list", () => {
+        render(<StartupPage />);
+        expect(screen.getByText("Avvio del backend in locale...")).toBeInTheDocument();
+        expect(screen.getByText("Avvio di PdfEditor")).toBeInTheDocument();
+    });
 });

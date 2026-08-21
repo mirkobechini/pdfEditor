@@ -106,4 +106,36 @@ describe("SettingsPage", () => {
     fireEvent.click(screen.getByText("advanced"));
     expect(screen.getByText("advancedTitle")).toBeInTheDocument();
   });
+
+  it("shows language selector in general tab", () => {
+    render(<SettingsPage />);
+    expect(screen.getByText("language")).toBeInTheDocument();
+  });
+
+  it("shows autoStart option in general tab", () => {
+    render(<SettingsPage />);
+    expect(screen.getByText("autoStart")).toBeInTheDocument();
+    expect(screen.getByText("autoStartDesc")).toBeInTheDocument();
+  });
+
+  it("shows density selector in appearance tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("appearance"));
+    expect(screen.getByText("density")).toBeInTheDocument();
+    expect(screen.getByText("densityDesc")).toBeInTheDocument();
+  });
+
+  it("shows antialiasing toggle in appearance tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("appearance"));
+    expect(screen.getByText("antialiasing")).toBeInTheDocument();
+    expect(screen.getByText("antialiasingDesc")).toBeInTheDocument();
+  });
+
+  it("shows version info in about tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("about"));
+    expect(screen.getByText("appLicense")).toBeInTheDocument();
+    expect(screen.getByText("Licenze di terze parti")).toBeInTheDocument();
+  });
 });

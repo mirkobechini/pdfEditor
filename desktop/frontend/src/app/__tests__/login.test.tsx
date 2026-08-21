@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 const mockLogin = vi.fn();
 const mockGuestLogin = vi.fn();
@@ -7,9 +7,10 @@ const mockPush = vi.fn();
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mockPush }) }));
 vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
+vi.mock("../../shared/error-map", () => ({ mapError: () => "auth.invalidCredentials" }));
 vi.mock("../../shared/auth", () => ({ useAuth: () => ({ user: null, loading: false, login: (...args: any[]) => mockLogin(...args), guestLogin: (...args: any[]) => mockGuestLogin(...args) }) }));
 vi.mock("../../shared/tauri", () => ({ getApiBaseUrl: () => "http://127.0.0.1:7723" }));
-vi.mock("../../components/PasswordInput", () => ({ default: ({ placeholder }: { placeholder: string }) => <input placeholder={placeholder} /> }));
+vi.mock("../../components/PasswordInput", () => ({ default: ({ placeholder, onChange, value }: { placeholder: string; onChange: (v: string) => void; value: string }) => <input placeholder={placeholder} onChange={(e) => onChange(e.target.value)} value={value} /> }));
 vi.mock("../../components/GoogleLoginButton", () => ({ default: () => <div>GoogleLogin</div> }));
 
 import LoginPage from "../login/page";
@@ -47,5 +48,84 @@ describe("LoginPage", () => {
     it("shows backend starting indicator", () => {
         render(<LoginPage />);
         expect(screen.getByText(/Avvio del backend/)).toBeInTheDocument();
+    });
+
+    it("renders remember me checkbox", () => {
+        render(<LoginPage />);
+        expect(screen.getByText("rememberMe")).toBeInTheDocument();
+    });
+
+    it("renders login button", () => {
+        render(<LoginPage />);
+        expect(screen.getByText("loginButton")).toBeInTheDocument();
+    });
+
+    it("renders password input", () => {
+        render(<LoginPage />);
+        const passwordInputs = screen.getAllByPlaceholderText("••••••••••••");
+        expect(passwordInputs.length).toBeGreaterThan(0);
+    });
+
+    it("renders workspace title", () => {
+        render(<LoginPage />);
+        expect(screen.getByText("workspace")).toBeInTheDocument();
+    });
+
+    it("renders WELCOME BACK label", () => {
+        render(<LoginPage />);
+        expect(screen.getByText("WELCOME BACK")).toBeInTheDocument();
+    });
+
+    it("submits form with email and password", async () => {
+        mockLogin.mockResolvedValueOnce(undefined);
+        render(<LoginPage />);
+        const emailInput = screen.getByPlaceholderText("email@esempio.com");
+        const passwordInputs = screen.getAllByPlaceholderText("••••••••••••");
+        const submitBtn = screen.getByText("loginButton");
+
+        fireEvent.change(emailInput, { target: { value: "test@test.com" } });
+        fireEvent.change(passwordInputs[0], { target: { value: "pass123" } });
+        fireEvent.click(submitBtn);
+
+        await waitFor(() => {
+            expect(mockLogin).toHaveBeenCalledWith("test@test.com", "pass123", true);
+        });
+    });
+
+    it("shows error on login failure", async () => {
+        mockLogin.mockRejectedValueOnce(new Error("Invalid credentials"));
+        render(<LoginPage />);
+        const emailInput = screen.getByPlaceholderText("email@esempio.com");
+        const passwordInputs = screen.getAllByPlaceholderText("••••••••••••");
+        const submitBtn = screen.getByText("loginButton");
+
+        fireEvent.change(emailInput, { target: { value: "test@test.com" } });
+        fireEvent.change(passwordInputs[0], { target: { value: "pass123" } });
+        fireEvent.click(submitBtn);
+
+        await waitFor(() => {
+            expect(screen.getByText("invalidCredentials")).toBeInTheDocument();
+        });
+    });
+
+    it("does not submit with empty email", async () => {
+        render(<LoginPage />);
+        const submitBtn = screen.getByText("loginButton");
+        expect(submitBtn).toBeDisabled();
+    });
+
+    it("renders or divider", () => {
+        render(<LoginPage />);
+        expect(screen.getByText("OR")).toBeInTheDocument();
+    });
+
+    it("renders continueAsGuest button", () => {
+        render(<LoginPage />);
+        expect(screen.getByText("continueAsGuest")).toBeInTheDocument();
+    });
+
+    it("renders password recovery link", () => {
+        render(<LoginPage />);
+        expect(screen.getByText("Recupera password")).toBeInTheDocument();
     });
 });
