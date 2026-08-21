@@ -128,4 +128,11 @@ describe("LoginPage", () => {
         render(<LoginPage />);
         expect(screen.getByText("Recupera password")).toBeInTheDocument();
     });
+
+    it("renders login page with stored token", () => {
+        localStorage.setItem("pdfeditor_remember_token", "stored-token");
+        render(<LoginPage />);
+        expect(screen.getByText("workspace")).toBeInTheDocument();
+        localStorage.removeItem("pdfeditor_remember_token");
+    });
 });

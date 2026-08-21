@@ -453,4 +453,16 @@ describe("EditorPage", () => {
       expect(screen.getByText("string error")).toBeInTheDocument();
     });
   });
+
+  it("shows download subtitle", async () => {
+    render(<EditorPage />);
+    await screen.findByText("doc2.pdf");
+    expect(screen.getByText("Salva una copia locale")).toBeInTheDocument();
+  });
+
+  it("shows Fast Actions section", async () => {
+    render(<EditorPage />);
+    await screen.findByText("doc2.pdf");
+    expect(screen.getByText("Fast Actions")).toBeInTheDocument();
+  });
 });
