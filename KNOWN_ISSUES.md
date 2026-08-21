@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-08-18
+> **Aggiornato:** 2026-08-21
 
 ---
 
@@ -29,14 +29,14 @@
 2. Se offline e JWT scaduto → modalità offline (solo PDF locali)
 3. Alla riconnessione → refresh automatico JWT + ripresa sync
 
-**Stato:** Da implementare (pianificato con issue #627).
+**Stato:** Da verificare — l'utente non è sicuro se funzioni o meno.
 
 ### K4 — Settings: antialiasing/densità nessun effetto visibile
 
 **File:** `desktop/frontend/src/app/settings/page.tsx`  
 **Descrizione:** Il toggle antialiasing e il select densità non producono cambiamenti visibili nell'interfaccia. L'antialiasing agisce sul font rendering (`-webkit-font-smoothing` su body), ma la differenza è impercettibile con i font e colori usati. La densità modifica solo il padding degli elementi `.doc-item` (8/12/20px), ma la differenza è troppo sottile per essere notata.
 
-**Stato:** Applicato tecnicamente, nessun effetto visibile.
+**Stato:** ✅ Risolto — tecnicamente applicato ma nessun effetto visibile percepibile.
 
 ### K3 — Upload PDF 403 (CSRF validation failed) — DRAFT
 
@@ -44,7 +44,7 @@
 **Descrizione:** L'upload PDF su sidecar dà 403 CSRF. Il cookie CSRF non viene inviato dal browser su POST cross-site (origin `http://tauri.localhost` → target `127.0.0.1:7723`) a causa di `SameSite=Lax`.
 
 **Soluzione prevista:** Usare `SameSite=None, Secure=False` su localhost. Chrome/Edge permettono SameSite=None senza Secure su localhost.
-**Stato:** Fix implementato in `csrf.py`, da testare con nuova build.
+**Stato:** ✅ Non più osservato dall'utente — fix implementato in `csrf.py`, da confermare con nuova build.
 
 ### K1 — Login con email/password non funziona su Neon (401)
 
@@ -58,7 +58,7 @@
 **File:** `backend/app/api/v1/auth.py` (endpoint già implementati), `desktop/frontend/src/components/GoogleLoginButton.tsx`  
 20:**Descrizione:** La popup JavaScript di Google One Tap non funziona in webview Tauri (richiede dominio pubblico). È stato implementato un redirect flow via browser di sistema con endpoint `/auth/google/desktop-login` e `/auth/google/desktop-callback`, ma il redirect URI su Google Cloud Console deve essere aggiornato a `https://pdfeditor-api.mirkobechini.com/auth/google/desktop-callback`.
 
-> Tutti i bug noti sono stati risolti.
+**Stato:** ✅ Funzionante — redirect flow via browser di sistema implementato e verificato dall'utente.
 
 ---
 
@@ -139,17 +139,17 @@
 
 ## 📊 Coverage gaps (non bloccanti)
 
-| Area                         | Coverage         | Bloccante? | Note                                          |
-| ---------------------------- | ---------------- | ---------- | --------------------------------------------- |
-| Backend totale               | 94% (359 test)   | ❌ No      | 1 pre-existing fail (test_seed_super_admin)   |
-| Frontend totale              | ~75% (363+ test) | ❌ No      | 22 test login + auth remember-me aggiunti     |
-| **Desktop totale**           | **71% (370 test)**| ❌ No      | Target 70% raggiunto (issue #665)             |
-| Desktop: Settings/Profile    | 51% / 38%        | ❌ No      | Da migliorare (non bloccante)                 |
-| Desktop: Wizard/Startup      | 66% / 46%        | ❌ No      | Da migliorare (non bloccante)                 |
-| Desktop: PdfViewer           | 57%              | ❌ No      | Rendering PDF.js in jsdom                      |
-| Desktop: GoogleLoginButton   | 40%              | ❌ No      | Redirect flow difficile da testare            |
-| Admin page                   | 67%              | ❌ No      | API calls non testate                         |
-| Reorder/Split/Remove dialogs | 34-44%           | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom |
+| Area                         | Coverage           | Bloccante? | Note                                          |
+| ---------------------------- | ------------------ | ---------- | --------------------------------------------- |
+| Backend totale               | 94% (359 test)     | ❌ No      | 1 pre-existing fail (test_seed_super_admin)   |
+| Frontend totale              | ~75% (363+ test)   | ❌ No      | 22 test login + auth remember-me aggiunti     |
+| **Desktop totale**           | **71% (370 test)** | ❌ No      | Target 70% raggiunto (issue #665)             |
+| Desktop: Settings/Profile    | 51% / 38%          | ❌ No      | Da migliorare (non bloccante)                 |
+| Desktop: Wizard/Startup      | 66% / 46%          | ❌ No      | Da migliorare (non bloccante)                 |
+| Desktop: PdfViewer           | 57%                | ❌ No      | Rendering PDF.js in jsdom                     |
+| Desktop: GoogleLoginButton   | 40%                | ❌ No      | Redirect flow difficile da testare            |
+| Admin page                   | 67%                | ❌ No      | API calls non testate                         |
+| Reorder/Split/Remove dialogs | 34-44%             | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom |
 
 ---
 
