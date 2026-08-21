@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-08-11
+> **Aggiornato:** 2026-08-21
 
 ---
 
@@ -10,12 +10,12 @@
 
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
-| **Backend** (FastAPI/Python)   | pytest      | **369** | ~94%       | ✅    |
+| **Backend** (FastAPI/Python)   | pytest      | **371** | **88%**    | ✅    |
 | **Webapp** (Next.js/React)     | vitest      | **363** | ~75%       | ✅    |
+| **Desktop** (Tauri)            | vitest      | **370** | **71%**    | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **179** | ~77% lines | ✅    |
-| **Desktop** (Tauri)            | —           | **0**   | —          | ❌    |
 
-> ℹ️ **Desktop**: nessun test specifico. Le funzionalità desktop sono testate indirettamente dai test frontend web (stessa codebase Next.js). Il sidecar e il Rust Tauri non hanno test.
+> ℹ️ **Desktop**: 370 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
 
 ---
 
@@ -88,14 +88,17 @@
 
 ## Coverage gaps pianificati
 
-| Gap                                | Issue/Plan                | Priorità |
-| ---------------------------------- | ------------------------- | -------- |
-| useCloudSync hook                  | Issue #619 work remaining | Media    |
-| Dialog UI (conflict/import/delete) | Issue #619 work remaining | Bassa    |
-| SettingsScreen / HomeScreen        | Da pianificare            | Bassa    |
-| OnboardingWizard (UI)              | Da pianificare            | Bassa    |
-| Desktop Tauri Rust                 | Da pianificare            | Bassa    |
-| E2E cross-origin (Playwright)      | T2 in KNOWN_ISSUES.md     | Media    |
+| Gap                                | Issue/Plan                                                 | Priorità |
+| ---------------------------------- | ---------------------------------------------------------- | -------- |
+| Desktop: componenti sotto 70%      | Settings (51%), Profile (38%), Startup (46%), Wizard (66%) | 🔴 Alta  |
+| Desktop: PdfViewer (57%)           | Rendering, spinner, page navigation                        | Media    |
+| Desktop: GoogleLoginButton (40%)   | Desktop redirect flow, error polling                       | Media    |
+| Desktop: useCloudSync hook         | Issue #619 work remaining                                  | Media    |
+| Dialog UI (conflict/import/delete) | Issue #619 work remaining                                  | Bassa    |
+| SettingsScreen / HomeScreen        | Da pianificare                                             | Bassa    |
+| OnboardingWizard (UI)              | Da pianificare                                             | Bassa    |
+| Desktop Tauri Rust                 | Da pianificare                                             | Bassa    |
+| E2E cross-origin (Playwright)      | T2 in KNOWN_ISSUES.md                                      | Media    |
 
 ---
 
@@ -129,4 +132,41 @@ bash run-all-tests.sh
 
 ### Desktop (Tauri)
 
-Non ha test specifici. Le funzionalità desktop sono testate indirettamente dai test frontend web (stessa codebase Next.js). Il sidecar e il Rust Tauri non hanno test.
+370 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
+
+| Componente                     | Test | Coverage | Note |
+| ------------------------------ | ---- | -------- | ---- |
+| Editor page (app/app/page.tsx) | 47   | 70%      | Modali, drag&drop, upload, download, zoom, delete |
+| Login page                     | 18   | 71%      | Form submission, errori, remember me, guest |
+| Register page                  | 10   | 95%      | Validazione, submission, errori |
+| Settings page                  | 21   | 51%      | Tutti i tab, about, language, density |
+| Wizard page                    | 26   | 66%      | Step navigation, checkbox, folder, skip/finish |
+| Profile page                   | 8    | 38%      | User info, logout, google unlink |
+| Startup page                   | 6    | 46%      | Steps, loading |
+| LockUnlockModal                | 14   | 97%      | Lock/unlock, password validation, eye toggle |
+| MergeModal                     | 7    | 97%      | Checkbox selection, merge API call |
+| MetadataModal                  | 7    | 77%      | Metadata fields, save, error |
+| RemovePagesModal               | 7    | 66%      | Page selection, remove, error |
+| ReorderPagesModal              | 7    | 58%      | DnD, reorder API call, error |
+| SplitPagesModal                | 7    | 74%      | Split point, split API call, error |
+| PdfViewer                      | 5    | 57%      | Canvas, PDF.js loading, no-file placeholder |
+| GoogleLoginButton              | 5    | 40%      | Desktop/web, no-client-id fallback |
+| PasswordInput                  | 5    | 80%      | Eye toggle, onChange, required |
+| auth.tsx                       | 17   | 74%      | Login, register, logout, guestLogin, Tauri paths |
+| api.ts                         | 33   | 85%      | CRUD, admin, edge cases, refresh token |
+| error-map.ts                   | 26   | 91%      | Tutti i codici errore, test edge case |
+| tauri.ts                       | 7    | 100%     | isTauri, tauriInvoke, getApiBaseUrl |
+| preferences.tsx                | 4    | 71%      | Load, fallback, update, error |
+| i18n.tsx                       | 2    | 100%     | Locale switching |
+
+**Rust (Tauri commands):** 3 test (get_sidecar_port, read_file_binary)
+
+```bash
+# Desktop frontend (Next.js/React) — vitest
+cd desktop/frontend
+npx vitest run
+
+# Desktop Tauri (Rust) — cargo test
+cd desktop/src-tauri
+cargo test
+```

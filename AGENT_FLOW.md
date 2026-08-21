@@ -223,7 +223,7 @@ git push origin feature/<issue-number>-<short-description> --force-with-lease
 gh pr create --base dev --title "<type>(<scope>): <feature description>" --body "closes #<issue-number>"
 
 # ⚠️ WAIT for CI to pass on GitHub before proceeding
-# Check: gh run list --limit 3 --workflow=test
+# Check: gh run list --limit 5 --workflow=ci-web
 # If CI fails: fix the issue, push, wait for CI again
 # Only merge when CI is green
 

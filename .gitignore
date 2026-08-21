@@ -57,3 +57,4 @@ secret.key
 
 # Specs files (feature plans, archived, future)
 .specs/
+!desktop/frontend/src/shared/__tests__/
