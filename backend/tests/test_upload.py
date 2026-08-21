@@ -25,6 +25,18 @@ class TestUpload:
         assert data["page_count"] >= 0
         assert "id" in data
         assert "created_at" in data
+        assert data["upload_source"] == "web"
+
+    def test_upload_with_upload_source(self, client, sample_pdf_content, free_headers):
+        """Should accept upload_source query parameter."""
+        response = client.post(
+            f"{self.UPLOAD_URL}?upload_source=desktop",
+            headers=free_headers,
+            files={"file": ("test.pdf", sample_pdf_content, "application/pdf")},
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        data = response.json()
+        assert data["upload_source"] == "desktop"
 
     def test_upload_invalid_extension(self, client, free_headers):
         """Should reject non-PDF files."""
