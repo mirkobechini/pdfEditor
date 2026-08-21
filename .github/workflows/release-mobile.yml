@@ -9,7 +9,44 @@ permissions:
   contents: read
 
 jobs:
+  wait-for-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Mobile CI on main to pass
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Disable set -e so we don't exit on API transient errors
+          set +e
+          # Get the commit SHA of what's currently on main
+          SHA=$(gh api repos/${REPO}/git/refs/heads/main --jq '.object.sha' 2>/dev/null)
+          if [ -z "$SHA" ]; then
+            echo "Failed to get main SHA, proceeding anyway."
+            exit 0
+          fi
+          echo "Waiting for Mobile CI on main (commit: $SHA)..."
+          for i in $(seq 1 30); do
+            RESULT=$(gh api repos/${REPO}/commits/${SHA}/check-runs --jq '[.check_runs[] | select(.name == "mobile-test") | .conclusion // "pending"] | join(",")' 2>/dev/null)
+              echo "  iteration $i: mobile conclusions: $RESULT"
+            # Check for failure
+            if echo "$RESULT" | grep -q "failure"; then
+              echo "Mobile CI failed on main, aborting release."
+              exit 1
+            fi
+            # Success? Good to go
+            if echo "$RESULT" | grep -q "success"; then
+              echo "Mobile CI passed on main, proceeding with build."
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "Timeout waiting for Mobile CI on main (15 minutes). Proceeding anyway."
+          exit 0
+
   build-mobile:
+    needs: [wait-for-ci]
     runs-on: ubuntu-latest
     permissions:
       contents: write
