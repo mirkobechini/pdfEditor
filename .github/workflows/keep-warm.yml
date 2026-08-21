@@ -1,0 +1,18 @@
+name: Keep Warm Backend
+
+on:
+  schedule:
+    # Ogni 5 minuti — mantiene il backend su Render sempre attivo
+    - cron: "*/5 * * * *"
+  workflow_dispatch: # Permette esecuzione manuale
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" https://pdfeditor-api.mirkobechini.com/health
