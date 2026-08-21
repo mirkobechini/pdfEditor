@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { ApiClient, api } from "../api";
+import { ApiClient, api, startKeepWarm, stopKeepWarm } from "../api";
 
 // Copy of the class for testing static methods
 const Client = ApiClient;
@@ -268,5 +268,73 @@ describe("ApiClient CRUD operations", () => {
         new Response(JSON.stringify({ detail: "Not found" }), { status: 404 }),
       );
     await expect(api.deletePdf("nonexistent")).rejects.toThrow("Not found");
+  });
+});
+
+describe("keepWarm", () => {
+  it("startKeepWarm pings /health immediately", () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    globalThis.fetch = mockFetch as any;
+    startKeepWarm();
+    expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining("/health"));
+    stopKeepWarm();
+    vi.restoreAllMocks();
+  });
+
+  it("startKeepWarm pings /health every 5 minutes", () => {
+    vi.useFakeTimers();
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    globalThis.fetch = mockFetch as any;
+    startKeepWarm();
+    vi.advanceTimersByTime(5 * 60 * 1000);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    stopKeepWarm();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("stopKeepWarm clears the interval", () => {
+    vi.useFakeTimers();
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    globalThis.fetch = mockFetch as any;
+    startKeepWarm();
+    stopKeepWarm();
+    vi.advanceTimersByTime(10 * 60 * 1000);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("startKeepWarm does not start duplicate timers", () => {
+    vi.useFakeTimers();
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 200 }));
+    globalThis.fetch = mockFetch as any;
+    startKeepWarm();
+    startKeepWarm();
+    vi.advanceTimersByTime(5 * 60 * 1000);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    stopKeepWarm();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("ignores network errors silently", async () => {
+    vi.useFakeTimers();
+    const mockFetch = vi.fn().mockRejectedValue(new Error("Network error"));
+    globalThis.fetch = mockFetch as any;
+    startKeepWarm();
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+    expect(mockFetch).toHaveBeenCalled();
+    stopKeepWarm();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 });
