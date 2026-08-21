@@ -144,10 +144,9 @@ describe("ApiClient CRUD operations", () => {
   });
 
   it("downloadPdf returns blob", async () => {
-    const blob = new Blob(["%PDF-content"], { type: "application/pdf" });
     globalThis.fetch = vi
       .fn()
-      .mockResolvedValue(new Response(blob, { status: 200 }));
+      .mockResolvedValue(new Response("%PDF-content", { status: 200 }));
     const result = await api.downloadPdf("p1");
     expect(result instanceof Blob).toBe(true);
   });
@@ -241,10 +240,9 @@ describe("ApiClient CRUD operations", () => {
   });
 
   it("exportPdf returns blob", async () => {
-    const blob = new Blob(["text-content"], { type: "text/plain" });
     globalThis.fetch = vi
       .fn()
-      .mockResolvedValue(new Response(blob, { status: 200 }));
+      .mockResolvedValue(new Response("text-content", { status: 200 }));
     const result = await api.exportPdf("p1", "txt");
     expect(result instanceof Blob).toBe(true);
   });
