@@ -768,3 +768,32 @@ export const api = new ApiClient();
 
 /** Cloud API client for auth (register/login via Render/Neon) */
 export const cloudApi = new ApiClient(getCloudApiBaseUrl());
+
+// ─── Keep-warm: evita cold start del backend su Render ──────────────
+
+let _keepWarmTimer: ReturnType<typeof setInterval> | null = null;
+const KEEP_WARM_INTERVAL = 5 * 60 * 1000; // 5 minuti
+
+/**
+ * Avvia il ping periodico al backend cloud per evitare il cold start.
+ * Il ping va a /health che è leggero e non richiede autenticazione.
+ */
+export function startKeepWarm(): void {
+  if (_keepWarmTimer) return; // già avviato
+  const url = `${getCloudApiBaseUrl()}/health`;
+  const ping = () => {
+    fetch(url).catch(() => {
+      // Ignora errori di rete — il backend potrebbe essere in cold start
+    });
+  };
+  ping(); // ping immediato all'avvio
+  _keepWarmTimer = setInterval(ping, KEEP_WARM_INTERVAL);
+}
+
+/** Ferma il keep-warm (utile per test o cleanup) */
+export function stopKeepWarm(): void {
+  if (_keepWarmTimer) {
+    clearInterval(_keepWarmTimer);
+    _keepWarmTimer = null;
+  }
+}
