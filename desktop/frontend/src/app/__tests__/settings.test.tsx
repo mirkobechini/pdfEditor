@@ -20,10 +20,6 @@ vi.mock("../../shared/api", () => ({
   },
 }));
 
-vi.mock("../../shared/auth", () => ({
-  useAuth: () => ({ user: { id: "u1", email: "test@test.com" }, logout: vi.fn() }),
-}));
-
 vi.mock("../../lib/i18n", () => ({
   useLocaleSetter: () => mockSetLocale,
 }));
@@ -35,6 +31,8 @@ vi.mock("../../lib/preferences", () => ({
     reload: vi.fn(),
   }),
 }));
+
+vi.mock("../../shared/auth", () => ({ useAuth: () => ({ user: { id: "u1", email: "test@test.com", license_tier: "Free" }, logout: vi.fn() }) }));
 
 vi.mock("../../shared/tauri", () => ({
   isTauri: () => true,
@@ -168,5 +166,11 @@ describe("SettingsPage", () => {
   it("shows sidebar sections", () => {
     render(<SettingsPage />);
     expect(screen.getByText("general")).toBeInTheDocument();
+  });
+
+  it("shows language current value", () => {
+    render(<SettingsPage />);
+    const italianoElements = screen.getAllByText("Italiano");
+    expect(italianoElements.length).toBeGreaterThanOrEqual(1);
   });
 });

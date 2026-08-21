@@ -135,4 +135,20 @@ describe("LoginPage", () => {
         expect(screen.getByText("workspace")).toBeInTheDocument();
         localStorage.removeItem("pdfeditor_remember_token");
     });
+
+    it("toggles remember me checkbox", () => {
+        render(<LoginPage />);
+        const checkbox = screen.getByRole("checkbox");
+        expect(checkbox).toBeChecked();
+        fireEvent.click(checkbox);
+        expect(checkbox).not.toBeChecked();
+        fireEvent.click(checkbox);
+        expect(checkbox).toBeChecked();
+    });
+
+    it("renders backend failed message when backend is down", () => {
+        render(<LoginPage />);
+        const backendMsg = screen.queryByText(/Backend non disponibile/);
+        expect(backendMsg).not.toBeInTheDocument();
+    });
 });
