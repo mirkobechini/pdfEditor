@@ -1,9 +1,11 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import MergeModal from "../MergeModal";
 
 const mockOnClose = vi.fn();
 const mockOnSaved = vi.fn();
+const mockListPdfs = vi.fn();
+const mockMergePdfs = vi.fn();
 
 const baseProps = {
   open: true,
@@ -15,23 +17,23 @@ const baseProps = {
 
 vi.mock("../../shared/api", () => ({
   api: {
-    listPdfs: vi.fn().mockImplementation(() =>
-      Promise.resolve({
-        items: [
-          { id: "p1", original_filename: "doc1.pdf" },
-          { id: "p2", original_filename: "doc2.pdf" },
-          { id: "p3", original_filename: "doc3.pdf" },
-        ],
-        total: 3,
-      })
-    ),
-    mergePdfs: vi.fn().mockResolvedValue({ id: "merged", original_filename: "merged.pdf" }),
+    listPdfs: (...args: any[]) => mockListPdfs(...args),
+    mergePdfs: (...args: any[]) => mockMergePdfs(...args),
   },
 }));
 
 describe("MergeModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockListPdfs.mockResolvedValue({
+      items: [
+        { id: "p1", original_filename: "doc1.pdf" },
+        { id: "p2", original_filename: "doc2.pdf" },
+        { id: "p3", original_filename: "doc3.pdf" },
+      ],
+      total: 3,
+    });
+    mockMergePdfs.mockResolvedValue({ id: "merged", original_filename: "merged.pdf" });
   });
 
   it("renders PDF list with checkboxes", async () => {
@@ -67,6 +69,31 @@ describe("MergeModal", () => {
     });
     const btn = screen.getByRole("button", { name: /Merge/ });
     expect(btn).not.toBeDisabled();
+  });
+
+  it("calls mergePdfs on Merge click", async () => {
+    render(<MergeModal {...baseProps} />);
+    await waitFor(() => {
+      const checkboxes = screen.getAllByRole("checkbox");
+      fireEvent.click(checkboxes[1]);
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Merge/ }));
+    await waitFor(() => {
+      expect(mockMergePdfs).toHaveBeenCalled();
+    });
+  });
+
+  it("shows error on merge failure", async () => {
+    mockMergePdfs.mockRejectedValueOnce(new Error("Merge failed"));
+    render(<MergeModal {...baseProps} />);
+    await waitFor(() => {
+      const checkboxes = screen.getAllByRole("checkbox");
+      fireEvent.click(checkboxes[1]);
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Merge/ }));
+    await waitFor(() => {
+      expect(screen.getByText("Merge failed")).toBeInTheDocument();
+    });
   });
 
   it("calls onClose when Cancel clicked", async () => {

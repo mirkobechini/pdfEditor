@@ -1,8 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import PdfViewer from "../PdfViewer";
-
-(window as any).pdfjsLib = undefined;
 
 describe("PdfViewer", () => {
   const defaultProps = {
@@ -15,12 +13,34 @@ describe("PdfViewer", () => {
     onZoomChange: vi.fn(),
   };
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (window as any).pdfjsLib = undefined;
+  });
+
   it("renders placeholder when no fileUrl", () => {
     render(<PdfViewer {...defaultProps} />);
     expect(screen.getByText("Seleziona un PDF per visualizzarlo")).toBeInTheDocument();
   });
 
   it("renders canvas when fileUrl is provided", () => {
+    render(<PdfViewer {...defaultProps} fileUrl="blob:test" />);
+    const canvas = document.querySelector("canvas");
+    expect(canvas).toBeInTheDocument();
+  });
+
+  it("loads PDF.js script when not already loaded", () => {
+    const appendChildSpy = vi.spyOn(document.body, "appendChild");
+    render(<PdfViewer {...defaultProps} fileUrl="blob:test" />);
+    expect(appendChildSpy).toHaveBeenCalled();
+    appendChildSpy.mockRestore();
+  });
+
+  it("uses existing pdfjsLib if already loaded", () => {
+    (window as any).pdfjsLib = {
+      GlobalWorkerOptions: { workerSrc: "" },
+      getDocument: vi.fn().mockReturnValue({ promise: Promise.resolve({ numPages: 5 }) }),
+    };
     render(<PdfViewer {...defaultProps} fileUrl="blob:test" />);
     const canvas = document.querySelector("canvas");
     expect(canvas).toBeInTheDocument();
