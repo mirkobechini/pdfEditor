@@ -48,6 +48,8 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | Next.js 16 (app router) con `output: 'export'` | SSR/API Routes                            | Compatibilità Tauri (static export). API tutte su FastAPI.       |
 | PDF.js (Mozilla) per viewer                    | pdf-lib, PSPDFKit                         | Viewer PDF lato client open source, standard de facto.           |
 | vitest + jsdom + @testing-library/react        | Jest, Cypress                             | Test frontend. Coverage ~75%.                                    |
+| vitest (desktop) + @testing-library/react       | —                                         | **370 test, 71% coverage** (issue #665). CI dedicata `ci-desktop.yml` con path filter. |
+| CI strutturata per piattaforma                  | Singolo test.yml                          | `ci-web.yml` (backend+frontend), `ci-desktop.yml` (desktop), `ci-mobile.yml` (mobile). Ogni CI si attiva solo sui path della piattaforma. |
 | Dark mode con persistenza                      | localStorage + system preference fallback | —                                                                |
 
 ---

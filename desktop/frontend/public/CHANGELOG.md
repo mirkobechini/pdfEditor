@@ -4,7 +4,7 @@
 
 ### 🧪 Desktop test suite completa + CI per piattaforma
 
-- **Desktop frontend:** 366 test Vitest — coverage **71% lines** (target 70% raggiunto!)
+- **Desktop frontend:** 370 test Vitest — coverage **71.21% lines** (target 70% raggiunto!)
 - **Test coperti:** Editor page (47), Login (18), Register (10), Settings (21), Wizard (26), Profile (8), Startup (6), LockUnlockModal (14), MergeModal (7), MetadataModal (7), RemovePagesModal (7), ReorderPagesModal (7), SplitPagesModal (7), PdfViewer (5), GoogleLoginButton (5), PasswordInput (5), auth.tsx (17), api.ts (33), error-map.ts (26), tauri.ts (7), preferences (4), i18n (2)
 - **Rust:** 3 test cargo (get_sidecar_port, read_file_binary)
 - **CI desktop dedicata:** `ci-desktop.yml` con test + build check
