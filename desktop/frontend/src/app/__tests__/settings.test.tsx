@@ -138,4 +138,35 @@ describe("SettingsPage", () => {
     expect(screen.getByText("appLicense")).toBeInTheDocument();
     expect(screen.getByText("Licenze di terze parti")).toBeInTheDocument();
   });
+
+  it("shows editor tab content", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("editor"));
+    expect(screen.getByText("editorTitle")).toBeInTheDocument();
+    expect(screen.getByText("editorDesc")).toBeInTheDocument();
+  });
+
+  it("shows shortcuts tab content", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("shortcuts"));
+    expect(screen.getByText("shortcutsTitle")).toBeInTheDocument();
+    expect(screen.getByText("shortcutsDesc")).toBeInTheDocument();
+  });
+
+  it("shows advanced tab content", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("advanced"));
+    expect(screen.getByText("advancedTitle")).toBeInTheDocument();
+    expect(screen.getByText("advancedDesc")).toBeInTheDocument();
+  });
+
+  it("shows back button in sidebar", () => {
+    render(<SettingsPage />);
+    expect(screen.getByText("Torna all'editor")).toBeInTheDocument();
+  });
+
+  it("shows sidebar sections", () => {
+    render(<SettingsPage />);
+    expect(screen.getByText("general")).toBeInTheDocument();
+  });
 });

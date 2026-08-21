@@ -441,4 +441,16 @@ describe("EditorPage", () => {
     const dateElements = screen.getAllByText(/2025/);
     expect(dateElements.length).toBeGreaterThan(0);
   });
+
+  it("shows upload error on non-Error upload failure", async () => {
+    mockUploadPdf.mockRejectedValue("string error");
+    render(<EditorPage />);
+    await screen.findByText("doc2.pdf");
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(["test"], "test.pdf", { type: "application/pdf" });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(screen.getByText("string error")).toBeInTheDocument();
+    });
+  });
 });
