@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-08-20
+> **Aggiornato:** 2026-08-21
 
 ---
 
@@ -12,10 +12,10 @@
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
 | **Backend** (FastAPI/Python)   | pytest      | **371** | **88%**    | ✅    |
 | **Webapp** (Next.js/React)     | vitest      | **363** | ~75%       | ✅    |
+| **Desktop** (Tauri)            | vitest      | **366** | **71%**    | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **179** | ~77% lines | ✅    |
-| **Desktop** (Tauri)            | —           | **0**   | —          | ❌    |
 
-> ℹ️ **Desktop**: nessun test specifico. Le funzionalità desktop sono testate indirettamente dai test frontend web (stessa codebase Next.js). Il sidecar e il Rust Tauri non hanno test.
+> ℹ️ **Desktop**: 366 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
 
 ---
 
@@ -90,8 +90,10 @@
 
 | Gap                                | Issue/Plan                | Priorità |
 | ---------------------------------- | ------------------------- | -------- |
-| Desktop: tutti i test              | **Prossimo task**         | 🔴 Alta  |
-| useCloudSync hook                  | Issue #619 work remaining | Media    |
+| Desktop: componenti sotto 70%      | Settings (51%), Profile (38%), Startup (46%), Wizard (66%) | 🔴 Alta  |
+| Desktop: PdfViewer (57%)           | Rendering, spinner, page navigation | Media    |
+| Desktop: GoogleLoginButton (40%)   | Desktop redirect flow, error polling | Media    |
+| Desktop: useCloudSync hook         | Issue #619 work remaining | Media    |
 | Dialog UI (conflict/import/delete) | Issue #619 work remaining | Bassa    |
 | SettingsScreen / HomeScreen        | Da pianificare            | Bassa    |
 | OnboardingWizard (UI)              | Da pianificare            | Bassa    |
@@ -130,4 +132,14 @@ bash run-all-tests.sh
 
 ### Desktop (Tauri)
 
-Non ha test specifici. Le funzionalità desktop sono testate indirettamente dai test frontend web (stessa codebase Next.js). Il sidecar e il Rust Tauri non hanno test.
+366 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
+
+```bash
+# Desktop frontend (Next.js/React) — vitest
+cd desktop/frontend
+npx vitest run
+
+# Desktop Tauri (Rust) — cargo test
+cd desktop/src-tauri
+cargo test
+```

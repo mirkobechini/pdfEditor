@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-21
+
+### 🧪 Desktop test suite completa + CI per piattaforma (issue #665)
+
+- **Desktop frontend:** 366 test Vitest — coverage **71% lines** (target 70% raggiunto)
+- **Test coperti:** Editor page (47), Login (18), Register (10), Settings (21), Wizard (26), Profile (8), Startup (6), componenti modali, auth.tsx, api.ts, error-map.ts, tauri.ts, preferences
+- **Rust:** 3 test cargo (get_sidecar_port, read_file_binary)
+- **CI ristrutturata per piattaforma:**
+  - `ci-web.yml` — backend + frontend web (path filter: backend, frontend, shared)
+  - `ci-desktop.yml` — desktop test + build check (path filter: desktop, shared)
+  - `ci-mobile.yml` — mobile typecheck (path filter: mobile)
+  - `release-desktop.yml` — build Tauri, aspetta backend + frontend + desktop-test
+  - `release-mobile.yml` — build EAS, aspetta mobile-test
+
 ## 2026-08-18
 
 ### 🔐 JWT persistente e login offline desktop (issue #640)
