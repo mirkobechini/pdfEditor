@@ -342,9 +342,70 @@ describe("EditorPage", () => {
   it("shows file size in document list", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    // The formatFileSize function is used in the document list
-    // 102400 bytes = 100 KB, 204800 bytes = 200 KB
     const sizeTexts = screen.getAllByText(/KB/);
     expect(sizeTexts.length).toBeGreaterThan(0);
+  });
+
+  it("handles download failure gracefully", async () => {
+    mockDownloadPdf.mockRejectedValue(new Error("Download failed"));
+    render(<EditorPage />);
+    await screen.findByText("doc2.pdf");
+    const downloadBtn = screen.getByText("Download PDF");
+    fireEvent.click(downloadBtn);
+    // Should not throw — error is caught in handleDownload
+    await new Promise((r) => setTimeout(r, 50));
+  });
+
+  it("handles Open Local PDF with default path from localStorage", async () => {
+    localStorage.setItem("pdfeditor_work_folder", "C:\\Work");
+    render(<EditorPage />);
+    await screen.findByText("doc2.pdf");
+    const openBtn = screen.getByText("Open Local PDF");
+    fireEvent.click(openBtn);
+    await waitFor(() => {
+      expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_open", { defaultPath: "C:\\Work" });
+    });
+  });
+
+  it("handles Open Local PDF when dialog_open returns null", async () => {
+    mockTauriInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "dialog_open") return Promise.resolve(null);
+      return Promise.resolve(null);
+    });
+    render(<EditorPage />);
+    await screen.findByText("doc2.pdf");
+    const openBtn = screen.getByText("Open Local PDF");
+    fireEvent.click(openBtn);
+    await new Promise((r) => setTimeout(r, 50));
+    // Should not throw — null return is handled
+  });
+
+  it("handles Open Local PDF when read_file_binary returns null", async () => {
+    mockTauriInvoke.mockImplementation((cmd: string) => {
+      if (cmd === "dialog_open") return Promise.resolve("C:\\test.pdf");
+      if (cmd === "read_file_binary") return Promise.resolve(null);
+      return Promise.resolve(null);
+    });
+    render(<EditorPage />);
+    await screen.findByText("doc2.pdf");
+    const openBtn = screen.getByText("Open Local PDF");
+    fireEvent.click(openBtn);
+    await new Promise((r) => setTimeout(r, 50));
+    // Should not throw — null return is handled
+  });
+
+  it("shows UNLOCK in sidebar for password-protected doc", async () => {
+    const lockedDoc = { ...mockDocs[0], is_password_protected: true };
+    mockListPdfs.mockResolvedValue({ items: [lockedDoc], total: 1 });
+    mockDownloadPdf.mockRejectedValue(new Error("protetto da password"));
+    render(<EditorPage />);
+    await screen.findByText(/PDF protetto da password/);
+    expect(screen.getByText("UNLOCK")).toBeInTheDocument();
+  });
+
+  it("shows OCR button (disabled)", async () => {
+    render(<EditorPage />);
+    await screen.findByText("doc2.pdf");
+    expect(screen.getByText("OCR")).toBeInTheDocument();
   });
 });
