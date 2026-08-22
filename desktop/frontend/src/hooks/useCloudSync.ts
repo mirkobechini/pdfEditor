@@ -1,0 +1,188 @@
+/**
+ * Hook for managing cloud sync of PDFs on desktop.
+ *
+ * Handles bidirectional sync (local sidecar ↔ cloud backend),
+ * connectivity awareness, and sync mode preferences.
+ */
+import { useState, useEffect, useCallback, useRef } from "react";
+import { cloudApi, api } from "../shared/api";
+import type { PdfDocument } from "../shared/types";
+
+// ─── Constants ────────────────────────────────────────────────────
+
+const SYNC_ENABLED_KEY = "pdfeditor_cloud_sync_enabled";
+const SYNC_STARTUP_KEY = "pdfeditor_cloud_sync_on_startup";
+
+export type PdfSyncStatus = "pending" | "synced" | "error" | "none";
+
+export interface SyncProgress {
+  current: number;
+  total: number;
+}
+
+interface UseCloudSyncReturn {
+  /** Upload a single PDF to cloud */
+  uploadPdf: (pdfId: string) => Promise<boolean>;
+  /** Download a single PDF from cloud */
+  downloadPdf: (pdfId: string) => Promise<boolean>;
+  /** Full bidirectional sync */
+  syncAll: () => Promise<{ uploaded: number; downloaded: number; errors: string[] }>;
+  /** Sync status per PDF (map of pdfId → status) */
+  status: Record<string, PdfSyncStatus>;
+  /** Whether sync is enabled */
+  syncEnabled: boolean;
+  /** Set sync enabled/disabled */
+  setSyncEnabled: (val: boolean) => Promise<void>;
+  /** Sync on startup toggle */
+  syncOnStartup: boolean;
+  /** Set sync on startup */
+  setSyncOnStartup: (val: boolean) => Promise<void>;
+  /** Progress during sync */
+  progress: SyncProgress | null;
+  /** Whether currently syncing */
+  isSyncing: boolean;
+  /** Whether device is online */
+  isOnline: boolean;
+}
+
+export function useCloudSync(): UseCloudSyncReturn {
+  const [syncEnabled, setSyncEnabledState] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(SYNC_ENABLED_KEY) !== "false";
+  });
+  const [syncOnStartup, setSyncOnStartupState] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem(SYNC_STARTUP_KEY) !== "false";
+  });
+  const [status, setStatus] = useState<Record<string, PdfSyncStatus>>({});
+  const [progress, setProgress] = useState<SyncProgress | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const syncingRef = useRef(false);
+
+  // Listen to connectivity changes
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  const setSyncEnabled = useCallback(async (val: boolean) => {
+    setSyncEnabledState(val);
+    localStorage.setItem(SYNC_ENABLED_KEY, String(val));
+  }, []);
+
+  const setSyncOnStartup = useCallback(async (val: boolean) => {
+    setSyncOnStartupState(val);
+    localStorage.setItem(SYNC_STARTUP_KEY, String(val));
+  }, []);
+
+  const uploadPdf = useCallback(
+    async (pdfId: string): Promise<boolean> => {
+      if (!syncEnabled) return false;
+      try {
+        setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
+        const blob = await api.downloadPdf(pdfId);
+        const file = new File([blob], "temp.pdf", { type: "application/pdf" });
+        await cloudApi.uploadPdf(file);
+        setStatus((prev) => ({ ...prev, [pdfId]: "synced" }));
+        return true;
+      } catch {
+        setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
+        return false;
+      }
+    },
+    [syncEnabled],
+  );
+
+  const downloadPdf = useCallback(
+    async (pdfId: string): Promise<boolean> => {
+      if (!syncEnabled) return false;
+      try {
+        setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
+        const blob = await cloudApi.downloadPdf(pdfId);
+        const file = new File([blob], "temp.pdf", { type: "application/pdf" });
+        await api.uploadPdf(file);
+        setStatus((prev) => ({ ...prev, [pdfId]: "synced" }));
+        return true;
+      } catch {
+        setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
+        return false;
+      }
+    },
+    [syncEnabled],
+  );
+
+  const syncAll = useCallback(async (): Promise<{ uploaded: number; downloaded: number; errors: string[] }> => {
+    if (syncingRef.current || !syncEnabled) return { uploaded: 0, downloaded: 0, errors: ["Sync disabled or already in progress"] };
+    syncingRef.current = true;
+    setIsSyncing(true);
+    const result = { uploaded: 0, downloaded: 0, errors: [] as string[] };
+
+    try {
+      // Get local PDFs
+      const localRes = await api.listPdfs();
+      const localPdfs = localRes.items;
+
+      // Get cloud PDFs
+      const cloudRes = await cloudApi.listPdfs();
+      const cloudPdfs = cloudRes.items;
+
+      const localIds = new Set(localPdfs.map((p) => p.id));
+      const cloudIds = new Set(cloudPdfs.map((p) => p.id));
+
+      const total = localPdfs.length + cloudPdfs.length;
+      let current = 0;
+
+      // Upload local PDFs not in cloud
+      for (const pdf of localPdfs) {
+        if (!cloudIds.has(pdf.id)) {
+          setProgress({ current, total });
+          const ok = await uploadPdf(pdf.id);
+          if (ok) result.uploaded++;
+          else result.errors.push(`Upload failed: ${pdf.original_filename}`);
+        }
+        current++;
+      }
+
+      // Download cloud PDFs not in local
+      for (const pdf of cloudPdfs) {
+        if (!localIds.has(pdf.id)) {
+          setProgress({ current, total });
+          const ok = await downloadPdf(pdf.id);
+          if (ok) result.downloaded++;
+          else result.errors.push(`Download failed: ${pdf.original_filename}`);
+        }
+        current++;
+      }
+    } catch (err) {
+      result.errors.push(`Sync failed: ${err}`);
+    } finally {
+      setIsSyncing(false);
+      setProgress(null);
+      syncingRef.current = false;
+    }
+
+    return result;
+  }, [syncEnabled, uploadPdf, downloadPdf]);
+
+  return {
+    uploadPdf,
+    downloadPdf,
+    syncAll,
+    status,
+    syncEnabled,
+    setSyncEnabled,
+    syncOnStartup,
+    setSyncOnStartup,
+    progress,
+    isSyncing,
+    isOnline,
+  };
+}
