@@ -26,8 +26,9 @@ _PASSWORD_CACHE_TTL = 1800  # 30 minutes in seconds
 
 def _get_cached_password(pdf_id: str) -> str | None:
     """Return cached password from DB if not expired, cleaning up expired entries."""
-    from app.core.database import SessionLocal
-    db = SessionLocal()
+    from app.core.database import engine
+    from sqlalchemy.orm import Session
+    db = Session(bind=engine)
     try:
         entry = db.query(PasswordCache).filter(PasswordCache.pdf_id == pdf_id).first()
         if entry:
@@ -43,8 +44,9 @@ def _get_cached_password(pdf_id: str) -> str | None:
 
 def _cache_password(pdf_id: str, password: str) -> None:
     """Cache a password in DB, replacing any existing entry."""
-    from app.core.database import SessionLocal
-    db = SessionLocal()
+    from app.core.database import engine
+    from sqlalchemy.orm import Session
+    db = Session(bind=engine)
     try:
         # Cleanup expired entries on every cache write (lazy cleanup)
         cutoff = datetime.now(timezone.utc).timestamp() - _PASSWORD_CACHE_TTL
@@ -67,8 +69,9 @@ def _cache_password(pdf_id: str, password: str) -> None:
 
 def _clear_password_cache() -> None:
     """Clear all cached passwords (called on shutdown for security)."""
-    from app.core.database import SessionLocal
-    db = SessionLocal()
+    from app.core.database import engine
+    from sqlalchemy.orm import Session
+    db = Session(bind=engine)
     try:
         db.query(PasswordCache).delete()
         db.commit()
