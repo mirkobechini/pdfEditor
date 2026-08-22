@@ -189,7 +189,7 @@ fn dialog_open(app: tauri::AppHandle, default_path: Option<String>) -> Result<Op
 /// Open a native save dialog and write the provided bytes to the chosen path.
 /// Returns the path where the file was saved, or None if cancelled.
 #[tauri::command]
-fn dialog_save(app: tauri::AppHandle, default_name: String, data: Vec<u8>) -> Result<Option<String>, String> {
+fn dialog_save(app: tauri::AppHandle, default_name: String, data: Vec<u8>, default_folder: Option<String>) -> Result<Option<String>, String> {
     use tauri_plugin_dialog::DialogExt;
     use std::fs;
 
@@ -204,6 +204,14 @@ fn dialog_save(app: tauri::AppHandle, default_name: String, data: Vec<u8>) -> Re
         .file()
         .add_filter("PDF", &["pdf"])
         .set_file_name(&name);
+
+    // Set default folder if provided
+    if let Some(ref folder) = default_folder {
+        let path = std::path::Path::new(folder);
+        if path.exists() {
+            builder = builder.set_directory(path);
+        }
+    }
 
     match builder.blocking_save_file() {
         Some(file_path) => {
