@@ -165,7 +165,9 @@ export class ApiClient {
   }
 
   async login(email: string, password: string): Promise<AuthResponse> {
-    const res = await this._fetch(`${this.baseUrl}/auth/login`, {
+    // Usa fetch diretto (non _fetch) per evitare che il 401 auto-refresh
+    // interferisca con EMAIL_NOT_FOUND / WRONG_PASSWORD
+    const res = await fetch(`${this.baseUrl}/auth/login`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
