@@ -1,7 +1,7 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-08-18
+> **Aggiornato:** 2026-08-22
 
 ---
 

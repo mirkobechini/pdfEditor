@@ -1,6 +1,18 @@
 {
   "desktop": [
     {
+      "version": "v0.1.37",
+      "date": "2026-08-22",
+      "changes": [
+        "Desktop: cartella predefinita per salvataggio PDF (wizard + preferenze)",
+        "Mobile: remember me con schermata di caricamento",
+        "Mobile: snackbar errore upload cloud",
+        "Mobile: PDF salvati in cartella PdfEditor/",
+        "Mobile: fix cursore rename PDF",
+        "CI mobile: ora esegue test Jest"
+      ]
+    },
+    {
       "version": "v0.1.36",
       "date": "2026-08-22",
       "changes": [

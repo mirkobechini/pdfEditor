@@ -13,7 +13,7 @@
 | **Backend** (FastAPI/Python)   | pytest      | **371** | **88%**    | ✅    |
 | **Webapp** (Next.js/React)     | vitest      | **363** | ~75%       | ✅    |
 | **Desktop** (Tauri)            | vitest      | **370** | **71%**    | ✅    |
-| **Mobile** (React Native/Expo) | jest        | **179** | ~77% lines | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **182** | ~77% lines | ✅    |
 
 > ℹ️ **Desktop**: 370 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
 
@@ -76,13 +76,13 @@
 | usePdfStorage logic               | `usePdfStorage.test.ts`       | ✅       | 3 test: loadLocalPdfs, removeLocalPdf, savePdfLocally                                                                                                                                |
 | useSyncQueue logic                | `useSyncQueue.test.ts`        | ✅       | 7 test: loadQueue, saveQueue, enqueue, removeItem, clearQueue                                                                                                                        |
 | i18n configuration                | `i18n.test.ts`                | ✅       | 5 test: getSystemLanguage EN/IT/fallback, supportedLanguages                                                                                                                         |
-| useCloudSync hook                 | —                             | ❌       | Richiede mock di NetInfo, FileSystem — coperto parzialmente da cloudSyncApi                                                                                                          |
+| useCloudSync hook                 | `useCloudSync.test.ts`        | ✅       | 2 test: API upload fallisce, PDF non trovato                                                                                                                                         |
 | SettingsScreen                    | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 | HomeScreen                        | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 | Dialog (conflict, import, delete) | —                             | ❌       | Non testati (UI components)                                                                                                                                                          |
 | OnboardingWizard                  | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 
-**Totale: 179 test**
+**Totale: 182 test**
 
 ---
 
@@ -134,30 +134,30 @@ bash run-all-tests.sh
 
 370 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
 
-| Componente                     | Test | Coverage | Note |
-| ------------------------------ | ---- | -------- | ---- |
+| Componente                     | Test | Coverage | Note                                              |
+| ------------------------------ | ---- | -------- | ------------------------------------------------- |
 | Editor page (app/app/page.tsx) | 47   | 70%      | Modali, drag&drop, upload, download, zoom, delete |
-| Login page                     | 18   | 71%      | Form submission, errori, remember me, guest |
-| Register page                  | 10   | 95%      | Validazione, submission, errori |
-| Settings page                  | 21   | 51%      | Tutti i tab, about, language, density |
-| Wizard page                    | 26   | 66%      | Step navigation, checkbox, folder, skip/finish |
-| Profile page                   | 8    | 38%      | User info, logout, google unlink |
-| Startup page                   | 6    | 46%      | Steps, loading |
-| LockUnlockModal                | 14   | 97%      | Lock/unlock, password validation, eye toggle |
-| MergeModal                     | 7    | 97%      | Checkbox selection, merge API call |
-| MetadataModal                  | 7    | 77%      | Metadata fields, save, error |
-| RemovePagesModal               | 7    | 66%      | Page selection, remove, error |
-| ReorderPagesModal              | 7    | 58%      | DnD, reorder API call, error |
-| SplitPagesModal                | 7    | 74%      | Split point, split API call, error |
-| PdfViewer                      | 5    | 57%      | Canvas, PDF.js loading, no-file placeholder |
-| GoogleLoginButton              | 5    | 40%      | Desktop/web, no-client-id fallback |
-| PasswordInput                  | 5    | 80%      | Eye toggle, onChange, required |
-| auth.tsx                       | 17   | 74%      | Login, register, logout, guestLogin, Tauri paths |
-| api.ts                         | 33   | 85%      | CRUD, admin, edge cases, refresh token |
-| error-map.ts                   | 26   | 91%      | Tutti i codici errore, test edge case |
-| tauri.ts                       | 7    | 100%     | isTauri, tauriInvoke, getApiBaseUrl |
-| preferences.tsx                | 4    | 71%      | Load, fallback, update, error |
-| i18n.tsx                       | 2    | 100%     | Locale switching |
+| Login page                     | 18   | 71%      | Form submission, errori, remember me, guest       |
+| Register page                  | 10   | 95%      | Validazione, submission, errori                   |
+| Settings page                  | 21   | 51%      | Tutti i tab, about, language, density             |
+| Wizard page                    | 26   | 66%      | Step navigation, checkbox, folder, skip/finish    |
+| Profile page                   | 8    | 38%      | User info, logout, google unlink                  |
+| Startup page                   | 6    | 46%      | Steps, loading                                    |
+| LockUnlockModal                | 14   | 97%      | Lock/unlock, password validation, eye toggle      |
+| MergeModal                     | 7    | 97%      | Checkbox selection, merge API call                |
+| MetadataModal                  | 7    | 77%      | Metadata fields, save, error                      |
+| RemovePagesModal               | 7    | 66%      | Page selection, remove, error                     |
+| ReorderPagesModal              | 7    | 58%      | DnD, reorder API call, error                      |
+| SplitPagesModal                | 7    | 74%      | Split point, split API call, error                |
+| PdfViewer                      | 5    | 57%      | Canvas, PDF.js loading, no-file placeholder       |
+| GoogleLoginButton              | 5    | 40%      | Desktop/web, no-client-id fallback                |
+| PasswordInput                  | 5    | 80%      | Eye toggle, onChange, required                    |
+| auth.tsx                       | 17   | 74%      | Login, register, logout, guestLogin, Tauri paths  |
+| api.ts                         | 33   | 85%      | CRUD, admin, edge cases, refresh token            |
+| error-map.ts                   | 26   | 91%      | Tutti i codici errore, test edge case             |
+| tauri.ts                       | 7    | 100%     | isTauri, tauriInvoke, getApiBaseUrl               |
+| preferences.tsx                | 4    | 71%      | Load, fallback, update, error                     |
+| i18n.tsx                       | 2    | 100%     | Locale switching                                  |
 
 **Rust (Tauri commands):** 3 test (get_sidecar_port, read_file_binary)
 

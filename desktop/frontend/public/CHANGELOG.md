@@ -2,7 +2,15 @@
 
 ## 2026-08-22
 
-### 🔥 Keep-warm backend + icona origine piattaforma
+### � Mobile bug fixes + Desktop cartella predefinita
+
+- **Desktop:** Cartella predefinita per salvataggio PDF (wizard + preferenze)
+- **Mobile:** Schermata di caricamento durante restore session (remember me)
+- **Mobile:** Mostra snackbar di errore quando upload su cloud fallisce
+- **Mobile:** PDF salvati in cartella PdfEditor/ invece di pdfs/
+- **Mobile:** Cursore non salta più durante il rename PDF
+
+### �🔥 Keep-warm backend + icona origine piattaforma
 
 - **Keep-warm:** GitHub Actions pinga `/health` ogni 5 minuti 24/7 + frontend keep-warm quando l'app è aperta
 - **Icona origine:** Ogni PDF mostra 🌐 💻 📱 per indicare da dove è stato caricato (nessuna icona se dalla piattaforma corrente)

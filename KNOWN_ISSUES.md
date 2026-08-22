@@ -5,6 +5,20 @@
 
 ---
 
+## ✅ Risolte in questa sessione
+
+| Issue | Fix                                              |
+| ----- | ------------------------------------------------ |
+| #667  | Keep-warm backend (GitHub Actions + frontend)    |
+| #668  | Icona origine piattaforma per PDF                |
+| #669  | Mobile: remember me con schermata di caricamento |
+| #670  | Mobile: snackbar errore upload cloud             |
+| #671  | Mobile: PDF in cartella PdfEditor/               |
+| #672  | Mobile: fix cursore rename PDF                   |
+| #673  | Desktop: cartella predefinita salvataggio PDF    |
+
+---
+
 ## 🔴 Bug aperti
 
 ### K6 — Disinstallazione non cancella dati utente in %APPDATA%
