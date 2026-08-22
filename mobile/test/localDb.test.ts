@@ -91,6 +91,20 @@ describe("localDb", () => {
     );
   });
 
+  it("savePdfLocally updates original_filename on rename", async () => {
+    mockDb.runAsync.mockResolvedValue(undefined);
+    const renamed = {
+      ...samplePdf,
+      original_filename: "renamed.pdf",
+      updated_at: "2026-08-22T00:00:00Z",
+    };
+    await savePdfLocally(renamed);
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT OR REPLACE"),
+      expect.arrayContaining(["renamed.pdf"]),
+    );
+  });
+
   // ─── Cloud sync helpers ─────────────────────────────────────────
 
   it("markPdfCloudSynced sets cloud_synced=1", async () => {
