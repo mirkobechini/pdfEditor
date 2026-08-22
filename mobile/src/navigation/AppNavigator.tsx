@@ -22,6 +22,7 @@ export type RootStackParamList = {
     PdfViewer: { pdfId: string; title?: string };
     Scanner: undefined;
     Tools: undefined;
+    Loading: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
