@@ -118,6 +118,66 @@ describe("Sidebar", () => {
         });
     });
 
+    it("shows platform icon for desktop uploads", async () => {
+        const desktopFiles = {
+            items: [
+                { id: "1", original_filename: "doc1.pdf", file_size: 1000, page_count: 5, upload_source: "desktop", created_at: "2026-01-01", updated_at: "2026-01-01" },
+            ],
+            total: 1,
+        };
+        (api.listPdfs as any).mockResolvedValue(desktopFiles);
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("💻")).toBeInTheDocument();
+        });
+    });
+
+    it("shows platform icon for mobile uploads", async () => {
+        const mobileFiles = {
+            items: [
+                { id: "1", original_filename: "doc1.pdf", file_size: 1000, page_count: 5, upload_source: "mobile", created_at: "2026-01-01", updated_at: "2026-01-01" },
+            ],
+            total: 1,
+        };
+        (api.listPdfs as any).mockResolvedValue(mobileFiles);
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("📱")).toBeInTheDocument();
+        });
+    });
+
+    it("does not show platform icon for same-platform uploads", async () => {
+        const webFiles = {
+            items: [
+                { id: "1", original_filename: "doc1.pdf", file_size: 1000, page_count: 5, upload_source: "web", created_at: "2026-01-01", updated_at: "2026-01-01" },
+            ],
+            total: 1,
+        };
+        (api.listPdfs as any).mockResolvedValue(webFiles);
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+        });
+        expect(screen.queryByText("🌐")).not.toBeInTheDocument();
+    });
+
+    it("does not show platform icon when upload_source is undefined", async () => {
+        const noSourceFiles = {
+            items: [
+                { id: "1", original_filename: "doc1.pdf", file_size: 1000, page_count: 5, created_at: "2026-01-01", updated_at: "2026-01-01" },
+            ],
+            total: 1,
+        };
+        (api.listPdfs as any).mockResolvedValue(noSourceFiles);
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+        });
+        expect(screen.queryByText("🌐")).not.toBeInTheDocument();
+        expect(screen.queryByText("💻")).not.toBeInTheDocument();
+        expect(screen.queryByText("📱")).not.toBeInTheDocument();
+    });
+
     it("shows error message when loadFiles fails", async () => {
         (api.listPdfs as any).mockRejectedValue(new Error("Network error"));
         render(<Sidebar {...defaultProps} />);
