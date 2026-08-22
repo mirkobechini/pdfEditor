@@ -11,6 +11,15 @@ vi.mock("next/navigation", () => ({
 vi.mock("../../shared/tauri", () => ({
   isTauri: () => true,
   tauriInvoke: vi.fn(),
+  getApiBaseUrl: () => "http://127.0.0.1:7723",
+  getCloudApiBaseUrl: () => "https://pdfeditor-api.mirkobechini.com",
+}));
+
+vi.mock("../../lib/preferences", () => ({
+  usePreferences: () => ({
+    prefs: { default_zoom: 100, theme: "dark", language: "it", antialiasing: true, density: "comfortable", default_save_folder: "" },
+    updatePrefs: vi.fn(),
+  }),
 }));
 
 describe("WizardPage", () => {
@@ -147,13 +156,12 @@ describe("WizardPage", () => {
     expect(mockPush).toHaveBeenCalledWith("/login");
   });
 
-  it("stores wizard_done and redirects on Finish", () => {
+  it("redirects to /app on Finish", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(screen.getByText("Continua"));
     fireEvent.click(screen.getByText(/Fine/));
-    expect(localStorage.getItem("pdfeditor_wizard_done")).toBe("true");
-    expect(mockPush).toHaveBeenCalledWith("/login");
+    expect(mockPush).toHaveBeenCalledWith("/app");
   });
 
   // ── Sidebar ──
