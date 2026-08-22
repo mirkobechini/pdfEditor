@@ -36,8 +36,8 @@ export function usePdfStorage() {
         const asset = result.assets[0];
         const id = generateId();
 
-        // Create pdfs directory in documents folder
-        const pdfDir = new Directory(Paths.document, "pdfs");
+        // Create PdfEditor directory in documents folder
+        const pdfDir = new Directory(Paths.document, "PdfEditor");
         try {
           pdfDir.create();
         } catch {
