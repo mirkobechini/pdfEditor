@@ -463,7 +463,15 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                 <Dialog visible={renameDialog} onDismiss={() => setRenameDialog(false)}>
                     <Dialog.Title>{t("home.renameTitle")}</Dialog.Title>
                     <Dialog.Content>
-                        <TextInput label={t("home.fileName")} value={renameText} onChangeText={setRenameText} mode="outlined" autoFocus />
+                        <TextInput
+                            key={renameTarget?.id || "rename"}
+                            label={t("home.fileName")}
+                            defaultValue={renameText}
+                            onChangeText={setRenameText}
+                            mode="outlined"
+                            autoFocus
+                            onSubmitEditing={confirmRename}
+                        />
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setRenameDialog(false)}>{t("common.cancel")}</Button>
