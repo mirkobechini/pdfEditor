@@ -14,38 +14,66 @@ from app.core.storage import (
     clear_snapshots,
 )
 from app.models.pdf import PdfDocument
+from app.models.password_cache import PasswordCache
 from app.repositories.pdf_repo import PdfRepository
 from app.schemas.pdf import PdfListResponse, PdfResponse
 
 
-# In-memory password cache for password-protected PDFs (never persisted to disk)
-# Each entry is (password, timestamp); auto-expires after 30 minutes
-_password_cache: dict[str, tuple[str, float]] = {}
+# DB-backed password cache for password-protected PDFs (supports multi-worker)
+# Entries auto-expire after 30 minutes (cleaned on read/write)
 _PASSWORD_CACHE_TTL = 1800  # 30 minutes in seconds
 
 
 def _get_cached_password(pdf_id: str) -> str | None:
-    """Return cached password if not expired, cleaning up expired entries."""
-    if pdf_id in _password_cache:
-        password, timestamp = _password_cache[pdf_id]
-        if time.time() - timestamp < _PASSWORD_CACHE_TTL:
-            return password
-        del _password_cache[pdf_id]
-    return None
+    """Return cached password from DB if not expired, cleaning up expired entries."""
+    from app.core.database import SessionLocal
+    db = SessionLocal()
+    try:
+        entry = db.query(PasswordCache).filter(PasswordCache.pdf_id == pdf_id).first()
+        if entry:
+            age = (datetime.now(timezone.utc) - entry.created_at).total_seconds()
+            if age < _PASSWORD_CACHE_TTL:
+                return entry.password
+            db.delete(entry)
+            db.commit()
+        return None
+    finally:
+        db.close()
 
 
 def _cache_password(pdf_id: str, password: str) -> None:
-    """Cache a password with current timestamp."""
-    # Cleanup expired entries on every cache write (lazy cleanup)
-    expired = [k for k, (_, ts) in _password_cache.items() if time.time() - ts >= _PASSWORD_CACHE_TTL]
-    for k in expired:
-        del _password_cache[k]
-    _password_cache[pdf_id] = (password, time.time())
+    """Cache a password in DB, replacing any existing entry."""
+    from app.core.database import SessionLocal
+    db = SessionLocal()
+    try:
+        # Cleanup expired entries on every cache write (lazy cleanup)
+        cutoff = datetime.now(timezone.utc).timestamp() - _PASSWORD_CACHE_TTL
+        cutoff_dt = datetime.fromtimestamp(cutoff, tz=timezone.utc)
+        db.query(PasswordCache).filter(PasswordCache.created_at < cutoff_dt).delete()
+        db.commit()
+
+        # Upsert: delete existing then insert new
+        existing = db.query(PasswordCache).filter(PasswordCache.pdf_id == pdf_id).first()
+        if existing:
+            db.delete(existing)
+            db.commit()
+
+        entry = PasswordCache(pdf_id=pdf_id, password=password)
+        db.add(entry)
+        db.commit()
+    finally:
+        db.close()
 
 
 def _clear_password_cache() -> None:
     """Clear all cached passwords (called on shutdown for security)."""
-    _password_cache.clear()
+    from app.core.database import SessionLocal
+    db = SessionLocal()
+    try:
+        db.query(PasswordCache).delete()
+        db.commit()
+    finally:
+        db.close()
 
 
 class PdfService:
