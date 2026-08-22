@@ -8,11 +8,13 @@ import { useAuth } from "../../shared/auth";
 import { useLocaleSetter } from "../../lib/i18n";
 import { usePreferences } from "../../lib/preferences";
 import { isTauri, tauriInvoke } from "../../shared/tauri";
+import { useCloudSync } from "../../hooks/useCloudSync";
 
 const sections = [
     { id: "general", label: "general" },
     { id: "appearance", label: "appearance" },
     { id: "editor", label: "editor" },
+    { id: "cloud", label: "cloud" },
     { id: "shortcuts", label: "shortcuts" },
     { id: "advanced", label: "advanced" },
     { id: "about", label: "about" },
@@ -107,6 +109,7 @@ export default function SettingsPage() {
     const { user } = useAuth();
     const setLocale = useLocaleSetter();
     const { prefs, updatePrefs } = usePreferences();
+    const { syncEnabled, setSyncEnabled, syncOnStartup, setSyncOnStartup, isOnline, isSyncing, progress, syncAll } = useCloudSync();
     const [activeTab, setActiveTab] = React.useState<SectionId>("general");
     const [appVersion, setAppVersion] = React.useState("");
     const [changelogOpen, setChangelogOpen] = React.useState(false);
@@ -199,6 +202,62 @@ export default function SettingsPage() {
                                 >
                                     <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${prefs.antialiasing ? "right-0.5" : "left-0.5"}`} />
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            case "cloud":
+                return (
+                    <div className="max-w-[900px]">
+                        <h1 className="text-[36px] font-bold leading-tight text-white">Cloud Sync</h1>
+                        <p className="mt-1 text-[14px] text-[#9d9184]">Sincronizza i tuoi PDF con il cloud</p>
+                        <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
+                            <div className="flex items-center justify-between py-3 border-b border-white/10">
+                                <div>
+                                    <p className="text-[16px] font-semibold text-white">Sync abilitato</p>
+                                    <p className="text-[14px] text-[#9d9184]">Carica e scarica PDF dal cloud</p>
+                                </div>
+                                <button
+                                    onClick={() => setSyncEnabled(!syncEnabled)}
+                                    className={`h-6 w-11 rounded-full relative transition-colors cursor-pointer ${syncEnabled ? "bg-[#f7871f]" : "bg-white/20"}`}
+                                >
+                                    <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${syncEnabled ? "right-0.5" : "left-0.5"}`} />
+                                </button>
+                            </div>
+                            <div className="flex items-center justify-between py-3 border-b border-white/10">
+                                <div>
+                                    <p className="text-[16px] font-semibold text-white">Sync all&apos;avvio</p>
+                                    <p className="text-[14px] text-[#9d9184]">Sincronizza automaticamente all&apos;apertura</p>
+                                </div>
+                                <button
+                                    onClick={() => setSyncOnStartup(!syncOnStartup)}
+                                    className={`h-6 w-11 rounded-full relative transition-colors cursor-pointer ${syncOnStartup ? "bg-[#f7871f]" : "bg-white/20"}`}
+                                >
+                                    <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${syncOnStartup ? "right-0.5" : "left-0.5"}`} />
+                                </button>
+                            </div>
+                            <div className="flex items-center justify-between py-3">
+                                <div>
+                                    <p className="text-[16px] font-semibold text-white">Stato connessione</p>
+                                    <p className="text-[14px] text-[#9d9184]">{isOnline ? "Online" : "Offline"}</p>
+                                </div>
+                                <span className={`rounded-xl px-3 py-1.5 text-[12px] font-semibold ${isOnline ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
+                                    {isOnline ? "● Online" : "● Offline"}
+                                </span>
+                            </div>
+                            <div className="pt-3 border-t border-white/10">
+                                <button
+                                    onClick={syncAll}
+                                    disabled={isSyncing || !syncEnabled || !isOnline}
+                                    className="cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2 text-[14px] font-semibold text-white transition hover:bg-[#ff9b37] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {isSyncing ? "Sync in corso..." : "Sincronizza ora"}
+                                </button>
+                                {progress && (
+                                    <p className="mt-2 text-[12px] text-[#9d9184]">
+                                        Sync in corso... ({progress.current}/{progress.total})
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
