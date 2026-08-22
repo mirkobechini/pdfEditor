@@ -32,7 +32,11 @@ def _get_cached_password(pdf_id: str) -> str | None:
     try:
         entry = db.query(PasswordCache).filter(PasswordCache.pdf_id == pdf_id).first()
         if entry:
-            age = (datetime.now(timezone.utc) - entry.created_at).total_seconds()
+            # Handle both naive and aware datetimes (SQLite stores naive)
+            created = entry.created_at
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            age = (datetime.now(timezone.utc) - created).total_seconds()
             if age < _PASSWORD_CACHE_TTL:
                 return entry.password
             db.delete(entry)
