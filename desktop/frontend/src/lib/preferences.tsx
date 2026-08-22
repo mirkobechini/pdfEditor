@@ -9,6 +9,7 @@ export interface Preferences {
     default_zoom: number;
     antialiasing: boolean;
     density: string;
+    default_save_folder: string;
 }
 
 interface PreferencesContextValue {
@@ -25,6 +26,7 @@ const DEFAULT_PREFS: Preferences = {
     default_zoom: 100,
     antialiasing: true,
     density: "comfortable",
+    default_save_folder: "",
 };
 
 const PreferencesContext = createContext<PreferencesContextValue | null>(null);
