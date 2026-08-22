@@ -342,39 +342,44 @@ class TestAuthServiceEdgeCases:
             with pytest.raises(ValueError, match="Account is inactive"):
                 service.google_login("fake-id-token")
 
-    def test_password_cache_expired(self):
+    def test_password_cache_expired(self, db_session):
         """Test that expired password cache entries are cleaned up."""
         from app.services.pdf_service import _cache_password, _get_cached_password, _clear_password_cache
+        from app.models.password_cache import PasswordCache
+        from datetime import datetime, timezone, timedelta
         _clear_password_cache()
 
-        # Cache a password with a manipulated timestamp
-        import time
-        from app.services.pdf_service import _password_cache, _PASSWORD_CACHE_TTL
-        old_time = time.time() - _PASSWORD_CACHE_TTL - 10
-        _password_cache["expired-pdf"] = ("oldpass", old_time)
+        # Insert an expired entry directly via DB
+        expired = PasswordCache(pdf_id="expired-pdf", password="oldpass")
+        expired.created_at = datetime.now(timezone.utc) - timedelta(minutes=31)
+        db_session.add(expired)
+        db_session.commit()
 
         # Getting expired password should return None and clean up
         result = _get_cached_password("expired-pdf")
         assert result is None
-        assert "expired-pdf" not in _password_cache
+        assert db_session.query(PasswordCache).filter(PasswordCache.pdf_id == "expired-pdf").first() is None
 
         _clear_password_cache()
 
-    def test_password_cache_lazy_cleanup(self):
+    def test_password_cache_lazy_cleanup(self, db_session):
         """Test lazy cleanup on cache write."""
-        from app.services.pdf_service import _cache_password, _get_cached_password, _clear_password_cache, _password_cache, _PASSWORD_CACHE_TTL
+        from app.services.pdf_service import _cache_password, _get_cached_password, _clear_password_cache
+        from app.models.password_cache import PasswordCache
+        from datetime import datetime, timezone, timedelta
         _clear_password_cache()
 
-        import time
-        # Add an expired entry
-        old_time = time.time() - _PASSWORD_CACHE_TTL - 10
-        _password_cache["lazy-expired"] = ("oldpass", old_time)
+        # Add an expired entry directly via DB
+        expired = PasswordCache(pdf_id="lazy-expired", password="oldpass")
+        expired.created_at = datetime.now(timezone.utc) - timedelta(minutes=31)
+        db_session.add(expired)
+        db_session.commit()
 
         # Writing a new cache entry should trigger cleanup of expired entries
         _cache_password("new-pdf", "newpass")
 
-        assert "lazy-expired" not in _password_cache
-        assert "new-pdf" in _password_cache
+        assert db_session.query(PasswordCache).filter(PasswordCache.pdf_id == "lazy-expired").first() is None
+        assert db_session.query(PasswordCache).filter(PasswordCache.pdf_id == "new-pdf").first() is not None
 
         _clear_password_cache()
 
