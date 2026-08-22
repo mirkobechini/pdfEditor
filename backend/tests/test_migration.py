@@ -93,40 +93,38 @@ class TestMigrationIntegrity:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
-            # Verify latest migration (add_upload_source_to_pdf_documents) exists
+            # Verify latest migration (add_password_cache_table) exists
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
             tables_before = inspector.get_table_names()
             assert "sync_status" in tables_before
             assert "users" in tables_before
-            # Check upload_source column exists (latest migration)
-            columns = [c["name"] for c in inspector.get_columns("pdf_documents")]
-            assert "upload_source" in columns, f"upload_source column should exist before downgrade: {columns}"
+            # Check password_cache table exists (latest migration)
+            assert "password_cache" in tables_before, f"password_cache table should exist before downgrade: {tables_before}"
             _cleanup_engine(engine)
 
-            # Downgrade one step (remove upload_source column)
+            # Downgrade one step (remove password_cache table)
             rc, out, err = _run_migration(db_path, "downgrade -1")
             assert rc == 0, f"alembic downgrade -1 failed:\n{err}\n{out}"
 
-            # Verify upload_source is gone, but sync_status and other tables still exist
+            # Verify password_cache is gone, but sync_status and other tables still exist
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
             tables_after = inspector.get_table_names()
             assert "bug_reports" in tables_after
             assert "sync_status" in tables_after, "sync_status should survive this downgrade"
-            columns = [c["name"] for c in inspector.get_columns("pdf_documents")]
-            assert "upload_source" not in columns, f"upload_source column should be gone after downgrade: {columns}"
+            assert "password_cache" not in tables_after, f"password_cache table should be gone after downgrade: {tables_after}"
             _cleanup_engine(engine)
 
             # Upgrade again
             rc, out, err = _run_migration(db_path, "upgrade head")
             assert rc == 0, f"alembic upgrade head after downgrade failed:\n{out}\n{err}"
 
-            # Verify upload_source is restored
+            # Verify password_cache is restored
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            columns = [c["name"] for c in inspector.get_columns("pdf_documents")]
-            assert "upload_source" in columns, f"upload_source column should be restored after upgrade: {columns}"
+            tables = inspector.get_table_names()
+            assert "password_cache" in tables, f"password_cache table should be restored after upgrade: {tables}"
             assert "sync_status" in inspector.get_table_names()
             _cleanup_engine(engine)
 
