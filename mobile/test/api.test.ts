@@ -308,7 +308,7 @@ describe("ApiClient", () => {
       expect(mockFetch).toHaveBeenNthCalledWith(1, "file:///test.pdf");
       expect(mockFetch).toHaveBeenNthCalledWith(
         2,
-        `${BASE}/pdfs/upload`,
+        `${BASE}/pdfs/upload?upload_source=mobile`,
         expect.objectContaining({ method: "POST" }),
       );
     });
