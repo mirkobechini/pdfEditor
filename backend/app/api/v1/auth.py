@@ -29,6 +29,7 @@ from app.services.email_service import EmailService
 from app.repositories.user_repo import UserRepository
 from app.core.errors import error_response, ErrorCode
 from app.core.csrf import generate_csrf_token, set_csrf_cookie
+from app.core.google_oauth_templates import GOOGLE_OAUTH_SUCCESS, GOOGLE_OAUTH_ERROR
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()
@@ -472,22 +473,18 @@ def google_desktop_token_receive(
     global _desktop_oauth_token
     if error:
         return HTMLResponse(
-            content=f"<html><body><h2>Google login failed</h2><p>{error}</p>"
-            "<p>Chiudi questa finestra e riprova.</p></body></html>"
+            content=GOOGLE_OAUTH_ERROR.format(error_msg=error)
         )
 
     if not token:
         return HTMLResponse(
-            content="<html><body><h2>Token mancante</h2>"
-            "<p>Chiudi questa finestra e riprova.</p></body></html>"
+            content=GOOGLE_OAUTH_ERROR.format(error_msg="Token mancante. Riprova.")
         )
 
     _desktop_oauth_token = token
 
     return HTMLResponse(
-        content="<html><body><h2>Login con Google riuscito!</h2>"
-        "<p>Puoi chiudere questa finestra e tornare all'app.</p>"
-        "<script>window.close();</script></body></html>"
+        content=GOOGLE_OAUTH_SUCCESS
     )
 
 
