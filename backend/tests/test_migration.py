@@ -93,40 +93,40 @@ class TestMigrationIntegrity:
             db_path = os.path.join(tmp, "test.db")
             _run_migration(db_path, "upgrade head")
 
-            # Verify latest migration (add_is_guest_to_user) exists
+            # Verify latest migration (add_upload_source_to_pdf_documents) exists
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
             tables_before = inspector.get_table_names()
             assert "sync_status" in tables_before
             assert "users" in tables_before
-            # Check is_guest column exists (latest migration)
-            columns = [c["name"] for c in inspector.get_columns("users")]
-            assert "is_guest" in columns, f"is_guest column should exist before downgrade: {columns}"
+            # Check upload_source column exists (latest migration)
+            columns = [c["name"] for c in inspector.get_columns("pdf_documents")]
+            assert "upload_source" in columns, f"upload_source column should exist before downgrade: {columns}"
             _cleanup_engine(engine)
 
-            # Downgrade one step (remove is_guest column)
+            # Downgrade one step (remove upload_source column)
             rc, out, err = _run_migration(db_path, "downgrade -1")
             assert rc == 0, f"alembic downgrade -1 failed:\n{err}\n{out}"
 
-            # Verify is_guest is gone, but sync_status and other tables still exist
+            # Verify upload_source is gone, but sync_status and other tables still exist
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
             tables_after = inspector.get_table_names()
             assert "bug_reports" in tables_after
             assert "sync_status" in tables_after, "sync_status should survive this downgrade"
-            columns = [c["name"] for c in inspector.get_columns("users")]
-            assert "is_guest" not in columns, f"is_guest column should be gone after downgrade: {columns}"
+            columns = [c["name"] for c in inspector.get_columns("pdf_documents")]
+            assert "upload_source" not in columns, f"upload_source column should be gone after downgrade: {columns}"
             _cleanup_engine(engine)
 
             # Upgrade again
             rc, out, err = _run_migration(db_path, "upgrade head")
             assert rc == 0, f"alembic upgrade head after downgrade failed:\n{out}\n{err}"
 
-            # Verify is_guest is restored
+            # Verify upload_source is restored
             engine = create_engine(f"sqlite:///{db_path}")
             inspector = inspect(engine)
-            columns = [c["name"] for c in inspector.get_columns("users")]
-            assert "is_guest" in columns, f"is_guest column should be restored after upgrade: {columns}"
+            columns = [c["name"] for c in inspector.get_columns("pdf_documents")]
+            assert "upload_source" in columns, f"upload_source column should be restored after upgrade: {columns}"
             assert "sync_status" in inspector.get_table_names()
             _cleanup_engine(engine)
 
