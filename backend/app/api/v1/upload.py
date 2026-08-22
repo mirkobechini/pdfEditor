@@ -35,6 +35,7 @@ def list_pdfs(
 @router.post("/upload", response_model=PdfResponse, status_code=status.HTTP_201_CREATED)
 def upload_pdf(
     file: UploadFile = File(...),
+    upload_source: str = "web",
     current_user: User = Depends(get_current_user),
     service: PdfService = Depends(get_pdf_service),
 ) -> PdfResponse:
@@ -64,6 +65,7 @@ def upload_pdf(
             filename=file.filename,
             content=content,
             user_id=current_user.id,
+            upload_source=upload_source,
         )
     except ValueError:
         raise error_response(ErrorCode.INVALID_PDF, "Invalid PDF file")

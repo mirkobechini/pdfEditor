@@ -100,4 +100,5 @@ export interface LocalPdf {
   cloud_synced?: number; // 0 = not synced, 1 = synced
   cloud_synced_at?: string | null; // ISO timestamp of last successful sync
   cloud_synced_exclude?: number; // 1 = excluded from sync (keep only local)
+  upload_source?: string; // web, desktop, mobile — da dove è stato caricato
 }

@@ -87,7 +87,7 @@ class PdfService:
             doc.close()
         return content
 
-    def upload(self, filename: str, content: bytes, user_id: str) -> PdfDocument:
+    def upload(self, filename: str, content: bytes, user_id: str, upload_source: str = "web") -> PdfDocument:
         """Validate, save to disk, and create DB record."""
         # Validate PDF
         if not validate_pdf(content):
@@ -121,6 +121,7 @@ class PdfService:
             page_count=page_count if not is_encrypted else 0,
             is_password_protected=is_encrypted,
             pdf_creation_date=pdf_creation_date,
+            upload_source=upload_source,
             user_id=user_id,
         )
         return self.repo.create(pdf)

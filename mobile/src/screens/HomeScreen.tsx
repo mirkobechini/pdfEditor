@@ -344,6 +344,9 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                             </View>
                                             <View style={{ flex: 1, paddingRight: 12 }}>
                                                 <Text variant="titleMedium" style={{ fontWeight: "600" }} numberOfLines={1}>
+                                                    {item.upload_source && item.upload_source !== "mobile" ? (
+                                                        <Text>{item.upload_source === "web" ? "🌐 " : item.upload_source === "desktop" ? "💻 " : ""}</Text>
+                                                    ) : null}
                                                     {item.original_filename}
                                                 </Text>
                                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
