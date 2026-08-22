@@ -14,6 +14,7 @@ import MergeModal from "../../components/MergeModal";
 import LockUnlockModal from "../../components/LockUnlockModal";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
+import { useCloudSync } from "../../hooks/useCloudSync";
 import type { PdfDocument } from "../../shared/types";
 
 const API_BASE = getApiBaseUrl();
@@ -21,6 +22,7 @@ const API_BASE = getApiBaseUrl();
 export default function EditorPage() {
     const { user } = useAuth();
     const { prefs } = usePreferences();
+    const { status: syncStatus } = useCloudSync();
     const [docs, setDocs] = React.useState<PdfDocument[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [selectedDoc, setSelectedDoc] = React.useState<PdfDocument | null>(null);
@@ -295,6 +297,9 @@ export default function EditorPage() {
                                                     )}
                                                     <p className="mt-1 font-mono text-[10px] text-[#7e7267]">
                                                         {formatFileSize(doc.file_size)} · {formatDate(doc.updated_at)}
+                                                        {syncStatus[doc.id] === "synced" && <span className="ml-2 text-green-400">☁️</span>}
+                                                        {syncStatus[doc.id] === "pending" && <span className="ml-2 text-yellow-400">⏳</span>}
+                                                        {syncStatus[doc.id] === "error" && <span className="ml-2 text-red-400">⚠️</span>}
                                                     </p>
                                                 </div>
                                             </div>
