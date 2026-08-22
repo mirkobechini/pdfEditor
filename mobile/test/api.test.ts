@@ -316,9 +316,6 @@ describe("ApiClient", () => {
     it("throws when upload response is not ok", async () => {
       client.setToken("t");
       const fileBlob = new Blob(["fake"]);
-      const consoleSpy = jest
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
       mockFetch
         .mockReset()
         .mockResolvedValueOnce({ blob: () => Promise.resolve(fileBlob) }) // file read
@@ -333,7 +330,6 @@ describe("ApiClient", () => {
       await expect(
         client.uploadPdf("file:///test.pdf", "doc.pdf", "application/pdf"),
       ).rejects.toThrow();
-      consoleSpy.mockRestore();
     });
   });
 
