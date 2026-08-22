@@ -52,9 +52,9 @@ export default function EditorPage() {
             const saved = await tauriInvoke<string>("dialog_save", {
                 defaultName: selectedDoc.original_filename,
                 data,
+                defaultFolder: prefs.default_save_folder || null,
             });
             if (saved) {
-                // Brief feedback — could be a toast in the future
                 console.log("PDF salvato in:", saved);
             }
         } catch (err) {

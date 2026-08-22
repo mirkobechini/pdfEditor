@@ -3,6 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { isTauri, tauriInvoke } from "../../shared/tauri";
+import { usePreferences } from "../../lib/preferences";
 
 /** Open a URL in the system browser (works in Tauri webview). */
 async function openExternal(url: string) {
@@ -38,8 +39,9 @@ const steps = [
 
 export default function WizardPage() {
     const router = useRouter();
+    const { prefs, updatePrefs } = usePreferences();
     const [currentStep, setCurrentStep] = React.useState(0);
-    const [workFolder, setWorkFolder] = React.useState("");
+    const [workFolder, setWorkFolder] = React.useState(prefs.default_save_folder || "");
     const [indexing, setIndexing] = React.useState(false);
     const [acceptedTerms, setAcceptedTerms] = React.useState(false);
 
@@ -49,15 +51,17 @@ export default function WizardPage() {
         }
     }
 
+    function handleFinish() {
+        if (workFolder.trim()) {
+            updatePrefs({ default_save_folder: workFolder.trim() });
+        }
+        router.push("/app");
+    }
+
     function handleBack() {
         if (currentStep > 0) {
             setCurrentStep((s) => s - 1);
         }
-    }
-
-    function handleFinish() {
-        localStorage.setItem("pdfeditor_wizard_done", "true");
-        router.push("/login");
     }
 
     function handleSkip() {
