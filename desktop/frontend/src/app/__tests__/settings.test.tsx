@@ -39,6 +39,22 @@ vi.mock("../../shared/tauri", () => ({
   tauriInvoke: vi.fn(),
 }));
 
+vi.mock("../../hooks/useCloudSync", () => ({
+  useCloudSync: () => ({
+    syncEnabled: true,
+    setSyncEnabled: vi.fn(),
+    syncOnStartup: true,
+    setSyncOnStartup: vi.fn(),
+    isOnline: true,
+    isSyncing: false,
+    progress: null,
+    syncAll: vi.fn(),
+    status: {},
+    uploadPdf: vi.fn(),
+    downloadPdf: vi.fn(),
+  }),
+}));
+
 describe("SettingsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
