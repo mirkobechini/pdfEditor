@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-22
+
+### 🔥 Keep-warm backend + icona origine piattaforma
+
+- **Keep-warm:** GitHub Actions pinga `/health` ogni 5 minuti 24/7 + frontend keep-warm quando l'app è aperta
+- **Icona origine:** Ogni PDF mostra 🌐 💻 📱 per indicare da dove è stato caricato (nessuna icona se dalla piattaforma corrente)
+
 ## 2026-08-21
 
 ### 🧪 Desktop test suite completa + CI per piattaforma

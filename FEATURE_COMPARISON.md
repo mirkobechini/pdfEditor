@@ -67,6 +67,9 @@
 | Compressione PDF                | ❌  | ❌      | ❌     | Solo in roadmap                                                                                                                                           |
 | Cloud sync                      | ✅  | ❌      | ✅     | Web: funzionante via API cloud. Mobile: bidirezionale con useCloudSync (issue #619). Desktop: pianificato (`.specs/active/feature-cloud-sync-desktop.md`) |
 | Rework UI Penpot                | ❌  | ❌      | ❌     | Design da fare                                                                                                                                            |
+| **Cross-platform**              |     |         |        |                                                                                                                                                           |
+| Keep-warm backend               | ✅  | ✅      | ❌     | GitHub Actions 24/7 + frontend keep-warm quando l'app è aperta                                                                                            |
+| Icona origine piattaforma       | ✅  | ✅      | ✅     | 🌐 web, 💻 desktop, 📱 mobile — nessuna icona se dalla piattaforma corrente                                                                               |
 
 ---
 

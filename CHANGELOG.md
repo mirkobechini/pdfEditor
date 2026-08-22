@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-22
+
+### 🔥 Keep-warm backend + icona origine piattaforma (issue #667, #668)
+
+- **Keep-warm:** GitHub Actions pinga `/health` ogni 5 minuti 24/7 + frontend keep-warm quando l'app è aperta
+- **Icona origine:** Ogni PDF mostra 🌐 💻 📱 per indicare da dove è stato caricato (nessuna icona se dalla piattaforma corrente)
+- **Backend:** Nuovo campo `upload_source` (web/desktop/mobile) su modello, schema, API upload
+- **Migration:** Alembic per aggiungere `upload_source` a `pdf_documents`
+- **Mobile:** Invia `upload_source=mobile` nelle upload API
+
 ## 2026-08-21
 
 ### 🧪 Desktop test suite completa + CI per piattaforma (issue #665)

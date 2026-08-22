@@ -1,6 +1,15 @@
 {
   "desktop": [
     {
+      "version": "v0.1.36",
+      "date": "2026-08-22",
+      "changes": [
+        "Keep-warm: GitHub Actions pinga /health ogni 5 minuti 24/7",
+        "Icona origine piattaforma: 🌐 💻 📱 accanto ai PDF nella sidebar",
+        "Backend: upload_source (web/desktop/mobile) su modello e API"
+      ]
+    },
+    {
       "version": "v0.1.35",
       "date": "2026-08-18",
       "changes": [

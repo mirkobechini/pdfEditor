@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-08-21
+> **Aggiornato:** 2026-08-22
 
 ---
 
