@@ -1,4 +1,5 @@
 import React from "react";
+import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../shared/auth";
@@ -33,6 +34,21 @@ export default function AppNavigator() {
     if (onboardingLoading) {
         // Splash-like empty view while checking onboarding flag
         return <NavigationContainer><Stack.Navigator screenOptions={{ headerShown: false }}><Stack.Screen name="Onboarding" component={OnboardingWizard} /></Stack.Navigator></NavigationContainer>;
+    }
+
+    // Show loading screen while restoring session (prevents flash of login screen)
+    if (loading && !user) {
+        return (
+            <NavigationContainer>
+                <Stack.Navigator screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="Loading" component={() => (
+                        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F97316" }}>
+                            <ActivityIndicator size="large" color="#FFFFFF" />
+                        </View>
+                    )} />
+                </Stack.Navigator>
+            </NavigationContainer>
+        );
     }
 
     return (
