@@ -444,7 +444,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                         {syncEnabled && contextPdf && contextPdf.cloud_synced === 1 ? (
                             <List.Item title={t("home.removeFromCloud")} left={(p) => <List.Icon {...p} icon="cloud-remove" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { await deletePdf(contextPdf.id, "cloud"); await loadPdfs(); showSnack(t("home.removedFromCloud", { name: contextPdf.original_filename })); } finally { setSyncingPdf(false); } } }} />
                         ) : syncEnabled && contextPdf && contextPdf.cloud_synced !== 1 && contextPdf.cloud_synced_exclude !== 1 ? (
-                            <List.Item title={t("home.syncToCloud")} left={(p) => <List.Icon {...p} icon="cloud-upload" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { const ok = await uploadPdf(contextPdf.id); if (ok) { await loadPdfs(); showSnack(t("home.syncedToCloud", { name: contextPdf.original_filename })); } } finally { setSyncingPdf(false); } } }} />
+                            <List.Item title={t("home.syncToCloud")} left={(p) => <List.Icon {...p} icon="cloud-upload" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { const ok = await uploadPdf(contextPdf.id); if (ok) { await loadPdfs(); showSnack(t("home.syncedToCloud", { name: contextPdf.original_filename })); } else { showSnack(t("home.syncErrorUploadFailed", { name: contextPdf.original_filename })); } } finally { setSyncingPdf(false); } } }} />
                         ) : null}
                         {syncEnabled && contextPdf && (
                             <List.Item title={contextPdf.cloud_synced_exclude === 1 ? t("home.includeInSync") : t("home.excludeFromSync")} left={(p) => <List.Icon {...p} icon={contextPdf.cloud_synced_exclude === 1 ? "cloud-sync" : "cloud-off-outline"} />} onPress={async () => { if (contextPdf) { const newVal = contextPdf.cloud_synced_exclude === 1 ? false : true; await togglePdfSyncExclude(contextPdf.id, newVal); setContextPdf(null); await loadPdfs(); showSnack(newVal ? t("home.excludedFromSync", { name: contextPdf.original_filename }) : t("home.includedInSync", { name: contextPdf.original_filename })); } }} />
@@ -544,9 +544,13 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                             const pdfName = syncAfterUpload?.pdfName;
                             setSyncAfterUpload(null);
                             if (pdfId) {
-                                uploadPdf(pdfId).then(() => {
+                                uploadPdf(pdfId).then((ok) => {
                                     loadPdfs();
-                                    navigation.navigate("PdfViewer", { pdfId, title: pdfName || "" });
+                                    if (ok) {
+                                        navigation.navigate("PdfViewer", { pdfId, title: pdfName || "" });
+                                    } else {
+                                        showSnack(t("home.syncErrorUploadFailed", { name: pdfName || "" }));
+                                    }
                                 });
                             }
                         }}>
