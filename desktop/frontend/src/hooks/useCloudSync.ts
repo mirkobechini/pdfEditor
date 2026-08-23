@@ -101,14 +101,15 @@ export function useCloudSync(): UseCloudSyncReturn {
     let cancelled = false;
     (async () => {
       try {
-        // Wait for cloud token (auth might still be loading)
+        // Wait for cloud token (auth might still be loading) — retry up to 10s
         let token = cloudApi.getToken();
-        if (!token) {
-          await new Promise((r) => setTimeout(r, 2000));
+        for (let i = 0; i < 10 && !token; i++) {
+          await new Promise((r) => setTimeout(r, 1000));
           if (cancelled) return;
           token = cloudApi.getToken();
-          if (!token) return; // Still no token — skip
         }
+        if (!token) return; // Still no token — skip
+
         const localRes = await api.listPdfs();
         const cloudRes = await cloudApi.listPdfs();
         if (cancelled) return;
