@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-23
+
+### 🐛 Desktop fixes batch (issue #689)
+
+- **Fix #1:** Login error mapping — ora mostra "Email non trovata" / "Password errata" invece di "Errore imprevisto"
+- **Fix #2:** Aggiunta chiave i18n `settings.cloud` in EN e IT
+
 ## 2026-08-22
 
 ### � Mobile bug fixes + Desktop cartella predefinita (issue #669-#673)
