@@ -238,6 +238,12 @@ export function useCloudSync(): UseCloudSyncReturn {
         return "uploaded";
       } catch (err) {
         const msg = String(err);
+        console.error(
+          "[useCloudSync] uploadPdf failed:",
+          pdfId,
+          originalFilename,
+          msg,
+        );
         if (
           msg.includes("password") ||
           msg.includes("locked") ||
