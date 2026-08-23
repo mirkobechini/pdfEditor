@@ -52,6 +52,8 @@ vi.mock("../../hooks/useCloudSync", () => ({
     status: {},
     uploadPdf: vi.fn(),
     downloadPdf: vi.fn(),
+    lastSyncResult: null,
+    clearSyncResult: vi.fn(),
   }),
 }));
 
