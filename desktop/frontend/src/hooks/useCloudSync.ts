@@ -26,7 +26,11 @@ interface UseCloudSyncReturn {
   /** Download a single PDF from cloud */
   downloadPdf: (pdfId: string) => Promise<boolean>;
   /** Full bidirectional sync */
-  syncAll: () => Promise<{ uploaded: number; downloaded: number; errors: string[] }>;
+  syncAll: () => Promise<{
+    uploaded: number;
+    downloaded: number;
+    errors: string[];
+  }>;
   /** Sync status per PDF (map of pdfId → status) */
   status: Record<string, PdfSyncStatus>;
   /** Whether sync is enabled */
@@ -43,6 +47,14 @@ interface UseCloudSyncReturn {
   isSyncing: boolean;
   /** Whether device is online */
   isOnline: boolean;
+  /** Last sync result (cleared after read) */
+  lastSyncResult: {
+    uploaded: number;
+    downloaded: number;
+    errors: string[];
+  } | null;
+  /** Clear last sync result */
+  clearSyncResult: () => void;
 }
 
 export function useCloudSync(): UseCloudSyncReturn {
@@ -58,7 +70,14 @@ export function useCloudSync(): UseCloudSyncReturn {
   const [progress, setProgress] = useState<SyncProgress | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [lastSyncResult, setLastSyncResult] = useState<{
+    uploaded: number;
+    downloaded: number;
+    errors: string[];
+  } | null>(null);
   const syncingRef = useRef(false);
+
+  const clearSyncResult = useCallback(() => setLastSyncResult(null), []);
 
   // Listen to connectivity changes
   useEffect(() => {
@@ -102,12 +121,13 @@ export function useCloudSync(): UseCloudSyncReturn {
   );
 
   const downloadPdf = useCallback(
-    async (pdfId: string): Promise<boolean> => {
+    async (pdfId: string, originalFilename?: string): Promise<boolean> => {
       if (!syncEnabled) return false;
       try {
         setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
         const blob = await cloudApi.downloadPdf(pdfId);
-        const file = new File([blob], "temp.pdf", { type: "application/pdf" });
+        const fileName = originalFilename || `${pdfId}.pdf`;
+        const file = new File([blob], fileName, { type: "application/pdf" });
         await api.uploadPdf(file);
         setStatus((prev) => ({ ...prev, [pdfId]: "synced" }));
         return true;
@@ -119,8 +139,17 @@ export function useCloudSync(): UseCloudSyncReturn {
     [syncEnabled],
   );
 
-  const syncAll = useCallback(async (): Promise<{ uploaded: number; downloaded: number; errors: string[] }> => {
-    if (syncingRef.current || !syncEnabled) return { uploaded: 0, downloaded: 0, errors: ["Sync disabled or already in progress"] };
+  const syncAll = useCallback(async (): Promise<{
+    uploaded: number;
+    downloaded: number;
+    errors: string[];
+  }> => {
+    if (syncingRef.current || !syncEnabled)
+      return {
+        uploaded: 0,
+        downloaded: 0,
+        errors: ["Sync disabled or already in progress"],
+      };
     syncingRef.current = true;
     setIsSyncing(true);
     const result = { uploaded: 0, downloaded: 0, errors: [] as string[] };
@@ -155,7 +184,7 @@ export function useCloudSync(): UseCloudSyncReturn {
       for (const pdf of cloudPdfs) {
         if (!localIds.has(pdf.id)) {
           setProgress({ current, total });
-          const ok = await downloadPdf(pdf.id);
+          const ok = await downloadPdf(pdf.id, pdf.original_filename);
           if (ok) result.downloaded++;
           else result.errors.push(`Download failed: ${pdf.original_filename}`);
         }
@@ -167,6 +196,7 @@ export function useCloudSync(): UseCloudSyncReturn {
       setIsSyncing(false);
       setProgress(null);
       syncingRef.current = false;
+      setLastSyncResult(result);
     }
 
     return result;
@@ -184,5 +214,7 @@ export function useCloudSync(): UseCloudSyncReturn {
     progress,
     isSyncing,
     isOnline,
+    lastSyncResult,
+    clearSyncResult,
   };
 }
