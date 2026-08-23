@@ -316,6 +316,11 @@ export function useCloudSync(): UseCloudSyncReturn {
       const map = getSyncMap();
       const cloudIds = new Set(cloudPdfs.map((p) => p.id));
       const localIds = new Set(localPdfs.map((p) => p.id));
+      // Build filename→cloudId index for matching without mapping
+      const cloudByName: Record<string, string> = {};
+      for (const p of cloudPdfs) {
+        cloudByName[p.original_filename] = p.id;
+      }
 
       const total = localPdfs.length + cloudPdfs.length;
       let current = 0;
@@ -325,11 +330,18 @@ export function useCloudSync(): UseCloudSyncReturn {
         const mappedCloudId = map[pdf.id];
         const alreadyInCloud = mappedCloudId && cloudIds.has(mappedCloudId);
         if (!alreadyInCloud) {
-          setProgress({ current, total });
-          const uploadResult = await uploadPdf(pdf.id, pdf.original_filename);
-          if (uploadResult === "uploaded") result.uploaded++;
-          else if (uploadResult === "skipped") result.skipped++;
-          else result.errors.push(`Upload failed: ${pdf.original_filename}`);
+          // Check if a cloud PDF with the same filename exists (pre-mapping)
+          const matchedCloudId = cloudByName[pdf.original_filename];
+          if (matchedCloudId) {
+            saveSyncMap(pdf.id, matchedCloudId);
+            result.skipped++;
+          } else {
+            setProgress({ current, total });
+            const uploadResult = await uploadPdf(pdf.id, pdf.original_filename);
+            if (uploadResult === "uploaded") result.uploaded++;
+            else if (uploadResult === "skipped") result.skipped++;
+            else result.errors.push(`Upload failed: ${pdf.original_filename}`);
+          }
         }
         current++;
       }
@@ -339,10 +351,17 @@ export function useCloudSync(): UseCloudSyncReturn {
         const mappedLocalId = getLocalId(pdf.id);
         const alreadyInLocal = mappedLocalId && localIds.has(mappedLocalId);
         if (!alreadyInLocal) {
-          setProgress({ current, total });
-          const ok = await downloadPdf(pdf.id, pdf.original_filename);
-          if (ok) result.downloaded++;
-          else result.errors.push(`Download failed: ${pdf.original_filename}`);
+          // Check if a local PDF with the same filename exists (pre-mapping)
+          const matchedLocal = localPdfs.find((p) => p.original_filename === pdf.original_filename);
+          if (matchedLocal) {
+            saveSyncMap(matchedLocal.id, pdf.id);
+            result.skipped++;
+          } else {
+            setProgress({ current, total });
+            const ok = await downloadPdf(pdf.id, pdf.original_filename);
+            if (ok) result.downloaded++;
+            else result.errors.push(`Download failed: ${pdf.original_filename}`);
+          }
         }
         current++;
       }
