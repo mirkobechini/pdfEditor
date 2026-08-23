@@ -272,8 +272,9 @@ export default function SettingsPage() {
                                 <div className="rounded-2xl border border-white/10 bg-[#221b16] p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
                                     <h2 className="text-[20px] font-bold text-white mb-4">Sync completato</h2>
                                     <div className="space-y-2 text-[14px]">
-                                        <p className="text-green-400">✅ {lastSyncResult.uploaded} PDF caricati sul cloud</p>
-                                        <p className="text-blue-400">⬇️ {lastSyncResult.downloaded} PDF scaricati dal cloud</p>
+                                        {lastSyncResult.uploaded > 0 && <p className="text-green-400">✅ {lastSyncResult.uploaded} PDF caricati sul cloud</p>}
+                                        {lastSyncResult.downloaded > 0 && <p className="text-blue-400">⬇️ {lastSyncResult.downloaded} PDF scaricati dal cloud</p>}
+                                        {lastSyncResult.skipped > 0 && <p className="text-yellow-400">⏭️ {lastSyncResult.skipped} PDF saltati (protetti da password)</p>}
                                         {lastSyncResult.errors.length > 0 && (
                                             <div className="mt-3">
                                                 <p className="text-red-400 font-semibold">⚠️ Errori ({lastSyncResult.errors.length}):</p>
@@ -282,7 +283,7 @@ export default function SettingsPage() {
                                                 ))}
                                             </div>
                                         )}
-                                        {lastSyncResult.uploaded === 0 && lastSyncResult.downloaded === 0 && lastSyncResult.errors.length === 0 && (
+                                        {lastSyncResult.uploaded === 0 && lastSyncResult.downloaded === 0 && lastSyncResult.skipped === 0 && lastSyncResult.errors.length === 0 && (
                                             <p className="text-[#9d9184]">Nessun PDF da sincronizzare. Tutti già allineati.</p>
                                         )}
                                     </div>
