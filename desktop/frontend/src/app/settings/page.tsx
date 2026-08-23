@@ -106,12 +106,12 @@ function AboutSection({ title, rows, onAction }: { title: string; rows: readonly
 
 export default function SettingsPage() {
     const ts = useTranslations("settings");
+    const tc = useTranslations("common");
     const { user } = useAuth();
     const setLocale = useLocaleSetter();
     const { prefs, updatePrefs } = usePreferences();
     const { syncEnabled, setSyncEnabled, syncOnStartup, setSyncOnStartup, isOnline, isSyncing, progress, syncAll, lastSyncResult, clearSyncResult } = useCloudSync();
     const [activeTab, setActiveTab] = React.useState<SectionId>("general");
-    const [appVersion, setAppVersion] = React.useState("");
     const [changelogOpen, setChangelogOpen] = React.useState(false);
     const [bugReportOpen, setBugReportOpen] = React.useState(false);
     const [docsOpen, setDocsOpen] = React.useState(false);
@@ -121,12 +121,6 @@ export default function SettingsPage() {
     const [bugSending, setBugSending] = React.useState(false);
     const [bugError, setBugError] = React.useState("");
     const [bugDone, setBugDone] = React.useState(false);
-
-    // Read version from common i18n
-    React.useEffect(() => {
-        const tc = (window as any).__NEXT_INTL_MESSAGES?.common?.version;
-        if (tc) setAppVersion(tc);
-    }, []);
 
     function openUrl(url: string) {
         if (isTauri()) {
@@ -404,7 +398,7 @@ export default function SettingsPage() {
 
                             <div>
                                 <h2 className="text-[42px] font-bold leading-tight text-white">PdfEditor</h2>
-                                <p className="mt-1 text-[14px] text-[#9d9184]">{appVersion || "v0.1.35"} · {user?.license_tier || "Free"} License</p>
+                                <p className="mt-1 text-[14px] text-[#9d9184]">{tc("version")} · {user?.license_tier || "Free"} License</p>
                             </div>
                         </section>
 

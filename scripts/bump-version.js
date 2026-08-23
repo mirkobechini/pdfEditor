@@ -29,7 +29,6 @@ const FILES = [
     { path: "desktop/src-tauri/Cargo.toml", type: "regex", pattern: /^(version\s*=\s*)"\d+\.\d+\.\d+"/m, replacement: `$1"${newVer}"` },
     // TSX files
     { path: "desktop/frontend/src/app/startup/page.tsx", type: "regex", pattern: /(v)\d+\.\d+\.\d+/g, replacement: `$1${newVer}` },
-    { path: "desktop/frontend/src/app/settings/page.tsx", type: "regex", pattern: /("v)\d+\.\d+\.\d+"/, replacement: `"v${newVer}"` },
     // i18n messages
     { path: "desktop/frontend/messages/en.json", type: "regex", pattern: /("version"\s*:\s*"v)\d+\.\d+\.\d+"/, replacement: `$1${newVer}"` },
     { path: "desktop/frontend/messages/it.json", type: "regex", pattern: /("version"\s*:\s*"v)\d+\.\d+\.\d+"/, replacement: `$1${newVer}"` },
