@@ -227,10 +227,12 @@ export default function EditorPage() {
     }
 
     function formatDate(dateStr: string): string {
+        if (!dateStr) return "";
         const d = new Date(dateStr);
         const now = new Date();
         const diff = now.getTime() - d.getTime();
         const mins = Math.floor(diff / 60000);
+        if (mins < 1) return "ora";
         if (mins < 60) return mins + te("minutesAgo");
         const hours = Math.floor(mins / 60);
         if (hours < 24) return hours + te("hoursAgo");
@@ -308,7 +310,7 @@ export default function EditorPage() {
                                                         </p>
                                                     )}
                                                     <p className="mt-1 font-mono text-[10px] text-[#7e7267]">
-                                                        {formatFileSize(doc.file_size)} · {formatDate(doc.updated_at)}
+                                                        {formatFileSize(doc.file_size)} · {formatDate(doc.created_at)}
                                                         {syncStatus[doc.id] === "synced" && <span className="ml-2 text-green-400">☁️</span>}
                                                         {syncStatus[doc.id] === "pending" && <span className="ml-2 text-yellow-400">⏳</span>}
                                                         {syncStatus[doc.id] === "error" && <span className="ml-2 text-red-400">⚠️</span>}
@@ -501,7 +503,7 @@ export default function EditorPage() {
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs text-[#948779]">{te("created")}</span>
-                                    <span className="text-xs font-semibold text-white">{new Date(selectedDoc.created_at).toLocaleDateString()}</span>
+                                    <span className="text-xs font-semibold text-white">{selectedDoc.pdf_creation_date ? new Date(selectedDoc.pdf_creation_date).toLocaleDateString() : new Date(selectedDoc.created_at).toLocaleDateString()}</span>
                                 </div>
                             </>
                         ) : (
