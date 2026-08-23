@@ -1,24 +1,21 @@
 {
   "desktop": [
     {
-      "version": "v0.1.37",
-      "date": "2026-08-22",
-      "changes": [
-        "Desktop: cartella predefinita per salvataggio PDF (wizard + preferenze)",
-        "Mobile: remember me con schermata di caricamento",
-        "Mobile: snackbar errore upload cloud",
-        "Mobile: PDF salvati in cartella PdfEditor/",
-        "Mobile: fix cursore rename PDF",
-        "CI mobile: ora esegue test Jest"
-      ]
-    },
-    {
       "version": "v0.1.36",
-      "date": "2026-08-22",
+      "date": "2026-08-23",
       "changes": [
-        "Keep-warm: GitHub Actions pinga /health ogni 5 minuti 24/7",
-        "Icona origine piattaforma: 🌐 💻 📱 accanto ai PDF nella sidebar",
-        "Backend: upload_source (web/desktop/mobile) su modello e API"
+        "Desktop fixes batch #689: 9 fix + i18n completa + 375 test",
+        "Cloud sync: mappa persistente localId→cloudId, match per filename, sync all'avvio",
+        "Cloud sync: feedback dialog, PDF protetti saltati, deletePdf local/cloud/both",
+        "Badge emoji piattaforma: ☁️🌐💻📱 invece di PDF",
+        "Workplace folder picker in Settings (dialog nativo)",
+        "Versione letta da i18n, bump script centralizzato",
+        "Pulsanti Organize/Convert → Download funzionante",
+        "i18n completa: wizard, login, register, profile, license, startup, modali",
+        "Logout cancella JWT dal Tauri store persistente",
+        "Data: tempo relativo su created_at, creato usa pdf_creation_date",
+        "375 test desktop frontend — tutti passanti",
+        "Desktop: cartella predefinita per salvataggio PDF (wizard + preferenze)"
       ]
     },
     {
@@ -37,12 +34,34 @@
   ],
   "mobile": [
     {
+      "version": "v0.2.1-mobile",
+      "date": "2026-08-23",
+      "changes": [
+        "Remember me con schermata di caricamento",
+        "Snackbar errore upload cloud",
+        "PDF salvati in cartella PdfEditor/",
+        "Fix cursore rename PDF",
+        "CI mobile: ora esegue test Jest"
+      ]
+    },
+    {
       "version": "v0.2.0-mobile",
       "date": "2026-08-11",
       "changes": [
         "Cloud sync bidirezionale (upload/download, conflitti, offline)",
         "Onboarding wizard alla prima installazione",
         "179 test mobile, copertura 100% su localDb, error-map, i18n"
+      ]
+    }
+  ],
+  "web": [
+    {
+      "version": "v0.1.36",
+      "date": "2026-08-23",
+      "changes": [
+        "Keep-warm: GitHub Actions pinga /health ogni 5 minuti 24/7",
+        "Icona origine piattaforma: 🌐 💻 📱 accanto ai PDF nella sidebar",
+        "Backend: upload_source (web/desktop/mobile) su modello e API"
       ]
     }
   ]

@@ -6,6 +6,24 @@
 
 - **Fix #1:** Login error mapping — ora mostra "Email non trovata" / "Password errata" invece di "Errore imprevisto"
 - **Fix #2:** Aggiunta chiave i18n `settings.cloud` in EN e IT
+- **Fix #3:** Cloud sync feedback dialog — mostra risultati upload/download/skipped/errors
+- **Fix #4:** Cloud sync PDF visibility — filename preservato durante upload
+- **Fix #5:** PDF protetti da password saltati durante sync
+- **Fix #6:** Sync badges ☁️⏳⚠️ accanto ai PDF + cloud token persistente in localStorage
+- **Fix #7:** Workplace folder picker in Settings (Advanced) con dialog nativo
+- **Fix #8:** Versione letta da i18n invece di fallback hardcoded v0.1.33
+- **Fix #9:** Pulsanti mock Organize/Convert sostituiti con Download funzionante
+- **i18n completa:** Tutte le pagine e componenti tradotti (wizard, login, register, profile, license, startup, modali, password input)
+- **Test:** 375 test desktop frontend — tutti passanti
+- **Cloud sync:** Mappa persistente localId→cloudId in localStorage per evitare re-sync
+- **Cloud sync:** Match per filename per PDF già caricati prima della mappa
+- **Cloud sync:** Sync all'avvio configurabile
+- **Cloud sync:** deletePdf con opzione local/cloud/both
+- **Badge emoji:** Sostituito "PDF" con emoji piattaforma (☁️🌐💻📱)
+- **Logout:** Ora cancella JWT dal Tauri store persistente (auth.json)
+- **Data:** Tempo relativo usa created_at, creato usa pdf_creation_date
+- **Bump version:** Script bump-version.js aggiorna anche settings page
+- **Folder picker:** Nuovo comando Rust dialog_open_folder
 
 ## 2026-08-22
 
