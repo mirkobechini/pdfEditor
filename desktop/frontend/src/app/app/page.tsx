@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
 import { getApiBaseUrl, isTauri, tauriInvoke } from "../../shared/tauri";
@@ -31,6 +32,7 @@ function getPlatformIcon(source?: string): string {
 }
 
 export default function EditorPage() {
+    const te = useTranslations("editor");
     const { user } = useAuth();
     const { prefs } = usePreferences();
     const { status: syncStatus } = useCloudSync();
@@ -220,9 +222,9 @@ export default function EditorPage() {
     }, [selectedDoc?.id, pdfRefreshKey]);
 
     function formatFileSize(bytes: number): string {
-        if (bytes < 1024) return bytes + " B";
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
-        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+        if (bytes < 1024) return bytes + " " + te("bytes");
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " " + te("kilobytes");
+        return (bytes / (1024 * 1024)).toFixed(1) + " " + te("megabytes");
     }
 
     function formatDate(dateStr: string): string {
@@ -230,11 +232,11 @@ export default function EditorPage() {
         const now = new Date();
         const diff = now.getTime() - d.getTime();
         const mins = Math.floor(diff / 60000);
-        if (mins < 60) return mins + "m ago";
+        if (mins < 60) return mins + te("minutesAgo");
         const hours = Math.floor(mins / 60);
-        if (hours < 24) return hours + "h ago";
+        if (hours < 24) return hours + te("hoursAgo");
         const days = Math.floor(hours / 24);
-        if (days < 7) return days + "d ago";
+        if (days < 7) return days + te("daysAgo");
         return d.toLocaleDateString();
     }
     return (
@@ -243,7 +245,7 @@ export default function EditorPage() {
                 <aside className="flex flex-col border-r border-white/10 bg-[#1f1914] min-h-0">
                     <div className="p-4 shrink-0">
                         <button onClick={handleOpenLocal} className="w-full cursor-pointer rounded-[14px] bg-[#f7871f] py-2.5 text-sm font-medium text-white shadow-sm shadow-[#f7871f]/30 transition hover:bg-[#ce5a00]">
-                            Open Local PDF
+                            {te("openLocalPdf")}
                         </button>
                         <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileInputChange} />
                         {uploadError && (
@@ -252,7 +254,7 @@ export default function EditorPage() {
                     </div>
 
                     <div className="flex-1 overflow-y-auto border-y border-white/8 px-5 py-5 min-h-0">
-                        <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-[#918476]">Recent documents</p>
+                        <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-[#918476]">{te("recentDocuments")}</p>
                         {loading ? (
                             <div className="space-y-3">
                                 {[1, 2, 3].map((i) => (
@@ -260,7 +262,7 @@ export default function EditorPage() {
                                 ))}
                             </div>
                         ) : docs.length === 0 ? (
-                            <p className="text-[12px] text-[#7e7267] text-center py-8">Nessun documento. Apri un PDF per iniziare.</p>
+                            <p className="text-[12px] text-[#7e7267] text-center py-8">{te("noDocuments")}</p>
                         ) : (
                             <div className="space-y-3">
                                 {docs.map((doc) => (
@@ -317,7 +319,7 @@ export default function EditorPage() {
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); setDeleteConfirm(doc.id); }}
                                                 className="mt-1 h-7 w-7 rounded-lg text-[#7e7267] hover:bg-red-500/10 hover:text-red-400 transition-colors shrink-0"
-                                                title="Delete PDF"
+                                                title={te("deletePdf")}
                                             >
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
                                                     <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
@@ -334,11 +336,11 @@ export default function EditorPage() {
 
                     <div className="border-t border-white/8 p-5">
                         <div className="mb-3 flex items-center justify-between">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#918476]">Cloud Sync</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#918476]">{te("cloudSync")}</p>
                             <span className="h-2.5 w-2.5 rounded-full bg-[#3ec35f]" />
                         </div>
                         <div className="flex items-center gap-3">
-                            <Link href="/settings" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm hover:bg-white/15 transition-colors" title="Impostazioni">
+                            <Link href="/settings" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm hover:bg-white/15 transition-colors" title={te("settings")}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#9a8d80]">
                                     <circle cx="12" cy="12" r="3" />
                                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -349,8 +351,8 @@ export default function EditorPage() {
                                     {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-semibold leading-tight truncate">{user?.full_name || "Utente"}</p>
-                                    <p className="text-[12px] text-[#8d8175]">{user?.license_tier || "Free"} License</p>
+                                    <p className="text-sm font-semibold leading-tight truncate">{user?.full_name || te("user")}</p>
+                                    <p className="text-[12px] text-[#8d8175]">{user?.license_tier || "Free"} {te("license")}</p>
                                 </div>
                             </Link>
                         </div>
@@ -361,8 +363,8 @@ export default function EditorPage() {
                     <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-[#201a15] px-4">
                         <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-1">
-                                {["Edit", "Organize", "Convert"].map((label) => (
-                                    <button key={label} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${label === "Edit" ? "border border-white/10 bg-[#201a15] text-white" : "text-[#9a8d80]"}`}>
+                                {[te("edit"), te("organize"), te("convert")].map((label, idx) => (
+                                    <button key={idx} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${idx === 0 ? "border border-white/10 bg-[#201a15] text-white" : "text-[#9a8d80]"}`}>
                                         {label}
                                     </button>
                                 ))}
@@ -390,35 +392,35 @@ export default function EditorPage() {
                                 disabled={!selectedDoc}
                                 className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                Merge
+                                {te("merge")}
                             </button>
                             <button
                                 onClick={() => setSplitOpen(true)}
                                 disabled={!selectedDoc}
                                 className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                Split
+                                {te("split")}
                             </button>
                             <button
                                 onClick={() => setReorderOpen(true)}
                                 disabled={!selectedDoc}
                                 className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                Reorder
+                                {te("reorder")}
                             </button>
                             <button
                                 onClick={() => setRemovePagesOpen(true)}
                                 disabled={!selectedDoc}
                                 className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                Remove
+                                {te("remove")}
                             </button>
                             <button
                                 onClick={() => setMetadataOpen(true)}
                                 disabled={!selectedDoc}
                                 className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                Metadata
+                                {te("metadata")}
                             </button>
                         </div>
                     </header>
@@ -426,7 +428,7 @@ export default function EditorPage() {
                     <div className="flex-1 bg-black p-6 overflow-hidden relative">
                         {dragOver && (
                             <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#f7871f]/10 border-2 border-dashed border-[#f7871f]/50 rounded-2xl m-6 pointer-events-none">
-                                <p className="text-lg font-semibold text-[#f7871f]">Rilascia per caricare il PDF</p>
+                                <p className="text-lg font-semibold text-[#f7871f]">{te("dropToUpload")}</p>
                             </div>
                         )}
                         <div className="relative h-full border border-white/6 bg-[#0f0d0b]">
@@ -457,8 +459,8 @@ export default function EditorPage() {
                                         </svg>
                                     </div>
                                     <div className="text-center">
-                                        <p className="text-base font-semibold text-white">PDF protetto da password</p>
-                                        <p className="mt-1 text-sm text-[#8d8175]">Inserisci la password per visualizzare questo documento</p>
+                                        <p className="text-base font-semibold text-white">{te("pdfLocked")}</p>
+                                        <p className="mt-1 text-sm text-[#8d8175]">{te("pdfLockedDesc")}</p>
                                     </div>
                                     <button
                                         onClick={() => setLockOpen(true)}
@@ -468,12 +470,12 @@ export default function EditorPage() {
                                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                                             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                                         </svg>
-                                        Sblocca PDF
+                                        {te("unlockPdf")}
                                     </button>
                                 </div>
                             ) : (
                                 <div className="flex h-full items-center justify-center text-[#7e7267] text-sm">
-                                    Seleziona o apri un PDF per iniziare
+                                    {te("selectPdf")}
                                 </div>
                             )}
                         </div>
@@ -481,29 +483,29 @@ export default function EditorPage() {
                 </main>
 
                 <aside className="flex flex-col bg-[#201a15] p-5">
-                    <h3 className="mb-4 text-xs font-bold uppercase tracking-widest">Page Metadata</h3>
+                    <h3 className="mb-4 text-xs font-bold uppercase tracking-widest">{te("pageMetadata")}</h3>
                     <div className="mt-4 space-y-3 border-b border-white/10 pb-5">
                         {selectedDoc ? (
                             <>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-[#948779]">Filename</span>
+                                    <span className="text-xs text-[#948779]">{te("filename")}</span>
                                     <span className="text-xs font-semibold text-white text-right truncate max-w-[140px]">{selectedDoc.original_filename}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-[#948779]">Size</span>
+                                    <span className="text-xs text-[#948779]">{te("size")}</span>
                                     <span className="text-xs font-semibold text-white">{formatFileSize(selectedDoc.file_size)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-[#948779]">Pages</span>
+                                    <span className="text-xs text-[#948779]">{te("pages")}</span>
                                     <span className="text-xs font-semibold text-white">{selectedDoc.page_count}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-xs text-[#948779]">Created</span>
+                                    <span className="text-xs text-[#948779]">{te("created")}</span>
                                     <span className="text-xs font-semibold text-white">{new Date(selectedDoc.created_at).toLocaleDateString()}</span>
                                 </div>
                             </>
                         ) : (
-                            <p className="text-xs text-[#7e7267]">Nessun PDF selezionato</p>
+                            <p className="text-xs text-[#7e7267]">{te("noPdfSelected")}</p>
                         )}
                     </div>
 
@@ -660,16 +662,16 @@ export default function EditorPage() {
             {deleteConfirm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
                     <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl">
-                        <h2 className="text-base font-bold text-white mb-2">Delete PDF</h2>
+                        <h2 className="text-base font-bold text-white mb-2">{te("deleteConfirmTitle")}</h2>
                         <p className="text-sm text-[#9a8d80] mb-6">
-                            Are you sure you want to delete this PDF? This action cannot be undone.
+                            {te("deleteConfirmDesc")}
                         </p>
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setDeleteConfirm(null)}
                                 className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5"
                             >
-                                Cancel
+                                {te("cancel")}
                             </button>
                             <button
                                 onClick={async () => {
@@ -688,7 +690,7 @@ export default function EditorPage() {
                                 }}
                                 className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
                             >
-                                Delete
+                                {te("delete")}
                             </button>
                         </div>
                     </div>
@@ -699,12 +701,12 @@ export default function EditorPage() {
                 <div className="mx-auto flex h-full max-w-[1880px] items-center justify-between">
                     <div className="flex items-center gap-5">
                         <span className="text-[#48c769]">●</span>
-                        <span>Sidecar API: Online ({API_BASE.replace("http://", "")})</span>
-                        <span>UTF-8</span>
-                        <span>SQLite: local.db</span>
+                        <span>{te("sidecarOnline")} ({API_BASE.replace("http://", "")})</span>
+                        <span>{te("encoding")}</span>
+                        <span>{te("database")}</span>
                     </div>
                     <div className="flex items-center gap-6">
-                        <span>PyMuPDF v1.24.2</span>
+                        <span>{te("pdfEngine")}</span>
                     </div>
                 </div>
             </footer>
