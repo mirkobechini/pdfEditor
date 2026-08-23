@@ -3,6 +3,9 @@
  *
  * Handles bidirectional sync (local sidecar ↔ cloud backend),
  * connectivity awareness, and sync mode preferences.
+ *
+ * Uses a persistent mapping (localStorage) to track which local PDFs
+ * have been synced to cloud, since local and cloud assign different IDs.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cloudApi, api } from "../shared/api";
@@ -12,6 +15,7 @@ import type { PdfDocument } from "../shared/types";
 
 const SYNC_ENABLED_KEY = "pdfeditor_cloud_sync_enabled";
 const SYNC_STARTUP_KEY = "pdfeditor_cloud_sync_on_startup";
+const SYNC_MAP_KEY = "pdfeditor_sync_id_map";
 const SYNC_STATUS_EVENT = "pdfeditor-sync-status-changed";
 
 export type PdfSyncStatus = "pending" | "synced" | "error" | "none";
@@ -22,48 +26,68 @@ export interface SyncProgress {
 }
 
 interface UseCloudSyncReturn {
-  /** Upload a single PDF to cloud */
   uploadPdf: (
     pdfId: string,
     originalFilename?: string,
   ) => Promise<"uploaded" | "skipped" | "failed">;
-  /** Download a single PDF from cloud */
   downloadPdf: (pdfId: string, originalFilename?: string) => Promise<boolean>;
-  /** Full bidirectional sync */
   syncAll: () => Promise<{
     uploaded: number;
     downloaded: number;
     skipped: number;
     errors: string[];
   }>;
-  /** Sync status per PDF (map of pdfId → status) */
   status: Record<string, PdfSyncStatus>;
-  /** Whether sync is enabled */
   syncEnabled: boolean;
-  /** Set sync enabled/disabled */
   setSyncEnabled: (val: boolean) => Promise<void>;
-  /** Sync on startup toggle */
   syncOnStartup: boolean;
-  /** Set sync on startup */
   setSyncOnStartup: (val: boolean) => Promise<void>;
-  /** Progress during sync */
   progress: SyncProgress | null;
-  /** Whether currently syncing */
   isSyncing: boolean;
-  /** Whether device is online */
   isOnline: boolean;
-  /** Last sync result (cleared after read) */
   lastSyncResult: {
     uploaded: number;
     downloaded: number;
     skipped: number;
     errors: string[];
   } | null;
-  /** Clear last sync result */
   clearSyncResult: () => void;
-  /** Refresh sync status (reload from cloud) */
   refreshStatus: () => Promise<void>;
 }
+
+// ─── Persistent mapping helpers ───────────────────────────────────
+
+function getSyncMap(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(SYNC_MAP_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveSyncMap(localId: string, cloudId: string): void {
+  const map = getSyncMap();
+  map[localId] = cloudId;
+  localStorage.setItem(SYNC_MAP_KEY, JSON.stringify(map));
+}
+
+function removeSyncMap(localId: string): void {
+  const map = getSyncMap();
+  delete map[localId];
+  localStorage.setItem(SYNC_MAP_KEY, JSON.stringify(map));
+}
+
+function getCloudId(localId: string): string | undefined {
+  return getSyncMap()[localId];
+}
+
+function getLocalId(cloudId: string): string | undefined {
+  const map = getSyncMap();
+  return Object.entries(map).find(([, v]) => v === cloudId)?.[0];
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────
 
 export function useCloudSync(): UseCloudSyncReturn {
   const [syncEnabled, setSyncEnabledState] = useState(() => {
@@ -88,7 +112,7 @@ export function useCloudSync(): UseCloudSyncReturn {
 
   const clearSyncResult = useCallback(() => setLastSyncResult(null), []);
 
-  // Shared status loader — can be called from any instance
+  // Load sync status from the persistent mapping
   const loadStatus = useCallback(async () => {
     if (!syncEnabled) return;
     try {
@@ -102,9 +126,16 @@ export function useCloudSync(): UseCloudSyncReturn {
       const localRes = await api.listPdfs();
       const cloudRes = await cloudApi.listPdfs();
       const cloudIds = new Set(cloudRes.items.map((p) => p.id));
+      const map = getSyncMap();
       const newStatus: Record<string, PdfSyncStatus> = {};
+
       for (const pdf of localRes.items) {
-        newStatus[pdf.id] = cloudIds.has(pdf.id) ? "synced" : "none";
+        const mappedCloudId = map[pdf.id];
+        if (mappedCloudId && cloudIds.has(mappedCloudId)) {
+          newStatus[pdf.id] = "synced";
+        } else {
+          newStatus[pdf.id] = "none";
+        }
       }
       setStatus(newStatus);
     } catch {
@@ -114,13 +145,12 @@ export function useCloudSync(): UseCloudSyncReturn {
 
   const refreshStatus = useCallback(async () => {
     await loadStatus();
-    // Notify other instances
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent(SYNC_STATUS_EVENT));
     }
   }, [loadStatus]);
 
-  // Listen to connectivity changes
+  // Connectivity
   useEffect(() => {
     setIsOnline(navigator.onLine);
     const handleOnline = () => setIsOnline(true);
@@ -133,7 +163,7 @@ export function useCloudSync(): UseCloudSyncReturn {
     };
   }, []);
 
-  // Load sync status on mount: compare local PDFs with cloud PDFs
+  // Load status on mount
   useEffect(() => {
     if (!syncEnabled) return;
     let cancelled = false;
@@ -145,10 +175,12 @@ export function useCloudSync(): UseCloudSyncReturn {
     };
   }, [syncEnabled, loadStatus]);
 
-  // Listen for status refresh events from other instances
+  // Listen for refresh events from other instances
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const handler = () => { loadStatus(); };
+    const handler = () => {
+      loadStatus();
+    };
     window.addEventListener(SYNC_STATUS_EVENT, handler);
     return () => window.removeEventListener(SYNC_STATUS_EVENT, handler);
   }, [loadStatus]);
@@ -174,11 +206,12 @@ export function useCloudSync(): UseCloudSyncReturn {
         const blob = await api.downloadPdf(pdfId);
         const fileName = originalFilename || `${pdfId}.pdf`;
         const file = new File([blob], fileName, { type: "application/pdf" });
-        await cloudApi.uploadPdf(file);
+        const cloudPdf = await cloudApi.uploadPdf(file);
+        // Save mapping: localId → cloudId
+        saveSyncMap(pdfId, cloudPdf.id);
         setStatus((prev) => ({ ...prev, [pdfId]: "synced" }));
         return "uploaded";
       } catch (err) {
-        // Skip password-protected PDFs gracefully
         const msg = String(err);
         if (
           msg.includes("password") ||
@@ -203,8 +236,10 @@ export function useCloudSync(): UseCloudSyncReturn {
         const blob = await cloudApi.downloadPdf(pdfId);
         const fileName = originalFilename || `${pdfId}.pdf`;
         const file = new File([blob], fileName, { type: "application/pdf" });
-        await api.uploadPdf(file);
-        setStatus((prev) => ({ ...prev, [pdfId]: "synced" }));
+        const localPdf = await api.uploadPdf(file);
+        // Save mapping: localId → cloudId
+        saveSyncMap(localPdf.id, pdfId);
+        setStatus((prev) => ({ ...prev, [localPdf.id]: "synced" }));
         return true;
       } catch {
         setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
@@ -237,23 +272,23 @@ export function useCloudSync(): UseCloudSyncReturn {
     };
 
     try {
-      // Get local PDFs
       const localRes = await api.listPdfs();
       const localPdfs = localRes.items;
-
-      // Get cloud PDFs
       const cloudRes = await cloudApi.listPdfs();
       const cloudPdfs = cloudRes.items;
 
-      const localIds = new Set(localPdfs.map((p) => p.id));
+      const map = getSyncMap();
       const cloudIds = new Set(cloudPdfs.map((p) => p.id));
+      const localIds = new Set(localPdfs.map((p) => p.id));
 
       const total = localPdfs.length + cloudPdfs.length;
       let current = 0;
 
-      // Upload local PDFs not in cloud
+      // Upload local PDFs not yet synced to cloud
       for (const pdf of localPdfs) {
-        if (!cloudIds.has(pdf.id)) {
+        const mappedCloudId = map[pdf.id];
+        const alreadyInCloud = mappedCloudId && cloudIds.has(mappedCloudId);
+        if (!alreadyInCloud) {
           setProgress({ current, total });
           const uploadResult = await uploadPdf(pdf.id, pdf.original_filename);
           if (uploadResult === "uploaded") result.uploaded++;
@@ -263,9 +298,11 @@ export function useCloudSync(): UseCloudSyncReturn {
         current++;
       }
 
-      // Download cloud PDFs not in local
+      // Download cloud PDFs not yet synced to local
       for (const pdf of cloudPdfs) {
-        if (!localIds.has(pdf.id)) {
+        const mappedLocalId = getLocalId(pdf.id);
+        const alreadyInLocal = mappedLocalId && localIds.has(mappedLocalId);
+        if (!alreadyInLocal) {
           setProgress({ current, total });
           const ok = await downloadPdf(pdf.id, pdf.original_filename);
           if (ok) result.downloaded++;
@@ -280,7 +317,6 @@ export function useCloudSync(): UseCloudSyncReturn {
       setProgress(null);
       syncingRef.current = false;
       setLastSyncResult(result);
-      // Refresh status badges after sync completes
       refreshStatus();
     }
 
