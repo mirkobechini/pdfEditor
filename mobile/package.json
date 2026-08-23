@@ -55,5 +55,8 @@
     "web": "expo start --web",
     "test": "jest"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "nanoid": "3.3.18"
+  }
 }

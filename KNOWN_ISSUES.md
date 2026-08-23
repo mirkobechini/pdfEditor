@@ -97,7 +97,7 @@
 
 ### T2 — Zero test E2E / integration
 
-**Descrizione:** 342 test backend (con `TestClient` same-origin) + 373 test frontend (jsdom). Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS).  
+**Descrizione:** 359 test backend (con `TestClient` same-origin) + 375 test frontend (jsdom) + 182 test mobile. Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS).  
 **Risoluzione prevista:** Playwright (T7).
 
 ### T3 — `@swc/helpers` lock file desync
@@ -110,13 +110,6 @@
 
 **Descrizione:** Il nuovo sistema di build usa `@tauri-apps/cli` via npm. Se il pacchetto non è installato (es. `npm ci` fallito), la build fallisce.
 **Risoluzione prevista:** Il preflight job in CI verifica che `npm ci` + `next build` funzionino prima di avviare la build Tauri.
-
-### T5 — Dipendenze transitive con vulnerabilità non fixabili
-
-| Pacchetto     | Versione | Vulnerabilità                 | Motivo                                                               |
-| ------------- | -------- | ----------------------------- | -------------------------------------------------------------------- |
-| `image-size`  | ≤2.0.2   | DoS in ICNS/JXL/HEIF parser   | Nessun fix disponibile                                               |
-| `glib` (Rust) | 0.18.5   | Unsoundness in VariantStrIter | Fix in 0.20.0, bloccato da crate intermedie (gtk/atk non aggiornate) |
 
 ---
 
@@ -172,12 +165,16 @@
 
 | #      | Pacchetto                        | Severità  | Versione             | Stato                           | Note                                                                                                                         |
 | ------ | -------------------------------- | --------- | -------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **34** | `postcss` (path traversal)       | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**             | Sub-dipendenza interna di `next@16.2.11`. In attesa che Next.js aggiorni il suo sub-dep.                                     |
-| **33** | `postcss` (arbitrary file read)  | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**             | Stesso di #34.                                                                                                               |
-| **22** | `sharp` / libvips                | 🔴 high   | < 0.35.0             | ⛔ **Non fixabile**             | Sub-dipendenza interna Next.js 16.2.11. `sharp@0.35.0` esiste ma Next non lo richiede ancora.                                |
-| **32** | `glib::VariantStrIter`           | 🟡 medium | < 0.20.0 (Rust)      | ⏳ **Fixabile ma sconsigliato** | Dipendenza indiretta di Tauri. Forzare `glib 0.20.0` rischia di rompere `cargo tauri build`. CVE non esposto a input utente. |
+| **51** | `nanoid` (mobile)                | 🔴 high   | < 3.3.18             | ✅ **Fixato (override)**        | Sub-dipendenza di react-navigation + expo. Override in mobile/package.json a 3.3.18.                                          |
+| **50** | `image-size` (mobile)            | 🔴 high   | <= 2.0.2             | ⛔ **Non fixabile**             | Sub-dipendenza di expo (metro). Nessun fix disponibile.                                                                      |
+| **49** | `image-size` (mobile)            | 🔴 high   | <= 2.0.2             | ⛔ **Non fixabile**             | Stesso di #50.                                                                                                               |
+| **48** | `uuid` (mobile)                  | 🟡 medium | < 7.0.3              | ⛔ **Non fixabile**             | Sub-dipendenza di xcode → expo-config-plugins. Saltare a 11.1.1 rompe breaking changes.                                      |
+| **32** | `glib::VariantStrIter` (Rust)    | 🟡 medium | < 0.20.0             | ⏳ **Sconsigliato**             | Dipendenza indiretta di Tauri. Forzare glib 0.20.0 rischia di rompere cargo tauri build. CVE non esposto a input utente.     |
+| —      | `postcss` (path traversal)       | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**             | Sub-dipendenza interna di `next@16.3.0`. In attesa che Next.js aggiorni il suo sub-dep.                                      |
+| —      | `sharp` / libvips                | 🔴 high   | < 0.35.0             | ✅ **Già a 0.35.3**            | Next.js 16.3.0 include sharp 0.35.3. Alert ancora aperto? Dismiss automatico.                                                |
+| —      | `brace-expansion`                | 🔴 high   | 1.1.16 / 5.0.8       | ✅ **Falso positivo**           | DevDependency di eslint, non raggiungibile in produzione.                                                                    |
+| —      | `js-yaml`                        | 🔴 high   | 4.0.0 / 4.3.1        | ✅ **Falso positivo**           | DevDependency di eslint, non raggiungibile in produzione.                                                                    |
 | —      | `httpx` + `starlette.testclient` | —         | —                    | ⛔ **Non fixabile**             | `StarletteDeprecationWarning` — `httpx2` non esiste ancora.                                                                  |
-| —      | `brace-expansion`                | 🔴 high   | 1.1.16 / 5.0.8       | ✅ **Falso positivo**           | DevDependency di eslint, non raggiungibile in produzione. Auto-dismissed da Dependabot.                                      |
 
 ### Vulnerabilità risolte (non più segnalate da Dependabot)
 
