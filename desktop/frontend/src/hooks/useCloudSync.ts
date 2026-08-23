@@ -22,7 +22,10 @@ export interface SyncProgress {
 
 interface UseCloudSyncReturn {
   /** Upload a single PDF to cloud */
-  uploadPdf: (pdfId: string) => Promise<"uploaded" | "skipped" | "failed">;
+  uploadPdf: (
+    pdfId: string,
+    originalFilename?: string,
+  ) => Promise<"uploaded" | "skipped" | "failed">;
   /** Download a single PDF from cloud */
   downloadPdf: (pdfId: string, originalFilename?: string) => Promise<boolean>;
   /** Full bidirectional sync */
@@ -139,12 +142,16 @@ export function useCloudSync(): UseCloudSyncReturn {
   }, []);
 
   const uploadPdf = useCallback(
-    async (pdfId: string): Promise<"uploaded" | "skipped" | "failed"> => {
+    async (
+      pdfId: string,
+      originalFilename?: string,
+    ): Promise<"uploaded" | "skipped" | "failed"> => {
       if (!syncEnabled) return "failed";
       try {
         setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
         const blob = await api.downloadPdf(pdfId);
-        const file = new File([blob], "temp.pdf", { type: "application/pdf" });
+        const fileName = originalFilename || `${pdfId}.pdf`;
+        const file = new File([blob], fileName, { type: "application/pdf" });
         await cloudApi.uploadPdf(file);
         setStatus((prev) => ({ ...prev, [pdfId]: "synced" }));
         return "uploaded";
@@ -226,7 +233,7 @@ export function useCloudSync(): UseCloudSyncReturn {
       for (const pdf of localPdfs) {
         if (!cloudIds.has(pdf.id)) {
           setProgress({ current, total });
-          const uploadResult = await uploadPdf(pdf.id);
+          const uploadResult = await uploadPdf(pdf.id, pdf.original_filename);
           if (uploadResult === "uploaded") result.uploaded++;
           else if (uploadResult === "skipped") result.skipped++;
           else result.errors.push(`Upload failed: ${pdf.original_filename}`);
