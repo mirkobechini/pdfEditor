@@ -352,7 +352,9 @@ export function useCloudSync(): UseCloudSyncReturn {
         const alreadyInLocal = mappedLocalId && localIds.has(mappedLocalId);
         if (!alreadyInLocal) {
           // Check if a local PDF with the same filename exists (pre-mapping)
-          const matchedLocal = localPdfs.find((p) => p.original_filename === pdf.original_filename);
+          const matchedLocal = localPdfs.find(
+            (p) => p.original_filename === pdf.original_filename,
+          );
           if (matchedLocal) {
             saveSyncMap(matchedLocal.id, pdf.id);
             result.skipped++;
@@ -360,7 +362,8 @@ export function useCloudSync(): UseCloudSyncReturn {
             setProgress({ current, total });
             const ok = await downloadPdf(pdf.id, pdf.original_filename);
             if (ok) result.downloaded++;
-            else result.errors.push(`Download failed: ${pdf.original_filename}`);
+            else
+              result.errors.push(`Download failed: ${pdf.original_filename}`);
           }
         }
         current++;

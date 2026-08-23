@@ -327,7 +327,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Desktop: cancella anche il JWT dal Tauri store persistente
       if (isTauri()) {
         const { tauriInvoke } = await import("./tauri");
-        await tauriInvoke("delete_jwt").catch(() => {});
+        await tauriInvoke("delete_jwt").catch(() => { });
       }
     }
   }, []);
