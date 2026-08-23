@@ -352,6 +352,28 @@ export default function SettingsPage() {
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
+                                    <p className="text-[16px] font-semibold text-white">{ts("workplace")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{prefs.default_save_folder || ts("workplaceNotSet")}</p>
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        if (!isTauri()) return;
+                                        try {
+                                            const folder = await tauriInvoke<string>("dialog_open_folder", { defaultPath: prefs.default_save_folder || undefined });
+                                            if (folder) {
+                                                updatePrefs({ default_save_folder: folder });
+                                            }
+                                        } catch (err) {
+                                            console.error("Failed to pick folder:", err);
+                                        }
+                                    }}
+                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white"
+                                >
+                                    {prefs.default_save_folder ? ts("workplaceChange") : ts("workplaceChoose")}
+                                </button>
+                            </div>
+                            <div className="flex items-center justify-between py-3 border-b border-white/10">
+                                <div>
                                     <p className="text-[16px] font-semibold text-white">{ts("systemLog")}</p>
                                     <p className="text-[14px] text-[#9d9184]">{ts("systemLogDesc")}</p>
                                 </div>
@@ -382,7 +404,7 @@ export default function SettingsPage() {
 
                             <div>
                                 <h2 className="text-[42px] font-bold leading-tight text-white">PdfEditor</h2>
-                                <p className="mt-1 text-[14px] text-[#9d9184]">{appVersion || "v0.1.33"} · {user?.license_tier || "Free"} License</p>
+                                <p className="mt-1 text-[14px] text-[#9d9184]">{appVersion || "v0.1.35"} · {user?.license_tier || "Free"} License</p>
                             </div>
                         </section>
 

@@ -186,6 +186,26 @@ fn dialog_open(app: tauri::AppHandle, default_path: Option<String>) -> Result<Op
     }
 }
 
+/// Open a native folder picker dialog.
+#[tauri::command]
+fn dialog_open_folder(app: tauri::AppHandle, default_path: Option<String>) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut builder = app.dialog().file();
+
+    if let Some(ref path) = default_path {
+        builder = builder.set_directory(path);
+    }
+
+    match builder.blocking_pick_folder() {
+        Some(folder_path) => {
+            let path = folder_path.into_path().map_err(|e| format!("Failed to resolve path: {}", e))?;
+            Ok(Some(path.to_string_lossy().to_string()))
+        }
+        None => Ok(None),
+    }
+}
+
 /// Open a native save dialog and write the provided bytes to the chosen path.
 /// Returns the path where the file was saved, or None if cancelled.
 #[tauri::command]
@@ -333,6 +353,7 @@ pub fn run() {
             delete_jwt,
             read_file_binary,
             dialog_open,
+            dialog_open_folder,
             dialog_save,
         ])
         .run(tauri::generate_context!())
