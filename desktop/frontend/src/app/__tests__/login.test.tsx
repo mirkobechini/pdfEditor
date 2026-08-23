@@ -32,12 +32,12 @@ describe("LoginPage", () => {
 
     it("renders email input", () => {
         render(<LoginPage />);
-        expect(screen.getByPlaceholderText("email@esempio.com")).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("emailPlaceholder")).toBeInTheDocument();
     });
 
     it("renders forgot password link", () => {
         render(<LoginPage />);
-        expect(screen.getByText("Recupera password")).toBeInTheDocument();
+        expect(screen.getByText("forgotPassword")).toBeInTheDocument();
     });
 
     it("renders guest login button", () => {
@@ -47,7 +47,7 @@ describe("LoginPage", () => {
 
     it("shows backend starting indicator", () => {
         render(<LoginPage />);
-        expect(screen.getByText(/Avvio del backend/)).toBeInTheDocument();
+        expect(screen.getByText(/backendStarting/)).toBeInTheDocument();
     });
 
     it("renders remember me checkbox", () => {
@@ -62,7 +62,7 @@ describe("LoginPage", () => {
 
     it("renders password input", () => {
         render(<LoginPage />);
-        const passwordInputs = screen.getAllByPlaceholderText("••••••••••••");
+        const passwordInputs = screen.getAllByPlaceholderText("passwordPlaceholder");
         expect(passwordInputs.length).toBeGreaterThan(0);
     });
 
@@ -73,14 +73,14 @@ describe("LoginPage", () => {
 
     it("renders WELCOME BACK label", () => {
         render(<LoginPage />);
-        expect(screen.getByText("WELCOME BACK")).toBeInTheDocument();
+        expect(screen.getByText("welcomeBack")).toBeInTheDocument();
     });
 
     it("submits form with email and password", async () => {
         mockLogin.mockResolvedValueOnce(undefined);
         render(<LoginPage />);
-        const emailInput = screen.getByPlaceholderText("email@esempio.com");
-        const passwordInputs = screen.getAllByPlaceholderText("••••••••••••");
+        const emailInput = screen.getByPlaceholderText("emailPlaceholder");
+        const passwordInputs = screen.getAllByPlaceholderText("passwordPlaceholder");
         const submitBtn = screen.getByText("loginButton");
 
         fireEvent.change(emailInput, { target: { value: "test@test.com" } });
@@ -95,8 +95,8 @@ describe("LoginPage", () => {
     it("shows error on login failure", async () => {
         mockLogin.mockRejectedValueOnce(new Error("Invalid credentials"));
         render(<LoginPage />);
-        const emailInput = screen.getByPlaceholderText("email@esempio.com");
-        const passwordInputs = screen.getAllByPlaceholderText("••••••••••••");
+        const emailInput = screen.getByPlaceholderText("emailPlaceholder");
+        const passwordInputs = screen.getAllByPlaceholderText("passwordPlaceholder");
         const submitBtn = screen.getByText("loginButton");
 
         fireEvent.change(emailInput, { target: { value: "test@test.com" } });
@@ -126,7 +126,7 @@ describe("LoginPage", () => {
 
     it("renders password recovery link", () => {
         render(<LoginPage />);
-        expect(screen.getByText("Recupera password")).toBeInTheDocument();
+        expect(screen.getByText("forgotPassword")).toBeInTheDocument();
     });
 
     it("renders login page with stored token", () => {
@@ -148,7 +148,7 @@ describe("LoginPage", () => {
 
     it("renders backend failed message when backend is down", () => {
         render(<LoginPage />);
-        const backendMsg = screen.queryByText(/Backend non disponibile/);
+        const backendMsg = screen.queryByText(/backendUnavailable/);
         expect(backendMsg).not.toBeInTheDocument();
     });
 });

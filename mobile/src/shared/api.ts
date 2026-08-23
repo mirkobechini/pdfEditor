@@ -172,7 +172,14 @@ export class ApiClient {
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      const code =
+        body?.detail?.code ||
+        body?.code ||
+        (await ApiClient.extractErrorResponse(res));
+      throw new Error(code);
+    }
     const data = await res.json();
     if (data.csrf_token) this.setCsrfToken(data.csrf_token);
     return data;

@@ -7,6 +7,8 @@ const mockOnSaved = vi.fn();
 const mockGetMetadata = vi.fn();
 const mockUpdateMetadata = vi.fn();
 
+vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
+
 const baseProps = {
   open: true,
   pdfId: "p1",
@@ -49,14 +51,14 @@ describe("MetadataModal", () => {
   it("shows overwrite checkbox", async () => {
     render(<MetadataModal {...baseProps} />);
     await waitFor(() => {
-      expect(screen.getByText(/Overwrite/)).toBeInTheDocument();
+      expect(screen.getByText(/overwrite/)).toBeInTheDocument();
     });
   });
 
   it("calls onClose when Cancel clicked", async () => {
     render(<MetadataModal {...baseProps} />);
     await waitFor(() => {
-      fireEvent.click(screen.getByText("Cancel"));
+      fireEvent.click(screen.getByText("cancel"));
     });
     expect(mockOnClose).toHaveBeenCalled();
   });
@@ -66,7 +68,7 @@ describe("MetadataModal", () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue("Doc Title")).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText("Save"));
+    fireEvent.click(screen.getByText("save"));
     await waitFor(() => {
       expect(mockUpdateMetadata).toHaveBeenCalled();
     });
@@ -78,7 +80,7 @@ describe("MetadataModal", () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue("Doc Title")).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText("Save"));
+    fireEvent.click(screen.getByText("save"));
     await waitFor(() => {
       expect(screen.getByText("Update failed")).toBeInTheDocument();
     });

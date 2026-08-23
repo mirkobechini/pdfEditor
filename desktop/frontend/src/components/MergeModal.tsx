@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
 
@@ -13,6 +14,7 @@ interface MergeModalProps {
 }
 
 export default function MergeModal({ open, pdfId, pdfName, onClose, onSaved }: MergeModalProps) {
+    const tmm = useTranslations("mergeModal");
     const [docs, setDocs] = React.useState<PdfDocument[]>([]);
     const [selected, setSelected] = React.useState<Set<string>>(new Set());
     const [merging, setMerging] = React.useState(false);
@@ -39,7 +41,7 @@ export default function MergeModal({ open, pdfId, pdfName, onClose, onSaved }: M
     }
 
     async function handleMerge() {
-        if (selected.size < 2) { setError("Select at least 2 PDFs to merge"); return; }
+        if (selected.size < 2) { setError(tmm("validationError")); return; }
         setMerging(true); setError(null);
         try {
             const ids = Array.from(selected);
@@ -47,7 +49,7 @@ export default function MergeModal({ open, pdfId, pdfName, onClose, onSaved }: M
             onSaved(result);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to merge PDFs");
+            setError(err instanceof Error ? err.message : tmm("mergeError"));
         } finally { setMerging(false); }
     }
 
@@ -57,14 +59,14 @@ export default function MergeModal({ open, pdfId, pdfName, onClose, onSaved }: M
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
             <div className="w-full max-w-lg max-h-[85vh] rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl flex flex-col">
                 <div className="flex items-center justify-between mb-4 shrink-0">
-                    <h2 className="text-base font-bold text-white">Merge PDFs</h2>
+                    <h2 className="text-base font-bold text-white">{tmm("title")}</h2>
                     <button onClick={onClose} className="h-8 w-8 rounded-lg text-[#9a8d80] hover:bg-white/10 transition-colors">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto"><path d="M18 6L6 18M6 6l12 12" /></svg>
                     </button>
                 </div>
 
                 <p className="mb-3 text-xs text-[#8d8175] shrink-0">
-                    Select at least 2 PDFs to merge them into a single document.
+                    {tmm("desc")}
                 </p>
 
                 <div className="flex-1 overflow-y-auto mb-4 space-y-1">
@@ -84,23 +86,23 @@ export default function MergeModal({ open, pdfId, pdfName, onClose, onSaved }: M
                                 />
                                 <span className="text-sm text-white truncate flex-1">{doc.original_filename}</span>
                                 {isCurrent && (
-                                    <span className="text-[10px] text-[#f7871f] font-semibold">Current</span>
+                                    <span className="text-[10px] text-[#f7871f] font-semibold">{tmm("current")}</span>
                                 )}
                             </label>
                         );
                     })}
                     {docs.length === 0 && (
-                        <p className="text-xs text-[#6f6358] text-center py-4">No PDFs available</p>
+                        <p className="text-xs text-[#6f6358] text-center py-4">{tmm("noPdfs")}</p>
                     )}
                 </div>
 
                 <div className="shrink-0 space-y-4">
                     <div>
-                        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#8d8175]">Output filename (optional)</label>
+                        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#8d8175]">{tmm("outputFilename")}</label>
                         <input
                             value={outputFilename}
                             onChange={(e) => setOutputFilename(e.target.value)}
-                            placeholder="merged.pdf"
+                            placeholder={tmm("outputPlaceholder")}
                             className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none transition focus:border-[#f7871f]/50"
                         />
                     </div>
@@ -108,9 +110,9 @@ export default function MergeModal({ open, pdfId, pdfName, onClose, onSaved }: M
                     {error && <p className="text-xs text-red-400">{error}</p>}
 
                     <div className="flex gap-3 pt-2">
-                        <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5">Cancel</button>
+                        <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5">{tmm("cancel")}</button>
                         <button onClick={handleMerge} disabled={selected.size < 2 || merging} className="flex-1 rounded-xl bg-[#f7871f] py-2.5 text-sm font-semibold text-white transition hover:bg-[#ce5a00] disabled:opacity-50">
-                            {merging ? "Merging..." : `Merge (${selected.size})`}
+                            {merging ? tmm("merging") : tmm("merge", { size: selected.size })}
                         </button>
                     </div>
                 </div>

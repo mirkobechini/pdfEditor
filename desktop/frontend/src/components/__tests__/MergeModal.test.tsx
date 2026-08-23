@@ -7,6 +7,8 @@ const mockOnSaved = vi.fn();
 const mockListPdfs = vi.fn();
 const mockMergePdfs = vi.fn();
 
+vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
+
 const baseProps = {
   open: true,
   pdfId: "p1",
@@ -56,7 +58,7 @@ describe("MergeModal", () => {
   it("disables merge button when less than 2 selected", async () => {
     render(<MergeModal {...baseProps} />);
     await waitFor(() => {
-      const btn = screen.getByRole("button", { name: /Merge/ });
+      const btn = screen.getByRole("button", { name: /merge/ });
       expect(btn).toBeDisabled();
     });
   });
@@ -67,7 +69,7 @@ describe("MergeModal", () => {
       const checkboxes = screen.getAllByRole("checkbox");
       fireEvent.click(checkboxes[1]);
     });
-    const btn = screen.getByRole("button", { name: /Merge/ });
+    const btn = screen.getByRole("button", { name: /merge/ });
     expect(btn).not.toBeDisabled();
   });
 
@@ -77,7 +79,7 @@ describe("MergeModal", () => {
       const checkboxes = screen.getAllByRole("checkbox");
       fireEvent.click(checkboxes[1]);
     });
-    fireEvent.click(screen.getByRole("button", { name: /Merge/ }));
+    fireEvent.click(screen.getByRole("button", { name: /merge/ }));
     await waitFor(() => {
       expect(mockMergePdfs).toHaveBeenCalled();
     });
@@ -90,7 +92,7 @@ describe("MergeModal", () => {
       const checkboxes = screen.getAllByRole("checkbox");
       fireEvent.click(checkboxes[1]);
     });
-    fireEvent.click(screen.getByRole("button", { name: /Merge/ }));
+    fireEvent.click(screen.getByRole("button", { name: /merge/ }));
     await waitFor(() => {
       expect(screen.getByText("Merge failed")).toBeInTheDocument();
     });
@@ -99,7 +101,7 @@ describe("MergeModal", () => {
   it("calls onClose when Cancel clicked", async () => {
     render(<MergeModal {...baseProps} />);
     await waitFor(() => {
-      fireEvent.click(screen.getByText("Cancel"));
+      fireEvent.click(screen.getByText("cancel"));
     });
     expect(mockOnClose).toHaveBeenCalled();
   });

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
 
@@ -14,6 +15,7 @@ interface LockUnlockModalProps {
 }
 
 export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onClose, onSaved }: LockUnlockModalProps) {
+    const tl = useTranslations("lockModal");
     const [password, setPassword] = React.useState("");
     const [confirmPassword, setConfirmPassword] = React.useState("");
     const [showPassword, setShowPassword] = React.useState(false);
@@ -29,9 +31,9 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
     }, [open]);
 
     async function handleLock() {
-        if (!password) { setError("Password is required"); return; }
-        if (password.length < 4) { setError("Password must be at least 4 characters"); return; }
-        if (password !== confirmPassword) { setError("Passwords do not match"); return; }
+        if (!password) { setError(tl("passwordRequired")); return; }
+        if (password.length < 4) { setError(tl("passwordMinLength")); return; }
+        if (password !== confirmPassword) { setError(tl("passwordsDoNotMatch")); return; }
 
         setSaving(true); setError(null);
         try {
@@ -39,12 +41,12 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
             onSaved(updated);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to lock PDF");
+            setError(err instanceof Error ? err.message : tl("lockError"));
         } finally { setSaving(false); }
     }
 
     async function handleUnlock() {
-        if (!password) { setError("Password is required"); return; }
+        if (!password) { setError(tl("passwordRequired")); return; }
 
         setSaving(true); setError(null);
         try {
@@ -52,7 +54,7 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
             onSaved(updated);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to unlock PDF");
+            setError(err instanceof Error ? err.message : tl("unlockError"));
         } finally { setSaving(false); }
     }
 
@@ -63,7 +65,7 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
             <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-base font-bold text-white">
-                        {isProtected ? "Unlock PDF" : "Lock PDF"}
+                        {isProtected ? tl("unlockTitle") : tl("lockTitle")}
                     </h2>
                     <button onClick={onClose} className="h-8 w-8 rounded-lg text-[#9a8d80] hover:bg-white/10 transition-colors">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto"><path d="M18 6L6 18M6 6l12 12" /></svg>
@@ -74,18 +76,18 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
 
                 {isProtected ? (
                     <p className="mb-3 text-[11px] text-[#6f6358]">
-                        This PDF is password-protected. Enter the password to unlock it.
+                        {tl("unlockDesc")}
                     </p>
                 ) : (
                     <p className="mb-3 text-[11px] text-[#6f6358]">
-                        Protect this PDF with a password (AES-256 encryption). The password will be cached in memory for 30 minutes.
+                        {tl("lockDesc")}
                     </p>
                 )}
 
                 <div className="space-y-3">
                     <div className="relative">
                         <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#8d8175]">
-                            {isProtected ? "Password" : "New password"}
+                            {isProtected ? tl("password") : tl("newPassword")}
                         </label>
                         <div className="relative">
                             <input
@@ -93,7 +95,7 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === "Enter") { isProtected ? handleUnlock() : handleLock(); } }}
-                                placeholder={isProtected ? "Enter password" : "Enter new password"}
+                                placeholder={isProtected ? tl("enterPassword") : tl("enterNewPassword")}
                                 className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 pr-10 text-sm text-white placeholder-[#5a4f44] outline-none transition focus:border-[#f7871f]/50"
                             />
                             <button
@@ -119,14 +121,14 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
 
                     {!isProtected && (
                         <div className="relative">
-                            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#8d8175]">Confirm password</label>
+                            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#8d8175]">{tl("confirmPassword")}</label>
                             <div className="relative">
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     onKeyDown={(e) => { if (e.key === "Enter") handleLock(); }}
-                                    placeholder="Re-enter password"
+                                    placeholder={tl("reEnterPassword")}
                                     className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 pr-10 text-sm text-white placeholder-[#5a4f44] outline-none transition focus:border-[#f7871f]/50"
                                 />
                             </div>
@@ -137,15 +139,15 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
                 {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
 
                 <div className="flex gap-3 mt-5">
-                    <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5">Cancel</button>
+                    <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5">{tl("cancel")}</button>
                     <button
                         onClick={isProtected ? handleUnlock : handleLock}
                         disabled={saving}
                         className={`flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 ${isProtected ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#f7871f] hover:bg-[#ce5a00]"}`}
                     >
                         {saving
-                            ? (isProtected ? "Unlocking..." : "Locking...")
-                            : (isProtected ? "Unlock" : "Lock")
+                            ? (isProtected ? tl("unlocking") : tl("locking"))
+                            : (isProtected ? tl("unlock") : tl("lock"))
                         }
                     </button>
                 </div>

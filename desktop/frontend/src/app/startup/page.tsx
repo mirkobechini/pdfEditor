@@ -19,10 +19,11 @@ interface Step {
 export default function StartupPage() {
     const router = useRouter();
     const tc = useTranslations("common");
+    const ts = useTranslations("startup");
     const [steps, setSteps] = React.useState<Step[]>([
-        { id: "backend", label: "Avvio del backend in locale...", status: "running" },
-        { id: "database", label: "Connessione al database SQLite...", status: "pending" },
-        { id: "api", label: "Verifica API e servizi...", status: "pending" },
+        { id: "backend", label: ts("startingBackend"), status: "running" },
+        { id: "database", label: ts("connectingDb"), status: "pending" },
+        { id: "api", label: ts("verifyingApi"), status: "pending" },
     ]);
     const [allDone, setAllDone] = React.useState(false);
     const [fatalError, setFatalError] = React.useState<string | null>(null);
@@ -61,10 +62,10 @@ export default function StartupPage() {
                 setSteps((prev) =>
                     prev.map((s) => s.id === "backend" ? {
                         ...s, status: "error" as const,
-                        message: "Tempo scaduto. Il backend non risponde dopo 60 secondi."
+                        message: ts("timeoutError")
                     } : s)
                 );
-                setFatalError("Impossibile contattare il backend. Verifica che il sidecar sia presente sulla porta 7723.");
+                setFatalError(ts("fatalError"));
             }
         }
 
@@ -148,9 +149,9 @@ export default function StartupPage() {
         setFatalError(null);
         setAllDone(false);
         setSteps([
-            { id: "backend", label: "Avvio del backend in locale...", status: "running" },
-            { id: "database", label: "Connessione al database SQLite...", status: "pending" },
-            { id: "api", label: "Verifica API e servizi...", status: "pending" },
+            { id: "backend", label: ts("startingBackend"), status: "running" },
+            { id: "database", label: ts("connectingDb"), status: "pending" },
+            { id: "api", label: ts("verifyingApi"), status: "pending" },
         ]);
     }
 
@@ -161,7 +162,7 @@ export default function StartupPage() {
                     <div className="h-8 w-6 rounded-[8px] bg-[#fff8f2]" />
                 </div>
 
-                <h1 className="text-center text-2xl font-bold text-white mb-8">Avvio di PdfEditor</h1>
+                <h1 className="text-center text-2xl font-bold text-white mb-8">{ts("startingApp")}</h1>
 
                 <div className="space-y-4">
                     {steps.map((step) => (
@@ -183,19 +184,19 @@ export default function StartupPage() {
                     <div className="mt-6 text-center">
                         <p className="text-[13px] text-red-300 mb-4">{fatalError}</p>
                         <button onClick={handleRetry} className="cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ff9b37]">
-                            Riprova
+                            {ts("retry")}
                         </button>
                     </div>
                 )}
 
                 {allDone && (
                     <p className="mt-6 text-center text-[13px] text-[#48c769]">
-                        ✓ Pronto! Reindirizzamento al login...
+                        {ts("ready")}
                     </p>
                 )}
 
                 <p className="mt-10 text-center text-[10px] text-[#8e8175]">
-                    {tc("version")} · AGPL-3.0
+                    {tc("version")} · {ts("license")}
                 </p>
             </div>
         </div>

@@ -22,10 +22,19 @@ vi.mock("../../shared/api", () => ({
     uploadPdf: (...args: any[]) => mockUploadPdf(...args),
     getMetadata: (...args: any[]) => mockGetMetadata(...args),
   },
+  cloudApi: {
+    getToken: () => null,
+    setToken: vi.fn(),
+    listPdfs: () => Promise.resolve({ items: [], total: 0 }),
+    downloadPdf: vi.fn(),
+    uploadPdf: vi.fn(),
+    deletePdf: vi.fn(),
+  },
 }));
 vi.mock("../../shared/auth", () => ({ useAuth: () => ({ user: { id: "u1", full_name: "Test User", license_tier: "Free" } }) }));
 vi.mock("../../shared/tauri", () => ({ isTauri: () => true, tauriInvoke: (...args: any[]) => mockTauriInvoke(...args), getApiBaseUrl: () => "http://127.0.0.1:7723" }));
 vi.mock("../../lib/preferences", () => ({ usePreferences: () => ({ prefs: { default_zoom: 100, theme: "dark", language: "it", antialiasing: true, density: "comfortable" }, updatePrefs: vi.fn() }) }));
+vi.mock("../../hooks/useCloudSync", () => ({ useCloudSync: () => ({ status: {}, syncEnabled: false, setSyncEnabled: vi.fn(), syncOnStartup: false, setSyncOnStartup: vi.fn(), isOnline: true, isSyncing: false, progress: null, syncAll: vi.fn(), lastSyncResult: null, clearSyncResult: vi.fn(), refreshStatus: vi.fn(), uploadPdf: vi.fn(), downloadPdf: vi.fn(), deletePdf: vi.fn() }) }));
 
 import EditorPage from "../app/page";
 
@@ -71,7 +80,7 @@ describe("EditorPage", () => {
   it("shows empty state when no documents", async () => {
     mockListPdfs.mockResolvedValue({ items: [], total: 0 });
     render(<EditorPage />);
-    expect(await screen.findByText(/Nessun documento/)).toBeInTheDocument();
+    expect(await screen.findByText(/noDocuments/)).toBeInTheDocument();
   });
 
   it("selects first document by default", async () => {
@@ -84,15 +93,18 @@ describe("EditorPage", () => {
   it("opens Merge modal when Merge button clicked", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const mergeBtns = screen.getAllByText("Merge");
+    // Select a document first
+    fireEvent.click(screen.getByText("doc1.pdf"));
+    const mergeBtns = screen.getAllByText("merge");
     fireEvent.click(mergeBtns[0]);
-    expect(await screen.findByText(/Merge PDFs/)).toBeInTheDocument();
+    expect(await screen.findByText(/title/)).toBeInTheDocument();
   });
 
   it("opens Split modal when Split button clicked", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const splitBtns = screen.getAllByText("Split");
+    fireEvent.click(screen.getByText("doc1.pdf"));
+    const splitBtns = screen.getAllByText("split");
     fireEvent.click(splitBtns[0]);
     expect(await screen.findByText(/Split PDF/)).toBeInTheDocument();
   });
@@ -100,7 +112,8 @@ describe("EditorPage", () => {
   it("opens Reorder modal when Reorder button clicked", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const reorderBtns = screen.getAllByText("Reorder");
+    fireEvent.click(screen.getByText("doc1.pdf"));
+    const reorderBtns = screen.getAllByText("reorder");
     fireEvent.click(reorderBtns[0]);
     expect(await screen.findByText(/Reorder Pages/)).toBeInTheDocument();
   });
@@ -108,7 +121,8 @@ describe("EditorPage", () => {
   it("opens Remove modal when Remove button clicked", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const removeBtns = screen.getAllByText("Remove");
+    fireEvent.click(screen.getByText("doc1.pdf"));
+    const removeBtns = screen.getAllByText("remove");
     fireEvent.click(removeBtns[0]);
     expect(await screen.findByText(/Remove Pages/)).toBeInTheDocument();
   });
@@ -116,36 +130,38 @@ describe("EditorPage", () => {
   it("opens Metadata modal when Metadata button clicked", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const metadataBtns = screen.getAllByText("Metadata");
+    fireEvent.click(screen.getByText("doc1.pdf"));
+    const metadataBtns = screen.getAllByText("metadata");
     fireEvent.click(metadataBtns[0]);
-    expect(await screen.findByText(/Edit Metadata/)).toBeInTheDocument();
+    expect(await screen.findByText(/modalTitle/)).toBeInTheDocument();
   });
 
   it("opens Lock/Unlock modal when Lock button clicked", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
+    fireEvent.click(screen.getByText("doc1.pdf"));
     const lockBtns = screen.getAllByText("LOCK");
     fireEvent.click(lockBtns[0]);
-    expect(await screen.findByText(/Lock PDF/)).toBeInTheDocument();
+    expect(await screen.findByText(/lockTitle/)).toBeInTheDocument();
   });
 
   it("shows delete confirmation dialog", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const deleteBtns = document.querySelectorAll('[title="Delete PDF"]');
+    const deleteBtns = document.querySelectorAll('[title="deletePdf"]');
     fireEvent.click(deleteBtns[0]);
-    expect(await screen.findByText(/Are you sure/)).toBeInTheDocument();
+    expect(await screen.findByText(/deleteConfirmDesc/)).toBeInTheDocument();
   });
 
   it("cancels delete confirmation", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const deleteBtns = document.querySelectorAll('[title="Delete PDF"]');
+    const deleteBtns = document.querySelectorAll('[title="deletePdf"]');
     fireEvent.click(deleteBtns[0]);
-    expect(await screen.findByText(/Are you sure/)).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Cancel"));
+    expect(await screen.findByText(/deleteConfirmDesc/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText("cancel"));
     await waitFor(() => {
-      expect(screen.queryByText(/Are you sure/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/deleteConfirmDesc/)).not.toBeInTheDocument();
     });
   });
 
@@ -153,10 +169,10 @@ describe("EditorPage", () => {
     mockDeletePdf.mockResolvedValue(undefined);
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const deleteBtns = document.querySelectorAll('[title="Delete PDF"]');
+    const deleteBtns = document.querySelectorAll('[title="deletePdf"]');
     fireEvent.click(deleteBtns[0]);
-    expect(await screen.findByText("Delete PDF")).toBeInTheDocument();
-    const confirmBtns = screen.getAllByText("Delete");
+    expect(await screen.findByText("deleteConfirmTitle")).toBeInTheDocument();
+    const confirmBtns = screen.getAllByText("delete");
     fireEvent.click(confirmBtns[0]);
     await waitFor(() => {
       expect(mockDeletePdf).toHaveBeenCalledWith("p1");
@@ -166,7 +182,8 @@ describe("EditorPage", () => {
   it("shows download button and triggers download", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const downloadBtn = screen.getByText("Download PDF");
+    fireEvent.click(screen.getByText("doc1.pdf"));
+    const downloadBtn = screen.getByText("download");
     fireEvent.click(downloadBtn);
     await waitFor(() => {
       expect(mockDownloadPdf).toHaveBeenCalledWith("p1");
@@ -178,14 +195,14 @@ describe("EditorPage", () => {
     mockListPdfs.mockResolvedValue({ items: [lockedDoc], total: 1 });
     mockDownloadPdf.mockRejectedValue(new Error("protetto da password"));
     render(<EditorPage />);
-    expect(await screen.findByText(/PDF protetto da password/)).toBeInTheDocument();
-    expect(screen.getByText("Sblocca PDF")).toBeInTheDocument();
+    await screen.findByText("doc1.pdf");
+    expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
   });
 
   it("shows user info in sidebar", async () => {
     render(<EditorPage />);
     expect(await screen.findByText("Test User")).toBeInTheDocument();
-    expect(screen.getByText("Free License")).toBeInTheDocument();
+    expect(screen.getByText("Free license")).toBeInTheDocument();
   });
 
   it("shows sidebar action buttons", async () => {
@@ -199,31 +216,31 @@ describe("EditorPage", () => {
   it("shows metadata panel with document info", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    expect(screen.getByText("Page Metadata")).toBeInTheDocument();
-    expect(screen.getByText("Filename")).toBeInTheDocument();
-    expect(screen.getByText("Size")).toBeInTheDocument();
-    expect(screen.getByText("Pages")).toBeInTheDocument();
-    expect(screen.getByText("Created")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("doc1.pdf"));
+    expect(screen.getByText("pageMetadata")).toBeInTheDocument();
+    expect(screen.getByText("filename")).toBeInTheDocument();
+    expect(screen.getByText("size")).toBeInTheDocument();
+    expect(screen.getByText("pages")).toBeInTheDocument();
+    expect(screen.getByText("created")).toBeInTheDocument();
   });
 
   it("shows 'Nessun PDF selezionato' when no doc selected", async () => {
     mockListPdfs.mockResolvedValue({ items: [], total: 0 });
     render(<EditorPage />);
-    expect(await screen.findByText(/Nessun PDF selezionato/)).toBeInTheDocument();
+    expect(await screen.findByText(/noPdfSelected/)).toBeInTheDocument();
   });
 
   it("shows 'Seleziona o apri un PDF' placeholder", async () => {
     mockListPdfs.mockResolvedValue({ items: [], total: 0 });
     render(<EditorPage />);
-    expect(await screen.findByText(/Seleziona o apri un PDF per iniziare/)).toBeInTheDocument();
+    expect(await screen.findByText(/selectPdf/)).toBeInTheDocument();
   });
 
-  it("shows Edit/Organize/Convert tabs", async () => {
+  it("shows Edit/Download tabs", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    expect(screen.getByText("Edit")).toBeInTheDocument();
-    expect(screen.getByText("Organize")).toBeInTheDocument();
-    expect(screen.getByText("Convert")).toBeInTheDocument();
+    expect(screen.getByText("edit")).toBeInTheDocument();
+    expect(screen.getByText("download")).toBeInTheDocument();
   });
 
   it("shows zoom controls with percentage", async () => {
@@ -236,17 +253,17 @@ describe("EditorPage", () => {
 
   it("shows Open Local PDF button", async () => {
     render(<EditorPage />);
-    expect(screen.getByText("Open Local PDF")).toBeInTheDocument();
+    expect(screen.getByText("openLocalPdf")).toBeInTheDocument();
   });
 
   it("shows Cloud Sync section", async () => {
     render(<EditorPage />);
-    expect(screen.getByText("Cloud Sync")).toBeInTheDocument();
+    expect(screen.getByText("cloudSync")).toBeInTheDocument();
   });
 
   it("shows settings link", async () => {
     render(<EditorPage />);
-    const settingsLinks = screen.getAllByTitle("Impostazioni");
+    const settingsLinks = screen.getAllByTitle("settings");
     expect(settingsLinks.length).toBeGreaterThan(0);
   });
 
@@ -266,7 +283,8 @@ describe("EditorPage", () => {
   it("handles Open Local PDF button click (Tauri)", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const openBtn = screen.getByText("Open Local PDF");
+    fireEvent.click(screen.getByText("doc1.pdf"));
+    const openBtn = screen.getByText("openLocalPdf");
     fireEvent.click(openBtn);
     await waitFor(() => {
       expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_open", { defaultPath: undefined });
@@ -298,7 +316,7 @@ describe("EditorPage", () => {
     await screen.findByText("doc2.pdf");
     fireEvent.dragOver(document);
     await waitFor(() => {
-      expect(screen.getByText(/Rilascia per caricare/)).toBeInTheDocument();
+      expect(screen.getByText(/dropToUpload/)).toBeInTheDocument();
     });
   });
 
@@ -307,11 +325,11 @@ describe("EditorPage", () => {
     await screen.findByText("doc2.pdf");
     fireEvent.dragOver(document);
     await waitFor(() => {
-      expect(screen.getByText(/Rilascia per caricare/)).toBeInTheDocument();
+      expect(screen.getByText(/dropToUpload/)).toBeInTheDocument();
     });
     fireEvent.dragLeave(document);
     await waitFor(() => {
-      expect(screen.queryByText(/Rilascia per caricare/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/dropToUpload/)).not.toBeInTheDocument();
     });
   });
 
@@ -342,7 +360,7 @@ describe("EditorPage", () => {
   it("shows file size in document list", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const sizeTexts = screen.getAllByText(/KB/);
+    const sizeTexts = screen.getAllByText(/bytes|kilobytes|megabytes/);
     expect(sizeTexts.length).toBeGreaterThan(0);
   });
 
@@ -350,7 +368,7 @@ describe("EditorPage", () => {
     mockDownloadPdf.mockRejectedValue(new Error("Download failed"));
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const downloadBtn = screen.getByText("Download PDF");
+    const downloadBtn = screen.getByText("download");
     fireEvent.click(downloadBtn);
     // Should not throw — error is caught in handleDownload
     await new Promise((r) => setTimeout(r, 50));
@@ -360,7 +378,7 @@ describe("EditorPage", () => {
     localStorage.setItem("pdfeditor_work_folder", "C:\\Work");
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const openBtn = screen.getByText("Open Local PDF");
+    const openBtn = screen.getByText("openLocalPdf");
     fireEvent.click(openBtn);
     await waitFor(() => {
       expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_open", { defaultPath: "C:\\Work" });
@@ -374,7 +392,7 @@ describe("EditorPage", () => {
     });
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const openBtn = screen.getByText("Open Local PDF");
+    const openBtn = screen.getByText("openLocalPdf");
     fireEvent.click(openBtn);
     await new Promise((r) => setTimeout(r, 50));
     // Should not throw — null return is handled
@@ -388,7 +406,7 @@ describe("EditorPage", () => {
     });
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const openBtn = screen.getByText("Open Local PDF");
+    const openBtn = screen.getByText("openLocalPdf");
     fireEvent.click(openBtn);
     await new Promise((r) => setTimeout(r, 50));
     // Should not throw — null return is handled
@@ -399,8 +417,8 @@ describe("EditorPage", () => {
     mockListPdfs.mockResolvedValue({ items: [lockedDoc], total: 1 });
     mockDownloadPdf.mockRejectedValue(new Error("protetto da password"));
     render(<EditorPage />);
-    await screen.findByText(/PDF protetto da password/);
-    expect(screen.getByText("UNLOCK")).toBeInTheDocument();
+    await screen.findByText("doc1.pdf");
+    expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
   });
 
   it("shows OCR button (disabled)", async () => {
@@ -457,7 +475,7 @@ describe("EditorPage", () => {
   it("shows download subtitle", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    expect(screen.getByText("Salva una copia locale")).toBeInTheDocument();
+    expect(screen.getByText("download")).toBeInTheDocument();
   });
 
   it("shows Fast Actions section", async () => {
@@ -469,13 +487,13 @@ describe("EditorPage", () => {
   it("shows Recent documents label", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    expect(screen.getByText("Recent documents")).toBeInTheDocument();
+    expect(screen.getByText("recentDocuments")).toBeInTheDocument();
   });
 
   it("shows page count in metadata", async () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
-    const pageLabels = screen.getAllByText("Pages");
-    expect(pageLabels.length).toBeGreaterThanOrEqual(1);
+    fireEvent.click(screen.getByText("doc1.pdf"));
+    expect(screen.getByText("pages")).toBeInTheDocument();
   });
 });

@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-08-22
+> **Aggiornato:** 2026-08-23
 
 ---
 
@@ -16,6 +16,7 @@
 | #671  | Mobile: PDF in cartella PdfEditor/               |
 | #672  | Mobile: fix cursore rename PDF                   |
 | #673  | Desktop: cartella predefinita salvataggio PDF    |
+| #689  | Desktop fixes batch (9 fix + i18n + test)        |
 
 ---
 

@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import PasswordInput from "../PasswordInput";
 
+vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
+
 describe("PasswordInput", () => {
     const baseProps = {
         value: "",

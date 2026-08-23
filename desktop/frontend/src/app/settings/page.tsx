@@ -106,12 +106,12 @@ function AboutSection({ title, rows, onAction }: { title: string; rows: readonly
 
 export default function SettingsPage() {
     const ts = useTranslations("settings");
+    const tc = useTranslations("common");
     const { user } = useAuth();
     const setLocale = useLocaleSetter();
     const { prefs, updatePrefs } = usePreferences();
-    const { syncEnabled, setSyncEnabled, syncOnStartup, setSyncOnStartup, isOnline, isSyncing, progress, syncAll } = useCloudSync();
+    const { syncEnabled, setSyncEnabled, syncOnStartup, setSyncOnStartup, isOnline, isSyncing, progress, syncAll, lastSyncResult, clearSyncResult } = useCloudSync();
     const [activeTab, setActiveTab] = React.useState<SectionId>("general");
-    const [appVersion, setAppVersion] = React.useState("");
     const [changelogOpen, setChangelogOpen] = React.useState(false);
     const [bugReportOpen, setBugReportOpen] = React.useState(false);
     const [docsOpen, setDocsOpen] = React.useState(false);
@@ -121,12 +121,6 @@ export default function SettingsPage() {
     const [bugSending, setBugSending] = React.useState(false);
     const [bugError, setBugError] = React.useState("");
     const [bugDone, setBugDone] = React.useState(false);
-
-    // Read version from common i18n
-    React.useEffect(() => {
-        const tc = (window as any).__NEXT_INTL_MESSAGES?.common?.version;
-        if (tc) setAppVersion(tc);
-    }, []);
 
     function openUrl(url: string) {
         if (isTauri()) {
@@ -247,7 +241,12 @@ export default function SettingsPage() {
                             </div>
                             <div className="pt-3 border-t border-white/10">
                                 <button
-                                    onClick={syncAll}
+                                    onClick={async () => {
+                                        const result = await syncAll();
+                                        if (result.uploaded > 0 || result.downloaded > 0 || result.errors.length > 0) {
+                                            // Result is stored in lastSyncResult, shown as dialog
+                                        }
+                                    }}
                                     disabled={isSyncing || !syncEnabled || !isOnline}
                                     className="cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2 text-[14px] font-semibold text-white transition hover:bg-[#ff9b37] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
@@ -260,6 +259,37 @@ export default function SettingsPage() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Sync result dialog */}
+                        {lastSyncResult && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={clearSyncResult}>
+                                <div className="rounded-2xl border border-white/10 bg-[#221b16] p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+                                    <h2 className="text-[20px] font-bold text-white mb-4">Sync completato</h2>
+                                    <div className="space-y-2 text-[14px]">
+                                        {lastSyncResult.uploaded > 0 && <p className="text-green-400">✅ {lastSyncResult.uploaded} PDF caricati sul cloud</p>}
+                                        {lastSyncResult.downloaded > 0 && <p className="text-blue-400">⬇️ {lastSyncResult.downloaded} PDF scaricati dal cloud</p>}
+                                        {lastSyncResult.skipped > 0 && <p className="text-yellow-400">⏭️ {lastSyncResult.skipped} PDF saltati (protetti da password)</p>}
+                                        {lastSyncResult.errors.length > 0 && (
+                                            <div className="mt-3">
+                                                <p className="text-red-400 font-semibold">⚠️ Errori ({lastSyncResult.errors.length}):</p>
+                                                {lastSyncResult.errors.map((err, i) => (
+                                                    <p key={i} className="text-red-300 text-[12px] ml-2">{err}</p>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {lastSyncResult.uploaded === 0 && lastSyncResult.downloaded === 0 && lastSyncResult.skipped === 0 && lastSyncResult.errors.length === 0 && (
+                                            <p className="text-[#9d9184]">Nessun PDF da sincronizzare. Tutti già allineati.</p>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={clearSyncResult}
+                                        className="mt-4 w-full cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2 text-[14px] font-semibold text-white"
+                                    >
+                                        OK
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
             case "editor":
@@ -316,6 +346,28 @@ export default function SettingsPage() {
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
+                                    <p className="text-[16px] font-semibold text-white">{ts("workplace")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{prefs.default_save_folder || ts("workplaceNotSet")}</p>
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        if (!isTauri()) return;
+                                        try {
+                                            const folder = await tauriInvoke<string>("dialog_open_folder", { defaultPath: prefs.default_save_folder || undefined });
+                                            if (folder) {
+                                                updatePrefs({ default_save_folder: folder });
+                                            }
+                                        } catch (err) {
+                                            console.error("Failed to pick folder:", err);
+                                        }
+                                    }}
+                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white"
+                                >
+                                    {prefs.default_save_folder ? ts("workplaceChange") : ts("workplaceChoose")}
+                                </button>
+                            </div>
+                            <div className="flex items-center justify-between py-3 border-b border-white/10">
+                                <div>
                                     <p className="text-[16px] font-semibold text-white">{ts("systemLog")}</p>
                                     <p className="text-[14px] text-[#9d9184]">{ts("systemLogDesc")}</p>
                                 </div>
@@ -346,7 +398,7 @@ export default function SettingsPage() {
 
                             <div>
                                 <h2 className="text-[42px] font-bold leading-tight text-white">PdfEditor</h2>
-                                <p className="mt-1 text-[14px] text-[#9d9184]">{appVersion || "v0.1.33"} · {user?.license_tier || "Free"} License</p>
+                                <p className="mt-1 text-[14px] text-[#9d9184]">{tc("version")} · {user?.license_tier || "Free"} License</p>
                             </div>
                         </section>
 
