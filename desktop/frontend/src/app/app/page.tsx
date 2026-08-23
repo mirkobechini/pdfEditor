@@ -269,12 +269,12 @@ export default function EditorPage() {
                                         className={`doc-item rounded-2xl border p-3 cursor-pointer transition ${selectedDoc?.id === doc.id ? "border-white/10 bg-white/[0.03]" : "border-transparent hover:bg-white/[0.02]"
                                             }`}
                                     >
-                                        <div className="flex items-start gap-3">
+                                        <div className="flex items-center gap-3">
                                             <div
                                                 onClick={() => setSelectedDoc(doc)}
-                                                className="flex items-start gap-3 flex-1 min-w-0"
+                                                className="flex items-center gap-3 flex-1 min-w-0"
                                             >
-                                                <div className={`mt-0.5 flex h-12 w-12 items-center justify-center rounded-xl text-xl shrink-0 ${selectedDoc?.id === doc.id ? "bg-[#3e2717]" : "bg-white/8"
+                                                <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-xl shrink-0 ${selectedDoc?.id === doc.id ? "bg-[#3e2717]" : "bg-white/8"
                                                     }`}>
                                                     {getPlatformIcon(doc.upload_source)}
                                                 </div>

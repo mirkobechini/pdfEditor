@@ -238,20 +238,25 @@ export function useCloudSync(): UseCloudSyncReturn {
         return "uploaded";
       } catch (err) {
         const msg = String(err);
-        console.error(
-          "[useCloudSync] uploadPdf failed:",
-          pdfId,
-          originalFilename,
-          msg,
-        );
         if (
           msg.includes("password") ||
           msg.includes("locked") ||
           msg.includes("protetto")
         ) {
+          console.log(
+            "[useCloudSync] uploadPdf skipped (locked):",
+            pdfId,
+            originalFilename,
+          );
           setStatus((prev) => ({ ...prev, [pdfId]: "none" }));
           return "skipped";
         }
+        console.error(
+          "[useCloudSync] uploadPdf error:",
+          pdfId,
+          originalFilename,
+          msg,
+        );
         setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
         return "failed";
       }
