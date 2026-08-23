@@ -11,6 +11,7 @@ import PasswordInput from "../../components/PasswordInput";
 export default function RegisterPage() {
     const t = useTranslations("auth");
     const tc = useTranslations("common");
+    const tr = useTranslations("register");
     const router = useRouter();
     const { register, user, loading: authLoading } = useAuth();
     const [fullName, setFullName] = React.useState("");
@@ -85,7 +86,7 @@ export default function RegisterPage() {
                             type="text"
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
-                            placeholder="Mario Rossi"
+                            placeholder={tr("namePlaceholder")}
                             required
                             autoFocus
                             className="h-11 w-full rounded-xl border border-white/10 bg-transparent px-4 text-sm font-medium text-[#f4f1ee] outline-none transition focus:border-[#f7871f]"
@@ -99,7 +100,7 @@ export default function RegisterPage() {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="email@esempio.com"
+                            placeholder={tr("emailPlaceholder")}
                             required
                             className="h-11 w-full rounded-xl border border-white/10 bg-transparent px-4 text-sm font-medium text-[#f4f1ee] outline-none transition focus:border-[#f7871f]"
                         />
@@ -107,12 +108,12 @@ export default function RegisterPage() {
 
                     <div>
                         <label htmlFor="password" className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-[#a79a8d]">{t("password")}</label>
-                        <PasswordInput value={password} onChange={setPassword} placeholder="••••••••••••" required />
+                        <PasswordInput value={password} onChange={setPassword} placeholder={tr("passwordPlaceholder")} required />
                     </div>
 
                     <div>
                         <label htmlFor="confirmPassword" className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-[#a79a8d]">{t("confirmPassword")}</label>
-                        <PasswordInput id="confirmPassword" value={confirmPassword} onChange={setConfirmPassword} placeholder="••••••••••••" required />
+                        <PasswordInput id="confirmPassword" value={confirmPassword} onChange={setConfirmPassword} placeholder={tr("confirmPasswordPlaceholder")} required />
                     </div>
 
                     <button

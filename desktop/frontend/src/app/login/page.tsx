@@ -62,6 +62,7 @@ function useSidecarReady() {
 export default function LoginPage() {
     const t = useTranslations("auth");
     const tc = useTranslations("common");
+    const tl = useTranslations("login");
     const { user, loading, login, guestLogin } = useAuth();
     const { ready, checking, failed } = useSidecarReady();
     const [email, setEmail] = React.useState("");
@@ -119,15 +120,15 @@ export default function LoginPage() {
 
                     <div>
                         <h1 className="mb-6 max-w-sm text-3xl font-bold leading-tight tracking-tight">
-                            Editing PDF di precisione. In locale.
+                            {tl("heroTitle")}
                         </h1>
                         <p className="mb-6 max-w-sm text-sm leading-relaxed text-white/85">
-                            Il tuo workspace è cifrato nel keychain del sistema operativo. Funziona offline e si sincronizza quando torni online.
+                            {tl("heroDesc")}
                         </p>
                         <div className="flex gap-2">
-                            <span className="rounded-full bg-white/20 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-widest">OFFLINE-FIRST</span>
-                            <span className="rounded-full bg-white/20 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-widest">E2E</span>
-                            <span className="rounded-full bg-white/20 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-widest">AGPL</span>
+                            <span className="rounded-full bg-white/20 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-widest">{tl("badgeOffline")}</span>
+                            <span className="rounded-full bg-white/20 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-widest">{tl("badgeE2e")}</span>
+                            <span className="rounded-full bg-white/20 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-widest">{tl("badgeAgpl")}</span>
                         </div>
                     </div>
                 </div>
@@ -137,19 +138,19 @@ export default function LoginPage() {
                         {!ready && !failed && checking && (
                             <div className="mb-4 rounded-xl border border-yellow-500/35 bg-yellow-500/10 px-4 py-3 text-[11px] text-yellow-200 flex items-center gap-2">
                                 <span className="inline-block h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
-                                Avvio del backend in corso...
+                                {tl("backendStarting")}
                             </div>
                         )}
                         {failed && (
                             <div className="mb-4 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-[11px] text-red-200">
-                                Backend non disponibile. Login e guest potrebbero non funzionare.
+                                {tl("backendUnavailable")}
                             </div>
                         )}
                         {error && (
                             <div className="mb-4 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div>
                         )}
 
-                        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#a79a8d]">WELCOME BACK</p>
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#a79a8d]">{tl("welcomeBack")}</p>
                         <h2 className="mb-8 text-2xl font-bold tracking-tight text-[#f4f1ee]">{t("workspace")}</h2>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
@@ -160,7 +161,7 @@ export default function LoginPage() {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="email@esempio.com"
+                                    placeholder={tl("emailPlaceholder")}
                                     required
                                     autoFocus
                                     className="h-11 w-full rounded-xl border border-white/10 bg-transparent px-4 text-sm font-medium text-[#f4f1ee] outline-none transition focus:border-[#f7871f]"
@@ -186,7 +187,7 @@ export default function LoginPage() {
                                     {t("rememberMe")}
                                 </label>
                                 <Link href="/forgot-password" className="font-medium text-[#f7871f]">
-                                    Recupera password
+                                    {tl("forgotPassword")}
                                 </Link>
                             </div>
 
