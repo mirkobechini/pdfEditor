@@ -12,6 +12,7 @@ import type { PdfDocument } from "../shared/types";
 
 const SYNC_ENABLED_KEY = "pdfeditor_cloud_sync_enabled";
 const SYNC_STARTUP_KEY = "pdfeditor_cloud_sync_on_startup";
+const SYNC_STATUS_EVENT = "pdfeditor-sync-status-changed";
 
 export type PdfSyncStatus = "pending" | "synced" | "error" | "none";
 
@@ -60,6 +61,8 @@ interface UseCloudSyncReturn {
   } | null;
   /** Clear last sync result */
   clearSyncResult: () => void;
+  /** Refresh sync status (reload from cloud) */
+  refreshStatus: () => Promise<void>;
 }
 
 export function useCloudSync(): UseCloudSyncReturn {
@@ -85,6 +88,38 @@ export function useCloudSync(): UseCloudSyncReturn {
 
   const clearSyncResult = useCallback(() => setLastSyncResult(null), []);
 
+  // Shared status loader — can be called from any instance
+  const loadStatus = useCallback(async () => {
+    if (!syncEnabled) return;
+    try {
+      let token = cloudApi.getToken();
+      for (let i = 0; i < 10 && !token; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        token = cloudApi.getToken();
+      }
+      if (!token) return;
+
+      const localRes = await api.listPdfs();
+      const cloudRes = await cloudApi.listPdfs();
+      const cloudIds = new Set(cloudRes.items.map((p) => p.id));
+      const newStatus: Record<string, PdfSyncStatus> = {};
+      for (const pdf of localRes.items) {
+        newStatus[pdf.id] = cloudIds.has(pdf.id) ? "synced" : "none";
+      }
+      setStatus(newStatus);
+    } catch {
+      // Cloud not reachable — leave status empty
+    }
+  }, [syncEnabled]);
+
+  const refreshStatus = useCallback(async () => {
+    await loadStatus();
+    // Notify other instances
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(SYNC_STATUS_EVENT));
+    }
+  }, [loadStatus]);
+
   // Listen to connectivity changes
   useEffect(() => {
     setIsOnline(navigator.onLine);
@@ -103,33 +138,20 @@ export function useCloudSync(): UseCloudSyncReturn {
     if (!syncEnabled) return;
     let cancelled = false;
     (async () => {
-      try {
-        // Wait for cloud token (auth might still be loading) — retry up to 10s
-        let token = cloudApi.getToken();
-        for (let i = 0; i < 10 && !token; i++) {
-          await new Promise((r) => setTimeout(r, 1000));
-          if (cancelled) return;
-          token = cloudApi.getToken();
-        }
-        if (!token) return; // Still no token — skip
-
-        const localRes = await api.listPdfs();
-        const cloudRes = await cloudApi.listPdfs();
-        if (cancelled) return;
-        const cloudIds = new Set(cloudRes.items.map((p) => p.id));
-        const newStatus: Record<string, PdfSyncStatus> = {};
-        for (const pdf of localRes.items) {
-          newStatus[pdf.id] = cloudIds.has(pdf.id) ? "synced" : "none";
-        }
-        setStatus(newStatus);
-      } catch {
-        // Cloud not reachable — leave status empty
-      }
+      await loadStatus();
     })();
     return () => {
       cancelled = true;
     };
-  }, [syncEnabled]);
+  }, [syncEnabled, loadStatus]);
+
+  // Listen for status refresh events from other instances
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => { loadStatus(); };
+    window.addEventListener(SYNC_STATUS_EVENT, handler);
+    return () => window.removeEventListener(SYNC_STATUS_EVENT, handler);
+  }, [loadStatus]);
 
   const setSyncEnabled = useCallback(async (val: boolean) => {
     setSyncEnabledState(val);
@@ -258,6 +280,8 @@ export function useCloudSync(): UseCloudSyncReturn {
       setProgress(null);
       syncingRef.current = false;
       setLastSyncResult(result);
+      // Refresh status badges after sync completes
+      refreshStatus();
     }
 
     return result;
@@ -277,5 +301,6 @@ export function useCloudSync(): UseCloudSyncReturn {
     isOnline,
     lastSyncResult,
     clearSyncResult,
+    refreshStatus,
   };
 }
