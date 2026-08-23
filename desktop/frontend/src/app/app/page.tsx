@@ -363,11 +363,12 @@ export default function EditorPage() {
                     <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-[#201a15] px-4">
                         <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-1">
-                                {[te("edit"), te("organize"), te("convert")].map((label, idx) => (
-                                    <button key={idx} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${idx === 0 ? "border border-white/10 bg-[#201a15] text-white" : "text-[#9a8d80]"}`}>
-                                        {label}
-                                    </button>
-                                ))}
+                                <button className="rounded-lg px-3 py-1.5 text-xs font-semibold border border-white/10 bg-[#201a15] text-white">
+                                    {te("edit")}
+                                </button>
+                                <button onClick={handleDownload} disabled={!selectedDoc} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#9a8d80] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                                    {te("download")}
+                                </button>
                             </div>
                             {totalPages > 0 && (
                                 <div className="flex items-center gap-1 ml-2 text-[11px] text-[#9a8d80] font-mono">
