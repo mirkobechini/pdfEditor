@@ -19,10 +19,21 @@ import type { PdfDocument } from "../../shared/types";
 
 const API_BASE = getApiBaseUrl();
 
+const PLATFORM_ICONS: Record<string, string> = {
+  web: "🌐",
+  desktop: "💻",
+  mobile: "📱",
+};
+
+function getPlatformIcon(source?: string): string {
+  if (!source) return "☁️";
+  return PLATFORM_ICONS[source] || "☁️";
+}
+
 export default function EditorPage() {
     const { user } = useAuth();
     const { prefs } = usePreferences();
-    const { status: syncStatus } = useCloudSync();
+    const { status: syncStatus, deletePdf: cloudDeletePdf } = useCloudSync();
     const [docs, setDocs] = React.useState<PdfDocument[]>([]);
     const [loading, setLoading] = React.useState(true);
     const [selectedDoc, setSelectedDoc] = React.useState<PdfDocument | null>(null);
@@ -265,7 +276,7 @@ export default function EditorPage() {
                                             >
                                                 <div className={`mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold shrink-0 ${selectedDoc?.id === doc.id ? "bg-[#3e2717] text-[#f7871f]" : "bg-white/8 text-[#8f8377]"
                                                     }`}>
-                                                    PDF
+                                                    {getPlatformIcon(doc.upload_source)}
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     {renameId === doc.id ? (
@@ -665,7 +676,7 @@ export default function EditorPage() {
                                     const id = deleteConfirm;
                                     setDeleteConfirm(null);
                                     try {
-                                        await api.deletePdf(id);
+                                        await cloudDeletePdf(id, "both");
                                         setDocs((prev) => prev.filter((d) => d.id !== id));
                                         if (selectedDoc?.id === id) {
                                             setSelectedDoc(null);

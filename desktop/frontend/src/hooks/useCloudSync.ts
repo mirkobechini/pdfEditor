@@ -31,6 +31,10 @@ interface UseCloudSyncReturn {
     originalFilename?: string,
   ) => Promise<"uploaded" | "skipped" | "failed">;
   downloadPdf: (pdfId: string, originalFilename?: string) => Promise<boolean>;
+  deletePdf: (
+    pdfId: string,
+    option?: "local" | "cloud" | "both",
+  ) => Promise<boolean>;
   syncAll: () => Promise<{
     uploaded: number;
     downloaded: number;
@@ -185,6 +189,27 @@ export function useCloudSync(): UseCloudSyncReturn {
     return () => window.removeEventListener(SYNC_STATUS_EVENT, handler);
   }, [loadStatus]);
 
+  // Sync on startup
+  useEffect(() => {
+    if (!syncEnabled || !syncOnStartup) return;
+    let cancelled = false;
+    (async () => {
+      // Wait for cloud token
+      let token = cloudApi.getToken();
+      for (let i = 0; i < 10 && !token; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        if (cancelled) return;
+        token = cloudApi.getToken();
+      }
+      if (!token || cancelled) return;
+      await syncAll();
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncEnabled, syncOnStartup]);
+
   const setSyncEnabled = useCallback(async (val: boolean) => {
     setSyncEnabledState(val);
     localStorage.setItem(SYNC_ENABLED_KEY, String(val));
@@ -323,9 +348,54 @@ export function useCloudSync(): UseCloudSyncReturn {
     return result;
   }, [syncEnabled, uploadPdf, downloadPdf]);
 
+  const deletePdf = useCallback(
+    async (
+      pdfId: string,
+      option: "local" | "cloud" | "both" = "both",
+    ): Promise<boolean> => {
+      try {
+        setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
+
+        if (option === "cloud" || option === "both") {
+          // Delete from cloud using the mapped cloud ID
+          const mappedCloudId = getCloudId(pdfId);
+          if (mappedCloudId) {
+            try {
+              await cloudApi.deletePdf(mappedCloudId);
+            } catch {
+              /* cloud delete failed — ignore */
+            }
+          }
+        }
+
+        if (option === "local" || option === "both") {
+          // Delete locally
+          try {
+            await api.deletePdf(pdfId);
+          } catch {
+            /* local delete failed — ignore */
+          }
+        }
+
+        removeSyncMap(pdfId);
+        setStatus((prev) => {
+          const next = { ...prev };
+          delete next[pdfId];
+          return next;
+        });
+        return true;
+      } catch {
+        setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
+        return false;
+      }
+    },
+    [],
+  );
+
   return {
     uploadPdf,
     downloadPdf,
+    deletePdf,
     syncAll,
     status,
     syncEnabled,
