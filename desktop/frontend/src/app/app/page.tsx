@@ -168,7 +168,6 @@ export default function EditorPage() {
                     const items = res.items || [];
                     if (!cancelled) {
                         setDocs(items);
-                        if (items.length > 0) setSelectedDoc(items[0]);
                         setLoading(false);
                     }
                     return;
@@ -509,22 +508,6 @@ export default function EditorPage() {
                             <p className="text-xs text-[#7e7267]">{te("noPdfSelected")}</p>
                         )}
                     </div>
-
-                    <button
-                        onClick={handleDownload}
-                        disabled={!selectedDoc}
-                        className="mt-4 flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8f8377" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        <div>
-                            <p className="text-[11px] font-semibold text-white">Download PDF</p>
-                            <p className="text-[10px] text-[#8f8377]">Salva una copia locale</p>
-                        </div>
-                    </button>
 
                     <h4 className="mt-6 mb-4 text-xs font-bold uppercase tracking-widest">Fast Actions</h4>
                     <div className="mt-4 grid grid-cols-2 gap-3">
