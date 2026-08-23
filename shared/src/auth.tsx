@@ -148,7 +148,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // cloudApi tiene il JWT cloud per operazioni future
           cloudApi.setToken(cloudToken);
         } else {
-          cloudApi.setToken(res.access_token);
+          // Login locale riuscito — prova anche cloud login per avere token cloud
+          try {
+            const cloudRes = await cloudApi.login(email, password);
+            if (cloudRes) {
+              cloudApi.setToken(cloudRes.access_token);
+            }
+          } catch {
+            // Cloud non disponibile — cloudApi resta senza token
+          }
         }
       } else {
         // Web: login sempre via cloud
