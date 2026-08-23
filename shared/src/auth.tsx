@@ -6,6 +6,7 @@ import { isTauri } from "./tauri";
 import type { User } from "./types";
 
 const REMEMBER_TOKEN_KEY = "pdfeditor_remember_token";
+const CLOUD_TOKEN_KEY = "pdfeditor_cloud_token";
 
 interface AuthContextValue {
   user: User | null;
@@ -70,6 +71,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!token) {
         if (!cancelled) setLoading(false);
         return;
+      }
+
+      // Restore cloud token from localStorage (desktop: saved separately from local JWT)
+      const cloudToken = localStorage.getItem(CLOUD_TOKEN_KEY);
+      if (cloudToken) {
+        cloudApi.setToken(cloudToken);
       }
 
       try {
@@ -147,12 +154,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           // cloudApi tiene il JWT cloud per operazioni future
           cloudApi.setToken(cloudToken);
+          localStorage.setItem(CLOUD_TOKEN_KEY, cloudToken);
         } else {
           // Login locale riuscito — prova anche cloud login per avere token cloud
           try {
             const cloudRes = await cloudApi.login(email, password);
             if (cloudRes) {
               cloudApi.setToken(cloudRes.access_token);
+              localStorage.setItem(CLOUD_TOKEN_KEY, cloudRes.access_token);
             }
           } catch {
             // Cloud non disponibile — cloudApi resta senza token
@@ -163,6 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         res = await cloudApi.login(email, password);
         if (!res) throw new Error("Login failed");
         cloudApi.setToken(res.access_token);
+        localStorage.setItem(CLOUD_TOKEN_KEY, res.access_token);
       }
 
       if (!res) throw new Error("Login failed");
@@ -198,6 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await cloudApi.register(email, password, fullName);
       api.setToken(res.access_token);
       cloudApi.setToken(res.access_token);
+      localStorage.setItem(CLOUD_TOKEN_KEY, res.access_token);
 
       if (isTauri()) {
         // Desktop: sync utente cloud in SQLite locale con password
@@ -230,6 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Already a JWT — set it directly
         api.setToken(token);
         cloudApi.setToken(token);
+        localStorage.setItem(CLOUD_TOKEN_KEY, token);
         // Persist token locally for offline use
         if (isTauri()) {
           const { tauriInvoke } = await import("./tauri");
@@ -251,6 +263,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const res = await cloudApi.googleLogin(token);
         api.setToken(res.access_token);
         cloudApi.setToken(res.access_token);
+        localStorage.setItem(CLOUD_TOKEN_KEY, res.access_token);
         // Persist token locally for offline use
         if (isTauri()) {
           const { tauriInvoke } = await import("./tauri");
@@ -305,9 +318,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       api.setToken(null);
       api.setCsrfToken?.(null);
+      cloudApi.setToken(null);
+      cloudApi.setCsrfToken?.(null);
       setUser(null);
       setIsOffline(false);
       localStorage.removeItem(REMEMBER_TOKEN_KEY);
+      localStorage.removeItem(CLOUD_TOKEN_KEY);
+      // Desktop: cancella anche il JWT dal Tauri store persistente
+      if (isTauri()) {
+        const { tauriInvoke } = await import("./tauri");
+        await tauriInvoke("delete_jwt").catch(() => {});
+      }
     }
   }, []);
 
