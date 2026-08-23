@@ -7,6 +7,8 @@ const mockOnSaved = vi.fn();
 const mockProtectPdf = vi.fn();
 const mockUnlockPdf = vi.fn();
 
+vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
+
 const baseProps = {
   open: true,
   pdfId: "p1",
@@ -30,52 +32,52 @@ describe("LockUnlockModal", () => {
 
   it("renders Lock mode when not protected", () => {
     render(<LockUnlockModal {...baseProps} />);
-    expect(screen.getByText("Lock PDF")).toBeInTheDocument();
-    expect(screen.getByText("New password")).toBeInTheDocument();
-    expect(screen.getByText("Confirm password")).toBeInTheDocument();
+    expect(screen.getByText("lockTitle")).toBeInTheDocument();
+    expect(screen.getByText("newPassword")).toBeInTheDocument();
+    expect(screen.getByText("confirmPassword")).toBeInTheDocument();
   });
 
   it("renders Unlock mode when protected", () => {
     render(<LockUnlockModal {...baseProps} isProtected={true} />);
-    expect(screen.getByText("Unlock PDF")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Enter password")).toBeInTheDocument();
-    expect(screen.queryByPlaceholderText("Re-enter password")).not.toBeInTheDocument();
+    expect(screen.getByText("unlockTitle")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("enterPassword")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("reEnterPassword")).not.toBeInTheDocument();
   });
 
   it("shows error when passwords don't match", () => {
     render(<LockUnlockModal {...baseProps} />);
-    const pw = screen.getByPlaceholderText("Enter new password");
-    const confirm = screen.getByPlaceholderText("Re-enter password");
+    const pw = screen.getByPlaceholderText("enterNewPassword");
+    const confirm = screen.getByPlaceholderText("reEnterPassword");
     fireEvent.change(pw, { target: { value: "pass123" } });
     fireEvent.change(confirm, { target: { value: "pass456" } });
-    fireEvent.click(screen.getByText("Lock"));
-    expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("lock"));
+    expect(screen.getByText("passwordsDoNotMatch")).toBeInTheDocument();
   });
 
   it("shows error when password is too short", () => {
     render(<LockUnlockModal {...baseProps} />);
-    const pw = screen.getByPlaceholderText("Enter new password");
-    const confirm = screen.getByPlaceholderText("Re-enter password");
+    const pw = screen.getByPlaceholderText("enterNewPassword");
+    const confirm = screen.getByPlaceholderText("reEnterPassword");
     fireEvent.change(pw, { target: { value: "ab" } });
     fireEvent.change(confirm, { target: { value: "ab" } });
-    fireEvent.click(screen.getByText("Lock"));
-    expect(screen.getByText("Password must be at least 4 characters")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("lock"));
+    expect(screen.getByText("passwordMinLength")).toBeInTheDocument();
   });
 
   it("shows error when password is empty", () => {
     render(<LockUnlockModal {...baseProps} />);
-    fireEvent.click(screen.getByText("Lock"));
-    expect(screen.getByText("Password is required")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("lock"));
+    expect(screen.getByText("passwordRequired")).toBeInTheDocument();
   });
 
   it("calls protectPdf on valid lock", async () => {
     mockProtectPdf.mockResolvedValueOnce({ id: "p1", is_password_protected: true });
     render(<LockUnlockModal {...baseProps} />);
-    const pw = screen.getByPlaceholderText("Enter new password");
-    const confirm = screen.getByPlaceholderText("Re-enter password");
+    const pw = screen.getByPlaceholderText("enterNewPassword");
+    const confirm = screen.getByPlaceholderText("reEnterPassword");
     fireEvent.change(pw, { target: { value: "pass1234" } });
     fireEvent.change(confirm, { target: { value: "pass1234" } });
-    fireEvent.click(screen.getByText("Lock"));
+    fireEvent.click(screen.getByText("lock"));
     await waitFor(() => {
       expect(mockProtectPdf).toHaveBeenCalledWith("p1", "pass1234");
     });
@@ -85,9 +87,9 @@ describe("LockUnlockModal", () => {
   it("calls unlockPdf on valid unlock", async () => {
     mockUnlockPdf.mockResolvedValueOnce({ id: "p1", is_password_protected: false });
     render(<LockUnlockModal {...baseProps} isProtected={true} />);
-    const pw = screen.getByPlaceholderText("Enter password");
+    const pw = screen.getByPlaceholderText("enterPassword");
     fireEvent.change(pw, { target: { value: "pass1234" } });
-    fireEvent.click(screen.getByText("Unlock"));
+    fireEvent.click(screen.getByText("unlock"));
     await waitFor(() => {
       expect(mockUnlockPdf).toHaveBeenCalledWith("p1", "pass1234");
     });
@@ -97,11 +99,11 @@ describe("LockUnlockModal", () => {
   it("shows error on protectPdf failure", async () => {
     mockProtectPdf.mockRejectedValueOnce(new Error("Failed to lock"));
     render(<LockUnlockModal {...baseProps} />);
-    const pw = screen.getByPlaceholderText("Enter new password");
-    const confirm = screen.getByPlaceholderText("Re-enter password");
+    const pw = screen.getByPlaceholderText("enterNewPassword");
+    const confirm = screen.getByPlaceholderText("reEnterPassword");
     fireEvent.change(pw, { target: { value: "pass1234" } });
     fireEvent.change(confirm, { target: { value: "pass1234" } });
-    fireEvent.click(screen.getByText("Lock"));
+    fireEvent.click(screen.getByText("lock"));
     await waitFor(() => {
       expect(screen.getByText("Failed to lock")).toBeInTheDocument();
     });
@@ -110,9 +112,9 @@ describe("LockUnlockModal", () => {
   it("shows error on unlockPdf failure", async () => {
     mockUnlockPdf.mockRejectedValueOnce(new Error("Wrong password"));
     render(<LockUnlockModal {...baseProps} isProtected={true} />);
-    const pw = screen.getByPlaceholderText("Enter password");
+    const pw = screen.getByPlaceholderText("enterPassword");
     fireEvent.change(pw, { target: { value: "wrong" } });
-    fireEvent.click(screen.getByText("Unlock"));
+    fireEvent.click(screen.getByText("unlock"));
     await waitFor(() => {
       expect(screen.getByText("Wrong password")).toBeInTheDocument();
     });
@@ -120,7 +122,7 @@ describe("LockUnlockModal", () => {
 
   it("calls onClose when Cancel is clicked", () => {
     render(<LockUnlockModal {...baseProps} />);
-    fireEvent.click(screen.getByText("Cancel"));
+    fireEvent.click(screen.getByText("cancel"));
     expect(mockOnClose).toHaveBeenCalled();
   });
 
@@ -131,7 +133,7 @@ describe("LockUnlockModal", () => {
 
   it("toggles password visibility", () => {
     render(<LockUnlockModal {...baseProps} />);
-    const pw = screen.getByPlaceholderText("Enter new password");
+    const pw = screen.getByPlaceholderText("enterNewPassword");
     expect(pw).toHaveAttribute("type", "password");
     const toggleBtn = document.querySelectorAll('button[tabindex="-1"]');
     fireEvent.click(toggleBtn[0]);
@@ -140,18 +142,18 @@ describe("LockUnlockModal", () => {
 
   it("supports Enter key for lock", () => {
     render(<LockUnlockModal {...baseProps} />);
-    const pw = screen.getByPlaceholderText("Enter new password");
-    const confirm = screen.getByPlaceholderText("Re-enter password");
+    const pw = screen.getByPlaceholderText("enterNewPassword");
+    const confirm = screen.getByPlaceholderText("reEnterPassword");
     fireEvent.change(pw, { target: { value: "ab" } });
     fireEvent.change(confirm, { target: { value: "ab" } });
     fireEvent.keyDown(pw, { key: "Enter" });
-    expect(screen.getByText("Password must be at least 4 characters")).toBeInTheDocument();
+    expect(screen.getByText("passwordMinLength")).toBeInTheDocument();
   });
 
   it("supports Enter key for unlock", () => {
     render(<LockUnlockModal {...baseProps} isProtected={true} />);
-    const pw = screen.getByPlaceholderText("Enter password");
+    const pw = screen.getByPlaceholderText("enterPassword");
     fireEvent.keyDown(pw, { key: "Enter" });
-    expect(screen.getByText("Password is required")).toBeInTheDocument();
+    expect(screen.getByText("passwordRequired")).toBeInTheDocument();
   });
 });

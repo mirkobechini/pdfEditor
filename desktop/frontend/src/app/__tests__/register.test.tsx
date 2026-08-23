@@ -45,18 +45,18 @@ describe("RegisterPage", () => {
 
     it("renders name input", () => {
         render(<RegisterPage />);
-        expect(screen.getByPlaceholderText("Mario Rossi")).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("namePlaceholder")).toBeInTheDocument();
     });
 
     it("renders email input", () => {
         render(<RegisterPage />);
-        expect(screen.getByPlaceholderText("email@esempio.com")).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("emailPlaceholder")).toBeInTheDocument();
     });
 
     it("renders password inputs", () => {
         render(<RegisterPage />);
-        const passwordInputs = screen.getAllByPlaceholderText("••••••••••••");
-        expect(passwordInputs.length).toBe(2);
+        expect(screen.getByPlaceholderText("passwordPlaceholder")).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("confirmPasswordPlaceholder")).toBeInTheDocument();
     });
 
     it("renders register button", () => {
@@ -71,11 +71,10 @@ describe("RegisterPage", () => {
 
     it("shows error when passwords don't match", async () => {
         render(<RegisterPage />);
-        fireEvent.change(screen.getByPlaceholderText("Mario Rossi"), { target: { value: "Test" } });
-        fireEvent.change(screen.getByPlaceholderText("email@esempio.com"), { target: { value: "test@test.com" } });
-        const pws = screen.getAllByPlaceholderText("••••••••••••");
-        fireEvent.change(pws[0], { target: { value: "pass123" } });
-        fireEvent.change(pws[1], { target: { value: "pass456" } });
+        fireEvent.change(screen.getByPlaceholderText("namePlaceholder"), { target: { value: "Test" } });
+        fireEvent.change(screen.getByPlaceholderText("emailPlaceholder"), { target: { value: "test@test.com" } });
+        fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: "pass123" } });
+        fireEvent.change(screen.getByPlaceholderText("confirmPasswordPlaceholder"), { target: { value: "pass456" } });
         fireEvent.click(screen.getByText("registerButton"));
         await waitFor(() => {
             expect(screen.getByText("Le password non coincidono")).toBeInTheDocument();
@@ -84,11 +83,10 @@ describe("RegisterPage", () => {
 
     it("shows error when password too short", async () => {
         render(<RegisterPage />);
-        fireEvent.change(screen.getByPlaceholderText("Mario Rossi"), { target: { value: "Test" } });
-        fireEvent.change(screen.getByPlaceholderText("email@esempio.com"), { target: { value: "test@test.com" } });
-        const pws = screen.getAllByPlaceholderText("••••••••••••");
-        fireEvent.change(pws[0], { target: { value: "ab" } });
-        fireEvent.change(pws[1], { target: { value: "ab" } });
+        fireEvent.change(screen.getByPlaceholderText("namePlaceholder"), { target: { value: "Test" } });
+        fireEvent.change(screen.getByPlaceholderText("emailPlaceholder"), { target: { value: "test@test.com" } });
+        fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: "ab" } });
+        fireEvent.change(screen.getByPlaceholderText("confirmPasswordPlaceholder"), { target: { value: "ab" } });
         fireEvent.click(screen.getByText("registerButton"));
         await waitFor(() => {
             expect(screen.getByText("Password troppo corta")).toBeInTheDocument();
@@ -98,11 +96,10 @@ describe("RegisterPage", () => {
     it("calls register on valid submission", async () => {
         mockRegister.mockResolvedValueOnce(undefined);
         render(<RegisterPage />);
-        fireEvent.change(screen.getByPlaceholderText("Mario Rossi"), { target: { value: "Test User" } });
-        fireEvent.change(screen.getByPlaceholderText("email@esempio.com"), { target: { value: "test@test.com" } });
-        const pws = screen.getAllByPlaceholderText("••••••••••••");
-        fireEvent.change(pws[0], { target: { value: "pass123" } });
-        fireEvent.change(pws[1], { target: { value: "pass123" } });
+        fireEvent.change(screen.getByPlaceholderText("namePlaceholder"), { target: { value: "Test User" } });
+        fireEvent.change(screen.getByPlaceholderText("emailPlaceholder"), { target: { value: "test@test.com" } });
+        fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: "pass123" } });
+        fireEvent.change(screen.getByPlaceholderText("confirmPasswordPlaceholder"), { target: { value: "pass123" } });
         fireEvent.click(screen.getByText("registerButton"));
         await waitFor(() => {
             expect(mockRegister).toHaveBeenCalledWith("test@test.com", "pass123", "Test User");
@@ -113,11 +110,10 @@ describe("RegisterPage", () => {
     it("shows error on register failure", async () => {
         mockRegister.mockRejectedValueOnce(new Error("Registration failed"));
         render(<RegisterPage />);
-        fireEvent.change(screen.getByPlaceholderText("Mario Rossi"), { target: { value: "Test" } });
-        fireEvent.change(screen.getByPlaceholderText("email@esempio.com"), { target: { value: "test@test.com" } });
-        const pws = screen.getAllByPlaceholderText("••••••••••••");
-        fireEvent.change(pws[0], { target: { value: "pass123" } });
-        fireEvent.change(pws[1], { target: { value: "pass123" } });
+        fireEvent.change(screen.getByPlaceholderText("namePlaceholder"), { target: { value: "Test" } });
+        fireEvent.change(screen.getByPlaceholderText("emailPlaceholder"), { target: { value: "test@test.com" } });
+        fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: "pass123" } });
+        fireEvent.change(screen.getByPlaceholderText("confirmPasswordPlaceholder"), { target: { value: "pass123" } });
         fireEvent.click(screen.getByText("registerButton"));
         await waitFor(() => {
             expect(screen.getByText("Registrazione fallita")).toBeInTheDocument();

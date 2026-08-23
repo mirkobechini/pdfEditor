@@ -8,6 +8,8 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
+vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
+
 vi.mock("../../shared/tauri", () => ({
   isTauri: () => true,
   tauriInvoke: vi.fn(),
@@ -31,17 +33,17 @@ describe("WizardPage", () => {
   // ── Step 0: Welcome ──
   it("renders first step with title", () => {
     render(<WizardPage />);
-    expect(screen.getByText("Benvenuto in PdfEditor")).toBeInTheDocument();
+    expect(screen.getByText("welcomeTitle")).toBeInTheDocument();
   });
 
   it("shows STEP 01 label", () => {
     render(<WizardPage />);
-    expect(screen.getByText("STEP 01")).toBeInTheDocument();
+    expect(screen.getByText("step01")).toBeInTheDocument();
   });
 
   it("shows description text on step 0", () => {
     render(<WizardPage />);
-    expect(screen.getByText(/Editing PDF di precisione/)).toBeInTheDocument();
+    expect(screen.getByText(/welcomeDesc/)).toBeInTheDocument();
   });
 
   it("shows terms checkbox", () => {
@@ -53,19 +55,19 @@ describe("WizardPage", () => {
 
   it("shows terms link buttons", () => {
     render(<WizardPage />);
-    expect(screen.getByText("termini di licenza")).toBeInTheDocument();
-    expect(screen.getByText("privacy policy")).toBeInTheDocument();
+    expect(screen.getByText("licenseTerms")).toBeInTheDocument();
+    expect(screen.getByText("privacyPolicy")).toBeInTheDocument();
   });
 
   it("shows Continua and Salta buttons on step 0", () => {
     render(<WizardPage />);
-    expect(screen.getByText("Continua")).toBeInTheDocument();
-    expect(screen.getByText("Salta")).toBeInTheDocument();
+    expect(screen.getByText("continue")).toBeInTheDocument();
+    expect(screen.getByText("skip")).toBeInTheDocument();
   });
 
   it("disables Continua when checkbox unchecked", () => {
     render(<WizardPage />);
-    const continuaBtn = screen.getByText("Continua");
+    const continuaBtn = screen.getByText("continue");
     expect(continuaBtn).toBeDisabled();
   });
 
@@ -73,7 +75,7 @@ describe("WizardPage", () => {
     render(<WizardPage />);
     const checkbox = screen.getByRole("checkbox");
     fireEvent.click(checkbox);
-    const continuaBtn = screen.getByText("Continua");
+    const continuaBtn = screen.getByText("continue");
     expect(continuaBtn).not.toBeDisabled();
   });
 
@@ -82,66 +84,66 @@ describe("WizardPage", () => {
     render(<WizardPage />);
     const checkbox = screen.getByRole("checkbox");
     fireEvent.click(checkbox);
-    fireEvent.click(screen.getByText("Continua"));
-    const cartellaElements = screen.getAllByText("Cartella di lavoro");
+    fireEvent.click(screen.getByText("continue"));
+    const cartellaElements = screen.getAllByText("workFolder");
     expect(cartellaElements.length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows STEP 02 label on step 2", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    expect(screen.getByText("STEP 02")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("continue"));
+    expect(screen.getByText("step02")).toBeInTheDocument();
   });
 
   it("shows folder path input on step 2", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    expect(screen.getByPlaceholderText(/C:\\Users/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText("continue"));
+    expect(screen.getByPlaceholderText("folderPlaceholder")).toBeInTheDocument();
   });
 
   it("shows Sfoglia button on step 2", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    expect(screen.getByText("Sfoglia…")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("continue"));
+    expect(screen.getByText("browse")).toBeInTheDocument();
   });
 
   it("shows Indicizzazione toggle on step 2", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    expect(screen.getByText("Indicizzazione file")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("continue"));
+    expect(screen.getByText("fileIndexing")).toBeInTheDocument();
   });
 
   it("shows Indietro button on step 2", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    expect(screen.getByText("Indietro")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("continue"));
+    expect(screen.getByText("back")).toBeInTheDocument();
   });
 
   it("shows Fine button on step 2", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    expect(screen.getByText(/Fine/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText("continue"));
+    expect(screen.getByText(/finish/)).toBeInTheDocument();
   });
 
   it("goes back to step 1 on Indietro click", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    fireEvent.click(screen.getByText("Indietro"));
-    expect(screen.getByText("Benvenuto in PdfEditor")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("continue"));
+    fireEvent.click(screen.getByText("back"));
+    expect(screen.getByText("welcomeTitle")).toBeInTheDocument();
   });
 
   it("toggles indexing on step 2", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    const toggleArea = screen.getByText("Indicizzazione file").closest("label")!;
+    fireEvent.click(screen.getByText("continue"));
+    const toggleArea = screen.getByText("fileIndexing").closest("label")!;
     const toggleBtn = toggleArea.querySelector('[class*="rounded-full"]')!;
     fireEvent.click(toggleBtn);
     // Toggle should have bg-[#f7871f] class when active
@@ -151,7 +153,7 @@ describe("WizardPage", () => {
   // ── Skip / Finish ──
   it("stores wizard_done and redirects on Skip", () => {
     render(<WizardPage />);
-    fireEvent.click(screen.getByText("Salta"));
+    fireEvent.click(screen.getByText("skip"));
     expect(localStorage.getItem("pdfeditor_wizard_done")).toBe("true");
     expect(mockPush).toHaveBeenCalledWith("/login");
   });
@@ -159,8 +161,8 @@ describe("WizardPage", () => {
   it("redirects to /app on Finish", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    fireEvent.click(screen.getByText(/Fine/));
+    fireEvent.click(screen.getByText("continue"));
+    fireEvent.click(screen.getByText(/finish/));
     expect(mockPush).toHaveBeenCalledWith("/app");
   });
 
@@ -173,20 +175,20 @@ describe("WizardPage", () => {
 
   it("shows SETUP progress in sidebar", () => {
     render(<WizardPage />);
-    expect(screen.getByText("SETUP 1 DI 2")).toBeInTheDocument();
+    expect(screen.getByText("setupProgress")).toBeInTheDocument();
   });
 
   it("shows SETUP 2 DI 2 on step 2", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    expect(screen.getByText("SETUP 2 DI 2")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("continue"));
+    expect(screen.getByText("setupProgress")).toBeInTheDocument();
   });
 
   it("shows completed checkmark on step 1 sidebar after moving to step 2", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
+    fireEvent.click(screen.getByText("continue"));
     expect(screen.getByText("✓")).toBeInTheDocument();
   });
 
@@ -194,8 +196,8 @@ describe("WizardPage", () => {
   it("updates folder path on input change", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    const input = screen.getByPlaceholderText(/C:\\Users/);
+    fireEvent.click(screen.getByText("continue"));
+    const input = screen.getByPlaceholderText("folderPlaceholder");
     fireEvent.change(input, { target: { value: "D:\\MyPDFs" } });
     expect(input).toHaveValue("D:\\MyPDFs");
   });
@@ -203,8 +205,8 @@ describe("WizardPage", () => {
   it("shows Cerca e organizza description on step 2", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("Continua"));
-    expect(screen.getByText("Cerca e organizza automaticamente i PDF")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("continue"));
+    expect(screen.getByText("fileIndexingDesc")).toBeInTheDocument();
   });
 
   it("shows pdfeditor icon in sidebar", () => {

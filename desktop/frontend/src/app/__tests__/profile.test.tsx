@@ -10,6 +10,8 @@ vi.mock("next/navigation", () => ({
     useRouter: () => ({ push: vi.fn() }),
 }));
 
+vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
+
 vi.mock("../../shared/api", () => ({
     api: {
         unlinkGoogle: (...args: any[]) => mockUnlinkGoogle(...args),
@@ -43,31 +45,31 @@ describe("ProfilePage", () => {
 
     it("renders Logout button", () => {
         render(<ProfilePage />);
-        expect(screen.getByText("Logout")).toBeInTheDocument();
+        expect(screen.getByText("logout")).toBeInTheDocument();
     });
 
     it("renders Impostazioni link", () => {
         render(<ProfilePage />);
-        expect(screen.getByText("Impostazioni")).toBeInTheDocument();
+        expect(screen.getByText("settings")).toBeInTheDocument();
     });
 
     it("renders Editor link", () => {
         render(<ProfilePage />);
-        expect(screen.getByText("Editor")).toBeInTheDocument();
+        expect(screen.getByText("editor")).toBeInTheDocument();
     });
 
     it("renders Servizi Collegati", () => {
         render(<ProfilePage />);
-        expect(screen.getByText("Servizi Collegati")).toBeInTheDocument();
+        expect(screen.getByText("connectedServices")).toBeInTheDocument();
     });
 
     it("renders Scollega button", () => {
         render(<ProfilePage />);
-        expect(screen.getByText("Scollega")).toBeInTheDocument();
+        expect(screen.getByText("unlink")).toBeInTheDocument();
     });
 
     it("renders Piano info", () => {
         render(<ProfilePage />);
-        expect(screen.getByText("Piano")).toBeInTheDocument();
+        expect(screen.getByText("plan")).toBeInTheDocument();
     });
 });

@@ -23,12 +23,12 @@ describe("StartupPage", () => {
 
     it("renders startup steps", () => {
         render(<StartupPage />);
-        expect(screen.getByText("Avvio del backend in locale...")).toBeInTheDocument();
+        expect(screen.getByText("startingBackend")).toBeInTheDocument();
     });
 
     it("renders startup title", () => {
         render(<StartupPage />);
-        expect(screen.getByText("Avvio di PdfEditor")).toBeInTheDocument();
+        expect(screen.getByText("startingApp")).toBeInTheDocument();
     });
 
     it("renders loading indicator", () => {
@@ -39,17 +39,17 @@ describe("StartupPage", () => {
 
     it("renders startup steps list", () => {
         render(<StartupPage />);
-        expect(screen.getByText("Avvio del backend in locale...")).toBeInTheDocument();
-        expect(screen.getByText("Avvio di PdfEditor")).toBeInTheDocument();
+        expect(screen.getByText("startingBackend")).toBeInTheDocument();
+        expect(screen.getByText("startingApp")).toBeInTheDocument();
     });
 
     it("renders database step", () => {
         render(<StartupPage />);
-        expect(screen.getByText("Connessione al database SQLite...")).toBeInTheDocument();
+        expect(screen.getByText("connectingDb")).toBeInTheDocument();
     });
 
     it("renders API step", () => {
         render(<StartupPage />);
-        expect(screen.getByText("Verifica API e servizi...")).toBeInTheDocument();
+        expect(screen.getByText("verifyingApi")).toBeInTheDocument();
     });
 });

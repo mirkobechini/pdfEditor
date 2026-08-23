@@ -170,7 +170,7 @@ export default function LoginPage() {
 
                             <div>
                                 <label htmlFor="password" className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-[#a79a8d]">{t("password")}</label>
-                                <PasswordInput value={password} onChange={setPassword} placeholder="••••••••••••" required />
+                                <PasswordInput value={password} onChange={setPassword} placeholder={tl("passwordPlaceholder")} required />
                             </div>
 
                             <div className="flex items-center justify-between text-xs">
