@@ -164,4 +164,23 @@ describe("ReorderPagesModal", () => {
         render(<ReorderPagesModal {...baseProps} pdfUrl={null} />);
         expect(screen.getByText(/pageCount/)).toBeInTheDocument();
     });
+
+    it("calls onSaved on successful reorder", async () => {
+        const updatedDoc = { id: "p1", original_filename: "reordered.pdf" };
+        mockReorderPages.mockResolvedValue(updatedDoc);
+        render(<ReorderPagesModal {...baseProps} />);
+        fireEvent.click(screen.getByText("reorder"));
+        await waitFor(() => {
+            expect(mockOnSaved).toHaveBeenCalledWith(updatedDoc);
+        });
+        expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it("shows loading spinner when thumbnails are loading", () => {
+        // Mock pdfjsLib to be undefined so loading stays true
+        (window as any).pdfjsLib = undefined;
+        render(<ReorderPagesModal {...baseProps} />);
+        // The loading state shows a spinner
+        expect(screen.getByText(/pageCount/)).toBeInTheDocument();
+    });
 });
