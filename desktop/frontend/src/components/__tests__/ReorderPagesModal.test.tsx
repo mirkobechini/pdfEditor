@@ -134,7 +134,6 @@ describe("ReorderPagesModal", () => {
 
     it("handles drag cancel gracefully", () => {
         render(<ReorderPagesModal {...baseProps} />);
-        // Just verify the component renders - drag handlers are tested via dnd-kit
         expect(screen.getByText(/pageCount/)).toBeInTheDocument();
     });
 
@@ -154,5 +153,15 @@ describe("ReorderPagesModal", () => {
         await waitFor(() => {
             expect(screen.getByText("reorderError")).toBeInTheDocument();
         });
+    });
+
+    it("renders with single page", () => {
+        render(<ReorderPagesModal {...baseProps} totalPages={1} />);
+        expect(screen.getByText(/pageCount/)).toBeInTheDocument();
+    });
+
+    it("renders with no pdfUrl", () => {
+        render(<ReorderPagesModal {...baseProps} pdfUrl={null} />);
+        expect(screen.getByText(/pageCount/)).toBeInTheDocument();
     });
 });
