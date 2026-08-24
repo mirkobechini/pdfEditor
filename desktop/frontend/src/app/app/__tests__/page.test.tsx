@@ -709,6 +709,32 @@ describe("EditorPage", () => {
     });
 
     it("shows formatDate for empty date", () => {
-        expect(true).toBe(true); // formatDate handles empty string
+        expect(true).toBe(true);
+    });
+
+    it("shows delete button for each document", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+                { id: "p2", original_filename: "doc2.pdf", file_size: 2048, page_count: 5, created_at: "2025-01-02T00:00:00Z", upload_source: "desktop" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            const deleteBtns = screen.getAllByTitle("Elimina");
+            expect(deleteBtns.length).toBe(2);
+        });
+    });
+
+    it("shows settings link navigates to /settings", () => {
+        render(<EditorPage />);
+        const settingsLink = screen.getByTitle("Impostazioni");
+        expect(settingsLink.closest("a")).toHaveAttribute("href", "/settings");
+    });
+
+    it("shows profile link navigates to /profile", () => {
+        render(<EditorPage />);
+        const profileLink = screen.getByText("Test User").closest("a");
+        expect(profileLink).toHaveAttribute("href", "/profile");
     });
 });
