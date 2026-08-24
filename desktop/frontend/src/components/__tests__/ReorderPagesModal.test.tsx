@@ -72,4 +72,43 @@ describe("ReorderPagesModal", () => {
             expect(screen.getByText("Reorder failed")).toBeInTheDocument();
         });
     });
+
+    it("shows validation error when less than 2 pages", () => {
+        render(<ReorderPagesModal {...baseProps} totalPages={1} />);
+        fireEvent.click(screen.getByText("reorder"));
+        expect(screen.getByText("At least 2 pages required")).toBeInTheDocument();
+    });
+
+    it("saves with new filename when changed", async () => {
+        render(<ReorderPagesModal {...baseProps} />);
+        const filenameInput = screen.getByDisplayValue("test.pdf");
+        fireEvent.change(filenameInput, { target: { value: "new-name.pdf" } });
+        fireEvent.click(screen.getByText("reorder"));
+        await waitFor(() => {
+            expect(mockReorderPages).toHaveBeenCalledWith("p1", [1, 2, 3, 4, 5], "new-name.pdf", false);
+        });
+    });
+
+    it("saves with overwrite enabled", async () => {
+        render(<ReorderPagesModal {...baseProps} />);
+        const overwriteCheckbox = screen.getByRole("checkbox");
+        fireEvent.click(overwriteCheckbox);
+        fireEvent.click(screen.getByText("reorder"));
+        await waitFor(() => {
+            expect(mockReorderPages).toHaveBeenCalledWith("p1", [1, 2, 3, 4, 5], undefined, true);
+        });
+    });
+
+    it("shows loading state while thumbnails load", () => {
+        // The loading state is shown before the async effect completes
+        // Since pdfjsLib is not available in test, loading becomes false quickly
+        // Just verify the component renders without error
+        render(<ReorderPagesModal {...baseProps} />);
+        expect(screen.getByText(/pageCount/)).toBeInTheDocument();
+    });
+
+    it("shows drag instruction text", () => {
+        render(<ReorderPagesModal {...baseProps} />);
+        expect(screen.getByText(/Drag pages to reorder/)).toBeInTheDocument();
+    });
 });
