@@ -466,4 +466,43 @@ describe("SettingsPage", () => {
         fireEvent.click(screen.getByText("Informazioni"));
         expect(screen.getByText(/free License/)).toBeInTheDocument();
     });
+
+    it("bug report modal shows success message after submit", async () => {
+        mockCreateBugReport.mockResolvedValue(undefined);
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Segnala bug"));
+        fireEvent.change(screen.getByPlaceholderText("Titolo"), { target: { value: "Test" } });
+        fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test" } });
+        fireEvent.click(screen.getByText("Invia"));
+        await waitFor(() => {
+            expect(screen.getByText("Grazie!")).toBeInTheDocument();
+        });
+        expect(screen.getByText("Chiudi")).toBeInTheDocument();
+    });
+
+    it("bug report modal closes after success", async () => {
+        mockCreateBugReport.mockResolvedValue(undefined);
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Segnala bug"));
+        fireEvent.change(screen.getByPlaceholderText("Titolo"), { target: { value: "Test" } });
+        fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test" } });
+        fireEvent.click(screen.getByText("Invia"));
+        await waitFor(() => {
+            expect(screen.getByText("Grazie!")).toBeInTheDocument();
+        });
+        fireEvent.click(screen.getByText("Chiudi"));
+        expect(screen.queryByText("Grazie!")).not.toBeInTheDocument();
+    });
+
+    it("documentation modal opens and closes", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        const docButtons = screen.getAllByText("Documentazione");
+        fireEvent.click(docButtons[docButtons.length - 1]);
+        expect(screen.getByText("Apri su GitHub")).toBeInTheDocument();
+        fireEvent.click(screen.getByText("Chiudi"));
+        expect(screen.queryByText("Apri su GitHub")).not.toBeInTheDocument();
+    });
 });
