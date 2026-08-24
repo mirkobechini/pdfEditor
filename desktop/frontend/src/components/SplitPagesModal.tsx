@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
 
@@ -77,20 +78,21 @@ export default function SplitPagesModal({ open, pdfId, pdfName, totalPages, pdfU
     const [error, setError] = React.useState<string | null>(null);
     const [filename1, setFilename1] = React.useState("");
     const [filename2, setFilename2] = React.useState("");
+    const ts = useTranslations("splitModal");
 
     React.useEffect(() => {
         if (open) {
             setSplitPage(null);
             setError(null);
             const base = pdfName.replace(/\.pdf$/i, "");
-            setFilename1(`${base}_part1`);
-            setFilename2(`${base}_part2`);
+            setFilename1(`${base}${ts("part1Suffix")}`);
+            setFilename2(`${base}${ts("part2Suffix")}`);
         }
     }, [open, pdfName]);
 
     async function handleSave() {
         if (!splitPage) { setError("Select the page where to split"); return; }
-        if (splitPage >= totalPages) { setError("Cannot split at the last page — at least 1 page must remain in part 2"); return; }
+        if (splitPage >= totalPages) { setError(ts("splitError")); return; }
         if (!filename1.trim() || !filename2.trim()) { setError("Both filenames are required"); return; }
 
         setSaving(true); setError(null);
@@ -100,7 +102,7 @@ export default function SplitPagesModal({ open, pdfId, pdfName, totalPages, pdfU
             onSaved(result.items);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to split PDF");
+            setError(err instanceof Error ? err.message : ts("splitError"));
         } finally { setSaving(false); }
     }
 
@@ -116,10 +118,10 @@ export default function SplitPagesModal({ open, pdfId, pdfName, totalPages, pdfU
                     </button>
                 </div>
 
-                <p className="mb-4 text-xs text-[#8d8175] shrink-0">{pdfName} ({totalPages} pages)</p>
+                <p className="mb-4 text-xs text-[#8d8175] shrink-0">{pdfName} ({ts("pageCount", { count: totalPages })})</p>
 
                 <p className="mb-3 text-[11px] text-[#6f6358] shrink-0">
-                    Click a page to set the split point. The PDF will be divided into two parts.
+                    {ts("desc")}
                 </p>
 
                 <div className="flex-1 overflow-y-auto mb-4">
@@ -149,11 +151,11 @@ export default function SplitPagesModal({ open, pdfId, pdfName, totalPages, pdfU
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[#8d8175]">Part 1 filename</label>
+                                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[#8d8175]">{ts("part1Label")}</label>
                                 <input value={filename1} onChange={(e) => setFilename1(e.target.value)} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none transition focus:border-[#f7871f]/50" />
                             </div>
                             <div>
-                                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[#8d8175]">Part 2 filename</label>
+                                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[#8d8175]">{ts("part2Label")}</label>
                                 <input value={filename2} onChange={(e) => setFilename2(e.target.value)} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none transition focus:border-[#f7871f]/50" />
                             </div>
                         </div>
@@ -161,9 +163,9 @@ export default function SplitPagesModal({ open, pdfId, pdfName, totalPages, pdfU
                         {error && <p className="text-xs text-red-400">{error}</p>}
 
                         <div className="flex gap-3 pt-2">
-                            <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5">Cancel</button>
+                            <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5">{ts("cancel")}</button>
                             <button onClick={handleSave} disabled={saving} className="flex-1 rounded-xl bg-[#f7871f] py-2.5 text-sm font-semibold text-white transition hover:bg-[#ce5a00] disabled:opacity-50">
-                                {saving ? "Splitting..." : "Split"}
+                                {saving ? ts("splitting") : ts("split")}
                             </button>
                         </div>
                     </div>

@@ -16,6 +16,7 @@ const baseProps = {
     onSaved: mockOnSaved,
 };
 
+vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
 vi.mock("../../shared/api", () => ({
     api: {
         reorderPages: (...args: any[]) => mockReorderPages(...args),
@@ -30,7 +31,7 @@ describe("ReorderPagesModal", () => {
 
     it("renders page count", () => {
         render(<ReorderPagesModal {...baseProps} />);
-        expect(screen.getByText(/5 pages/)).toBeInTheDocument();
+        expect(screen.getByText(/pageCount/)).toBeInTheDocument();
     });
 
     it("shows filename input", () => {
@@ -40,12 +41,12 @@ describe("ReorderPagesModal", () => {
 
     it("shows overwrite checkbox", () => {
         render(<ReorderPagesModal {...baseProps} />);
-        expect(screen.getByText(/Overwrite/)).toBeInTheDocument();
+        expect(screen.getByText(/overwrite/)).toBeInTheDocument();
     });
 
     it("calls onClose when Cancel clicked", () => {
         render(<ReorderPagesModal {...baseProps} />);
-        fireEvent.click(screen.getByText("Cancel"));
+        fireEvent.click(screen.getByText("cancel"));
         expect(mockOnClose).toHaveBeenCalled();
     });
 
@@ -56,7 +57,7 @@ describe("ReorderPagesModal", () => {
 
     it("calls reorderPages on Reorder click", async () => {
         render(<ReorderPagesModal {...baseProps} />);
-        const reorderBtn = screen.getByText("Reorder");
+        const reorderBtn = screen.getByText("reorder");
         fireEvent.click(reorderBtn);
         await waitFor(() => {
             expect(mockReorderPages).toHaveBeenCalled();
@@ -66,7 +67,7 @@ describe("ReorderPagesModal", () => {
     it("shows error on reorderPages failure", async () => {
         mockReorderPages.mockRejectedValueOnce(new Error("Reorder failed"));
         render(<ReorderPagesModal {...baseProps} />);
-        fireEvent.click(screen.getByText("Reorder"));
+        fireEvent.click(screen.getByText("reorder"));
         await waitFor(() => {
             expect(screen.getByText("Reorder failed")).toBeInTheDocument();
         });

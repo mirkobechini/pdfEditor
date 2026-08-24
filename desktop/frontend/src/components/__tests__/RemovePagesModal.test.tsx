@@ -16,6 +16,7 @@ const baseProps = {
     onSaved: mockOnSaved,
 };
 
+vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
 vi.mock("../../shared/api", () => ({
     api: {
         removePages: (...args: any[]) => mockRemovePages(...args),
@@ -30,7 +31,7 @@ describe("RemovePagesModal", () => {
 
     it("renders page count", () => {
         render(<RemovePagesModal {...baseProps} />);
-        expect(screen.getByText(/5 pages/)).toBeInTheDocument();
+        expect(screen.getByText(/pageCount/)).toBeInTheDocument();
     });
 
     it("shows filename input", () => {
@@ -40,12 +41,12 @@ describe("RemovePagesModal", () => {
 
     it("shows overwrite checkbox", () => {
         render(<RemovePagesModal {...baseProps} />);
-        expect(screen.getByText(/Overwrite/)).toBeInTheDocument();
+        expect(screen.getByText(/overwrite/)).toBeInTheDocument();
     });
 
     it("calls onClose when Cancel clicked", () => {
         render(<RemovePagesModal {...baseProps} />);
-        fireEvent.click(screen.getByText("Cancel"));
+        fireEvent.click(screen.getByText("cancel"));
         expect(mockOnClose).toHaveBeenCalled();
     });
 
@@ -60,7 +61,7 @@ describe("RemovePagesModal", () => {
         // We need to select pages first
         const pageInput = screen.getByPlaceholderText(/1,3,5/);
         fireEvent.change(pageInput, { target: { value: "1" } });
-        const removeBtn = screen.getByRole("button", { name: /Remove/ });
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
         fireEvent.click(removeBtn);
         await waitFor(() => {
             expect(mockRemovePages).toHaveBeenCalled();
@@ -72,7 +73,7 @@ describe("RemovePagesModal", () => {
         render(<RemovePagesModal {...baseProps} />);
         const pageInput = screen.getByPlaceholderText(/1,3,5/);
         fireEvent.change(pageInput, { target: { value: "1" } });
-        const removeBtn = screen.getByRole("button", { name: /Remove/ });
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
         fireEvent.click(removeBtn);
         await waitFor(() => {
             expect(screen.getByText("Remove failed")).toBeInTheDocument();

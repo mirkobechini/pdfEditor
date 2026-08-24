@@ -16,6 +16,7 @@ const baseProps = {
   onSaved: mockOnSaved,
 };
 
+vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
 vi.mock("../../shared/api", () => ({
   api: {
     splitPdf: (...args: any[]) => mockSplitPdf(...args),
@@ -30,7 +31,7 @@ describe("SplitPagesModal", () => {
 
   it("renders page count", () => {
     render(<SplitPagesModal {...baseProps} />);
-    expect(screen.getByText(/5 pages/)).toBeInTheDocument();
+    expect(screen.getByText(/pageCount/)).toBeInTheDocument();
   });
 
   it("shows filename inputs after selecting split point", () => {
@@ -38,8 +39,8 @@ describe("SplitPagesModal", () => {
     const pageButtons = screen.getAllByRole("button");
     const page3Btn = pageButtons.find(b => b.textContent === "3");
     if (page3Btn) fireEvent.click(page3Btn);
-    expect(screen.getByDisplayValue("test_part1")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("test_part2")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("testpart1Suffix")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("testpart2Suffix")).toBeInTheDocument();
   });
 
   it("shows Cancel button after selecting split point", () => {
@@ -47,7 +48,7 @@ describe("SplitPagesModal", () => {
     const pageButtons = screen.getAllByRole("button");
     const page3Btn = pageButtons.find(b => b.textContent === "3");
     if (page3Btn) fireEvent.click(page3Btn);
-    expect(screen.getByText("Cancel")).toBeInTheDocument();
+    expect(screen.getByText("cancel")).toBeInTheDocument();
   });
 
   it("does not render when open is false", () => {
@@ -60,7 +61,7 @@ describe("SplitPagesModal", () => {
     const pageButtons = screen.getAllByRole("button");
     const page3Btn = pageButtons.find(b => b.textContent === "3");
     if (page3Btn) fireEvent.click(page3Btn);
-    const splitBtn = screen.getByText("Split");
+    const splitBtn = screen.getByText("split");
     fireEvent.click(splitBtn);
     await waitFor(() => {
       expect(mockSplitPdf).toHaveBeenCalled();
@@ -73,7 +74,7 @@ describe("SplitPagesModal", () => {
     const pageButtons = screen.getAllByRole("button");
     const page3Btn = pageButtons.find(b => b.textContent === "3");
     if (page3Btn) fireEvent.click(page3Btn);
-    fireEvent.click(screen.getByText("Split"));
+    fireEvent.click(screen.getByText("split"));
     await waitFor(() => {
       expect(screen.getByText("Split failed")).toBeInTheDocument();
     });
