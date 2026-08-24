@@ -500,4 +500,90 @@ describe("EditorPage", () => {
             expect(screen.getByText(/3\.0 MB/)).toBeInTheDocument();
         });
     });
+
+    it("shows zoom controls when document selected", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 5, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText("100%")).toBeInTheDocument();
+        });
+    });
+
+    it("shows fast actions buttons", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        expect(screen.getByText("MERGE")).toBeInTheDocument();
+        expect(screen.getByText("SPLIT")).toBeInTheDocument();
+        expect(screen.getByText("LOCK")).toBeInTheDocument();
+        expect(screen.getByText("OCR")).toBeInTheDocument();
+    });
+
+    it("shows UNLOCK for password-protected doc in fast actions", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "locked.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web", is_password_protected: true },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("locked.pdf");
+        fireEvent.click(screen.getByText("locked.pdf"));
+        expect(screen.getByText("UNLOCK")).toBeInTheDocument();
+    });
+
+    it("navigates pages with prev/next buttons", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 5, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText(/1 \/ 5/)).toBeInTheDocument();
+        });
+        const prevBtn = screen.getByText("◀");
+        const nextBtn = screen.getByText("▶");
+        fireEvent.click(nextBtn);
+        expect(screen.getByText(/2 \/ 5/)).toBeInTheDocument();
+        fireEvent.click(prevBtn);
+        expect(screen.getByText(/1 \/ 5/)).toBeInTheDocument();
+    });
+
+    it("changes zoom with +/- buttons", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 5, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText("100%")).toBeInTheDocument();
+        });
+        const zoomOut = screen.getByText("−");
+        const zoomIn = screen.getByText("+");
+        fireEvent.click(zoomIn);
+        expect(screen.getByText("125%")).toBeInTheDocument();
+        fireEvent.click(zoomOut);
+        expect(screen.getByText("100%")).toBeInTheDocument();
+    });
+
+    it("shows download button disabled when no doc selected", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Scarica")).toBeDisabled();
+    });
 });
