@@ -654,4 +654,44 @@ describe("EditorPage", () => {
             expect(screen.getByText(/5m fa/)).toBeInTheDocument();
         });
     });
+
+    it("shows formatDate for hours ago", async () => {
+        const now = new Date();
+        const threeHoursAgo = new Date(now.getTime() - 3 * 3600000).toISOString();
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "hours.pdf", file_size: 1024, page_count: 3, created_at: threeHoursAgo, upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText(/3h fa/)).toBeInTheDocument();
+        });
+    });
+
+    it("shows formatDate for days ago", async () => {
+        const now = new Date();
+        const threeDaysAgo = new Date(now.getTime() - 3 * 86400000).toISOString();
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "days.pdf", file_size: 1024, page_count: 3, created_at: threeDaysAgo, upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText(/3g fa/)).toBeInTheDocument();
+        });
+    });
+
+    it("shows formatDate for older dates", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "old.pdf", file_size: 1024, page_count: 3, created_at: "2024-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText(/2024/)).toBeInTheDocument();
+        });
+    });
 });
