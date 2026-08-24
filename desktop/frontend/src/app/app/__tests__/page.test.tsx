@@ -623,7 +623,7 @@ describe("EditorPage", () => {
     });
 
     it("triggers file input click on Apri PDF button", () => {
-        const clickSpy = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
+        const clickSpy = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => { });
         render(<EditorPage />);
         fireEvent.click(screen.getByText("Apri PDF"));
         expect(clickSpy).toHaveBeenCalled();

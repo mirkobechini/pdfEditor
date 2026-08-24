@@ -176,11 +176,39 @@ describe("ReorderPagesModal", () => {
         expect(mockOnClose).toHaveBeenCalled();
     });
 
-    it("shows loading spinner when thumbnails are loading", () => {
-        // Mock pdfjsLib to be undefined so loading stays true
-        (window as any).pdfjsLib = undefined;
+    it("loads thumbnails when pdfjsLib is available", async () => {
+        const mockPage = {
+            getViewport: () => ({ width: 100, height: 150 }),
+            render: () => ({ promise: Promise.resolve() }),
+        };
+        const mockPdf = {
+            numPages: 2,
+            getPage: vi.fn().mockResolvedValue(mockPage),
+        };
+        (window as any).pdfjsLib = {
+            getDocument: vi.fn().mockReturnValue({ promise: Promise.resolve(mockPdf) }),
+        };
+        // Mock canvas toDataURL
+        HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue("data:image/jpeg;base64,fake");
+        HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+            drawImage: vi.fn(),
+        } as any);
+
         render(<ReorderPagesModal {...baseProps} />);
-        // The loading state shows a spinner
-        expect(screen.getByText(/pageCount/)).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText(/pageCount/)).toBeInTheDocument();
+        });
+        delete (window as any).pdfjsLib;
+    });
+
+    it("handles thumbnail loading error gracefully", async () => {
+        (window as any).pdfjsLib = {
+            getDocument: vi.fn().mockReturnValue({ promise: Promise.reject(new Error("PDF load failed")) }),
+        };
+        render(<ReorderPagesModal {...baseProps} />);
+        await waitFor(() => {
+            expect(screen.getByText(/pageCount/)).toBeInTheDocument();
+        });
+        delete (window as any).pdfjsLib;
     });
 });
