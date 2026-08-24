@@ -30,46 +30,50 @@ type AboutRow = {
     value?: string;
 };
 
-const runtimeRows: readonly AboutRow[] = [
-    {
-        id: "pdf_engine",
-        title: "Motore PDF",
-        subtitle: "Rendering ed editing locale",
-        type: "badge",
-        value: "PyMuPDF 1.24.9",
-    },
-    {
-        id: "shell",
-        title: "Shell desktop",
-        subtitle: "Bundle nativo firmato e notarizzato",
-        type: "badge",
-        value: "Tauri 2.1",
-    },
-    {
-        id: "sidecar",
-        title: "Sidecar",
-        subtitle: "Processo API locale",
-        type: "badge",
-        value: "FastAPI • Python 3.12",
-    },
-];
+function getRuntimeRows(ts: (k: string) => string): readonly AboutRow[] {
+    return [
+        {
+            id: "pdf_engine",
+            title: ts("pdfEngine"),
+            subtitle: ts("pdfEngineDesc"),
+            type: "badge",
+            value: ts("pdfEngineValue"),
+        },
+        {
+            id: "shell",
+            title: ts("shell"),
+            subtitle: ts("shellDesc"),
+            type: "badge",
+            value: ts("shellValue"),
+        },
+        {
+            id: "sidecar",
+            title: ts("sidecar"),
+            subtitle: ts("sidecarDesc"),
+            type: "badge",
+            value: ts("sidecarValue"),
+        },
+    ];
+}
 
-const licenseRows: readonly AboutRow[] = [
-    {
-        id: "app_license",
-        title: "Licenza applicazione",
-        subtitle: "Codice sorgente disponibile su richiesta",
-        type: "badge",
-        value: "AGPL-3.0",
-    },
-    {
-        id: "third_party",
-        title: "Licenze di terze parti",
-        subtitle: "Elenco completo delle dipendenze",
-        type: "action",
-        value: "Visualizza",
-    },
-];
+function getLicenseRows(ts: (k: string) => string): readonly AboutRow[] {
+    return [
+        {
+            id: "app_license",
+            title: ts("appLicense"),
+            subtitle: ts("appLicenseDesc"),
+            type: "badge",
+            value: ts("appLicenseValue"),
+        },
+        {
+            id: "third_party",
+            title: ts("thirdParty"),
+            subtitle: ts("thirdPartyDesc"),
+            type: "action",
+            value: ts("thirdPartyValue"),
+        },
+    ];
+}
 
 function AboutSection({ title, rows, onAction }: { title: string; rows: readonly AboutRow[]; onAction?: (id: string) => void }) {
     return (
@@ -141,7 +145,7 @@ export default function SettingsPage() {
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
                                     <p className="text-[16px] font-semibold text-white">{ts("language")}</p>
-                                    <p className="text-[14px] text-[#9d9184]">{prefs.language === "it" ? "Italiano" : "English"}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{prefs.language === "it" ? ts("languageItalian") : ts("languageEnglish")}</p>
                                 </div>
                                 <select
                                     value={prefs.language}
@@ -203,13 +207,13 @@ export default function SettingsPage() {
             case "cloud":
                 return (
                     <div className="max-w-[900px]">
-                        <h1 className="text-[36px] font-bold leading-tight text-white">Cloud Sync</h1>
+                        <h1 className="text-[36px] font-bold leading-tight text-white">{ts("cloud")}</h1>
                         <p className="mt-1 text-[14px] text-[#9d9184]">Sincronizza i tuoi PDF con il cloud</p>
                         <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Sync abilitato</p>
-                                    <p className="text-[14px] text-[#9d9184]">Carica e scarica PDF dal cloud</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("syncEnabled")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("syncEnabledDesc")}</p>
                                 </div>
                                 <button
                                     onClick={() => setSyncEnabled(!syncEnabled)}
@@ -220,8 +224,8 @@ export default function SettingsPage() {
                             </div>
                             <div className="flex items-center justify-between py-3 border-b border-white/10">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Sync all&apos;avvio</p>
-                                    <p className="text-[14px] text-[#9d9184]">Sincronizza automaticamente all&apos;apertura</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("syncOnStartup")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{ts("syncOnStartupDesc")}</p>
                                 </div>
                                 <button
                                     onClick={() => setSyncOnStartup(!syncOnStartup)}
@@ -232,8 +236,8 @@ export default function SettingsPage() {
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
-                                    <p className="text-[16px] font-semibold text-white">Stato connessione</p>
-                                    <p className="text-[14px] text-[#9d9184]">{isOnline ? "Online" : "Offline"}</p>
+                                    <p className="text-[16px] font-semibold text-white">{ts("connectionStatus")}</p>
+                                    <p className="text-[14px] text-[#9d9184]">{isOnline ? ts("online") : ts("offline")}</p>
                                 </div>
                                 <span className={`rounded-xl px-3 py-1.5 text-[12px] font-semibold ${isOnline ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
                                     {isOnline ? "● Online" : "● Offline"}
@@ -250,7 +254,7 @@ export default function SettingsPage() {
                                     disabled={isSyncing || !syncEnabled || !isOnline}
                                     className="cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2 text-[14px] font-semibold text-white transition hover:bg-[#ff9b37] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    {isSyncing ? "Sync in corso..." : "Sincronizza ora"}
+                                    {isSyncing ? ts("syncing") : ts("syncNow")}
                                 </button>
                                 {progress && (
                                     <p className="mt-2 text-[12px] text-[#9d9184]">
@@ -371,14 +375,14 @@ export default function SettingsPage() {
                                     <p className="text-[16px] font-semibold text-white">{ts("systemLog")}</p>
                                     <p className="text-[14px] text-[#9d9184]">{ts("systemLogDesc")}</p>
                                 </div>
-                                <button onClick={() => alert("Log di sistema:\n\nIl sidecar scrive i log nella console del terminale.\nPer vederli, avvia l'app da terminale con: desktop\pdf-editor-desktop.exe")} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">{ts("open")}</button>
+                                <button onClick={() => alert(ts("systemLogAlert"))} className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white">{ts("open")}</button>
                             </div>
                             <div className="flex items-center justify-between py-3">
                                 <div>
                                     <p className="text-[16px] font-semibold text-white">{ts("clearCache")}</p>
                                     <p className="text-[14px] text-[#9d9184]">{ts("clearCacheDesc")}</p>
                                 </div>
-                                <button onClick={() => { if (confirm("Cancellare la cache locale?")) { localStorage.clear(); alert("Cache cancellata."); } }} className="cursor-pointer rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] font-semibold text-red-300">{ts("delete")}</button>
+                                <button onClick={() => { if (confirm(ts("clearCacheConfirm"))) { localStorage.clear(); alert(ts("cacheCleared")); } }} className="cursor-pointer rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[12px] font-semibold text-red-300">{ts("delete")}</button>
                             </div>
                         </div>
                     </div>
@@ -402,8 +406,8 @@ export default function SettingsPage() {
                             </div>
                         </section>
 
-                        <AboutSection title={ts("pdfEngine")} rows={runtimeRows} />
-                        <AboutSection title={ts("appLicense")} rows={licenseRows} onAction={(id) => {
+                        <AboutSection title={ts("pdfEngine")} rows={getRuntimeRows(ts)} />
+                        <AboutSection title={ts("appLicense")} rows={getLicenseRows(ts)} onAction={(id) => {
                             if (id === "third_party") openUrl("https://github.com/mirkobechini/pdfEditor/blob/main/desktop/src-tauri/licenses.json");
                         }} />
 
@@ -425,7 +429,7 @@ export default function SettingsPage() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M15 18l-6-6 6-6" />
                         </svg>
-                        Torna all'editor
+                        {ts("backToEditor")}
                     </Link>
                     <div className="space-y-1">
                         {sections.map((item) => {
@@ -491,7 +495,7 @@ export default function SettingsPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
                     <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl">
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-base font-bold text-white">{bugDone ? "Grazie!" : ts("reportBug")}</h2>
+                            <h2 className="text-base font-bold text-white">{bugDone ? ts("bugThankYou") : ts("reportBug")}</h2>
                             <button onClick={() => { setBugReportOpen(false); setBugError(""); setBugDone(false); }} className="h-8 w-8 rounded-lg text-[#9a8d80] hover:bg-white/10 transition-colors">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto"><path d="M18 6L6 18M6 6l12 12" /></svg>
                             </button>
@@ -503,23 +507,23 @@ export default function SettingsPage() {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <input value={bugTitle} onChange={(e) => setBugTitle(e.target.value)} placeholder="Titolo del bug" className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none focus:border-[#f7871f]/50" />
-                                <textarea value={bugDesc} onChange={(e) => setBugDesc(e.target.value)} placeholder="Descrizione del problema..." rows={5} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none focus:border-[#f7871f]/50 resize-none" />
+                                <input value={bugTitle} onChange={(e) => setBugTitle(e.target.value)} placeholder={ts("bugTitlePlaceholder")} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none focus:border-[#f7871f]/50" />
+                                <textarea value={bugDesc} onChange={(e) => setBugDesc(e.target.value)} placeholder={ts("bugDescPlaceholder")} rows={5} className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none focus:border-[#f7871f]/50 resize-none" />
                                 {bugError && <p className="text-xs text-red-400">{bugError}</p>}
                                 <div className="flex gap-3">
                                     <button onClick={() => { setBugReportOpen(false); setBugError(""); }} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] hover:bg-white/5">Annulla</button>
                                     <button onClick={async () => {
-                                        if (!bugTitle.trim() || !bugDesc.trim()) { setBugError("Compila tutti i campi."); return; }
+                                        if (!bugTitle.trim() || !bugDesc.trim()) { setBugError(ts("bugValidationError")); return; }
                                         setBugSending(true); setBugError("");
                                         try {
                                             await api.createBugReport(bugTitle.trim(), bugDesc.trim(), "desktop-settings");
                                             setBugDone(true);
                                             setBugTitle(""); setBugDesc("");
                                         } catch (err) {
-                                            setBugError(err instanceof Error ? err.message : "Invio fallito");
+                                            setBugError(err instanceof Error ? err.message : ts("bugSendError"));
                                         } finally { setBugSending(false); }
                                     }} disabled={bugSending} className="flex-1 rounded-xl bg-[#f7871f] py-2.5 text-sm font-semibold text-white disabled:opacity-50">
-                                        {bugSending ? "Invio..." : "Invia"}
+                                        {bugSending ? ts("bugSending") : ts("bugSend")}
                                     </button>
                                 </div>
                             </div>

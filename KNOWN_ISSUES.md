@@ -163,18 +163,18 @@
 
 ## 🧪 Dipendenze con warning (Dependabot)
 
-| #      | Pacchetto                        | Severità  | Versione             | Stato                           | Note                                                                                                                         |
-| ------ | -------------------------------- | --------- | -------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **51** | `nanoid` (mobile)                | 🔴 high   | < 3.3.18             | ✅ **Fixato (override)**        | Sub-dipendenza di react-navigation + expo. Override in mobile/package.json a 3.3.18.                                          |
-| **50** | `image-size` (mobile)            | 🔴 high   | <= 2.0.2             | ⛔ **Non fixabile**             | Sub-dipendenza di expo (metro). Nessun fix disponibile.                                                                      |
-| **49** | `image-size` (mobile)            | 🔴 high   | <= 2.0.2             | ⛔ **Non fixabile**             | Stesso di #50.                                                                                                               |
-| **48** | `uuid` (mobile)                  | 🟡 medium | < 7.0.3              | ⛔ **Non fixabile**             | Sub-dipendenza di xcode → expo-config-plugins. Saltare a 11.1.1 rompe breaking changes.                                      |
-| **32** | `glib::VariantStrIter` (Rust)    | 🟡 medium | < 0.20.0             | ⏳ **Sconsigliato**             | Dipendenza indiretta di Tauri. Forzare glib 0.20.0 rischia di rompere cargo tauri build. CVE non esposto a input utente.     |
-| —      | `postcss` (path traversal)       | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**             | Sub-dipendenza interna di `next@16.3.0`. In attesa che Next.js aggiorni il suo sub-dep.                                      |
-| —      | `sharp` / libvips                | 🔴 high   | < 0.35.0             | ✅ **Già a 0.35.3**            | Next.js 16.3.0 include sharp 0.35.3. Alert ancora aperto? Dismiss automatico.                                                |
-| —      | `brace-expansion`                | 🔴 high   | 1.1.16 / 5.0.8       | ✅ **Falso positivo**           | DevDependency di eslint, non raggiungibile in produzione.                                                                    |
-| —      | `js-yaml`                        | 🔴 high   | 4.0.0 / 4.3.1        | ✅ **Falso positivo**           | DevDependency di eslint, non raggiungibile in produzione.                                                                    |
-| —      | `httpx` + `starlette.testclient` | —         | —                    | ⛔ **Non fixabile**             | `StarletteDeprecationWarning` — `httpx2` non esiste ancora.                                                                  |
+| #      | Pacchetto                        | Severità  | Versione             | Stato                    | Note                                                                                                                     |
+| ------ | -------------------------------- | --------- | -------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| **51** | `nanoid` (mobile)                | 🔴 high   | < 3.3.18             | ✅ **Fixato (override)** | Sub-dipendenza di react-navigation + expo. Override in mobile/package.json a 3.3.18.                                     |
+| **50** | `image-size` (mobile)            | 🔴 high   | <= 2.0.2             | ⛔ **Non fixabile**      | Sub-dipendenza di expo (metro). Nessun fix disponibile.                                                                  |
+| **49** | `image-size` (mobile)            | 🔴 high   | <= 2.0.2             | ⛔ **Non fixabile**      | Stesso di #50.                                                                                                           |
+| **48** | `uuid` (mobile)                  | 🟡 medium | < 7.0.3              | ⛔ **Non fixabile**      | Sub-dipendenza di xcode → expo-config-plugins. Saltare a 11.1.1 rompe breaking changes.                                  |
+| **32** | `glib::VariantStrIter` (Rust)    | 🟡 medium | < 0.20.0             | ⏳ **Sconsigliato**      | Dipendenza indiretta di Tauri. Forzare glib 0.20.0 rischia di rompere cargo tauri build. CVE non esposto a input utente. |
+| —      | `postcss` (path traversal)       | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**      | Sub-dipendenza interna di `next@16.3.0`. In attesa che Next.js aggiorni il suo sub-dep.                                  |
+| —      | `sharp` / libvips                | 🔴 high   | < 0.35.0             | ✅ **Già a 0.35.3**      | Next.js 16.3.0 include sharp 0.35.3. Alert ancora aperto? Dismiss automatico.                                            |
+| —      | `brace-expansion`                | 🔴 high   | 1.1.16 / 5.0.8       | ✅ **Falso positivo**    | DevDependency di eslint, non raggiungibile in produzione.                                                                |
+| —      | `js-yaml`                        | 🔴 high   | 4.0.0 / 4.3.1        | ✅ **Falso positivo**    | DevDependency di eslint, non raggiungibile in produzione.                                                                |
+| —      | `httpx` + `starlette.testclient` | —         | —                    | ⛔ **Non fixabile**      | `StarletteDeprecationWarning` — `httpx2` non esiste ancora.                                                              |
 
 ### Vulnerabilità risolte (non più segnalate da Dependabot)
 

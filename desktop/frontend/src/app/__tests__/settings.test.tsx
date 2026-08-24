@@ -93,16 +93,16 @@ describe("SettingsPage", () => {
   it("switches to about tab", () => {
     render(<SettingsPage />);
     fireEvent.click(screen.getByText("about"));
-    expect(screen.getByText("Motore PDF")).toBeInTheDocument();
-    expect(screen.getByText("Shell desktop")).toBeInTheDocument();
-    expect(screen.getByText("Sidecar")).toBeInTheDocument();
+    expect(screen.getAllByText("pdfEngine").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("shell")).toBeInTheDocument();
+    expect(screen.getByText("sidecar")).toBeInTheDocument();
   });
 
   it("shows license info in about tab", () => {
     render(<SettingsPage />);
     fireEvent.click(screen.getByText("about"));
-    expect(screen.getByText("Licenza applicazione")).toBeInTheDocument();
-    expect(screen.getByText("Licenze di terze parti")).toBeInTheDocument();
+    expect(screen.getAllByText("appLicense").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("thirdParty").length).toBeGreaterThanOrEqual(1);
   });
 
   it("switches to editor tab", () => {
@@ -151,8 +151,8 @@ describe("SettingsPage", () => {
   it("shows version info in about tab", () => {
     render(<SettingsPage />);
     fireEvent.click(screen.getByText("about"));
-    expect(screen.getByText("appLicense")).toBeInTheDocument();
-    expect(screen.getByText("Licenze di terze parti")).toBeInTheDocument();
+    expect(screen.getAllByText("appLicense").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("thirdParty").length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows editor tab content", () => {
@@ -178,7 +178,7 @@ describe("SettingsPage", () => {
 
   it("shows back button in sidebar", () => {
     render(<SettingsPage />);
-    expect(screen.getByText("Torna all'editor")).toBeInTheDocument();
+    expect(screen.getByText("backToEditor")).toBeInTheDocument();
   });
 
   it("shows sidebar sections", () => {
@@ -188,40 +188,40 @@ describe("SettingsPage", () => {
 
   it("shows language current value", () => {
     render(<SettingsPage />);
-    const italianoElements = screen.getAllByText("Italiano");
+    const italianoElements = screen.getAllByText("languageItalian");
     expect(italianoElements.length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows about section details", () => {
     render(<SettingsPage />);
     fireEvent.click(screen.getByText("about"));
-    expect(screen.getByText("Visualizza")).toBeInTheDocument();
-    expect(screen.getByText("AGPL-3.0")).toBeInTheDocument();
+    expect(screen.getAllByText("thirdPartyValue").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("appLicense").length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows third party licenses button in about tab", () => {
     render(<SettingsPage />);
     fireEvent.click(screen.getByText("about"));
-    expect(screen.getByText("Elenco completo delle dipendenze")).toBeInTheDocument();
+    expect(screen.getByText("thirdPartyDesc")).toBeInTheDocument();
   });
 
   it("shows Codice sorgente in about tab", () => {
     render(<SettingsPage />);
     fireEvent.click(screen.getByText("about"));
-    expect(screen.getByText("Codice sorgente disponibile su richiesta")).toBeInTheDocument();
+    expect(screen.getByText("appLicenseDesc")).toBeInTheDocument();
   });
 
   it("shows Tauri and FastAPI version in about tab", () => {
     render(<SettingsPage />);
     fireEvent.click(screen.getByText("about"));
-    expect(screen.getByText("Tauri 2.1")).toBeInTheDocument();
-    expect(screen.getByText("FastAPI • Python 3.12")).toBeInTheDocument();
+    expect(screen.getByText("shell")).toBeInTheDocument();
+    expect(screen.getByText("sidecar")).toBeInTheDocument();
   });
 
   it("shows Bundle nativo in about tab", () => {
     render(<SettingsPage />);
     fireEvent.click(screen.getByText("about"));
-    expect(screen.getByText("Bundle nativo firmato e notarizzato")).toBeInTheDocument();
+    expect(screen.getByText("shellDesc")).toBeInTheDocument();
   });
 
   it("shows default zoom slider in editor tab", () => {
@@ -248,6 +248,48 @@ describe("SettingsPage", () => {
   it("shows Bundled items in about tab", () => {
     render(<SettingsPage />);
     fireEvent.click(screen.getByText("about"));
-    expect(screen.getByText("Processo API locale")).toBeInTheDocument();
+    expect(screen.getByText("sidecarDesc")).toBeInTheDocument();
+  });
+
+  it("shows cloud tab with sync toggle", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("cloud"));
+    expect(screen.getAllByText("cloud").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("shows workplace folder in advanced tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("advanced"));
+    expect(screen.getByText("workplace")).toBeInTheDocument();
+  });
+
+  it("shows system log in advanced tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("advanced"));
+    expect(screen.getByText("systemLog")).toBeInTheDocument();
+  });
+
+  it("shows clear cache in advanced tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("advanced"));
+    expect(screen.getByText("clearCache")).toBeInTheDocument();
+  });
+
+  it("shows release notes button in about tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("about"));
+    expect(screen.getByText("releaseNotes")).toBeInTheDocument();
+  });
+
+  it("shows report bug button in about tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("about"));
+    expect(screen.getByText("reportBug")).toBeInTheDocument();
+  });
+
+  it("shows documentation button in about tab", () => {
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByText("about"));
+    expect(screen.getByText("documentation")).toBeInTheDocument();
   });
 });
