@@ -606,4 +606,19 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         expect(screen.getByText("T")).toBeInTheDocument();
     });
+
+    it("shows page metadata section", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Metadati pagina")).toBeInTheDocument();
+    });
+
+    it("shows fast actions section", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Fast Actions")).toBeInTheDocument();
+    });
+
+    it("shows sidecar online status in footer", () => {
+        render(<EditorPage />);
+        expect(screen.getByText(/Sidecar online/)).toBeInTheDocument();
+    });
 });
