@@ -505,4 +505,45 @@ describe("SettingsPage", () => {
         fireEvent.click(screen.getByText("Chiudi"));
         expect(screen.queryByText("Apri su GitHub")).not.toBeInTheDocument();
     });
+
+    it("bug report modal closes via X button", async () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Segnala bug"));
+        const closeBtns = screen.getAllByRole("button").filter(b => b.querySelector("svg"));
+        if (closeBtns.length > 0) fireEvent.click(closeBtns[0]);
+        expect(screen.queryByPlaceholderText("Titolo")).not.toBeInTheDocument();
+    });
+
+    it("bug report modal cancels via Annulla button", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Segnala bug"));
+        fireEvent.click(screen.getByText("Annulla"));
+        expect(screen.queryByPlaceholderText("Titolo")).not.toBeInTheDocument();
+    });
+
+    it("bug report shows sending state", async () => {
+        mockCreateBugReport.mockImplementation(() => new Promise((r) => setTimeout(r, 1000)));
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Segnala bug"));
+        fireEvent.change(screen.getByPlaceholderText("Titolo"), { target: { value: "Test" } });
+        fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test" } });
+        fireEvent.click(screen.getByText("Invia"));
+        expect(screen.getByText("Invio...")).toBeInTheDocument();
+    });
+
+    it("bug report shows error on non-Error rejection", async () => {
+        mockCreateBugReport.mockRejectedValue("string error");
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Segnala bug"));
+        fireEvent.change(screen.getByPlaceholderText("Titolo"), { target: { value: "Test" } });
+        fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test" } });
+        fireEvent.click(screen.getByText("Invia"));
+        await waitFor(() => {
+            expect(screen.getByText("Errore invio")).toBeInTheDocument();
+        });
+    });
 });
