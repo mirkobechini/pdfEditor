@@ -62,6 +62,15 @@ describe("WizardPage", () => {
         vi.clearAllMocks();
         mockPrefs = { language: "it", default_save_folder: "" };
         localStorage.clear();
+        // Mock window.__TAURI__ for openExternal and pickDirectory
+        (window as any).__TAURI__ = {
+            opener: { openUrl: vi.fn().mockResolvedValue(undefined) },
+            dialog: { open: vi.fn().mockResolvedValue("/selected/folder") },
+        };
+    });
+
+    afterEach(() => {
+        delete (window as any).__TAURI__;
     });
 
     it("renders welcome step by default", () => {
@@ -196,5 +205,33 @@ describe("WizardPage", () => {
         fireEvent.click(checkbox);
         fireEvent.click(screen.getByText("Continua"));
         expect(screen.getByText(/Progresso/)).toBeInTheDocument();
+    });
+
+    it("opens terms link via __TAURI__ opener", () => {
+        render(<WizardPage />);
+        fireEvent.click(screen.getByText("Termini di licenza"));
+        expect((window as any).__TAURI__.opener.openUrl).toHaveBeenCalledWith(
+            "https://pdfeditor.mirkobechini.com/terms",
+        );
+    });
+
+    it("opens privacy link via __TAURI__ opener", () => {
+        render(<WizardPage />);
+        fireEvent.click(screen.getByText("Privacy Policy"));
+        expect((window as any).__TAURI__.opener.openUrl).toHaveBeenCalledWith(
+            "https://www.iubenda.com/privacy-policy/76778813",
+        );
+    });
+
+    it("browse button calls pickDirectory and sets folder", async () => {
+        render(<WizardPage />);
+        const checkbox = screen.getByRole("checkbox");
+        fireEvent.click(checkbox);
+        fireEvent.click(screen.getByText("Continua"));
+        fireEvent.click(screen.getByText("Sfoglia"));
+        await waitFor(() => {
+            const input = screen.getByPlaceholderText("Seleziona cartella") as HTMLInputElement;
+            expect(input.value).toBe("/selected/folder");
+        });
     });
 });
