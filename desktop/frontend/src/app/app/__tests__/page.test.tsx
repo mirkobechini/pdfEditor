@@ -621,4 +621,37 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         expect(screen.getByText(/Sidecar online/)).toBeInTheDocument();
     });
+
+    it("triggers file input click on Apri PDF button", () => {
+        const clickSpy = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
+        render(<EditorPage />);
+        fireEvent.click(screen.getByText("Apri PDF"));
+        expect(clickSpy).toHaveBeenCalled();
+        clickSpy.mockRestore();
+    });
+
+    it("ignores non-PDF file upload", async () => {
+        mockUploadPdf.mockRejectedValue(new Error("Should not be called"));
+        render(<EditorPage />);
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+        if (fileInput) {
+            const file = new File(["fake"], "test.txt", { type: "text/plain" });
+            fireEvent.change(fileInput, { target: { files: [file] } });
+        }
+        expect(mockUploadPdf).not.toHaveBeenCalled();
+    });
+
+    it("shows formatDate for recent time", async () => {
+        const now = new Date();
+        const fiveMinAgo = new Date(now.getTime() - 5 * 60000).toISOString();
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "recent.pdf", file_size: 1024, page_count: 3, created_at: fiveMinAgo, upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText(/5m fa/)).toBeInTheDocument();
+        });
+    });
 });
