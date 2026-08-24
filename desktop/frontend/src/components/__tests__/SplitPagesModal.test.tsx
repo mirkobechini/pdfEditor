@@ -79,4 +79,71 @@ describe("SplitPagesModal", () => {
       expect(screen.getByText("Split failed")).toBeInTheDocument();
     });
   });
+
+  it("shows error when split page equals total pages", () => {
+    render(<SplitPagesModal {...baseProps} totalPages={3} />);
+    const pageButtons = screen.getAllByRole("button");
+    const page3Btn = pageButtons.find(b => b.textContent === "3");
+    if (page3Btn) fireEvent.click(page3Btn);
+    fireEvent.click(screen.getByText("split"));
+    expect(screen.getByText("splitError")).toBeInTheDocument();
+  });
+
+  it("shows error when filenames are empty", () => {
+    render(<SplitPagesModal {...baseProps} />);
+    const pageButtons = screen.getAllByRole("button");
+    const page3Btn = pageButtons.find(b => b.textContent === "3");
+    if (page3Btn) fireEvent.click(page3Btn);
+    // Clear filenames
+    const inputs = screen.getAllByRole("textbox");
+    fireEvent.change(inputs[0], { target: { value: "" } });
+    fireEvent.change(inputs[1], { target: { value: "" } });
+    fireEvent.click(screen.getByText("split"));
+    expect(screen.getByText("Both filenames are required")).toBeInTheDocument();
+  });
+
+  it("shows split here badge on selected page", () => {
+    render(<SplitPagesModal {...baseProps} />);
+    const pageButtons = screen.getAllByRole("button");
+    const page3Btn = pageButtons.find(b => b.textContent === "3");
+    if (page3Btn) fireEvent.click(page3Btn);
+    expect(screen.getByText("Split here")).toBeInTheDocument();
+  });
+
+  it("shows page range after selecting split point", () => {
+    render(<SplitPagesModal {...baseProps} totalPages={5} />);
+    const pageButtons = screen.getAllByRole("button");
+    const page3Btn = pageButtons.find(b => b.textContent === "3");
+    if (page3Btn) fireEvent.click(page3Btn);
+    expect(screen.getByText(/Pages 1–3/)).toBeInTheDocument();
+    expect(screen.getByText(/Pages 4–5/)).toBeInTheDocument();
+  });
+
+  it("toggles split point off on re-click", () => {
+    render(<SplitPagesModal {...baseProps} />);
+    const pageButtons = screen.getAllByRole("button");
+    const page3Btn = pageButtons.find(b => b.textContent === "3");
+    if (page3Btn) {
+      fireEvent.click(page3Btn);
+      fireEvent.click(page3Btn);
+    }
+    expect(screen.queryByText("Split here")).not.toBeInTheDocument();
+  });
+
+  it("shows saving state while splitting", async () => {
+    mockSplitPdf.mockImplementation(() => new Promise((r) => setTimeout(r, 1000)));
+    render(<SplitPagesModal {...baseProps} />);
+    const pageButtons = screen.getAllByRole("button");
+    const page3Btn = pageButtons.find(b => b.textContent === "3");
+    if (page3Btn) fireEvent.click(page3Btn);
+    fireEvent.click(screen.getByText("split"));
+    expect(screen.getByText("splitting")).toBeInTheDocument();
+  });
+
+  it("calls onClose on close button click", () => {
+    render(<SplitPagesModal {...baseProps} />);
+    const closeBtn = screen.getAllByRole("button").find(b => b.querySelector("svg"));
+    if (closeBtn) fireEvent.click(closeBtn);
+    expect(mockOnClose).toHaveBeenCalled();
+  });
 });
