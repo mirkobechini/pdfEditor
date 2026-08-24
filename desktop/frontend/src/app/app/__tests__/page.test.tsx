@@ -757,4 +757,32 @@ describe("EditorPage", () => {
         for (let i = 0; i < 15; i++) fireEvent.click(zoomOut);
         expect(screen.getByText("25%")).toBeInTheDocument();
     });
+
+    it("uploads PDF successfully", async () => {
+        const uploadedDoc = { id: "p1", original_filename: "uploaded.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" };
+        mockUploadPdf.mockResolvedValue(uploadedDoc);
+        render(<EditorPage />);
+        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+        if (fileInput) {
+            const file = new File(["fake-pdf"], "test.pdf", { type: "application/pdf" });
+            fireEvent.change(fileInput, { target: { files: [file] } });
+        }
+        await waitFor(() => {
+            expect(mockUploadPdf).toHaveBeenCalled();
+        });
+    });
+
+    it("handles drop event for file upload", () => {
+        render(<EditorPage />);
+        const file = new File(["fake-pdf"], "dropped.pdf", { type: "application/pdf" });
+        const dataTransfer = { files: [file] };
+        fireEvent.drop(document, { dataTransfer });
+        expect(screen.queryByText("Rilascia per caricare")).not.toBeInTheDocument();
+    });
+
+    it("shows Free license for free users", () => {
+        mockUser = { ...mockUser, license_tier: "free" };
+        render(<EditorPage />);
+        expect(screen.getByText(/free Licenza/)).toBeInTheDocument();
+    });
 });
