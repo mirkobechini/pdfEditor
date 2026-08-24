@@ -111,4 +111,24 @@ describe("ReorderPagesModal", () => {
         render(<ReorderPagesModal {...baseProps} />);
         expect(screen.getByText(/Drag pages to reorder/)).toBeInTheDocument();
     });
+
+    it("shows saving state while reordering", async () => {
+        mockReorderPages.mockImplementation(() => new Promise((r) => setTimeout(r, 1000)));
+        render(<ReorderPagesModal {...baseProps} />);
+        fireEvent.click(screen.getByText("reorder"));
+        expect(screen.getByText("reordering")).toBeInTheDocument();
+    });
+
+    it("calls onClose on close button click", () => {
+        render(<ReorderPagesModal {...baseProps} />);
+        const closeBtn = screen.getAllByRole("button").find(b => b.querySelector("svg"));
+        if (closeBtn) fireEvent.click(closeBtn);
+        expect(mockOnClose).toHaveBeenCalled();
+    });
+
+    it("resets state when modal opens", () => {
+        const { rerender } = render(<ReorderPagesModal {...baseProps} open={false} />);
+        rerender(<ReorderPagesModal {...baseProps} open={true} />);
+        expect(screen.getByText(/pageCount/)).toBeInTheDocument();
+    });
 });
