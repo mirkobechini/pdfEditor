@@ -213,7 +213,11 @@
     "cancel": "Cancel",
     "remove": "Remove {count} pages",
     "removing": "Removing...",
-    "removeError": "Failed to remove pages"
+    "removeError": "Failed to remove pages",
+    "validationError": "Select or enter at least one page to remove.",
+    "manualInputLabel": "Or enter page numbers manually",
+    "pageInputHint": "Single: 1,3,5 \u00b7 Range: 5-8 \u00b7 Max: {max}",
+    "filenameLabel": "Filename"
   },
   "reorderModal": {
     "title": "Reorder Pages",

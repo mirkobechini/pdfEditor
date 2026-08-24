@@ -57,9 +57,7 @@ describe("RemovePagesModal", () => {
 
     it("calls removePages on Remove click", async () => {
         render(<RemovePagesModal {...baseProps} />);
-        // The button says "Remove 0 pages" when no pages selected
-        // We need to select pages first
-        const pageInput = screen.getByPlaceholderText(/1,3,5/);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
         fireEvent.change(pageInput, { target: { value: "1" } });
         const removeBtn = screen.getByRole("button", { name: /remove/ });
         fireEvent.click(removeBtn);
@@ -71,7 +69,7 @@ describe("RemovePagesModal", () => {
     it("shows error on removePages failure", async () => {
         mockRemovePages.mockRejectedValueOnce(new Error("Remove failed"));
         render(<RemovePagesModal {...baseProps} />);
-        const pageInput = screen.getByPlaceholderText(/1,3,5/);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
         fireEvent.change(pageInput, { target: { value: "1" } });
         const removeBtn = screen.getByRole("button", { name: /remove/ });
         fireEvent.click(removeBtn);

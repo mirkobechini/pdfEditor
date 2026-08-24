@@ -213,7 +213,11 @@
     "cancel": "Annulla",
     "remove": "Rimuovi {count} pagine",
     "removing": "Rimozione...",
-    "removeError": "Rimozione pagine fallita"
+    "removeError": "Rimozione pagine fallita",
+    "validationError": "Seleziona o inserisci almeno una pagina da rimuovere.",
+    "manualInputLabel": "Oppure inserisci i numeri di pagina manualmente",
+    "pageInputHint": "Singole: 1,3,5 \u00b7 Intervallo: 5-8 \u00b7 Max: {max}",
+    "filenameLabel": "Nome file"
   },
   "reorderModal": {
     "title": "Riordina Pagine",

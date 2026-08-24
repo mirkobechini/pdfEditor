@@ -124,7 +124,7 @@ describe("EditorPage", () => {
     fireEvent.click(screen.getByText("doc1.pdf"));
     const removeBtns = screen.getAllByText("remove");
     fireEvent.click(removeBtns[0]);
-    expect(await screen.findByText(/Remove Pages/)).toBeInTheDocument();
+    expect(await screen.findByText(/title/)).toBeInTheDocument();
   });
 
   it("opens Metadata modal when Metadata button clicked", async () => {
