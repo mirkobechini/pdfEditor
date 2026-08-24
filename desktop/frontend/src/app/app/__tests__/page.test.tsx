@@ -459,4 +459,45 @@ describe("EditorPage", () => {
             expect(screen.getByText("☁️")).toBeInTheDocument();
         });
     });
+
+    it("shows noPdfSelected when no document selected", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Nessun PDF selezionato")).toBeInTheDocument();
+    });
+
+    it("shows file size in bytes", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "small.pdf", file_size: 500, page_count: 1, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText(/500 B/)).toBeInTheDocument();
+        });
+    });
+
+    it("shows file size in KB", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "medium.pdf", file_size: 2048, page_count: 1, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText(/2 KB/)).toBeInTheDocument();
+        });
+    });
+
+    it("shows file size in MB", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "large.pdf", file_size: 3145728, page_count: 1, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText(/3\.0 MB/)).toBeInTheDocument();
+        });
+    });
 });
