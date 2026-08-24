@@ -56,7 +56,8 @@ describe("StartupPage", () => {
 
     it("renders version and license in footer", () => {
         render(<StartupPage />);
-        expect(screen.getByText("license")).toBeInTheDocument();
+        expect(screen.getByText(/version/)).toBeInTheDocument();
+        expect(screen.getByText(/license/)).toBeInTheDocument();
     });
 
     it("renders retry button when fatal error is set", () => {

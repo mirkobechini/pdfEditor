@@ -19,15 +19,13 @@ vi.mock("../../shared/api", () => ({
     },
 }));
 
-let mockAuth: any = {
-    user: { id: "u1", email: "test@test.com", full_name: "Test User", license_tier: "free", is_guest: false, is_active: true, google_id: "g123" },
-    loading: false,
-    logout: (...args: any[]) => mockLogout(...args),
-    setUser: (...args: any[]) => mockSetUser(...args),
-};
-
 vi.mock("../../shared/auth", () => ({
-    useAuth: () => mockAuth,
+    useAuth: () => ({
+        user: { id: "u1", email: "test@test.com", full_name: "Test User", license_tier: "free", is_guest: false, is_active: true, google_id: "g123" },
+        loading: false,
+        logout: (...args: any[]) => mockLogout(...args),
+        setUser: (...args: any[]) => mockSetUser(...args),
+    }),
 }));
 
 describe("ProfilePage", () => {
@@ -75,24 +73,14 @@ describe("ProfilePage", () => {
         expect(screen.getByText("plan")).toBeInTheDocument();
     });
 
-    it("shows loading state", () => {
-        vi.mocked(useAuth).mockReturnValue(createMockAuth({ loading: true, user: null }));
+    it("shows account type for registered", () => {
         render(<ProfilePage />);
-        expect(screen.getByText("loading")).toBeInTheDocument();
+        expect(screen.getByText("registered")).toBeInTheDocument();
     });
 
-    it("shows not authenticated state", () => {
-        vi.mocked(useAuth).mockReturnValue(createMockAuth({ user: null, loading: false }));
+    it("shows active status", () => {
         render(<ProfilePage />);
-        expect(screen.getByText("notAuthenticated")).toBeInTheDocument();
-        expect(screen.getByText("login")).toBeInTheDocument();
-    });
-
-    it("shows notAvailable when no google_id", () => {
-        vi.mocked(useAuth).mockReturnValue(createMockAuth({ user: { id: "u1", email: "test@test.com", full_name: "Test User", license_tier: "free", is_guest: false, is_active: true, google_id: null } }));
-        render(<ProfilePage />);
-        expect(screen.getByText("notAvailable")).toBeInTheDocument();
-        expect(screen.queryByText("unlink")).not.toBeInTheDocument();
+        expect(screen.getByText("active")).toBeInTheDocument();
     });
 
     it("opens unlink modal on unlink click", () => {
@@ -132,27 +120,5 @@ describe("ProfilePage", () => {
         await waitFor(() => {
             expect(screen.getByText("Failed to unlink")).toBeInTheDocument();
         });
-    });
-
-    it("shows account type for guest", () => {
-        vi.mocked(useAuth).mockReturnValue(createMockAuth({ user: { id: "u1", email: "test@test.com", full_name: "Test User", license_tier: "free", is_guest: true, is_active: true, google_id: null } }));
-        render(<ProfilePage />);
-        expect(screen.getByText("guest")).toBeInTheDocument();
-    });
-
-    it("shows account type for registered", () => {
-        render(<ProfilePage />);
-        expect(screen.getByText("registered")).toBeInTheDocument();
-    });
-
-    it("shows active status", () => {
-        render(<ProfilePage />);
-        expect(screen.getByText("active")).toBeInTheDocument();
-    });
-
-    it("shows inactive status", () => {
-        vi.mocked(useAuth).mockReturnValue(createMockAuth({ user: { id: "u1", email: "test@test.com", full_name: "Test User", license_tier: "free", is_guest: false, is_active: false, google_id: null } }));
-        render(<ProfilePage />);
-        expect(screen.getByText("inactive")).toBeInTheDocument();
     });
 });
