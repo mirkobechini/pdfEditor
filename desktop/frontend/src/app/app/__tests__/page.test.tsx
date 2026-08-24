@@ -785,4 +785,29 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         expect(screen.getByText(/free Licenza/)).toBeInTheDocument();
     });
+
+    it("shows pro license for pro users", () => {
+        mockUser = { ...mockUser, license_tier: "pro" };
+        render(<EditorPage />);
+        expect(screen.getByText(/pro Licenza/)).toBeInTheDocument();
+    });
+
+    it("shows user initial for user without full_name", () => {
+        mockUser = { ...mockUser, full_name: "" };
+        render(<EditorPage />);
+        expect(screen.getByText("U")).toBeInTheDocument();
+    });
+
+    it("shows formatDate for 'ora' when just created", async () => {
+        const now = new Date().toISOString();
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "justnow.pdf", file_size: 1024, page_count: 3, created_at: now, upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText(/ora/)).toBeInTheDocument();
+        });
+    });
 });
