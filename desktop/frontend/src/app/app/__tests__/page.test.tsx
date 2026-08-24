@@ -737,4 +737,24 @@ describe("EditorPage", () => {
         const profileLink = screen.getByText("Test User").closest("a");
         expect(profileLink).toHaveAttribute("href", "/profile");
     });
+
+    it("shows zoom controls at bounds", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 5, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText("100%")).toBeInTheDocument();
+        });
+        const zoomOut = screen.getByText("−");
+        const zoomIn = screen.getByText("+");
+        for (let i = 0; i < 10; i++) fireEvent.click(zoomIn);
+        expect(screen.getByText("300%")).toBeInTheDocument();
+        for (let i = 0; i < 15; i++) fireEvent.click(zoomOut);
+        expect(screen.getByText("25%")).toBeInTheDocument();
+    });
 });
