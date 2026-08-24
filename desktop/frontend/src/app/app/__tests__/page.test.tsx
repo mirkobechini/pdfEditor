@@ -101,7 +101,13 @@ vi.mock("../../../shared/api", () => ({
 
 // Mock child components
 vi.mock("../../../components/PdfViewer", () => ({
-    default: () => <div data-testid="pdf-viewer">PDF Viewer</div>,
+    default: ({ onTotalPagesChange }: any) => {
+        // Call onTotalPagesChange to simulate PDF loading
+        React.useEffect(() => {
+            onTotalPagesChange?.(5);
+        }, []);
+        return <div data-testid="pdf-viewer">PDF Viewer</div>;
+    },
 }));
 
 vi.mock("../../../components/MetadataModal", () => ({
@@ -385,5 +391,72 @@ describe("EditorPage", () => {
         fireEvent.dragOver(document);
         fireEvent.dragLeave(document);
         expect(screen.queryByText("Rilascia per caricare")).not.toBeInTheDocument();
+    });
+
+    it("shows metadata panel when document selected", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", pdf_creation_date: "2024-12-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        expect(screen.getByText("Nome file")).toBeInTheDocument();
+        expect(screen.getByText("Dimensione")).toBeInTheDocument();
+        expect(screen.getByText("Pagine")).toBeInTheDocument();
+        expect(screen.getByText("Creato")).toBeInTheDocument();
+    });
+
+    it("shows page navigation when document has pages", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 5, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        mockDownloadPdf.mockResolvedValue(new Blob(["fake"], { type: "application/pdf" }));
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText(/1 \/ 5/)).toBeInTheDocument();
+        });
+    });
+
+    it("shows error sync status icon", async () => {
+        mockSyncStatus = { p1: "error" };
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText("⚠️")).toBeInTheDocument();
+        });
+    });
+
+    it("shows platform icon for mobile source", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "mobile" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText("📱")).toBeInTheDocument();
+        });
+    });
+
+    it("shows cloud icon for unknown source", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "unknown" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText("☁️")).toBeInTheDocument();
+        });
     });
 });
