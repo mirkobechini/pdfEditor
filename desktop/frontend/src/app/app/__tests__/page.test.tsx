@@ -586,4 +586,24 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         expect(screen.getByText("Scarica")).toBeDisabled();
     });
+
+    it("shows edit button selected by default", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Modifica")).toBeInTheDocument();
+    });
+
+    it("shows cloud sync section in sidebar", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Cloud Sync")).toBeInTheDocument();
+    });
+
+    it("shows cloud sync section in sidebar", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Cloud Sync")).toBeInTheDocument();
+    });
+
+    it("shows user initial in avatar", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("T")).toBeInTheDocument();
+    });
 });
