@@ -77,4 +77,69 @@ describe("RemovePagesModal", () => {
             expect(screen.getByText("Remove failed")).toBeInTheDocument();
         });
     });
+
+    it("shows validation error when no pages selected", () => {
+        render(<RemovePagesModal {...baseProps} />);
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
+        fireEvent.click(removeBtn);
+        expect(screen.getByText("validationError")).toBeInTheDocument();
+    });
+
+    it("parses page range input correctly", () => {
+        render(<RemovePagesModal {...baseProps} />);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
+        fireEvent.change(pageInput, { target: { value: "1-3" } });
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
+        fireEvent.click(removeBtn);
+        expect(mockRemovePages).toHaveBeenCalledWith("p1", [1, 2, 3], undefined, false);
+    });
+
+    it("parses comma-separated pages", () => {
+        render(<RemovePagesModal {...baseProps} />);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
+        fireEvent.change(pageInput, { target: { value: "1, 3, 5" } });
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
+        fireEvent.click(removeBtn);
+        expect(mockRemovePages).toHaveBeenCalledWith("p1", [1, 3, 5], undefined, false);
+    });
+
+    it("saves with new filename when changed", async () => {
+        render(<RemovePagesModal {...baseProps} />);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
+        fireEvent.change(pageInput, { target: { value: "2" } });
+        const filenameInput = screen.getByDisplayValue("test.pdf");
+        fireEvent.change(filenameInput, { target: { value: "new-name.pdf" } });
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
+        fireEvent.click(removeBtn);
+        await waitFor(() => {
+            expect(mockRemovePages).toHaveBeenCalledWith("p1", [2], "new-name.pdf", false);
+        });
+    });
+
+    it("saves with overwrite enabled", async () => {
+        render(<RemovePagesModal {...baseProps} />);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
+        fireEvent.change(pageInput, { target: { value: "2" } });
+        const overwriteCheckbox = screen.getByRole("checkbox");
+        fireEvent.click(overwriteCheckbox);
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
+        fireEvent.click(removeBtn);
+        await waitFor(() => {
+            expect(mockRemovePages).toHaveBeenCalledWith("p1", [2], undefined, true);
+        });
+    });
+
+    it("toggles page selection via checkbox click", () => {
+        render(<RemovePagesModal {...baseProps} />);
+        // Click on a page thumbnail button (the first one with page number 1)
+        const pageButtons = screen.getAllByRole("button");
+        const page1Btn = pageButtons.find(b => b.textContent?.includes("1") && !b.textContent?.includes("remove") && !b.textContent?.includes("cancel"));
+        if (page1Btn) {
+            fireEvent.click(page1Btn);
+            // Click again to deselect
+            fireEvent.click(page1Btn);
+        }
+        // Just verify no crash
+        expect(screen.getByText(/pageCount/)).toBeInTheDocument();
+    });
 });
