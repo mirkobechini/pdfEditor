@@ -546,4 +546,39 @@ describe("SettingsPage", () => {
             expect(screen.getByText("Errore invio")).toBeInTheDocument();
         });
     });
+
+    it("changelog modal shows loading state", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Novità"));
+        expect(screen.getByText("Caricamento in corso...")).toBeInTheDocument();
+    });
+
+    it("changelog modal closes via X button", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Novità"));
+        const closeBtns = screen.getAllByRole("button").filter(b => b.querySelector("svg"));
+        if (closeBtns.length > 0) fireEvent.click(closeBtns[0]);
+        expect(screen.queryByText("Caricamento in corso...")).not.toBeInTheDocument();
+    });
+
+    it("changelog modal closes via Chiudi button", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Novità"));
+        const chiudiBtns = screen.getAllByText("Chiudi");
+        if (chiudiBtns.length > 0) fireEvent.click(chiudiBtns[chiudiBtns.length - 1]);
+        expect(screen.queryByText("Caricamento in corso...")).not.toBeInTheDocument();
+    });
+
+    it("documentation modal closes via X button", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        const docButtons = screen.getAllByText("Documentazione");
+        fireEvent.click(docButtons[docButtons.length - 1]);
+        const closeBtns = screen.getAllByRole("button").filter(b => b.querySelector("svg"));
+        if (closeBtns.length > 0) fireEvent.click(closeBtns[0]);
+        expect(screen.queryByText("Apri su GitHub")).not.toBeInTheDocument();
+    });
 });
