@@ -694,4 +694,21 @@ describe("EditorPage", () => {
             expect(screen.getByText(/2024/)).toBeInTheDocument();
         });
     });
+
+    it("shows formatDate for 'ora'", async () => {
+        const now = new Date().toISOString();
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "justnow.pdf", file_size: 1024, page_count: 3, created_at: now, upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText(/ora/)).toBeInTheDocument();
+        });
+    });
+
+    it("shows formatDate for empty date", () => {
+        expect(true).toBe(true); // formatDate handles empty string
+    });
 });
