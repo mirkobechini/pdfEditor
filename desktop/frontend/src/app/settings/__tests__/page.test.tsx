@@ -581,4 +581,34 @@ describe("SettingsPage", () => {
         if (closeBtns.length > 0) fireEvent.click(closeBtns[0]);
         expect(screen.queryByText("Apri su GitHub")).not.toBeInTheDocument();
     });
+
+    it("opens changelog and shows entries", async () => {
+        const origFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve({
+                desktop: [{ version: "v1.0.0", date: "2025-01-01", changes: ["Fix bug"] }],
+            }),
+        });
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Novità"));
+        await waitFor(() => {
+            expect(screen.getByText("v1.0.0")).toBeInTheDocument();
+            expect(screen.getByText("Fix bug")).toBeInTheDocument();
+        });
+        globalThis.fetch = origFetch;
+    });
+
+    it("opens changelog and shows empty state on fetch failure", async () => {
+        const origFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Novità"));
+        await waitFor(() => {
+            expect(screen.getByText("Changelog non disponibile.")).toBeInTheDocument();
+        });
+        globalThis.fetch = origFetch;
+    });
 });
