@@ -810,4 +810,43 @@ describe("EditorPage", () => {
             expect(screen.getByText(/ora/)).toBeInTheDocument();
         });
     });
+
+    it("shows download button enabled when doc selected", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 5, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText("Scarica")).not.toBeDisabled();
+        });
+    });
+
+    it("shows merge button disabled when no doc selected", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Unisci")).toBeDisabled();
+    });
+
+    it("shows split button disabled when no doc selected", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Dividi")).toBeDisabled();
+    });
+
+    it("shows reorder button disabled when no doc selected", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Riordina")).toBeDisabled();
+    });
+
+    it("shows remove button disabled when no doc selected", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Rimuovi")).toBeDisabled();
+    });
+
+    it("shows metadata button disabled when no doc selected", () => {
+        render(<EditorPage />);
+        expect(screen.getByText("Metadati")).toBeDisabled();
+    });
 });
