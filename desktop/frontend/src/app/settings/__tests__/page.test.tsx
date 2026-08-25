@@ -611,4 +611,103 @@ describe("SettingsPage", () => {
         });
         globalThis.fetch = origFetch;
     });
+
+    it("changes language via select", () => {
+        render(<SettingsPage />);
+        const select = screen.getByRole("combobox");
+        fireEvent.change(select, { target: { value: "en" } });
+        expect(mockUpdatePrefs).toHaveBeenCalledWith({ language: "en" });
+        expect(mockSetLocale).toHaveBeenCalledWith("en");
+    });
+
+    it("editor tab shows default zoom setting", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Editor"));
+        expect(screen.getByText("Zoom predefinito")).toBeInTheDocument();
+    });
+
+    it("advanced tab shows workplace folder choose button", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Avanzate"));
+        expect(screen.getByText("Scegli")).toBeInTheDocument();
+    });
+
+    it("advanced tab shows clear cache confirm", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Avanzate"));
+        const clearBtns = screen.getAllByText("Svuota cache");
+        expect(clearBtns.length).toBeGreaterThan(0);
+    });
+
+    it("documentation modal closes via X button", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        const docBtns = screen.getAllByText("Documentazione");
+        fireEvent.click(docBtns[docBtns.length - 1]);
+        expect(screen.getByText("Apri su GitHub")).toBeInTheDocument();
+        const closeBtns = screen.getAllByRole("button").filter(b => b.querySelector("svg"));
+        if (closeBtns.length > 0) fireEvent.click(closeBtns[0]);
+        expect(screen.queryByText("Apri su GitHub")).not.toBeInTheDocument();
+    });
+
+    it("documentation modal closes via Chiudi button", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        const docBtns = screen.getAllByText("Documentazione");
+        fireEvent.click(docBtns[docBtns.length - 1]);
+        expect(screen.getByText("Apri su GitHub")).toBeInTheDocument();
+        fireEvent.click(screen.getByText("Chiudi"));
+        expect(screen.queryByText("Apri su GitHub")).not.toBeInTheDocument();
+    });
+
+    it("bug report modal shows sending state", async () => {
+        mockCreateBugReport.mockImplementation(() => new Promise(() => {}));
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Segnala bug"));
+        fireEvent.change(screen.getByPlaceholderText("Titolo"), { target: { value: "Test" } });
+        fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test" } });
+        fireEvent.click(screen.getByText("Invia"));
+        expect(screen.getByText("Invio...")).toBeInTheDocument();
+    });
+
+    it("bug report modal shows error on non-Error rejection", async () => {
+        mockCreateBugReport.mockRejectedValue("string error");
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Segnala bug"));
+        fireEvent.change(screen.getByPlaceholderText("Titolo"), { target: { value: "Test" } });
+        fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test" } });
+        fireEvent.click(screen.getByText("Invia"));
+        await waitFor(() => {
+            expect(screen.getByText("Errore invio")).toBeInTheDocument();
+        });
+    });
+
+    it("bug report modal closes via Annulla", () => {
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Segnala bug"));
+        const cancelBtns = screen.getAllByText("Annulla");
+        if (cancelBtns.length > 0) fireEvent.click(cancelBtns[0]);
+        expect(screen.queryByPlaceholderText("Titolo")).not.toBeInTheDocument();
+    });
+
+    it("changelog modal closes via X button", async () => {
+        const origFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve({ desktop: [{ version: "v1.0.0", date: "2025-01-01", changes: ["Fix"] }] }),
+        });
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Novità"));
+        await waitFor(() => {
+            expect(screen.getByText("v1.0.0")).toBeInTheDocument();
+        });
+        const closeBtns = screen.getAllByRole("button").filter(b => b.querySelector("svg"));
+        if (closeBtns.length > 0) fireEvent.click(closeBtns[0]);
+        expect(screen.queryByText("v1.0.0")).not.toBeInTheDocument();
+        globalThis.fetch = origFetch;
+    });
 });
