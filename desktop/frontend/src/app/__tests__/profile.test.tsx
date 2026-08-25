@@ -121,4 +121,10 @@ describe("ProfilePage", () => {
             expect(screen.getByText("Failed to unlink")).toBeInTheDocument();
         });
     });
+
+    it("calls logout on logout button click", () => {
+        render(<ProfilePage />);
+        fireEvent.click(screen.getByText("logout"));
+        expect(mockLogout).toHaveBeenCalled();
+    });
 });
