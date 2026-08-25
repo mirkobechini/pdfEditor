@@ -1,6 +1,16 @@
 {
   "desktop": [
     {
+      "version": "v0.1.37",
+      "date": "2026-08-25",
+      "changes": [
+        "Desktop test coverage 70%+: 680 test (da 375), 79.77% statements",
+        "Nuovi test: GuestConvertBanner, useCloudSync, Settings, Login, Wizard, EditorPage",
+        "Test ampliati: GoogleLoginButton, SplitPagesModal, RemovePagesModal, ReorderPagesModal",
+        "Tutti i file desktop frontend >= 70% coverage"
+      ]
+    },
+    {
       "version": "v0.1.36",
       "date": "2026-08-23",
       "changes": [
