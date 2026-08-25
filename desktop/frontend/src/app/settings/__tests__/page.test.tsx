@@ -27,6 +27,8 @@ let mockIsOnline = true;
 let mockIsSyncing = false;
 let mockProgress: any = null;
 let mockLastSyncResult: any = null;
+let mockIsTauri = false;
+let mockTauriInvoke = vi.fn();
 
 vi.mock("next-intl", () => ({
     useTranslations: () => (k: string) => {
@@ -136,8 +138,8 @@ vi.mock("../../../lib/preferences", () => ({
 }));
 
 vi.mock("../../../shared/tauri", () => ({
-    isTauri: () => false,
-    tauriInvoke: vi.fn(),
+    isTauri: () => mockIsTauri,
+    tauriInvoke: (...args: any[]) => mockTauriInvoke(...args),
 }));
 
 vi.mock("../../../hooks/useCloudSync", () => ({
@@ -174,6 +176,8 @@ describe("SettingsPage", () => {
         mockIsSyncing = false;
         mockProgress = null;
         mockLastSyncResult = null;
+        mockIsTauri = false;
+        mockTauriInvoke = vi.fn();
     });
 
     // ── Rendering ─────────────────────────────────────────────
@@ -1217,5 +1221,115 @@ describe("SettingsPage", () => {
         fireEvent.click(screen.getByText("Novità"));
         expect(screen.getByText("Caricamento in corso...")).toBeInTheDocument();
         globalThis.fetch = origFetch;
+    });
+
+    // ── Advanced tab actions ────────────────────────────────
+
+    it("advanced tab picks workplace folder via Tauri", async () => {
+        mockIsTauri = true;
+        mockTauriInvoke.mockResolvedValue("/picked/folder");
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Avanzate"));
+        fireEvent.click(screen.getByText("Scegli"));
+        await waitFor(() => {
+            expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_open_folder", expect.objectContaining({
+                defaultPath: undefined,
+            }));
+        });
+        expect(mockUpdatePrefs).toHaveBeenCalledWith({ default_save_folder: "/picked/folder" });
+    });
+
+    it("advanced tab workplace folder picker cancelled", async () => {
+        mockIsTauri = true;
+        mockTauriInvoke.mockResolvedValue(null);
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Avanzate"));
+        fireEvent.click(screen.getByText("Scegli"));
+        await new Promise((r) => setTimeout(r, 100));
+        expect(mockUpdatePrefs).not.toHaveBeenCalled();
+    });
+
+    it("advanced tab workplace folder picker error", async () => {
+        mockIsTauri = true;
+        mockTauriInvoke.mockRejectedValue(new Error("Tauri error"));
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Avanzate"));
+        fireEvent.click(screen.getByText("Scegli"));
+        await new Promise((r) => setTimeout(r, 100));
+        expect(consoleSpy).toHaveBeenCalled();
+        consoleSpy.mockRestore();
+    });
+
+    it("advanced tab workplace folder not available in web mode", async () => {
+        mockIsTauri = false;
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Avanzate"));
+        fireEvent.click(screen.getByText("Scegli"));
+        await new Promise((r) => setTimeout(r, 100));
+        expect(mockTauriInvoke).not.toHaveBeenCalled();
+    });
+
+    it("advanced tab shows change button when folder set", () => {
+        mockPrefs = { ...mockPrefs, default_save_folder: "/existing/folder" };
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Avanzate"));
+        expect(screen.getByText("Cambia")).toBeInTheDocument();
+    });
+
+    it("advanced tab clear cache with confirm", () => {
+        const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Avanzate"));
+        fireEvent.click(screen.getByText("Elimina"));
+        expect(confirmSpy).toHaveBeenCalled();
+        expect(alertSpy).toHaveBeenCalled();
+        confirmSpy.mockRestore();
+        alertSpy.mockRestore();
+    });
+
+    it("advanced tab clear cache without confirm", () => {
+        const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Avanzate"));
+        fireEvent.click(screen.getByText("Elimina"));
+        expect(confirmSpy).toHaveBeenCalled();
+        expect(alertSpy).not.toHaveBeenCalled();
+        confirmSpy.mockRestore();
+        alertSpy.mockRestore();
+    });
+
+    it("advanced tab system log alert", () => {
+        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Avanzate"));
+        fireEvent.click(screen.getByText("Apri"));
+        expect(alertSpy).toHaveBeenCalled();
+        alertSpy.mockRestore();
+    });
+
+    it("about tab opens third-party licenses via Tauri", () => {
+        mockIsTauri = true;
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Visualizza"));
+        expect(mockTauriInvoke).toHaveBeenCalledWith("plugin:opener|open_url", expect.objectContaining({
+            url: "https://github.com/mirkobechini/pdfEditor/blob/main/desktop/src-tauri/licenses.json",
+        }));
+    });
+
+    it("about tab opens third-party licenses via window.open in web", () => {
+        mockIsTauri = false;
+        const windowOpenSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+        render(<SettingsPage />);
+        fireEvent.click(screen.getByText("Informazioni"));
+        fireEvent.click(screen.getByText("Visualizza"));
+        expect(windowOpenSpy).toHaveBeenCalledWith(
+            "https://github.com/mirkobechini/pdfEditor/blob/main/desktop/src-tauri/licenses.json",
+            "_blank"
+        );
+        windowOpenSpy.mockRestore();
     });
 });
