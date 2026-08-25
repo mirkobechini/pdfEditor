@@ -68,6 +68,8 @@
 
 **Soluzione prevista:** Verificare che Render backend sia attivo, che l'utente sia registrato su Neon, e differenziare l'errore (già implementato ma non verificato: EMAIL_NOT_FOUND vs WRONG_PASSWORD).
 
+**Stato:** ✅ Risolto in PR #682 — login desktop prova sidecar locale prima, poi cloud con sync utente. Login usa `fetch` diretto invece di `_fetch` per evitare loop 401.
+
 ### K2 — Google OAuth popup non funziona in Tauri
 
 **File:** `backend/app/api/v1/auth.py` (endpoint già implementati), `desktop/frontend/src/components/GoogleLoginButton.tsx`  
