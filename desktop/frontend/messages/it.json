@@ -204,6 +204,42 @@
     "kilobytes": "KB",
     "megabytes": "MB"
   },
+  "removeModal": {
+    "title": "Rimuovi Pagine",
+    "desc": "Seleziona le pagine da rimuovere da questo PDF.",
+    "pageInputPlaceholder": "1,3,5",
+    "pageCount": "{count} pagine",
+    "overwrite": "Sovrascrivi file esistente (invece di creare una copia)",
+    "cancel": "Annulla",
+    "remove": "Rimuovi {count} pagine",
+    "removing": "Rimozione...",
+    "removeError": "Rimozione pagine fallita",
+    "validationError": "Seleziona o inserisci almeno una pagina da rimuovere.",
+    "manualInputLabel": "Oppure inserisci i numeri di pagina manualmente",
+    "pageInputHint": "Singole: 1,3,5 \u00b7 Intervallo: 5-8 \u00b7 Max: {max}",
+    "filenameLabel": "Nome file"
+  },
+  "reorderModal": {
+    "title": "Riordina Pagine",
+    "desc": "Trascina o usa i pulsanti per riordinare le pagine.",
+    "overwrite": "Sovrascrivi file esistente (invece di creare una copia)",
+    "cancel": "Annulla",
+    "reorder": "Riordina",
+    "reordering": "Riordino...",
+    "reorderError": "Riordino pagine fallito"
+  },
+  "splitModal": {
+    "title": "Dividi PDF",
+    "desc": "Seleziona un punto di divisione.",
+    "part1Label": "Nome file Parte 1",
+    "part2Label": "Nome file Parte 2",
+    "part1Suffix": "_parte1",
+    "part2Suffix": "_parte2",
+    "cancel": "Annulla",
+    "split": "Dividi",
+    "splitting": "Divisione...",
+    "splitError": "Divisione PDF fallita"
+  },
   "wizard": {
     "title": "Benvenuto",
     "step01": "STEP 01",

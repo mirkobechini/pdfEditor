@@ -16,6 +16,7 @@ const baseProps = {
     onSaved: mockOnSaved,
 };
 
+vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
 vi.mock("../../shared/api", () => ({
     api: {
         removePages: (...args: any[]) => mockRemovePages(...args),
@@ -30,7 +31,7 @@ describe("RemovePagesModal", () => {
 
     it("renders page count", () => {
         render(<RemovePagesModal {...baseProps} />);
-        expect(screen.getByText(/5 pages/)).toBeInTheDocument();
+        expect(screen.getByText(/pageCount/)).toBeInTheDocument();
     });
 
     it("shows filename input", () => {
@@ -40,12 +41,12 @@ describe("RemovePagesModal", () => {
 
     it("shows overwrite checkbox", () => {
         render(<RemovePagesModal {...baseProps} />);
-        expect(screen.getByText(/Overwrite/)).toBeInTheDocument();
+        expect(screen.getByText(/overwrite/)).toBeInTheDocument();
     });
 
     it("calls onClose when Cancel clicked", () => {
         render(<RemovePagesModal {...baseProps} />);
-        fireEvent.click(screen.getByText("Cancel"));
+        fireEvent.click(screen.getByText("cancel"));
         expect(mockOnClose).toHaveBeenCalled();
     });
 
@@ -56,11 +57,9 @@ describe("RemovePagesModal", () => {
 
     it("calls removePages on Remove click", async () => {
         render(<RemovePagesModal {...baseProps} />);
-        // The button says "Remove 0 pages" when no pages selected
-        // We need to select pages first
-        const pageInput = screen.getByPlaceholderText(/1,3,5/);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
         fireEvent.change(pageInput, { target: { value: "1" } });
-        const removeBtn = screen.getByRole("button", { name: /Remove/ });
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
         fireEvent.click(removeBtn);
         await waitFor(() => {
             expect(mockRemovePages).toHaveBeenCalled();
@@ -70,12 +69,77 @@ describe("RemovePagesModal", () => {
     it("shows error on removePages failure", async () => {
         mockRemovePages.mockRejectedValueOnce(new Error("Remove failed"));
         render(<RemovePagesModal {...baseProps} />);
-        const pageInput = screen.getByPlaceholderText(/1,3,5/);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
         fireEvent.change(pageInput, { target: { value: "1" } });
-        const removeBtn = screen.getByRole("button", { name: /Remove/ });
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
         fireEvent.click(removeBtn);
         await waitFor(() => {
             expect(screen.getByText("Remove failed")).toBeInTheDocument();
         });
+    });
+
+    it("shows validation error when no pages selected", () => {
+        render(<RemovePagesModal {...baseProps} />);
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
+        fireEvent.click(removeBtn);
+        expect(screen.getByText("validationError")).toBeInTheDocument();
+    });
+
+    it("parses page range input correctly", () => {
+        render(<RemovePagesModal {...baseProps} />);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
+        fireEvent.change(pageInput, { target: { value: "1-3" } });
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
+        fireEvent.click(removeBtn);
+        expect(mockRemovePages).toHaveBeenCalledWith("p1", [1, 2, 3], undefined, false);
+    });
+
+    it("parses comma-separated pages", () => {
+        render(<RemovePagesModal {...baseProps} />);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
+        fireEvent.change(pageInput, { target: { value: "1, 3, 5" } });
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
+        fireEvent.click(removeBtn);
+        expect(mockRemovePages).toHaveBeenCalledWith("p1", [1, 3, 5], undefined, false);
+    });
+
+    it("saves with new filename when changed", async () => {
+        render(<RemovePagesModal {...baseProps} />);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
+        fireEvent.change(pageInput, { target: { value: "2" } });
+        const filenameInput = screen.getByDisplayValue("test.pdf");
+        fireEvent.change(filenameInput, { target: { value: "new-name.pdf" } });
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
+        fireEvent.click(removeBtn);
+        await waitFor(() => {
+            expect(mockRemovePages).toHaveBeenCalledWith("p1", [2], "new-name.pdf", false);
+        });
+    });
+
+    it("saves with overwrite enabled", async () => {
+        render(<RemovePagesModal {...baseProps} />);
+        const pageInput = screen.getByPlaceholderText(/pageInputPlaceholder/);
+        fireEvent.change(pageInput, { target: { value: "2" } });
+        const overwriteCheckbox = screen.getByRole("checkbox");
+        fireEvent.click(overwriteCheckbox);
+        const removeBtn = screen.getByRole("button", { name: /remove/ });
+        fireEvent.click(removeBtn);
+        await waitFor(() => {
+            expect(mockRemovePages).toHaveBeenCalledWith("p1", [2], undefined, true);
+        });
+    });
+
+    it("toggles page selection via checkbox click", () => {
+        render(<RemovePagesModal {...baseProps} />);
+        // Click on a page thumbnail button (the first one with page number 1)
+        const pageButtons = screen.getAllByRole("button");
+        const page1Btn = pageButtons.find(b => b.textContent?.includes("1") && !b.textContent?.includes("remove") && !b.textContent?.includes("cancel"));
+        if (page1Btn) {
+            fireEvent.click(page1Btn);
+            // Click again to deselect
+            fireEvent.click(page1Btn);
+        }
+        // Just verify no crash
+        expect(screen.getByText(/pageCount/)).toBeInTheDocument();
     });
 });

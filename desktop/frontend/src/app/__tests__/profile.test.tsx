@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ProfilePage from "../profile/page";
 
 const mockLogout = vi.fn();
@@ -48,7 +48,7 @@ describe("ProfilePage", () => {
         expect(screen.getByText("logout")).toBeInTheDocument();
     });
 
-    it("renders Impostazioni link", () => {
+    it("renders Settings link", () => {
         render(<ProfilePage />);
         expect(screen.getByText("settings")).toBeInTheDocument();
     });
@@ -58,18 +58,67 @@ describe("ProfilePage", () => {
         expect(screen.getByText("editor")).toBeInTheDocument();
     });
 
-    it("renders Servizi Collegati", () => {
+    it("renders connected services section", () => {
         render(<ProfilePage />);
         expect(screen.getByText("connectedServices")).toBeInTheDocument();
     });
 
-    it("renders Scollega button", () => {
+    it("renders unlink button when google_id exists", () => {
         render(<ProfilePage />);
         expect(screen.getByText("unlink")).toBeInTheDocument();
     });
 
-    it("renders Piano info", () => {
+    it("renders plan info", () => {
         render(<ProfilePage />);
         expect(screen.getByText("plan")).toBeInTheDocument();
+    });
+
+    it("shows account type for registered", () => {
+        render(<ProfilePage />);
+        expect(screen.getByText("registered")).toBeInTheDocument();
+    });
+
+    it("shows active status", () => {
+        render(<ProfilePage />);
+        expect(screen.getByText("active")).toBeInTheDocument();
+    });
+
+    it("opens unlink modal on unlink click", () => {
+        render(<ProfilePage />);
+        fireEvent.click(screen.getByText("unlink"));
+        expect(screen.getByText("unlinkGoogle")).toBeInTheDocument();
+        expect(screen.getByText("unlinkGoogleDesc")).toBeInTheDocument();
+    });
+
+    it("closes unlink modal on cancel", () => {
+        render(<ProfilePage />);
+        fireEvent.click(screen.getByText("unlink"));
+        expect(screen.getByText("unlinkGoogle")).toBeInTheDocument();
+        fireEvent.click(screen.getByText("cancel"));
+        expect(screen.queryByText("unlinkGoogle")).not.toBeInTheDocument();
+    });
+
+    it("calls unlinkGoogle on confirm", async () => {
+        mockUnlinkGoogle.mockResolvedValue({ google_id: null });
+        render(<ProfilePage />);
+        fireEvent.click(screen.getByText("unlink"));
+        const input = screen.getByPlaceholderText("password");
+        fireEvent.change(input, { target: { value: "mypass" } });
+        fireEvent.click(screen.getByText("confirm"));
+        await waitFor(() => {
+            expect(mockUnlinkGoogle).toHaveBeenCalledWith("mypass");
+        });
+    });
+
+    it("shows error on unlink failure", async () => {
+        mockUnlinkGoogle.mockRejectedValue(new Error("Failed to unlink"));
+        render(<ProfilePage />);
+        fireEvent.click(screen.getByText("unlink"));
+        const input = screen.getByPlaceholderText("password");
+        fireEvent.change(input, { target: { value: "mypass" } });
+        fireEvent.click(screen.getByText("confirm"));
+        await waitFor(() => {
+            expect(screen.getByText("Failed to unlink")).toBeInTheDocument();
+        });
     });
 });

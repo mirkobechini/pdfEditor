@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-08-23
+> **Aggiornato:** 2026-08-25
 
 ---
 
@@ -12,10 +12,10 @@
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
 | **Backend** (FastAPI/Python)   | pytest      | **371** | **88%**    | ✅    |
 | **Webapp** (Next.js/React)     | vitest      | **363** | ~75%       | ✅    |
-| **Desktop** (Tauri)            | vitest      | **375** | **71%**    | ✅    |
+| **Desktop** (Tauri)            | vitest      | **680** | **79.77%** | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **182** | ~77% lines | ✅    |
 
-> ℹ️ **Desktop**: 370 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
+> ℹ️ **Desktop**: 680 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Tutti i file >= 70% coverage.
 
 ---
 

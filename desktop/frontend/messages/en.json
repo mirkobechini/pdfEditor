@@ -204,6 +204,42 @@
     "kilobytes": "KB",
     "megabytes": "MB"
   },
+  "removeModal": {
+    "title": "Remove Pages",
+    "desc": "Select pages to remove from this PDF.",
+    "pageInputPlaceholder": "1,3,5",
+    "pageCount": "{count} pages",
+    "overwrite": "Overwrite existing file (instead of creating a copy)",
+    "cancel": "Cancel",
+    "remove": "Remove {count} pages",
+    "removing": "Removing...",
+    "removeError": "Failed to remove pages",
+    "validationError": "Select or enter at least one page to remove.",
+    "manualInputLabel": "Or enter page numbers manually",
+    "pageInputHint": "Single: 1,3,5 \u00b7 Range: 5-8 \u00b7 Max: {max}",
+    "filenameLabel": "Filename"
+  },
+  "reorderModal": {
+    "title": "Reorder Pages",
+    "desc": "Drag or use buttons to reorder pages.",
+    "overwrite": "Overwrite existing file (instead of creating a copy)",
+    "cancel": "Cancel",
+    "reorder": "Reorder",
+    "reordering": "Reordering...",
+    "reorderError": "Failed to reorder pages"
+  },
+  "splitModal": {
+    "title": "Split PDF",
+    "desc": "Select a page to split at.",
+    "part1Label": "Part 1 filename",
+    "part2Label": "Part 2 filename",
+    "part1Suffix": "_part1",
+    "part2Suffix": "_part2",
+    "cancel": "Cancel",
+    "split": "Split",
+    "splitting": "Splitting...",
+    "splitError": "Failed to split PDF"
+  },
   "wizard": {
     "title": "Welcome",
     "step01": "STEP 01",

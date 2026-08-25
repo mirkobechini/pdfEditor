@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import {
     DndContext,
     closestCenter,
@@ -79,6 +80,7 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
     const [overwrite, setOverwrite] = React.useState(false);
     const scrollRef = React.useRef<HTMLDivElement>(null);
     const [dragging, setDragging] = React.useState(false);
+    const tr = useTranslations("reorderModal");
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -163,7 +165,7 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
             onSaved(updated);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to reorder pages");
+            setError(err instanceof Error ? err.message : tr("reorderError"));
         } finally { setSaving(false); }
     }
 
@@ -179,7 +181,7 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
                     </button>
                 </div>
 
-                <p className="mb-4 text-xs text-[#8d8175] shrink-0">{pdfName} ({totalPages} pages)</p>
+                <p className="mb-4 text-xs text-[#8d8175] shrink-0">{pdfName} ({tr("pageCount", { count: totalPages })})</p>
 
                 {loading ? (
                     <div className="flex items-center justify-center py-8">
@@ -223,15 +225,15 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
                     </div>
                     <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
                         <input type="checkbox" id="reorder-overwrite" checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} className="h-4 w-4 accent-[#f7871f]" />
-                        <label htmlFor="reorder-overwrite" className="text-xs text-[#c4b8ab] cursor-pointer select-none">Overwrite existing file (instead of creating a copy)</label>
+                        <label htmlFor="reorder-overwrite" className="text-xs text-[#c4b8ab] cursor-pointer select-none">{tr("overwrite")}</label>
                     </div>
 
                     {error && <p className="text-xs text-red-400">{error}</p>}
 
                     <div className="flex gap-3 pt-2">
-                        <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5">Cancel</button>
+                        <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5">{tr("cancel")}</button>
                         <button onClick={handleSave} disabled={saving} className="flex-1 rounded-xl bg-[#f7871f] py-2.5 text-sm font-semibold text-white transition hover:bg-[#ce5a00] disabled:opacity-50">
-                            {saving ? "Reordering..." : "Reorder"}
+                            {saving ? tr("reordering") : tr("reorder")}
                         </button>
                     </div>
                 </div>

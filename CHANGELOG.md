@@ -2,7 +2,13 @@
 
 ## 2026-08-23
 
-### 🐛 Desktop fixes batch (issue #689)
+### 🐛 Desktop fixes batch (issue #689) + Test coverage 70%+ (issue #691)
+
+- **Coverance desktop frontend portata al 79.77%** (era 71.46%)
+- **680 test totali** (da 375, +305 nuovi test)
+- **Tutti i file desktop ora >= 70%** di statements coverage
+- Nuovi test file: GuestConvertBanner (7), useCloudSync (39), Settings (49), Login (21), Wizard (21), EditorPage (73)
+- Test esistenti ampliati: GoogleLoginButton (5→12), SplitPagesModal (6→13), RemovePagesModal (7→13), ReorderPagesModal (7→23)
 
 - **Fix #1:** Login error mapping — ora mostra "Email non trovata" / "Password errata" invece di "Errore imprevisto"
 - **Fix #2:** Aggiunta chiave i18n `settings.cloud` in EN e IT
@@ -14,7 +20,7 @@
 - **Fix #8:** Versione letta da i18n invece di fallback hardcoded v0.1.33
 - **Fix #9:** Pulsanti mock Organize/Convert sostituiti con Download funzionante
 - **i18n completa:** Tutte le pagine e componenti tradotti (wizard, login, register, profile, license, startup, modali, password input)
-- **Test:** 375 test desktop frontend — tutti passanti
+- **Test:** 680 test desktop frontend — tutti passanti
 - **Cloud sync:** Mappa persistente localId→cloudId in localStorage per evitare re-sync
 - **Cloud sync:** Match per filename per PDF già caricati prima della mappa
 - **Cloud sync:** Sync all'avvio configurabile

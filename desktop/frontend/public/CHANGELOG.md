@@ -2,8 +2,12 @@
 
 ## 2026-08-22
 
-### � Mobile bug fixes + Desktop cartella predefinita
+### 🧪 Desktop test coverage 70%+ + Mobile bug fixes + Desktop cartella predefinita
 
+- **680 test** (da 375), **79.77% statements coverage**
+- Tutti i file desktop frontend >= 70% coverage
+- Nuovi test: GuestConvertBanner, useCloudSync, Settings, Login, Wizard, EditorPage
+- Test ampliati: GoogleLoginButton, SplitPagesModal, RemovePagesModal, ReorderPagesModal
 - **Desktop:** Cartella predefinita per salvataggio PDF (wizard + preferenze)
 - **Mobile:** Schermata di caricamento durante restore session (remember me)
 - **Mobile:** Mostra snackbar di errore quando upload su cloud fallisce

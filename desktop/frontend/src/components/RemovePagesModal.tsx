@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
 
@@ -76,6 +77,7 @@ export default function RemovePagesModal({ open, pdfId, pdfName, totalPages, pdf
     const [error, setError] = React.useState<string | null>(null);
     const [newFilename, setNewFilename] = React.useState(pdfName);
     const [overwrite, setOverwrite] = React.useState(false);
+    const tr = useTranslations("removeModal");
 
     React.useEffect(() => {
         if (open) {
@@ -127,7 +129,7 @@ export default function RemovePagesModal({ open, pdfId, pdfName, totalPages, pdf
     async function handleSave() {
         const pages = getPagesToRemove();
         if (pages.length === 0) {
-            setError("Seleziona o inserisci almeno una pagina da rimuovere.");
+            setError(tr("validationError"));
             return;
         }
         setSaving(true);
@@ -137,7 +139,7 @@ export default function RemovePagesModal({ open, pdfId, pdfName, totalPages, pdf
             onSaved(updated);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to remove pages");
+            setError(err instanceof Error ? err.message : tr("removeError"));
         } finally {
             setSaving(false);
         }
@@ -149,13 +151,13 @@ export default function RemovePagesModal({ open, pdfId, pdfName, totalPages, pdf
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
             <div className="w-full max-w-2xl max-h-[85vh] rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl flex flex-col">
                 <div className="flex items-center justify-between mb-4 shrink-0">
-                    <h2 className="text-base font-bold text-white">Remove Pages</h2>
+                    <h2 className="text-base font-bold text-white">{tr("title")}</h2>
                     <button onClick={onClose} className="h-8 w-8 rounded-lg text-[#9a8d80] hover:bg-white/10 transition-colors">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mx-auto"><path d="M18 6L6 18M6 6l12 12" /></svg>
                     </button>
                 </div>
 
-                <p className="mb-4 text-xs text-[#8d8175] shrink-0">{pdfName} ({totalPages} pages)</p>
+                <p className="mb-4 text-xs text-[#8d8175] shrink-0">{pdfName} ({tr("pageCount", { count: totalPages })})</p>
 
                 {/* Page thumbnails grid */}
                 {pdfUrl && (
@@ -177,19 +179,19 @@ export default function RemovePagesModal({ open, pdfId, pdfName, totalPages, pdf
                 {/* Manual input */}
                 <div className="shrink-0 space-y-4">
                     <div>
-                        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#8d8175]">Or enter page numbers manually</label>
+                        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#8d8175]">{tr("manualInputLabel")}</label>
                         <input
                             value={pageInput}
                             onChange={(e) => setPageInput(e.target.value)}
                             className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-[#5a4f44] outline-none transition focus:border-[#f7871f]/50"
-                            placeholder="e.g. 1,3,5-8"
+                            placeholder={tr("pageInputPlaceholder")}
                         />
-                        <p className="mt-1 text-[10px] text-[#7e7267]">Single: 1,3,5 &middot; Range: 5-8 &middot; Max: {totalPages}</p>
+                        <p className="mt-1 text-[10px] text-[#7e7267]">{tr("pageInputHint", { max: totalPages })}</p>
                     </div>
 
                     {/* Filename + overwrite */}
                     <div>
-                        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#8d8175]">Filename</label>
+                        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#8d8175]">{tr("filenameLabel")}</label>
                         <input
                             value={newFilename}
                             onChange={(e) => setNewFilename(e.target.value)}
@@ -198,15 +200,15 @@ export default function RemovePagesModal({ open, pdfId, pdfName, totalPages, pdf
                     </div>
                     <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5">
                         <input type="checkbox" id="remove-overwrite" checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} className="h-4 w-4 accent-[#f7871f]" />
-                        <label htmlFor="remove-overwrite" className="text-xs text-[#c4b8ab] cursor-pointer select-none">Overwrite existing file (instead of creating a copy)</label>
+                        <label htmlFor="remove-overwrite" className="text-xs text-[#c4b8ab] cursor-pointer select-none">{tr("overwrite")}</label>
                     </div>
 
                     {error && <p className="text-xs text-red-400">{error}</p>}
 
                     <div className="flex gap-3 pt-2">
-                        <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5">Cancel</button>
+                        <button onClick={onClose} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5">{tr("cancel")}</button>
                         <button onClick={handleSave} disabled={saving} className="flex-1 rounded-xl bg-[#f7871f] py-2.5 text-sm font-semibold text-white transition hover:bg-[#ce5a00] disabled:opacity-50">
-                            {saving ? "Removing..." : `Remove ${getPagesToRemove().length} page${getPagesToRemove().length !== 1 ? "s" : ""}`}
+                            {saving ? tr("removing") : tr("remove", { count: getPagesToRemove().length })}
                         </button>
                     </div>
                 </div>
