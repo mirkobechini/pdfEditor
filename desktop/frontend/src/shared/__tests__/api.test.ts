@@ -271,29 +271,25 @@ describe("ApiClient CRUD operations", () => {
   });
 
   it("login throws raw error code on failure", async () => {
-    globalThis.fetch = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            detail: { code: "EMAIL_NOT_FOUND", detail: "Email not registered" },
-          }),
-          { status: 401 },
-        ),
-      );
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          detail: { code: "EMAIL_NOT_FOUND", detail: "Email not registered" },
+        }),
+        { status: 401 },
+      ),
+    );
     await expect(api.login("missing@test.com", "pass")).rejects.toThrow(
       "EMAIL_NOT_FOUND",
     );
   });
 
   it("login throws extracted error when no code", async () => {
-    globalThis.fetch = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ detail: "Wrong password" }), {
-          status: 401,
-        }),
-      );
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: "Wrong password" }), {
+        status: 401,
+      }),
+    );
     await expect(api.login("test@test.com", "wrong")).rejects.toThrow();
   });
 
@@ -385,13 +381,11 @@ describe("ApiClient CRUD operations", () => {
 
   it("_fetch does not auto-refresh on 401 with INVALID_CREDENTIALS", async () => {
     (api as any).token = "expired-jwt";
-    globalThis.fetch = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ detail: "INVALID_CREDENTIALS" }), {
-          status: 401,
-        }),
-      );
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: "INVALID_CREDENTIALS" }), {
+        status: 401,
+      }),
+    );
     await expect(api.getMe()).rejects.toThrow();
     // The refresh attempt happens but fails (returns null), so fetch is called twice
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
@@ -433,15 +427,208 @@ describe("ApiClient CRUD operations", () => {
   });
 
   it("refreshCsrf stores csrf_token from response", async () => {
-    globalThis.fetch = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ csrf_token: "csrf456" }), {
-          status: 200,
-        }),
-      );
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ csrf_token: "csrf456" }), {
+        status: 200,
+      }),
+    );
     await api.refreshCsrf();
     expect((api as any)._csrfToken).toBe("csrf456");
+  });
+});
+
+describe("uploadPdfWithProgress", () => {
+  let xhrInstance: any;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    (api as any).token = null;
+    (api as any)._csrfToken = null;
+    vi.stubGlobal(
+      "XMLHttpRequest",
+      class {
+        upload: any;
+        status = 200;
+        statusText = "OK";
+        responseText = "";
+        withCredentials = false;
+        headers: Record<string, string> = {};
+        open = vi.fn();
+        setRequestHeader = vi.fn((k: string, v: string) => {
+          this.headers[k] = v;
+        });
+        send = vi.fn();
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        constructor() {
+          this.upload = { onprogress: null };
+          xhrInstance = this;
+        }
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("resolves with parsed PDF on success", async () => {
+    const file = new File(["dummy"], "doc.pdf", { type: "application/pdf" });
+    const promise = api.uploadPdfWithProgress(file);
+    xhrInstance.status = 201;
+    xhrInstance.responseText = JSON.stringify({
+      id: "p1",
+      original_filename: "doc.pdf",
+    });
+    xhrInstance.onload!();
+    const result = await promise;
+    expect(result.id).toBe("p1");
+    expect(xhrInstance.open).toHaveBeenCalledWith(
+      "POST",
+      expect.stringContaining("/pdfs/upload"),
+    );
+    expect(xhrInstance.withCredentials).toBe(true);
+    expect(xhrInstance.send).toHaveBeenCalled();
+  });
+
+  it("rejects with detail string on error status", async () => {
+    const file = new File(["dummy"], "doc.pdf", { type: "application/pdf" });
+    const promise = api.uploadPdfWithProgress(file);
+    xhrInstance.status = 400;
+    xhrInstance.statusText = "Bad Request";
+    xhrInstance.responseText = JSON.stringify({ detail: "File troppo grande" });
+    xhrInstance.onload!();
+    await expect(promise).rejects.toThrow("File troppo grande");
+  });
+
+  it("rejects with first array msg on error status", async () => {
+    const file = new File(["dummy"], "doc.pdf", { type: "application/pdf" });
+    const promise = api.uploadPdfWithProgress(file);
+    xhrInstance.status = 422;
+    xhrInstance.statusText = "Unprocessable";
+    xhrInstance.responseText = JSON.stringify({
+      detail: [{ msg: "field required" }],
+    });
+    xhrInstance.onload!();
+    await expect(promise).rejects.toThrow("field required");
+  });
+
+  it("rejects with statusText for non-JSON error body", async () => {
+    const file = new File(["dummy"], "doc.pdf", { type: "application/pdf" });
+    const promise = api.uploadPdfWithProgress(file);
+    xhrInstance.status = 500;
+    xhrInstance.statusText = "Internal Server Error";
+    xhrInstance.responseText = "not json";
+    xhrInstance.onload!();
+    await expect(promise).rejects.toThrow("Internal Server Error");
+  });
+
+  it("rejects with Network error on xhr.onerror", async () => {
+    const file = new File(["dummy"], "doc.pdf", { type: "application/pdf" });
+    const promise = api.uploadPdfWithProgress(file);
+    xhrInstance.onerror!();
+    await expect(promise).rejects.toThrow("Network error");
+  });
+
+  it("calls onProgress when length is computable", async () => {
+    const onProgress = vi.fn();
+    const file = new File(["dummy"], "doc.pdf", { type: "application/pdf" });
+    const promise = api.uploadPdfWithProgress(file, onProgress);
+    xhrInstance.status = 201;
+    xhrInstance.responseText = JSON.stringify({ id: "p1" });
+    xhrInstance.upload.onprogress({
+      lengthComputable: true,
+      loaded: 50,
+      total: 100,
+    });
+    expect(onProgress).toHaveBeenCalledWith(50);
+    xhrInstance.onload!();
+    await promise;
+  });
+
+  it("does not call onProgress when length is not computable", async () => {
+    const onProgress = vi.fn();
+    const file = new File(["dummy"], "doc.pdf", { type: "application/pdf" });
+    const promise = api.uploadPdfWithProgress(file, onProgress);
+    xhrInstance.status = 201;
+    xhrInstance.responseText = JSON.stringify({ id: "p1" });
+    xhrInstance.upload.onprogress({ lengthComputable: false });
+    expect(onProgress).not.toHaveBeenCalled();
+    xhrInstance.onload!();
+    await promise;
+  });
+
+  it("sets Authorization header when token present", async () => {
+    (api as any).token = "jwt123";
+    const file = new File(["dummy"], "doc.pdf", { type: "application/pdf" });
+    const promise = api.uploadPdfWithProgress(file);
+    expect(xhrInstance.headers["Authorization"]).toBe("Bearer jwt123");
+    xhrInstance.status = 201;
+    xhrInstance.responseText = JSON.stringify({ id: "p1" });
+    xhrInstance.onload!();
+    await promise;
+  });
+
+  it("sets X-CSRF-Token header when csrf present", async () => {
+    (api as any)._csrfToken = "csrf123";
+    const file = new File(["dummy"], "doc.pdf", { type: "application/pdf" });
+    const promise = api.uploadPdfWithProgress(file);
+    expect(xhrInstance.headers["X-CSRF-Token"]).toBe("csrf123");
+    xhrInstance.status = 201;
+    xhrInstance.responseText = JSON.stringify({ id: "p1" });
+    xhrInstance.onload!();
+    await promise;
+  });
+});
+
+describe("getToken and _fetch edge cases", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    (api as any).token = null;
+    (api as any)._csrfToken = null;
+    (api as any)._isRefreshing = false;
+  });
+
+  it("getToken returns current token", () => {
+    (api as any).token = "jwt123";
+    expect(api.getToken()).toBe("jwt123");
+  });
+
+  it("getToken returns null when no token set", () => {
+    (api as any).token = null;
+    expect(api.getToken()).toBeNull();
+  });
+
+  it("_fetch does not auto-refresh when detail is not a string", async () => {
+    (api as any).token = "expired-jwt";
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: { code: "X" } }), {
+        status: 401,
+      }),
+    );
+    await expect(api.getMe()).rejects.toThrow();
+    // detail is object → no refresh attempt
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("_fetch does not auto-refresh when body is not JSON", async () => {
+    (api as any).token = "expired-jwt";
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response("not json", { status: 401 }));
+    await expect(api.getMe()).rejects.toThrow();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("_fetch does not auto-refresh when detail is unrelated string", async () => {
+    (api as any).token = "expired-jwt";
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: "Some other error" }), {
+        status: 401,
+      }),
+    );
+    await expect(api.getMe()).rejects.toThrow();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 });
 
