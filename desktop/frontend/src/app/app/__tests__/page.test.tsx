@@ -16,6 +16,7 @@ const mockTauriInvoke = vi.fn();
 let mockUser: any = { id: "u1", email: "test@test.com", full_name: "Test User", license_tier: "pro" };
 let mockPrefs: any = { language: "it", default_zoom: 100, default_save_folder: "" };
 let mockSyncStatus: Record<string, string> = {};
+let mockIsTauri = false;
 
 vi.mock("next-intl", () => ({
     useTranslations: () => (key: string) => {
@@ -70,7 +71,7 @@ vi.mock("../../../shared/auth", () => ({
 }));
 
 vi.mock("../../../shared/tauri", () => ({
-    isTauri: () => false,
+    isTauri: () => mockIsTauri,
     getApiBaseUrl: () => "http://127.0.0.1:7723",
     tauriInvoke: (...args: any[]) => mockTauriInvoke(...args),
 }));
@@ -1411,5 +1412,84 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         const downloadBtn = screen.getByText("Scarica");
         expect(downloadBtn).toBeDisabled();
+    });
+
+    // ── 1a: handleDownload ─────────────────────────────────
+
+    it("1a: handles download via tauriInvoke", async () => {
+        mockTauriInvoke.mockResolvedValue("/saved/path.pdf");
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText("Scarica")).not.toBeDisabled();
+        });
+        fireEvent.click(screen.getByText("Scarica"));
+        await waitFor(() => {
+            expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_save", expect.objectContaining({
+                defaultName: "doc.pdf",
+            }));
+        });
+    });
+
+    it("1a: handles download with default save folder", async () => {
+        mockPrefs = { ...mockPrefs, default_save_folder: "/default/folder" };
+        mockTauriInvoke.mockResolvedValue("/saved/path.pdf");
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText("Scarica")).not.toBeDisabled();
+        });
+        fireEvent.click(screen.getByText("Scarica"));
+        await waitFor(() => {
+            expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_save", expect.objectContaining({
+                defaultFolder: "/default/folder",
+            }));
+        });
+    });
+
+    it("1a: handles download error gracefully", async () => {
+        mockDownloadPdf.mockRejectedValue(new Error("Download failed"));
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText("Scarica")).not.toBeDisabled();
+        });
+        fireEvent.click(screen.getByText("Scarica"));
+        await new Promise((r) => setTimeout(r, 100));
+    });
+
+    it("1a: handles download with tauriInvoke failure", async () => {
+        mockTauriInvoke.mockRejectedValue(new Error("Tauri error"));
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText("Scarica")).not.toBeDisabled();
+        });
+        fireEvent.click(screen.getByText("Scarica"));
+        await new Promise((r) => setTimeout(r, 100));
     });
 });
