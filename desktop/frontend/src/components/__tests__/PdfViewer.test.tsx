@@ -58,7 +58,7 @@ describe("PdfViewer", () => {
   });
 
   it("handles PDF load error gracefully", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
     (window as any).pdfjsLib = {
       GlobalWorkerOptions: { workerSrc: "" },
       getDocument: vi.fn().mockReturnValue({ promise: Promise.reject(new Error("PDF load failed")) }),
@@ -97,7 +97,7 @@ describe("PdfViewer", () => {
   });
 
   it("handles render error with Node cannot be found", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
     const mockPage = {
       getViewport: () => ({ width: 100, height: 150 }),
       render: () => ({ promise: Promise.reject(new Error("Node cannot be found")) }),
@@ -112,7 +112,7 @@ describe("PdfViewer", () => {
   });
 
   it("handles render error with other error", async () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
     const mockPage = {
       getViewport: () => ({ width: 100, height: 150 }),
       render: () => ({ promise: Promise.reject(new Error("Some render error")) }),
@@ -130,7 +130,7 @@ describe("PdfViewer", () => {
   it("shows rendering spinner while loading", () => {
     (window as any).pdfjsLib = {
       GlobalWorkerOptions: { workerSrc: "" },
-      getDocument: vi.fn().mockReturnValue({ promise: new Promise(() => {}) }),
+      getDocument: vi.fn().mockReturnValue({ promise: new Promise(() => { }) }),
     };
     render(<PdfViewer {...defaultProps} fileUrl="blob:test" />);
     // The spinner is shown when rendering is true (set in the render effect)

@@ -738,7 +738,7 @@ describe("SettingsPage", () => {
 
     it("shows changelog loading state", () => {
         const origFetch = globalThis.fetch;
-        globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => {}));
+        globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => { }));
         render(<SettingsPage />);
         fireEvent.click(screen.getByText("Informazioni"));
         fireEvent.click(screen.getByText("Novità"));
@@ -858,7 +858,7 @@ describe("SettingsPage", () => {
     });
 
     it("shows bug report modal sending state", async () => {
-        mockCreateBugReport.mockImplementation(() => new Promise(() => {}));
+        mockCreateBugReport.mockImplementation(() => new Promise(() => { }));
         render(<SettingsPage />);
         fireEvent.click(screen.getByText("Informazioni"));
         fireEvent.click(screen.getByText("Segnala bug"));
