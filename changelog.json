@@ -1,19 +1,13 @@
 {
   "desktop": [
     {
-      "version": "v0.1.37",
+      "version": "v0.1.36",
       "date": "2026-08-25",
       "changes": [
         "Desktop test coverage 70%+: 680 test (da 375), 79.77% statements",
         "Nuovi test: GuestConvertBanner, useCloudSync, Settings, Login, Wizard, EditorPage",
         "Test ampliati: GoogleLoginButton, SplitPagesModal, RemovePagesModal, ReorderPagesModal",
-        "Tutti i file desktop frontend >= 70% coverage"
-      ]
-    },
-    {
-      "version": "v0.1.36",
-      "date": "2026-08-23",
-      "changes": [
+        "Tutti i file desktop frontend >= 70% coverage",
         "Desktop fixes batch #689: 9 fix + i18n completa + 375 test",
         "Cloud sync: mappa persistente localId→cloudId, match per filename, sync all'avvio",
         "Cloud sync: feedback dialog, PDF protetti saltati, deletePdf local/cloud/both",
