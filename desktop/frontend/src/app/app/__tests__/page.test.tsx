@@ -1492,4 +1492,56 @@ describe("EditorPage", () => {
         fireEvent.click(screen.getByText("Scarica"));
         await new Promise((r) => setTimeout(r, 100));
     });
+
+    // ── 1b: handleOpenLocal ────────────────────────────────
+
+    it("1b: handles open local with Tauri dialog", async () => {
+        mockIsTauri = true;
+        mockTauriInvoke
+            .mockResolvedValueOnce("/path/to/file.pdf")
+            .mockResolvedValueOnce([37, 80, 68, 70]);
+        mockUploadPdf.mockResolvedValue({ id: "p1", original_filename: "file.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" });
+        render(<EditorPage />);
+        fireEvent.click(screen.getByText("Apri PDF"));
+        await waitFor(() => {
+            expect(mockUploadPdf).toHaveBeenCalled();
+        });
+    });
+
+    it("1b: handles open local with Tauri dialog cancelled", async () => {
+        mockIsTauri = true;
+        mockTauriInvoke.mockResolvedValueOnce(null);
+        render(<EditorPage />);
+        fireEvent.click(screen.getByText("Apri PDF"));
+        await new Promise((r) => setTimeout(r, 100));
+        expect(mockUploadPdf).not.toHaveBeenCalled();
+    });
+
+    it("1b: handles open local with Tauri read failure", async () => {
+        mockIsTauri = true;
+        mockTauriInvoke
+            .mockResolvedValueOnce("/path/to/file.pdf")
+            .mockResolvedValueOnce(null);
+        render(<EditorPage />);
+        fireEvent.click(screen.getByText("Apri PDF"));
+        await new Promise((r) => setTimeout(r, 100));
+        expect(mockUploadPdf).not.toHaveBeenCalled();
+    });
+
+    it("1b: handles open local with work folder from localStorage", async () => {
+        mockIsTauri = true;
+        localStorage.setItem("pdfeditor_work_folder", "/work/folder");
+        mockTauriInvoke
+            .mockResolvedValueOnce("/work/folder/doc.pdf")
+            .mockResolvedValueOnce([37, 80, 68, 70]);
+        mockUploadPdf.mockResolvedValue({ id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" });
+        render(<EditorPage />);
+        fireEvent.click(screen.getByText("Apri PDF"));
+        await waitFor(() => {
+            expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_open", expect.objectContaining({
+                defaultPath: "/work/folder",
+            }));
+        });
+        localStorage.removeItem("pdfeditor_work_folder");
+    });
 });
