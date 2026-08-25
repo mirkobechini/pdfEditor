@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import React from "react";
 import EditorPage from "../page";
 
@@ -111,28 +111,49 @@ vi.mock("../../../components/PdfViewer", () => ({
     },
 }));
 
+// Store onSaved callbacks so tests can trigger them
+const modalCallbacks: Record<string, any> = {};
+
 vi.mock("../../../components/MetadataModal", () => ({
-    default: ({ open }: any) => open ? <div data-testid="metadata-modal">Metadata</div> : null,
+    default: ({ open, onSaved }: any) => {
+        modalCallbacks.metadata = onSaved;
+        return open ? <div data-testid="metadata-modal">Metadata</div> : null;
+    },
 }));
 
 vi.mock("../../../components/RemovePagesModal", () => ({
-    default: ({ open }: any) => open ? <div data-testid="remove-modal">Remove</div> : null,
+    default: ({ open, onSaved }: any) => {
+        modalCallbacks.remove = onSaved;
+        return open ? <div data-testid="remove-modal">Remove</div> : null;
+    },
 }));
 
 vi.mock("../../../components/ReorderPagesModal", () => ({
-    default: ({ open }: any) => open ? <div data-testid="reorder-modal">Reorder</div> : null,
+    default: ({ open, onSaved }: any) => {
+        modalCallbacks.reorder = onSaved;
+        return open ? <div data-testid="reorder-modal">Reorder</div> : null;
+    },
 }));
 
 vi.mock("../../../components/SplitPagesModal", () => ({
-    default: ({ open }: any) => open ? <div data-testid="split-modal">Split</div> : null,
+    default: ({ open, onSaved }: any) => {
+        modalCallbacks.split = onSaved;
+        return open ? <div data-testid="split-modal">Split</div> : null;
+    },
 }));
 
 vi.mock("../../../components/MergeModal", () => ({
-    default: ({ open }: any) => open ? <div data-testid="merge-modal">Merge</div> : null,
+    default: ({ open, onSaved }: any) => {
+        modalCallbacks.merge = onSaved;
+        return open ? <div data-testid="merge-modal">Merge</div> : null;
+    },
 }));
 
 vi.mock("../../../components/LockUnlockModal", () => ({
-    default: ({ open }: any) => open ? <div data-testid="lock-modal">Lock</div> : null,
+    default: ({ open, onSaved }: any) => {
+        modalCallbacks.lock = onSaved;
+        return open ? <div data-testid="lock-modal">Lock</div> : null;
+    },
 }));
 
 vi.mock("../../components/GuestConvertBanner", () => ({
@@ -2024,5 +2045,120 @@ describe("EditorPage", () => {
         await waitFor(() => {
             expect(screen.queryByText("missing.pdf")).not.toBeInTheDocument();
         }, { timeout: 3000 });
+    });
+
+    // ── 1j: modal onSaved callbacks ────────────────────────
+
+    it("1j: handles metadata modal onSaved", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByText("Metadati"));
+        expect(screen.getByTestId("metadata-modal")).toBeInTheDocument();
+        // Trigger onSaved
+        const updatedDoc = { id: "p1", original_filename: "renamed.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" };
+        await act(async () => {
+            modalCallbacks.metadata?.(updatedDoc);
+        });
+        expect(screen.getAllByText("renamed.pdf").length).toBeGreaterThan(0);
+    });
+
+    it("1j: handles remove modal onSaved", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByText("Rimuovi"));
+        expect(screen.getByTestId("remove-modal")).toBeInTheDocument();
+        const updatedDoc = { id: "p1", original_filename: "removed.pdf", file_size: 1024, page_count: 2, created_at: "2025-01-01T00:00:00Z", upload_source: "web" };
+        await act(async () => {
+            modalCallbacks.remove?.(updatedDoc);
+        });
+        expect(screen.getAllByText("removed.pdf").length).toBeGreaterThan(0);
+    });
+
+    it("1j: handles reorder modal onSaved", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByText("Riordina"));
+        expect(screen.getByTestId("reorder-modal")).toBeInTheDocument();
+        const updatedDoc = { id: "p1", original_filename: "reordered.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" };
+        await act(async () => {
+            modalCallbacks.reorder?.(updatedDoc);
+        });
+        expect(screen.getAllByText("reordered.pdf").length).toBeGreaterThan(0);
+    });
+
+    it("1j: handles merge modal onSaved", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByText("Unisci"));
+        expect(screen.getByTestId("merge-modal")).toBeInTheDocument();
+        const updatedDoc = { id: "p1", original_filename: "merged.pdf", file_size: 1024, page_count: 6, created_at: "2025-01-01T00:00:00Z", upload_source: "web" };
+        await act(async () => {
+            modalCallbacks.merge?.(updatedDoc);
+        });
+        expect(screen.getAllByText("merged.pdf").length).toBeGreaterThan(0);
+    });
+
+    it("1j: handles split modal onSaved", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByText("Dividi"));
+        expect(screen.getByTestId("split-modal")).toBeInTheDocument();
+        const newDocs = [
+            { id: "s1", original_filename: "part1.pdf", file_size: 512, page_count: 1, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            { id: "s2", original_filename: "part2.pdf", file_size: 512, page_count: 2, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+        ];
+        await act(async () => {
+            modalCallbacks.split?.(newDocs);
+        });
+        expect(screen.getAllByText("part1.pdf").length).toBeGreaterThan(0);
+        expect(screen.getAllByText("part2.pdf").length).toBeGreaterThan(0);
+    });
+
+    it("1j: handles lock modal onSaved", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByText("LOCK"));
+        expect(screen.getByTestId("lock-modal")).toBeInTheDocument();
+        const updatedDoc = { id: "p1", original_filename: "locked.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web", is_password_protected: true };
+        await act(async () => {
+            modalCallbacks.lock?.(updatedDoc);
+        });
+        expect(screen.getAllByText("locked.pdf").length).toBeGreaterThan(0);
     });
 });
