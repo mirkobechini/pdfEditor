@@ -20,7 +20,7 @@
 - **Fix #8:** Versione letta da i18n invece di fallback hardcoded v0.1.33
 - **Fix #9:** Pulsanti mock Organize/Convert sostituiti con Download funzionante
 - **i18n completa:** Tutte le pagine e componenti tradotti (wizard, login, register, profile, license, startup, modali, password input)
-- **Test:** 375 test desktop frontend — tutti passanti
+- **Test:** 680 test desktop frontend — tutti passanti
 - **Cloud sync:** Mappa persistente localId→cloudId in localStorage per evitare re-sync
 - **Cloud sync:** Match per filename per PDF già caricati prima della mappa
 - **Cloud sync:** Sync all'avvio configurabile

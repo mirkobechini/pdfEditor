@@ -97,7 +97,7 @@
 
 ### T2 — Zero test E2E / integration
 
-**Descrizione:** 359 test backend (con `TestClient` same-origin) + 375 test frontend (jsdom) + 182 test mobile. Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS).  
+**Descrizione:** 359 test backend (con `TestClient` same-origin) + 680 test frontend (vitest) + 182 test mobile. Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS).  
 **Risoluzione prevista:** Playwright (T7).
 
 ### T3 — `@swc/helpers` lock file desync
