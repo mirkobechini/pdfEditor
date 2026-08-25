@@ -153,13 +153,13 @@
 | ---------------------------- | ------------------ | ---------- | --------------------------------------------- |
 | Backend totale               | 94% (359 test)     | ❌ No      | 1 pre-existing fail (test_seed_super_admin)   |
 | Frontend totale              | ~75% (363+ test)   | ❌ No      | 22 test login + auth remember-me aggiunti     |
-| **Desktop totale**           | **71% (370 test)** | ❌ No      | Target 70% raggiunto (issue #665)             |
+| **Desktop totale**           | **79.77% (680 test)** | ❌ No      | Target 70% raggiunto (issue #665), target 90% in corso (issue #693) |
 | Desktop: Settings/Profile    | 51% / 38%          | ❌ No      | Da migliorare (non bloccante)                 |
 | Desktop: Wizard/Startup      | 66% / 46%          | ❌ No      | Da migliorare (non bloccante)                 |
-| Desktop: PdfViewer           | 57%                | ❌ No      | Rendering PDF.js in jsdom                     |
-| Desktop: GoogleLoginButton   | 40%                | ❌ No      | Redirect flow difficile da testare            |
+| Desktop: PdfViewer           | 81.7%              | ❌ No      | Rendering PDF.js in jsdom                     |
+| Desktop: GoogleLoginButton   | 76.31%             | ❌ No      | Redirect flow difficile da testare            |
 | Admin page                   | 67%                | ❌ No      | API calls non testate                         |
-| Reorder/Split/Remove dialogs | 34-44%             | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom |
+| ReorderPagesModal DnD        | 81.17%             | ❌ No      | DnD handlers (@dnd-kit) non copribili in jsdom — richiedono test E2E con Playwright |
 
 ---
 
