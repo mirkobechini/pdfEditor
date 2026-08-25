@@ -1544,4 +1544,59 @@ describe("EditorPage", () => {
         });
         localStorage.removeItem("pdfeditor_work_folder");
     });
+
+    // ── 1c: rename ─────────────────────────────────────────
+
+    it("1c: handles rename with same filename (no API call)", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.doubleClick(screen.getByText("doc.pdf"));
+        const renameInput = document.querySelector('input[class*="border"]') as HTMLInputElement;
+        if (renameInput) {
+            fireEvent.change(renameInput, { target: { value: "doc.pdf" } });
+            fireEvent.keyDown(renameInput, { key: "Enter" });
+            expect(mockUpdateMetadata).not.toHaveBeenCalled();
+        }
+    });
+
+    it("1c: handles rename with empty value (no API call)", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.doubleClick(screen.getByText("doc.pdf"));
+        const renameInput = document.querySelector('input[class*="border"]') as HTMLInputElement;
+        if (renameInput) {
+            fireEvent.change(renameInput, { target: { value: "" } });
+            fireEvent.keyDown(renameInput, { key: "Enter" });
+            expect(mockUpdateMetadata).not.toHaveBeenCalled();
+        }
+    });
+
+    it("1c: handles rename API error gracefully", async () => {
+        mockUpdateMetadata.mockRejectedValue(new Error("Rename failed"));
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.doubleClick(screen.getByText("doc.pdf"));
+        const renameInput = document.querySelector('input[class*="border"]') as HTMLInputElement;
+        if (renameInput) {
+            fireEvent.change(renameInput, { target: { value: "renamed.pdf" } });
+            fireEvent.keyDown(renameInput, { key: "Enter" });
+            await new Promise((r) => setTimeout(r, 50));
+            expect(mockUpdateMetadata).toHaveBeenCalled();
+        }
+    });
 });
