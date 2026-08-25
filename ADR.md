@@ -42,15 +42,15 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## 2. Webapp Frontend (Next.js)
 
-| Scelta                                         | Alternativa                               | Motivo                                                                                                                                    |
-| ---------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| React 19 + TailwindCSS v4                      | Vue, Svelte, Angular                      | UI condivisa tra web, desktop e mobile. Ecosistema React maturo.                                                                          |
-| Next.js 16 (app router) con `output: 'export'` | SSR/API Routes                            | Compatibilità Tauri (static export). API tutte su FastAPI.                                                                                |
-| PDF.js (Mozilla) per viewer                    | pdf-lib, PSPDFKit                         | Viewer PDF lato client open source, standard de facto.                                                                                    |
-| vitest + jsdom + @testing-library/react        | Jest, Cypress                             | Test frontend. Coverage ~75%.                                                                                                             |
-| vitest (desktop) + @testing-library/react      | —                                         | **680 test, 79.77% coverage** (issue #691). CI dedicata `ci-desktop.yml` con path filter. Tutti i file >= 70%.                            |
-| CI strutturata per piattaforma                 | Singolo test.yml                          | `ci-web.yml` (backend+frontend), `ci-desktop.yml` (desktop), `ci-mobile.yml` (mobile). Ogni CI si attiva solo sui path della piattaforma. |
-| Dark mode con persistenza                      | localStorage + system preference fallback | —                                                                                                                                         |
+| Scelta                                         | Alternativa                               | Motivo                                                                                                                                                          |
+| ---------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| React 19 + TailwindCSS v4                      | Vue, Svelte, Angular                      | UI condivisa tra web, desktop e mobile. Ecosistema React maturo.                                                                                                |
+| Next.js 16 (app router) con `output: 'export'` | SSR/API Routes                            | Compatibilità Tauri (static export). API tutte su FastAPI.                                                                                                      |
+| PDF.js (Mozilla) per viewer                    | pdf-lib, PSPDFKit                         | Viewer PDF lato client open source, standard de facto.                                                                                                          |
+| vitest + jsdom + @testing-library/react        | Jest, Cypress                             | Test frontend. Coverage ~75%.                                                                                                                                   |
+| vitest (desktop) + @testing-library/react      | —                                         | **897 test, 91.41% coverage** (issue #693). CI dedicata `ci-desktop.yml` con path filter. Tutti i file >= 90% (eccetto ReorderPagesModal, limite DnD in jsdom). |
+| CI strutturata per piattaforma                 | Singolo test.yml                          | `ci-web.yml` (backend+frontend), `ci-desktop.yml` (desktop), `ci-mobile.yml` (mobile). Ogni CI si attiva solo sui path della piattaforma.                       |
+| Dark mode con persistenza                      | localStorage + system preference fallback | —                                                                                                                                                               |
 
 ---
 

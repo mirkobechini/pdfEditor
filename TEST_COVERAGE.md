@@ -12,10 +12,10 @@
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
 | **Backend** (FastAPI/Python)   | pytest      | **371** | **88%**    | ✅    |
 | **Webapp** (Next.js/React)     | vitest      | **363** | ~75%       | ✅    |
-| **Desktop** (Tauri)            | vitest      | **680** | **79.77%** | ✅    |
+| **Desktop** (Tauri)            | vitest      | **897** | **91.41%** | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **182** | ~77% lines | ✅    |
 
-> ℹ️ **Desktop**: 680 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Tutti i file >= 70% coverage. Target 90% in corso (issue #693).
+> ℹ️ **Desktop**: 897 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **91.41% statements, 94.88% lines**.
 >
 > ⚠️ **Nota:** `ReorderPagesModal` ha i callback DnD (`@dnd-kit/core`) non copribili in jsdom — richiedono test E2E con Playwright. Coverage ferma a 81.17% per quel file.
 
