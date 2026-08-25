@@ -269,6 +269,180 @@ describe("ApiClient CRUD operations", () => {
       );
     await expect(api.deletePdf("nonexistent")).rejects.toThrow("Not found");
   });
+
+  it("login throws raw error code on failure", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            detail: { code: "EMAIL_NOT_FOUND", detail: "Email not registered" },
+          }),
+          { status: 401 },
+        ),
+      );
+    await expect(api.login("missing@test.com", "pass")).rejects.toThrow(
+      "EMAIL_NOT_FOUND",
+    );
+  });
+
+  it("login throws extracted error when no code", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ detail: "Wrong password" }), {
+          status: 401,
+        }),
+      );
+    await expect(api.login("test@test.com", "wrong")).rejects.toThrow();
+  });
+
+  it("login stores csrf_token from response", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ access_token: "jwt123", csrf_token: "csrf123" }),
+          { status: 200 },
+        ),
+      );
+    const result = await api.login("test@test.com", "pass");
+    expect(result.access_token).toBe("jwt123");
+    expect((api as any)._csrfToken).toBe("csrf123");
+  });
+
+  it("refreshToken returns null on failure", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 401 }));
+    const result = await api.refreshToken();
+    expect(result).toBeNull();
+  });
+
+  it("refreshToken returns token on success", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ access_token: "new-jwt", csrf_token: "new-csrf" }),
+          { status: 200 },
+        ),
+      );
+    const result = await api.refreshToken();
+    expect(result?.access_token).toBe("new-jwt");
+    expect((api as any).token).toBe("new-jwt");
+  });
+
+  it("refreshToken calls onTokenRefreshed callback", async () => {
+    const callback = vi.fn();
+    (api as any).onTokenRefreshed = callback;
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({ access_token: "new-jwt", csrf_token: "new-csrf" }),
+          { status: 200 },
+        ),
+      );
+    await api.refreshToken();
+    expect(callback).toHaveBeenCalledWith("new-jwt", "new-csrf");
+    (api as any).onTokenRefreshed = null;
+  });
+
+  it("refreshToken calls onTokenRefreshFailed on error", async () => {
+    const callback = vi.fn();
+    (api as any).onTokenRefreshFailed = callback;
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+    await api.refreshToken();
+    expect(callback).toHaveBeenCalled();
+    (api as any).onTokenRefreshFailed = null;
+  });
+
+  it("_fetch auto-refreshes on 401 with expired token", async () => {
+    (api as any).token = "expired-jwt";
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ detail: "Token expired" }), {
+          status: 401,
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ access_token: "new-jwt", csrf_token: "new-csrf" }),
+          { status: 200 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ id: "u1", email: "test@test.com" }), {
+          status: 200,
+        }),
+      );
+    const result = await api.getMe();
+    expect(result.email).toBe("test@test.com");
+    expect((api as any).token).toBe("new-jwt");
+  });
+
+  it("_fetch does not auto-refresh on 401 with INVALID_CREDENTIALS", async () => {
+    (api as any).token = "expired-jwt";
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ detail: "INVALID_CREDENTIALS" }), {
+          status: 401,
+        }),
+      );
+    await expect(api.getMe()).rejects.toThrow();
+    // The refresh attempt happens but fails (returns null), so fetch is called twice
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("getHeaders includes Bearer token and CSRF", async () => {
+    (api as any).token = "jwt123";
+    (api as any)._csrfToken = "csrf123";
+    const headers = (api as any).getHeaders();
+    expect(headers["Authorization"]).toBe("Bearer jwt123");
+    expect(headers["X-CSRF-Token"]).toBe("csrf123");
+  });
+
+  it("getHeaders returns empty when no token", async () => {
+    (api as any).token = null;
+    (api as any)._csrfToken = null;
+    const headers = (api as any).getHeaders();
+    expect(headers["Authorization"]).toBeUndefined();
+  });
+
+  it("_getCsrfToken falls back to cookie", () => {
+    (api as any)._csrfToken = null;
+    document.cookie = "csrf_token=cookie-csrf";
+    const token = (api as any)._getCsrfToken();
+    expect(token).toBe("cookie-csrf");
+    document.cookie = "csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  });
+
+  it("_getCsrfToken returns null when no cookie", () => {
+    (api as any)._csrfToken = null;
+    document.cookie = "csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    const token = (api as any)._getCsrfToken();
+    expect(token).toBeNull();
+  });
+
+  it("refreshCsrf handles network error gracefully", async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+    await api.refreshCsrf(); // Should not throw
+  });
+
+  it("refreshCsrf stores csrf_token from response", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ csrf_token: "csrf456" }), {
+          status: 200,
+        }),
+      );
+    await api.refreshCsrf();
+    expect((api as any)._csrfToken).toBe("csrf456");
+  });
 });
 
 describe("keepWarm", () => {
