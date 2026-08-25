@@ -3,7 +3,7 @@ import { render, screen, act, waitFor } from "@testing-library/react";
 import { PreferencesProvider, usePreferences } from "../preferences";
 
 const mockGetPreferences = vi.fn();
-const mockUpdatePreferences = vi.fn();
+const mockUpdatePreferences = vi.fn().mockResolvedValue({});
 
 vi.mock("../../shared/api", () => ({
     api: {
