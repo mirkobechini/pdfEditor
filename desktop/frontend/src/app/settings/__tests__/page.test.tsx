@@ -1252,7 +1252,7 @@ describe("SettingsPage", () => {
     it("advanced tab workplace folder picker error", async () => {
         mockIsTauri = true;
         mockTauriInvoke.mockRejectedValue(new Error("Tauri error"));
-        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
         render(<SettingsPage />);
         fireEvent.click(screen.getByText("Avanzate"));
         fireEvent.click(screen.getByText("Scegli"));
@@ -1279,7 +1279,7 @@ describe("SettingsPage", () => {
 
     it("advanced tab clear cache with confirm", () => {
         const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => { });
         render(<SettingsPage />);
         fireEvent.click(screen.getByText("Avanzate"));
         fireEvent.click(screen.getByText("Elimina"));
@@ -1291,7 +1291,7 @@ describe("SettingsPage", () => {
 
     it("advanced tab clear cache without confirm", () => {
         const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => { });
         render(<SettingsPage />);
         fireEvent.click(screen.getByText("Avanzate"));
         fireEvent.click(screen.getByText("Elimina"));
@@ -1302,7 +1302,7 @@ describe("SettingsPage", () => {
     });
 
     it("advanced tab system log alert", () => {
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => { });
         render(<SettingsPage />);
         fireEvent.click(screen.getByText("Avanzate"));
         fireEvent.click(screen.getByText("Apri"));
