@@ -925,4 +925,61 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         expect(screen.getByText("Apri PDF")).toBeInTheDocument();
     });
+
+    it("handles delete confirm action", async () => {
+        mockDeletePdf.mockResolvedValue(undefined);
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getAllByTitle("Elimina")[0]);
+        fireEvent.click(screen.getByText("Elimina"));
+        await waitFor(() => {
+            expect(mockDeletePdf).toHaveBeenCalledWith("p1");
+        });
+    });
+
+    it("handles delete error gracefully", async () => {
+        mockDeletePdf.mockRejectedValue(new Error("Delete failed"));
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getAllByTitle("Elimina")[0]);
+        fireEvent.click(screen.getByText("Elimina"));
+        await waitFor(() => {
+            expect(mockDeletePdf).toHaveBeenCalledWith("p1");
+        });
+    });
+
+    it("handles retry logic when listPdfs fails initially", async () => {
+        mockListPdfs
+            .mockRejectedValueOnce(new Error("Not ready"))
+            .mockResolvedValueOnce({ items: [{ id: "p1", original_filename: "retry.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" }] });
+        render(<EditorPage />);
+        await waitFor(() => {
+            expect(screen.getByText("retry.pdf")).toBeInTheDocument();
+        }, { timeout: 5000 });
+    }, 10000);
+
+    it("handles password-protected doc without error message", async () => {
+        mockDownloadPdf.mockRejectedValue({ message: "protetto da password" });
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "locked.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web", is_password_protected: true },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("locked.pdf");
+        fireEvent.click(screen.getByText("locked.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText("PDF protetto")).toBeInTheDocument();
+        }, { timeout: 3000 });
+    });
 });
