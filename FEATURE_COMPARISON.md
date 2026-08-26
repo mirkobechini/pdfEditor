@@ -60,9 +60,9 @@
 | Snackbar notifiche              | ❌  | ❌      | ✅     | React Native Paper                                                                                                                                   |
 | Bottom tabs                     | ❌  | ❌      | ✅     | Home + Settings                                                                                                                                      |
 | **UX Web/Desktop**              |     |         |        |                                                                                                                                                      |
-| Bug reports                     | ✅  | ✅      | ❌     |                                                                                                                                                      |
-| License management              | ✅  | ✅      | ❌     | Solo backend                                                                                                                                         |
-| Admin panel                     | ✅  | ✅      | ❌     | Solo backend                                                                                                                                         |
+| Bug reports                     | ✅  | ❌      | ❌     | Solo webapp                                                                                                                                          |
+| License management              | ✅  | ❌      | ❌     | Solo webapp                                                                                                                                          |
+| Admin panel                     | ✅  | ❌      | ❌     | Solo webapp                                                                                                                                          |
 | **Non implementato su nessuna** |     |         |        |                                                                                                                                                      |
 | Compressione PDF                | ❌  | ❌      | ❌     | Solo in roadmap                                                                                                                                      |
 | Cloud sync                      | ✅  | ✅      | ✅     | Web: funzionante via API cloud. Desktop: bidirezionale con useCloudSync + mappa persistente localId→cloudId. Mobile: bidirezionale con useCloudSync. |
