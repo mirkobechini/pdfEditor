@@ -62,6 +62,8 @@ function TestConsumer() {
       <button data-testid="btn-register" onClick={() => auth.register("new@test.com", "pass", "Test")}>Register</button>
       <button data-testid="btn-logout" onClick={() => auth.logout()}>Logout</button>
       <button data-testid="btn-guest" onClick={() => auth.guestLogin()}>Guest</button>
+      <button data-testid="btn-google-jwt" onClick={() => auth.googleLogin("eyJhbGciOiJIUzI1NiJ9.dGVzdA.test")}>GoogleJWT</button>
+      <button data-testid="btn-google-id" onClick={() => auth.googleLogin("google-id-token")}>GoogleID</button>
     </div>
   );
 }
@@ -213,8 +215,61 @@ describe("AuthProvider", () => {
 
   it("useAuth throws outside provider", () => {
     // Suppress console.error for expected error
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const spy = vi.spyOn(console, "error").mockImplementation(() => { });
     expect(() => render(<TestConsumer />)).toThrow("useAuth must be used within an AuthProvider");
     spy.mockRestore();
+  });
+
+  it("googleLogin with JWT token (eyJ prefix) in web mode", async () => {
+    mockGetMe.mockResolvedValueOnce({ id: "u1", email: "google-jwt@test.com" });
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-google-jwt"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("google-jwt@test.com");
+    });
+  });
+
+  it("googleLogin with JWT handles api.getMe failure", async () => {
+    mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
+    mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google-cloud@test.com" });
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-google-jwt"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("google-cloud@test.com");
+    });
+  });
+
+  it("googleLogin with id_token exchanges via cloud API", async () => {
+    mockCloudGoogleLogin.mockResolvedValueOnce({ access_token: "exchanged-jwt" });
+    mockGetMe.mockResolvedValueOnce({ id: "u1", email: "google-id@test.com" });
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-google-id"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("google-id@test.com");
+    });
+    expect(mockCloudGoogleLogin).toHaveBeenCalledWith("google-id-token");
+  });
+
+  it("googleLogin with id_token handles api.getMe failure", async () => {
+    mockCloudGoogleLogin.mockResolvedValueOnce({ access_token: "exchanged-jwt" });
+    mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
+    mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google-cloud-id@test.com" });
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-google-id"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("google-cloud-id@test.com");
+    });
   });
 });

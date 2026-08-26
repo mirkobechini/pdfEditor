@@ -178,6 +178,42 @@ describe("LoginPage", () => {
         vi.useRealTimers();
     });
 
+    it("hides backend starting message when health check succeeds", async () => {
+        vi.useFakeTimers();
+        const origFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn().mockResolvedValue({ ok: true });
+
+        render(<LoginPage />);
+
+        // First poll iteration resolves immediately with ok: true
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(screen.queryByText("Avvio backend...")).not.toBeInTheDocument();
+        expect(screen.queryByText("Backend non disponibile")).not.toBeInTheDocument();
+        globalThis.fetch = origFetch;
+        vi.useRealTimers();
+    });
+
+    it("keeps checking when health returns non-ok response", async () => {
+        vi.useFakeTimers();
+        const origFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn().mockResolvedValue({ ok: false });
+
+        render(<LoginPage />);
+
+        // First poll: res.ok is false → loop continues, attempts++
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        // Still checking (not failed yet, only 1 attempt)
+        expect(screen.getByText("Avvio backend...")).toBeInTheDocument();
+        globalThis.fetch = origFetch;
+        vi.useRealTimers();
+    });
+
     // ── Login form submission ─────────────────────────────────
 
     it("calls login on form submit", async () => {

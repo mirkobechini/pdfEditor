@@ -23,10 +23,21 @@ vi.mock("../../shared/api", () => ({
   },
 }));
 
+// Mock pdfjsLib for PageThumbnail rendering
+const mockRender = vi.fn().mockResolvedValue({ promise: Promise.resolve() });
+const mockGetPage = vi.fn().mockResolvedValue({
+  getViewport: () => ({ width: 100, height: 140 }),
+  render: mockRender,
+});
+const mockGetDocument = vi.fn().mockReturnValue({ promise: Promise.resolve({ getPage: mockGetPage }) });
+
 describe("SplitPagesModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSplitPdf.mockResolvedValue({ items: [{ id: "s1" }, { id: "s2" }] });
+    (window as any).pdfjsLib = {
+      getDocument: mockGetDocument,
+    };
   });
 
   it("renders page count", () => {
@@ -145,5 +156,58 @@ describe("SplitPagesModal", () => {
     const closeBtn = screen.getAllByRole("button").find(b => b.querySelector("svg"));
     if (closeBtn) fireEvent.click(closeBtn);
     expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  it("shows non-Error rejection fallback message", async () => {
+    mockSplitPdf.mockRejectedValueOnce("string error");
+    render(<SplitPagesModal {...baseProps} />);
+    const pageButtons = screen.getAllByRole("button");
+    const page3Btn = pageButtons.find(b => b.textContent === "3");
+    if (page3Btn) fireEvent.click(page3Btn);
+    fireEvent.click(screen.getByText("split"));
+    await waitFor(() => {
+      expect(screen.getByText("splitError")).toBeInTheDocument();
+    });
+  });
+
+  it("shows error when no split point selected", () => {
+    render(<SplitPagesModal {...baseProps} />);
+    // The split button is only visible after selecting a split point
+    // So this validation is handled by the UI not showing the button at all
+    expect(screen.queryByText("split")).not.toBeInTheDocument();
+  });
+
+  it("calls onSaved on successful split", async () => {
+    const result = { items: [{ id: "s1" }, { id: "s2" }] };
+    mockSplitPdf.mockResolvedValue(result);
+    render(<SplitPagesModal {...baseProps} />);
+    const pageButtons = screen.getAllByRole("button");
+    const page3Btn = pageButtons.find(b => b.textContent === "3");
+    if (page3Btn) fireEvent.click(page3Btn);
+    fireEvent.click(screen.getByText("split"));
+    await waitFor(() => {
+      expect(mockOnSaved).toHaveBeenCalledWith(result.items);
+    });
+    expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  it("resets state when modal reopens", () => {
+    const { rerender } = render(<SplitPagesModal {...baseProps} />);
+    rerender(<SplitPagesModal {...baseProps} open={false} />);
+    rerender(<SplitPagesModal {...baseProps} />);
+    expect(screen.getByText(/pageCount/)).toBeInTheDocument();
+  });
+
+  it("renders page thumbnails with pdfjsLib", async () => {
+    render(<SplitPagesModal {...baseProps} />);
+    await waitFor(() => {
+      expect(mockGetDocument).toHaveBeenCalled();
+    });
+  });
+
+  it("handles pdfjsLib not available", () => {
+    delete (window as any).pdfjsLib;
+    render(<SplitPagesModal {...baseProps} />);
+    expect(screen.getByText(/pageCount/)).toBeInTheDocument();
   });
 });

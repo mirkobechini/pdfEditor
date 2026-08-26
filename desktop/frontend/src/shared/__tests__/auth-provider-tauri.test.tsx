@@ -60,6 +60,7 @@ function TestConsumer() {
       <button data-testid="btn-register" onClick={() => auth.register("new@test.com", "pass", "Test")}>Register</button>
       <button data-testid="btn-logout" onClick={() => auth.logout()}>Logout</button>
       <button data-testid="btn-guest" onClick={() => auth.guestLogin()}>Guest</button>
+      <button data-testid="btn-google-jwt" onClick={() => auth.googleLogin("eyJhbGciOiJIUzI1NiJ9.dGVzdA.test")}>GoogleJWT</button>
     </div>
   );
 }
@@ -145,5 +146,76 @@ describe("AuthProvider (Tauri/Desktop)", () => {
       expect(screen.getByTestId("user")).toHaveTextContent("new@test.com");
     });
     expect(mockSyncUser).toHaveBeenCalled();
+  });
+
+  it("login with local success also tries cloud login", async () => {
+    mockLogin.mockResolvedValueOnce({ access_token: "local-jwt" });
+    mockCloudLogin.mockResolvedValueOnce({ access_token: "cloud-jwt" });
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-login"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("test@test.com");
+    });
+    // Should have tried cloud login too
+    expect(mockCloudLogin).toHaveBeenCalledWith("test@test.com", "pass");
+  });
+
+  it("login with local success handles cloud login failure gracefully", async () => {
+    mockLogin.mockResolvedValueOnce({ access_token: "local-jwt" });
+    mockCloudLogin.mockRejectedValueOnce(new Error("cloud not available"));
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-login"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("test@test.com");
+    });
+  });
+
+  it("login cloud fallback handles syncUser returning null", async () => {
+    mockLogin.mockRejectedValueOnce(new Error("not in local SQLite"));
+    mockCloudLogin.mockResolvedValueOnce({ access_token: "cloud-jwt" });
+    mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "cloud-user@test.com" });
+    mockSyncUser.mockResolvedValueOnce(null);
+    mockGetMe.mockResolvedValue({ id: "u1", email: "cloud-user@test.com" });
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-login"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("cloud-user@test.com");
+    });
+  });
+
+  it("logout clears Tauri store", async () => {
+    mockLogout.mockResolvedValueOnce(undefined);
+    mockGetToken.mockReturnValue("token123");
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("test@test.com"));
+
+    fireEvent.click(screen.getByTestId("btn-logout"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("null");
+    });
+    expect(mockTauriInvoke).toHaveBeenCalledWith("delete_jwt");
+  });
+
+  it("googleLogin with JWT token (eyJ prefix) in Tauri", async () => {
+    mockGetMe.mockResolvedValueOnce({ id: "u1", email: "google@test.com" });
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-google-jwt"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("google@test.com");
+    });
+    expect(mockTauriInvoke).toHaveBeenCalledWith("store_jwt", { token: "eyJhbGciOiJIUzI1NiJ9.dGVzdA.test" });
   });
 });

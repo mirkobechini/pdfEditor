@@ -107,7 +107,8 @@ export default function PdfViewer({
                 canvas.style.width = `${viewport.width}px`;
                 canvas.style.height = `${viewport.height}px`;
 
-                const ctx = canvas.getContext("2d")!;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return;
                 ctx.scale(dpr, dpr);
                 const renderTask = page.render({
                     canvasContext: ctx,

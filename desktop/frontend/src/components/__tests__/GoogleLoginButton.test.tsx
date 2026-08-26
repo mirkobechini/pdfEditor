@@ -236,4 +236,93 @@ describe("GoogleLoginButton", () => {
 
     process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = originalEnv;
   });
+
+  it("handles desktop Google login with window.open fallback", async () => {
+    mockTauriInvoke.mockRejectedValue(new Error("Tauri not available"));
+    const windowOpenSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    render(<GoogleLoginButton />);
+    const btn = await screen.findByRole("button");
+    fireEvent.click(btn);
+    await waitFor(() => {
+      expect(windowOpenSpy).toHaveBeenCalledWith(
+        "https://pdfeditor-api.mirkobechini.com/auth/google/desktop-login",
+        "_blank"
+      );
+    });
+    windowOpenSpy.mockRestore();
+  });
+
+  it("handles desktop polling with successful token", async () => {
+    vi.useFakeTimers();
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ access_token: "test-token" }),
+    });
+
+    Object.defineProperty(window, "location", {
+      value: { href: "" },
+      writable: true,
+    });
+
+    mockGoogleLogin.mockResolvedValue(undefined);
+
+    render(<GoogleLoginButton />);
+    await act(async () => { vi.advanceTimersByTime(100); });
+
+    const btn = screen.getByRole("button");
+    await act(async () => { fireEvent.click(btn); });
+    await act(async () => { vi.advanceTimersByTime(2000); });
+
+    await vi.waitFor(() => {
+      expect(mockGoogleLogin).toHaveBeenCalledWith("test-token");
+    }, { timeout: 5000, interval: 100 });
+
+    globalThis.fetch = origFetch;
+    vi.useRealTimers();
+  });
+
+  it("shows error on Google One Tap success with no credential", async () => {
+    mockIsTauri = false;
+    const originalEnv = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = "test-client-id";
+
+    mockGoogleLoginComponent = (props: any) => (
+      <button data-testid="google-one-tap" onClick={() => props.onSuccess?.({})}>
+        Google One Tap
+      </button>
+    );
+
+    render(<GoogleLoginButton />);
+    await screen.findByTestId("google-one-tap");
+    fireEvent.click(screen.getByTestId("google-one-tap"));
+    await waitFor(() => {
+      expect(screen.getByText("No credential received")).toBeInTheDocument();
+    });
+
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = originalEnv;
+  });
+
+  it("shows error on Google One Tap success with login failure", async () => {
+    mockIsTauri = false;
+    const originalEnv = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = "test-client-id";
+
+    mockGoogleLoginComponent = (props: any) => (
+      <button data-testid="google-one-tap" onClick={() => props.onSuccess?.({ credential: "test-token" })}>
+        Google One Tap
+      </button>
+    );
+
+    mockGoogleLogin.mockRejectedValue(new Error("Login failed"));
+
+    render(<GoogleLoginButton />);
+    await screen.findByTestId("google-one-tap");
+    fireEvent.click(screen.getByTestId("google-one-tap"));
+    await waitFor(() => {
+      expect(screen.getByText("unknownError")).toBeInTheDocument();
+    });
+
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = originalEnv;
+  });
 });
