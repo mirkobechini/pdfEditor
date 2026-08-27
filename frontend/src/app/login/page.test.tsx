@@ -1,11 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import LoginPage from "./page";
 import { useAuth } from "../lib/auth";
+import { isTauri } from "../lib/tauri";
 
 // Mock the auth hook
 vi.mock("../lib/auth", () => ({
   useAuth: vi.fn(),
+}));
+
+// Mock isTauri so we can toggle the guest login button
+vi.mock("../lib/tauri", () => ({
+  isTauri: vi.fn(),
 }));
 
 // Mock matchMedia for HeaderControls dark mode
@@ -21,6 +27,7 @@ Object.defineProperty(window, "matchMedia", {
 });
 
 const mockLogin = vi.fn();
+const mockGuestLogin = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -28,10 +35,11 @@ beforeEach(() => {
     user: null,
     loading: false,
     login: mockLogin,
-    guestLogin: vi.fn(),
+    guestLogin: mockGuestLogin,
     register: vi.fn(),
     logout: vi.fn(),
   });
+  (isTauri as any).mockReturnValue(false);
 
   // Mock window.location.href
   delete (window as any).location;
@@ -149,5 +157,111 @@ describe("LoginPage", () => {
     render(<LoginPage />);
     const link = screen.getByText("registerLink");
     expect(link.getAttribute("href")).toBe("/register");
+  });
+
+  it("redirects to /app when user is already authenticated", async () => {
+    (useAuth as any).mockReturnValue({
+      user: { email: "test@example.com" },
+      loading: false,
+      login: mockLogin,
+      guestLogin: mockGuestLogin,
+      register: vi.fn(),
+      logout: vi.fn(),
+    });
+
+    render(<LoginPage />);
+    await waitFor(() => {
+      expect(window.location.href).toBe("/app");
+    });
+  });
+
+  it("shows loading state while checking auth", () => {
+    (useAuth as any).mockReturnValue({
+      user: null,
+      loading: true,
+      login: mockLogin,
+      guestLogin: mockGuestLogin,
+      register: vi.fn(),
+      logout: vi.fn(),
+    });
+
+    render(<LoginPage />);
+    expect(screen.getByText("Loading...")).toBeTruthy();
+  });
+
+  it("shows empty screen when user is set after loading", () => {
+    (useAuth as any).mockReturnValue({
+      user: { email: "test@example.com" },
+      loading: false,
+      login: mockLogin,
+      guestLogin: mockGuestLogin,
+      register: vi.fn(),
+      logout: vi.fn(),
+    });
+
+    render(<LoginPage />);
+    // The authenticated branch renders an empty div — no form
+    expect(screen.queryByText("loginTitle")).toBeNull();
+  });
+
+  it("shows guest login button only in Tauri and logs in as guest", async () => {
+    (isTauri as any).mockReturnValue(true);
+    mockGuestLogin.mockResolvedValue(undefined);
+
+    render(<LoginPage />);
+    const guestBtn = screen.getByText("guestLogin");
+    expect(guestBtn).toBeTruthy();
+
+    fireEvent.click(guestBtn);
+    await waitFor(() => {
+      expect(mockGuestLogin).toHaveBeenCalled();
+    });
+    expect(window.location.href).toBe("/app");
+  });
+
+  it("shows loginFailed error when guest login fails", async () => {
+    (isTauri as any).mockReturnValue(true);
+    mockGuestLogin.mockRejectedValue(new Error("fail"));
+
+    render(<LoginPage />);
+    fireEvent.click(screen.getByText("guestLogin"));
+
+    await waitFor(() => {
+      expect(screen.getByText("loginFailed")).toBeTruthy();
+    });
+  });
+
+  it("shows loggingIn text while submitting", async () => {
+    let resolveLogin: (v: unknown) => void;
+    mockLogin.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveLogin = resolve;
+        }),
+    );
+
+    render(<LoginPage />);
+    fireEvent.change(screen.getByPlaceholderText("email@example.com"), {
+      target: { value: "test@example.com" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("••••••••"), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByText("loginButton"));
+
+    expect(screen.getByText("loggingIn")).toBeTruthy();
+
+    await act(async () => {
+      resolveLogin!(undefined);
+    });
+  });
+
+  it("does not submit when email is empty", async () => {
+    render(<LoginPage />);
+    fireEvent.change(screen.getByPlaceholderText("••••••••"), {
+      target: { value: "password123" },
+    });
+    fireEvent.click(screen.getByText("loginButton"));
+    expect(mockLogin).not.toHaveBeenCalled();
   });
 });
