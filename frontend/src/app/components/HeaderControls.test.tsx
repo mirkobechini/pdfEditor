@@ -9,13 +9,15 @@ vi.mock("next-intl", () => ({
 }));
 
 // Mock useAuth
+const mockUseAuth = vi.fn();
 vi.mock("../lib/auth", () => ({
-  useAuth: () => ({ user: null }),
+  useAuth: () => mockUseAuth(),
 }));
 
 // Mock useLocaleSetter
+const mockSetLocale = vi.fn();
 vi.mock("../lib/i18n", () => ({
-  useLocaleSetter: () => vi.fn(),
+  useLocaleSetter: () => mockSetLocale,
 }));
 
 // Mock matchMedia
@@ -45,6 +47,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   localStorageMock.clear();
   document.documentElement.classList.remove("dark");
+  mockUseAuth.mockReturnValue({ user: null });
 });
 
 describe("HeaderControls", () => {
@@ -85,6 +88,52 @@ describe("LanguageSelector", () => {
     render(<LanguageSelector />);
     expect(screen.getByText("IT")).toBeTruthy();
     expect(screen.getByText("EN")).toBeTruthy();
+  });
+
+  it("changes locale on selection change", () => {
+    render(<LanguageSelector />);
+    const select = screen.getByRole("combobox") as HTMLSelectElement;
+    fireEvent.change(select, { target: { value: "it" } });
+    expect(mockSetLocale).toHaveBeenCalledWith("it");
+  });
+});
+
+describe("HeaderControls with user", () => {
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ user: null });
+  });
+
+  it("shows guest badge for guest user", () => {
+    mockUseAuth.mockReturnValue({
+      user: { is_guest: true, email: "guest@test.com", full_name: "Guest User", is_admin: false, id: "1" },
+    });
+    render(<HeaderControls />);
+    expect(screen.getByText("Guest")).toBeTruthy();
+    expect(screen.getByText("Guest User ⚙️")).toBeTruthy();
+  });
+
+  it("shows profile link with full name", () => {
+    mockUseAuth.mockReturnValue({
+      user: { is_guest: false, email: "a@b.com", full_name: "Alice", is_admin: false, id: "1" },
+    });
+    render(<HeaderControls />);
+    expect(screen.getByText("Alice ⚙️")).toBeTruthy();
+    const link = screen.getByText("Alice ⚙️").closest("a");
+    expect(link?.getAttribute("href")).toBe("/app/profile");
+  });
+
+  it("does not show guest badge for regular user", () => {
+    mockUseAuth.mockReturnValue({
+      user: { is_guest: false, email: "a@b.com", full_name: "Alice", is_admin: false, id: "1" },
+    });
+    render(<HeaderControls />);
+    expect(screen.queryByText("Guest")).toBeNull();
+  });
+
+  it("does not show user info when no user", () => {
+    mockUseAuth.mockReturnValue({ user: null });
+    render(<HeaderControls />);
+    expect(screen.queryByText("Alice ⚙️")).toBeNull();
   });
 });
 
