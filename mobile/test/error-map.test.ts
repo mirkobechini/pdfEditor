@@ -111,6 +111,10 @@ describe("mapError", () => {
     );
   });
 
+  it("maps 'WRONG_PASSWORD' plain text string", () => {
+    expect(mapError("WRONG_PASSWORD")).toBe("auth.wrongPassword");
+  });
+
   it("maps 'Reset token has expired' string", () => {
     expect(mapError("Reset token has expired")).toBe("auth.resetTokenExpired");
   });
