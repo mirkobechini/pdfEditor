@@ -70,6 +70,22 @@ describe("ClientLayout", () => {
         expect(screen.getByText("Content")).toBeInTheDocument();
         expect(mockStartKeepWarm).toHaveBeenCalled();
     });
+
+    it("wraps children in GoogleOAuthProvider when GOOGLE_CLIENT_ID is set", async () => {
+        // Simulate env var being set
+        const originalEnv = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+        process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = "test-client-id";
+        try {
+            // Re-import with fresh module state to re-read the env var
+            vi.resetModules();
+            const ClientLayout = (await import("../ClientLayout")).default;
+            render(<ClientLayout><div>OAuth Content</div></ClientLayout>);
+            expect(screen.getByText("OAuth Content")).toBeInTheDocument();
+            expect(mockStartKeepWarm).toHaveBeenCalled();
+        } finally {
+            process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = originalEnv;
+        }
+    });
 });
 
 describe("HomePage (root page)", () => {
