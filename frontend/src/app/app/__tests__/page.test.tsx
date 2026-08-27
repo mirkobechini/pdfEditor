@@ -45,6 +45,7 @@ vi.mock("../../components/Sidebar", () => ({
     default: ({ onSelect, onUpload, onDeleteClick, selectedId, refreshKey }: any) => (
         <div data-testid="sidebar" data-selected-id={selectedId || ""} data-refresh-key={refreshKey}>
             <button data-testid="sidebar-select" onClick={() => onSelect?.("pdf-1")}>Select PDF</button>
+            <button data-testid="sidebar-select-2" onClick={() => onSelect?.("pdf-2")}>Select PDF 2</button>
             <button data-testid="sidebar-upload" onClick={() => onUpload?.({ id: "new-pdf", original_filename: "test.pdf", file_size: 100, page_count: 3, is_password_protected: false, created_at: "2026-01-01", updated_at: "2026-01-01" })}>Upload</button>
             <button data-testid="sidebar-delete-click" onClick={() => onDeleteClick?.({ id: "pdf-1", original_filename: "del.pdf", file_size: 100, page_count: 2, created_at: "2026-01-01", updated_at: "2026-01-01" })}>Delete Click</button>
         </div>
@@ -477,6 +478,89 @@ describe("EditorPage", () => {
             const viewer = screen.getByTestId("viewer");
             expect(viewer.getAttribute("data-requires-password")).toBe("false");
         });
+    });
+
+    it("handleUnlock revokes previous fileUrl when already set", async () => {
+        // Select a normal PDF twice — second select revokes first fileUrl
+        mockGetPdf.mockResolvedValue(mockPdf);
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("sidebar-select"));
+        await waitFor(() => expect(mockDownloadPdf).toHaveBeenCalledTimes(1));
+
+        // Select a different non-protected PDF — revokes the previous blob URL
+        fireEvent.click(screen.getByTestId("sidebar-select-2"));
+        await waitFor(() => {
+            expect(mockGetPdf).toHaveBeenCalledWith("pdf-2");
+            expect(URL.revokeObjectURL).toHaveBeenCalled();
+        });
+    });
+
+    it("metadata onSuccess with non-protected doc updates selected state", async () => {
+        mockDownloadPdf.mockResolvedValue(new Blob(["meta"], { type: "application/pdf" }));
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("toolbar-metadata"));
+        expect(screen.getByTestId("metadata-dialog")).toBeInTheDocument();
+        // Success with non-protected doc — should update selectedId and download
+        fireEvent.click(screen.getByTestId("metadata-success"));
+        await waitFor(() => {
+            expect(mockDownloadPdf).toHaveBeenCalled();
+            const sidebar = screen.getByTestId("sidebar");
+            expect(sidebar.getAttribute("data-selected-id")).toBe("meta-id");
+        });
+    });
+
+    it("renders replace text dialog when opened", () => {
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("toolbar-replacetext"));
+        expect(screen.getByTestId("replacetext-dialog")).toBeInTheDocument();
+        // Close it
+        fireEvent.click(screen.getByTestId("replacetext-close"));
+        expect(screen.queryByTestId("replacetext-dialog")).not.toBeInTheDocument();
+    });
+
+    it("renders protect dialog when opened", () => {
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("toolbar-protect"));
+        expect(screen.getByTestId("protect-dialog")).toBeInTheDocument();
+        // Close it
+        fireEvent.click(screen.getByTestId("protect-close"));
+        expect(screen.queryByTestId("protect-dialog")).not.toBeInTheDocument();
+    });
+
+    it("delete modal confirm calls handleDelete and closes", async () => {
+        mockGetPdf.mockResolvedValue(mockPdf);
+        mockDeletePdf.mockResolvedValue(undefined);
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("sidebar-delete-click"));
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId("delete-confirm"));
+        await waitFor(() => {
+            expect(mockDeletePdf).toHaveBeenCalled();
+            expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
+        });
+    });
+
+    it("handleSelect logs error when getPdf fails", async () => {
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
+        mockGetPdf.mockRejectedValue(new Error("Load failed"));
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("sidebar-select"));
+        await waitFor(() => {
+            expect(consoleSpy).toHaveBeenCalled();
+        });
+        consoleSpy.mockRestore();
+    });
+
+    it("handleSelect logs error when downloadPdf fails", async () => {
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
+        mockGetPdf.mockResolvedValue(mockPdf);
+        mockDownloadPdf.mockRejectedValue(new Error("Download failed"));
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("sidebar-select"));
+        await waitFor(() => {
+            expect(consoleSpy).toHaveBeenCalled();
+        });
+        consoleSpy.mockRestore();
     });
 
     it("passes page/zoom info to viewer and toolbar", () => {
