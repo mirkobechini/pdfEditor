@@ -162,4 +162,61 @@ describe("MetadataDialog", () => {
         fireEvent.click(screen.getByText("title").closest(".fixed")!);
         expect(onClose).toHaveBeenCalled();
     });
+
+    it("does not load metadata when pdfId is null", async () => {
+        render(<MetadataDialog {...defaultProps} pdfId={null} />);
+        expect(screen.getByText("title")).toBeInTheDocument();
+        expect(api.getMetadata).not.toHaveBeenCalled();
+    });
+
+    it("does not save when pdfId is null", async () => {
+        render(<MetadataDialog {...defaultProps} pdfId={null} />);
+        fireEvent.click(screen.getByText("save"));
+        expect(api.updateMetadata).not.toHaveBeenCalled();
+    });
+
+    it("shows loading state while metadata is being fetched", async () => {
+        (api.getMetadata as any).mockImplementation(
+            () => new Promise(() => { }),
+        );
+        render(<MetadataDialog {...defaultProps} />);
+        expect(screen.getByText("loading")).toBeInTheDocument();
+    });
+
+    it("edits author and keywords fields", async () => {
+        (api.getMetadata as any).mockResolvedValue({
+            title: "T",
+            author: "A",
+            subject: "S",
+            keywords: "K",
+        });
+        (api.updateMetadata as any).mockResolvedValue({ id: "pdf-123" });
+
+        render(<MetadataDialog {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByDisplayValue("A")).toBeInTheDocument();
+        });
+
+        fireEvent.change(screen.getByDisplayValue("A"), {
+            target: { value: "New Author" },
+        });
+        fireEvent.change(screen.getByDisplayValue("S"), {
+            target: { value: "New Subject" },
+        });
+        fireEvent.change(screen.getByDisplayValue("K"), {
+            target: { value: "new, keywords" },
+        });
+        fireEvent.click(screen.getByText("save"));
+
+        await waitFor(() => {
+            expect(api.updateMetadata).toHaveBeenCalledWith(
+                "pdf-123",
+                expect.objectContaining({
+                    author: "New Author",
+                    subject: "New Subject",
+                    keywords: "new, keywords",
+                }),
+            );
+        });
+    });
 });
