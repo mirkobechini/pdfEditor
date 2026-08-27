@@ -38,6 +38,15 @@
   ],
   "mobile": [
     {
+      "version": "v0.2.2-mobile",
+      "date": "2026-08-27",
+      "changes": [
+        "Test coverage 90%: 272 test (da 182), 98.7% statements, 100% lines",
+        "Tutti i file >= 90%: pdfService 100%, api 96.73%, error-map 100%, localDb 100%, i18n 100%",
+        "Nuovi test: pdfService-utils, pdfService-metadata, pdfService-protect, api-refresh, api-branches, api-pdf"
+      ]
+    },
+    {
       "version": "v0.2.1-mobile",
       "date": "2026-08-23",
       "changes": [

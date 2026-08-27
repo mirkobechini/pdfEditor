@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-27
+
+### 🧪 Mobile test coverage 90% (issue #696)
+
+- **Coverage mobile portata al 98.7% statements, 100% lines** (era 76.12%)
+- **272 test totali** (da 182, +90 nuovi test)
+- **Tutti i file mobile >= 90%**: pdfService.ts (100%), api.ts (96.73%), error-map.ts (100%), localDb.ts (100%), i18n (100%)
+- Nuovi file di test: pdfService-utils (7), pdfService-metadata (6), pdfService-protect (11), api-refresh (11), api-branches (13), api-pdf (33)
+- Test ampliati: error-map (+1 WRONG_PASSWORD plain text)
+
 ## 2026-08-23
 
 ### 🐛 Desktop fixes batch (issue #689) + Test coverage 70%+ (issue #691)

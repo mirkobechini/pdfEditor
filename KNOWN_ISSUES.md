@@ -99,7 +99,7 @@
 
 ### T2 — Zero test E2E / integration
 
-**Descrizione:** 359 test backend (con `TestClient` same-origin) + 897 test frontend (vitest) + 182 test mobile. Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS).  
+**Descrizione:** 359 test backend (con `TestClient` same-origin) + 897 test desktop (vitest) + 272 test mobile. Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS).  
 **Risoluzione prevista:** Playwright (T7).
 
 ### T3 — `@swc/helpers` lock file desync
@@ -154,6 +154,7 @@
 | Backend totale             | 94% (359 test)        | ❌ No      | 1 pre-existing fail (test_seed_super_admin)                                                          |
 | Frontend totale            | ~75% (363+ test)      | ❌ No      | 22 test login + auth remember-me aggiunti                                                            |
 | **Desktop totale**         | **91.41% (897 test)** | ❌ No      | Target 90% raggiunto (issue #693). Unico file sotto: ReorderPagesModal (81.17%, limite DnD in jsdom) |
+| **Mobile totale**          | **98.7% (272 test)**  | ❌ No      | Target 90% raggiunto (issue #696). Tutti i file >= 90%: pdfService 100%, api 96.73%, error-map 100%  |
 | Desktop: Settings/Profile  | 51% / 38%             | ❌ No      | Da migliorare (non bloccante)                                                                        |
 | Desktop: Wizard/Startup    | 66% / 46%             | ❌ No      | Da migliorare (non bloccante)                                                                        |
 | Desktop: PdfViewer         | 81.7%                 | ❌ No      | Rendering PDF.js in jsdom                                                                            |

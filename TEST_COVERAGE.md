@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-08-25
+> **Aggiornato:** 2026-08-27
 
 ---
 
@@ -13,11 +13,13 @@
 | **Backend** (FastAPI/Python)   | pytest      | **371** | **88%**    | ✅    |
 | **Webapp** (Next.js/React)     | vitest      | **363** | ~75%       | ✅    |
 | **Desktop** (Tauri)            | vitest      | **897** | **91.41%** | ✅    |
-| **Mobile** (React Native/Expo) | jest        | **182** | ~77% lines | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **272** | **98.7%**  | ✅    |
 
 > ℹ️ **Desktop**: 897 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **91.41% statements, 94.88% lines**.
 >
 > ⚠️ **Nota:** `ReorderPagesModal` ha i callback DnD (`@dnd-kit/core`) non copribili in jsdom — richiedono test E2E con Playwright. Coverage ferma a 81.17% per quel file.
+>
+> ℹ️ **Mobile**: 272 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. Tutti i file a 100% tranne `api.ts` (96.73%).
 
 ---
 
@@ -60,6 +62,8 @@
 ---
 
 ## Mobile (React Native / Expo)
+
+**Coverage: 98.7% statements, 100% lines (272 test)** — issue #696
 
 | Area                              | Test                          | Coverage | Note                                                                                                                                                                                 |
 | --------------------------------- | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
