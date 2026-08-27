@@ -165,4 +165,74 @@ describe("PdfViewer", () => {
         fireEvent.click(screen.getByText("unlock"));
         expect(await screen.findByText("rendering")).toBeInTheDocument();
     });
+
+    it("cancels render task on unmount", async () => {
+        // Mock canvas context so render proceeds and sets renderTaskRef
+        HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+            scale: vi.fn(),
+        });
+        const cancelMock = vi.fn();
+        (window as any).pdfjsLib.getDocument.mockReturnValue({
+            promise: Promise.resolve({
+                numPages: 5,
+                getPage: vi.fn().mockResolvedValue({
+                    getViewport: vi.fn().mockReturnValue({ width: 800, height: 600 }),
+                    render: vi.fn().mockReturnValue({
+                        promise: new Promise(() => { }),
+                        cancel: cancelMock,
+                    }),
+                }),
+            }),
+        });
+        const { unmount } = render(<PdfViewer {...defaultProps} fileUrl="blob:test" totalPages={5} />);
+        // Wait for render to start (render() called → cancelMock set as renderTaskRef)
+        await new Promise((r) => setTimeout(r, 100));
+        unmount();
+        // Cleanup effect calls renderTaskRef.current.cancel()
+        expect(cancelMock).toHaveBeenCalled();
+    });
+
+    it("handles drag-over and drag-leave on viewer with fileUrl", async () => {
+        render(<PdfViewer {...defaultProps} fileUrl="blob:test" totalPages={5} />);
+        await vi.waitFor(() => {
+            expect(document.querySelector("canvas")).toBeInTheDocument();
+        });
+        const container = document.querySelector("canvas")!.closest("div")!.parentElement!;
+        fireEvent.dragOver(container);
+        fireEvent.dragLeave(container);
+        // No error — drag state toggles
+    });
+
+    it("handles drop on viewer with fileUrl", async () => {
+        const onFileDrop = vi.fn();
+        render(<PdfViewer {...defaultProps} fileUrl="blob:test" totalPages={5} onFileDrop={onFileDrop} />);
+        await vi.waitFor(() => {
+            expect(document.querySelector("canvas")).toBeInTheDocument();
+        });
+        const container = document.querySelector("canvas")!.closest("div")!.parentElement!;
+        const file = new File(["content"], "test.pdf", { type: "application/pdf" });
+        fireEvent.drop(container, { dataTransfer: { files: [file] } });
+        expect(onFileDrop).toHaveBeenCalledWith(file);
+    });
+
+    it("loads PDF.js script when not preloaded", () => {
+        // Remove pdfjsLib to trigger script loading path
+        delete (window as any).pdfjsLib;
+        const appendChildSpy = vi.spyOn(document.body, "appendChild");
+        render(<PdfViewer {...defaultProps} />);
+        expect(appendChildSpy).toHaveBeenCalled();
+        appendChildSpy.mockRestore();
+    });
+
+    it("logs error when PDF load fails", async () => {
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
+        (window as any).pdfjsLib.getDocument.mockReturnValue({
+            promise: Promise.reject(new Error("Load failed")),
+        });
+        render(<PdfViewer {...defaultProps} fileUrl="blob:test" totalPages={5} />);
+        await vi.waitFor(() => {
+            expect(consoleSpy).toHaveBeenCalled();
+        });
+        consoleSpy.mockRestore();
+    });
 });
