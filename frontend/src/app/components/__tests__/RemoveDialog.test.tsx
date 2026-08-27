@@ -160,4 +160,79 @@ describe("RemoveDialog", () => {
         // No error shown since remove not triggered
         expect(screen.queryByText(/Remove failed/)).not.toBeInTheDocument();
     });
+
+    it("selects pages and confirms removal with thumbnails", async () => {
+        const mockPage = {
+            getViewport: () => ({ width: 100, height: 150 }),
+            render: () => ({ promise: Promise.resolve() }),
+        };
+        (api.downloadPdf as any)
+            .mockResolvedValueOnce(new Blob(["fake"])) // thumbnails
+            .mockResolvedValueOnce(new Blob(["result"])); // result download
+        (api.removePages as any).mockResolvedValue({ id: "new-id" });
+        (window as any).pdfjsLib = {
+            getDocument: () => ({
+                promise: Promise.resolve({
+                    numPages: 3,
+                    getPage: () => Promise.resolve(mockPage),
+                }),
+            }),
+        };
+        HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({ scale: vi.fn() });
+        HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue("data:image/png;base64,x");
+        const onSuccess = vi.fn();
+        const onClose = vi.fn();
+        render(<RemoveDialog {...defaultProps} totalPages={3} onSuccess={onSuccess} onClose={onClose} />);
+        await screen.findByText("1");
+
+        // Click first page thumbnail to select it for removal
+        fireEvent.click(screen.getByText("1").closest(".relative")!);
+
+        // Remove button should now be enabled
+        const removeBtn = screen.getByText("remove");
+        expect(removeBtn).not.toBeDisabled();
+
+        // Click remove → confirm dialog appears
+        fireEvent.click(removeBtn);
+        expect(screen.getByText("confirmMessage")).toBeInTheDocument();
+
+        // Confirm removal
+        fireEvent.click(screen.getByText("confirmDelete"));
+
+        await waitFor(() => {
+            expect(api.removePages).toHaveBeenCalled();
+        });
+        expect(downloadBlob).toHaveBeenCalled();
+        expect(onSuccess).toHaveBeenCalled();
+        expect(onClose).toHaveBeenCalled();
+    });
+
+    it("cancels confirm dialog", async () => {
+        const mockPage = {
+            getViewport: () => ({ width: 100, height: 150 }),
+            render: () => ({ promise: Promise.resolve() }),
+        };
+        (api.downloadPdf as any).mockResolvedValue(new Blob(["fake"]));
+        (window as any).pdfjsLib = {
+            getDocument: () => ({
+                promise: Promise.resolve({
+                    numPages: 3,
+                    getPage: () => Promise.resolve(mockPage),
+                }),
+            }),
+        };
+        HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({ scale: vi.fn() });
+        HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue("data:image/png;base64,x");
+        render(<RemoveDialog {...defaultProps} totalPages={3} />);
+        await screen.findByText("1");
+
+        fireEvent.click(screen.getByText("1").closest(".relative")!);
+        fireEvent.click(screen.getByText("remove"));
+        expect(screen.getByText("confirmMessage")).toBeInTheDocument();
+
+        // Cancel the confirm dialog
+        fireEvent.click(screen.getByText("cancel"));
+        expect(screen.queryByText("confirmMessage")).not.toBeInTheDocument();
+        expect(api.removePages).not.toHaveBeenCalled();
+    });
 });
