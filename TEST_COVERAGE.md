@@ -11,7 +11,7 @@
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
 | **Backend** (FastAPI/Python)   | pytest      | **371** | **88%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **363** | ~75%       | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **508** | **85.01%** | ✅    |
 | **Desktop** (Tauri)            | vitest      | **897** | **91.41%** | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **272** | **98.7%**  | ✅    |
 

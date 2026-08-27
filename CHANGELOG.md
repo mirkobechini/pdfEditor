@@ -2,6 +2,14 @@
 
 ## 2026-08-27
 
+### 🧪 Web test coverage 70% (issue #698)
+
+- **Coverage web portata all'85.01% statements, 87.65% lines** (era 69.12%)
+- **508 test totali** (da 372, +136 nuovi test)
+- **Tutti i file web >= 70%** (unico file sotto: EditorPage 67.74% ma 70.55% lines)
+- Nuovi file di test: layout-pages (5), download (5), error-map (52), MonkeyLogo (4)
+- Test ampliati: RemoveDialog (6→14), ReorderDialog (6→13), SplitDialog (6→11), MetadataDialog (3→9), AdminPage (12→17), EditorPage (31→38), ProfilePage (5→14)
+
 ### 🧪 Mobile test coverage 90% (issue #696)
 
 - **Coverage mobile portata al 98.7% statements, 100% lines** (era 76.12%)
