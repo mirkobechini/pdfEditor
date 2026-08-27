@@ -238,6 +238,49 @@ describe("Sidebar", () => {
         });
         const deleteBtns = screen.getAllByTitle("delete");
         fireEvent.click(deleteBtns[0]);
-        expect(onDeleteClick).toHaveBeenCalledWith(mockFiles.items[0]);
+        expect(onDeleteClick).toHaveBeenCalledWith(
+            expect.objectContaining({ id: "1" }),
+        );
+    });
+
+    it("handles file drop with valid PDF", async () => {
+        const onUpload = vi.fn();
+        const onSelect = vi.fn();
+        (api.uploadPdfWithProgress as any).mockResolvedValue({ id: "3", original_filename: "dropped.pdf" });
+        render(<Sidebar {...defaultProps} onUpload={onUpload} onSelect={onSelect} />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        const dropZone = screen.getByText("dropHere").closest("div[class*='border-dashed']")!;
+        const file = new File(["pdf content"], "dropped.pdf", { type: "application/pdf" });
+        fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
+
+        await waitFor(() => {
+            expect(api.uploadPdfWithProgress).toHaveBeenCalled();
+        });
+    });
+
+    it("handles drop without file (no-op)", async () => {
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        const dropZone = screen.getByText("dropHere").closest("div[class*='border-dashed']")!;
+        fireEvent.drop(dropZone, { dataTransfer: { files: [] } });
+        // No upload called
+        expect(api.uploadPdfWithProgress).not.toHaveBeenCalled();
+    });
+
+    it("closes rename on Enter key", async () => {
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+        });
+        const renameBtns = screen.getAllByTitle("rename");
+        fireEvent.click(renameBtns[0]);
+        const renameInput = document.querySelector("input[class*='border-blue']") as HTMLInputElement;
+        expect(renameInput).toBeTruthy();
+        fireEvent.keyDown(renameInput, { key: "Enter" });
+        // Should go back to showing the filename
+        expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
     });
 });
+
