@@ -152,14 +152,13 @@
 | Area                       | Coverage              | Bloccante? | Note                                                                                                 |
 | -------------------------- | --------------------- | ---------- | ---------------------------------------------------------------------------------------------------- |
 | Backend totale             | 94% (359 test)        | ❌ No      | 1 pre-existing fail (test_seed_super_admin)                                                          |
-| Frontend totale            | ~75% (363+ test)      | ❌ No      | 22 test login + auth remember-me aggiunti                                                            |
+| **Webapp totale**          | **94.96% (565 test)** | ❌ No      | Target 90% raggiunto (issue #700). Tutti i file >= 90% statements                                    |
 | **Desktop totale**         | **91.41% (897 test)** | ❌ No      | Target 90% raggiunto (issue #693). Unico file sotto: ReorderPagesModal (81.17%, limite DnD in jsdom) |
 | **Mobile totale**          | **98.7% (272 test)**  | ❌ No      | Target 90% raggiunto (issue #696). Tutti i file >= 90%: pdfService 100%, api 96.73%, error-map 100%  |
 | Desktop: Settings/Profile  | 51% / 38%             | ❌ No      | Da migliorare (non bloccante)                                                                        |
 | Desktop: Wizard/Startup    | 66% / 46%             | ❌ No      | Da migliorare (non bloccante)                                                                        |
 | Desktop: PdfViewer         | 81.7%                 | ❌ No      | Rendering PDF.js in jsdom                                                                            |
 | Desktop: GoogleLoginButton | 76.31%                | ❌ No      | Redirect flow difficile da testare                                                                   |
-| Admin page                 | 67%                   | ❌ No      | API calls non testate                                                                                |
 | ReorderPagesModal DnD      | 81.17%                | ❌ No      | DnD handlers (@dnd-kit) non copribili in jsdom — richiedono test E2E con Playwright                  |
 
 ---

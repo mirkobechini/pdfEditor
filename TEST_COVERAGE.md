@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-08-27
+> **Aggiornato:** 2026-08-28
 
 ---
 
@@ -11,7 +11,7 @@
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
 | **Backend** (FastAPI/Python)   | pytest      | **371** | **88%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **508** | **85.01%** | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **565** | **94.96%** | ✅    |
 | **Desktop** (Tauri)            | vitest      | **897** | **91.41%** | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **272** | **98.7%**  | ✅    |
 
@@ -20,6 +20,8 @@
 > ⚠️ **Nota:** `ReorderPagesModal` ha i callback DnD (`@dnd-kit/core`) non copribili in jsdom — richiedono test E2E con Playwright. Coverage ferma a 81.17% per quel file.
 >
 > ℹ️ **Mobile**: 272 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. Tutti i file a 100% tranne `api.ts` (96.73%).
+>
+> ℹ️ **Webapp**: 565 test (Vitest). Target 90% raggiunto (issue #700): **94.96% statements, 97.34% lines**. Tutti i file >= 90% statements.
 
 ---
 
@@ -52,12 +54,23 @@
 
 ## Webapp (Next.js / React)
 
-| Area          | Test         | Coverage | Note                        |
-| ------------- | ------------ | -------- | --------------------------- |
-| Auth UI       | `test_login` | ✅       | 22 test login + remember-me |
-| Componenti UI | Vari         | ✅       | ~75% coverage               |
+**Coverage: 94.96% statements, 97.34% lines (565 test)** — issue #700
 
-**Totale: 363 test, ~75% coverage**
+| Area                                      | Test                                            | Coverage | Note                                                           |
+| ----------------------------------------- | ----------------------------------------------- | -------- | -------------------------------------------------------------- |
+| Auth provider                             | `auth.test.tsx`                                 | ✅       | login, register, guest, logout, session restore, refresh       |
+| Auth pages                                | `login/page.test.tsx`, `register/page.test.tsx` | ✅       | login 93.61%, register 97.29% (incl. convert guest)            |
+| Lib (tauri, pdfjs)                        | `tauri.test.ts`, `usePdfJs.test.tsx`            | ✅       | tauri 96.15%, usePdfJs 94.11%                                  |
+| EditorPage                                | `app/__tests__/page.test.tsx`                   | ✅       | 92.14% — dead code rimosso (5 handler inutilizzati)            |
+| Sidebar                                   | `Sidebar.test.tsx`                              | ✅       | 92.42%                                                         |
+| PdfViewer                                 | `PdfViewer.test.tsx`                            | ✅       | 92.79%                                                         |
+| HeaderControls                            | `HeaderControls.test.tsx`                       | ✅       | 96.55% — listener preferenza sistema dark mode                 |
+| Admin                                     | `admin/__tests__/AdminPage.test.tsx`            | ✅       | 95.04% (filtri, license, bug reports)                          |
+| Dialoghi (metadata, bug report, merge...) | Vari                                            | ✅       | MetadataDialog 97.77%, BugReportDialog 96.66%, tutti >= 90%    |
+| Componenti vari                           | Vari                                            | ✅       | PasswordInput 100%, GuestConvertBanner 100%, ClientLayout 100% |
+| Layout & home                             | `layout-pages.test.tsx`                         | ✅       | home page 100% (redirect Tauri), ClientLayout 100%             |
+
+**Totale: 565 test, 94.96% statements — tutti i file >= 90%**
 
 ---
 

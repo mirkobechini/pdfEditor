@@ -63,6 +63,17 @@
   ],
   "web": [
     {
+      "version": "v0.1.37",
+      "date": "2026-08-28",
+      "changes": [
+        "Test coverage 90%: 565 test (da 508), 94.96% statements, 97.34% lines",
+        "Tutti i file >= 90%: auth 93.02%, Sidebar 92.42%, PdfViewer 92.79%, HeaderControls 96.55%, register 97.29%, login 93.61%, tauri 96.15%, usePdfJs 94.11%, EditorPage 92.14%, admin 95.04%",
+        "Nuovi test: PasswordInput (100%), GuestConvertBanner (100%), ClientLayout (100%), home page (100%)",
+        "Test ampliati: BugReportDialog (96.66%), MetadataDialog (97.77%), AdminPage (95.04%)",
+        "Dead code rimosso: EditorPage (5 handler inutilizzati), admin page (handleSendReset)"
+      ]
+    },
+    {
       "version": "v0.1.36",
       "date": "2026-08-23",
       "changes": [

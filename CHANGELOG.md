@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-28
+
+### 🧪 Web test coverage 90% (issue #700)
+
+- **Coverage web portata al 94.96% statements, 97.34% lines** (era 85.01%)
+- **565 test totali** (da 508, +57 nuovi test)
+- **Tutti i file web >= 90% statements** (target raggiunto)
+- File portati oltre 90%: auth.tsx (93.02%), Sidebar (92.42%), PdfViewer (92.79%), HeaderControls (96.55%), PasswordInput (100%), GuestConvertBanner (100%), register (97.29%), login (93.61%), tauri.ts (96.15%), usePdfJs (94.11%), EditorPage (92.14%), ClientLayout (100%), MetadataDialog (97.77%), BugReportDialog (96.66%), home page (100%), admin page (95.04%)
+- **Dead code rimosso**: EditorPage (5 handler mai chiamati: handleMerge, handleSplit, handleReorder, handleRemove, handleMetadata), admin page (handleSendReset + resetMsg mai collegati a UI)
+
 ## 2026-08-27
 
 ### 🧪 Web test coverage 70% (issue #698)
