@@ -99,7 +99,6 @@ function UsersTable() {
     const [tierFilter, setTierFilter] = React.useState("");
     const [dateFrom, setDateFrom] = React.useState("");
     const [dateTo, setDateTo] = React.useState("");
-    const [resetMsg, setResetMsg] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         loadUsers();
@@ -128,16 +127,6 @@ function UsersTable() {
             setEditingId(null);
         } catch (err) {
             alert("Failed to update license: " + mapError(err));
-        }
-    }
-
-    async function handleSendReset(userId: string) {
-        try {
-            const resp = await api.adminSendReset(userId);
-            setResetMsg(resp.message);
-            setTimeout(() => setResetMsg(null), 4000);
-        } catch (err) {
-            alert("Failed to send reset: " + mapError(err));
         }
     }
 
@@ -222,11 +211,6 @@ function UsersTable() {
                 <p className="text-sm text-gray-400">{t("noUsers")}</p>
             ) : (
                 <div>
-                    {resetMsg && (
-                        <div className="mb-3 p-2 text-sm text-green-700 bg-green-100 dark:bg-green-900/30 rounded">
-                            {resetMsg}
-                        </div>
-                    )}
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm border-collapse">
                             <thead>
