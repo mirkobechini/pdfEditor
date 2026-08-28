@@ -95,4 +95,57 @@ describe("tauri utilities (unit)", () => {
     expect(result).toBe("/test/file.pdf");
     delete (window as any).__TAURI__;
   });
+
+  it("openPdfDialog returns null when dialog returns no path", async () => {
+    (window as any).__TAURI__ = {
+      invoke: async () => null,
+    };
+    const { openPdfDialog } = await import("../tauri");
+    const result = await openPdfDialog();
+    expect(result).toBeNull();
+    delete (window as any).__TAURI__;
+  });
+
+  it("saveFileDialog returns path when Tauri save succeeds", async () => {
+    (window as any).__TAURI__ = {
+      invoke: async (cmd: string) => {
+        if (cmd === "plugin:dialog|save") return { path: "/test/saved.pdf" };
+        return null;
+      },
+    };
+    const { saveFileDialog } = await import("../tauri");
+    const result = await saveFileDialog("out.pdf");
+    expect(result).toBe("/test/saved.pdf");
+    delete (window as any).__TAURI__;
+  });
+
+  it("saveFileDialog returns null when dialog returns no path", async () => {
+    (window as any).__TAURI__ = {
+      invoke: async () => null,
+    };
+    const { saveFileDialog } = await import("../tauri");
+    const result = await saveFileDialog("out.pdf");
+    expect(result).toBeNull();
+    delete (window as any).__TAURI__;
+  });
+
+  it("getSidecarPort returns port from Tauri invoke", async () => {
+    (window as any).__TAURI__ = {
+      invoke: async () => 8123,
+    };
+    const { getSidecarPort } = await import("../tauri");
+    const port = await getSidecarPort();
+    expect(port).toBe(8123);
+    delete (window as any).__TAURI__;
+  });
+
+  it("getSidecarPort returns fallback when invoke returns null", async () => {
+    (window as any).__TAURI__ = {
+      invoke: async () => null,
+    };
+    const { getSidecarPort } = await import("../tauri");
+    const port = await getSidecarPort();
+    expect(port).toBe(7723);
+    delete (window as any).__TAURI__;
+  });
 });

@@ -9,6 +9,7 @@ vi.mock("../api", () => ({
     login: vi.fn(),
     register: vi.fn(),
     googleLogin: vi.fn(),
+    guestLogin: vi.fn(),
     logout: vi.fn(),
     setToken: vi.fn(),
     setCsrfToken: vi.fn(),
@@ -19,14 +20,16 @@ vi.mock("../api", () => ({
 import { api } from "../api";
 
 function TestConsumer() {
-  const { user, loading, login, register, googleLogin, logout } = useAuth();
+  const { user, loading, login, register, googleLogin, guestLogin, logout } = useAuth();
   return (
     <div>
       <div data-testid="loading">{loading ? "loading" : "done"}</div>
       <div data-testid="user">{user ? user.email : "null"}</div>
       <button data-testid="btn-login" onClick={() => login("a@b.com", "pwd")}>login</button>
+      <button data-testid="btn-login-remember" onClick={() => login("a@b.com", "pwd", true)}>login-remember</button>
       <button data-testid="btn-register" onClick={() => register("a@b.com", "pwd", "A B")}>register</button>
       <button data-testid="btn-google" onClick={() => googleLogin("id-token")}>google</button>
+      <button data-testid="btn-guest" onClick={() => guestLogin()}>guest</button>
       <button data-testid="btn-logout" onClick={() => logout()}>logout</button>
     </div>
   );
@@ -116,5 +119,42 @@ describe("AuthProvider", () => {
     (api.getMe as any).mockRejectedValue(new Error("Failed"));
     fireEvent.click(screen.getByTestId("btn-google"));
     await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
+  });
+
+  it("guestLogin sets user on success", async () => {
+    (api.getMe as any).mockRejectedValue(new Error("Not authenticated"));
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
+    (api.guestLogin as any).mockResolvedValue({ access_token: "guest-token" });
+    (api.getMe as any).mockResolvedValue({ id: "g1", email: "guest@test.com", full_name: "Guest", is_active: true, is_admin: false, license_tier: "free" });
+    fireEvent.click(screen.getByTestId("btn-guest"));
+    await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("guest@test.com"));
+    expect(api.setToken).toHaveBeenCalledWith("guest-token");
+  });
+
+  it("guestLogin redirects to / when getMe fails", async () => {
+    (api.getMe as any).mockRejectedValue(new Error("Not authenticated"));
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
+    (api.guestLogin as any).mockResolvedValue({ access_token: "guest-token" });
+    (api.getMe as any).mockRejectedValue(new Error("Failed"));
+    const originalLocation = window.location;
+    delete (window as any).location;
+    (window as any).location = { href: "" };
+    fireEvent.click(screen.getByTestId("btn-guest"));
+    await waitFor(() => expect(window.location.href).toBe("/"));
+    (window as any).location = originalLocation;
+  });
+
+  it("login with remember-me stores token in localStorage", async () => {
+    localStorage.clear();
+    (api.getMe as any).mockRejectedValue(new Error("Not authenticated"));
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
+    (api.login as any).mockResolvedValue({ access_token: "remember-token" });
+    (api.getMe as any).mockResolvedValue({ id: "1", email: "a@b.com", full_name: "A B", is_active: true, is_admin: false, license_tier: "free" });
+    fireEvent.click(screen.getByTestId("btn-login-remember"));
+    await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("a@b.com"));
+    expect(localStorage.getItem("pdfeditor_remember_token")).toBe("remember-token");
   });
 });

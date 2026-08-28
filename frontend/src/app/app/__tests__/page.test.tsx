@@ -571,4 +571,49 @@ describe("EditorPage", () => {
         fireEvent.click(screen.getByTestId("viewer-total-change"));
         expect(screen.getByTestId("toolbar-page").textContent).toBe("1/10");
     });
+
+    it("handleUnlock falls back to generic message for non-Error rejection", async () => {
+        mockGetPdf.mockResolvedValue(mockProtectedPdf);
+        // Reject with a non-Error value (e.g. a string)
+        mockUnlockPdf.mockRejectedValue("wrong password string");
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("sidebar-select"));
+        await waitFor(() => expect(screen.getByTestId("viewer").getAttribute("data-requires-password")).toBe("true"));
+        fireEvent.click(screen.getByTestId("viewer-unlock"));
+        await waitFor(() => {
+            expect(screen.getByTestId("viewer").getAttribute("data-password-error")).toBe("Incorrect password");
+        });
+    });
+
+    it("handleUndo logs error when undoPdf fails", async () => {
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
+        mockGetPdf.mockResolvedValue(mockPdf);
+        mockUndoPdf.mockRejectedValue(new Error("Undo failed"));
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("sidebar-select"));
+        await waitFor(() => expect(mockDownloadPdf).toHaveBeenCalled());
+        fireEvent.click(screen.getByTestId("toolbar-undo"));
+        await waitFor(() => {
+            expect(consoleSpy).toHaveBeenCalled();
+        });
+        consoleSpy.mockRestore();
+    });
+
+    it("deleting the currently selected PDF clears selection", async () => {
+        mockGetPdf.mockResolvedValue(mockPdf);
+        mockDeletePdf.mockResolvedValue(undefined);
+        render(<EditorPage />);
+        // Select pdf-1 so it becomes the selectedId
+        fireEvent.click(screen.getByTestId("sidebar-select"));
+        await waitFor(() => expect(mockDownloadPdf).toHaveBeenCalled());
+        // Delete pdf-1 (the sidebar mock fires onDeleteClick with id "pdf-1")
+        fireEvent.click(screen.getByTestId("sidebar-delete-click"));
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+        fireEvent.click(screen.getByTestId("delete-confirm"));
+        await waitFor(() => {
+            expect(mockDeletePdf).toHaveBeenCalledWith("pdf-1");
+            const sidebar = screen.getByTestId("sidebar");
+            expect(sidebar.getAttribute("data-selected-id")).toBe("");
+        });
+    });
 });
