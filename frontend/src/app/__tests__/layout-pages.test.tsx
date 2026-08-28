@@ -40,9 +40,10 @@ vi.mock("../lib/i18n", () => ({
     useLocaleSetter: () => vi.fn(),
 }));
 
-// Mock tauri
+// Mock tauri — use a mutable variable so tests can override
+let mockIsTauri = false;
 vi.mock("../lib/tauri", () => ({
-    isTauri: () => false,
+    isTauri: () => mockIsTauri,
 }));
 
 describe("RootLayout", () => {
@@ -92,6 +93,7 @@ describe("HomePage (root page)", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockUseAuth.mockReturnValue({ user: null, loading: false });
+        mockIsTauri = false;
         // Allow window.location.href to be set in jsdom
         Object.defineProperty(window, "location", {
             writable: true,
@@ -119,6 +121,27 @@ describe("HomePage (root page)", () => {
         await waitFor(() => {
             expect(window.location.href).toContain("/app");
         });
+    });
+
+    it("redirects to /login in Tauri environment", async () => {
+        mockIsTauri = true;
+
+        const Home = (await import("../page")).default;
+        const { container } = render(<Home />);
+        // In Tauri mode, should redirect to /login
+        await waitFor(() => {
+            expect(window.location.href).toContain("/login");
+        });
+        // Should render empty div while redirecting
+        expect(container.firstChild).toBeTruthy();
+    });
+
+    it("does not redirect while loading", async () => {
+        mockUseAuth.mockReturnValue({ user: null, loading: true });
+        const Home = (await import("../page")).default;
+        render(<Home />);
+        // Should not redirect while loading
+        expect(window.location.href).toBe("http://localhost:3000/");
     });
 });
 
