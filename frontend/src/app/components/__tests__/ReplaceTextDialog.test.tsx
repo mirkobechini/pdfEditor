@@ -111,4 +111,14 @@ describe("ReplaceTextDialog", () => {
             expect(onSuccess).toHaveBeenCalledWith(mockResult);
         });
     });
+
+    it("does not call API when pdfId is null", async () => {
+        render(<ReplaceTextDialog {...defaultProps} pdfId={null} />);
+        const inputs = screen.getAllByRole("textbox");
+        fireEvent.change(inputs[0], { target: { value: "old" } });
+        fireEvent.change(inputs[1], { target: { value: "new" } });
+        fireEvent.click(screen.getByText("replace"));
+        await new Promise((r) => setTimeout(r, 100));
+        expect(api.replaceText).not.toHaveBeenCalled();
+    });
 });

@@ -139,9 +139,10 @@ vi.mock("../../components/MetadataDialog", () => ({
 }));
 
 vi.mock("../../components/ReplaceTextDialog", () => ({
-    default: ({ open, onClose }: any) => (
+    default: ({ open, onClose, onSuccess }: any) => (
         open ? <div data-testid="replacetext-dialog">
             <button data-testid="replacetext-close" onClick={onClose}>Close ReplaceText</button>
+            <button data-testid="replacetext-success" onClick={() => onSuccess?.({ id: "replaced-id", original_filename: "replaced.pdf", file_size: 500, page_count: 5, is_password_protected: false, created_at: "2026-01-01", updated_at: "2026-01-01" })}>Success ReplaceText</button>
         </div> : null
     ),
 }));
@@ -525,6 +526,20 @@ describe("EditorPage", () => {
         // Close it
         fireEvent.click(screen.getByTestId("protect-close"));
         expect(screen.queryByTestId("protect-dialog")).not.toBeInTheDocument();
+    });
+
+    it("replace text onSuccess updates sidebar and downloads blob", async () => {
+        mockDownloadPdf.mockResolvedValue(new Blob(["replaced"], { type: "application/pdf" }));
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("toolbar-replacetext"));
+        expect(screen.getByTestId("replacetext-dialog")).toBeInTheDocument();
+        // Fire onSuccess callback
+        fireEvent.click(screen.getByTestId("replacetext-success"));
+        await waitFor(() => {
+            expect(mockDownloadPdf).toHaveBeenCalledWith("replaced-id");
+            const sidebar = screen.getByTestId("sidebar");
+            expect(sidebar.getAttribute("data-selected-id")).toBe("replaced-id");
+        });
     });
 
     it("delete modal confirm calls handleDelete and closes", async () => {
