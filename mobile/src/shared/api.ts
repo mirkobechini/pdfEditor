@@ -404,6 +404,26 @@ export class ApiClient {
     return res.json();
   }
 
+  // Text
+  async replaceText(
+    id: string,
+    search: string,
+    replace: string,
+    occurrence?: number,
+    outputFilename?: string,
+  ): Promise<PdfDocument> {
+    const body: Record<string, unknown> = { search, replace };
+    if (occurrence !== undefined) body.occurrence = occurrence;
+    if (outputFilename) body.output_filename = outputFilename;
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/replace-text`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
   async refreshToken(): Promise<{
     access_token: string;
     csrf_token: string;
