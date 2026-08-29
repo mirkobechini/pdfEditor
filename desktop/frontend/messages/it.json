@@ -176,6 +176,7 @@
     "reorder": "Riordina",
     "remove": "Rimuovi",
     "metadata": "Metadati",
+    "replaceText": "Sostituisci testo",
     "cloudSync": "Cloud Sync",
     "settings": "Impostazioni",
     "dropToUpload": "Rilascia per caricare il PDF",
@@ -398,5 +399,19 @@
   "passwordInput": {
     "hide": "Nascondi",
     "show": "Mostra"
+  },
+  "replaceTextDialog": {
+    "title": "Cerca e Sostituisci",
+    "searchLabel": "Testo da cercare",
+    "searchPlaceholder": "Inserisci il testo da cercare",
+    "replaceLabel": "Sostituisci con",
+    "replacePlaceholder": "Inserisci il testo sostitutivo",
+    "replaceAllLabel": "Sostituisci tutte le occorrenze",
+    "replace": "Sostituisci",
+    "replacing": "Sostituzione in corso...",
+    "cancel": "Annulla",
+    "replaceFailed": "Sostituzione fallita",
+    "outputName": "Nome file output",
+    "outputNameHint": "Lascia vuoto per nome auto-generato"
   }
 }

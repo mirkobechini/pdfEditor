@@ -13,6 +13,7 @@ import ReorderPagesModal from "../../components/ReorderPagesModal";
 import SplitPagesModal from "../../components/SplitPagesModal";
 import MergeModal from "../../components/MergeModal";
 import LockUnlockModal from "../../components/LockUnlockModal";
+import ReplaceTextModal from "../../components/ReplaceTextModal";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
 import { useCloudSync } from "../../hooks/useCloudSync";
@@ -53,6 +54,7 @@ export default function EditorPage() {
     const [splitOpen, setSplitOpen] = React.useState(false);
     const [mergeOpen, setMergeOpen] = React.useState(false);
     const [lockOpen, setLockOpen] = React.useState(false);
+    const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
     const [renameValue, setRenameValue] = React.useState("");
     const [pdfRefreshKey, setPdfRefreshKey] = React.useState(0);
@@ -424,6 +426,13 @@ export default function EditorPage() {
                             >
                                 {te("metadata")}
                             </button>
+                            <button
+                                onClick={() => setReplaceTextOpen(true)}
+                                disabled={!selectedDoc}
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                {te("replaceText")}
+                            </button>
                         </div>
                     </header>
 
@@ -640,6 +649,21 @@ export default function EditorPage() {
                         return [updatedDoc, ...prev];
                     });
                     setSelectedDoc(updatedDoc);
+                    setPdfRefreshKey((k) => k + 1);
+                }}
+            />
+
+            <ReplaceTextModal
+                open={replaceTextOpen}
+                onClose={() => setReplaceTextOpen(false)}
+                pdfId={selectedDoc?.id ?? null}
+                onSuccess={(doc) => {
+                    setDocs((prev) => {
+                        const oldId = selectedDoc?.id;
+                        if (oldId) return [doc, ...prev.filter((d) => d.id !== oldId)];
+                        return [doc, ...prev];
+                    });
+                    setSelectedDoc(doc);
                     setPdfRefreshKey((k) => k + 1);
                 }}
             />

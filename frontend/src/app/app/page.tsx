@@ -256,6 +256,16 @@ export default function EditorPage() {
                 open={replaceTextOpen}
                 onClose={() => setReplaceTextOpen(false)}
                 pdfId={selectedId}
+                onSuccess={(doc) => {
+                    setSidebarRefreshKey((prev) => prev + 1);
+                    setSelectedId(doc.id);
+                    setSelectedName(doc.original_filename);
+                    void api.downloadPdf(doc.id).then((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        if (fileUrl) URL.revokeObjectURL(fileUrl);
+                        setFileUrl(url);
+                    });
+                }}
             />
             <ProtectDialog
                 open={protectOpen}

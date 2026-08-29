@@ -1,35 +1,40 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import React from "react";
-import ReplaceTextDialog from "../ReplaceTextDialog";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import ReplaceTextModal from "../ReplaceTextModal";
 
-vi.mock("next-intl", () => ({
-    useTranslations: () => (key: string) => key,
-}));
+const mockOnClose = vi.fn();
+const mockOnSuccess = vi.fn();
 
-vi.mock("../../lib/api", () => ({
+vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
+
+vi.mock("../../shared/api", () => ({
     api: { replaceText: vi.fn() },
 }));
 
-import { api } from "../../lib/api";
+import { api } from "../../shared/api";
 
-const defaultProps = { open: true, onClose: vi.fn(), pdfId: "pdf-1" };
+const baseProps = {
+    open: true,
+    onClose: mockOnClose,
+    pdfId: "p1",
+    onSuccess: mockOnSuccess,
+};
 
-describe("ReplaceTextDialog", () => {
+describe("ReplaceTextModal", () => {
     beforeEach(() => { vi.clearAllMocks(); });
 
     it("renders nothing when closed", () => {
-        const { container } = render(<ReplaceTextDialog {...defaultProps} open={false} />);
+        const { container } = render(<ReplaceTextModal {...baseProps} open={false} />);
         expect(container.innerHTML).toBe("");
     });
 
     it("renders form when open", () => {
-        render(<ReplaceTextDialog {...defaultProps} />);
+        render(<ReplaceTextModal {...baseProps} />);
         expect(screen.getByText("title")).toBeInTheDocument();
     });
 
     it("does not call API when search is empty", async () => {
-        render(<ReplaceTextDialog {...defaultProps} />);
+        render(<ReplaceTextModal {...baseProps} />);
         fireEvent.click(screen.getByText("replace"));
         await new Promise((r) => setTimeout(r, 100));
         expect(api.replaceText).not.toHaveBeenCalled();
@@ -37,43 +42,42 @@ describe("ReplaceTextDialog", () => {
 
     it("calls replaceText with replaceAll=true by default", async () => {
         (api.replaceText as any).mockResolvedValue({});
-        render(<ReplaceTextDialog {...defaultProps} />);
+        render(<ReplaceTextModal {...baseProps} />);
         const inputs = screen.getAllByRole("textbox");
         fireEvent.change(inputs[0], { target: { value: "old" } });
         fireEvent.change(inputs[1], { target: { value: "new" } });
         fireEvent.click(screen.getByText("replace"));
-        await vi.waitFor(() => {
-            expect(api.replaceText).toHaveBeenCalledWith("pdf-1", "old", "new", undefined, undefined);
+        await waitFor(() => {
+            expect(api.replaceText).toHaveBeenCalledWith("p1", "old", "new", undefined, undefined);
         });
     });
 
     it("calls replaceText with occurrence=1 when replaceAll is off", async () => {
         (api.replaceText as any).mockResolvedValue({});
-        render(<ReplaceTextDialog {...defaultProps} />);
+        render(<ReplaceTextModal {...baseProps} />);
         const inputs = screen.getAllByRole("textbox");
         fireEvent.change(inputs[0], { target: { value: "old" } });
         fireEvent.change(inputs[1], { target: { value: "new" } });
         fireEvent.click(screen.getByRole("checkbox"));
         fireEvent.click(screen.getByText("replace"));
-        await vi.waitFor(() => {
-            expect(api.replaceText).toHaveBeenCalledWith("pdf-1", "old", "new", 1, undefined);
+        await waitFor(() => {
+            expect(api.replaceText).toHaveBeenCalledWith("p1", "old", "new", 1, undefined);
         });
     });
 
     it("closes after successful replace", async () => {
-        const onClose = vi.fn();
         (api.replaceText as any).mockResolvedValue({});
-        render(<ReplaceTextDialog {...defaultProps} onClose={onClose} />);
+        render(<ReplaceTextModal {...baseProps} />);
         const inputs = screen.getAllByRole("textbox");
         fireEvent.change(inputs[0], { target: { value: "old" } });
         fireEvent.change(inputs[1], { target: { value: "new" } });
         fireEvent.click(screen.getByText("replace"));
-        await vi.waitFor(() => expect(onClose).toHaveBeenCalled());
+        await waitFor(() => expect(mockOnClose).toHaveBeenCalled());
     });
 
     it("shows error on API failure", async () => {
         (api.replaceText as any).mockRejectedValue(new Error("Not found"));
-        render(<ReplaceTextDialog {...defaultProps} />);
+        render(<ReplaceTextModal {...baseProps} />);
         const inputs = screen.getAllByRole("textbox");
         fireEvent.change(inputs[0], { target: { value: "old" } });
         fireEvent.change(inputs[1], { target: { value: "new" } });
@@ -83,7 +87,7 @@ describe("ReplaceTextDialog", () => {
 
     it("shows replacing loading state", async () => {
         (api.replaceText as any).mockImplementation(() => new Promise(() => { }));
-        render(<ReplaceTextDialog {...defaultProps} />);
+        render(<ReplaceTextModal {...baseProps} />);
         const inputs = screen.getAllByRole("textbox");
         fireEvent.change(inputs[0], { target: { value: "old" } });
         fireEvent.change(inputs[1], { target: { value: "new" } });
@@ -91,34 +95,36 @@ describe("ReplaceTextDialog", () => {
         expect(await screen.findByText("replacing")).toBeInTheDocument();
     });
 
-    it("closes when clicking overlay", () => {
-        const onClose = vi.fn();
-        render(<ReplaceTextDialog {...defaultProps} onClose={onClose} />);
-        fireEvent.click(screen.getByText("title").closest(".fixed")!);
-        expect(onClose).toHaveBeenCalled();
-    });
-
     it("calls onSuccess with the result after replace", async () => {
-        const onSuccess = vi.fn();
-        const mockResult = { id: "pdf-1", original_filename: "replaced.pdf", file_size: 500, page_count: 5, is_password_protected: false, created_at: "2026-01-01", updated_at: "2026-01-01" };
+        const mockResult = { id: "p1", original_filename: "replaced.pdf", file_size: 500, page_count: 5, is_password_protected: false, created_at: "2026-01-01", updated_at: "2026-01-01" };
         (api.replaceText as any).mockResolvedValue(mockResult);
-        render(<ReplaceTextDialog {...defaultProps} onSuccess={onSuccess} />);
+        render(<ReplaceTextModal {...baseProps} />);
         const inputs = screen.getAllByRole("textbox");
         fireEvent.change(inputs[0], { target: { value: "old" } });
         fireEvent.change(inputs[1], { target: { value: "new" } });
         fireEvent.click(screen.getByText("replace"));
-        await vi.waitFor(() => {
-            expect(onSuccess).toHaveBeenCalledWith(mockResult);
+        await waitFor(() => {
+            expect(mockOnSuccess).toHaveBeenCalledWith(mockResult);
         });
     });
 
     it("does not call API when pdfId is null", async () => {
-        render(<ReplaceTextDialog {...defaultProps} pdfId={null} />);
+        render(<ReplaceTextModal {...baseProps} pdfId={null} />);
         const inputs = screen.getAllByRole("textbox");
         fireEvent.change(inputs[0], { target: { value: "old" } });
         fireEvent.change(inputs[1], { target: { value: "new" } });
         fireEvent.click(screen.getByText("replace"));
         await new Promise((r) => setTimeout(r, 100));
         expect(api.replaceText).not.toHaveBeenCalled();
+    });
+
+    it("shows error message for non-Error rejection", async () => {
+        (api.replaceText as any).mockRejectedValue("string error");
+        render(<ReplaceTextModal {...baseProps} />);
+        const inputs = screen.getAllByRole("textbox");
+        fireEvent.change(inputs[0], { target: { value: "old" } });
+        fireEvent.change(inputs[1], { target: { value: "new" } });
+        fireEvent.click(screen.getByText("replace"));
+        expect(await screen.findByText(/replaceFailed/)).toBeInTheDocument();
     });
 });
