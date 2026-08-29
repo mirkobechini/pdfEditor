@@ -54,7 +54,8 @@
     "excludeFromSync": "Escludi dal sync",
     "includeInSync": "Includi nel sync",
     "excludedFromSync": "{{name}} escluso dal sync",
-    "includedInSync": "{{name}} incluso nel sync"
+    "includedInSync": "{{name}} incluso nel sync",
+    "replaceText": "Sostituisci testo"
   },
   "tools": {
     "title": "Strumenti PDF",
