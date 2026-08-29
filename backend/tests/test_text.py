@@ -67,6 +67,54 @@ class TestReplaceText:
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_replace_text_preserves_font_size_position(self, client, pro_headers):
+        """Replacement text should keep the original font, size and baseline."""
+        import fitz
+
+        doc = fitz.open()
+        page_idx = doc.insert_page(-1, width=612, height=792)
+        page = doc[page_idx]
+        # Use a non-default font and size so we can verify preservation
+        page.insert_text((50, 100), "Hello World", fontname="tiro", fontsize=24)
+        content = doc.tobytes()
+        doc.close()
+
+        from tests.conftest import upload_pdf
+        doc_id = upload_pdf(client, pro_headers, content, filename="font.pdf")
+
+        response = client.post(
+            f"/pdfs/{doc_id}/replace-text",
+            headers=pro_headers,
+            json={"search": "World", "replace": "There"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        new_id = response.json()["id"]
+
+        # Download the REPLACED PDF (new_id, not doc_id)
+        dl = client.get(f"/pdfs/{new_id}/download", headers=pro_headers)
+        assert dl.status_code == status.HTTP_200_OK
+        replaced = fitz.open(stream=dl.content, filetype="pdf")
+        page = replaced[0]
+        data = page.get_text("dict")
+        spans = []
+        for block in data.get("blocks", []):
+            if block.get("type") != 0:
+                continue
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    spans.append(span)
+        replaced.close()
+
+        # The replacement "There" should exist with the same font and size
+        there_spans = [s for s in spans if "There" in s.get("text", "")]
+        assert there_spans, "Replacement text not found in output PDF"
+        span = there_spans[0]
+        assert span["size"] == 24, f"Expected size 24, got {span['size']}"
+        # Baseline origin should be near the original (50, 100)
+        origin = span["origin"]
+        assert abs(origin[0] - 50) < 5, f"Origin x {origin[0]} too far from 50"
+        assert abs(origin[1] - 100) < 5, f"Origin y {origin[1]} too far from 100"
+
 
 class TestExtractText:
     """Test suite for PDF text extraction endpoint."""

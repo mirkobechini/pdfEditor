@@ -356,17 +356,29 @@ class PdfService:
                     if occurrence is not None and total_replacements >= occurrence:
                         break
 
+                    # Find the exact span containing the searched text to
+                    # preserve the original font, size and baseline (origin).
+                    span_info = self._find_text_span(page, rect, search)
+
                     # Redact the found text area
                     page.add_redact_annot(rect, fill=None)
                     page.apply_redactions()
                     # Insert replacement text
-                    fontsize = rect.y1 - rect.y0 - 2
-                    if fontsize < 6:
-                        fontsize = 10
+                    if span_info:
+                        fontsize = span_info["size"]
+                        fontname = span_info["font"]
+                        origin = span_info["origin"]
+                    else:
+                        # Fallback: estimate from rect
+                        fontsize = rect.y1 - rect.y0 - 2
+                        if fontsize < 6:
+                            fontsize = 10
+                        fontname = "helv"
+                        origin = (rect.x0, rect.y0 + 1)
                     page.insert_text(
-                        (rect.x0, rect.y0 + 1),
+                        origin,
                         replace,
-                        fontname="helv",
+                        fontname=fontname,
                         fontsize=fontsize,
                     )
                     total_replacements += 1
@@ -392,6 +404,49 @@ class PdfService:
             user_id=user_id,
         )
         return self.repo.create(new_pdf)
+
+    def _find_text_span(
+        self,
+        page,
+        rect,
+        search: str,
+        tolerance: float = 1.0,
+    ) -> dict | None:
+        """Find the text span containing the searched text near a rect.
+
+        Uses ``page.get_text("dict")`` to locate the exact span whose origin
+        (baseline) is closest to the found rect. Returns font name, font size
+        and baseline origin so replacement text matches the original style.
+        """
+        data = page.get_text("dict")
+        best_span = None
+        best_dist = float("inf")
+
+        for block in data.get("blocks", []):
+            if block.get("type") != 0:
+                continue  # skip image blocks
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    span_text = span.get("text", "")
+                    if search not in span_text and span_text.strip() != search:
+                        continue
+                    # Use baseline origin (x = left, y = baseline)
+                    origin = span.get("origin", (rect.x0, rect.y0))
+                    dist = abs(origin[0] - rect.x0) + abs(
+                        origin[1] - rect.y0
+                    )
+                    if dist < best_dist:
+                        best_dist = dist
+                        best_span = span
+
+        if best_span is None:
+            return None
+
+        return {
+            "font": best_span.get("font", "helv"),
+            "size": best_span.get("size", 10),
+            "origin": best_span.get("origin", (rect.x0, rect.y0 + 1)),
+        }
 
     def extract_text(self, pdf_id: str, user_id: str, page: int | None = None) -> tuple[str, int]:
         """Extract text from a PDF. If page is None, extracts from all pages."""
