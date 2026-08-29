@@ -17,6 +17,7 @@ import * as Sharing from "expo-sharing";
 import { useTranslation } from "react-i18next";
 import { useCloudSync } from "../hooks/useCloudSync";
 import DeleteSyncDialog, { type DeleteSyncOption } from "./DeleteSyncDialog";
+import ReplaceTextDialog from "../components/ReplaceTextDialog";
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Main">;
 
@@ -44,6 +45,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const [renameText, setRenameText] = useState("");
     const [renameTarget, setRenameTarget] = useState<LocalPdf | null>(null);
     const [detailsPdf, setDetailsPdf] = useState<LocalPdf | null>(null);
+    const [replaceTextPdf, setReplaceTextPdf] = useState<LocalPdf | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [snackbarMsg, setSnackbarMsg] = useState("");
@@ -451,6 +453,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                         )}
                         <List.Item title={t("home.delete")} left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
                         <List.Item title={t("home.details")} left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setDetailsPdf(pdf); } }} />
+                        <List.Item title={t("home.replaceText")} left={(p) => <List.Icon {...p} icon="text-search" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setReplaceTextPdf(pdf); } }} />
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setContextPdf(null)}>{t("common.close")}</Button>
@@ -496,6 +499,16 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
+
+            <ReplaceTextDialog
+                visible={replaceTextPdf !== null}
+                onClose={() => setReplaceTextPdf(null)}
+                pdfId={replaceTextPdf?.id ?? null}
+                onSuccess={() => {
+                    setReplaceTextPdf(null);
+                    loadPdfs();
+                }}
+            />
 
             <Snackbar
                 visible={snackbarVisible}
