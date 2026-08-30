@@ -159,7 +159,8 @@
     "documentation": "Documentazione",
     "open": "Apri",
     "delete": "Cancella",
-    "view": "Visualizza"
+    "view": "Visualizza",
+    "backToEditor": "Torna all'editor"
   },
   "editor": {
     "openLocalPdf": "Apri PDF locale",

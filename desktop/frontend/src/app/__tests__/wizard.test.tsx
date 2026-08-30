@@ -158,12 +158,13 @@ describe("WizardPage", () => {
     expect(mockPush).toHaveBeenCalledWith("/login");
   });
 
-  it("redirects to /app on Finish", () => {
+  it("stores wizard_done and redirects to /login on Finish", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(screen.getByText("continue"));
     fireEvent.click(screen.getByText(/finish/));
-    expect(mockPush).toHaveBeenCalledWith("/app");
+    expect(localStorage.getItem("pdfeditor_wizard_done")).toBe("true");
+    expect(mockPush).toHaveBeenCalledWith("/login");
   });
 
   // ── Sidebar ──
