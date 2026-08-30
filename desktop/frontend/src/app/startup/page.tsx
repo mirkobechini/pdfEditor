@@ -96,16 +96,20 @@ export default function StartupPage() {
         const dbStep = steps.find((s) => s.id === "database");
         if (!dbStep || dbStep.status !== "done") return;
 
+        let cancelled = false;
+
         async function verifyApi() {
             // Actually verify the API is ready by calling listPdfs
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 30 && !cancelled; i++) {
                 try {
                     const res = await fetch(`${API_BASE}/pdfs?skip=0&limit=1`);
                     if (res.ok) {
-                        setSteps((prev) =>
-                            prev.map((s) => s.id === "api" ? { ...s, status: "done" as const } : s)
-                        );
-                        setAllDone(true);
+                        if (!cancelled) {
+                            setSteps((prev) =>
+                                prev.map((s) => s.id === "api" ? { ...s, status: "done" as const } : s)
+                            );
+                            setAllDone(true);
+                        }
                         return;
                     }
                 } catch {
@@ -113,13 +117,19 @@ export default function StartupPage() {
                 }
                 await new Promise((r) => setTimeout(r, 500));
             }
-            // Fallback: mark as done anyway after timeout
-            setSteps((prev) =>
-                prev.map((s) => s.id === "api" ? { ...s, status: "done" as const } : s)
-            );
-            setAllDone(true);
+            // All attempts failed — show error instead of passing through
+            if (!cancelled) {
+                setSteps((prev) =>
+                    prev.map((s) => s.id === "api" ? {
+                        ...s, status: "error" as const,
+                        message: ts("apiError")
+                    } : s)
+                );
+                setFatalError(ts("fatalError"));
+            }
         }
         verifyApi();
+        return () => { cancelled = true; };
     }, [steps.find((s) => s.id === "database")?.status]);
 
     // Redirect to wizard (first launch) or login when all done
