@@ -243,6 +243,10 @@ describe("AuthProvider", () => {
     await waitFor(() => {
       expect(screen.getByTestId("user")).toHaveTextContent("google-cloud@test.com");
     });
+    // The user must be synced to the sidecar so local listPdfs works
+    expect(mockSyncUser).toHaveBeenCalledWith(
+      expect.objectContaining({ email: "google-cloud@test.com" }),
+    );
   });
 
   it("googleLogin with id_token exchanges via cloud API", async () => {
