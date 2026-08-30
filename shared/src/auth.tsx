@@ -257,6 +257,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const u = await cloudApi.getMe();
           setUser(u);
           setIsOffline(false);
+          // Sync user to sidecar so local getMe/CSRF/listPdfs work
+          await api.syncUser(u);
         }
       } else {
         // Google id_token — exchange via cloud API
