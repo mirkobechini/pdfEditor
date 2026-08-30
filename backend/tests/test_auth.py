@@ -610,6 +610,99 @@ class TestUnlinkGoogle:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
+class TestSyncUser:
+    """Test suite for POST /auth/sync — cloud user sync into local sidecar DB."""
+
+    URL = "/auth/sync"
+
+    def _sync_payload(self, email="sync@test.com", user_id="cloud-id-1", full_name="Sync User"):
+        return {
+            "id": user_id,
+            "email": email,
+            "full_name": full_name,
+            "is_active": True,
+            "is_admin": False,
+            "is_guest": False,
+            "license_tier": "free",
+            "license_tier_source": "admin",
+            "google_id": "google-123",
+        }
+
+    def test_sync_creates_new_user(self, client):
+        """POST /auth/sync should create a new user and return local JWT."""
+        response = client.post(self.URL, json=self._sync_payload())
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+        assert "csrf_token" in data
+        assert len(data["csrf_token"]) == 64
+
+        # The new user should be able to getMe with the local token
+        me_resp = client.get(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {data['access_token']}"},
+        )
+        assert me_resp.status_code == status.HTTP_200_OK
+        assert me_resp.json()["email"] == "sync@test.com"
+
+    def test_sync_updates_existing_user_by_id(self, client):
+        """POST /auth/sync should update user when ID matches."""
+        # First sync creates the user
+        client.post(self.URL, json=self._sync_payload())
+        # Second sync with same ID updates (no duplicate error)
+        response = client.post(
+            self.URL,
+            json=self._sync_payload(full_name="Updated Name"),
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_sync_same_email_different_id_reuses_local_user(self, client):
+        """CRITICAL: sync with same email but different ID (Google login case)
+        must NOT crash with UNIQUE constraint — it should reuse the local user
+        and update it with cloud data."""
+        # Create a local user first (as if registered locally before cloud sync)
+        client.post(
+            "/auth/register",
+            json={"email": "sync@test.com", "password": "Password123", "full_name": "Local User"},
+        )
+        client.cookies.clear()
+
+        # Now sync the SAME email but with a DIFFERENT cloud ID (Google login case)
+        response = client.post(
+            self.URL,
+            json=self._sync_payload(email="sync@test.com", user_id="different-cloud-id"),
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert "access_token" in data
+
+        # The local user should now have the google_id set (updated, not duplicated)
+        me_resp = client.get(
+            "/auth/me",
+            headers={"Authorization": f"Bearer {data['access_token']}"},
+        )
+        assert me_resp.status_code == status.HTTP_200_OK
+        assert me_resp.json()["email"] == "sync@test.com"
+        assert me_resp.json()["google_id"] == "google-123"
+
+    def test_sync_with_password_allows_offline_login(self, client):
+        """POST /auth/sync with password should allow local login later."""
+        response = client.post(
+            self.URL,
+            json={**self._sync_payload(email="sync-pw@test.com"), "password": "SyncPass123"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+        # Local login with the synced password should work
+        client.cookies.clear()
+        login_resp = client.post(
+            "/auth/login",
+            json={"email": "sync-pw@test.com", "password": "SyncPass123"},
+        )
+        assert login_resp.status_code == status.HTTP_200_OK
+
+
 class TestGuestAccess:
     """Test suite for POST /auth/guest and POST /auth/guest/convert."""
 
