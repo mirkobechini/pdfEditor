@@ -605,6 +605,11 @@ def sync_user(
 
     # Upsert user by id (matching cloud user id)
     user = repo.get_by_id(req.id)
+    if not user:
+        # Fallback: match by email — the local user may have been created
+        # before cloud sync (different ID). Reuse it so local PDFs stay
+        # associated, and update it with cloud data + google_id.
+        user = repo.get_by_email(req.email)
     if user:
         # Update existing
         user.email = req.email
