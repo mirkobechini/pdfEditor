@@ -103,7 +103,8 @@ export default function StartupPage() {
             for (let i = 0; i < 30 && !cancelled; i++) {
                 try {
                     const res = await fetch(`${API_BASE}/pdfs?skip=0&limit=1`);
-                    if (res.ok) {
+                    // 401 means the API is working (just needs auth) — treat as success
+                    if (res.ok || res.status === 401) {
                         if (!cancelled) {
                             setSteps((prev) =>
                                 prev.map((s) => s.id === "api" ? { ...s, status: "done" as const } : s)
@@ -113,7 +114,7 @@ export default function StartupPage() {
                         return;
                     }
                 } catch {
-                    // API not ready yet
+                    // API not ready yet (connection refused, timeout, etc.)
                 }
                 await new Promise((r) => setTimeout(r, 500));
             }
