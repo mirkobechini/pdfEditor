@@ -320,6 +320,7 @@
     "connectingDb": "Connecting to SQLite database...",
     "verifyingApi": "Verifying API and services...",
     "timeoutError": "Timeout. Backend not responding after 60 seconds.",
+    "apiError": "API not responding. The sidecar may have crashed.",
     "fatalError": "Cannot reach the backend. Verify that the sidecar is running on port 7723.",
     "startingApp": "Starting PdfEditor",
     "retry": "Retry",

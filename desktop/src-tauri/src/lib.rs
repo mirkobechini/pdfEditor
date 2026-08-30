@@ -15,26 +15,10 @@ struct SidecarState {
 
 /// Spawn the FastAPI sidecar process.
 fn start_sidecar(app: &tauri::App) {
-    // If port 7723 already responds, a sidecar is already running (e.g. from a previous instance).
-    // Do NOT kill it — it belongs to the running instance. The single-instance plugin
-    // will handle bringing the existing window to focus.
-    use std::io::Write;
-    use std::net::TcpStream;
-
-    let already_running = TcpStream::connect_timeout(
-        &"127.0.0.1:7723".parse().unwrap(),
-        std::time::Duration::from_millis(500),
-    )
-    .map(|mut stream| {
-        let _ = write!(stream, "GET /health HTTP/1.0\r\n\r\n");
-        true
-    })
-    .unwrap_or(false);
-
-    if already_running {
-        log::info!("Sidecar già in esecuzione sulla porta 7723 — skip spawn.");
-        return;
-    }
+    // Kill any orphaned sidecar process from a previous crash that may still
+    // hold port 7723. The single-instance plugin prevents multiple app windows,
+    // but a crashed instance can leave a zombie sidecar behind.
+    kill_by_name();
 
     // Clean up orphaned PyInstaller _MEI* temp directories left from crashed sidecars.
     // If the sidecar was killed forcefully (taskkill /F), _MEI* dirs remain corrupted
