@@ -70,6 +70,8 @@ def _add_missing_columns():
         pdf_missing = []
         if "pdf_creation_date" not in pdf_cols:
             pdf_missing.append("pdf_creation_date VARCHAR(50)")
+        if "upload_source" not in pdf_cols:
+            pdf_missing.append("upload_source VARCHAR(20)")
         for col_def in pdf_missing:
             with engine.connect() as conn:
                 conn.execute(text(f"ALTER TABLE pdf_documents ADD COLUMN {col_def}"))
