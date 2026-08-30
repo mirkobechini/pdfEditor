@@ -57,7 +57,8 @@ export default function WizardPage() {
         if (workFolder.trim()) {
             updatePrefs({ default_save_folder: workFolder.trim() });
         }
-        router.push("/app");
+        localStorage.setItem("pdfeditor_wizard_done", "true");
+        router.push("/login");
     }
 
     function handleBack() {
