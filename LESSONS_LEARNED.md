@@ -1,7 +1,21 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-08-22
+> **Aggiornato:** 2026-08-30
+
+---
+
+## Non usare `--runtime-tmpdir` nella build manuale del sidecar
+
+> **Lezione appresa (2026-08-30):**
+
+Ho ricostruito il sidecar manualmente con `pyinstaller --onefile --runtime-tmpdir "."`. Lo script ufficiale `desktop/build-sidecar.ps1` NON usa `--runtime-tmpdir` (default PyInstaller = `%TEMP%`). Conseguenza: a runtime, quando Tauri spawna il sidecar con cwd = `%LOCALAPPDATA%/PdfEditor/`, PyInstaller estraeva i file `_MEI*` **lì** invece che in `%TEMP%`. Dopo 3 avvii si sono accumulate 3 cartelle `_MEI*` da ~126MB ciascuna (~380MB di spazzatura).
+
+**Sintomo:** `%LOCALAPPDATA%/PdfEditor/_MEI*` ripiene, git mostrava `desktop/src-tauri/_MEI350922/` come untracked.
+
+**Regola:** Quando si ricostruisce il sidecar in locale, usare SEMPRE lo script ufficiale `desktop/build-sidecar.ps1` (o il comando PyInstaller identico, **senza** `--runtime-tmpdir`). Mai improvvisare opzioni diverse — PyInstaller ha default sensati per `--onefile`.
+
+**Nota:** `%APPDATA%/PdfEditor/` (DB, secret.key, storage) è distinto da `%LOCALAPPDATA%/PdfEditor/` (exe estratti + temp). Non confonderli durante le pulizie.
 
 ---
 
