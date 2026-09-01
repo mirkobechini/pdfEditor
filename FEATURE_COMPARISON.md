@@ -30,7 +30,7 @@
 | Split PDF                       | ✅  | ✅      | ✅     | Mobile: split interattivo (scegli pagine)                                                                                                            |
 | Reorder pagine                  | ✅  | ✅      | ✅     | Mobile: pulsanti su/giù                                                                                                                              |
 | Remove pagine                   | ✅  | ✅      | ✅     |                                                                                                                                                      |
-| Replace text                    | ✅  | ✅      | ✅     | Web/desktop: aggiorna viewer, preserva font/size. Mobile: via cloud API                                                                                                                  |
+| Replace text                    | ✅  | ✅      | ✅     | Web/desktop: aggiorna viewer, preserva font/size. Mobile: via cloud API                                                                              |
 | Password protect                | ✅  | ✅      | ✅     | Mobile: @cantoo/pdf-lib (fork con encrypt)                                                                                                           |
 | Unlock PDF                      | ✅  | ✅      | ✅     |                                                                                                                                                      |
 | Undo/Redo                       | ✅  | ✅      | ❌     | Solo backend (history)                                                                                                                               |
