@@ -2,8 +2,9 @@ name: Keep Warm Backend
 
 on:
   schedule:
-    # Ogni 5 minuti — mantiene il backend su Render sempre attivo
-    - cron: "*/5 * * * *"
+    # Ogni 14 minuti — mantiene Render attivo (sleep threshold = 15min)
+    # senza esaurire le compute hours di Neon (100h/mese free tier)
+    - cron: "*/14 * * * *"
   workflow_dispatch: # Permette esecuzione manuale
 
 permissions:
