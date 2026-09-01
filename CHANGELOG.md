@@ -2,17 +2,17 @@
 
 ## 2026-09-01
 
-### 🐛 Fix desktop: Google login, migration DB, wizard, startup (issue #710)
+### 🐛 Fix desktop/mobile (desktop v0.1.35 | mobile v0.2.1 | web v0.1.37)
 
 - **Fix Google login** (issue #710): dopo il login Google il sidecar crashava con `UNIQUE constraint failed: users.email` perché `auth/sync` faceva upsert solo per ID cloud, ignorando l'utente locale esistente con la stessa email. Fix: upsert per email come fallback.
-- **Fix token locale** (issue #710): `googleLogin()` ignorava il risultato di `syncUser`, mantenendo il JWT cloud in `api` → 401 loop. Fix: token locale da `syncResult.access_token` usato per `api` e `store_jwt`.
-- **Fix migration automatica** (issue #710): sidecar crashava con `no such column: pdf_documents.upload_source` su DB legacy. `_add_missing_columns()` riscritta per auto-rilevare colonne mancanti confrontando il modello SQLAlchemy con il DB, senza lista manuale.
+- **Fix token locale** (issue #710): `googleLogin()` ignorava il risultato di `syncUser`, mantenendo il JWT cloud in `api` → 401 loop → 500 su `/pdfs`. Fix: token locale da `syncResult.access_token` usato per `api` e `store_jwt`.
+- **Fix migration DB automatica** (issue #710): sidecar crashava con `no such column: pdf_documents.upload_source` su DB legacy. `_add_missing_columns()` riscritta per auto-rilevare colonne mancanti confrontando il modello SQLAlchemy con il DB — nessuna lista manuale necessaria.
 - **Fix wizard** (issue #710): `handleFinish()` andava a `/app` senza login. Fix: va a `/login` + salva `pdfeditor_wizard_done`.
 - **Fix startup page** (issue #708): passava anche se il sidecar non era pronto (fallback bug rimosso). 401 = API pronta, errore solo se nessuna risposta dopo 15s.
 - **Fix sidecar zombie** (issue #708): `kill_by_name()` all'avvio per liberare porta 7723 da istanze precedenti.
 - **Fix i18n** `editor.user` mancante in EN e IT.
-- **Fix replace text** (issue #702): aggiornamento viewer dopo replace su web, desktop e mobile.
-- **Fix replace text font/size** (issue #704): backend ora preserva font, dimensione e baseline originali.
+- **Fix replace text viewer** (issue #702): aggiornamento viewer dopo replace su web, desktop e mobile. Nuovo `ReplaceTextModal` su desktop, `ReplaceTextDialog` su mobile via cloud API.
+- **Fix replace text font/size** (issue #704): backend ora preserva font, dimensione e baseline originali tramite `page.get_text("dict")`.
 - **AGENT_FLOW**: aggiunta regola "100% coverage per ogni file modificato prima della PR".
 
 ## 2026-08-28
