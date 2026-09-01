@@ -235,6 +235,10 @@ describe("AuthProvider", () => {
   it("googleLogin with JWT handles api.getMe failure", async () => {
     mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
     mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google-cloud@test.com" });
+    mockSyncUser.mockResolvedValueOnce({
+      access_token: "local-jwt-token",
+      csrf_token: "local-csrf",
+    });
 
     render(<AuthProvider><TestConsumer /></AuthProvider>);
     await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
@@ -247,6 +251,45 @@ describe("AuthProvider", () => {
     expect(mockSyncUser).toHaveBeenCalledWith(
       expect.objectContaining({ email: "google-cloud@test.com" }),
     );
+    // The LOCAL token from syncUser must be set on api (not the cloud JWT)
+    expect(mockSetToken).toHaveBeenCalledWith("local-jwt-token");
+    expect(mockSetCsrfToken).toHaveBeenCalledWith("local-csrf");
+  });
+
+  it("googleLogin with JWT in Tauri persists LOCAL token for offline restart", async () => {
+    mockIsTauri = true;
+    mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
+    mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google-cloud@test.com" });
+    mockSyncUser.mockResolvedValueOnce({
+      access_token: "local-jwt-token",
+      csrf_token: "local-csrf",
+    });
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-google-jwt"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("google-cloud@test.com");
+    });
+    // store_jwt must receive the LOCAL token, not the cloud JWT
+    expect(mockTauriInvoke).toHaveBeenCalledWith("store_jwt", { token: "local-jwt-token" });
+  });
+
+  it("googleLogin with JWT keeps cloud token when syncUser returns null", async () => {
+    mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
+    mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google-cloud@test.com" });
+    mockSyncUser.mockResolvedValueOnce(null);
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-google-jwt"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("google-cloud@test.com");
+    });
+    // syncUser returned null — api keeps whatever token it had (cloud JWT)
+    expect(mockSetToken).not.toHaveBeenCalledWith("local-jwt-token");
   });
 
   it("googleLogin with id_token exchanges via cloud API", async () => {

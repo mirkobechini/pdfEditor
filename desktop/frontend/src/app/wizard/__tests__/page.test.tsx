@@ -148,7 +148,9 @@ describe("WizardPage", () => {
         fireEvent.click(checkbox);
         fireEvent.click(screen.getByText("Continua"));
         fireEvent.click(screen.getByText("Fine"));
-        expect(mockPush).toHaveBeenCalledWith("/app");
+        // Finish must mark wizard as done and go to /login (not /app)
+        expect(localStorage.getItem("pdfeditor_wizard_done")).toBe("true");
+        expect(mockPush).toHaveBeenCalledWith("/login");
     });
 
     it("saves work folder on finish", () => {

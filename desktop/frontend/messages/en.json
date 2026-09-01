@@ -159,7 +159,8 @@
     "documentation": "Documentation",
     "open": "Open",
     "delete": "Delete",
-    "view": "View"
+    "view": "View",
+    "backToEditor": "Back to editor"
   },
   "editor": {
     "openLocalPdf": "Open Local PDF",
@@ -177,6 +178,7 @@
     "remove": "Remove",
     "metadata": "Metadata",
     "replaceText": "Replace Text",
+    "user": "User",
     "cloudSync": "Cloud Sync",
     "settings": "Settings",
     "dropToUpload": "Release to upload the PDF",
