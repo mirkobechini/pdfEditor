@@ -1,7 +1,31 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-08-30
+> **Aggiornato:** 2026-09-01
+
+---
+
+## \_add_missing_columns generica vs Alembic per il sidecar desktop
+
+> **Lezione appresa (2026-09-01):**
+
+Il sidecar crashava con `no such column: pdf_documents.upload_source` su DB legacy (creato prima che venisse aggiunta la colonna). La `_add_missing_columns()` originale aveva una lista manuale di colonne da aggiungere — mancava `upload_source`.
+
+**Tentativo di soluzione:** aggiungere la colonna manualmente. **Soluzione corretta:** riscrivere `_add_missing_columns()` per auto-rilevare le colonne mancanti confrontando `Base.metadata.sorted_tables` con lo schema reale del DB.
+
+**Perché non Alembic per il sidecar:** Alembic richiede che `alembic.ini` e le versioni siano disponibili a runtime nel bundle PyInstaller (path management complesso in `_MEIPASS`). La funzione generica è sufficiente per SQLite desktop che non richiede rename/drop colonne.
+
+**Regola:** Ogni nuova colonna nel modello SQLAlchemy è gestita automaticamente da `_add_missing_columns()` nel sidecar — nessuna modifica manuale necessaria. Per il cloud (Neon), continuare a usare Alembic come definito in ADR.
+
+---
+
+## Google login desktop: syncUser deve restituire token locale
+
+> **Lezione appresa (2026-09-01):**
+
+Dopo il login Google su desktop, il sidecar crashava con `UNIQUE constraint failed: users.email`. Causa: `auth/sync` faceva upsert solo per ID cloud, ignorando l'utente locale esistente con la stessa email (ID diverso). Inoltre, anche quando `syncUser` funzionava, il risultato veniva ignorato e `api` manteneva il JWT cloud → 401 loop → 500 su `/pdfs`.
+
+**Regola:** `auth/sync` deve fare upsert per email come fallback. Il chiamante deve usare `syncResult.access_token` (JWT locale del sidecar) per `api.setToken()` e `store_jwt`, non il JWT cloud.
 
 ---
 
