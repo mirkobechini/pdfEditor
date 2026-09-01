@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-08-28
+> **Aggiornato:** 2026-09-01
 
 ---
 
@@ -10,18 +10,18 @@
 
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
-| **Backend** (FastAPI/Python)   | pytest      | **371** | **88%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **565** | **94.96%** | ✅    |
-| **Desktop** (Tauri)            | vitest      | **897** | **91.41%** | ✅    |
-| **Mobile** (React Native/Expo) | jest        | **272** | **98.7%**  | ✅    |
+| **Backend** (FastAPI/Python)   | pytest      | **375** | **94%**    | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **566** | **94.96%** | ✅    |
+| **Desktop** (Tauri)            | vitest      | **906** | **90.84%** | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **276** | **98.7%**  | ✅    |
 
-> ℹ️ **Desktop**: 897 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **91.41% statements, 94.88% lines**.
+> ℹ️ **Desktop**: 906 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +9 test ReplaceTextModal, +3 test googleLogin.
 >
 > ⚠️ **Nota:** `ReorderPagesModal` ha i callback DnD (`@dnd-kit/core`) non copribili in jsdom — richiedono test E2E con Playwright. Coverage ferma a 81.17% per quel file.
 >
-> ℹ️ **Mobile**: 272 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. Tutti i file a 100% tranne `api.ts` (96.73%).
+> ℹ️ **Mobile**: 276 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. +4 test api replaceText.
 >
-> ℹ️ **Webapp**: 565 test (Vitest). Target 90% raggiunto (issue #700): **94.96% statements, 97.34% lines**. Tutti i file >= 90% statements.
+> ℹ️ **Webapp**: 566 test (Vitest). Target 90% raggiunto (issue #700): **94.96% statements, 97.34% lines**. Tutti i file >= 90% statements.
 
 ---
 

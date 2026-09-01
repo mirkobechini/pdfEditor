@@ -1,53 +1,43 @@
 {
   "desktop": [
     {
-      "version": "v0.1.36",
-      "date": "2026-08-25",
+      "version": "v0.1.35",
+      "date": "2026-09-01",
       "changes": [
-        "Desktop test coverage 70%+: 680 test (da 375), 79.77% statements",
-        "Nuovi test: GuestConvertBanner, useCloudSync, Settings, Login, Wizard, EditorPage",
-        "Test ampliati: GoogleLoginButton, SplitPagesModal, RemovePagesModal, ReorderPagesModal",
-        "Tutti i file desktop frontend >= 70% coverage",
-        "Desktop fixes batch #689: 9 fix + i18n completa + 375 test",
-        "Cloud sync: mappa persistente localId→cloudId, match per filename, sync all'avvio",
+        "Fix Google login: PDF locali ora visibili dopo il login Google",
+        "Fix Replace Text: aggiorna il viewer dopo la sostituzione, preserva font/size/posizione",
+        "Fix migrazione DB: nuove colonne rilevate automaticamente all'avvio",
+        "Fix wizard: al termine ora va alla pagina di login",
+        "Fix startup page: mostra errore se il sidecar non parte (nessun passthrough silenzioso)",
+        "Fix sidecar zombie: porta 7723 liberata all'avvio da istanze precedenti",
+        "JWT persistente: token sopravvive ai riavvii del sidecar",
+        "Login offline: funzionante dopo il primo sync dal cloud",
         "Cloud sync: feedback dialog, PDF protetti saltati, deletePdf local/cloud/both",
-        "Badge emoji piattaforma: ☁️🌐💻📱 invece di PDF",
-        "Workplace folder picker in Settings (dialog nativo)",
-        "Versione letta da i18n, bump script centralizzato",
-        "Pulsanti Organize/Convert → Download funzionante",
         "i18n completa: wizard, login, register, profile, license, startup, modali",
-        "Logout cancella JWT dal Tauri store persistente",
-        "Data: tempo relativo su created_at, creato usa pdf_creation_date",
-        "375 test desktop frontend — tutti passanti",
-        "Desktop: cartella predefinita per salvataggio PDF (wizard + preferenze)"
+        "906 test frontend — coverage 90%+ su tutti i file"
       ]
     },
     {
-      "version": "v0.1.35",
-      "date": "2026-08-18",
+      "version": "v0.1.34",
+      "date": "2026-08-21",
       "changes": [
-        "Desktop: eliminazione PDF dalla lista documenti",
-        "Desktop: metadata modal funzionante (overwrite/save-as)",
-        "Desktop: JWT persistente e login offline",
-        "Desktop: PreferencesProvider per settings istantanee",
-        "Desktop: About section con modali Release Notes, Bug Report, Docs",
-        "Backend: sync password per login offline desktop",
-        "Docs: ADR, CHANGELOG, LESSONS_LEARNED aggiornati"
+        "Test suite desktop: 370 test Vitest, coverage 71% lines",
+        "CI ristrutturata per piattaforma: ci-web, ci-desktop, ci-mobile separati",
+        "Path filter per ogni CI: si attiva solo sui file della piattaforma"
       ]
     }
   ],
   "mobile": [
     {
       "version": "v0.2.1-mobile",
-      "date": "2026-08-27",
+      "date": "2026-09-01",
       "changes": [
-        "Test coverage 90%: 272 test (da 182), 98.7% statements, 100% lines",
-        "Tutti i file >= 90%: pdfService 100%, api 96.73%, error-map 100%, localDb 100%, i18n 100%",
-        "Nuovi test: pdfService-utils, pdfService-metadata, pdfService-protect, api-refresh, api-branches, api-pdf",
+        "Replace Text: nuovo componente ReplaceTextDialog via cloud API",
+        "Fix Replace Text api: metodo replaceText aggiunto al client API",
+        "Test coverage 90%: 276 test, 98.7% statements, 100% lines",
         "Remember me con schermata di caricamento",
         "Snackbar errore upload cloud",
         "PDF salvati in cartella PdfEditor/",
-        "Fix cursore rename PDF",
         "CI mobile: ora esegue test Jest"
       ]
     },
@@ -64,21 +54,22 @@
   "web": [
     {
       "version": "v0.1.37",
-      "date": "2026-08-28",
+      "date": "2026-09-01",
       "changes": [
-        "Test coverage 90%: 565 test (da 508), 94.96% statements, 97.34% lines",
-        "Tutti i file >= 90%: auth 93.02%, Sidebar 92.42%, PdfViewer 92.79%, HeaderControls 96.55%, register 97.29%, login 93.61%, tauri 96.15%, usePdfJs 94.11%, EditorPage 92.14%, admin 95.04%",
-        "Nuovi test: PasswordInput (100%), GuestConvertBanner (100%), ClientLayout (100%), home page (100%)",
-        "Test ampliati: BugReportDialog (96.66%), MetadataDialog (97.77%), AdminPage (95.04%)",
-        "Dead code rimosso: EditorPage (5 handler inutilizzati), admin page (handleSendReset)"
+        "Fix Replace Text: aggiorna il viewer dopo la sostituzione",
+        "Fix Replace Text font/size: backend preserva font, dimensione e baseline originali",
+        "Test coverage 90%: 566 test, 94.96% statements — tutti i file >= 90%",
+        "Dead code rimosso: EditorPage, admin page",
+        "Keep-warm: GitHub Actions pinga /health ogni 5 minuti 24/7",
+        "Icona origine piattaforma: 🌐 💻 📱 accanto ai PDF"
       ]
     },
     {
       "version": "v0.1.36",
       "date": "2026-08-23",
       "changes": [
-        "Keep-warm: GitHub Actions pinga /health ogni 5 minuti 24/7",
-        "Icona origine piattaforma: 🌐 💻 📱 accanto ai PDF nella sidebar",
+        "Test coverage 70%: 508 test, 85.01% statements",
+        "Nuovi test: layout-pages, download, error-map, MonkeyLogo",
         "Backend: upload_source (web/desktop/mobile) su modello e API"
       ]
     }

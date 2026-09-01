@@ -1,6 +1,6 @@
 # Feature Comparison: Web vs Desktop vs Mobile
 
-> **Ultimo aggiornamento:** 2026-08-23
+> **Ultimo aggiornamento:** 2026-09-01
 > Questo file traccia le differenze funzionali tra le tre piattaforme di PdfEditor.
 
 ---
@@ -30,7 +30,7 @@
 | Split PDF                       | ✅  | ✅      | ✅     | Mobile: split interattivo (scegli pagine)                                                                                                            |
 | Reorder pagine                  | ✅  | ✅      | ✅     | Mobile: pulsanti su/giù                                                                                                                              |
 | Remove pagine                   | ✅  | ✅      | ✅     |                                                                                                                                                      |
-| Replace text                    | ❌  | ❌      | ❌     | Non funziona su nessuna piattaforma                                                                                                                  |
+| Replace text                    | ✅  | ✅      | ✅     | Web/desktop: aggiorna viewer, preserva font/size. Mobile: via cloud API                                                                                                                  |
 | Password protect                | ✅  | ✅      | ✅     | Mobile: @cantoo/pdf-lib (fork con encrypt)                                                                                                           |
 | Unlock PDF                      | ✅  | ✅      | ✅     |                                                                                                                                                      |
 | Undo/Redo                       | ✅  | ✅      | ❌     | Solo backend (history)                                                                                                                               |
@@ -87,7 +87,7 @@
 ### Desktop (`desktop/`)
 
 - **Stack:** Tauri v2 + Next.js static export + sidecar FastAPI (PyInstaller)
-- **Auth:** Email/password, guest (Google OAuth commentato nel codice), JWT refresh automatico ✅
+- **Auth:** Email/password, guest, Google OAuth (redirect flow via browser di sistema), JWT refresh automatico ✅
 - **Operazioni:** Sidecar locale (PyMuPDF) + cloud per auth
 - **Undo/Redo:** Supportato (history sul sidecar)
 - **Rispetto a web:** Stessa UI, Google OAuth non attivo

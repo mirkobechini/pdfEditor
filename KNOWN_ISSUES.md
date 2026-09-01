@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-08-23
+> **Aggiornato:** 2026-09-01
 
 ---
 
@@ -81,11 +81,9 @@
 
 ## 🟡 Bug minori
 
-### B2 — Find & Replace non funziona
+### B2 — Find & Replace ✅ Fixato (issue #702, #704)
 
-**File:** `backend/app/api/v1/text.py`  
-**Descrizione:** L'endpoint `POST /pdfs/{id}/replace-text` accetta `search + replace + occurrence` ma il risultato non è affidabile. PyMuPDF text search ha limitazioni con PDF complessi (font embedded, ligature, spaziature variabili).  
-**Risoluzione prevista:** Sostituire con inline text editor (`.specs/plans/feature-inline-text-editor.md`).
+Replace text ora funziona su web, desktop e mobile. Aggiorna il viewer dopo la sostituzione e preserva font, dimensione e baseline del testo originale. La sostituzione WYSIWYG inline (issue #inline-text-editor) rimane come feature futura separata.
 
 ---
 
