@@ -1,9 +1,17 @@
 # Lessons Learned
 
-> **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-01
+> **Scopo:** Documentare le lezioni apprese durante lo svilupzo, problemi architetturali emersi, e regole per evitare che si ripetano.
+> **Aggiornato:** 2026-09-02
 
 ---
+
+## CI release-desktop timeout inutile quando non ci sono check runs
+
+> **Lezione appresa (2026-09-02):**
+
+La `release-desktop.yml` aspettava 15 minuti anche quando non c'erano check runs per il commit taggato. Causa: `ci-desktop.yml` ha path filter `desktop/**` + `shared/**`, ma sui tag viene pushato solo il commit (spesso con modifiche `.github/workflows/` o doc) — il path filter esclude il commit dalla CI. `wait-for-ci` eseguiva 30 loop da 30s aspettando check runs inesistenti.
+
+**Regola:** se `RESULT` è vuoto (nessun check run), procedere immediatamente. Il loop di attesa serve solo per aspettare CI in corso, non per attendere CI che non partirà mai.
 
 ## Keep-warm troppo aggressivo esaurisce le compute hours di Neon
 
