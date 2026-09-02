@@ -14,6 +14,7 @@
         "Login offline: funzionante dopo il primo sync dal cloud",
         "Cloud sync: feedback dialog, PDF protetti saltati, deletePdf local/cloud/both",
         "i18n completa: wizard, login, register, profile, license, startup, modali",
+        "Fix keep-warm: ping ogni 14min invece di 5min (evita esaurimento compute Neon)",
         "906 test frontend — coverage 90%+ su tutti i file"
       ]
     },
@@ -58,9 +59,10 @@
       "changes": [
         "Fix Replace Text: aggiorna il viewer dopo la sostituzione",
         "Fix Replace Text font/size: backend preserva font, dimensione e baseline originali",
+        "Fix keep-warm: ping ogni 14min invece di 5min (evita esaurimento compute Neon)",
         "Test coverage 90%: 566 test, 94.96% statements — tutti i file >= 90%",
         "Dead code rimosso: EditorPage, admin page",
-        "Keep-warm: GitHub Actions pinga /health ogni 5 minuti 24/7",
+        "Keep-warm: GitHub Actions pinga /health ogni 14 minuti",
         "Icona origine piattaforma: 🌐 💻 📱 accanto ai PDF"
       ]
     },
