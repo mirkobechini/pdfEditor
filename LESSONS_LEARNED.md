@@ -4,6 +4,7 @@
 > **Aggiornato:** 2026-09-01
 
 ---
+
 ## Keep-warm troppo aggressivo esaurisce le compute hours di Neon
 
 > **Lezione appresa (2026-09-01):**
@@ -15,6 +16,7 @@ Il keep-warm (GitHub Actions cron ogni 5min) mantiene Render sveglio ma tiene an
 **Regola:** Il keep-warm deve pingare ogni 14min (threshold sleep Render = 15min). Non serve frequenza maggiore — Render si risveglia in ~2s dalla richiesta dell'utente. Meno ping = meno compute Neon consumato.
 
 ---
+
 ## \_add_missing_columns generica vs Alembic per il sidecar desktop
 
 > **Lezione appresa (2026-09-01):**
