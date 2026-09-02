@@ -118,28 +118,28 @@ fi
 # 8. Verifica versioni allineate
 # ─────────────────────────────────────────────
 echo "── 8/8 Version alignment ──"
-V_FE=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/frontend/package.json" 2>/dev/null)
-V_DFE=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/desktop/frontend/package.json" 2>/dev/null)
-V_CARGO=$(grep -m1 '^version' "$ROOT/desktop/src-tauri/Cargo.toml" 2>/dev/null | cut -d'"' -f2)
-V_TAURI=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/desktop/src-tauri/tauri.conf.json" 2>/dev/null)
-V_UI=$(grep -oP 'v\K\d+\.\d+\.\d+' "$ROOT/desktop/frontend/src/app/startup/page.tsx" 2>/dev/null | head -1)
+# Web e desktop hanno track di versioning indipendenti — non confrontarli tra loro
+V_FE=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/frontend/package.json" 2>/dev/null || true)
+V_DFE=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/desktop/frontend/package.json" 2>/dev/null || true)
+V_CARGO=$(grep -m1 '^version' "$ROOT/desktop/src-tauri/Cargo.toml" 2>/dev/null | cut -d'"' -f2 || true)
+V_TAURI=$(grep -oP '"version":\s*"\K[^"]+' "$ROOT/desktop/src-tauri/tauri.conf.json" 2>/dev/null || true)
+V_UI=$(grep -oP 'v\K\d+\.\d+\.\d+' "$ROOT/desktop/frontend/src/app/startup/page.tsx" 2>/dev/null | head -1 || true)
+V_EN=$(grep -oP '"version":\s*"v\K[^"]+' "$ROOT/desktop/frontend/messages/en.json" 2>/dev/null || true)
+V_IT=$(grep -oP '"version":\s*"v\K[^"]+' "$ROOT/desktop/frontend/messages/it.json" 2>/dev/null || true)
 
-echo "  Frontend web:      $V_FE"
+echo "  Frontend web:      $V_FE  (track separato)"
 echo "  Desktop frontend:  $V_DFE"
 echo "  Cargo.toml:        $V_CARGO"
 echo "  tauri.conf.json:   $V_TAURI"
 echo "  Startup UI:        $V_UI"
-
-# Also check i18n messages version
-V_EN=$(grep -oP '"version":\s*"v\K[^"]+' "$ROOT/desktop/frontend/messages/en.json" 2>/dev/null)
-V_IT=$(grep -oP '"version":\s*"v\K[^"]+' "$ROOT/desktop/frontend/messages/it.json" 2>/dev/null)
 echo "  messages/en.json:  $V_EN"
 echo "  messages/it.json:  $V_IT"
 
-if [ "$V_DFE" = "$V_FE" ] && [ "$V_FE" = "$V_CARGO" ] && [ "$V_CARGO" = "$V_TAURI" ] && [ "$V_TAURI" = "$V_EN" ] && [ "$V_EN" = "$V_IT" ]; then
-  pass "versioni allineate ($V_FE)"
+# Controlla solo i file desktop tra loro (web ha versioning indipendente)
+if [ "$V_DFE" = "$V_CARGO" ] && [ "$V_CARGO" = "$V_TAURI" ] && [ "$V_TAURI" = "$V_EN" ] && [ "$V_EN" = "$V_IT" ]; then
+  pass "versioni desktop allineate ($V_DFE)"
 else
-  fail "versioni NON allineate! Web=$V_FE Desktop=$V_DFE Cargo=$V_CARGO Tauri=$V_TAURI UI=$V_UI"
+  fail "versioni NON allineate! Desktop=$V_DFE Cargo=$V_CARGO Tauri=$V_TAURI en=$V_EN it=$V_IT"
 fi
 
 # ─────────────────────────────────────────────
