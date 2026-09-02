@@ -21,6 +21,16 @@ CSRF_EXEMPT_PATHS = {
     "/auth/guest",
     "/auth/guest/convert",
     "/auth/sync",
+    # API v1 auth endpoints (for mobile compatibility)
+    "/api/v1/auth/login",
+    "/api/v1/auth/register", 
+    "/api/v1/auth/google",
+    "/api/v1/auth/logout",
+    "/api/v1/auth/forgot-password",
+    "/api/v1/auth/reset-password",
+    "/api/v1/auth/guest",
+    "/api/v1/auth/guest/convert",
+    "/api/v1/auth/sync",
     "/health",
 }
 
