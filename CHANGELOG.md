@@ -4,6 +4,8 @@
 
 ### 🐛 Fix desktop/mobile (desktop v0.1.35 | mobile v0.2.1 | web v0.1.37)
 
+- **Fix keep-warm** (issue #712): ping ogni 5min → ogni 14min. Il ping H24 ogni 5min consumava le 100h/mese di compute Neon in ~4 giorni, rompendo il cloud sync.
+
 - **Fix Google login** (issue #710): dopo il login Google il sidecar crashava con `UNIQUE constraint failed: users.email` perché `auth/sync` faceva upsert solo per ID cloud, ignorando l'utente locale esistente con la stessa email. Fix: upsert per email come fallback.
 - **Fix token locale** (issue #710): `googleLogin()` ignorava il risultato di `syncUser`, mantenendo il JWT cloud in `api` → 401 loop → 500 su `/pdfs`. Fix: token locale da `syncResult.access_token` usato per `api` e `store_jwt`.
 - **Fix migration DB automatica** (issue #710): sidecar crashava con `no such column: pdf_documents.upload_source` su DB legacy. `_add_missing_columns()` riscritta per auto-rilevare colonne mancanti confrontando il modello SQLAlchemy con il DB — nessuna lista manuale necessaria.

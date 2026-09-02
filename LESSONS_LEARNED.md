@@ -4,7 +4,17 @@
 > **Aggiornato:** 2026-09-01
 
 ---
+## Keep-warm troppo aggressivo esaurisce le compute hours di Neon
 
+> **Lezione appresa (2026-09-01):**
+
+Il keep-warm (GitHub Actions cron ogni 5min) mantiene Render sveglio ma tiene anche attiva la connessione a Neon. Il free tier di Neon ha 100h/mese di compute: con ping ogni 5min H24, il compute si esaurisce in ~4 giorni. Il cloud sync smette di funzionare silenziosamente.
+
+**Sintomo:** cloud sync mobile/desktop smette di funzionare dopo ~4 giorni dall'inizio del mese (o dall'attivazione del keep-warm).
+
+**Regola:** Il keep-warm deve pingare ogni 14min (threshold sleep Render = 15min). Non serve frequenza maggiore — Render si risveglia in ~2s dalla richiesta dell'utente. Meno ping = meno compute Neon consumato.
+
+---
 ## \_add_missing_columns generica vs Alembic per il sidecar desktop
 
 > **Lezione appresa (2026-09-01):**
