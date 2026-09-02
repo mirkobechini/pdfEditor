@@ -107,7 +107,8 @@ export default function PdfViewer({
                 canvas.style.width = `${viewport.width}px`;
                 canvas.style.height = `${viewport.height}px`;
 
-                const ctx = canvas.getContext("2d")!;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return;
                 ctx.scale(dpr, dpr);
                 const renderTask = page.render({
                     canvasContext: ctx,
@@ -136,13 +137,13 @@ export default function PdfViewer({
     }
 
     return (
-        <div className="relative flex w-full items-start justify-center">
+        <div className="relative flex h-full w-full items-start justify-center overflow-auto p-4">
             {rendering && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#f6f6f6]/80">
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0f0d0b]/80">
                     <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#f7871f] border-t-transparent" />
                 </div>
             )}
-            <canvas ref={canvasRef} className="shadow-lg" />
+            <canvas ref={canvasRef} className="shadow-2xl" />
         </div>
     );
 }

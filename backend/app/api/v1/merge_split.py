@@ -48,7 +48,7 @@ def split_pdf(
         if not req.ranges or len(req.ranges) == 0:
             raise error_response(ErrorCode.SPLIT_INVALID_RANGE, "Ranges are required when mode is 'range'")
         try:
-            results = service.split_by_ranges(pdf_id, current_user.id, req.ranges, output_filename=req.output_filename)
+            results = service.split_by_ranges(pdf_id, current_user.id, req.ranges, output_filename=req.output_filename, output_filenames=req.output_filenames)
         except ValueError:
             raise error_response(ErrorCode.SPLIT_INVALID_RANGE, "Invalid page range specified")
     else:

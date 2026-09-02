@@ -64,7 +64,6 @@ $PYTHON -m PyInstaller \
     --hidden-import "app.services" \
     --hidden-import "app.api.v1" \
     --add-data "$PROJECT_ROOT/desktop/.env.desktop:." \
-    --runtime-tmpdir "." \
     "$ENTRY_POINT"
 
 # Clean up temp build files

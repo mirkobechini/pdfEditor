@@ -16,6 +16,7 @@ vi.mock("../../../lib/api", () => ({
     api: {
         updateProfile: vi.fn(),
         listMyBugReports: vi.fn(),
+        unlinkGoogle: vi.fn(),
     },
 }));
 
@@ -107,5 +108,88 @@ describe("ProfilePage", () => {
         await waitFor(() => {
             expect(screen.getByText("noBugs")).toBeInTheDocument();
         });
+    });
+
+    it("does not save name when empty", () => {
+        (useAuth as any).mockReturnValue({ user: mockUser, loading: false, setUser: vi.fn() });
+        render(<ProfilePage />);
+        const input = screen.getByDisplayValue("Test User");
+        fireEvent.change(input, { target: { value: "   " } });
+        fireEvent.click(screen.getByText("save"));
+        expect(api.updateProfile).not.toHaveBeenCalled();
+    });
+
+    it("does not save name when unchanged", () => {
+        (useAuth as any).mockReturnValue({ user: mockUser, loading: false, setUser: vi.fn() });
+        render(<ProfilePage />);
+        fireEvent.click(screen.getByText("save"));
+        expect(api.updateProfile).not.toHaveBeenCalled();
+    });
+
+    it("shows error message when name save fails", async () => {
+        (useAuth as any).mockReturnValue({ user: mockUser, loading: false, setUser: vi.fn() });
+        (api.updateProfile as any).mockRejectedValue(new Error("Save failed"));
+        render(<ProfilePage />);
+        const input = screen.getByDisplayValue("Test User");
+        fireEvent.change(input, { target: { value: "New Name" } });
+        fireEvent.click(screen.getByText("save"));
+        await waitFor(() => {
+            expect(screen.getByText("error")).toBeInTheDocument();
+        });
+    });
+
+    it("shows Google not linked for user without google_id", () => {
+        (useAuth as any).mockReturnValue({ user: mockUser, loading: false, setUser: vi.fn() });
+        render(<ProfilePage />);
+        expect(screen.getByText("googleNotLinked")).toBeInTheDocument();
+    });
+
+    it("shows unlink button for user with google_id", () => {
+        const googleUser = { ...mockUser, google_id: "g123" };
+        (useAuth as any).mockReturnValue({ user: googleUser, loading: false, setUser: vi.fn() });
+        render(<ProfilePage />);
+        expect(screen.getByText("googleLinked")).toBeInTheDocument();
+        fireEvent.click(screen.getByText("unlink"));
+        expect(screen.getByText("unlinkGoogleTitle")).toBeInTheDocument();
+    });
+
+    it("unlinks Google account successfully", async () => {
+        const setUser = vi.fn();
+        const googleUser = { ...mockUser, google_id: "g123" };
+        (useAuth as any).mockReturnValue({ user: googleUser, loading: false, setUser });
+        (api.unlinkGoogle as any).mockResolvedValue({ ...mockUser, google_id: null });
+        render(<ProfilePage />);
+        fireEvent.click(screen.getByText("unlink"));
+        const passwordInput = screen.getByPlaceholderText("enterPassword");
+        fireEvent.change(passwordInput, { target: { value: "secret" } });
+        fireEvent.click(screen.getByText("confirmUnlink"));
+        await waitFor(() => {
+            expect(api.unlinkGoogle).toHaveBeenCalledWith("secret");
+            expect(setUser).toHaveBeenCalled();
+        });
+    });
+
+    it("shows error when unlink fails", async () => {
+        const googleUser = { ...mockUser, google_id: "g123" };
+        (useAuth as any).mockReturnValue({ user: googleUser, loading: false, setUser: vi.fn() });
+        (api.unlinkGoogle as any).mockRejectedValue(new Error("Wrong password"));
+        render(<ProfilePage />);
+        fireEvent.click(screen.getByText("unlink"));
+        const passwordInput = screen.getByPlaceholderText("enterPassword");
+        fireEvent.change(passwordInput, { target: { value: "bad" } });
+        fireEvent.click(screen.getByText("confirmUnlink"));
+        await waitFor(() => {
+            expect(screen.getByText("Wrong password")).toBeInTheDocument();
+        });
+    });
+
+    it("cancels unlink modal", () => {
+        const googleUser = { ...mockUser, google_id: "g123" };
+        (useAuth as any).mockReturnValue({ user: googleUser, loading: false, setUser: vi.fn() });
+        render(<ProfilePage />);
+        fireEvent.click(screen.getByText("unlink"));
+        expect(screen.getByText("unlinkGoogleTitle")).toBeInTheDocument();
+        fireEvent.click(screen.getByText("cancel"));
+        expect(screen.queryByText("unlinkGoogleTitle")).not.toBeInTheDocument();
     });
 });

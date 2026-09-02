@@ -1,10 +1,54 @@
 from pathlib import Path
+import os
+import sys
 
 from pydantic import ConfigDict, field_validator
 from pydantic_settings import BaseSettings
 
 # Backend root = 3 levels up from app/core/config.py
 BACKEND_DIR = Path(__file__).parent.parent.parent
+
+
+def _get_app_data_dir() -> Path:
+    """Return the persistent app data directory for PyInstaller bundles.
+    Falls back to BACKEND_DIR when running in development."""
+    if hasattr(sys, "_MEIPASS"):
+        if sys.platform == "win32":
+            base = Path(os.environ.get("APPDATA", Path.home()))
+        else:
+            base = Path.home() / ".local" / "share"
+        return base / "PdfEditor"
+    return BACKEND_DIR
+
+
+def _load_or_generate_jwt_secret() -> str:
+    """Load JWT secret from a persistent file, or generate and save one.
+
+    In cloud deployment, JWT_SECRET_KEY is set via .env and takes precedence.
+    On desktop (PyInstaller bundle), the secret is persisted to a file so
+    that JWT tokens survive sidecar restarts.
+    """
+    import secrets
+
+    app_data = _get_app_data_dir()
+    secret_file = app_data / "secret.key"
+
+    # Try to load existing secret
+    if secret_file.exists():
+        try:
+            return secret_file.read_text().strip()
+        except OSError:
+            pass
+
+    # Generate new secret and persist it
+    secret = secrets.token_urlsafe(48)
+    try:
+        app_data.mkdir(parents=True, exist_ok=True)
+        secret_file.write_text(secret)
+    except OSError:
+        pass  # Non-critical — will generate a new one next time
+
+    return secret
 
 
 class Settings(BaseSettings):
@@ -35,10 +79,14 @@ class Settings(BaseSettings):
     @field_validator("JWT_SECRET_KEY", mode="before")
     @classmethod
     def generate_jwt_secret_if_empty(cls, v: str) -> str:
-        """Auto-generate JWT secret key if empty, same as SECRET_KEY."""
+        """Auto-generate JWT secret key if empty.
+
+        In cloud deployment, JWT_SECRET_KEY is set explicitly in .env.
+        On desktop (PyInstaller bundle), uses a persistent secret stored
+        in %APPDATA%/PdfEditor/secret.key so JWT tokens survive restarts.
+        """
         if not v or not v.strip():
-            import secrets
-            return secrets.token_urlsafe(48)
+            return _load_or_generate_jwt_secret()
         return v
 
     # CORS origins (production should restrict this)
@@ -58,7 +106,7 @@ class Settings(BaseSettings):
     PUBLIC_URL: str = ""  # Custom domain for OAuth redirect URIs (e.g. https://pdfeditor-api.mirkobechini.com)
 
     # Database — use as_posix() to get forward slashes for SQLAlchemy URI
-    DATABASE_URL: str = f"sqlite:///{(BACKEND_DIR / 'pdf_editor.db').as_posix()}"
+    DATABASE_URL: str = f"sqlite:///{(_get_app_data_dir() / 'pdfeditor.db').as_posix()}"
 
     @field_validator("DATABASE_URL", mode="after")
     @classmethod
@@ -69,8 +117,8 @@ class Settings(BaseSettings):
             return v.replace("postgresql://", "postgresql+psycopg://", 1)
         return v
 
-    # Storage — absolute path to backend/storage/pdfs
-    UPLOAD_DIR: str = (BACKEND_DIR / "storage" / "pdfs").as_posix()
+    # Storage — absolute path, same base as the database
+    UPLOAD_DIR: str = (_get_app_data_dir() / "storage" / "pdfs").as_posix()
     MAX_UPLOAD_SIZE_MB: int = 50
     MAX_PAGE_COUNT: int = 500
 

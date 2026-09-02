@@ -61,7 +61,7 @@ export function useCameraScanner() {
 
         const pdfBytes = await pdfDoc.save();
 
-        const pdfDir = (FileSystem.documentDirectory || "") + "pdfs/";
+        const pdfDir = (FileSystem.documentDirectory || "") + "PdfEditor/";
         const dirInfo = await FileSystem.getInfoAsync(pdfDir);
         if (!dirInfo.exists) {
           await FileSystem.makeDirectoryAsync(pdfDir, { intermediates: true });

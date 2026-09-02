@@ -165,12 +165,21 @@ export class ApiClient {
   }
 
   async login(email: string, password: string): Promise<AuthResponse> {
-    const res = await this._fetch(`${this.baseUrl}/auth/login`, {
+    // Usa fetch diretto (non _fetch) per evitare che il 401 auto-refresh
+    // interferisca con EMAIL_NOT_FOUND / WRONG_PASSWORD
+    const res = await fetch(`${this.baseUrl}/auth/login`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      const code =
+        body?.detail?.code ||
+        body?.code ||
+        (await ApiClient.extractErrorResponse(res));
+      throw new Error(code);
+    }
     const data = await res.json();
     if (data.csrf_token) this.setCsrfToken(data.csrf_token);
     return data;
@@ -234,10 +243,13 @@ export class ApiClient {
       const res = await fetch(fileUri);
       const blob = await res.blob();
       formData.append("file", blob, fileName);
-      const uploadRes = await this._fetch(`${this.baseUrl}/pdfs/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const uploadRes = await this._fetch(
+        `${this.baseUrl}/pdfs/upload?upload_source=mobile`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
       if (!uploadRes.ok)
         throw new Error(await ApiClient.extractErrorResponse(uploadRes));
       return uploadRes.json();
@@ -387,6 +399,26 @@ export class ApiClient {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
+  // Text
+  async replaceText(
+    id: string,
+    search: string,
+    replace: string,
+    occurrence?: number,
+    outputFilename?: string,
+  ): Promise<PdfDocument> {
+    const body: Record<string, unknown> = { search, replace };
+    if (occurrence !== undefined) body.occurrence = occurrence;
+    if (outputFilename) body.output_filename = outputFilename;
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/replace-text`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();

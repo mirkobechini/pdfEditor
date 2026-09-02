@@ -31,7 +31,7 @@
 
 | Platform   | Latest version                                                                      |
 | ---------- | ----------------------------------------------------------------------------------- |
-| 🖥️ Desktop | [Download v0.1.34](https://github.com/mirkobechini/pdfEditor/releases/latest)       |
+| 🖥️ Desktop | [Download v0.1.35](https://github.com/mirkobechini/pdfEditor/releases/latest)       |
 | 📱 Mobile  | [Download v0.1.0](https://github.com/mirkobechini/pdfEditor/releases) (APK Android) |
 
 ## 🛠️ Tech stack

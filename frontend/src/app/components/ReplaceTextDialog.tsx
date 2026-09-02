@@ -2,16 +2,17 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { api } from "../lib/api";
+import { api, PdfDocument } from "../lib/api";
 import { mapError } from "../lib/error-map";
 
 interface ReplaceTextDialogProps {
     open: boolean;
     onClose: () => void;
     pdfId: string | null;
+    onSuccess?: (doc: PdfDocument) => void;
 }
 
-export default function ReplaceTextDialog({ open, onClose, pdfId }: ReplaceTextDialogProps) {
+export default function ReplaceTextDialog({ open, onClose, pdfId, onSuccess }: ReplaceTextDialogProps) {
     const t = useTranslations("replaceTextDialog");
     const [search, setSearch] = React.useState("");
     const [replaceWith, setReplaceWith] = React.useState("");
@@ -26,10 +27,11 @@ export default function ReplaceTextDialog({ open, onClose, pdfId }: ReplaceTextD
         setError("");
         try {
             const occurrence = replaceAll ? undefined : 1;
-            await api.replaceText(pdfId, search, replaceWith, occurrence, outputName.trim() || undefined);
+            const result = await api.replaceText(pdfId, search, replaceWith, occurrence, outputName.trim() || undefined);
             setSearch("");
             setReplaceWith("");
             onClose();
+            onSuccess?.(result);
         } catch (err) {
             setError(t("replaceFailed") + ": " + mapError(err));
         } finally {

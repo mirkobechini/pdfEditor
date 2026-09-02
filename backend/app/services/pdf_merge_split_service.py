@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.storage import save_pdf, get_pdf_path
 from app.models.pdf import PdfDocument
 from app.repositories.pdf_repo import PdfRepository
+from app.services.pdf_service import _get_cached_password
 
 
 class PdfMergeSplitService:
@@ -23,7 +24,20 @@ class PdfMergeSplitService:
     def _get_file_content(self, pdf: PdfDocument) -> bytes | None:
         file_uuid = pdf.storage_filename.replace(".pdf", "")
         path = get_pdf_path(file_uuid)
-        return path.read_bytes() if path else None
+        if not path:
+            return None
+        content = path.read_bytes()
+        # Decrypt if password-protected and cached password is available
+        if pdf.is_password_protected:
+            password = _get_cached_password(pdf.id)
+            if not password:
+                raise ValueError(f"PDF {pdf.id} is password protected. Please unlock it first.")
+            doc = fitz.open(stream=content, filetype="pdf")
+            if doc.needs_pass:
+                doc.authenticate(password)
+            content = doc.tobytes()
+            doc.close()
+        return content
 
     def merge(self, pdf_ids: list[str], user_id: str, output_filename: str | None = None) -> PdfDocument:
         """Merge multiple PDFs into one."""
@@ -69,7 +83,7 @@ class PdfMergeSplitService:
         )
         return self.repo.create(pdf)
 
-    def split_by_ranges(self, pdf_id: str, user_id: str, ranges: list[str], output_filename: str | None = None) -> list[PdfDocument]:
+    def split_by_ranges(self, pdf_id: str, user_id: str, ranges: list[str], output_filename: str | None = None, output_filenames: list[str] | None = None) -> list[PdfDocument]:
         """Split a PDF by page ranges."""
         pdf = self._get_user_pdf(pdf_id, user_id)
         content = self._get_file_content(pdf)
@@ -91,7 +105,11 @@ class PdfMergeSplitService:
                 out_bytes = output.tobytes()
                 output.close()
                 file_uuid = save_pdf(out_bytes)
-                if output_filename:
+                if output_filenames and i < len(output_filenames) and output_filenames[i]:
+                    range_name = output_filenames[i].strip()
+                    if not range_name.lower().endswith(".pdf"):
+                        range_name += ".pdf"
+                elif output_filename:
                     base = output_filename.replace(".pdf", "")
                     range_name = f"{base}_part_{i + 1}.pdf"
                 else:

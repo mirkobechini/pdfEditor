@@ -35,6 +35,7 @@ def list_pdfs(
 @router.post("/upload", response_model=PdfResponse, status_code=status.HTTP_201_CREATED)
 def upload_pdf(
     file: UploadFile = File(...),
+    upload_source: str = "web",
     current_user: User = Depends(get_current_user),
     service: PdfService = Depends(get_pdf_service),
 ) -> PdfResponse:
@@ -64,6 +65,7 @@ def upload_pdf(
             filename=file.filename,
             content=content,
             user_id=current_user.id,
+            upload_source=upload_source,
         )
     except ValueError:
         raise error_response(ErrorCode.INVALID_PDF, "Invalid PDF file")
@@ -101,7 +103,19 @@ def download_pdf(
             detail="PDF not found",
         )
 
-    content = service.get_file_content(pdf)
+    # If the PDF is password-protected, try to decrypt with cached password
+    if pdf.is_password_protected:
+        try:
+            content = service.get_decrypted_content(pdf)
+        except ValueError:
+            raise error_response(
+                ErrorCode.PDF_LOCKED,
+                "PDF is password protected. Please unlock it first.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+    else:
+        content = service.get_file_content(pdf)
+
     if not content:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

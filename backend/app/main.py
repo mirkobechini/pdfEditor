@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 import logging
 import signal
+import sys
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -40,57 +41,52 @@ def _run_migrations():
 
 
 def _add_missing_columns():
-    """Add columns that may be missing from existing database tables."""
-    from sqlalchemy import text, inspect
+    """Auto-detect missing columns by comparing SQLAlchemy models with the DB schema.
+
+    SQLite type mapping is approximate — we use VARCHAR for most non-integer types
+    because SQLite is loosely typed and CAST handles the rest.
+    """
+    from sqlalchemy import text, inspect as sa_inspect
+    from sqlalchemy import Integer, Boolean, String, Text, Float, Numeric
     from sqlalchemy.exc import OperationalError, SQLAlchemyError
+
+    def _sqlite_type(col) -> str:
+        t = col.type
+        if isinstance(t, Boolean):
+            default = "0" if col.default is None else str(int(col.default.arg)) if hasattr(col.default, "arg") else "0"
+            nullable = "" if col.nullable else f" NOT NULL DEFAULT {default}"
+            return f"INTEGER{nullable}"
+        if isinstance(t, Integer):
+            default_clause = ""
+            if not col.nullable and col.default is not None and hasattr(col.default, "arg"):
+                default_clause = f" NOT NULL DEFAULT {col.default.arg}"
+            elif not col.nullable:
+                default_clause = " NOT NULL DEFAULT 0"
+            return f"INTEGER{default_clause}"
+        # VARCHAR / TEXT / TIMESTAMP / etc.
+        default_clause = ""
+        if col.default is not None and hasattr(col.default, "arg") and not callable(col.default.arg):
+            val = col.default.arg
+            default_clause = f" DEFAULT '{val}'"
+        return f"VARCHAR(255){default_clause}"
+
     try:
-        inspector = inspect(engine)
-        existing_cols = {c["name"] for c in inspector.get_columns("users")}
-        missing = []
-        if "license_tier_source" not in existing_cols:
-            missing.append("license_tier_source VARCHAR(20) NOT NULL DEFAULT 'admin'")
-        if "google_id" not in existing_cols:
-            missing.append("google_id VARCHAR(255)")
-        if "reset_token" not in existing_cols:
-            missing.append("reset_token VARCHAR(255)")
-        if "reset_token_expires" not in existing_cols:
-            missing.append("reset_token_expires TIMESTAMP")
-        if "is_guest" not in existing_cols:
-            missing.append("is_guest BOOLEAN NOT NULL DEFAULT FALSE")
-        for col_def in missing:
-            with engine.connect() as conn:
-                conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_def}"))
-                conn.commit()
-        if missing:
-            logger.info("Added missing columns to users table: %s", ", ".join(m.split()[0] for m in missing))
-
-        # Check pdf_documents table for missing columns
-        pdf_cols = {c["name"] for c in inspector.get_columns("pdf_documents")} if "pdf_documents" in inspector.get_table_names() else set()
-        pdf_missing = []
-        if "pdf_creation_date" not in pdf_cols:
-            pdf_missing.append("pdf_creation_date VARCHAR(50)")
-        for col_def in pdf_missing:
-            with engine.connect() as conn:
-                conn.execute(text(f"ALTER TABLE pdf_documents ADD COLUMN {col_def}"))
-                conn.commit()
-        if pdf_missing:
-            logger.info("Added missing columns to pdf_documents table: %s", ", ".join(m.split()[0] for m in pdf_missing))
-
-        # Check user_preferences table for missing columns
-        pref_cols = {c["name"] for c in inspector.get_columns("user_preferences")} if "user_preferences" in inspector.get_table_names() else set()
-        pref_missing = []
-        if "antialiasing" not in pref_cols:
-            pref_missing.append("antialiasing INTEGER NOT NULL DEFAULT 1")
-        if "density" not in pref_cols:
-            pref_missing.append("density VARCHAR(20) NOT NULL DEFAULT 'comfortable'")
-        for col_def in pref_missing:
-            with engine.connect() as conn:
-                conn.execute(text(f"ALTER TABLE user_preferences ADD COLUMN {col_def}"))
-                conn.commit()
-        if pref_missing:
-            logger.info("Added missing columns to user_preferences table: %s", ", ".join(m.split()[0] for m in pref_missing))
-    except OperationalError:
-        pass  # Table doesn't exist yet — will be created via migration
+        inspector = sa_inspect(engine)
+        for table in Base.metadata.sorted_tables:
+            if table.name not in inspector.get_table_names():
+                continue  # new table — create_all handles it
+            existing = {c["name"] for c in inspector.get_columns(table.name)}
+            for col in table.columns:
+                if col.name in existing:
+                    continue
+                col_def = f"{col.name} {_sqlite_type(col)}"
+                try:
+                    with engine.connect() as conn:
+                        conn.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {col_def}"))
+                        conn.commit()
+                    logger.info("Added missing column %s.%s", table.name, col.name)
+                except OperationalError:
+                    pass  # column may have been added concurrently
     except SQLAlchemyError as e:
         logger.warning("Could not check/add missing columns: %s", e)
 
@@ -120,12 +116,16 @@ def _cleanup_on_shutdown():
 
 
 def _validate_settings():
-    """Validate critical configuration at startup."""
+    """Validate critical configuration at startup.
+    Skips production-only checks when running in PyInstaller bundle (desktop)."""
     if not settings.effective_secret_key:
         raise RuntimeError(
             "SECRET_KEY or JWT_SECRET_KEY must be set in .env. "
             "Without a secret key, JWT tokens can be forged."
         )
+    # Skip production-only checks when running in PyInstaller bundle (desktop)
+    if hasattr(sys, "_MEIPASS"):
+        return
     if not settings.DEBUG and settings.SUPER_ADMIN_EMAIL == "admin@pdfeditor.local":
         raise RuntimeError(
             "SUPER_ADMIN_EMAIL is still set to the default 'admin@pdfeditor.local'. "

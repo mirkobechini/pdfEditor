@@ -20,6 +20,7 @@ class PdfDocument(Base):
     author = Column(String(255), nullable=True)
     is_password_protected = Column(Boolean, default=False, nullable=False)
     pdf_creation_date = Column(String(50), nullable=True)  # Original PDF creation date
+    upload_source = Column(String(20), nullable=False, default="web")  # web, desktop, mobile
 
     created_at = Column(
         DateTime,

@@ -2,7 +2,9 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { isTauri, tauriInvoke } from "../../shared/tauri";
+import { usePreferences } from "../../lib/preferences";
 
 /** Open a URL in the system browser (works in Tauri webview). */
 async function openExternal(url: string) {
@@ -32,14 +34,16 @@ async function pickDirectory(): Promise<string | null> {
 }
 
 const steps = [
-    { id: "01", title: "Benvenuto" },
-    { id: "02", title: "Cartella di lavoro" },
+    { id: "01", title: "title" },
+    { id: "02", title: "workFolder" },
 ] as const;
 
 export default function WizardPage() {
     const router = useRouter();
+    const tw = useTranslations("wizard");
+    const { prefs, updatePrefs } = usePreferences();
     const [currentStep, setCurrentStep] = React.useState(0);
-    const [workFolder, setWorkFolder] = React.useState("");
+    const [workFolder, setWorkFolder] = React.useState(prefs.default_save_folder || "");
     const [indexing, setIndexing] = React.useState(false);
     const [acceptedTerms, setAcceptedTerms] = React.useState(false);
 
@@ -49,15 +53,18 @@ export default function WizardPage() {
         }
     }
 
+    function handleFinish() {
+        if (workFolder.trim()) {
+            updatePrefs({ default_save_folder: workFolder.trim() });
+        }
+        localStorage.setItem("pdfeditor_wizard_done", "true");
+        router.push("/login");
+    }
+
     function handleBack() {
         if (currentStep > 0) {
             setCurrentStep((s) => s - 1);
         }
-    }
-
-    function handleFinish() {
-        localStorage.setItem("pdfeditor_wizard_done", "true");
-        router.push("/login");
     }
 
     function handleSkip() {
@@ -70,11 +77,10 @@ export default function WizardPage() {
             case 0:
                 return (
                     <>
-                        <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#f7871f]">STEP 01</p>
-                        <h1 className="mt-3 text-[50px] font-bold leading-[1.08] tracking-[-0.02em] text-white">Benvenuto in PdfEditor</h1>
+                        <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#f7871f]">{tw("step01")}</p>
+                        <h1 className="mt-3 text-[50px] font-bold leading-[1.08] tracking-[-0.02em] text-white">{tw("welcomeTitle")}</h1>
                         <p className="mt-6 max-w-[700px] text-[14px] leading-relaxed text-[#9d9184]">
-                            Editing PDF di precisione, in locale. Il tuo workspace è cifrato nel keychain del sistema operativo.
-                            Funziona offline e si sincronizza quando torni online.
+                            {tw("welcomeDesc")}
                         </p>
                         <div className="mt-9 max-w-[700px] rounded-2xl border border-white/10 bg-[#1b1612] p-6">
                             <div className="flex items-start gap-3">
@@ -85,9 +91,9 @@ export default function WizardPage() {
                                     className="mt-0.5 h-4 w-4 rounded border-white/20 bg-transparent accent-[#f7871f]"
                                 />
                                 <span className="text-[14px] leading-relaxed text-[#9d9184]">
-                                    Accetto i{" "}
-                                    <button type="button" onClick={() => openExternal("https://pdfeditor.mirkobechini.com/terms")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">termini di licenza</button> e la{" "}
-                                    <button type="button" onClick={() => openExternal("https://www.iubenda.com/privacy-policy/76778813")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">privacy policy</button>
+                                    {tw("acceptTerms")}{" "}
+                                    <button type="button" onClick={() => openExternal("https://pdfeditor.mirkobechini.com/terms")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">{tw("licenseTerms")}</button> e la{" "}
+                                    <button type="button" onClick={() => openExternal("https://www.iubenda.com/privacy-policy/76778813")} className="cursor-pointer text-[#f7871f] underline hover:text-[#ff9b37]">{tw("privacyPolicy")}</button>
                                 </span>
                             </div>
                         </div>
@@ -96,19 +102,19 @@ export default function WizardPage() {
             case 1:
                 return (
                     <>
-                        <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#f7871f]">STEP 02</p>
-                        <h1 className="mt-3 text-[50px] font-bold leading-[1.08] tracking-[-0.02em] text-white">Cartella di lavoro</h1>
+                        <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#f7871f]">{tw("step02")}</p>
+                        <h1 className="mt-3 text-[50px] font-bold leading-[1.08] tracking-[-0.02em] text-white">{tw("workFolder")}</h1>
                         <p className="mt-6 max-w-[700px] text-[14px] leading-relaxed text-[#9d9184]">
-                            Scegli dove salvare i tuoi PDF e abilita l&apos;indicizzazione per ritrovarli velocemente.
+                            {tw("workFolderDesc")}
                         </p>
                         <div className="mt-9 max-w-[700px]">
-                            <label className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#9d9184]">PERCORSO CARTELLA</label>
+                            <label className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#9d9184]">{tw("folderPath")}</label>
                             <div className="mt-2 flex h-[48px] items-center gap-2">
                                 <input
                                     type="text"
                                     value={workFolder}
                                     onChange={(e) => setWorkFolder(e.target.value)}
-                                    placeholder="C:\Users\Utente\Documents\PDF"
+                                    placeholder={tw("folderPlaceholder")}
                                     className="h-full flex-1 rounded-[12px] border border-white/10 bg-[#1b1612] px-4 text-[14px] font-semibold text-white outline-none transition focus:border-[#f7871f]"
                                 />
                                 <button
@@ -118,15 +124,15 @@ export default function WizardPage() {
                                     }}
                                     className="h-full cursor-pointer rounded-[12px] border border-white/15 bg-[#1b1612] px-6 text-[13px] font-semibold text-white transition hover:bg-[#231c17]"
                                 >
-                                    Sfoglia…
+                                    {tw("browse")}
                                 </button>
                             </div>
                         </div>
                         <div className="mt-5 max-w-[700px] rounded-2xl border border-white/10 bg-[#1b1612] p-4">
                             <label className="flex cursor-pointer items-center justify-between">
                                 <div>
-                                    <p className="text-[14px] font-semibold text-white">Indicizzazione file</p>
-                                    <p className="text-[12px] text-[#9d9184]">Cerca e organizza automaticamente i PDF</p>
+                                    <p className="text-[14px] font-semibold text-white">{tw("fileIndexing")}</p>
+                                    <p className="text-[12px] text-[#9d9184]">{tw("fileIndexingDesc")}</p>
                                 </div>
                                 <div
                                     className={`relative h-6 w-11 cursor-pointer rounded-full transition ${indexing ? "bg-[#f7871f]" : "bg-white/15"}`}
@@ -156,24 +162,24 @@ export default function WizardPage() {
                                 ) : (
                                     <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-[15px] font-bold ${i === currentStep ? "border border-[#8a4f22] bg-[#3c2516] text-[#f7871f]" : "border border-white/10 bg-white/[0.04] text-[#8b7f73]"}`}>{step.id}</span>
                                 )}
-                                <span className={`text-[14px] leading-tight ${i === currentStep ? "font-semibold text-white" : "text-[#8f8377]"}`}>{step.title}</span>
+                                <span className={`text-[14px] leading-tight ${i === currentStep ? "font-semibold text-white" : "text-[#8f8377]"}`}>{tw(step.title)}</span>
                             </div>
                         ))}
                     </div>
-                    <p className="mt-auto text-[14px] font-mono uppercase tracking-[0.2em] text-[#8f8377]">SETUP {currentStep + 1} DI 2</p>
+                    <p className="mt-auto text-[14px] font-mono uppercase tracking-[0.2em] text-[#8f8377]">{tw("setupProgress", { current: currentStep + 1, total: 2 })}</p>
                 </aside>
                 <main className="flex-1 bg-[#221b16] px-14 py-18">
                     {renderStepContent()}
                     <div className="mt-9 flex max-w-[700px] items-center justify-between gap-3">
-                        <button onClick={handleSkip} className="cursor-pointer text-[14px] font-semibold text-[#9d9184] transition hover:text-white">Salta</button>
+                        <button onClick={handleSkip} className="cursor-pointer text-[14px] font-semibold text-[#9d9184] transition hover:text-white">{tw("skip")}</button>
                         <div className="flex items-center gap-3">
                             {currentStep > 0 && (
-                                <button onClick={handleBack} className="cursor-pointer rounded-2xl border border-white/15 bg-[#1b1612] px-8 py-3 text-[14px] font-semibold text-white transition hover:bg-[#231c17]">Indietro</button>
+                                <button onClick={handleBack} className="cursor-pointer rounded-2xl border border-white/15 bg-[#1b1612] px-8 py-3 text-[14px] font-semibold text-white transition hover:bg-[#231c17]">{tw("back")}</button>
                             )}
                             {currentStep < 1 ? (
-                                <button onClick={handleNext} disabled={currentStep === 0 && !acceptedTerms} className="cursor-pointer rounded-2xl bg-[#f7871f] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_8px_22px_rgba(247,135,31,0.35)] transition hover:bg-[#ff9b37] disabled:cursor-not-allowed disabled:opacity-50">Continua</button>
+                                <button onClick={handleNext} disabled={currentStep === 0 && !acceptedTerms} className="cursor-pointer rounded-2xl bg-[#f7871f] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_8px_22px_rgba(247,135,31,0.35)] transition hover:bg-[#ff9b37] disabled:cursor-not-allowed disabled:opacity-50">{tw("continue")}</button>
                             ) : (
-                                <button onClick={handleFinish} className="cursor-pointer rounded-2xl bg-[#f7871f] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_8px_22px_rgba(247,135,31,0.35)] transition hover:bg-[#ff9b37]">Fine · avvia l&apos;app</button>
+                                <button onClick={handleFinish} className="cursor-pointer rounded-2xl bg-[#f7871f] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_8px_22px_rgba(247,135,31,0.35)] transition hover:bg-[#ff9b37]">{tw("finish")}</button>
                             )}
                         </div>
                     </div>

@@ -120,72 +120,6 @@ export default function EditorPage() {
         }
     }
 
-    async function handleMerge(ids: string[]) {
-        try {
-            const merged = await api.mergePdfs(ids);
-            setSidebarRefreshKey((prev) => prev + 1);
-            setSelectedId(merged.id);
-            const blob = await api.downloadPdf(merged.id);
-            const url = URL.createObjectURL(blob);
-            if (fileUrl) URL.revokeObjectURL(fileUrl);
-            setFileUrl(url);
-            setMergeOpen(false);
-        } catch (err) {
-            console.error("Merge failed:", err);
-        }
-    }
-
-    async function handleSplit(id: string, pages: number[]) {
-        try {
-            // Convert pages array to ranges string format expected by API
-            const ranges = pages.length > 0 ? [pages.map(String).join("-")] : [];
-            const split = await api.splitPdf(id, "range", ranges);
-            setSidebarRefreshKey((prev) => prev + 1);
-            setSelectedId(split.items?.[0]?.id || id);
-            const blob = await api.downloadPdf(split.items?.[0]?.id || id);
-            const url = URL.createObjectURL(blob);
-            if (fileUrl) URL.revokeObjectURL(fileUrl);
-            setFileUrl(url);
-            setSplitOpen(false);
-        } catch (err) {
-            console.error("Split failed:", err);
-        }
-    }
-
-    async function handleReorder(id: string, order: number[]) {
-        try {
-            await api.reorderPages(id, order);
-            const blob = await api.downloadPdf(id);
-            const url = URL.createObjectURL(blob);
-            if (fileUrl) URL.revokeObjectURL(fileUrl);
-            setFileUrl(url);
-            setReorderOpen(false);
-        } catch (err) {
-            console.error("Reorder failed:", err);
-        }
-    }
-
-    async function handleRemove(id: string, pages: number[]) {
-        try {
-            await api.removePages(id, pages);
-            const blob = await api.downloadPdf(id);
-            const url = URL.createObjectURL(blob);
-            if (fileUrl) URL.revokeObjectURL(fileUrl);
-            setFileUrl(url);
-            setRemoveOpen(false);
-        } catch (err) {
-            console.error("Remove failed:", err);
-        }
-    }
-
-    async function handleMetadata(id: string, data: Record<string, string>) {
-        try {
-            await api.updateMetadata(id, data);
-        } catch (err) {
-            console.error("Metadata update failed:", err);
-        }
-    }
-
     async function handleDelete(doc: PdfDocument) {
         await api.deletePdf(doc.id);
         if (selectedId === doc.id) {
@@ -322,6 +256,16 @@ export default function EditorPage() {
                 open={replaceTextOpen}
                 onClose={() => setReplaceTextOpen(false)}
                 pdfId={selectedId}
+                onSuccess={(doc) => {
+                    setSidebarRefreshKey((prev) => prev + 1);
+                    setSelectedId(doc.id);
+                    setSelectedName(doc.original_filename);
+                    void api.downloadPdf(doc.id).then((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        if (fileUrl) URL.revokeObjectURL(fileUrl);
+                        setFileUrl(url);
+                    });
+                }}
             />
             <ProtectDialog
                 open={protectOpen}

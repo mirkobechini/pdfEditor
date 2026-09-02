@@ -4,6 +4,20 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
 import { mapError } from "../lib/error-map";
+import { isTauri } from "../lib/tauri";
+
+const PLATFORM_ICONS: Record<string, string> = {
+  web: "🌐",
+  desktop: "💻",
+  mobile: "📱",
+};
+
+function getPlatformIcon(source?: string): string | null {
+  if (!source) return null;
+  const current = isTauri() ? "desktop" : "web";
+  if (source === current) return null; // stessa piattaforma, nessuna icona
+  return PLATFORM_ICONS[source] || null;
+}
 
 interface SidebarProps {
   selectedId: string | null;
@@ -144,7 +158,12 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
                 className="flex-1 bg-transparent border border-blue-500 rounded px-1 text-sm"
               />
             ) : (
-              <span className="truncate flex-1">{file.original_filename}</span>
+              <span className="truncate flex-1">
+                {getPlatformIcon(file.upload_source) && (
+                  <span className="mr-1" title={file.upload_source}>{getPlatformIcon(file.upload_source)}</span>
+                )}
+                {file.original_filename}
+              </span>
             )}
             <div className="flex gap-1 shrink-0 ml-1">
               <button

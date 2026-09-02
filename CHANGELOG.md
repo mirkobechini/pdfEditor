@@ -1,5 +1,146 @@
 # Changelog
 
+## 2026-09-01
+
+### 🐛 Fix desktop/mobile (desktop v0.1.35 | mobile v0.2.1 | web v0.1.37)
+
+- **Fix keep-warm** (issue #712): ping ogni 5min → ogni 14min. Il ping H24 ogni 5min consumava le 100h/mese di compute Neon in ~4 giorni, rompendo il cloud sync.
+
+- **Fix Google login** (issue #710): dopo il login Google il sidecar crashava con `UNIQUE constraint failed: users.email` perché `auth/sync` faceva upsert solo per ID cloud, ignorando l'utente locale esistente con la stessa email. Fix: upsert per email come fallback.
+- **Fix token locale** (issue #710): `googleLogin()` ignorava il risultato di `syncUser`, mantenendo il JWT cloud in `api` → 401 loop → 500 su `/pdfs`. Fix: token locale da `syncResult.access_token` usato per `api` e `store_jwt`.
+- **Fix migration DB automatica** (issue #710): sidecar crashava con `no such column: pdf_documents.upload_source` su DB legacy. `_add_missing_columns()` riscritta per auto-rilevare colonne mancanti confrontando il modello SQLAlchemy con il DB — nessuna lista manuale necessaria.
+- **Fix wizard** (issue #710): `handleFinish()` andava a `/app` senza login. Fix: va a `/login` + salva `pdfeditor_wizard_done`.
+- **Fix startup page** (issue #708): passava anche se il sidecar non era pronto (fallback bug rimosso). 401 = API pronta, errore solo se nessuna risposta dopo 15s.
+- **Fix sidecar zombie** (issue #708): `kill_by_name()` all'avvio per liberare porta 7723 da istanze precedenti.
+- **Fix i18n** `editor.user` mancante in EN e IT.
+- **Fix replace text viewer** (issue #702): aggiornamento viewer dopo replace su web, desktop e mobile. Nuovo `ReplaceTextModal` su desktop, `ReplaceTextDialog` su mobile via cloud API.
+- **Fix replace text font/size** (issue #704): backend ora preserva font, dimensione e baseline originali tramite `page.get_text("dict")`.
+- **AGENT_FLOW**: aggiunta regola "100% coverage per ogni file modificato prima della PR".
+
+## 2026-08-28
+
+### 🧪 Web test coverage 90% (issue #700)
+
+- **Coverage web portata al 94.96% statements, 97.34% lines** (era 85.01%)
+- **565 test totali** (da 508, +57 nuovi test)
+- **Tutti i file web >= 90% statements** (target raggiunto)
+- File portati oltre 90%: auth.tsx (93.02%), Sidebar (92.42%), PdfViewer (92.79%), HeaderControls (96.55%), PasswordInput (100%), GuestConvertBanner (100%), register (97.29%), login (93.61%), tauri.ts (96.15%), usePdfJs (94.11%), EditorPage (92.14%), ClientLayout (100%), MetadataDialog (97.77%), BugReportDialog (96.66%), home page (100%), admin page (95.04%)
+- **Dead code rimosso**: EditorPage (5 handler mai chiamati: handleMerge, handleSplit, handleReorder, handleRemove, handleMetadata), admin page (handleSendReset + resetMsg mai collegati a UI)
+
+## 2026-08-27
+
+### 🧪 Web test coverage 70% (issue #698)
+
+- **Coverage web portata all'85.01% statements, 87.65% lines** (era 69.12%)
+- **508 test totali** (da 372, +136 nuovi test)
+- **Tutti i file web >= 70%** (unico file sotto: EditorPage 67.74% ma 70.55% lines)
+- Nuovi file di test: layout-pages (5), download (5), error-map (52), MonkeyLogo (4)
+- Test ampliati: RemoveDialog (6→14), ReorderDialog (6→13), SplitDialog (6→11), MetadataDialog (3→9), AdminPage (12→17), EditorPage (31→38), ProfilePage (5→14)
+
+### 🧪 Mobile test coverage 90% (issue #696)
+
+- **Coverage mobile portata al 98.7% statements, 100% lines** (era 76.12%)
+- **272 test totali** (da 182, +90 nuovi test)
+- **Tutti i file mobile >= 90%**: pdfService.ts (100%), api.ts (96.73%), error-map.ts (100%), localDb.ts (100%), i18n (100%)
+- Nuovi file di test: pdfService-utils (7), pdfService-metadata (6), pdfService-protect (11), api-refresh (11), api-branches (13), api-pdf (33)
+- Test ampliati: error-map (+1 WRONG_PASSWORD plain text)
+
+## 2026-08-23
+
+### 🐛 Desktop fixes batch (issue #689) + Test coverage 70%+ (issue #691)
+
+- **Coverance desktop frontend portata al 79.77%** (era 71.46%)
+- **680 test totali** (da 375, +305 nuovi test)
+- **Tutti i file desktop ora >= 70%** di statements coverage
+- Nuovi test file: GuestConvertBanner (7), useCloudSync (39), Settings (49), Login (21), Wizard (21), EditorPage (73)
+- Test esistenti ampliati: GoogleLoginButton (5→12), SplitPagesModal (6→13), RemovePagesModal (7→13), ReorderPagesModal (7→23)
+
+- **Fix #1:** Login error mapping — ora mostra "Email non trovata" / "Password errata" invece di "Errore imprevisto"
+- **Fix #2:** Aggiunta chiave i18n `settings.cloud` in EN e IT
+- **Fix #3:** Cloud sync feedback dialog — mostra risultati upload/download/skipped/errors
+- **Fix #4:** Cloud sync PDF visibility — filename preservato durante upload
+- **Fix #5:** PDF protetti da password saltati durante sync
+- **Fix #6:** Sync badges ☁️⏳⚠️ accanto ai PDF + cloud token persistente in localStorage
+- **Fix #7:** Workplace folder picker in Settings (Advanced) con dialog nativo
+- **Fix #8:** Versione letta da i18n invece di fallback hardcoded v0.1.33
+- **Fix #9:** Pulsanti mock Organize/Convert sostituiti con Download funzionante
+- **i18n completa:** Tutte le pagine e componenti tradotti (wizard, login, register, profile, license, startup, modali, password input)
+- **Test:** 680 test desktop frontend — tutti passanti
+- **Cloud sync:** Mappa persistente localId→cloudId in localStorage per evitare re-sync
+- **Cloud sync:** Match per filename per PDF già caricati prima della mappa
+- **Cloud sync:** Sync all'avvio configurabile
+- **Cloud sync:** deletePdf con opzione local/cloud/both
+- **Badge emoji:** Sostituito "PDF" con emoji piattaforma (☁️🌐💻📱)
+- **Logout:** Ora cancella JWT dal Tauri store persistente (auth.json)
+- **Data:** Tempo relativo usa created_at, creato usa pdf_creation_date
+- **Bump version:** Script bump-version.js aggiorna anche settings page
+- **Folder picker:** Nuovo comando Rust dialog_open_folder
+
+## 2026-08-22
+
+### � Mobile bug fixes + Desktop cartella predefinita (issue #669-#673)
+
+- **Mobile:** Schermata di caricamento durante restore session (remember me) — #669
+- **Mobile:** Mostra snackbar di errore quando upload su cloud fallisce — #670
+- **Mobile:** PDF salvati in cartella PdfEditor/ invece di pdfs/ — #671
+- **Mobile:** Cursore non salta più durante il rename PDF — #672
+- **Desktop:** Cartella predefinita per salvataggio PDF (wizard + preferenze) — #673
+- **CI mobile:** Aggiunta esecuzione test Jest (prima solo typecheck)
+
+### �🔥 Keep-warm backend + icona origine piattaforma (issue #667, #668)
+
+- **Keep-warm:** GitHub Actions pinga `/health` ogni 5 minuti 24/7 + frontend keep-warm quando l'app è aperta
+- **Icona origine:** Ogni PDF mostra 🌐 💻 📱 per indicare da dove è stato caricato (nessuna icona se dalla piattaforma corrente)
+- **Backend:** Nuovo campo `upload_source` (web/desktop/mobile) su modello, schema, API upload
+- **Migration:** Alembic per aggiungere `upload_source` a `pdf_documents`
+- **Mobile:** Invia `upload_source=mobile` nelle upload API
+
+## 2026-08-21
+
+### 🧪 Desktop test suite completa + CI per piattaforma (issue #665)
+
+- **Desktop frontend:** 370 test Vitest — coverage **71.21% lines** (target 70% raggiunto)
+- **Test coperti:** Editor page (47), Login (18), Register (10), Settings (21), Wizard (26), Profile (8), Startup (6), componenti modali, auth.tsx, api.ts, error-map.ts, tauri.ts, preferences
+- **Rust:** 3 test cargo (get_sidecar_port, read_file_binary)
+- **CI ristrutturata per piattaforma:**
+  - `ci-web.yml` — backend + frontend web (path filter: backend, frontend, shared)
+  - `ci-desktop.yml` — desktop test + build check (path filter: desktop, shared)
+  - `ci-mobile.yml` — mobile typecheck (path filter: mobile)
+  - `release-desktop.yml` — build Tauri, aspetta backend + frontend + desktop-test
+  - `release-mobile.yml` — build EAS, aspetta mobile-test
+
+## 2026-08-18
+
+### 🔐 JWT persistente e login offline desktop (issue #640)
+
+- **Backend:** `JWT_SECRET_KEY` ora è persistente — salvata in `%APPDATA%/PdfEditor/secret.key` invece di essere rigenerata casualmente a ogni avvio del sidecar. I token JWT sopravvivono ai riavvii.
+- **Backend:** `SyncUserRequest` ora accetta `password` (plaintext). Il sidecar la hasha con bcrypt e la salva in SQLite locale.
+- **Backend:** `sync_user` hasha e salva la password sia per utenti nuovi che esistenti (upsert).
+- **Shared Auth:** `syncUser` usa `fetch` diretto invece di `_fetch` per evitare il loop 401 (il JWT cloud non è valido per il sidecar).
+
+### 🖼️ Metadata modal funzionante + fix sidebar (issue #642)
+
+- **Desktop:** Nuovo `MetadataModal` con campi Title, Author, Subject, Keywords, filename editabile
+- **Desktop:** Checkbox "Overwrite existing file" — sovrascrive o crea nuova copia
+- **Backend:** `UpdateMetadataRequest` supporta `new_filename` e `overwrite` (bool)
+- **Backend:** Campi vuoti ora vengono cancellati correttamente
+- **Backend:** `updated_at` aggiornato esplicitamente in overwrite
+- **Desktop:** Sidebar scrollbar — `min-h-0` + `shrink-0` per scroll funzionante
+- **Desktop:** Data display — ora usa `updated_at` invece di `pdf_creation_date`
+
+### 🧹 Pulizia issue
+
+- Chiuse 9 issue su GitHub (#595, #597, #629, #631, #633, #636, #638, #640, #642)
+- Spostati in archive i plans completati (desktop-data-persistence, desktop-profile-persistence, desktop-scrollbar)
+- **Shared Auth:** Login desktop prova prima SQLite locale → se utente non trovato, prova cloud → sync con password → JWT locale valido.
+- **Shared Auth:** Register desktop fa sync con password per abilitare login offline successivi.
+- **Shared Auth:** `cloudApi` mantiene separato il JWT cloud per operazioni future.
+
+### 🧹 Pulizia
+
+- **Git:** Ignorati `desktop/frontend/src/shared/` (generato da prebuild) e `desktop/frontend/out/`
+- **Git:** Rimossi dal tracking i file generati in `desktop/frontend/src/shared/`
+
 ## 2026-08-12
 
 ### 🔧 Desktop Google login configurato (issue #627)

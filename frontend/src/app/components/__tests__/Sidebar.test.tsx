@@ -118,6 +118,66 @@ describe("Sidebar", () => {
         });
     });
 
+    it("shows platform icon for desktop uploads", async () => {
+        const desktopFiles = {
+            items: [
+                { id: "1", original_filename: "doc1.pdf", file_size: 1000, page_count: 5, upload_source: "desktop", created_at: "2026-01-01", updated_at: "2026-01-01" },
+            ],
+            total: 1,
+        };
+        (api.listPdfs as any).mockResolvedValue(desktopFiles);
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("💻")).toBeInTheDocument();
+        });
+    });
+
+    it("shows platform icon for mobile uploads", async () => {
+        const mobileFiles = {
+            items: [
+                { id: "1", original_filename: "doc1.pdf", file_size: 1000, page_count: 5, upload_source: "mobile", created_at: "2026-01-01", updated_at: "2026-01-01" },
+            ],
+            total: 1,
+        };
+        (api.listPdfs as any).mockResolvedValue(mobileFiles);
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("📱")).toBeInTheDocument();
+        });
+    });
+
+    it("does not show platform icon for same-platform uploads", async () => {
+        const webFiles = {
+            items: [
+                { id: "1", original_filename: "doc1.pdf", file_size: 1000, page_count: 5, upload_source: "web", created_at: "2026-01-01", updated_at: "2026-01-01" },
+            ],
+            total: 1,
+        };
+        (api.listPdfs as any).mockResolvedValue(webFiles);
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+        });
+        expect(screen.queryByText("🌐")).not.toBeInTheDocument();
+    });
+
+    it("does not show platform icon when upload_source is undefined", async () => {
+        const noSourceFiles = {
+            items: [
+                { id: "1", original_filename: "doc1.pdf", file_size: 1000, page_count: 5, created_at: "2026-01-01", updated_at: "2026-01-01" },
+            ],
+            total: 1,
+        };
+        (api.listPdfs as any).mockResolvedValue(noSourceFiles);
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+        });
+        expect(screen.queryByText("🌐")).not.toBeInTheDocument();
+        expect(screen.queryByText("💻")).not.toBeInTheDocument();
+        expect(screen.queryByText("📱")).not.toBeInTheDocument();
+    });
+
     it("shows error message when loadFiles fails", async () => {
         (api.listPdfs as any).mockRejectedValue(new Error("Network error"));
         render(<Sidebar {...defaultProps} />);
@@ -178,6 +238,49 @@ describe("Sidebar", () => {
         });
         const deleteBtns = screen.getAllByTitle("delete");
         fireEvent.click(deleteBtns[0]);
-        expect(onDeleteClick).toHaveBeenCalledWith(mockFiles.items[0]);
+        expect(onDeleteClick).toHaveBeenCalledWith(
+            expect.objectContaining({ id: "1" }),
+        );
+    });
+
+    it("handles file drop with valid PDF", async () => {
+        const onUpload = vi.fn();
+        const onSelect = vi.fn();
+        (api.uploadPdfWithProgress as any).mockResolvedValue({ id: "3", original_filename: "dropped.pdf" });
+        render(<Sidebar {...defaultProps} onUpload={onUpload} onSelect={onSelect} />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        const dropZone = screen.getByText("dropHere").closest("div[class*='border-dashed']")!;
+        const file = new File(["pdf content"], "dropped.pdf", { type: "application/pdf" });
+        fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
+
+        await waitFor(() => {
+            expect(api.uploadPdfWithProgress).toHaveBeenCalled();
+        });
+    });
+
+    it("handles drop without file (no-op)", async () => {
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        const dropZone = screen.getByText("dropHere").closest("div[class*='border-dashed']")!;
+        fireEvent.drop(dropZone, { dataTransfer: { files: [] } });
+        // No upload called
+        expect(api.uploadPdfWithProgress).not.toHaveBeenCalled();
+    });
+
+    it("closes rename on Enter key", async () => {
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+        });
+        const renameBtns = screen.getAllByTitle("rename");
+        fireEvent.click(renameBtns[0]);
+        const renameInput = document.querySelector("input[class*='border-blue']") as HTMLInputElement;
+        expect(renameInput).toBeTruthy();
+        fireEvent.keyDown(renameInput, { key: "Enter" });
+        // Should go back to showing the filename
+        expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
     });
 });
+

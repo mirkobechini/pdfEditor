@@ -6,6 +6,7 @@ export interface PdfDocument {
   title?: string | null;
   author?: string | null;
   is_password_protected?: boolean;
+  upload_source?: string;
   created_at: string;
   updated_at: string;
 }

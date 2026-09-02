@@ -29,6 +29,7 @@ from app.services.email_service import EmailService
 from app.repositories.user_repo import UserRepository
 from app.core.errors import error_response, ErrorCode
 from app.core.csrf import generate_csrf_token, set_csrf_cookie
+from app.core.google_oauth_templates import GOOGLE_OAUTH_SUCCESS, GOOGLE_OAUTH_ERROR
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer()
@@ -472,22 +473,18 @@ def google_desktop_token_receive(
     global _desktop_oauth_token
     if error:
         return HTMLResponse(
-            content=f"<html><body><h2>Google login failed</h2><p>{error}</p>"
-            "<p>Chiudi questa finestra e riprova.</p></body></html>"
+            content=GOOGLE_OAUTH_ERROR.format(error_msg=error)
         )
 
     if not token:
         return HTMLResponse(
-            content="<html><body><h2>Token mancante</h2>"
-            "<p>Chiudi questa finestra e riprova.</p></body></html>"
+            content=GOOGLE_OAUTH_ERROR.format(error_msg="Token mancante. Riprova.")
         )
 
     _desktop_oauth_token = token
 
     return HTMLResponse(
-        content="<html><body><h2>Login con Google riuscito!</h2>"
-        "<p>Puoi chiudere questa finestra e tornare all'app.</p>"
-        "<script>window.close();</script></body></html>"
+        content=GOOGLE_OAUTH_SUCCESS
     )
 
 
@@ -591,17 +588,28 @@ def sync_user(
 ) -> dict:
     """Sync a cloud user into the local sidecar database.
 
-    This allows the desktop sidecar to recognise the user for getMe
-    and CSRF requests without needing the cloud's JWT secret key.
+    This allows the desktop sidecar to recognise the user for getMe,
+    CSRF requests, and offline login without needing the cloud's
+    JWT secret key. The password is hashed and stored locally so
+    that the user can log in even when offline.
     A new local JWT is issued and a CSRF token is set.
     """
 
     from datetime import datetime, timezone
+    from app.core.security import get_password_hash
 
     repo = UserRepository(db)
 
+    # Hash password if provided (plaintext from cloud login)
+    hashed = get_password_hash(req.password) if req.password else ""
+
     # Upsert user by id (matching cloud user id)
     user = repo.get_by_id(req.id)
+    if not user:
+        # Fallback: match by email — the local user may have been created
+        # before cloud sync (different ID). Reuse it so local PDFs stay
+        # associated, and update it with cloud data + google_id.
+        user = repo.get_by_email(req.email)
     if user:
         # Update existing
         user.email = req.email
@@ -612,6 +620,8 @@ def sync_user(
         user.license_tier = req.license_tier
         user.license_tier_source = req.license_tier_source
         user.google_id = req.google_id
+        if hashed:
+            user.hashed_password = hashed
         if req.created_at:
             user.created_at = req.created_at
         user.updated_at = req.updated_at or datetime.now(timezone.utc)
@@ -628,7 +638,7 @@ def sync_user(
             license_tier=req.license_tier,
             license_tier_source=req.license_tier_source,
             google_id=req.google_id,
-            hashed_password="",  # password managed on cloud, not stored locally
+            hashed_password=hashed,
             created_at=req.created_at or datetime.now(timezone.utc),
             updated_at=req.updated_at or datetime.now(timezone.utc),
         )

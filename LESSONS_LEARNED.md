@@ -1,7 +1,85 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-08-07
+> **Aggiornato:** 2026-09-01
+
+---
+
+## Keep-warm troppo aggressivo esaurisce le compute hours di Neon
+
+> **Lezione appresa (2026-09-01):**
+
+Il keep-warm (GitHub Actions cron ogni 5min) mantiene Render sveglio ma tiene anche attiva la connessione a Neon. Il free tier di Neon ha 100h/mese di compute: con ping ogni 5min H24, il compute si esaurisce in ~4 giorni. Il cloud sync smette di funzionare silenziosamente.
+
+**Sintomo:** cloud sync mobile/desktop smette di funzionare dopo ~4 giorni dall'inizio del mese (o dall'attivazione del keep-warm).
+
+**Regola:** Il keep-warm deve pingare ogni 14min (threshold sleep Render = 15min). Non serve frequenza maggiore — Render si risveglia in ~2s dalla richiesta dell'utente. Meno ping = meno compute Neon consumato.
+
+---
+
+## \_add_missing_columns generica vs Alembic per il sidecar desktop
+
+> **Lezione appresa (2026-09-01):**
+
+Il sidecar crashava con `no such column: pdf_documents.upload_source` su DB legacy (creato prima che venisse aggiunta la colonna). La `_add_missing_columns()` originale aveva una lista manuale di colonne da aggiungere — mancava `upload_source`.
+
+**Tentativo di soluzione:** aggiungere la colonna manualmente. **Soluzione corretta:** riscrivere `_add_missing_columns()` per auto-rilevare le colonne mancanti confrontando `Base.metadata.sorted_tables` con lo schema reale del DB.
+
+**Perché non Alembic per il sidecar:** Alembic richiede che `alembic.ini` e le versioni siano disponibili a runtime nel bundle PyInstaller (path management complesso in `_MEIPASS`). La funzione generica è sufficiente per SQLite desktop che non richiede rename/drop colonne.
+
+**Regola:** Ogni nuova colonna nel modello SQLAlchemy è gestita automaticamente da `_add_missing_columns()` nel sidecar — nessuna modifica manuale necessaria. Per il cloud (Neon), continuare a usare Alembic come definito in ADR.
+
+---
+
+## Google login desktop: syncUser deve restituire token locale
+
+> **Lezione appresa (2026-09-01):**
+
+Dopo il login Google su desktop, il sidecar crashava con `UNIQUE constraint failed: users.email`. Causa: `auth/sync` faceva upsert solo per ID cloud, ignorando l'utente locale esistente con la stessa email (ID diverso). Inoltre, anche quando `syncUser` funzionava, il risultato veniva ignorato e `api` manteneva il JWT cloud → 401 loop → 500 su `/pdfs`.
+
+**Regola:** `auth/sync` deve fare upsert per email come fallback. Il chiamante deve usare `syncResult.access_token` (JWT locale del sidecar) per `api.setToken()` e `store_jwt`, non il JWT cloud.
+
+---
+
+## Non usare `--runtime-tmpdir` nella build manuale del sidecar
+
+> **Lezione appresa (2026-08-30):**
+
+Ho ricostruito il sidecar manualmente con `pyinstaller --onefile --runtime-tmpdir "."`. Lo script ufficiale `desktop/build-sidecar.ps1` NON usa `--runtime-tmpdir` (default PyInstaller = `%TEMP%`). Conseguenza: a runtime, quando Tauri spawna il sidecar con cwd = `%LOCALAPPDATA%/PdfEditor/`, PyInstaller estraeva i file `_MEI*` **lì** invece che in `%TEMP%`. Dopo 3 avvii si sono accumulate 3 cartelle `_MEI*` da ~126MB ciascuna (~380MB di spazzatura).
+
+**Sintomo:** `%LOCALAPPDATA%/PdfEditor/_MEI*` ripiene, git mostrava `desktop/src-tauri/_MEI350922/` come untracked.
+
+**Regola:** Quando si ricostruisce il sidecar in locale, usare SEMPRE lo script ufficiale `desktop/build-sidecar.ps1` (o il comando PyInstaller identico, **senza** `--runtime-tmpdir`). Mai improvvisare opzioni diverse — PyInstaller ha default sensati per `--onefile`.
+
+**Nota:** `%APPDATA%/PdfEditor/` (DB, secret.key, storage) è distinto da `%LOCALAPPDATA%/PdfEditor/` (exe estratti + temp). Non confonderli durante le pulizie.
+
+---
+
+## JWT_SECRET_KEY deve essere persistente per sidecar desktop
+
+> **Lezione appresa (2026-08-18):**
+
+Il sidecar PyInstaller rigenerava `JWT_SECRET_KEY` casuale a ogni avvio (perché `.env.desktop` non la specificava e `config.py` usava `secrets.token_urlsafe(48)`). Questo invalidava tutti i JWT emessi nella sessione precedente, causando "Invalid or expired token" dopo ogni riavvio.
+
+**Sintomo:** L'upload PDF funzionava, ma dopo aver chiuso e riaperto l'app, tutti i PDF sparivano (il token non era più valido per `getMe` e `listPdfs`).
+
+**Regola:** In un'applicazione desktop con sidecar, la chiave JWT deve essere **persistente su file** (es. `%APPDATA%/PdfEditor/secret.key`), non rigenerata a ogni avvio. La generazione avviene una volta sola, poi viene riletta.
+
+## Sync utente cloud → sidecar deve includere password per login offline
+
+> **Lezione appresa (2026-08-18):**
+
+`POST /auth/sync` creava l'utente in SQLite locale con `hashed_password=""`, quindi il login locale falliva sempre (password vuota non verifica). L'utente doveva rifare login via cloud ogni volta.
+
+**Regola:** Quando si sync un utente dal cloud al sidecar locale, includere la password (plaintext) e hasharla lato sidecar. Così il login offline funziona dopo il primo sync.
+
+## syncUser non deve usare \_fetch (evita loop 401)
+
+> **Lezione appresa (2026-08-18):**
+
+`syncUser` usava `_fetch` che aggiunge l'Authorization header con il JWT corrente. Se il JWT era del cloud (non valido per il sidecar), il sidecar rispondeva 401, `_fetch` tentava refresh (falliva), e `syncUser` ritornava `null` silenziosamente.
+
+**Regola:** Endpoint che non richiedono autenticazione (come `/auth/sync`) devono usare `fetch` diretto, non `_fetch`, per evitare il loop 401 → refresh → fail.
 
 ---
 
@@ -187,13 +265,13 @@ L'audit manuale del 2026-07-15 ha trovato 21 bug + 10 miglioramenti, tutti fixat
 
 **Rimedio:** Aggiornati tutti e 3 i file manualmente.
 
-**Regola per il futuro:** Prima di creare un tag release, aggiornare SEMPRE `tauri.conf.json`, `package.json` e `pyproject.toml` con la nuova versione. Il `release.yml` dovrebbe idealmente automatizzare questo passaggio leggendo il nome del tag.
+**Regola per il futuro:** Prima di creare un tag release, aggiornare SEMPRE `tauri.conf.json`, `package.json` e `pyproject.toml` con la nuova versione. Il `release-desktop.yml` dovrebbe idealmente automatizzare questo passaggio leggendo il nome del tag.
 
 ### 2026-07-27 — La CI non faceva build check, bug di compilazione in produzione
 
 **Problema:** La frontend CI eseguiva solo `vitest run` ma non `npm run build`. Un import mancante (`useAuth` in `page.tsx`) non veniva rilevato — i test passavano ma la build falliva su Render e nella release desktop.
 
-**Rimedio:** Aggiunto step `npm run build` in `test.yml` dopo i test frontend.
+**Rimedio:** Aggiunto step `npm run build` in `ci-web.yml` dopo i test frontend.
 
 **Regola per il futuro:** La CI frontend DEVE includere un build check (`npm run build` o `tsc --noEmit`) oltre ai test. I test unitari non verificano la compilazione.
 

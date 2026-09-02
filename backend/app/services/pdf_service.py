@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 import time
+from datetime import datetime, timezone
 
 from app.core.config import settings
 from app.core.storage import (
@@ -13,38 +14,73 @@ from app.core.storage import (
     clear_snapshots,
 )
 from app.models.pdf import PdfDocument
+from app.models.password_cache import PasswordCache
 from app.repositories.pdf_repo import PdfRepository
 from app.schemas.pdf import PdfListResponse, PdfResponse
 
 
-# In-memory password cache for password-protected PDFs (never persisted to disk)
-# Each entry is (password, timestamp); auto-expires after 30 minutes
-_password_cache: dict[str, tuple[str, float]] = {}
+# DB-backed password cache for password-protected PDFs (supports multi-worker)
+# Entries auto-expire after 30 minutes (cleaned on read/write)
 _PASSWORD_CACHE_TTL = 1800  # 30 minutes in seconds
 
 
 def _get_cached_password(pdf_id: str) -> str | None:
-    """Return cached password if not expired, cleaning up expired entries."""
-    if pdf_id in _password_cache:
-        password, timestamp = _password_cache[pdf_id]
-        if time.time() - timestamp < _PASSWORD_CACHE_TTL:
-            return password
-        del _password_cache[pdf_id]
-    return None
+    """Return cached password from DB if not expired, cleaning up expired entries."""
+    from app.core.database import engine
+    from sqlalchemy.orm import Session
+    db = Session(bind=engine)
+    try:
+        entry = db.query(PasswordCache).filter(PasswordCache.pdf_id == pdf_id).first()
+        if entry:
+            # Handle both naive and aware datetimes (SQLite stores naive)
+            created = entry.created_at
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            age = (datetime.now(timezone.utc) - created).total_seconds()
+            if age < _PASSWORD_CACHE_TTL:
+                return entry.password
+            db.delete(entry)
+            db.commit()
+        return None
+    finally:
+        db.close()
 
 
 def _cache_password(pdf_id: str, password: str) -> None:
-    """Cache a password with current timestamp."""
-    # Cleanup expired entries on every cache write (lazy cleanup)
-    expired = [k for k, (_, ts) in _password_cache.items() if time.time() - ts >= _PASSWORD_CACHE_TTL]
-    for k in expired:
-        del _password_cache[k]
-    _password_cache[pdf_id] = (password, time.time())
+    """Cache a password in DB, replacing any existing entry."""
+    from app.core.database import engine
+    from sqlalchemy.orm import Session
+    db = Session(bind=engine)
+    try:
+        # Cleanup expired entries on every cache write (lazy cleanup)
+        cutoff = datetime.now(timezone.utc).timestamp() - _PASSWORD_CACHE_TTL
+        cutoff_dt = datetime.fromtimestamp(cutoff, tz=timezone.utc)
+        db.query(PasswordCache).filter(PasswordCache.created_at < cutoff_dt).delete()
+        db.commit()
+
+        # Upsert: delete existing then insert new
+        existing = db.query(PasswordCache).filter(PasswordCache.pdf_id == pdf_id).first()
+        if existing:
+            db.delete(existing)
+            db.commit()
+
+        entry = PasswordCache(pdf_id=pdf_id, password=password)
+        db.add(entry)
+        db.commit()
+    finally:
+        db.close()
 
 
 def _clear_password_cache() -> None:
     """Clear all cached passwords (called on shutdown for security)."""
-    _password_cache.clear()
+    from app.core.database import engine
+    from sqlalchemy.orm import Session
+    db = Session(bind=engine)
+    try:
+        db.query(PasswordCache).delete()
+        db.commit()
+    finally:
+        db.close()
 
 
 class PdfService:
@@ -76,7 +112,7 @@ class PdfService:
         if not content:
             raise ValueError(f"PDF {pdf_id} file not found on disk")
         if pdf.is_password_protected:
-            if pdf_id not in _password_cache:
+            if not _get_cached_password(pdf_id):
                 raise ValueError("PDF is password protected. Please unlock it first.")
             import fitz
             doc = fitz.open(stream=content, filetype="pdf")
@@ -86,7 +122,7 @@ class PdfService:
             doc.close()
         return content
 
-    def upload(self, filename: str, content: bytes, user_id: str) -> PdfDocument:
+    def upload(self, filename: str, content: bytes, user_id: str, upload_source: str = "web") -> PdfDocument:
         """Validate, save to disk, and create DB record."""
         # Validate PDF
         if not validate_pdf(content):
@@ -120,6 +156,7 @@ class PdfService:
             page_count=page_count if not is_encrypted else 0,
             is_password_protected=is_encrypted,
             pdf_creation_date=pdf_creation_date,
+            upload_source=upload_source,
             user_id=user_id,
         )
         return self.repo.create(pdf)
@@ -141,6 +178,23 @@ class PdfService:
         file_uuid = pdf.storage_filename.replace(".pdf", "")
         return get_file_content(file_uuid)
 
+    def get_decrypted_content(self, pdf: PdfDocument) -> bytes:
+        """Read and decrypt a password-protected PDF using cached password.
+        Raises ValueError if no cached password is available."""
+        content = self.get_file_content(pdf)
+        if not content:
+            raise ValueError(f"PDF {pdf.id} file not found on disk")
+        password = _get_cached_password(pdf.id)
+        if not password:
+            raise ValueError("PDF is password protected. Please unlock it first.")
+        import fitz
+        doc = fitz.open(stream=content, filetype="pdf")
+        if doc.needs_pass:
+            doc.authenticate(password)
+        result = doc.tobytes()
+        doc.close()
+        return result
+
     def delete(self, pdf_id: str, user_id: str) -> bool:
         """Delete a PDF from DB and disk. Returns True if deleted."""
         try:
@@ -153,7 +207,7 @@ class PdfService:
         delete_pdf(file_uuid)
         return True
 
-    def reorder(self, pdf_id: str, user_id: str, page_order: list[int], output_filename: str | None = None) -> PdfDocument:
+    def reorder(self, pdf_id: str, user_id: str, page_order: list[int], output_filename: str | None = None, overwrite: bool = False) -> PdfDocument:
         """Reorder pages of a PDF. page_order is 1-based."""
         self._create_snapshot(pdf_id, user_id)
         import fitz
@@ -192,6 +246,14 @@ class PdfService:
         else:
             new_name = f"{pdf.original_filename.replace('.pdf', '')}_reordered.pdf"
 
+        if overwrite:
+            pdf.storage_filename = f"{file_uuid}.pdf"
+            pdf.file_size = len(out_bytes)
+            pdf.page_count = len(page_order)
+            pdf.original_filename = new_name
+            pdf.updated_at = datetime.now(timezone.utc)
+            return self.repo.update(pdf)
+
         new_pdf = PdfDocument(
             original_filename=new_name,
             storage_filename=f"{file_uuid}.pdf",
@@ -201,7 +263,7 @@ class PdfService:
         )
         return self.repo.create(new_pdf)
 
-    def remove_pages(self, pdf_id: str, user_id: str, page_numbers: list[int], output_filename: str | None = None) -> PdfDocument:
+    def remove_pages(self, pdf_id: str, user_id: str, page_numbers: list[int], output_filename: str | None = None, overwrite: bool = False) -> PdfDocument:
         """Remove specific pages from a PDF. page_numbers is 1-based."""
         self._create_snapshot(pdf_id, user_id)
         import fitz
@@ -239,6 +301,14 @@ class PdfService:
             new_name = output_filename if output_filename.endswith(".pdf") else output_filename + ".pdf"
         else:
             new_name = f"{pdf.original_filename.replace('.pdf', '')}_pages_removed.pdf"
+
+        if overwrite:
+            pdf.storage_filename = f"{file_uuid}.pdf"
+            pdf.file_size = len(out_bytes)
+            pdf.page_count = len(keep_pages)
+            pdf.original_filename = new_name
+            pdf.updated_at = datetime.now(timezone.utc)
+            return self.repo.update(pdf)
 
         new_pdf = PdfDocument(
             original_filename=new_name,
@@ -286,17 +356,29 @@ class PdfService:
                     if occurrence is not None and total_replacements >= occurrence:
                         break
 
+                    # Find the exact span containing the searched text to
+                    # preserve the original font, size and baseline (origin).
+                    span_info = self._find_text_span(page, rect, search)
+
                     # Redact the found text area
                     page.add_redact_annot(rect, fill=None)
                     page.apply_redactions()
                     # Insert replacement text
-                    fontsize = rect.y1 - rect.y0 - 2
-                    if fontsize < 6:
-                        fontsize = 10
+                    if span_info:
+                        fontsize = span_info["size"]
+                        fontname = span_info["font"]
+                        origin = span_info["origin"]
+                    else:
+                        # Fallback: estimate from rect
+                        fontsize = rect.y1 - rect.y0 - 2
+                        if fontsize < 6:
+                            fontsize = 10
+                        fontname = "helv"
+                        origin = (rect.x0, rect.y0 + 1)
                     page.insert_text(
-                        (rect.x0, rect.y0 + 1),
+                        origin,
                         replace,
-                        fontname="helv",
+                        fontname=fontname,
                         fontsize=fontsize,
                     )
                     total_replacements += 1
@@ -322,6 +404,49 @@ class PdfService:
             user_id=user_id,
         )
         return self.repo.create(new_pdf)
+
+    def _find_text_span(
+        self,
+        page,
+        rect,
+        search: str,
+        tolerance: float = 1.0,
+    ) -> dict | None:
+        """Find the text span containing the searched text near a rect.
+
+        Uses ``page.get_text("dict")`` to locate the exact span whose origin
+        (baseline) is closest to the found rect. Returns font name, font size
+        and baseline origin so replacement text matches the original style.
+        """
+        data = page.get_text("dict")
+        best_span = None
+        best_dist = float("inf")
+
+        for block in data.get("blocks", []):
+            if block.get("type") != 0:
+                continue  # skip image blocks
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    span_text = span.get("text", "")
+                    if search not in span_text and span_text.strip() != search:
+                        continue
+                    # Use baseline origin (x = left, y = baseline)
+                    origin = span.get("origin", (rect.x0, rect.y0))
+                    dist = abs(origin[0] - rect.x0) + abs(
+                        origin[1] - rect.y0
+                    )
+                    if dist < best_dist:
+                        best_dist = dist
+                        best_span = span
+
+        if best_span is None:
+            return None
+
+        return {
+            "font": best_span.get("font", "helv"),
+            "size": best_span.get("size", 10),
+            "origin": best_span.get("origin", (rect.x0, rect.y0 + 1)),
+        }
 
     def extract_text(self, pdf_id: str, user_id: str, page: int | None = None) -> tuple[str, int]:
         """Extract text from a PDF. If page is None, extracts from all pages."""
@@ -377,7 +502,12 @@ class PdfService:
     def update_metadata(
         self, pdf_id: str, user_id: str, updates: dict
     ) -> PdfDocument:
-        """Update PDF metadata. Creates a new file preserving original content."""
+        """Update PDF metadata.
+
+        If overwrite=True, updates the existing PDF in-place (same DB record).
+        Otherwise, creates a new document preserving the original.
+        If new_filename is provided, uses it as the filename.
+        """
         self._create_snapshot(pdf_id, user_id)
         import fitz
 
@@ -390,27 +520,44 @@ class PdfService:
         source = fitz.open(stream=content, filetype="pdf")
         try:
             new_meta = dict(source.metadata)
-            # Update only provided fields
+            # Update only provided fields — null/empty clears the field
             for key in ("title", "author", "subject", "keywords"):
-                if key in updates and updates[key] is not None:
-                    new_meta[key] = updates[key]
+                if key in updates:
+                    new_meta[key] = updates[key] if updates[key] else ""
 
             source.set_metadata(new_meta)
             out_bytes = source.tobytes()
         finally:
             source.close()
 
-        file_uuid = save_pdf(out_bytes)
-        new_name = f"{pdf.original_filename.replace('.pdf', '')}_metadata_updated.pdf"
+        overwrite = updates.pop("overwrite", False)
+        new_filename = updates.pop("new_filename", None)
 
-        new_pdf = PdfDocument(
-            original_filename=new_name,
-            storage_filename=f"{file_uuid}.pdf",
-            file_size=len(out_bytes),
-            page_count=pdf.page_count,
-            user_id=user_id,
-        )
-        return self.repo.create(new_pdf)
+        if overwrite:
+            # Update existing PDF in-place
+            file_uuid = save_pdf(out_bytes)
+            pdf.storage_filename = f"{file_uuid}.pdf"
+            pdf.file_size = len(out_bytes)
+            pdf.updated_at = datetime.now(timezone.utc)
+            if new_filename:
+                pdf.original_filename = new_filename
+            return self.repo.update(pdf)
+        else:
+            # Create new document
+            file_uuid = save_pdf(out_bytes)
+            if new_filename:
+                new_name = new_filename
+            else:
+                new_name = f"{pdf.original_filename.replace('.pdf', '')}_metadata_updated.pdf"
+
+            new_pdf = PdfDocument(
+                original_filename=new_name,
+                storage_filename=f"{file_uuid}.pdf",
+                file_size=len(out_bytes),
+                page_count=pdf.page_count,
+                user_id=user_id,
+            )
+            return self.repo.create(new_pdf)
 
     def export_pdf(
         self, pdf_id: str, user_id: str, fmt: str

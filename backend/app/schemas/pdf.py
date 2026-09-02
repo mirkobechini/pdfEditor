@@ -16,6 +16,7 @@ class PdfResponse(BaseModel):
     author: str | None = None
     is_password_protected: bool = False
     pdf_creation_date: str | None = None
+    upload_source: str = "web"
     created_at: datetime
     updated_at: datetime
 
@@ -45,6 +46,7 @@ class SplitRequest(BaseModel):
     mode: str  # "range" or "every"
     ranges: list[str] | None = None  # e.g. ["1-3", "5-7"] — required when mode="range"
     output_filename: str | None = None  # User-chosen filename; fallback to auto-generated
+    output_filenames: list[str] | None = None  # One filename per resulting part (e.g. 2 for split in 2)
 
 
 class SplitResponse(BaseModel):
@@ -58,6 +60,7 @@ class ReorderRequest(BaseModel):
 
     page_order: list[int]
     output_filename: str | None = None  # User-chosen filename; fallback to auto-generated
+    overwrite: bool = False
 
 
 class RemovePagesRequest(BaseModel):
@@ -65,6 +68,7 @@ class RemovePagesRequest(BaseModel):
 
     page_numbers: list[int]
     output_filename: str | None = None  # User-chosen filename; fallback to auto-generated
+    overwrite: bool = False
 
 
 class ReplaceTextRequest(BaseModel):
@@ -99,6 +103,8 @@ class UpdateMetadataRequest(BaseModel):
     author: str | None = None
     subject: str | None = None
     keywords: str | None = None
+    new_filename: str | None = None
+    overwrite: bool = False
 
 
 class BugReportRequest(BaseModel):

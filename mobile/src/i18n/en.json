@@ -54,7 +54,8 @@
     "excludeFromSync": "Exclude from sync",
     "includeInSync": "Include in sync",
     "excludedFromSync": "{{name}} excluded from sync",
-    "includedInSync": "{{name}} included in sync"
+    "includedInSync": "{{name}} included in sync",
+    "replaceText": "Replace Text"
   },
   "tools": {
     "title": "PDF Tools",
@@ -237,5 +238,19 @@
     "doneTitle": "You're all set!",
     "doneDesc": "Your preferences have been saved. You can change them anytime in Settings.",
     "startApp": "Start using Editor"
+  },
+  "replaceTextDialog": {
+    "title": "Find & Replace",
+    "searchLabel": "Find text",
+    "searchPlaceholder": "Enter text to find",
+    "replaceLabel": "Replace with",
+    "replacePlaceholder": "Enter replacement text",
+    "replaceAllLabel": "Replace all occurrences",
+    "replace": "Replace",
+    "replacing": "Replacing...",
+    "cancel": "Cancel",
+    "replaceFailed": "Failed to replace text",
+    "outputName": "Output filename",
+    "outputNameHint": "Leave empty for auto-generated name"
   }
 }

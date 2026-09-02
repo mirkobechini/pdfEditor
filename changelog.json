@@ -1,30 +1,78 @@
 {
   "desktop": [
     {
-      "version": "v0.2.0",
-      "date": "2026-08-11",
+      "version": "v0.1.35",
+      "date": "2026-09-01",
       "changes": [
-        "🔑 JWT token refresh automatico — login ogni ora non più necessario",
-        "🧪 179 test mobile (+126), copertura 100% su localDb, error-map, i18n",
-        "🏃 Full suite runner: bash run-all-tests.sh / .\\run-all-tests.ps1",
-        "🔧 Bug fixes e miglioramenti di stabilità"
+        "Fix Google login: PDF locali ora visibili dopo il login Google",
+        "Fix Replace Text: aggiorna il viewer dopo la sostituzione, preserva font/size/posizione",
+        "Fix migrazione DB: nuove colonne rilevate automaticamente all'avvio",
+        "Fix wizard: al termine ora va alla pagina di login",
+        "Fix startup page: mostra errore se il sidecar non parte (nessun passthrough silenzioso)",
+        "Fix sidecar zombie: porta 7723 liberata all'avvio da istanze precedenti",
+        "JWT persistente: token sopravvive ai riavvii del sidecar",
+        "Login offline: funzionante dopo il primo sync dal cloud",
+        "Cloud sync: feedback dialog, PDF protetti saltati, deletePdf local/cloud/both",
+        "i18n completa: wizard, login, register, profile, license, startup, modali",
+        "Fix keep-warm: ping ogni 14min invece di 5min (evita esaurimento compute Neon)",
+        "906 test frontend — coverage 90%+ su tutti i file"
+      ]
+    },
+    {
+      "version": "v0.1.34",
+      "date": "2026-08-21",
+      "changes": [
+        "Test suite desktop: 370 test Vitest, coverage 71% lines",
+        "CI ristrutturata per piattaforma: ci-web, ci-desktop, ci-mobile separati",
+        "Path filter per ogni CI: si attiva solo sui file della piattaforma"
       ]
     }
   ],
   "mobile": [
     {
+      "version": "v0.2.1-mobile",
+      "date": "2026-09-01",
+      "changes": [
+        "Replace Text: nuovo componente ReplaceTextDialog via cloud API",
+        "Fix Replace Text api: metodo replaceText aggiunto al client API",
+        "Test coverage 90%: 276 test, 98.7% statements, 100% lines",
+        "Remember me con schermata di caricamento",
+        "Snackbar errore upload cloud",
+        "PDF salvati in cartella PdfEditor/",
+        "CI mobile: ora esegue test Jest"
+      ]
+    },
+    {
       "version": "v0.2.0-mobile",
       "date": "2026-08-11",
       "changes": [
-        "☁️ Cloud sync bidirezionale (upload/download, conflitti, offline)",
-        "🧭 Onboarding wizard alla prima installazione",
-        "🔑 JWT token refresh automatico",
-        "⚙️ Settings con sync mode, tema, lingua",
-        "🔍 Badge sync in Home (synced/pending/error)",
-        "🗑️ DeleteSyncDialog: locale/cloud/entrambi",
-        "⚔️ ConflictDialog per risoluzione conflitti sync",
-        "📥 ImportPdfDialog per import selettivo PDF nel cloud",
-        "🔧 Bug fixes e miglioramenti"
+        "Cloud sync bidirezionale (upload/download, conflitti, offline)",
+        "Onboarding wizard alla prima installazione",
+        "179 test mobile, copertura 100% su localDb, error-map, i18n"
+      ]
+    }
+  ],
+  "web": [
+    {
+      "version": "v0.1.37",
+      "date": "2026-09-01",
+      "changes": [
+        "Fix Replace Text: aggiorna il viewer dopo la sostituzione",
+        "Fix Replace Text font/size: backend preserva font, dimensione e baseline originali",
+        "Fix keep-warm: ping ogni 14min invece di 5min (evita esaurimento compute Neon)",
+        "Test coverage 90%: 566 test, 94.96% statements — tutti i file >= 90%",
+        "Dead code rimosso: EditorPage, admin page",
+        "Keep-warm: GitHub Actions pinga /health ogni 14 minuti",
+        "Icona origine piattaforma: 🌐 💻 📱 accanto ai PDF"
+      ]
+    },
+    {
+      "version": "v0.1.36",
+      "date": "2026-08-23",
+      "changes": [
+        "Test coverage 70%: 508 test, 85.01% statements",
+        "Nuovi test: layout-pages, download, error-map, MonkeyLogo",
+        "Backend: upload_source (web/desktop/mobile) su modello e API"
       ]
     }
   ]

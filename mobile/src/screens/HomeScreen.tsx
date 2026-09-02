@@ -17,6 +17,7 @@ import * as Sharing from "expo-sharing";
 import { useTranslation } from "react-i18next";
 import { useCloudSync } from "../hooks/useCloudSync";
 import DeleteSyncDialog, { type DeleteSyncOption } from "./DeleteSyncDialog";
+import ReplaceTextDialog from "../components/ReplaceTextDialog";
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Main">;
 
@@ -44,6 +45,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const [renameText, setRenameText] = useState("");
     const [renameTarget, setRenameTarget] = useState<LocalPdf | null>(null);
     const [detailsPdf, setDetailsPdf] = useState<LocalPdf | null>(null);
+    const [replaceTextPdf, setReplaceTextPdf] = useState<LocalPdf | null>(null);
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [snackbarMsg, setSnackbarMsg] = useState("");
@@ -344,6 +346,9 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                             </View>
                                             <View style={{ flex: 1, paddingRight: 12 }}>
                                                 <Text variant="titleMedium" style={{ fontWeight: "600" }} numberOfLines={1}>
+                                                    {item.upload_source && item.upload_source !== "mobile" ? (
+                                                        <Text>{item.upload_source === "web" ? "🌐 " : item.upload_source === "desktop" ? "💻 " : ""}</Text>
+                                                    ) : null}
                                                     {item.original_filename}
                                                 </Text>
                                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -441,13 +446,14 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                         {syncEnabled && contextPdf && contextPdf.cloud_synced === 1 ? (
                             <List.Item title={t("home.removeFromCloud")} left={(p) => <List.Icon {...p} icon="cloud-remove" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { await deletePdf(contextPdf.id, "cloud"); await loadPdfs(); showSnack(t("home.removedFromCloud", { name: contextPdf.original_filename })); } finally { setSyncingPdf(false); } } }} />
                         ) : syncEnabled && contextPdf && contextPdf.cloud_synced !== 1 && contextPdf.cloud_synced_exclude !== 1 ? (
-                            <List.Item title={t("home.syncToCloud")} left={(p) => <List.Icon {...p} icon="cloud-upload" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { const ok = await uploadPdf(contextPdf.id); if (ok) { await loadPdfs(); showSnack(t("home.syncedToCloud", { name: contextPdf.original_filename })); } } finally { setSyncingPdf(false); } } }} />
+                            <List.Item title={t("home.syncToCloud")} left={(p) => <List.Icon {...p} icon="cloud-upload" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { const ok = await uploadPdf(contextPdf.id); if (ok) { await loadPdfs(); showSnack(t("home.syncedToCloud", { name: contextPdf.original_filename })); } else { showSnack(t("home.syncErrorUploadFailed", { name: contextPdf.original_filename })); } } finally { setSyncingPdf(false); } } }} />
                         ) : null}
                         {syncEnabled && contextPdf && (
                             <List.Item title={contextPdf.cloud_synced_exclude === 1 ? t("home.includeInSync") : t("home.excludeFromSync")} left={(p) => <List.Icon {...p} icon={contextPdf.cloud_synced_exclude === 1 ? "cloud-sync" : "cloud-off-outline"} />} onPress={async () => { if (contextPdf) { const newVal = contextPdf.cloud_synced_exclude === 1 ? false : true; await togglePdfSyncExclude(contextPdf.id, newVal); setContextPdf(null); await loadPdfs(); showSnack(newVal ? t("home.excludedFromSync", { name: contextPdf.original_filename }) : t("home.includedInSync", { name: contextPdf.original_filename })); } }} />
                         )}
                         <List.Item title={t("home.delete")} left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
                         <List.Item title={t("home.details")} left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setDetailsPdf(pdf); } }} />
+                        <List.Item title={t("home.replaceText")} left={(p) => <List.Icon {...p} icon="text-search" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setReplaceTextPdf(pdf); } }} />
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setContextPdf(null)}>{t("common.close")}</Button>
@@ -460,7 +466,15 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                 <Dialog visible={renameDialog} onDismiss={() => setRenameDialog(false)}>
                     <Dialog.Title>{t("home.renameTitle")}</Dialog.Title>
                     <Dialog.Content>
-                        <TextInput label={t("home.fileName")} value={renameText} onChangeText={setRenameText} mode="outlined" autoFocus />
+                        <TextInput
+                            key={renameTarget?.id || "rename"}
+                            label={t("home.fileName")}
+                            defaultValue={renameText}
+                            onChangeText={setRenameText}
+                            mode="outlined"
+                            autoFocus
+                            onSubmitEditing={confirmRename}
+                        />
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setRenameDialog(false)}>{t("common.cancel")}</Button>
@@ -485,6 +499,16 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
+
+            <ReplaceTextDialog
+                visible={replaceTextPdf !== null}
+                onClose={() => setReplaceTextPdf(null)}
+                pdfId={replaceTextPdf?.id ?? null}
+                onSuccess={() => {
+                    setReplaceTextPdf(null);
+                    loadPdfs();
+                }}
+            />
 
             <Snackbar
                 visible={snackbarVisible}
@@ -533,9 +557,13 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                             const pdfName = syncAfterUpload?.pdfName;
                             setSyncAfterUpload(null);
                             if (pdfId) {
-                                uploadPdf(pdfId).then(() => {
+                                uploadPdf(pdfId).then((ok) => {
                                     loadPdfs();
-                                    navigation.navigate("PdfViewer", { pdfId, title: pdfName || "" });
+                                    if (ok) {
+                                        navigation.navigate("PdfViewer", { pdfId, title: pdfName || "" });
+                                    } else {
+                                        showSnack(t("home.syncErrorUploadFailed", { name: pdfName || "" }));
+                                    }
                                 });
                             }
                         }}>

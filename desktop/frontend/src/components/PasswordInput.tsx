@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 
 interface PasswordInputProps {
     value: string;
@@ -12,6 +13,7 @@ interface PasswordInputProps {
 }
 
 export default function PasswordInput({ value, onChange, placeholder, autoFocus, required, id }: PasswordInputProps) {
+    const tpi = useTranslations("passwordInput");
     const [show, setShow] = React.useState(false);
 
     return (
@@ -31,7 +33,7 @@ export default function PasswordInput({ value, onChange, placeholder, autoFocus,
                 onClick={() => setShow(!show)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold uppercase tracking-wide text-[#8f8377] hover:text-[#c5baae]"
             >
-                {show ? "Nascondi" : "Mostra"}
+                {show ? tpi("hide") : tpi("show")}
             </button>
         </div>
     );

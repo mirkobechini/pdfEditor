@@ -1,0 +1,258 @@
+name: Build & Release Desktop App
+
+on:
+  push:
+    tags:
+      - "v*" # e.g. v0.1.0, v0.2.0
+      - "!v*-mobile" # exclude mobile tags (handled by release-mobile.yml)
+
+permissions:
+  contents: read
+
+jobs:
+  wait-for-ci:
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for CI on main to pass
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Disable set -e so we don't exit on API transient errors
+          set +e
+          # Get the commit SHA of what's currently on main
+          SHA=$(gh api repos/${REPO}/git/refs/heads/main --jq '.object.sha' 2>/dev/null)
+          if [ -z "$SHA" ]; then
+            echo "Failed to get main SHA, proceeding anyway."
+            exit 0
+          fi
+          echo "Waiting for CI checks on main (commit: $SHA)..."
+          for i in $(seq 1 30); do
+            RESULT=$(gh api repos/${REPO}/commits/${SHA}/check-runs --jq '[.check_runs[] | select(.name == "backend" or .name == "frontend" or .name == "desktop-test") | .conclusion // "pending"] | join(",")' 2>/dev/null)
+              echo "  iteration $i: backend+frontend+desktop conclusions: $RESULT"
+            # Check for failure
+            if echo "$RESULT" | grep -q "failure"; then
+              echo "CI failed on main, aborting release."
+              exit 1
+            fi
+            # All required CI passed? Good to go
+            # Accept any number of successes (CI jobs may be skipped by path filters)
+            if echo "$RESULT" | grep -q "success"; then
+              echo "CI passed on main, proceeding with build."
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "Timeout waiting for CI on main (15 minutes). Proceeding anyway."
+          exit 0
+
+  build-frontend:
+    needs: [wait-for-ci]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+
+      - name: Install frontend deps
+        run: cd frontend && npm ci
+      - name: Install desktop frontend deps
+        run: cd desktop/frontend && npm ci
+      - name: Build desktop frontend (static export)
+        run: cd desktop/frontend && npm run build
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-out
+          path: desktop/frontend/out/
+
+  build:
+    needs: [wait-for-ci, build-frontend]
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-out
+          path: desktop/frontend/out/
+
+      - name: Bump version from tag
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Bumping version to $VERSION"
+          # Use python3 for portable sed-like replacement (works on macOS, Linux, Windows)
+          python3 -c "
+          import json, re
+          # tauri.conf.json
+          with open('desktop/src-tauri/tauri.conf.json') as f:
+              c = json.load(f)
+          c['version'] = '$VERSION'
+          with open('desktop/src-tauri/tauri.conf.json', 'w') as f:
+              json.dump(c, f, indent=2)
+          # package.json
+          with open('frontend/package.json') as f:
+              c = json.load(f)
+          c['version'] = '$VERSION'
+          with open('frontend/package.json', 'w') as f:
+              json.dump(c, f, indent=2)
+          # pyproject.toml
+          with open('backend/pyproject.toml') as f:
+              content = f.read()
+          content = re.sub(r'^version = \".*\"', 'version = \"$VERSION\"', content, flags=re.MULTILINE)
+          with open('backend/pyproject.toml', 'w') as f:
+              f.write(content)
+          "
+          echo "Version bumped to $VERSION in all config files"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Install desktop frontend deps (for @tauri-apps/cli)
+        run: cd desktop/frontend && npm ci
+      - name: Install backend deps (incl. PyInstaller)
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: |
+            x86_64-pc-windows-msvc
+            aarch64-apple-darwin
+            x86_64-apple-darwin
+            x86_64-unknown-linux-gnu
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "desktop/src-tauri -> target"
+
+      - name: Install Linux deps
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Install UPX (compress sidecar)
+        shell: bash
+        run: |
+          case "${{ runner.os }}" in
+            Linux)
+              sudo apt-get install -y upx >/dev/null 2>&1 || true
+              ;;
+            macOS)
+              brew install upx >/dev/null 2>&1 || true
+              ;;
+            Windows)
+              curl -sL "https://github.com/upx/upx/releases/download/v5.2.0/upx-5.2.0-win64.zip" -o /tmp/upx.zip
+              unzip -q -o /tmp/upx.zip -d /tmp/upx 2>/dev/null
+              mkdir -p /usr/local/bin
+              cp /tmp/upx/upx-5.2.0-win64/upx.exe /usr/local/bin/upx.exe 2>/dev/null || true
+              ;;
+          esac
+          upx --version 2>/dev/null && echo "UPX available" || echo "UPX not available (non bloccante)"
+
+      - name: Build sidecar
+        shell: bash
+        run: |
+          cd desktop
+          bash build-sidecar.sh
+
+      - name: Rename sidecar for Tauri target triple
+        shell: bash
+        run: |
+          # Detect host triple dynamically: macOS runners alternate between Intel and ARM
+          TRIPLE=$(rustc -vV | grep "^host:" | awk '{print $2}')
+          SIDECAR="desktop/src-tauri/binaries/fastapi-sidecar"
+          EXT=""
+          case "$TRIPLE" in
+            *windows*|*msvc*) EXT=".exe" ;;
+          esac
+          if [ -f "${SIDECAR}${EXT}" ]; then
+            mv "${SIDECAR}${EXT}" "${SIDECAR}-${TRIPLE}${EXT}"
+            echo "Renamed sidecar to fastapi-sidecar-${TRIPLE}${EXT}"
+          fi
+
+      - name: Build Tauri app
+        # Uses @tauri-apps/cli from desktop/frontend/node_modules (installed via npm ci)
+        # npm --prefix ../frontend exec tauri tells npm to use desktop/frontend/ node_modules
+        # while keeping CWD as desktop/src-tauri/ so tauri.conf.json paths resolve correctly
+        # --ci flag disables interactive prompts
+        run: |
+          cd desktop/src-tauri
+          npm --prefix ../frontend exec tauri build -- --ci
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: pdfeditor-${{ runner.os }}
+          path: |
+            desktop/src-tauri/target/release/bundle/
+            !desktop/src-tauri/target/release/bundle/**/*.pdb
+
+  create-release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: pdfeditor-*
+          merge-multiple: true
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "## PdfEditor Desktop App" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "See [CHANGELOG.md](./CHANGELOG.md) for details." >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "PdfEditor ${{ github.ref_name }}"
+          body: ${{ steps.notes.outputs.notes }}
+          draft: false
+          prerelease: false
+          files: |
+            **/*.msi
+            **/*setup.exe
+            **/*.dmg
+            **/*.AppImage
+            **/*.deb

@@ -388,12 +388,19 @@ export class ApiClient {
     token_type: string;
     csrf_token?: string;
   }> {
-    const res = await this._fetch(`${this.baseUrl}/auth/login`, {
+    // Usa fetch diretto (non _fetch) per evitare che il 401 auto-refresh
+    // interferisca con EMAIL_NOT_FOUND / WRONG_PASSWORD
+    const res = await fetch(`${this.baseUrl}/auth/login`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      const code =
+        body?.detail?.code || body?.code || (await ApiClient.extractError(res));
+      throw new Error(code);
+    }
     const data = await res.json();
     if (data.csrf_token) this.setCsrfToken(data.csrf_token);
     return data;
@@ -689,3 +696,32 @@ export class ApiClient {
 }
 
 export const api = new ApiClient();
+
+// ─── Keep-warm: evita cold start del backend su Render ──────────────
+
+let _keepWarmTimer: ReturnType<typeof setInterval> | null = null;
+const KEEP_WARM_INTERVAL = 5 * 60 * 1000; // 5 minuti
+
+/**
+ * Avvia il ping periodico al backend cloud per evitare il cold start.
+ * Il ping va a /health che è leggero e non richiede autenticazione.
+ */
+export function startKeepWarm(): void {
+  if (_keepWarmTimer) return; // già avviato
+  const url = `${API_BASE}/health`;
+  const ping = () => {
+    fetch(url).catch(() => {
+      // Ignora errori di rete — il backend potrebbe essere in cold start
+    });
+  };
+  ping(); // ping immediato all'avvio
+  _keepWarmTimer = setInterval(ping, KEEP_WARM_INTERVAL);
+}
+
+/** Ferma il keep-warm (utile per test o cleanup) */
+export function stopKeepWarm(): void {
+  if (_keepWarmTimer) {
+    clearInterval(_keepWarmTimer);
+    _keepWarmTimer = null;
+  }
+}

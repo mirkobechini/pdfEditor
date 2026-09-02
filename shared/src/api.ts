@@ -41,16 +41,16 @@ export class ApiClient {
   static async extractError(res: Response): Promise<string> {
     // Rate limit — user-friendly message
     if (res.status === 429) {
-      return JSON.stringify({
-        code: "RATE_LIMIT",
-        detail: "Too many requests",
-      });
+      return "Troppe richieste. Riprova più tardi.";
     }
     try {
       const body = await res.json();
       // New format: {code, detail} from backend error_response helper
-      if (body && typeof body === "object" && body.code && body.detail) {
-        return JSON.stringify(body);
+      // FastAPI wraps it as {detail: {code, detail}}, so check both levels
+      const errDetail =
+        body.detail && typeof body.detail === "object" ? body.detail : body;
+      if (errDetail && errDetail.code && errDetail.detail) {
+        return ApiClient.translateError(errDetail.code, errDetail.detail);
       }
       if (typeof body.detail === "string") return body.detail;
       if (Array.isArray(body.detail))
@@ -59,6 +59,37 @@ export class ApiClient {
     } catch {
       return res.statusText;
     }
+  }
+
+  /** Map backend error codes to user-friendly Italian messages. */
+  private static translateError(code: string, fallback: string): string {
+    const messages: Record<string, string> = {
+      INVALID_CREDENTIALS: "Password errata",
+      WRONG_PASSWORD: "Password errata",
+      EMAIL_NOT_FOUND: "Email non trovata",
+      EMAIL_ALREADY_REGISTERED: "Email già registrata",
+      PASSWORD_TOO_WEAK: "Password troppo debole",
+      PDF_NOT_FOUND: "PDF non trovato",
+      PDF_FILE_NOT_FOUND: "File PDF non trovato sul disco",
+      UPLOAD_TOO_LARGE: "File troppo grande",
+      INVALID_PDF: "PDF non valido",
+      INVALID_FILE_TYPE: "Tipo di file non supportato",
+      VALIDATION_ERROR: "Dati non validi",
+      MERGE_TOO_FEW: "Servono almeno 2 PDF per unire",
+      SPLIT_INVALID_RANGE: "Intervallo pagine non valido",
+      NOT_AUTHENTICATED: "Non autenticato",
+      FORBIDDEN: "Accesso negato",
+      NOT_FOUND: "Risorsa non trovata",
+      RATE_LIMIT: "Troppe richieste. Riprova più tardi.",
+      GOOGLE_AUTH_FAILED: "Autenticazione Google fallita",
+      CONVERSION_FAILED: "Conversione fallita",
+      RESET_TOKEN_INVALID: "Token di reset non valido",
+      RESET_TOKEN_EXPIRED: "Token di reset scaduto",
+      SEARCH_TEXT_EMPTY: "Testo di ricerca vuoto",
+      PDF_LOCKED: "PDF protetto da password. Sbloccalo per visualizzarlo.",
+      INTERNAL_ERROR: "Errore interno del server",
+    };
+    return messages[code] || fallback;
   }
 
   private getHeaders(): Record<string, string> {
@@ -112,7 +143,7 @@ export class ApiClient {
         .clone()
         .json()
         .catch(() => null);
-      const detail = body?.detail || "";
+      const detail = typeof body?.detail === "string" ? body.detail : "";
       if (detail === "INVALID_CREDENTIALS" || detail.includes("expired")) {
         this._isRefreshing = true;
         const refreshed = await this.refreshToken().catch(() => null);
@@ -252,10 +283,12 @@ export class ApiClient {
     mode: "every" | "range",
     ranges?: string[],
     outputFilename?: string,
+    outputFilenames?: string[],
   ) {
     const body: Record<string, unknown> = { mode };
     if (ranges) body.ranges = ranges;
     if (outputFilename) body.output_filename = outputFilename;
+    if (outputFilenames) body.output_filenames = outputFilenames;
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/split`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
@@ -269,9 +302,11 @@ export class ApiClient {
     id: string,
     pageOrder: number[],
     outputFilename?: string,
+    overwrite?: boolean,
   ): Promise<PdfDocument> {
     const body: Record<string, unknown> = { page_order: pageOrder };
     if (outputFilename) body.output_filename = outputFilename;
+    if (overwrite) body.overwrite = true;
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/reorder`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
@@ -285,9 +320,11 @@ export class ApiClient {
     id: string,
     pageNumbers: number[],
     outputFilename?: string,
+    overwrite?: boolean,
   ): Promise<PdfDocument> {
     const body: Record<string, unknown> = { page_numbers: pageNumbers };
     if (outputFilename) body.output_filename = outputFilename;
+    if (overwrite) body.overwrite = true;
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/remove-pages`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
@@ -342,7 +379,10 @@ export class ApiClient {
 
   async updateMetadata(
     id: string,
-    metadata: Partial<Metadata>,
+    metadata: Partial<Metadata> & {
+      new_filename?: string;
+      overwrite?: boolean;
+    },
   ): Promise<PdfDocument> {
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
       method: "PUT",
@@ -417,12 +457,21 @@ export class ApiClient {
   }
 
   async login(email: string, password: string): Promise<AuthResponse> {
-    const res = await this._fetch(`${this.baseUrl}/auth/login`, {
+    // Usa fetch diretto (non _fetch) per evitare che il 401 auto-refresh
+    // interferisca con EMAIL_NOT_FOUND / WRONG_PASSWORD
+    const res = await fetch(`${this.baseUrl}/auth/login`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    if (!res.ok) {
+      // Estrai il codice errore raw (es. "EMAIL_NOT_FOUND") invece della traduzione,
+      // così mapError() può matcharlo correttamente
+      const body = await res.json().catch(() => null);
+      const code =
+        body?.detail?.code || body?.code || (await ApiClient.extractError(res));
+      throw new Error(code);
+    }
     const data = await res.json();
     if (data.csrf_token) this.setCsrfToken(data.csrf_token);
     return data;
@@ -543,6 +592,7 @@ export class ApiClient {
     id: string;
     email: string;
     full_name: string;
+    password?: string;
     is_active: boolean;
     is_admin: boolean;
     is_guest: boolean;
@@ -553,7 +603,9 @@ export class ApiClient {
     updated_at?: string;
   }): Promise<{ access_token: string; csrf_token: string } | null> {
     try {
-      const res = await this._fetch(`${this.baseUrl}/auth/sync`, {
+      // Usa fetch diretto (non _fetch) per evitare di mandare il JWT cloud
+      // che il sidecar non riconosce, innescando il loop 401 → refresh → fail
+      const res = await fetch(`${this.baseUrl}/auth/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(user),
@@ -725,3 +777,32 @@ export const api = new ApiClient();
 
 /** Cloud API client for auth (register/login via Render/Neon) */
 export const cloudApi = new ApiClient(getCloudApiBaseUrl());
+
+// ─── Keep-warm: evita cold start del backend su Render ──────────────
+
+let _keepWarmTimer: ReturnType<typeof setInterval> | null = null;
+const KEEP_WARM_INTERVAL = 5 * 60 * 1000; // 5 minuti
+
+/**
+ * Avvia il ping periodico al backend cloud per evitare il cold start.
+ * Il ping va a /health che è leggero e non richiede autenticazione.
+ */
+export function startKeepWarm(): void {
+  if (_keepWarmTimer) return; // già avviato
+  const url = `${getCloudApiBaseUrl()}/health`;
+  const ping = () => {
+    fetch(url).catch(() => {
+      // Ignora errori di rete — il backend potrebbe essere in cold start
+    });
+  };
+  ping(); // ping immediato all'avvio
+  _keepWarmTimer = setInterval(ping, KEEP_WARM_INTERVAL);
+}
+
+/** Ferma il keep-warm (utile per test o cleanup) */
+export function stopKeepWarm(): void {
+  if (_keepWarmTimer) {
+    clearInterval(_keepWarmTimer);
+    _keepWarmTimer = null;
+  }
+}

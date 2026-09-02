@@ -21,7 +21,7 @@ def reorder_pdf_pages(
         raise error_response(ErrorCode.VALIDATION_ERROR, "At least 2 pages are required for reordering")
 
     try:
-        pdf = service.reorder(pdf_id, current_user.id, req.page_order, output_filename=req.output_filename)
+        pdf = service.reorder(pdf_id, current_user.id, req.page_order, output_filename=req.output_filename, overwrite=req.overwrite)
     except ValueError:
         raise error_response(ErrorCode.VALIDATION_ERROR, "Failed to reorder pages")
 
@@ -40,7 +40,11 @@ def remove_pdf_pages(
         raise error_response(ErrorCode.VALIDATION_ERROR, "At least one page number is required")
 
     try:
-        pdf = service.remove_pages(pdf_id, current_user.id, req.page_numbers, output_filename=req.output_filename)
+        pdf = service.remove_pages(
+            pdf_id, current_user.id, req.page_numbers,
+            output_filename=req.output_filename,
+            overwrite=req.overwrite,
+        )
     except ValueError:
         raise error_response(ErrorCode.VALIDATION_ERROR, "Failed to remove pages")
 

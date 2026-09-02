@@ -2,9 +2,11 @@
 
 import React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useAuth } from "../../shared/auth";
 
 export default function LicensePage() {
+    const tl = useTranslations("license");
     const { user } = useAuth();
 
     return (
@@ -17,17 +19,17 @@ export default function LicensePage() {
                         </div>
                     </div>
 
-                    <h1 className="text-[36px] font-bold leading-tight text-white">Licenza</h1>
+                    <h1 className="text-[36px] font-bold leading-tight text-white">{tl("title")}</h1>
                     <p className="mt-3 max-w-md text-[14px] leading-relaxed text-[#9d9184]">
-                        Piano attuale: <strong className="text-white">{user?.license_tier || "Free"}</strong>
+                        {tl("currentPlan")} <strong className="text-white">{user?.license_tier || "Free"}</strong>
                     </p>
 
                     <div className="mt-10 flex items-center gap-3">
                         <Link href="/app" className="rounded-2xl border border-white/15 bg-[#1b1612] px-8 py-3 text-[14px] font-semibold text-white transition hover:bg-[#231c17]">
-                            Torna all&apos;editor
+                            {tl("backToEditor")}
                         </Link>
                         <Link href="/settings" className="rounded-2xl bg-[#f7871f] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_8px_22px_rgba(247,135,31,0.35)] transition hover:bg-[#ff9b37]">
-                            Impostazioni
+                            {tl("settings")}
                         </Link>
                     </div>
                 </main>

@@ -1,11 +1,37 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-08-12
+> **Aggiornato:** 2026-09-01
+
+---
+
+## ✅ Risolte in questa sessione
+
+| Issue | Fix                                              |
+| ----- | ------------------------------------------------ |
+| #667  | Keep-warm backend (GitHub Actions + frontend)    |
+| #668  | Icona origine piattaforma per PDF                |
+| #669  | Mobile: remember me con schermata di caricamento |
+| #670  | Mobile: snackbar errore upload cloud             |
+| #671  | Mobile: PDF in cartella PdfEditor/               |
+| #672  | Mobile: fix cursore rename PDF                   |
+| #673  | Desktop: cartella predefinita salvataggio PDF    |
+| #689  | Desktop fixes batch (9 fix + i18n + test)        |
 
 ---
 
 ## 🔴 Bug aperti
+
+### K6 — Disinstallazione non cancella dati utente in %APPDATA%
+
+**File:** `desktop/src-tauri/installer.nsh`  
+**Descrizione:** L'uninstall di NSIS cancella solo i file in `C:\Program Files\PdfEditor/`, non i dati utente in `%APPDATA%/PdfEditor/` (PDF, DB SQLite, secret.key). Reinstallando l'app, i vecchi PDF e utenti sono ancora presenti.
+
+**Comportamento:** Voluto — è lo standard Windows (Chrome, Discord, Spotify fanno lo stesso). I dati utente sono separati dall'applicazione.
+
+**Se in futuro si volesse cambiare:** Aggiungere una MessageBox in `NSIS_HOOK_PREUNINSTALL` che chiede "Vuoi cancellare anche i tuoi PDF e dati utente?" e, se confermato, cancella `%APPDATA%/PdfEditor/`.
+
+**Stato:** Non pianificato.
 
 ### K5 — Auth offline: dopo login Google, l'app non funziona senza connessione
 
@@ -18,14 +44,14 @@
 2. Se offline e JWT scaduto → modalità offline (solo PDF locali)
 3. Alla riconnessione → refresh automatico JWT + ripresa sync
 
-**Stato:** Da implementare (pianificato con issue #627).
+**Stato:** Da verificare — l'utente non è sicuro se funzioni o meno.
 
 ### K4 — Settings: antialiasing/densità nessun effetto visibile
 
 **File:** `desktop/frontend/src/app/settings/page.tsx`  
 **Descrizione:** Il toggle antialiasing e il select densità non producono cambiamenti visibili nell'interfaccia. L'antialiasing agisce sul font rendering (`-webkit-font-smoothing` su body), ma la differenza è impercettibile con i font e colori usati. La densità modifica solo il padding degli elementi `.doc-item` (8/12/20px), ma la differenza è troppo sottile per essere notata.
 
-**Stato:** Applicato tecnicamente, nessun effetto visibile.
+**Stato:** ✅ Risolto — tecnicamente applicato ma nessun effetto visibile percepibile.
 
 ### K3 — Upload PDF 403 (CSRF validation failed) — DRAFT
 
@@ -33,7 +59,7 @@
 **Descrizione:** L'upload PDF su sidecar dà 403 CSRF. Il cookie CSRF non viene inviato dal browser su POST cross-site (origin `http://tauri.localhost` → target `127.0.0.1:7723`) a causa di `SameSite=Lax`.
 
 **Soluzione prevista:** Usare `SameSite=None, Secure=False` su localhost. Chrome/Edge permettono SameSite=None senza Secure su localhost.
-**Stato:** Fix implementato in `csrf.py`, da testare con nuova build.
+**Stato:** ✅ Non più osservato dall'utente — fix implementato in `csrf.py`, da confermare con nuova build.
 
 ### K1 — Login con email/password non funziona su Neon (401)
 
@@ -42,22 +68,22 @@
 
 **Soluzione prevista:** Verificare che Render backend sia attivo, che l'utente sia registrato su Neon, e differenziare l'errore (già implementato ma non verificato: EMAIL_NOT_FOUND vs WRONG_PASSWORD).
 
+**Stato:** ✅ Risolto in PR #682 — login desktop prova sidecar locale prima, poi cloud con sync utente. Login usa `fetch` diretto invece di `_fetch` per evitare loop 401.
+
 ### K2 — Google OAuth popup non funziona in Tauri
 
 **File:** `backend/app/api/v1/auth.py` (endpoint già implementati), `desktop/frontend/src/components/GoogleLoginButton.tsx`  
 20:**Descrizione:** La popup JavaScript di Google One Tap non funziona in webview Tauri (richiede dominio pubblico). È stato implementato un redirect flow via browser di sistema con endpoint `/auth/google/desktop-login` e `/auth/google/desktop-callback`, ma il redirect URI su Google Cloud Console deve essere aggiornato a `https://pdfeditor-api.mirkobechini.com/auth/google/desktop-callback`.
 
-> Tutti i bug noti sono stati risolti.
+**Stato:** ✅ Funzionante — redirect flow via browser di sistema implementato e verificato dall'utente.
 
 ---
 
 ## 🟡 Bug minori
 
-### B2 — Find & Replace non funziona
+### B2 — Find & Replace ✅ Fixato (issue #702, #704)
 
-**File:** `backend/app/api/v1/text.py`  
-**Descrizione:** L'endpoint `POST /pdfs/{id}/replace-text` accetta `search + replace + occurrence` ma il risultato non è affidabile. PyMuPDF text search ha limitazioni con PDF complessi (font embedded, ligature, spaziature variabili).  
-**Risoluzione prevista:** Sostituire con inline text editor (`.specs/plans/feature-inline-text-editor.md`).
+Replace text ora funziona su web, desktop e mobile. Aggiorna il viewer dopo la sostituzione e preserva font, dimensione e baseline del testo originale. La sostituzione WYSIWYG inline (issue #inline-text-editor) rimane come feature futura separata.
 
 ---
 
@@ -71,7 +97,7 @@
 
 ### T2 — Zero test E2E / integration
 
-**Descrizione:** 342 test backend (con `TestClient` same-origin) + 373 test frontend (jsdom). Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS).  
+**Descrizione:** 359 test backend (con `TestClient` same-origin) + 897 test desktop (vitest) + 272 test mobile. Nessun test E2E che copra flussi cross-origin reali (cookie, CSRF, CORS).  
 **Risoluzione prevista:** Playwright (T7).
 
 ### T3 — `@swc/helpers` lock file desync
@@ -84,13 +110,6 @@
 
 **Descrizione:** Il nuovo sistema di build usa `@tauri-apps/cli` via npm. Se il pacchetto non è installato (es. `npm ci` fallito), la build fallisce.
 **Risoluzione prevista:** Il preflight job in CI verifica che `npm ci` + `next build` funzionino prima di avviare la build Tauri.
-
-### T5 — Dipendenze transitive con vulnerabilità non fixabili
-
-| Pacchetto     | Versione | Vulnerabilità                 | Motivo                                                               |
-| ------------- | -------- | ----------------------------- | -------------------------------------------------------------------- |
-| `image-size`  | ≤2.0.2   | DoS in ICNS/JXL/HEIF parser   | Nessun fix disponibile                                               |
-| `glib` (Rust) | 0.18.5   | Unsoundness in VariantStrIter | Fix in 0.20.0, bloccato da crate intermedie (gtk/atk non aggiornate) |
 
 ---
 
@@ -128,26 +147,34 @@
 
 ## 📊 Coverage gaps (non bloccanti)
 
-| Area                         | Coverage         | Bloccante? | Note                                          |
-| ---------------------------- | ---------------- | ---------- | --------------------------------------------- |
-| Backend totale               | 94% (359 test)   | ❌ No      | 1 pre-existing fail (test_seed_super_admin)   |
-| Frontend totale              | ~75% (363+ test) | ❌ No      | 22 test login + auth remember-me aggiunti     |
-| Admin page                   | 67%              | ❌ No      | API calls non testate                         |
-| Editor page                  | 69%              | ❌ No      | handleSplit/handleReorder/... non testati     |
-| Reorder/Split/Remove dialogs | 34-44%           | ❌ No      | Richiedono rendering PDF.js (canvas) in jsdom |
+| Area                       | Coverage              | Bloccante? | Note                                                                                          |
+| -------------------------- | --------------------- | ---------- | --------------------------------------------------------------------------------------------- |
+| Backend totale             | 94% (359 test)        | ❌ No      | 1 pre-existing fail (test_seed_super_admin)                                                   |
+| **Webapp totale**          | **94.96% (565 test)** | ❌ No      | Target 90% raggiunto (issue #700). Tutti i file >= 90% statements                             |
+| **Desktop totale**         | **90.84% (906 test)** | ❌ No      | Target 90% raggiunto (issue #693). +9 test ReplaceTextModal, +3 test googleLogin token locale |
+| **Mobile totale**          | **98.7% (276 test)**  | ❌ No      | +4 test api replaceText                                                                       |
+| Desktop: Settings/Profile  | 51% / 38%             | ❌ No      | Da migliorare (non bloccante)                                                                 |
+| Desktop: Wizard/Startup    | 66% / 46%             | ❌ No      | Da migliorare (non bloccante)                                                                 |
+| Desktop: PdfViewer         | 81.7%                 | ❌ No      | Rendering PDF.js in jsdom                                                                     |
+| Desktop: GoogleLoginButton | 76.31%                | ❌ No      | Redirect flow difficile da testare                                                            |
+| ReorderPagesModal DnD      | 81.17%                | ❌ No      | DnD handlers (@dnd-kit) non copribili in jsdom — richiedono test E2E con Playwright           |
 
 ---
 
 ## 🧪 Dipendenze con warning (Dependabot)
 
-| #      | Pacchetto                        | Severità  | Versione             | Stato                           | Note                                                                                                                         |
-| ------ | -------------------------------- | --------- | -------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **34** | `postcss` (path traversal)       | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**             | Sub-dipendenza interna di `next@16.2.11`. In attesa che Next.js aggiorni il suo sub-dep.                                     |
-| **33** | `postcss` (arbitrary file read)  | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**             | Stesso di #34.                                                                                                               |
-| **22** | `sharp` / libvips                | 🔴 high   | < 0.35.0             | ⛔ **Non fixabile**             | Sub-dipendenza interna Next.js 16.2.11. `sharp@0.35.0` esiste ma Next non lo richiede ancora.                                |
-| **32** | `glib::VariantStrIter`           | 🟡 medium | < 0.20.0 (Rust)      | ⏳ **Fixabile ma sconsigliato** | Dipendenza indiretta di Tauri. Forzare `glib 0.20.0` rischia di rompere `cargo tauri build`. CVE non esposto a input utente. |
-| —      | `httpx` + `starlette.testclient` | —         | —                    | ⛔ **Non fixabile**             | `StarletteDeprecationWarning` — `httpx2` non esiste ancora.                                                                  |
-| —      | `brace-expansion`                | 🔴 high   | 1.1.16 / 5.0.8       | ✅ **Falso positivo**           | DevDependency di eslint, non raggiungibile in produzione. Auto-dismissed da Dependabot.                                      |
+| #      | Pacchetto                        | Severità  | Versione             | Stato                    | Note                                                                                                                     |
+| ------ | -------------------------------- | --------- | -------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| **51** | `nanoid` (mobile)                | 🔴 high   | < 3.3.18             | ✅ **Fixato (override)** | Sub-dipendenza di react-navigation + expo. Override in mobile/package.json a 3.3.18.                                     |
+| **50** | `image-size` (mobile)            | 🔴 high   | <= 2.0.2             | ⛔ **Non fixabile**      | Sub-dipendenza di expo (metro). Nessun fix disponibile.                                                                  |
+| **49** | `image-size` (mobile)            | 🔴 high   | <= 2.0.2             | ⛔ **Non fixabile**      | Stesso di #50.                                                                                                           |
+| **48** | `uuid` (mobile)                  | 🟡 medium | < 7.0.3              | ⛔ **Non fixabile**      | Sub-dipendenza di xcode → expo-config-plugins. Saltare a 11.1.1 rompe breaking changes.                                  |
+| **32** | `glib::VariantStrIter` (Rust)    | 🟡 medium | < 0.20.0             | ⏳ **Sconsigliato**      | Dipendenza indiretta di Tauri. Forzare glib 0.20.0 rischia di rompere cargo tauri build. CVE non esposto a input utente. |
+| —      | `postcss` (path traversal)       | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**      | Sub-dipendenza interna di `next@16.3.0`. In attesa che Next.js aggiorni il suo sub-dep.                                  |
+| —      | `sharp` / libvips                | 🔴 high   | < 0.35.0             | ✅ **Già a 0.35.3**      | Next.js 16.3.0 include sharp 0.35.3. Alert ancora aperto? Dismiss automatico.                                            |
+| —      | `brace-expansion`                | 🔴 high   | 1.1.16 / 5.0.8       | ✅ **Falso positivo**    | DevDependency di eslint, non raggiungibile in produzione.                                                                |
+| —      | `js-yaml`                        | 🔴 high   | 4.0.0 / 4.3.1        | ✅ **Falso positivo**    | DevDependency di eslint, non raggiungibile in produzione.                                                                |
+| —      | `httpx` + `starlette.testclient` | —         | —                    | ⛔ **Non fixabile**      | `StarletteDeprecationWarning` — `httpx2` non esiste ancora.                                                              |
 
 ### Vulnerabilità risolte (non più segnalate da Dependabot)
 

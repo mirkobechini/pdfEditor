@@ -47,6 +47,14 @@ mobile/node_modules/
 
 # Desktop artifacts
 desktop/frontend/.next/
+desktop/frontend/out/
+desktop/frontend/src/shared/
 desktop/src-tauri/target/
 desktop/src-tauri/binaries/*.exe
 desktop/src-tauri/binaries/*.dll
+desktop/src-tauri/binaries/_MEI*/
+secret.key
+
+# Specs files (feature plans, archived, future)
+.specs/
+!desktop/frontend/src/shared/__tests__/

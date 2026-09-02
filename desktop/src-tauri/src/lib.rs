@@ -15,26 +15,10 @@ struct SidecarState {
 
 /// Spawn the FastAPI sidecar process.
 fn start_sidecar(app: &tauri::App) {
-    // If port 7723 already responds, a sidecar is already running (e.g. from a previous instance).
-    // Do NOT kill it — it belongs to the running instance. The single-instance plugin
-    // will handle bringing the existing window to focus.
-    use std::io::Write;
-    use std::net::TcpStream;
-
-    let already_running = TcpStream::connect_timeout(
-        &"127.0.0.1:7723".parse().unwrap(),
-        std::time::Duration::from_millis(500),
-    )
-    .map(|mut stream| {
-        let _ = write!(stream, "GET /health HTTP/1.0\r\n\r\n");
-        true
-    })
-    .unwrap_or(false);
-
-    if already_running {
-        log::info!("Sidecar già in esecuzione sulla porta 7723 — skip spawn.");
-        return;
-    }
+    // Kill any orphaned sidecar process from a previous crash that may still
+    // hold port 7723. The single-instance plugin prevents multiple app windows,
+    // but a crashed instance can leave a zombie sidecar behind.
+    kill_by_name();
 
     // Clean up orphaned PyInstaller _MEI* temp directories left from crashed sidecars.
     // If the sidecar was killed forcefully (taskkill /F), _MEI* dirs remain corrupted
@@ -186,6 +170,64 @@ fn dialog_open(app: tauri::AppHandle, default_path: Option<String>) -> Result<Op
     }
 }
 
+/// Open a native folder picker dialog.
+#[tauri::command]
+fn dialog_open_folder(app: tauri::AppHandle, default_path: Option<String>) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let mut builder = app.dialog().file();
+
+    if let Some(ref path) = default_path {
+        builder = builder.set_directory(path);
+    }
+
+    match builder.blocking_pick_folder() {
+        Some(folder_path) => {
+            let path = folder_path.into_path().map_err(|e| format!("Failed to resolve path: {}", e))?;
+            Ok(Some(path.to_string_lossy().to_string()))
+        }
+        None => Ok(None),
+    }
+}
+
+/// Open a native save dialog and write the provided bytes to the chosen path.
+/// Returns the path where the file was saved, or None if cancelled.
+#[tauri::command]
+fn dialog_save(app: tauri::AppHandle, default_name: String, data: Vec<u8>, default_folder: Option<String>) -> Result<Option<String>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    use std::fs;
+
+    // Make sure the filename ends with .pdf
+    let name = if default_name.ends_with(".pdf") {
+        default_name
+    } else {
+        format!("{}.pdf", default_name)
+    };
+
+    let mut builder = app.dialog()
+        .file()
+        .add_filter("PDF", &["pdf"])
+        .set_file_name(&name);
+
+    // Set default folder if provided
+    if let Some(ref folder) = default_folder {
+        let path = std::path::Path::new(folder);
+        if path.exists() {
+            builder = builder.set_directory(path);
+        }
+    }
+
+    match builder.blocking_save_file() {
+        Some(file_path) => {
+            let path = file_path.into_path().map_err(|e| format!("Failed to resolve path: {}", e))?;
+            fs::write(&path, &data).map_err(|e| format!("Failed to write file: {}", e))?;
+            log::info!("PDF salvato in: {:?}", path);
+            Ok(Some(path.to_string_lossy().to_string()))
+        }
+        None => Ok(None),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -295,7 +337,44 @@ pub fn run() {
             delete_jwt,
             read_file_binary,
             dialog_open,
+            dialog_open_folder,
+            dialog_save,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_sidecar_port() {
+        assert_eq!(get_sidecar_port(), 7723);
+    }
+
+    #[test]
+    fn test_read_file_binary_nonexistent() {
+        let result = read_file_binary("/nonexistent/path/file.pdf".to_string());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_read_file_binary_success() {
+        use std::io::Write;
+        let dir = std::env::temp_dir().join("pdfeditor_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("test_read.pdf");
+        let mut f = std::fs::File::create(&path).unwrap();
+        f.write_all(b"%PDF-test-content").unwrap();
+        drop(f);
+
+        let result = read_file_binary(path.to_string_lossy().to_string());
+        assert!(result.is_ok());
+        let bytes = result.unwrap();
+        assert_eq!(bytes, b"%PDF-test-content");
+
+        std::fs::remove_file(&path).unwrap();
+        std::fs::remove_dir(&dir).unwrap();
+    }
 }

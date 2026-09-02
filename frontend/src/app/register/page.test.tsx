@@ -2,15 +2,26 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import RegisterPage from "./page";
 import { useAuth } from "../lib/auth";
+import { api } from "../lib/api";
 
 // Mock the auth hook
 vi.mock("../lib/auth", () => ({
   useAuth: vi.fn(),
 }));
 
+// Mock the api module for the guest-convert flow
+vi.mock("../lib/api", () => ({
+  api: {
+    convertGuest: vi.fn(),
+    setToken: vi.fn(),
+    setCsrfToken: vi.fn(),
+  },
+}));
+
 // Mock useSearchParams (used by RegisterForm for ?convert=1)
+const mockSearchParams = vi.fn();
 vi.mock("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams(""),
+  useSearchParams: () => mockSearchParams(),
 }));
 
 // Mock matchMedia for HeaderControls dark mode
@@ -36,6 +47,7 @@ beforeEach(() => {
     register: mockRegister,
     logout: vi.fn(),
   });
+  mockSearchParams.mockReturnValue(new URLSearchParams(""));
 
   // Mock window.location.href
   delete (window as any).location;
@@ -164,5 +176,113 @@ describe("RegisterPage", () => {
     render(<RegisterPage />);
     const link = screen.getByText("loginLink");
     expect(link.getAttribute("href")).toBe("/login");
+  });
+
+  it("shows guest convert banner and title when ?convert=1", () => {
+    mockSearchParams.mockReturnValue(new URLSearchParams("convert=1"));
+    render(<RegisterPage />);
+
+    expect(screen.getByText("guestConvertTitle")).toBeTruthy();
+    expect(screen.getByText("guestConvertDescription")).toBeTruthy();
+  });
+
+  it("calls api.convertGuest and redirects when ?convert=1", async () => {
+    mockSearchParams.mockReturnValue(new URLSearchParams("convert=1"));
+    (api.convertGuest as any).mockResolvedValue({
+      access_token: "token123",
+      csrf_token: "csrf123",
+    });
+
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("Mario Rossi"), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getAllByPlaceholderText("email@example.com")[0], {
+      target: { value: "test@example.com" },
+    });
+    const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
+
+    fireEvent.click(screen.getByText("registerButton"));
+
+    await waitFor(() => {
+      expect(api.convertGuest).toHaveBeenCalledWith(
+        "test@example.com",
+        "password123",
+        "Test User",
+      );
+    });
+    expect(api.setToken).toHaveBeenCalledWith("token123");
+    expect(api.setCsrfToken).toHaveBeenCalledWith("csrf123");
+    expect(window.location.href).toBe("/app");
+  });
+
+  it("shows error when convertGuest fails", async () => {
+    mockSearchParams.mockReturnValue(new URLSearchParams("convert=1"));
+    (api.convertGuest as any).mockRejectedValue(new Error("fail"));
+
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("Mario Rossi"), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getAllByPlaceholderText("email@example.com")[0], {
+      target: { value: "test@example.com" },
+    });
+    const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
+
+    fireEvent.click(screen.getByText("registerButton"));
+
+    await waitFor(() => {
+      expect(screen.getByText(/registerFailed/)).toBeTruthy();
+    });
+  });
+
+  it("shows registering text while submitting", async () => {
+    let resolveRegister: (v: unknown) => void;
+    mockRegister.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRegister = resolve;
+        }),
+    );
+
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("Mario Rossi"), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getAllByPlaceholderText("email@example.com")[0], {
+      target: { value: "test@example.com" },
+    });
+    const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
+
+    fireEvent.click(screen.getByText("registerButton"));
+
+    expect(screen.getByText("registering")).toBeTruthy();
+
+    await waitFor(() => {
+      resolveRegister!(undefined);
+    });
+  });
+
+  it("does not submit when fullName is empty", async () => {
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getAllByPlaceholderText("email@example.com")[0], {
+      target: { value: "test@example.com" },
+    });
+    const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
+
+    fireEvent.click(screen.getByText("registerButton"));
+    expect(mockRegister).not.toHaveBeenCalled();
   });
 });
