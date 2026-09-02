@@ -5,13 +5,19 @@ on:
     tags:
       - "v*" # e.g. v0.1.0, v0.2.0
       - "!v*-mobile" # exclude mobile tags (handled by release-mobile.yml)
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag da rilasciare (es. v0.1.35)"
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   wait-for-ci:
-    if: github.ref_type == 'tag'
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Wait for CI on main to pass
@@ -31,14 +37,18 @@ jobs:
           echo "Waiting for CI checks on main (commit: $SHA)..."
           for i in $(seq 1 30); do
             RESULT=$(gh api repos/${REPO}/commits/${SHA}/check-runs --jq '[.check_runs[] | select(.name == "backend" or .name == "frontend" or .name == "desktop-test") | .conclusion // "pending"] | join(",")' 2>/dev/null)
-              echo "  iteration $i: backend+frontend+desktop conclusions: $RESULT"
+            echo "  iteration $i: backend+frontend+desktop conclusions: $RESULT"
+            # No check runs found = CI not triggered (e.g. path filters excluded this commit)
+            if [ -z "$RESULT" ]; then
+              echo "No relevant CI checks found on main (path filters likely excluded this commit). Proceeding."
+              exit 0
+            fi
             # Check for failure
             if echo "$RESULT" | grep -q "failure"; then
               echo "CI failed on main, aborting release."
               exit 1
             fi
             # All required CI passed? Good to go
-            # Accept any number of successes (CI jobs may be skipped by path filters)
             if echo "$RESULT" | grep -q "success"; then
               echo "CI passed on main, proceeding with build."
               exit 0
@@ -93,7 +103,8 @@ jobs:
       - name: Bump version from tag
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          TAG_NAME="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${TAG_NAME#v}"
           echo "Bumping version to $VERSION"
           # Use python3 for portable sed-like replacement (works on macOS, Linux, Windows)
           python3 -c "
@@ -245,8 +256,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.ref_name }}
-          name: "PdfEditor ${{ github.ref_name }}"
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: "PdfEditor ${{ github.event.inputs.tag || github.ref_name }}"
           body: ${{ steps.notes.outputs.notes }}
           draft: false
           prerelease: false
