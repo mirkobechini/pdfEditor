@@ -79,19 +79,25 @@ def _add_missing_columns():
                 continue  # new table — create_all handles it
             existing = {c["name"] for c in inspector.get_columns(table.name)}
             for col in table.columns:
+                # Populate NULL values with the column default so NOT NULL columns
+                # don't end up NULL (causes 500 on read). Do this for existing
+                # columns too, not just newly added ones.
+                if col.default is not None and hasattr(col.default, "arg") and not callable(col.default.arg):
+                    try:
+                        with db_engine.connect() as conn:
+                            conn.execute(
+                                text(f"UPDATE {table.name} SET {col.name} = :val WHERE {col.name} IS NULL"),
+                                {"val": col.default.arg},
+                            )
+                            conn.commit()
+                    except OperationalError:
+                        pass  # column may not exist yet — handled below
                 if col.name in existing:
                     continue
                 col_def = f"{col.name} {_sqlite_type(col)}"
                 try:
                     with db_engine.connect() as conn:
                         conn.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {col_def}"))
-                        # Populate existing rows with the column default so
-                        # NOT NULL columns don't end up NULL (causes 500 on read).
-                        if col.default is not None and hasattr(col.default, "arg") and not callable(col.default.arg):
-                            conn.execute(
-                                text(f"UPDATE {table.name} SET {col.name} = :val WHERE {col.name} IS NULL"),
-                                {"val": col.default.arg},
-                            )
                         conn.commit()
                     logger.info("Added missing column %s.%s", table.name, col.name)
                 except OperationalError:
