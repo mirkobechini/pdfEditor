@@ -120,8 +120,12 @@ export class ApiClient {
           .clone()
           .json()
           .catch(() => null);
+        // Backend returns {detail: {code, detail}} — handle both string and object
         const detail = body?.detail || "";
-        if (detail === "INVALID_CREDENTIALS" || detail.includes("expired")) {
+        const code = typeof detail === "string" ? detail : detail?.code || "";
+        const detailMsg =
+          typeof detail === "string" ? detail : detail?.detail || "";
+        if (code === "INVALID_CREDENTIALS" || detailMsg.includes("expired")) {
           this._isRefreshing = true;
           const refreshed = await this.refreshToken().catch(() => null);
           this._isRefreshing = false;
