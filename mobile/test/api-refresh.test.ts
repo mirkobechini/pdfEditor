@@ -131,6 +131,64 @@ describe("ApiClient - auto-refresh on 401", () => {
     expect(mockFetch).toHaveBeenCalledTimes(3);
   });
 
+  it("auto-refreshes on 401 with object detail {code: INVALID_CREDENTIALS} and retries", async () => {
+    // Backend returns {detail: {code, detail}} object format
+    mockFetch
+      .mockResolvedValueOnce(
+        mockJsonResponse(
+          { detail: { code: "INVALID_CREDENTIALS", detail: "Invalid or expired token" } },
+          401,
+        ),
+      )
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          access_token: "new-jwt",
+          csrf_token: "new-csrf",
+        }),
+      )
+      .mockResolvedValueOnce(mockJsonResponse({ ok: true }));
+
+    const res = await (client as any)._fetch(`${BASE}/pdfs`, { method: "GET" });
+    expect(res.ok).toBe(true);
+    expect(client.getToken()).toBe("new-jwt");
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("auto-refreshes on 401 with object detail {detail: expired} and retries", async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        mockJsonResponse(
+          { detail: { code: "TOKEN_EXPIRED", detail: "Token has expired" } },
+          401,
+        ),
+      )
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          access_token: "new-jwt",
+          csrf_token: "new-csrf",
+        }),
+      )
+      .mockResolvedValueOnce(mockJsonResponse({ ok: true }));
+
+    const res = await (client as any)._fetch(`${BASE}/pdfs`, { method: "GET" });
+    expect(res.ok).toBe(true);
+    expect(client.getToken()).toBe("new-jwt");
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not auto-refresh when object detail code is not recognized", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockJsonResponse(
+        { detail: { code: "SOME_OTHER_ERROR", detail: "Something else" } },
+        401,
+      ),
+    );
+
+    const res = await (client as any)._fetch(`${BASE}/pdfs`, { method: "GET" });
+    expect(res.status).toBe(401);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
   it("does not auto-refresh when detail is not recognized", async () => {
     mockFetch.mockResolvedValueOnce(
       mockJsonResponse({ detail: "Some other error" }, 401),
