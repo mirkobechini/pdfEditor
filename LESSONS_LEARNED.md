@@ -1,35 +1,17 @@
 # Lessons Learned
 
-> **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-03
+> **Scopo:** Documentare le lezioni apprese durante lo svilupzo, problemi architetturali emersi, e regole per evitare che si ripetano.
+> **Aggiornato:** 2026-09-02
 
 ---
 
-## Il formato errore backend {code, detail} rompe i check che assumono stringhe
+## CI release-desktop timeout inutile quando non ci sono check runs
 
-> **Lezione appresa (2026-09-03):**
+> **Lezione appresa (2026-09-02):**
 
-Il backend usa `error_response(code, detail)` che produce `{"detail": {"code": "...", "detail": "..."}}` — `detail` è un **oggetto**, non una stringa. Il check 401 auto-refresh in `mobile/src/shared/api.ts` assumeva `body.detail` come stringa:
+La `release-desktop.yml` aspettava 15 minuti anche quando non c'erano check runs per il commit taggato. Causa: `ci-desktop.yml` ha path filter `desktop/**` + `shared/**`, ma sui tag viene pushato solo il commit (spesso con modifiche `.github/workflows/` o doc) — il path filter esclude il commit dalla CI. `wait-for-ci` eseguiva 30 loop da 30s aspettando check runs inesistenti.
 
-```typescript
-const detail = body?.detail || "";
-if (detail === "INVALID_CREDENTIALS" || detail.includes("expired")) {
-```
-
-`detail.includes("expired")` **crasha** su un oggetto (`.includes` non esiste). Il refresh non avveniva → `listPdfs` falliva con errore generico → "Impossibile recuperare la lista PDF dal cloud".
-
-**Regola:** Quando si controlla `body.detail`, gestire SEMPRE sia il formato stringa che oggetto:
-
-```typescript
-const detail = body?.detail || "";
-const code = typeof detail === "string" ? detail : detail?.code || "";
-const detailMsg = typeof detail === "string" ? detail : detail?.detail || "";
-if (code === "INVALID_CREDENTIALS" || detailMsg.includes("expired")) {
-```
-
-**Nota:** `String(err).includes("INVALID_CREDENTIALS")` funziona perché `String()` converte l'oggetto in stringa — ma è fragile. Meglio estrarre `code` esplicitamente.
-
----
+**Regola:** se `RESULT` è vuoto (nessun check run), procedere immediatamente. Il loop di attesa serve solo per aspettare CI in corso, non per attendere CI che non partirà mai.
 
 ## Keep-warm troppo aggressivo esaurisce le compute hours di Neon
 

@@ -1,17 +1,24 @@
 # Changelog
 
-## 2026-09-03
+## 2026-09-02
 
-### 🐛 Fix mobile cloud sync (issue #718)
+### 🚀 Release desktop v0.1.35
 
-- **Fix auto-refresh 401**: il check in `mobile/src/shared/api.ts` assumeva `body.detail` come stringa, ma il backend risponde con `{detail: {code, detail}}` (oggetto). Il check `detail.includes("expired")` crashava su un oggetto → il refresh non avveniva → "Impossibile recuperare la lista PDF dal cloud". Fix: gestire sia stringa che oggetto.
-- **Test**: 3 nuovi test per il formato errore oggetto (15/15 passano).
+**Contiene tutte le fix della sessione Sep 1-2:**
+
+- **Fix Google login desktop** (issue #710): token locale corretto da `syncResult.access_token`, upsert by email per evitare UNIQUE constraint
+- **Fix startup page** (issue #708): rimosso fallback silenzioso, mostra errore se sidecar non risponde dopo 30 retry
+- **Fix wizard** (issue #710): `handleFinish()` va a `/login` invece di `/app` senza autenticazione
+- **Fix migration automatica** (issue #710): `_add_missing_columns()` auto-rileva colonne mancanti confrontando SQLAlchemy model vs DB
+- **Fix replace text** (issues #702, #704): funziona su web/desktop/mobile, preserva font/dimensione originali
+- **Fix keep-warm** (issue #712): ping ogni 14min invece di 5min — evita esaurimento compute Neon (100h/mese)
+- **Fix CI release** (issue #714): `wait-for-ci` non aspetta 15min se non ci sono check runs, supporta `workflow_dispatch`
+- **Security fix**: @xmldom/xmldom DoS vulnerability (GHSA-965w-775f-mr7g)
+- **Render deploy**: backend e web aggiornati con tutte le fix
 
 ## 2026-09-01
 
-### 🐛 Fix desktop/mobile (desktop v0.1.35 | web v0.1.37)
-
-> ⚠️ **Nota mobile:** la versione mobile effettiva è **v0.2.0-mobile**. La v0.2.1-mobile è pianificata ma **non ancora rilasciata**.
+### 🐛 Fix desktop/mobile (sessione di sviluppo)
 
 - **Fix keep-warm** (issue #712): ping ogni 5min → ogni 14min. Il ping H24 ogni 5min consumava le 100h/mese di compute Neon in ~4 giorni, rompendo il cloud sync.
 

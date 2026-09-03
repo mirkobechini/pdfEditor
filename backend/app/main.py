@@ -192,6 +192,7 @@ app = FastAPI(
     version=settings.VERSION,
     lifespan=lifespan,
 )
+# Deploy trigger: Sep 2, 2026 - include all fixes from v0.1.35
 
 # ---------------------------------------------------------------------------
 # Rate limiter — registered on app state

@@ -1,23 +1,22 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-03
+> **Aggiornato:** 2026-09-02
 
 ---
 
-## ✅ Risolte in questa sessione
+## ✅ Risolte in v0.1.35 (Sep 2026)
 
-| Issue | Fix                                                                                                   |
-| ----- | ----------------------------------------------------------------------------------------------------- |
-| #718  | Mobile: auto-refresh crasha su 401 con detail oggetto — cloud sync "impossibile recuperare lista PDF" |
-| #667  | Keep-warm backend (GitHub Actions + frontend)                                                         |
-| #668  | Icona origine piattaforma per PDF                                                                     |
-| #669  | Mobile: remember me con schermata di caricamento                                                      |
-| #670  | Mobile: snackbar errore upload cloud                                                                  |
-| #671  | Mobile: PDF in cartella PdfEditor/                                                                    |
-| #672  | Mobile: fix cursore rename PDF                                                                        |
-| #673  | Desktop: cartella predefinita salvataggio PDF                                                         |
-| #689  | Desktop fixes batch (9 fix + i18n + test)                                                             |
+| Issue | Fix                                                     |
+| ----- | ------------------------------------------------------- |
+| B3    | Google login desktop (JWT sync corretto)                |
+| B4    | Startup page fallback rimosso (no silent passthrough)   |
+| B5    | Wizard finish va a `/login` invece di `/app`            |
+| T3    | Migration auto-detect colonne mancanti                  |
+| B2    | Replace text su web/desktop/mobile (preserva formato)   |
+| #712  | Keep-warm 14min invece di 5min (fix compute exhaustion) |
+| #714  | CI release-desktop parte subito (no timeout 15min)      |
+| CVE   | Security fix @xmldom/xmldom DoS vulnerability           |
 
 ---
 
@@ -47,44 +46,14 @@
 
 **Stato:** Da verificare — l'utente non è sicuro se funzioni o meno.
 
-### K4 — Settings: antialiasing/densità nessun effetto visibile
-
 **File:** `desktop/frontend/src/app/settings/page.tsx`  
 **Descrizione:** Il toggle antialiasing e il select densità non producono cambiamenti visibili nell'interfaccia. L'antialiasing agisce sul font rendering (`-webkit-font-smoothing` su body), ma la differenza è impercettibile con i font e colori usati. La densità modifica solo il padding degli elementi `.doc-item` (8/12/20px), ma la differenza è troppo sottile per essere notata.
 
 **Stato:** ✅ Risolto — tecnicamente applicato ma nessun effetto visibile percepibile.
 
-### K3 — Upload PDF 403 (CSRF validation failed) — DRAFT
+## 🟡 Bug minori rimanenti
 
-**File:** `shared/src/auth.tsx`, `shared/src/api.ts`, `backend/app/core/csrf.py`  
-**Descrizione:** L'upload PDF su sidecar dà 403 CSRF. Il cookie CSRF non viene inviato dal browser su POST cross-site (origin `http://tauri.localhost` → target `127.0.0.1:7723`) a causa di `SameSite=Lax`.
-
-**Soluzione prevista:** Usare `SameSite=None, Secure=False` su localhost. Chrome/Edge permettono SameSite=None senza Secure su localhost.
-**Stato:** ✅ Non più osservato dall'utente — fix implementato in `csrf.py`, da confermare con nuova build.
-
-### K1 — Login con email/password non funziona su Neon (401)
-
-**File:** `shared/src/auth.tsx`, `desktop/frontend/src/shared/auth.tsx`  
-**Descrizione:** Il login chiama `cloudApi.login()` su `https://pdfeditor-api.mirkobechini.com/auth/login` ma risponde 401. Possibili cause: utente non registrato su Neon, o SECRET_KEY del cloud diversa da quella del sidecar.
-
-**Soluzione prevista:** Verificare che Render backend sia attivo, che l'utente sia registrato su Neon, e differenziare l'errore (già implementato ma non verificato: EMAIL_NOT_FOUND vs WRONG_PASSWORD).
-
-**Stato:** ✅ Risolto in PR #682 — login desktop prova sidecar locale prima, poi cloud con sync utente. Login usa `fetch` diretto invece di `_fetch` per evitare loop 401.
-
-### K2 — Google OAuth popup non funziona in Tauri
-
-**File:** `backend/app/api/v1/auth.py` (endpoint già implementati), `desktop/frontend/src/components/GoogleLoginButton.tsx`  
-20:**Descrizione:** La popup JavaScript di Google One Tap non funziona in webview Tauri (richiede dominio pubblico). È stato implementato un redirect flow via browser di sistema con endpoint `/auth/google/desktop-login` e `/auth/google/desktop-callback`, ma il redirect URI su Google Cloud Console deve essere aggiornato a `https://pdfeditor-api.mirkobechini.com/auth/google/desktop-callback`.
-
-**Stato:** ✅ Funzionante — redirect flow via browser di sistema implementato e verificato dall'utente.
-
----
-
-## 🟡 Bug minori
-
-### B2 — Find & Replace ✅ Fixato (issue #702, #704)
-
-Replace text ora funziona su web, desktop e mobile. Aggiorna il viewer dopo la sostituzione e preserva font, dimensione e baseline del testo originale. La sostituzione WYSIWYG inline (issue #inline-text-editor) rimane come feature futura separata.
+Tutti i bug minori precedenti sono stati risolti.
 
 ---
 
