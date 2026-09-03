@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-09-01
+> **Aggiornato:** 2026-09-03
 
 ---
 
@@ -13,7 +13,7 @@
 | **Backend** (FastAPI/Python)   | pytest      | **375** | **94%**    | ✅    |
 | **Webapp** (Next.js/React)     | vitest      | **566** | **94.96%** | ✅    |
 | **Desktop** (Tauri)            | vitest      | **906** | **90.84%** | ✅    |
-| **Mobile** (React Native/Expo) | jest        | **276** | **98.7%**  | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **279** | **98.7%**  | ✅    |
 
 > ℹ️ **Desktop**: 906 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +9 test ReplaceTextModal, +3 test googleLogin.
 >
