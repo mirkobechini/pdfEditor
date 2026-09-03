@@ -4,6 +4,7 @@ import {
   getApiBaseUrl,
   getCloudApiBaseUrl,
   tauriInvoke,
+  openDevTools,
 } from "../tauri";
 
 describe("tauri utilities", () => {
@@ -44,6 +45,14 @@ describe("tauri utilities", () => {
   it("isTauri returns true when __TAURI_INTERNALS__ is available", () => {
     (window as any).__TAURI_INTERNALS__ = { invoke: vi.fn() };
     expect(isTauri()).toBe(true);
+    delete (window as any).__TAURI_INTERNALS__;
+  });
+
+  it("openDevTools invokes open_devtools command", async () => {
+    const mockInvoke = vi.fn().mockResolvedValue(undefined);
+    (window as any).__TAURI_INTERNALS__ = { invoke: mockInvoke };
+    await openDevTools();
+    expect(mockInvoke).toHaveBeenCalledWith("open_devtools", undefined);
     delete (window as any).__TAURI_INTERNALS__;
   });
 });
