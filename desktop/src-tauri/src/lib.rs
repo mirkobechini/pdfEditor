@@ -229,6 +229,12 @@ fn dialog_save(app: tauri::AppHandle, default_name: String, data: Vec<u8>, defau
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+/// Open the webview devtools (debugging cloud sync / console errors).
+#[tauri::command]
+fn open_devtools(window: tauri::WebviewWindow) {
+    let _ = window.open_devtools();
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -339,6 +345,7 @@ pub fn run() {
             dialog_open,
             dialog_open_folder,
             dialog_save,
+            open_devtools,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
