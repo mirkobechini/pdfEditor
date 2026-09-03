@@ -31,8 +31,9 @@
   "mobile": [
     {
       "version": "v0.2.1-mobile",
-      "date": "2026-09-01",
+      "date": "2026-09-03",
       "changes": [
+        "Fix cloud sync: auto-refresh 401 gestisce formato errore {code, detail} — risolve 'impossibile recuperare lista PDF'",
         "Replace Text: nuovo componente ReplaceTextDialog via cloud API",
         "Fix Replace Text api: metodo replaceText aggiunto al client API",
         "Test coverage 90%: 276 test, 98.7% statements, 100% lines",

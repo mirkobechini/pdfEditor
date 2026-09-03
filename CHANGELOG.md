@@ -1,8 +1,17 @@
 # Changelog
 
+## 2026-09-03
+
+### 🐛 Fix mobile cloud sync (issue #718)
+
+- **Fix auto-refresh 401**: il check in `mobile/src/shared/api.ts` assumeva `body.detail` come stringa, ma il backend risponde con `{detail: {code, detail}}` (oggetto). Il check `detail.includes("expired")` crashava su un oggetto → il refresh non avveniva → "Impossibile recuperare la lista PDF dal cloud". Fix: gestire sia stringa che oggetto.
+- **Test**: 3 nuovi test per il formato errore oggetto (15/15 passano).
+
 ## 2026-09-01
 
-### 🐛 Fix desktop/mobile (desktop v0.1.35 | mobile v0.2.1 | web v0.1.37)
+### 🐛 Fix desktop/mobile (desktop v0.1.35 | web v0.1.37)
+
+> ⚠️ **Nota mobile:** la versione mobile effettiva è **v0.2.0-mobile**. La v0.2.1-mobile è pianificata ma **non ancora rilasciata**.
 
 - **Fix keep-warm** (issue #712): ping ogni 5min → ogni 14min. Il ping H24 ogni 5min consumava le 100h/mese di compute Neon in ~4 giorni, rompendo il cloud sync.
 

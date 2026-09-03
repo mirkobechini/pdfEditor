@@ -1,7 +1,33 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-01
+> **Aggiornato:** 2026-09-03
+
+---
+
+## Il formato errore backend {code, detail} rompe i check che assumono stringhe
+
+> **Lezione appresa (2026-09-03):**
+
+Il backend usa `error_response(code, detail)` che produce `{"detail": {"code": "...", "detail": "..."}}` — `detail` è un **oggetto**, non una stringa. Il check 401 auto-refresh in `mobile/src/shared/api.ts` assumeva `body.detail` come stringa:
+
+```typescript
+const detail = body?.detail || "";
+if (detail === "INVALID_CREDENTIALS" || detail.includes("expired")) {
+```
+
+`detail.includes("expired")` **crasha** su un oggetto (`.includes` non esiste). Il refresh non avveniva → `listPdfs` falliva con errore generico → "Impossibile recuperare la lista PDF dal cloud".
+
+**Regola:** Quando si controlla `body.detail`, gestire SEMPRE sia il formato stringa che oggetto:
+
+```typescript
+const detail = body?.detail || "";
+const code = typeof detail === "string" ? detail : detail?.code || "";
+const detailMsg = typeof detail === "string" ? detail : detail?.detail || "";
+if (code === "INVALID_CREDENTIALS" || detailMsg.includes("expired")) {
+```
+
+**Nota:** `String(err).includes("INVALID_CREDENTIALS")` funziona perché `String()` converte l'oggetto in stringa — ma è fragile. Meglio estrarre `code` esplicitamente.
 
 ---
 
