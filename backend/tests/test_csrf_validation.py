@@ -126,3 +126,32 @@ class TestCSRFRegression:
             files={"file": ("test.pdf", b"%PDF-1.4 fake content", "application/pdf")},
         )
         assert upload_resp.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_upload_with_valid_bearer_no_csrf_succeeds(self, client, monkeypatch, free_token):
+        """Upload with valid Bearer token but NO CSRF header should succeed.
+
+        Bearer-authenticated requests (mobile, desktop cloud) don't use cookies,
+        so CSRF is redundant — the JWT is the authentication mechanism.
+        """
+        monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
+        # Clear any CSRF cookie so the request is treated as cross-site (no cookie),
+        # simulating a Bearer-only client (mobile / desktop cloud).
+        client.cookies.clear()
+        upload_resp = client.post(
+            "/pdfs/upload",
+            headers={"Authorization": f"Bearer {free_token}"},
+            files={"file": ("test.pdf", b"%PDF-1.4 fake content", "application/pdf")},
+        )
+        assert upload_resp.status_code != status.HTTP_403_FORBIDDEN, (
+            f"Bearer-authenticated upload should not be CSRF-blocked, got {upload_resp.status_code}"
+        )
+
+    def test_upload_with_invalid_bearer_no_csrf_fails(self, client, monkeypatch):
+        """Upload with INVALID Bearer token and no CSRF should fail (403)."""
+        monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
+        upload_resp = client.post(
+            "/pdfs/upload",
+            headers={"Authorization": "Bearer invalid-token"},
+            files={"file": ("test.pdf", b"%PDF-1.4 fake content", "application/pdf")},
+        )
+        assert upload_resp.status_code == status.HTTP_403_FORBIDDEN
