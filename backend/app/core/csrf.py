@@ -8,6 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from app.core.config import settings
+from app.core.security import decode_access_token
 
 
 # Endpoints that don't require CSRF validation (auth, health)
@@ -127,10 +128,19 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                         content={"detail": "CSRF validation failed"},
                     )
             else:
-                # No cookie — likely cross-site request from Tauri webview.
-                # The browser does not send the cookie on cross-site POST even with
-                # SameSite=None (Chrome requires Secure=True on non-localhost).
-                # Accept the header alone if the user is authenticated via Bearer token.
+                # No cookie present — likely cross-site request from Tauri webview
+                # or a Bearer-authenticated client (mobile, desktop cloud).
+                # CSRF protects cookie/session-based requests. A valid Bearer JWT
+                # is explicit authentication (not automatic from the browser), so
+                # CSRF is redundant when the request is authenticated via Bearer.
+                auth_header = request.headers.get("Authorization", "")
+                has_bearer = auth_header.startswith("Bearer ") and bool(auth_header[7:])
+                if has_bearer:
+                    # Only exempt if the Bearer token is actually valid.
+                    token = auth_header[len("Bearer "):]
+                    if decode_access_token(token) is not None:
+                        return await call_next(request)
+                # No valid Bearer — require CSRF header (fallback to double-submit).
                 if not csrf_header:
                     from fastapi.responses import JSONResponse
                     return JSONResponse(
