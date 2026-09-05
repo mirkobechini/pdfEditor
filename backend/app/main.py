@@ -70,18 +70,33 @@ def _add_missing_columns():
             default_clause = f" DEFAULT '{val}'"
         return f"VARCHAR(255){default_clause}"
 
+    # Use the database module engine so tests can inject their own engine
+    from app.core.database import engine as db_engine
     try:
-        inspector = sa_inspect(engine)
+        inspector = sa_inspect(db_engine)
         for table in Base.metadata.sorted_tables:
             if table.name not in inspector.get_table_names():
                 continue  # new table — create_all handles it
             existing = {c["name"] for c in inspector.get_columns(table.name)}
             for col in table.columns:
+                # Populate NULL values with the column default so NOT NULL columns
+                # don't end up NULL (causes 500 on read). Do this for existing
+                # columns too, not just newly added ones.
+                if col.default is not None and hasattr(col.default, "arg") and not callable(col.default.arg):
+                    try:
+                        with db_engine.connect() as conn:
+                            conn.execute(
+                                text(f"UPDATE {table.name} SET {col.name} = :val WHERE {col.name} IS NULL"),
+                                {"val": col.default.arg},
+                            )
+                            conn.commit()
+                    except OperationalError:
+                        pass  # column may not exist yet — handled below
                 if col.name in existing:
                     continue
                 col_def = f"{col.name} {_sqlite_type(col)}"
                 try:
-                    with engine.connect() as conn:
+                    with db_engine.connect() as conn:
                         conn.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {col_def}"))
                         conn.commit()
                     logger.info("Added missing column %s.%s", table.name, col.name)
