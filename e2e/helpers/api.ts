@@ -1,6 +1,23 @@
-import { APIRequestContext } from "@playwright/test";
+import { APIRequestContext, Page } from "@playwright/test";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "http://localhost:8000";
+
+/**
+ * Dismiss the iubenda cookie banner if it appears. The banner is a modal
+ * alertdialog that blocks interaction with the page, so it must be closed
+ * before filling forms or clicking buttons.
+ */
+export async function dismissCookieBanner(page: Page): Promise<void> {
+  const reject = page.getByRole("button", { name: "Rifiuta" });
+  // Wait for the banner to appear (it loads async), then click "Rifiuta".
+  // If it never appears, proceed without dismissing.
+  try {
+    await reject.waitFor({ state: "visible", timeout: 5000 });
+    await reject.click();
+  } catch {
+    // Banner not present — nothing to dismiss
+  }
+}
 
 /** Register a new user and return the access token. */
 export async function registerUser(

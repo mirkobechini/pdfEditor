@@ -31,9 +31,10 @@ export default defineConfig({
   webServer: [
     {
       // FastAPI backend on a test SQLite DB
+      // --host 0.0.0.0 listens on IPv4+IPv6 so "localhost" resolves on Windows
       command:
-        "cd ../backend && set DATABASE_URL=sqlite:///./e2e_test.db&& python -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
-      url: "http://127.0.0.1:8000/health",
+        "cd ../backend && cross-env DATABASE_URL=sqlite:///./e2e_test.db DEBUG=true ../.venv/Scripts/python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000",
+      url: "http://localhost:8000/health",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },

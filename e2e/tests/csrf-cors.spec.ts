@@ -1,29 +1,32 @@
 import { test, expect } from "@playwright/test";
-import { registerUser, uniqueEmail } from "../helpers/api";
+import { registerUser, uniqueEmail, makePdfBuffer } from "../helpers/api";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "http://localhost:8000";
 
 test.describe("CSRF & CORS", () => {
   test("POST with valid Bearer token (no CSRF header) is accepted", async ({
     request,
+    playwright,
   }) => {
     const email = uniqueEmail("csrf");
     const token = await registerUser(request, email);
 
-    // State-changing request without CSRF header, but with valid Bearer
-    const res = await request.post(`${API_BASE}/pdfs/upload`, {
+    // Fresh context WITHOUT cookies — simulates a cookie-less client (mobile/desktop)
+    const noCookieCtx = await playwright.request.newContext();
+    const res = await noCookieCtx.post(`${API_BASE}/pdfs/upload`, {
       headers: { Authorization: `Bearer ${token}` },
       multipart: {
         file: {
           name: "csrf.pdf",
           mimeType: "application/pdf",
-          buffer: Buffer.from("%PDF-1.4 test", "utf-8"),
+          buffer: makePdfBuffer(),
         },
       },
     });
 
     // Should NOT be 403 CSRF — Bearer token is valid authentication
-    expect(res.status()).not.toBe(403);
+    expect(res.status()).toBe(201);
+    await noCookieCtx.dispose();
   });
 
   test("POST without Bearer and without CSRF header is rejected", async ({
@@ -34,13 +37,13 @@ test.describe("CSRF & CORS", () => {
         file: {
           name: "noauth.pdf",
           mimeType: "application/pdf",
-          buffer: Buffer.from("%PDF-1.4 test", "utf-8"),
+          buffer: makePdfBuffer(),
         },
       },
     });
 
-    // No auth at all → should be 401 (not authenticated), not 403 CSRF
-    expect(res.status()).toBe(401);
+    // No auth and no CSRF → CSRF middleware rejects with 403
+    expect(res.status()).toBe(403);
   });
 
   test("CORS headers present on cross-origin request", async ({ request }) => {

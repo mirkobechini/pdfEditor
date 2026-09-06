@@ -1,5 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { registerUser, uniqueEmail, makePdfBuffer } from "../helpers/api";
+import {
+  registerUser,
+  uniqueEmail,
+  makePdfBuffer,
+  dismissCookieBanner,
+} from "../helpers/api";
 
 test.describe("PDF flows", () => {
   test("upload PDF → appears in list → download works", async ({
@@ -11,9 +16,10 @@ test.describe("PDF flows", () => {
 
     // Login via UI
     await page.goto("/login");
-    await page.fill('input[name="email"]', email);
-    await page.fill('input[name="password"]', "Password123");
-    await page.click('button[type="submit"]');
+    await dismissCookieBanner(page);
+    await page.locator('input[type="email"]').fill(email);
+    await page.locator('input[type="password"]').fill("Password123");
+    await page.getByRole("button", { name: "Accedi", exact: true }).click();
     await page.waitForURL("**/app", { timeout: 15000 });
 
     // Upload a PDF
@@ -32,12 +38,15 @@ test.describe("PDF flows", () => {
 
   test("upload via API with Bearer token (no CSRF header) works", async ({
     request,
+    playwright,
   }) => {
     const email = uniqueEmail("apipdf");
     const token = await registerUser(request, email);
 
-    // Upload without CSRF header — should work with valid Bearer token
-    const res = await request.post("http://127.0.0.1:8000/pdfs/upload", {
+    // Use a fresh context WITHOUT cookies to simulate a cookie-less client
+    // (e.g. mobile app or desktop sidecar). The Bearer token alone must work.
+    const noCookieCtx = await playwright.request.newContext();
+    const res = await noCookieCtx.post("http://localhost:8000/pdfs/upload", {
       headers: {
         Authorization: `Bearer ${token}`,
         // No X-CSRF-Token header — tests the Bearer exemption
@@ -51,8 +60,12 @@ test.describe("PDF flows", () => {
       },
     });
 
-    expect(res.status()).toBe(201);
+    // Read body BEFORE disposing the context
+    const status = res.status();
     const body = await res.json();
+    await noCookieCtx.dispose();
+
+    expect(status).toBe(201);
     expect(body.original_filename).toBe("api-test.pdf");
   });
 });
