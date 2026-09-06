@@ -2,9 +2,12 @@
   "desktop": [
     {
       "version": "v0.1.35",
-      "date": "2026-09-01",
+      "date": "2026-09-06",
       "changes": [
         "Fix Google login: PDF locali ora visibili dopo il login Google",
+        "Fix download sidecar 403: token locale del sidecar usato dopo login Google",
+        "Fix 500 su /pdfs: colonne mancanti popolate con default (upload_source)",
+        "Fix upload cloud 403 CSRF: esentato per richieste Bearer-authenticated",
         "Fix Replace Text: aggiorna il viewer dopo la sostituzione, preserva font/size/posizione",
         "Fix migrazione DB: nuove colonne rilevate automaticamente all'avvio",
         "Fix wizard: al termine ora va alla pagina di login",
@@ -15,7 +18,8 @@
         "Cloud sync: feedback dialog, PDF protetti saltati, deletePdf local/cloud/both",
         "i18n completa: wizard, login, register, profile, license, startup, modali",
         "Fix keep-warm: ping ogni 14min invece di 5min (evita esaurimento compute Neon)",
-        "906 test frontend — coverage 90%+ su tutti i file"
+        "Devtools: Ctrl+Shift+D per aprire la console",
+        "907 test frontend — coverage 90%+ su tutti i file"
       ]
     },
     {

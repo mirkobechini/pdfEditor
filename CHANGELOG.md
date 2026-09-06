@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-06
+
+### 🐛 Fix cloud sync + desktop (issues #718, #725, #727, #728)
+
+- **Fix mobile cloud sync** (issue #718): auto-refresh 401 gestisce formato errore `{code, detail}` — risolve "impossibile recuperare lista PDF dal cloud"
+- **Fix desktop 500 su /pdfs** (issue #725): `_add_missing_columns()` ora popola i NULL con il default del modello (es. `upload_source="web"`) — risolve il 500 su record legacy
+- **Fix desktop download 403** (issue #727): dopo login Google, `auth.tsx` usa `syncResult` per settare il token locale del sidecar su `api` (non il token cloud)
+- **Fix upload cloud 403 CSRF** (issue #728): esentato CSRF per richieste Bearer-authenticated (mobile + desktop cloud) — il Bearer JWT è già autenticazione forte
+- **Devtools desktop** (issue #723): scorciatoia `Ctrl+Shift+D` per aprire la console (debug cloud sync)
+
 ## 2026-09-02
 
 ### 🚀 Release desktop v0.1.35

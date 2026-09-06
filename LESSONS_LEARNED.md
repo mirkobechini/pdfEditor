@@ -1,7 +1,21 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo svilupzo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-02
+> **Aggiornato:** 2026-09-06
+
+---
+
+## CSRF è ridondante per richieste Bearer-authenticated
+
+> **Lezione appresa (2026-09-06):**
+
+Il cloud upload dava 403 CSRF su mobile e desktop. Causa: il client autenticato via **Bearer token** non inviava `X-CSRF-Token`, e il backend lo rifiutava.
+
+**Perché il CSRF è ridondante con Bearer:** il CSRF protegge dalle richieste che si autenticano **automaticamente via cookie** (il browser li invia da solo). Il Bearer token invece è **esplicito** — deve essere incluso nell'header `Authorization`, e un sito malevolo non può leggerlo. Quindi non c'è nulla da sfruttare.
+
+**Fix:** nel middleware CSRF, se c'è un Bearer token **valido** (verificato con `decode_access_token`) e **nessun cookie CSRF**, esentare la validazione. Il web (cookie-based) resta protetto perché il ramo `if csrf_cookie` si attiva.
+
+**Regola:** per richieste autenticate esclusivamente via Bearer JWT, il CSRF è ridondante e va esentato. Verificare SEMPRE che il Bearer token sia valido prima di esentare.
 
 ---
 
