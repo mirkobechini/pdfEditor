@@ -77,6 +77,7 @@ describe("ApiClient", () => {
 
   describe("adminSendReset", () => {
     it("sends POST request and returns message", async () => {
+      api.setCsrfToken("csrf-for-test");
       globalThis.fetch = vi.fn().mockResolvedValue(
         new Response(JSON.stringify({ message: "Reset email sent!" }), {
           status: 200,
@@ -88,6 +89,7 @@ describe("ApiClient", () => {
         expect.objectContaining({ method: "POST" }),
       );
       expect(result.message).toBe("Reset email sent!");
+      api.setCsrfToken(null);
     });
 
     it("throws on error response", async () => {
@@ -129,6 +131,7 @@ describe("ApiClient", () => {
 
   describe("voteBugReport", () => {
     it("calls POST /bugs/{id}/vote", async () => {
+      api.setCsrfToken("csrf-for-test");
       globalThis.fetch = vi.fn().mockResolvedValue(
         new Response(JSON.stringify({ id: "b1", report_count: 2 }), {
           status: 200,
@@ -140,6 +143,7 @@ describe("ApiClient", () => {
         expect.objectContaining({ method: "POST" }),
       );
       expect(result.report_count).toBe(2);
+      api.setCsrfToken(null);
     });
 
     it("throws on error", async () => {
@@ -310,6 +314,95 @@ describe("ApiClient", () => {
       );
 
       await expect(api.refreshCsrf()).resolves.toBeUndefined();
+    });
+  });
+
+  describe("state-changing requests fetch CSRF token first", () => {
+    it("calls refreshCsrf before a POST when no csrf token is available", async () => {
+      // Ensure no in-memory token and no cookie
+      api.setCsrfToken(null);
+      Object.defineProperty(document, "cookie", {
+        writable: true,
+        value: "",
+      });
+
+      const refreshSpy = vi.spyOn(api, "refreshCsrf");
+      // refreshCsrf internally calls fetch → mock it to supply a token
+      window.fetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes("/auth/csrf")) {
+          return new Response(JSON.stringify({ csrf_token: "fresh-csrf" }), {
+            status: 200,
+          });
+        }
+        // The actual state-changing request
+        return new Response(
+          JSON.stringify({
+            id: "pdf1",
+            original_filename: "merged.pdf",
+            file_size: 10,
+            page_count: 1,
+            is_password_protected: false,
+            created_at: "2026-01-01",
+            updated_at: "2026-01-01",
+          }),
+          { status: 200 },
+        );
+      });
+
+      await api.mergePdfs(["a", "b"]);
+
+      // refreshCsrf must have been called (spy interposes on real impl)
+      expect(refreshSpy).toHaveBeenCalled();
+      // The state-changing request must carry the freshly fetched X-CSRF-Token
+      const mergeCall = (window.fetch as any).mock.calls.find((c: any) =>
+        c[0].includes("/pdfs/merge"),
+      );
+      expect(mergeCall[1].headers["X-CSRF-Token"]).toBe("fresh-csrf");
+
+      refreshSpy.mockRestore();
+      window.fetch ??= fetch;
+    });
+
+    it("does not call refreshCsrf when a csrf token is already present", async () => {
+      api.setCsrfToken("existing-token");
+
+      const refreshSpy = vi.spyOn(api, "refreshCsrf");
+      window.fetch = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            id: "pdf1",
+            original_filename: "merged.pdf",
+            file_size: 10,
+            page_count: 1,
+            is_password_protected: false,
+            created_at: "2026-01-01",
+            updated_at: "2026-01-01",
+          }),
+          { status: 200 },
+        ),
+      );
+
+      await api.mergePdfs(["a", "b"]);
+
+      expect(refreshSpy).not.toHaveBeenCalled();
+
+      refreshSpy.mockRestore();
+      api.setCsrfToken(null);
+    });
+
+    it("does not fetch a csrf token for GET requests", async () => {
+      const refreshSpy = vi.spyOn(api, "refreshCsrf");
+      window.fetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ items: [], total: 0 }), {
+          status: 200,
+        }),
+      );
+
+      await api.listPdfs();
+
+      expect(refreshSpy).not.toHaveBeenCalled();
+
+      refreshSpy.mockRestore();
     });
   });
 });
