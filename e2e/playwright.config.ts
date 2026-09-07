@@ -33,8 +33,11 @@ export default defineConfig({
       // FastAPI backend on a test SQLite DB
       // --host 0.0.0.0 listens on IPv4+IPv6 so "localhost" resolves on Windows
       // Use PYTHON env var (set in CI) or the local venv path on Windows.
+      // cross-env is only needed on Windows (cmd); Linux/macOS use bash syntax.
       command:
-        "cd ../backend && cross-env DATABASE_URL=sqlite:///./e2e_test.db DEBUG=true " +
+        "cd ../backend && " +
+        (process.platform === "win32" ? "cross-env " : "") +
+        "DATABASE_URL=sqlite:///./e2e_test.db DEBUG=true " +
         (process.env.PYTHON || "../.venv/Scripts/python.exe") +
         " -m uvicorn app.main:app --host 0.0.0.0 --port 8000",
       url: "http://localhost:8000/health",
