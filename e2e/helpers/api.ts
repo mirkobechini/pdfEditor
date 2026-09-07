@@ -1,4 +1,4 @@
-import { APIRequestContext, Page } from "@playwright/test";
+import { APIRequestContext, Page, expect } from "@playwright/test";
 
 const API_BASE = "http://localhost:8000";
 
@@ -17,6 +17,41 @@ export async function dismissCookieBanner(page: Page): Promise<void> {
   } catch {
     // Banner not present — nothing to dismiss
   }
+}
+
+/**
+ * Login via the real UI. Assumes the user already exists (via registerUser).
+ * Returns once the app dashboard (/app) is loaded.
+ */
+export async function loginViaUI(
+  page: Page,
+  email: string,
+  password = "Password123",
+): Promise<void> {
+  await page.goto("/login");
+  await dismissCookieBanner(page);
+  await page.locator('input[type="email"]').fill(email);
+  await page.locator('input[type="password"]').fill(password);
+  await page.getByRole("button", { name: "Accedi", exact: true }).click();
+  await page.waitForURL("**/app", { timeout: 15000 });
+}
+
+/**
+ * Upload a PDF via the real UI file input and wait for it to appear in the list.
+ */
+export async function uploadPdf(
+  page: Page,
+  filename: string,
+  buffer: Buffer = makePdfBuffer(),
+): Promise<void> {
+  await page.locator('input[type="file"]').setInputFiles({
+    name: filename,
+    mimeType: "application/pdf",
+    buffer,
+  });
+  await expect(page.getByText(filename).first()).toBeVisible({
+    timeout: 15000,
+  });
 }
 
 /** Register a new user and return the access token. */
