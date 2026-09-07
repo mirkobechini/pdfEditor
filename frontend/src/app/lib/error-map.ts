@@ -63,6 +63,8 @@ export function mapError(err: unknown): string {
 
   // Check for known plain-text messages (legacy / fallback)
   if (message === "RATE_LIMIT") return "common.rateLimitExceeded";
+  if (message === "WRONG_PASSWORD" || message === "INVALID_CREDENTIALS")
+    return "auth.invalidCredentials";
   if (message.includes("Email already registered"))
     return "auth.emailAlreadyRegistered";
   if (message.includes("Invalid email or password"))
@@ -98,6 +100,7 @@ export function mapError(err: unknown): string {
 function codeToI18nKey(code: string): string {
   const map: Record<string, string> = {
     INVALID_CREDENTIALS: "auth.invalidCredentials",
+    WRONG_PASSWORD: "auth.invalidCredentials",
     RATE_LIMIT: "common.rateLimitExceeded",
     NOT_AUTHENTICATED: "auth.notAuthenticated",
     FORBIDDEN: "common.forbidden",

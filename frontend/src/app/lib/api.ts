@@ -392,6 +392,7 @@ export class ApiClient {
     // interferisca con EMAIL_NOT_FOUND / WRONG_PASSWORD
     const res = await fetch(`${this.baseUrl}/auth/login`, {
       method: "POST",
+      credentials: "include",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });

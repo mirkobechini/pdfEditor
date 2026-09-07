@@ -1,0 +1,49 @@
+import { test, expect } from "@playwright/test";
+import { registerUser, uniqueEmail } from "../helpers/api";
+
+const API_BASE = "http://localhost:8000";
+
+test.describe("Cloud sync", () => {
+  test("GET /sync/status with Bearer token works", async ({
+    request,
+    playwright,
+  }) => {
+    const email = uniqueEmail("sync");
+    const token = await registerUser(request, email);
+
+    // Fresh context WITHOUT cookies — simulates the desktop sidecar
+    const noCookieCtx = await playwright.request.newContext();
+    const res = await noCookieCtx.get(`${API_BASE}/sync/status`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await res.json();
+    await noCookieCtx.dispose();
+
+    expect(res.status()).toBe(200);
+    // Status returns the last sync timestamp (may be null for a new user)
+    expect(body).toHaveProperty("last_sync_at");
+  });
+
+  test("POST /sync/push with Bearer token works", async ({
+    request,
+    playwright,
+  }) => {
+    const email = uniqueEmail("syncpush");
+    const token = await registerUser(request, email);
+
+    const noCookieCtx = await playwright.request.newContext();
+    const res = await noCookieCtx.post(`${API_BASE}/sync/push`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      data: { pdfs: [] },
+    });
+    const body = await res.json();
+    await noCookieCtx.dispose();
+
+    expect(res.status()).toBe(200);
+    expect(body).toHaveProperty("pushed");
+    expect(body).toHaveProperty("synced_at");
+  });
+});
