@@ -38,20 +38,22 @@ test.describe("Editor features", () => {
       .locator('input[type="checkbox"]')
       .check();
 
-    // Optionally set a deterministic output name
-    const output = page.getByPlaceholder("merged.pdf");
-    if (await output.isVisible().catch(() => false)) {
-      await output.fill("merged-test.pdf");
-    }
-
-    // Confirm merge (the dialog's "Unisci" button, exact match)
-    await page
+    // Confirm merge using the button inside the dialog. Scope to the dialog
+    // container (the overlay has a fixed inset-0 wrapper) to avoid matching
+    // the toolbar's "Unisci" button.
+    const dialog = page.locator("div.fixed.inset-0");
+    await dialog
       .getByRole("button", { name: "Unisci", exact: true })
-      .last()
       .click();
 
-    // The merged file should appear in the sidebar list
-    await expect(page.getByText(/merged-test\.pdf/i).first()).toBeVisible({
+    // The dialog should close after a successful merge
+    await expect(
+      page.getByRole("heading", { name: "Unisci PDF" }),
+    ).not.toBeVisible({ timeout: 15000 });
+
+    // The merged file appears with the auto-generated name
+    // merged_<name>_<name>.pdf → merged_merge-a_merge-b.pdf
+    await expect(page.getByText(/merged_merge-a_merge-b\.pdf/i).first()).toBeVisible({
       timeout: 15000,
     });
   });
