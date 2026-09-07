@@ -85,6 +85,8 @@ jobs:
           cache-dependency-path: e2e/package-lock.json
       - name: Install backend deps
         run: pip install -r backend/requirements.txt
+      - name: Install frontend deps
+        run: cd frontend && npm ci
       - name: Install e2e deps
         run: cd e2e && npm ci
       - name: Install Playwright browsers
