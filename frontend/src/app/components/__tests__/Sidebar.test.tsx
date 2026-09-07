@@ -15,6 +15,7 @@ vi.mock("../../lib/api", () => ({
     api: {
         listPdfs: vi.fn(),
         uploadPdfWithProgress: vi.fn(),
+        updateMetadata: vi.fn(),
     },
 }));
 
@@ -281,6 +282,29 @@ describe("Sidebar", () => {
         fireEvent.keyDown(renameInput, { key: "Enter" });
         // Should go back to showing the filename
         expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+    });
+
+    it("renames file on Enter and calls updateMetadata", async () => {
+        (api.updateMetadata as any).mockResolvedValue({ id: "1", original_filename: "renamed.pdf" });
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => {
+            expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+        });
+        const renameBtns = screen.getAllByTitle("rename");
+        fireEvent.click(renameBtns[0]);
+        const renameInput = document.querySelector("input[class*='border-blue']") as HTMLInputElement;
+        expect(renameInput).toBeTruthy();
+        // Change the name and press Enter
+        fireEvent.change(renameInput, { target: { value: "renamed.pdf" } });
+        fireEvent.keyDown(renameInput, { key: "Enter" });
+        // updateMetadata should be called with new_filename
+        await waitFor(() => {
+            expect(api.updateMetadata).toHaveBeenCalledWith("1", { new_filename: "renamed.pdf" });
+        });
+        // New name should appear in the list
+        await waitFor(() => {
+            expect(screen.getByText("renamed.pdf")).toBeInTheDocument();
+        });
     });
 });
 
