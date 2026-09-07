@@ -7,6 +7,7 @@ on:
       - "backend/**"
       - "frontend/**"
       - "shared/**"
+      - "e2e/**"
       - ".github/workflows/ci-web.yml"
   pull_request:
     branches: [dev, main]
@@ -14,6 +15,7 @@ on:
       - "backend/**"
       - "frontend/**"
       - "shared/**"
+      - "e2e/**"
       - ".github/workflows/ci-web.yml"
 
 permissions:
