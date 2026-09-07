@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-07
+
+### 🧪 Test E2E cross-origin (Playwright) — issue #731
+
+- **Suite E2E Playwright** in `e2e/` — **12 test verdi** che coprono i flussi cross-origin reali (cookie, CSRF, CORS) che i test unitari non possono verificare
+- **Test auth**: register, login, wrong password, logout
+- **Test CSRF/CORS**: Bearer senza CSRF, senza auth → 403, header CORS
+- **Test PDF**: upload UI, upload API Bearer
+- **Test editor**: delete PDF dalla sidebar
+- **Test cloud sync**: GET `/sync/status`, POST `/sync/push`
+- **CI**: job `e2e` aggiunto a `ci-web.yml` (installa backend deps, e2e deps, Playwright chromium, runna i test)
+- **Bug frontend scoperti e fixati dai test E2E**:
+  - `login()` non salvava il cookie di sessione (mancava `credentials: "include"`) → dopo il login `/app` reindirizzava a `/login`
+  - `mapError` non mappava `WRONG_PASSWORD` → mostrava "errore imprevisto" invece di "Email o password non validi"
+- **Bug backend**: rate limit disabilitato in DEBUG mode (bloccava i test con 429)
+- **Bug scoperti (da fixare)**: rename PDF non implementato (K7), merge UI fallisce per CSRF (K8)
+
 ## 2026-09-06
 
 ### 🐛 Fix cloud sync + desktop (issues #718, #725, #727, #728)
