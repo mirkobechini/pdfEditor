@@ -37,7 +37,7 @@ export default defineConfig({
       command:
         "cd ../backend && " +
         (process.platform === "win32" ? "cross-env " : "") +
-        "DATABASE_URL=sqlite:///./e2e_test.db DEBUG=true " +
+        "DATABASE_URL=sqlite:///./e2e_test.db DEBUG=true DISABLE_LICENSE_ENFORCEMENT=true " +
         (process.env.PYTHON || "../.venv/Scripts/python.exe") +
         " -m uvicorn app.main:app --host 0.0.0.0 --port 8000",
       url: "http://localhost:8000/health",

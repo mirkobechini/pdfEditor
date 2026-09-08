@@ -42,16 +42,7 @@ test.describe("Editor features", () => {
     // container (the overlay has a fixed inset-0 wrapper) to avoid matching
     // the toolbar's "Unisci" button.
     const dialog = page.locator("div.fixed.inset-0");
-
-    // TEMP DEBUG: capture merge response
-    const mergeResp = page.waitForResponse(
-      (r) => r.url().includes("/pdfs/merge") && r.request().method() === "POST",
-      { timeout: 15000 },
-    );
     await dialog.getByRole("button", { name: "Unisci", exact: true }).click();
-    const resp = await mergeResp;
-    console.log("E2E_DEBUG MERGE STATUS:", resp.status());
-    console.log("E2E_DEBUG MERGE BODY:", JSON.stringify(await resp.text()));
 
     // The dialog should close after a successful merge
     await expect(
