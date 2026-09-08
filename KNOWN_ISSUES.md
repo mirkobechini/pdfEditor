@@ -24,6 +24,7 @@
 | #732  | Rename PDF: `Sidebar.tsx` salva via `updateMetadata(id, { new_filename })`      |
 | #733  | Merge CSRF: `_fetch` garantisce `X-CSRF-Token` prima dei POST state-changing    |
 | #736  | Test E2E merge riabilitato + `e2e/**` nei paths CI + license enforcement off    |
+| #737  | Merge/split S3: `pdf_merge_split_service` usa `get_file_content()` (S3-aware)   |
 
 ---
 
@@ -57,15 +58,6 @@
 **Descrizione:** Il toggle antialiasing e il select densità non producono cambiamenti visibili nell'interfaccia. L'antialiasing agisce sul font rendering (`-webkit-font-smoothing` su body), ma la differenza è impercettibile con i font e colori usati. La densità modifica solo il padding degli elementi `.doc-item` (8/12/20px), ma la differenza è troppo sottile per essere notata.
 
 **Stato:** ✅ Risolto — tecnicamente applicato ma nessun effetto visibile percepibile.
-
-### K9 — Merge/split rotti con storage S3 (produzione)
-
-**File:** `backend/app/services/pdf_merge_split_service.py`  
-**Descrizione:** Il service merge/split usa `get_pdf_path()` (solo locale) in `_get_file_content()`, mentre `pdf_service.py` usa `get_file_content()` (S3-aware). Su S3, `get_pdf_path()` restituisce `None` (per design) → `_get_file_content()` restituisce `None` → il merge lancia `ValueError` → mappato a `MERGE_TOO_FEW` → "Unione fallita". In produzione (storage S3) il merge e lo split via UI sono rotti.
-
-**Scoperto da:** test E2E merge (#736) durante riproduzione locale con `STORAGE_BACKEND=s3`.
-
-**Stato:** Da fixare (issue #737). Fix: usare `get_file_content()` (S3-aware) nel service merge/split, come già fa `pdf_service.py`.
 
 ## 🟡 Bug minori rimanenti
 
