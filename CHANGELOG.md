@@ -2,6 +2,11 @@
 
 ## 2026-09-08
 
+### 🐛 Fix merge/split con storage S3 (issue #737)
+
+- **Fix merge/split S3**: `pdf_merge_split_service.py` ora usa `get_file_content()` (S3-aware) invece di `get_pdf_path()` (solo locale) in `_get_file_content()`. Su S3, `get_pdf_path()` restituiva `None` → merge/split fallivano con "Unione fallita" in produzione (storage Cloudflare R2). Ora il service legge il contenuto via `get_file_content()`, che su S3 usa `s3_download()` e su locale `get_pdf_path()`.
+- **Test**: aggiunti 2 test unitari che verificano che `_get_file_content` usi `get_file_content` (S3-aware) e restituisca `None` quando il file manca. 382 test backend verdi.
+
 ### 🐛 Fix merge UI + test E2E (issues #732, #733, #736)
 
 - **Fix rename PDF** (issue #732): `Sidebar.tsx` ora chiama `api.updateMetadata(id, { new_filename })` su Enter/blur per salvare il nuovo nome. Aggiunto `new_filename`/`overwrite` alla firma di `updateMetadata` in `api.ts` (web). Test Sidebar aggiornati.
