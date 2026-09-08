@@ -42,9 +42,7 @@ test.describe("Editor features", () => {
     // container (the overlay has a fixed inset-0 wrapper) to avoid matching
     // the toolbar's "Unisci" button.
     const dialog = page.locator("div.fixed.inset-0");
-    await dialog
-      .getByRole("button", { name: "Unisci", exact: true })
-      .click();
+    await dialog.getByRole("button", { name: "Unisci", exact: true }).click();
 
     // The dialog should close after a successful merge
     await expect(
@@ -52,8 +50,10 @@ test.describe("Editor features", () => {
     ).not.toBeVisible({ timeout: 15000 });
 
     // The merged file appears with the auto-generated name
-    // merged_<name>_<name>.pdf → merged_merge-a_merge-b.pdf
-    await expect(page.getByText(/merged_merge-a_merge-b\.pdf/i).first()).toBeVisible({
+    // merged_<name>_<name>.pdf → merged_merge-a_merge-b.pdf (order may vary)
+    await expect(
+      page.getByText(/merged_merge-[ab]_merge-[ab]\.pdf/i).first(),
+    ).toBeVisible({
       timeout: 15000,
     });
   });
