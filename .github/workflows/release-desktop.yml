@@ -130,6 +130,24 @@ jobs:
           "
           echo "Version bumped to $VERSION in all config files"
 
+      - name: Commit version bump to main
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add desktop/src-tauri/tauri.conf.json frontend/package.json backend/pyproject.toml
+          if git diff --cached --quiet; then
+            echo "No version changes to commit"
+          else
+            git commit -m "chore: bump version to $VERSION (release)"
+            git push origin main
+            echo "Version bump committed to main"
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
