@@ -7,12 +7,62 @@ import {
 } from "../helpers/api";
 
 test.describe("Editor features", () => {
-  // NOTE: merge/split/reorder/remove/replace-text/protect/metadata dialogs
-  // depend on pdf.js thumbnails and CSRF in the browser, which is fragile in
-  // E2E. These features are already covered by backend pytest (test_merge,
-  // test_split, test_reorder, test_remove, test_text, test_protect,
-  // test_metadata). E2E covers the cross-origin flows (auth, CSRF, CORS,
-  // upload) and the robust UI flows (delete).
+  // Merge flow: upload 2 PDFs, open merge dialog from toolbar, select both,
+  // confirm merge, and verify the new merged file appears in the list.
+  test("merge two PDFs from toolbar", async ({ page, request }) => {
+    const email = uniqueEmail("merge");
+    await registerUser(request, email);
+    await loginViaUI(page, email);
+
+    await uploadPdf(page, "merge-a.pdf");
+    await uploadPdf(page, "merge-b.pdf");
+
+    // Open the merge dialog from the toolbar ("Unisci")
+    await page
+      .getByRole("button", { name: "Unisci", exact: true })
+      .first()
+      .click();
+
+    // Dialog heading
+    await expect(
+      page.getByRole("heading", { name: "Unisci PDF" }),
+    ).toBeVisible();
+
+    // Check both PDFs in the merge dialog (checkbox wrapped in a <label>)
+    await page
+      .locator("label", { hasText: "merge-a.pdf" })
+      .locator('input[type="checkbox"]')
+      .check();
+    await page
+      .locator("label", { hasText: "merge-b.pdf" })
+      .locator('input[type="checkbox"]')
+      .check();
+
+    // Confirm merge using the button inside the dialog. Scope to the dialog
+    // container (the overlay has a fixed inset-0 wrapper) to avoid matching
+    // the toolbar's "Unisci" button.
+    const dialog = page.locator("div.fixed.inset-0");
+    await dialog.getByRole("button", { name: "Unisci", exact: true }).click();
+
+    // The dialog should close after a successful merge
+    await expect(
+      page.getByRole("heading", { name: "Unisci PDF" }),
+    ).not.toBeVisible({ timeout: 15000 });
+
+    // The merged file appears with the auto-generated name
+    // merged_<name>_<name>.pdf → merged_merge-a_merge-b.pdf (order may vary)
+    await expect(
+      page.getByText(/merged_merge-[ab]_merge-[ab]\.pdf/i).first(),
+    ).toBeVisible({
+      timeout: 15000,
+    });
+  });
+
+  // The remaining merge/split/reorder/remove/replace-text/protect/metadata
+  // dialogs depend on pdf.js thumbnails and CSRF in the browser, which is
+  // fragile in E2E. These features are already covered by backend pytest
+  // (test_merge, test_split, test_reorder, test_remove, test_text,
+  // test_protect, test_metadata).
 
   test("delete PDF from sidebar", async ({ page, request }) => {
     const email = uniqueEmail("delete");
