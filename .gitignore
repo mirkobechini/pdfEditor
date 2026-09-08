@@ -49,6 +49,7 @@ mobile/node_modules/
 desktop/frontend/.next/
 desktop/frontend/out/
 desktop/frontend/src/shared/
+desktop/frontend/tsconfig.tsbuildinfo
 desktop/src-tauri/target/
 desktop/src-tauri/binaries/*.exe
 desktop/src-tauri/binaries/*.dll

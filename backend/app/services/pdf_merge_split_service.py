@@ -3,7 +3,7 @@
 import fitz
 from sqlalchemy.orm import Session
 
-from app.core.storage import save_pdf, get_pdf_path
+from app.core.storage import save_pdf, get_file_content
 from app.models.pdf import PdfDocument
 from app.repositories.pdf_repo import PdfRepository
 from app.services.pdf_service import _get_cached_password
@@ -23,10 +23,9 @@ class PdfMergeSplitService:
 
     def _get_file_content(self, pdf: PdfDocument) -> bytes | None:
         file_uuid = pdf.storage_filename.replace(".pdf", "")
-        path = get_pdf_path(file_uuid)
-        if not path:
+        content = get_file_content(file_uuid)  # S3-aware
+        if not content:
             return None
-        content = path.read_bytes()
         # Decrypt if password-protected and cached password is available
         if pdf.is_password_protected:
             password = _get_cached_password(pdf.id)

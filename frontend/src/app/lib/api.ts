@@ -17,6 +17,7 @@ export class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
   private _csrfToken: string | null = null;
+  private _refreshingCsrf: boolean = false;
 
   constructor(baseUrl?: string) {
     this.baseUrl = baseUrl ?? getApiBaseUrl();
@@ -80,6 +81,23 @@ export class ApiClient {
     url: string,
     options: RequestInit = {},
   ): Promise<Response> {
+    // For state-changing requests (POST/PUT/DELETE/PATCH) in a cross-origin
+    // context, the in-memory csrf_token may be null after a page reload while the
+    // backend still has the csrf_token cookie. Ensure we have a token by fetching
+    // /auth/csrf once before proceeding (a GET, so no recursion into _fetch here).
+    const method = (options.method || "GET").toUpperCase();
+    if (
+      ["POST", "PUT", "DELETE", "PATCH"].includes(method) &&
+      !this._getCsrfToken() &&
+      !this._refreshingCsrf
+    ) {
+      this._refreshingCsrf = true;
+      try {
+        await this.refreshCsrf();
+      } finally {
+        this._refreshingCsrf = false;
+      }
+    }
     const headers = {
       ...this.getHeaders(),
       ...((options.headers as Record<string, string>) || {}),
@@ -323,7 +341,10 @@ export class ApiClient {
 
   async updateMetadata(
     id: string,
-    metadata: Partial<Metadata>,
+    metadata: Partial<Metadata> & {
+      new_filename?: string;
+      overwrite?: boolean;
+    },
   ): Promise<PdfDocument> {
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
       method: "PUT",
@@ -392,6 +413,7 @@ export class ApiClient {
     // interferisca con EMAIL_NOT_FOUND / WRONG_PASSWORD
     const res = await fetch(`${this.baseUrl}/auth/login`, {
       method: "POST",
+      credentials: "include",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });

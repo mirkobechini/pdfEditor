@@ -86,6 +86,23 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
     if (file) handleUpload(file);
   }
 
+  // Commit rename: save new filename via API and update local list
+  async function commitRename(file: PdfDocument) {
+    const newName = renameValue.trim();
+    if (!newName || newName === file.original_filename) {
+      setRenameId(null);
+      return;
+    }
+    try {
+      const updated = await api.updateMetadata(file.id, { new_filename: newName });
+      setFiles((prev) => prev.map((f) => (f.id === file.id ? updated : f)));
+    } catch (err) {
+      console.error("Rename failed:", err);
+    } finally {
+      setRenameId(null);
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Upload area */}
@@ -151,9 +168,14 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
                 autoFocus
                 value={renameValue}
                 onChange={(e) => setRenameValue(e.target.value)}
-                onBlur={() => setRenameId(null)}
+                onBlur={() => void commitRename(file)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") setRenameId(null);
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void commitRename(file);
+                  } else if (e.key === "Escape") {
+                    setRenameId(null);
+                  }
                 }}
                 className="flex-1 bg-transparent border border-blue-500 rounded px-1 text-sm"
               />

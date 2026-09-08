@@ -218,4 +218,31 @@ describe("AuthProvider (Tauri/Desktop)", () => {
     });
     expect(mockTauriInvoke).toHaveBeenCalledWith("store_jwt", { token: "eyJhbGciOiJIUzI1NiJ9.dGVzdA.test" });
   });
+
+  it("googleLogin uses syncResult local token when api.getMe fails (download 403 fix)", async () => {
+    // api.getMe (sidecar) fails with the cloud JWT → 401
+    mockGetMe.mockRejectedValueOnce(new Error("401"));
+    // cloudApi.getMe works
+    mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google@test.com" });
+    // syncUser returns the LOCAL sidecar token
+    mockSyncUser.mockResolvedValueOnce({ access_token: "local-sidecar-jwt", csrf_token: "local-csrf" });
+    mockTauriInvoke.mockResolvedValue(undefined);
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-google-jwt"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("google@test.com");
+    });
+
+    // syncUser must be called
+    expect(mockSyncUser).toHaveBeenCalled();
+    // api.setToken must be called with the LOCAL sidecar token (not the cloud JWT)
+    expect(mockSetToken).toHaveBeenCalledWith("local-sidecar-jwt");
+    // api.setCsrfToken must be called with the local CSRF
+    expect(mockSetCsrfToken).toHaveBeenCalledWith("local-csrf");
+    // The LOCAL token must be persisted to Tauri store (not the cloud one)
+    expect(mockTauriInvoke).toHaveBeenCalledWith("store_jwt", { token: "local-sidecar-jwt" });
+  });
 });

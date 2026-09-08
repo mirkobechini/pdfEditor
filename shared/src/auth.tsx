@@ -295,7 +295,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const u = await cloudApi.getMe();
           setUser(u);
           setIsOffline(false);
-          await api.syncUser(u);
+          // Sync user to sidecar so local getMe/CSRF/listPdfs work.
+          // syncUser returns a LOCAL JWT (signed by the sidecar secret) —
+          // we MUST use it for api and persist it, otherwise the cloud JWT
+          // (unknown to the sidecar) causes 401/403/500 loops.
+          const syncResult = await api.syncUser(u);
+          if (syncResult) {
+            api.setToken(syncResult.access_token);
+            if (syncResult.csrf_token) api.setCsrfToken(syncResult.csrf_token);
+            // Persist the LOCAL token for offline restarts
+            if (isTauri()) {
+              const { tauriInvoke } = await import("./tauri");
+              await tauriInvoke("store_jwt", { token: syncResult.access_token }).catch(() => { });
+            } else {
+              localStorage.setItem(REMEMBER_TOKEN_KEY, syncResult.access_token);
+            }
+          }
         }
       }
       // Refresh CSRF for both sidecar and cloud

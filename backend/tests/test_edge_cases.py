@@ -584,6 +584,43 @@ class TestMainStartupAdvanced:
         from app.main import _run_migrations
         _run_migrations()
 
+    def test_add_missing_columns_populates_null_default(self, db_engine):
+        """_add_missing_columns should populate NULL values with the column default."""
+        from sqlalchemy import text
+        from app.main import _add_missing_columns
+        import app.core.database as database_module
+
+        # _add_missing_columns now uses database_module.engine (the test engine)
+        engine = database_module.engine
+
+        # Simulate a legacy DB: drop upload_source column, insert a row, then re-add
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE pdf_documents DROP COLUMN upload_source"))
+            conn.commit()
+
+        # Insert a row without upload_source (legacy data)
+        import uuid
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        with engine.connect() as conn:
+            conn.execute(
+                text(
+                    "INSERT INTO pdf_documents (id, user_id, original_filename, storage_filename, file_size, page_count, is_password_protected, created_at, updated_at) "
+                    "VALUES (:id, :uid, 'test.pdf', 'test.pdf', 100, 1, 0, :now, :now)"
+                ),
+                {"id": str(uuid.uuid4()), "uid": str(uuid.uuid4()), "now": now},
+            )
+            conn.commit()
+
+        # Re-add the column via _add_missing_columns (should populate NULL with 'web')
+        _add_missing_columns()
+
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT upload_source FROM pdf_documents")).fetchall()
+            assert result, "Expected at least one row"
+            for row in result:
+                assert row[0] == "web", f"Expected 'web', got {row[0]}"
+
     def test_seed_super_admin(self, monkeypatch, db_session):
         """_seed_super_admin should run without error (no user = no promotion)."""
         from app.main import _seed_super_admin

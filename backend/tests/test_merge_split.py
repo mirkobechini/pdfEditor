@@ -113,3 +113,61 @@ class TestSplit:
             "/pdfs/fake-id/split", headers=pro_headers, json={"mode": "every"}
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+class TestMergeSplitServiceS3Aware:
+    """Unit tests verifying the merge/split service reads file content via the
+    S3-aware get_file_content() helper (issue #737)."""
+
+    def _make_pdf(self, db_session, user_id="user-1"):
+        """Create a minimal PdfDocument row in the test DB."""
+        from app.models.pdf import PdfDocument
+        pdf = PdfDocument(
+            original_filename="test.pdf",
+            storage_filename="abc-123.pdf",
+            file_size=100,
+            page_count=1,
+            user_id=user_id,
+        )
+        db_session.add(pdf)
+        db_session.commit()
+        db_session.refresh(pdf)
+        return pdf
+
+    def test_get_file_content_uses_s3_aware_helper(self, db_session, monkeypatch):
+        """_get_file_content should call get_file_content (S3-aware), not get_pdf_path."""
+        from app.services.pdf_merge_split_service import PdfMergeSplitService
+
+        pdf = self._make_pdf(db_session)
+
+        called_with = {}
+        fake_content = b"%PDF-1.4 fake content"
+
+        def fake_get_file_content(file_uuid):
+            called_with["file_uuid"] = file_uuid
+            return fake_content
+
+        monkeypatch.setattr(
+            "app.services.pdf_merge_split_service.get_file_content",
+            fake_get_file_content,
+        )
+
+        service = PdfMergeSplitService(db_session)
+        result = service._get_file_content(pdf)
+
+        assert called_with.get("file_uuid") == "abc-123"
+        assert result == fake_content
+
+    def test_get_file_content_returns_none_when_missing(self, db_session, monkeypatch):
+        """_get_file_content should return None when get_file_content returns None."""
+        from app.services.pdf_merge_split_service import PdfMergeSplitService
+
+        pdf = self._make_pdf(db_session)
+
+        monkeypatch.setattr(
+            "app.services.pdf_merge_split_service.get_file_content",
+            lambda file_uuid: None,
+        )
+
+        service = PdfMergeSplitService(db_session)
+        assert service._get_file_content(pdf) is None

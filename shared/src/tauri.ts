@@ -60,3 +60,8 @@ export async function tauriInvoke<T = unknown>(
     return null;
   }
 }
+
+/** Open the webview devtools (debugging cloud sync / console errors). */
+export async function openDevTools(): Promise<void> {
+  await tauriInvoke("open_devtools");
+}
