@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-06
+> **Aggiornato:** 2026-09-08
 
 ---
 
@@ -21,6 +21,9 @@
 | #725  | Desktop: 500 su /pdfs — `_add_missing_columns` popola NULL con default          |
 | #727  | Desktop: download sidecar 403 — `syncResult` per token locale dopo login Google |
 | #728  | Upload cloud 403 CSRF — esentato CSRF per richieste Bearer-authenticated        |
+| #732  | Rename PDF: `Sidebar.tsx` salva via `updateMetadata(id, { new_filename })`      |
+| #733  | Merge CSRF: `_fetch` garantisce `X-CSRF-Token` prima dei POST state-changing    |
+| #736  | Test E2E merge riabilitato + `e2e/**` nei paths CI + license enforcement off    |
 
 ---
 
@@ -55,23 +58,14 @@
 
 **Stato:** ✅ Risolto — tecnicamente applicato ma nessun effetto visibile percepibile.
 
-### K7 — Rename PDF non implementato (frontend mostra input ma non salva)
+### K9 — Merge/split rotti con storage S3 (produzione)
 
-**File:** `frontend/src/app/components/Sidebar.tsx`  
-**Descrizione:** Il pulsante ✏️ (Rinomina) mostra un input editabile, ma premendo Enter o blur fa solo `setRenameId(null)` — **non salva mai il nuovo nome**. Non c'è nessuna chiamata API. Il backend ha già l'endpoint `PUT /pdfs/{id}/metadata` che supporta `new_filename` (usato dal desktop MetadataModal), quindi il fix è solo frontend: chiamare `api.updateMetadata(id, { new_filename })` su Enter/blur.
+**File:** `backend/app/services/pdf_merge_split_service.py`  
+**Descrizione:** Il service merge/split usa `get_pdf_path()` (solo locale) in `_get_file_content()`, mentre `pdf_service.py` usa `get_file_content()` (S3-aware). Su S3, `get_pdf_path()` restituisce `None` (per design) → `_get_file_content()` restituisce `None` → il merge lancia `ValueError` → mappato a `MERGE_TOO_FEW` → "Unione fallita". In produzione (storage S3) il merge e lo split via UI sono rotti.
 
-**Scoperto da:** test E2E `editor.spec.ts` (rename test rimosso perché la feature non esiste).
+**Scoperto da:** test E2E merge (#736) durante riproduzione locale con `STORAGE_BACKEND=s3`.
 
-**Stato:** Da fixare (issue dedicata).
-
-### K8 — Merge UI fallisce per CSRF (web cross-origin)
-
-**File:** `frontend/src/app/lib/api.ts`, `backend/app/core/csrf.py`  
-**Descrizione:** Il merge via UI dà "Unione fallita: common.unknownError". Il browser ha il cookie `csrf_token` (settato dal login) ma il frontend non invia l'header `X-CSRF-Token` che matcha → il middleware CSRF risponde 403. Il backend merge funziona (test pytest passano). Il problema è il double-submit pattern nel contesto UI cross-origin (frontend su `localhost:3000`, backend su `localhost:8000`).
-
-**Scoperto da:** test E2E `editor.spec.ts` (merge test rimosso perché fragile).
-
-**Stato:** Da investigare (issue dedicata).
+**Stato:** Da fixare (issue #737). Fix: usare `get_file_content()` (S3-aware) nel service merge/split, come già fa `pdf_service.py`.
 
 ## 🟡 Bug minori rimanenti
 
@@ -91,7 +85,7 @@ Tutti i bug minori precedenti sono stati risolti.
 
 **Descrizione:** 375 test backend (con `TestClient` same-origin) + 907 test desktop (vitest) + 279 test mobile. I test unitari non coprono i flussi cross-origin reali (cookie, CSRF, CORS).  
 **Risoluzione prevista:** Playwright (T7).  
-**Stato:** ✅ **Parziale (2026-09-07)** — Suite E2E Playwright in `e2e/` con **12 test verdi** (auth, CSRF/CORS, upload PDF, delete, cloud sync). Job `e2e` aggiunto a `ci-web.yml`. I flussi PDF avanzati (merge/split/reorder/protect) sono fragili in E2E (pdf.js + CSRF) e restano coperti da pytest. Vedi `.specs/active/roadmap-test-e2e.md`.
+**Stato:** ✅ **Parziale (2026-09-08)** — Suite E2E Playwright in `e2e/` con **13 test verdi** (auth, CSRF/CORS, upload PDF, delete, merge, cloud sync). Job `e2e` aggiunto a `ci-web.yml` con `e2e/**` nei paths. Il backend E2E parte con `DISABLE_LICENSE_ENFORCEMENT=true`. I flussi PDF avanzati (split/reorder/protect) restano fragili in E2E (pdf.js) e coperti da pytest. Vedi `.specs/active/roadmap-test-e2e.md`.
 
 ### T3 — `@swc/helpers` lock file desync
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-08
+
+### 🐛 Fix merge UI + test E2E (issues #732, #733, #736)
+
+- **Fix rename PDF** (issue #732): `Sidebar.tsx` ora chiama `api.updateMetadata(id, { new_filename })` su Enter/blur per salvare il nuovo nome. Aggiunto `new_filename`/`overwrite` alla firma di `updateMetadata` in `api.ts` (web). Test Sidebar aggiornati.
+- **Fix merge CSRF** (issue #733): `_fetch` in `api.ts` ora garantisce l'header `X-CSRF-Token` prima dei POST/PUT/DELETE/PATCH state-changing — se il token in memoria è null (dopo page reload), chiama `refreshCsrf()` (GET `/auth/csrf`) per popolarlo. Flag `_refreshingCsrf` evita loop. Risolve il 403 CSRF del merge via UI.
+- **Test E2E merge riabilitato** (issue #736): aggiunto test merge in `editor.spec.ts` (upload 2 PDF → dialogo merge → seleziona → conferma → verifica file risultante). Aggiunto `e2e/**` ai paths del workflow `ci-web.yml` per triggerare la CI sui cambi E2E.
+- **Fix E2E license enforcement**: il backend E2E in CI ora parte con `DISABLE_LICENSE_ENFORCEMENT=true` (nel config Playwright) — senza, il merge falliva con 403 `License tier 'free' does not include 'merge_pdf'`.
+- **Bug scoperto (da fixare)**: merge/split rotti con storage S3 (K9) — `pdf_merge_split_service.py` usa `get_pdf_path()` (solo locale) invece di `get_file_content()` (S3-aware). In produzione (storage S3) il merge via UI fallisce.
+
 ## 2026-09-07
 
 ### 🧪 Test E2E cross-origin (Playwright) — issue #731

@@ -14,7 +14,7 @@
 | **Webapp** (Next.js/React)     | vitest      | **566** | **94.96%** | ✅    |
 | **Desktop** (Tauri)            | vitest      | **907** | **90.84%** | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **279** | **98.7%**  | ✅    |
-| **E2E** (Playwright)           | playwright  | **12**  | —          | ✅    |
+| **E2E** (Playwright)           | playwright  | **13**  | —          | ✅    |
 
 > ℹ️ **Desktop**: 906 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +9 test ReplaceTextModal, +3 test googleLogin.
 >
