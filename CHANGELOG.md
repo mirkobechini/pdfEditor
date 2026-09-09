@@ -2,6 +2,11 @@
 
 ## 2026-09-09
 
+### ✨ Bug reports su mobile (issue #753)
+
+- **Bug reports mobile**: aggiunta la segnalazione bug su mobile (React Native/Expo), prima presente solo su web (e parzialmente su desktop). Nuovo `BugReportDialog` con titolo, descrizione e categoria, metodo `createBugReport` in api.ts (platform=mobile), integrato in SettingsScreen.
+- **Test**: 294 test mobile verdi (25 suite). Nuovi test per createBugReport.
+
 ### ✨ Google OAuth login mobile (issue #751)
 
 - **Google OAuth mobile**: aggiunto il login con Google su mobile (React Native/Expo), prima presente solo su web e desktop. Nuovo `GoogleLoginButton` con `expo-auth-session`, metodo `googleLogin` in api.ts e auth.tsx, integrato in LoginScreen. **Nota**: richiede client ID Android/iOS dedicati in Google Cloud Console (da configurare in app.json).
