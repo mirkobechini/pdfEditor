@@ -2,6 +2,11 @@
 
 ## 2026-09-09
 
+### 🔐 Fix auth offline dopo login Google (issue #749, K5)
+
+- **Fix auth offline**: dopo login Google, se la connessione cade e il JWT scade, l'utente poteva perdere l'accesso ai PDF locali. Il profilo utente non veniva salvato in cache. Ora `shared/src/auth.tsx` salva il profilo in localStorage dopo ogni login (login, register, googleLogin, guestLogin), lo ripristina in `restoreSession()` quando offline, e lo cancella in `logout()`.
+- **Test**: 915 test desktop verdi (36 suite). Nuovi test per cache utente offline.
+
 ### ✨ Notifica aggiornamento mobile (issue #747)
 
 - **Notifica aggiornamento**: quando viene rilasciata una nuova release su GitHub, l'app mobile mostra una notifica all'utente che esiste un aggiornamento disponibile. Nuovo hook `useUpdateCheck` che confronta la versione locale con l'ultima release mobile (semver), dialog "Nuova versione disponibile" con link alla release, persistenza in AsyncStorage per non ripetere la notifica.

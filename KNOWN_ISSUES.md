@@ -25,6 +25,7 @@
 | #733  | Merge CSRF: `_fetch` garantisce `X-CSRF-Token` prima dei POST state-changing    |
 | #736  | Test E2E merge riabilitato + `e2e/**` nei paths CI + license enforcement off    |
 | #737  | Merge/split S3: `pdf_merge_split_service` usa `get_file_content()` (S3-aware)   |
+| #749  | K5: auth offline — profilo utente salvato in cache per uso offline              |
 
 ---
 
@@ -40,24 +41,6 @@
 **Se in futuro si volesse cambiare:** Aggiungere una MessageBox in `NSIS_HOOK_PREUNINSTALL` che chiede "Vuoi cancellare anche i tuoi PDF e dati utente?" e, se confermato, cancella `%APPDATA%/PdfEditor/`.
 
 **Stato:** Non pianificato.
-
-### K5 — Auth offline: dopo login Google, l'app non funziona senza connessione
-
-**File:** `shared/src/auth.tsx`, `shared/src/api.ts`  
-**Descrizione:** Dopo login Google (online), se la connessione cade e il JWT scade (60 min), l'utente non può più usare l'app — neanche per i PDF locali. Manca il salvataggio del profilo utente + JWT in cache locale per uso offline.
-
-**Soluzione prevista:**
-
-1. Salvare profilo + JWT + refresh token in SQLite/AsyncStorage dopo login
-2. Se offline e JWT scaduto → modalità offline (solo PDF locali)
-3. Alla riconnessione → refresh automatico JWT + ripresa sync
-
-**Stato:** Da verificare — l'utente non è sicuro se funzioni o meno.
-
-**File:** `desktop/frontend/src/app/settings/page.tsx`  
-**Descrizione:** Il toggle antialiasing e il select densità non producono cambiamenti visibili nell'interfaccia. L'antialiasing agisce sul font rendering (`-webkit-font-smoothing` su body), ma la differenza è impercettibile con i font e colori usati. La densità modifica solo il padding degli elementi `.doc-item` (8/12/20px), ma la differenza è troppo sottile per essere notata.
-
-**Stato:** ✅ Risolto — tecnicamente applicato ma nessun effetto visibile percepibile.
 
 ## 🟡 Bug minori rimanenti
 
