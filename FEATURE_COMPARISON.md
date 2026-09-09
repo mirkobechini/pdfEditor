@@ -45,7 +45,7 @@
 | **Auth**                        |     |         |        |                                                                                                                                                      |
 | Email/password                  | ✅  | ✅      | ✅     |                                                                                                                                                      |
 | Guest mode                      | ✅  | ✅      | ✅     |                                                                                                                                                      |
-| Google OAuth                    | ✅  | ✅      | ❌     | Desktop: funzionante con redirect flow via browser di sistema                                                                                        |
+| Google OAuth                    | ✅  | ✅      | ✅     | Desktop: redirect flow via browser. Mobile: expo-auth-session (richiede client ID Android/iOS) |
 | Forgot/reset password           | ✅  | ✅      | ✅     |                                                                                                                                                      |
 | JWT token refresh               | ✅  | ✅      | ✅     | Automatico su 401 (issue #623)                                                                                                                       |
 | **UX Mobile-specifiche**        |     |         |        |                                                                                                                                                      |
@@ -60,7 +60,7 @@
 | Snackbar notifiche              | ❌  | ❌      | ✅     | React Native Paper                                                                                                                                   |
 | Bottom tabs                     | ❌  | ❌      | ✅     | Home + Settings                                                                                                                                      |
 | **UX Web/Desktop**              |     |         |        |                                                                                                                                                      |
-| Bug reports                     | ✅  | ❌      | ❌     | Solo webapp                                                                                                                                          |
+| Bug reports                     | ✅  | 🟡      | ✅     | Web: completo. Desktop: UI inline in Settings. Mobile: BugReportDialog in Settings      |
 | License management              | ✅  | ❌      | ❌     | Solo webapp                                                                                                                                          |
 | Admin panel                     | ✅  | ❌      | ❌     | Solo webapp                                                                                                                                          |
 | **Non implementato su nessuna** |     |         |        |                                                                                                                                                      |
@@ -95,13 +95,13 @@
 ### Mobile (`mobile/`)
 
 - **Stack:** Expo SDK 57 (managed), React Native Paper, pdf-lib locale
-- **Auth:** Email/password, guest (no Google OAuth), forgot/reset password ✅, JWT refresh automatico ✅
+- **Auth:** Email/password, guest, Google OAuth (expo-auth-session), forgot/reset password ✅, JWT refresh automatico ✅
 - **Operazioni:** Tutte locali con @cantoo/pdf-lib (nessun backend necessario)
 - **Cloud sync:** ✅ Bidirezionale con useCloudSync (upload/download, conflitti, offline)
 - **Undo/Redo:** Non supportato (pdf-lib non ha history)
 - **Download PDF:** ✅ tramite SAF (Storage Access Framework)
 - **Solo mobile:** Scanner, Share, Badge, Multi-select, Splash, Pull-to-refresh, Search, Swipe, Snackbar, Bottom tabs, Onboarding wizard, Sync badges
-- **Manca rispetto a web/desktop:** Replace text, Extract text, Import/Export, Undo/Redo, Google OAuth, Bug reports
+- **Manca rispetto a web/desktop:** Replace text, Extract text, Import/Export, Undo/Redo
 
 ---
 

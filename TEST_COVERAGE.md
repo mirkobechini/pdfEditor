@@ -13,14 +13,14 @@
 | **Backend** (FastAPI/Python)   | pytest      | **375** | **94%**    | ✅    |
 | **Webapp** (Next.js/React)     | vitest      | **566** | **94.96%** | ✅    |
 | **Desktop** (Tauri)            | vitest      | **907** | **90.84%** | ✅    |
-| **Mobile** (React Native/Expo) | jest        | **279** | **98.7%**  | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **294** | **98.7%**  | ✅    |
 | **E2E** (Playwright)           | playwright  | **13**  | —          | ✅    |
 
 > ℹ️ **Desktop**: 906 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +9 test ReplaceTextModal, +3 test googleLogin.
 >
 > ⚠️ **Nota:** `ReorderPagesModal` ha i callback DnD (`@dnd-kit/core`) non copribili in jsdom — richiedono test E2E con Playwright. Coverage ferma a 81.17% per quel file.
 >
-> ℹ️ **Mobile**: 276 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. +4 test api replaceText.
+> ℹ️ **Mobile**: 294 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. +4 test api replaceText, +3 test googleLogin, +3 test createBugReport, +4 test useUpdateCheck.
 >
 > ℹ️ **Webapp**: 566 test (Vitest). Target 90% raggiunto (issue #700): **94.96% statements, 97.34% lines**. Tutti i file >= 90% statements.
 
@@ -77,7 +77,7 @@
 
 ## Mobile (React Native / Expo)
 
-**Coverage: 98.7% statements, 100% lines (272 test)** — issue #696
+**Coverage: 98.7% statements, 100% lines (294 test)** — issue #696
 
 | Area                              | Test                          | Coverage | Note                                                                                                                                                                                 |
 | --------------------------------- | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

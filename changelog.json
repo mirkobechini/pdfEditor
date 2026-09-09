@@ -34,6 +34,20 @@
   ],
   "mobile": [
     {
+      "version": "v0.2.2-mobile",
+      "date": "2026-09-09",
+      "changes": [
+        "Fix PDF duplicati dopo reinstall: cloud sync usa cloud_id per il dedup",
+        "Fix icone mancanti: font MaterialCommunityIcons caricato prima del render",
+        "Fix sync lento: la lista PDF si aggiorna quando il sync finisce",
+        "Fix conflitto update: versionCode esplicito in app.json (update 0.2.1 funzionante)",
+        "Notifica aggiornamento: avvisa quando esce una nuova release",
+        "Google OAuth login: login con Google dal mobile",
+        "Bug reports: segnalazione bug dal mobile (Settings)",
+        "294 test mobile — coverage 90%+"
+      ]
+    },
+    {
       "version": "v0.2.1-mobile",
       "date": "2026-09-03",
       "changes": [
