@@ -14,6 +14,12 @@
     "languageEn": "English",
     "languageSystem": "Lingua di sistema"
   },
+  "update": {
+    "title": "Aggiornamento disponibile",
+    "message": "È disponibile una nuova versione {{version}}.",
+    "download": "Scarica",
+    "later": "Più tardi"
+  },
   "home": {
     "title": "Editor",
     "search": "Cerca PDF",
