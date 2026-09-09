@@ -319,4 +319,60 @@ describe("AuthProvider", () => {
       expect(screen.getByTestId("user")).toHaveTextContent("google-cloud-id@test.com");
     });
   });
+
+  it("login caches the user profile for offline use", async () => {
+    localStorage.clear();
+    mockGetToken.mockReturnValue(null);
+    mockCloudLogin.mockResolvedValueOnce({ access_token: "jwt123" });
+    mockGetMe.mockResolvedValueOnce({ id: "u1", email: "cache@test.com" });
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-login"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("cache@test.com");
+    });
+    const cached = JSON.parse(localStorage.getItem("pdfeditor_user_cache") || "null");
+    expect(cached).not.toBeNull();
+    expect(cached.email).toBe("cache@test.com");
+  });
+
+  it("restores user from cache when offline (getMe and cloud fail)", async () => {
+    localStorage.clear();
+    localStorage.setItem("pdfeditor_user_cache", JSON.stringify({ id: "u1", email: "cached@test.com" }));
+    mockGetToken.mockReturnValue("token123");
+    mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
+    mockCloudGetMe.mockRejectedValueOnce(new Error("network error"));
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("cached@test.com");
+    });
+  });
+
+  it("logout clears the cached user profile", async () => {
+    localStorage.clear();
+    mockGetToken.mockReturnValue(null);
+    mockCloudLogin.mockResolvedValueOnce({ access_token: "jwt123" });
+    mockGetMe.mockResolvedValueOnce({ id: "u1", email: "cache@test.com" });
+    mockLogout.mockResolvedValueOnce(undefined);
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    // Login saves the user to cache
+    fireEvent.click(screen.getByTestId("btn-login"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("cache@test.com");
+    });
+    expect(localStorage.getItem("pdfeditor_user_cache")).not.toBeNull();
+
+    // Logout clears the cache
+    fireEvent.click(screen.getByTestId("btn-logout"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("null");
+    });
+    expect(localStorage.getItem("pdfeditor_user_cache")).toBeNull();
+  });
 });
