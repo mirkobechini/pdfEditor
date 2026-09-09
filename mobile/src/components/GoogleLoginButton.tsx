@@ -2,9 +2,8 @@ import React from "react";
 import { Button, Text, useTheme } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import * as Google from "expo-auth-session/providers/google";
+import Constants from "expo-constants";
 import { useAuth } from "../shared/auth";
-
-const GOOGLE_CLIENT_ID = "309361418291-0j2jpuk4sdft5hm9tdvpj1n4trukphee.apps.googleusercontent.com";
 
 export default function GoogleLoginButton() {
     const theme = useTheme();
@@ -12,10 +11,13 @@ export default function GoogleLoginButton() {
     const { googleLogin } = useAuth();
     const [error, setError] = React.useState<string | null>(null);
 
+    // Read the Android client ID from app.json (extra.googleClientId)
+    const config = Constants.expoConfig?.extra as Record<string, unknown> | undefined;
+    const androidClientId = (config?.googleClientId as string) || undefined;
+
     const [request, response, promptAsync] = Google.useAuthRequest({
-        clientId: GOOGLE_CLIENT_ID,
-        androidClientId: GOOGLE_CLIENT_ID,
-        iosClientId: GOOGLE_CLIENT_ID,
+        clientId: androidClientId,
+        androidClientId,
     });
 
     // When the auth response arrives, exchange the id_token with the backend
