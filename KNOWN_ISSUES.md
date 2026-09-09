@@ -50,12 +50,6 @@ Tutti i bug minori precedenti sono stati risolti.
 
 ## 🔵 Debito tecnico
 
-### T1 — `_password_cache` module-global non scala
-
-**File:** `backend/app/services/pdf_service.py`  
-**Descrizione:** Variabile `_password_cache` è module-global. Con multi-worker (gunicorn), ogni worker ha la sua copia.  
-**Risoluzione prevista:** Redis o DB centralizzato.
-
 ### T2 — Test E2E cross-origin (Playwright) — ✅ PARZIALE
 
 **Descrizione:** 375 test backend (con `TestClient` same-origin) + 907 test desktop (vitest) + 279 test mobile. I test unitari non coprono i flussi cross-origin reali (cookie, CSRF, CORS).  
