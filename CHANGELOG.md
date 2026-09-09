@@ -2,6 +2,11 @@
 
 ## 2026-09-09
 
+### 🐛 Fix icone mancanti mobile (issue #741)
+
+- **Fix icone mancanti**: nel mobile, al posto delle icone PDF appariva un quadratino nero con scritto "pdf". Il font MaterialCommunityIcons non veniva caricato esplicitamente con `expo-font` prima del render. In APK standalone il font non era disponibile al primo render → icone come quadratini neri. Fix: `App.tsx` ora carica il font con `useFonts` e mostra lo splash finché non è pronto.
+- **Test**: 284 test mobile verdi (24 suite). Nuovo test App.test.tsx per il caricamento font.
+
 ### 🐛 Fix PDF duplicati mobile dopo reinstall (issue #739)
 
 - **Fix PDF duplicati**: il cloud sync mobile scaricava i PDF cloud con un nuovo ID locale ogni volta, senza rilevare che esistevano già → PDF duplicati dopo reinstall. Aggiunto campo `cloud_id` a `LocalPdf` (types.ts), colonna `cloud_id` + `getLocalPdfByCloudId()` (localDb.ts), e dedup nel sync (useCloudSync.ts usa `getLocalPdfByCloudId` invece di `getLocalPdfById`).
