@@ -2,6 +2,11 @@
 
 ## 2026-09-09
 
+### 🐛 Fix sync lento mobile (issue #743)
+
+- **Fix sync lento**: durante il sync, i PDF scaricati non apparivano in tempo reale — comparivano tutti alla fine. `HomeScreen.tsx` ora ricarica la lista quando `isSyncing` passa da true a false (sync completato), così i PDF appaiono subito dopo il sync.
+- **Test**: 284 test mobile verdi (24 suite). Type check OK.
+
 ### 🐛 Fix icone mancanti mobile (issue #741)
 
 - **Fix icone mancanti**: nel mobile, al posto delle icone PDF appariva un quadratino nero con scritto "pdf". Il font MaterialCommunityIcons non veniva caricato esplicitamente con `expo-font` prima del render. In APK standalone il font non era disponibile al primo render → icone come quadratini neri. Fix: `App.tsx` ora carica il font con `useFonts` e mostra lo splash finché non è pronto.
