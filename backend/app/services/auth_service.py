@@ -105,8 +105,6 @@ class AuthService:
             info = None
             last_err: Exception | None = None
             for aud in audiences:
-                if not aud:
-                    continue
                 try:
                     info = google_id_token.verify_oauth2_token(
                         id_token_str,
