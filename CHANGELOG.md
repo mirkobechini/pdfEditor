@@ -2,6 +2,11 @@
 
 ## 2026-09-09
 
+### ✨ Notifica aggiornamento mobile (issue #747)
+
+- **Notifica aggiornamento**: quando viene rilasciata una nuova release su GitHub, l'app mobile mostra una notifica all'utente che esiste un aggiornamento disponibile. Nuovo hook `useUpdateCheck` che confronta la versione locale con l'ultima release mobile (semver), dialog "Nuova versione disponibile" con link alla release, persistenza in AsyncStorage per non ripetere la notifica.
+- **Test**: 288 test mobile verdi (25 suite). Nuovo test useUpdateCheck.test.ts.
+
 ### 🐛 Fix conflitto update mobile 0.2.1 (issue #745)
 
 - **Fix conflitto update**: l'update da 0.2.0 a 0.2.1 falliva con "conflitto con un pacchetto già esistente". Android richiede che il versionCode del nuovo APK sia maggiore del precedente. Aggiunto `android.versionCode: 3` esplicito in `app.json`, cambiato `appVersionSource` da 'remote' a 'local' in `eas.json` (EAS usa il versionCode da app.json), e `bump-version.js` ora incrementa `versionCode` a ogni bump.
