@@ -8,11 +8,14 @@ import { AuthProvider } from "./src/shared/auth";
 import { AppSettingsProvider, useAppSettings } from "./src/shared/AppSettingsContext";
 import { OnboardingProvider } from "./src/shared/OnboardingContext";
 import AppNavigator from "./src/navigation/AppNavigator";
+import { useUpdateCheck } from "./src/hooks/useUpdateCheck";
+import UpdateDialog from "./src/components/UpdateDialog";
 import * as Icons from "@expo/vector-icons";
 import "./src/i18n";
 
 function AppContent() {
   const { theme } = useAppSettings();
+  const { updateAvailable, latestVersion, dismissUpdate } = useUpdateCheck();
 
   return (
     <PaperProvider
@@ -26,6 +29,11 @@ function AppContent() {
           <AuthProvider>
             <StatusBar style="auto" />
             <AppNavigator />
+            <UpdateDialog
+              visible={updateAvailable}
+              version={latestVersion}
+              onDismiss={dismissUpdate}
+            />
           </AuthProvider>
         </OnboardingProvider>
       </SafeAreaProvider>
