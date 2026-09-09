@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-09
+
+### 🐛 Fix PDF duplicati mobile dopo reinstall (issue #739)
+
+- **Fix PDF duplicati**: il cloud sync mobile scaricava i PDF cloud con un nuovo ID locale ogni volta, senza rilevare che esistevano già → PDF duplicati dopo reinstall. Aggiunto campo `cloud_id` a `LocalPdf` (types.ts), colonna `cloud_id` + `getLocalPdfByCloudId()` (localDb.ts), e dedup nel sync (useCloudSync.ts usa `getLocalPdfByCloudId` invece di `getLocalPdfById`).
+- **Test**: 282 test mobile verdi (23 suite). Nuovi test per getLocalPdfByCloudId e savePdfLocally con cloud_id.
+
 ## 2026-09-08
 
 ### 🐛 Fix merge/split con storage S3 (issue #737)
