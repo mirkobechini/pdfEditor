@@ -563,7 +563,11 @@ describe("ApiClient", () => {
       mockFetch.mockResolvedValueOnce(
         mockJsonResponse({ id: "b1", title: "Bug", platform: "mobile" }),
       );
-      const result = await client.createBugReport("Bug title", "Bug desc", "mobile");
+      const result = await client.createBugReport(
+        "Bug title",
+        "Bug desc",
+        "mobile",
+      );
       expect(result.id).toBe("b1");
       expect(mockFetch).toHaveBeenCalledWith(
         `${BASE}/bugs`,

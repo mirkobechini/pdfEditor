@@ -45,7 +45,7 @@
 | **Auth**                        |     |         |        |                                                                                                                                                      |
 | Email/password                  | ✅  | ✅      | ✅     |                                                                                                                                                      |
 | Guest mode                      | ✅  | ✅      | ✅     |                                                                                                                                                      |
-| Google OAuth                    | ✅  | ✅      | ✅     | Desktop: redirect flow via browser. Mobile: expo-auth-session (richiede client ID Android/iOS) |
+| Google OAuth                    | ✅  | ✅      | ✅     | Desktop: redirect flow via browser. Mobile: expo-auth-session (richiede client ID Android/iOS)                                                       |
 | Forgot/reset password           | ✅  | ✅      | ✅     |                                                                                                                                                      |
 | JWT token refresh               | ✅  | ✅      | ✅     | Automatico su 401 (issue #623)                                                                                                                       |
 | **UX Mobile-specifiche**        |     |         |        |                                                                                                                                                      |
@@ -60,7 +60,7 @@
 | Snackbar notifiche              | ❌  | ❌      | ✅     | React Native Paper                                                                                                                                   |
 | Bottom tabs                     | ❌  | ❌      | ✅     | Home + Settings                                                                                                                                      |
 | **UX Web/Desktop**              |     |         |        |                                                                                                                                                      |
-| Bug reports                     | ✅  | 🟡      | ✅     | Web: completo. Desktop: UI inline in Settings. Mobile: BugReportDialog in Settings      |
+| Bug reports                     | ✅  | 🟡      | ✅     | Web: completo. Desktop: UI inline in Settings. Mobile: BugReportDialog in Settings                                                                   |
 | License management              | ✅  | ❌      | ❌     | Solo webapp                                                                                                                                          |
 | Admin panel                     | ✅  | ❌      | ❌     | Solo webapp                                                                                                                                          |
 | **Non implementato su nessuna** |     |         |        |                                                                                                                                                      |
