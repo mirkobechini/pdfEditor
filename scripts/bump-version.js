@@ -80,3 +80,18 @@ for (const file of FILES) {
 }
 
 console.log(`\n📦 Bumped ${count} files to v${newVer}`);
+
+// Increment android.versionCode in mobile/app.json (required for Android updates)
+// Android requires the versionCode to be strictly greater than the previous build.
+const appJsonPath = path.join(ROOT, "mobile/app.json");
+if (fs.existsSync(appJsonPath)) {
+    const appJson = JSON.parse(fs.readFileSync(appJsonPath, "utf8"));
+    const current = appJson.expo?.android?.versionCode;
+    if (typeof current === "number") {
+        appJson.expo.android.versionCode = current + 1;
+        fs.writeFileSync(appJsonPath, JSON.stringify(appJson, null, 2) + "\n");
+        console.log(`  ✅ mobile/app.json android.versionCode → ${current + 1}`);
+    } else {
+        console.warn("  ⚠️  No android.versionCode in mobile/app.json — set it manually");
+    }
+}
