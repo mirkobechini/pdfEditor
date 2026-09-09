@@ -8,6 +8,7 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useAuth } from "../shared/auth";
 import { mapError } from "../shared/error-map";
 import { useTranslation } from "react-i18next";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 type LoginNavProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 
@@ -126,6 +127,8 @@ export default function LoginScreen() {
                         >
                             {isRegister ? t("auth.register") : t("auth.signIn")}
                         </Button>
+
+                        {!isRegister && <GoogleLoginButton />}
 
                         <Button
                             mode="text"

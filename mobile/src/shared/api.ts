@@ -199,6 +199,18 @@ export class ApiClient {
     return data;
   }
 
+  async googleLogin(idToken: string): Promise<AuthResponse> {
+    const res = await this._fetch(`${this.baseUrl}/auth/google`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ id_token: idToken }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
+  }
+
   async getMe(): Promise<UserResponse> {
     const res = await this._fetch(`${this.baseUrl}/auth/me`, {
       headers: this.getHeaders(),

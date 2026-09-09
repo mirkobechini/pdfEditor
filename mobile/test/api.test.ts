@@ -101,6 +101,33 @@ describe("ApiClient", () => {
     });
   });
 
+  describe("googleLogin", () => {
+    it("sends POST to /auth/google with id_token", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({
+          access_token: "google-token",
+          token_type: "bearer",
+        }),
+      );
+      const result = await client.googleLogin("google-id-token");
+      expect(result.access_token).toBe("google-token");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/auth/google`,
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ id_token: "google-id-token" }),
+        }),
+      );
+    });
+
+    it("throws on failure", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ detail: "Google auth failed" }, 400),
+      );
+      await expect(client.googleLogin("bad-token")).rejects.toThrow();
+    });
+  });
+
   describe("getMe", () => {
     it("sends GET to /auth/me with Authorization header", async () => {
       client.setToken("my-jwt");
