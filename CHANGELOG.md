@@ -2,6 +2,11 @@
 
 ## 2026-09-09
 
+### 🐛 Fix Google login CI (issue #757)
+
+- **Fix Google login CI**: il PR #756 ha introdotto un loop sulle audience Google. Quando `GOOGLE_CLIENT_ID` è vuoto (come in CI, dove non è impostato), il loop faceva `if not aud: continue` e non chiamava mai `verify_oauth2_token` → `info` restava `None` → `ValueError: Invalid or expired Google token`. 6 test fallivano (Web CI rossa). Fix: rimosso lo skip delle audience vuote, così `verify_oauth2_token` viene sempre chiamato almeno una volta.
+- **Test**: 6 test Google auth verdi (test_google_oauth.py + test_edge_cases.py).
+
 ### ✨ Bug reports su mobile (issue #753)
 
 - **Bug reports mobile**: aggiunta la segnalazione bug su mobile (React Native/Expo), prima presente solo su web (e parzialmente su desktop). Nuovo `BugReportDialog` con titolo, descrizione e categoria, metodo `createBugReport` in api.ts (platform=mobile), integrato in SettingsScreen.

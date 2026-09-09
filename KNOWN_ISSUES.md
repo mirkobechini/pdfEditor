@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-08
+> **Aggiornato:** 2026-09-09
 
 ---
 
@@ -26,6 +26,7 @@
 | #736  | Test E2E merge riabilitato + `e2e/**` nei paths CI + license enforcement off    |
 | #737  | Merge/split S3: `pdf_merge_split_service` usa `get_file_content()` (S3-aware)   |
 | #749  | K5: auth offline — profilo utente salvato in cache per uso offline              |
+| #757  | Google login CI: `verify_oauth2_token` chiamato anche con audience vuota        |
 
 ---
 
@@ -119,18 +120,26 @@ Tutti i bug minori precedenti sono stati risolti.
 
 ## 🧪 Dipendenze con warning (Dependabot)
 
-| #      | Pacchetto                        | Severità  | Versione             | Stato                    | Note                                                                                                                     |
-| ------ | -------------------------------- | --------- | -------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| **51** | `nanoid` (mobile)                | 🔴 high   | < 3.3.18             | ✅ **Fixato (override)** | Sub-dipendenza di react-navigation + expo. Override in mobile/package.json a 3.3.18.                                     |
-| **50** | `image-size` (mobile)            | 🔴 high   | <= 2.0.2             | ⛔ **Non fixabile**      | Sub-dipendenza di expo (metro). Nessun fix disponibile.                                                                  |
-| **49** | `image-size` (mobile)            | 🔴 high   | <= 2.0.2             | ⛔ **Non fixabile**      | Stesso di #50.                                                                                                           |
-| **48** | `uuid` (mobile)                  | 🟡 medium | < 7.0.3              | ⛔ **Non fixabile**      | Sub-dipendenza di xcode → expo-config-plugins. Saltare a 11.1.1 rompe breaking changes.                                  |
-| **32** | `glib::VariantStrIter` (Rust)    | 🟡 medium | < 0.20.0             | ⏳ **Sconsigliato**      | Dipendenza indiretta di Tauri. Forzare glib 0.20.0 rischia di rompere cargo tauri build. CVE non esposto a input utente. |
-| —      | `postcss` (path traversal)       | 🔴 high   | 8.4.31 (via Next.js) | ⛔ **Non fixabile**      | Sub-dipendenza interna di `next@16.3.0`. In attesa che Next.js aggiorni il suo sub-dep.                                  |
-| —      | `sharp` / libvips                | 🔴 high   | < 0.35.0             | ✅ **Già a 0.35.3**      | Next.js 16.3.0 include sharp 0.35.3. Alert ancora aperto? Dismiss automatico.                                            |
-| —      | `brace-expansion`                | 🔴 high   | 1.1.16 / 5.0.8       | ✅ **Falso positivo**    | DevDependency di eslint, non raggiungibile in produzione.                                                                |
-| —      | `js-yaml`                        | 🔴 high   | 4.0.0 / 4.3.1        | ✅ **Falso positivo**    | DevDependency di eslint, non raggiungibile in produzione.                                                                |
-| —      | `httpx` + `starlette.testclient` | —         | —                    | ⛔ **Non fixabile**      | `StarletteDeprecationWarning` — `httpx2` non esiste ancora.                                                              |
+| #      | Pacchetto                        | Severità    | Versione             | Stato                    | Note                                                                                                                     |
+| ------ | -------------------------------- | ----------- | -------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| **51** | `nanoid` (mobile)                | 🔴 high     | < 3.3.18             | ✅ **Fixato (override)** | Sub-dipendenza di react-navigation + expo. Override in mobile/package.json a 3.3.18.                                     |
+| **50** | `image-size` (mobile)            | 🔴 high     | <= 2.0.2             | ⛔ **Non fixabile**      | Sub-dipendenza di expo (metro). Nessun fix disponibile.                                                                  |
+| **49** | `image-size` (mobile)            | 🔴 high     | <= 2.0.2             | ⛔ **Non fixabile**      | Stesso di #50.                                                                                                           |
+| **48** | `uuid` (mobile)                  | 🟡 medium   | < 7.0.3              | ⛔ **Non fixabile**      | Sub-dipendenza di xcode → expo-config-plugins. Saltare a 11.1.1 rompe breaking changes.                                  |
+| **32** | `glib::VariantStrIter` (Rust)    | 🟡 medium   | < 0.20.0             | ⏳ **Sconsigliato**      | Dipendenza indiretta di Tauri. Forzare glib 0.20.0 rischia di rompere cargo tauri build. CVE non esposto a input utente. |
+| —      | `postcss` (path traversal)       | 🔴 high     | 8.4.31 (via Next.js) | ⛔ **Non fixabile**      | Sub-dipendenza interna di `next@16.3.0`. In attesa che Next.js aggiorni il suo sub-dep.                                  |
+| —      | `sharp` / libvips                | 🔴 high     | < 0.35.0             | ✅ **Già a 0.35.3**      | Next.js 16.3.0 include sharp 0.35.3. Alert ancora aperto? Dismiss automatico.                                            |
+| —      | `brace-expansion`                | 🔴 high     | 1.1.16 / 5.0.8       | ✅ **Falso positivo**    | DevDependency di eslint, non raggiungibile in produzione.                                                                |
+| —      | `js-yaml`                        | 🔴 high     | 4.0.0 / 4.3.1        | ✅ **Falso positivo**    | DevDependency di eslint, non raggiungibile in produzione.                                                                |
+| —      | `httpx` + `starlette.testclient` | —           | —                    | ⛔ **Non fixabile**      | `StarletteDeprecationWarning` — `httpx2` non esiste ancora.                                                              |
+| —      | `next` (web)                     | 🔴 critical | 16.3.0               | ⛔ **Non fixabile**      | RCE (GHSA-p293-qw3h-jr36, GHSA-2xp9-vwfh-vxw4). Fix in 16.3.4 fuori range dichiarato. In attesa bump.                    |
+| —      | `sharp` (web)                    | 🔴 high     | < 0.35.4             | ⛔ **Non fixabile**      | libheif (GHSA-rgj7-g3m4-5g8c). Sub-dep di Next.js.                                                                       |
+| —      | `pillow` (backend)               | 🔴 high     | 12.2.0               | ⛔ **Non fixabile**      | 20 CVE (PYSEC-2026-3453/54/93/94/95/96). Fix in 12.3.0. In attesa bump.                                                  |
+| —      | `pypdf` (backend)                | 🔴 high     | 6.14.2               | ⛔ **Non fixabile**      | 6 CVE (CVE-2026-84309/10/11, -82398). Fix in 6.16.1. In attesa bump.                                                     |
+| —      | `starlette` (backend)            | 🔴 high     | 0.38.6               | ⛔ **Non fixabile**      | 9 CVE (PYSEC-2026-161/248/249/1941/1943). Fix in 1.x. Richiede FastAPI compatibile.                                      |
+| —      | `pyasn1` (backend)               | 🟡 medium   | 0.6.3                | ⛔ **Non fixabile**      | 4 CVE (PYSEC-2026-3455/56/57). Fix in 0.6.4. In attesa bump.                                                             |
+| —      | `cryptography`/`ecdsa`/`httpx`   | 🟡 medium   | —                    | ⛔ **Non fixabile**      | 3 CVE backend. In attesa bump upstream.                                                                                  |
+| —      | `decode-uri-component` (mobile)  | 🟡 medium   | <= 0.4.2             | ⛔ **Non fixabile**      | DoS (GHSA-vcc3-ghjq-m6fr). Nessun fix disponibile.                                                                       |
 
 ### Vulnerabilità risolte (non più segnalate da Dependabot)
 
@@ -155,6 +164,8 @@ Tutti i bug minori precedenti sono stati risolti.
 | **glib (Rust)**     | sub-dep Tauri   | 0 (1 medium)                                                      | Sub-dipendenza indiretta di Tauri. Forzare `glib 0.20.0` rischia di rompere `cargo tauri build`. CVE non esposto a input utente. |
 
 > **Totale:** 30 segnalazioni Dependabot. **12 risolte** (incluso bump Next.js 16.3.0), **18 accettate** come non fixabili o già all'ultima versione.
+>
+> **Audit 2026-09-09 (npm audit + pip-audit + cargo audit):** Web 6 vuln (1 critical Next.js RCE, 2 high, 3 moderate). Desktop frontend 2 vuln (1 critical, 1 high). Mobile 29 vuln (10 high, 19 moderate, 0 critical — quasi tutte in dev-deps jest/expo). Backend 49 vuln in 8 pacchetti (pillow 20, starlette 9, pypdf 6, pip 5, pyasn1 4, httpx 3, ecdsa, cryptography). Rust 8 warning (unmaintained/unsound, nessuna critical). Nessuna vulnerabilità fixabile senza breaking change o bump fuori range — tutte in attesa di aggiornamento upstream.
 
 ---
 

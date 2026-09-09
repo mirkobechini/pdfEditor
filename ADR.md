@@ -1,7 +1,7 @@
 # Architecture Decision Record
 
 **Progetto:** PdfEditor
-**Data:** 2026-06-25 (ultimo aggiornamento 2026-09-01)
+**Data:** 2026-06-25 (ultimo aggiornamento 2026-09-09)
 **Versioni ADR incluse:** v0.1.24 → v0.1.35-dev
 **Autore:** Mirko Bechini
 
@@ -28,6 +28,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | Alembic per migration                               | —                          | Standard de facto per SQLAlchemy. Usato per il cloud (Neon/PostgreSQL). Il sidecar desktop usa invece `_add_missing_columns()` generica in `main.py` (auto-rileva colonne mancanti da `Base.metadata`): Alembic richiederebbe path management complesso in PyInstaller `_MEIPASS`. |
 | JWT (bcrypt) + httpOnly cookie                      | Session-based              | Stateless, compatibile con mobile e desktop offline.                                                                                                                                                                                                                               |
 | google-auth-library per SSO Google                  | PyJWT + requests manuali   | google-auth ufficiale: cache automatica chiavi, validazione Google, key rotation gestita. PR #388.                                                                                                                                                                                 |
+| Audience Google multipla (web + Android)            | Solo web client ID         | Il backend accetta sia `GOOGLE_CLIENT_ID` (web/desktop) sia `GOOGLE_ANDROID_CLIENT_ID` (mobile) come audience dell'id_token. `verify_oauth2_token` viene sempre chiamato almeno una volta anche con audience vuota (fix CI #757). PR #756. |
 | SendGrid API HTTP (requests diretto)                | SMTP via libreria SendGrid | Render free tier blocca porta 587 in uscita. Nessuna dipendenza extra.                                                                                                                                                                                                             |
 | Standard error codes API (codice + dettaglio)       | Solo `str(e)` plain        | Ogni HTTPException usa `error_response(code, detail)`. Frontend mappa in chiave i18n tramite `mapError()`. UX produzione, supporto IT/EN.                                                                                                                                          |
 | Neon PostgreSQL (serverless)                        | Render PostgreSQL free     | Render ha discontinuato il free tier PostgreSQL. Neon offre free tier permanente (0.5GB storage, 100h compute/mese).                                                                                                                                                               |

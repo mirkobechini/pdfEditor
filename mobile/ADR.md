@@ -1,7 +1,7 @@
 # Architecture Decision Record — Mobile (React Native / Expo)
 
 **Progetto:** PdfEditor — App mobile
-**Data:** 2026-08-07 (ultimo aggiornamento 2026-08-12)
+**Data:** 2026-08-07 (ultimo aggiornamento 2026-09-09)
 **Versioni ADR incluse:** v1.0 (Fase 4 — MVP completato + bug fix + offline auth)
 **Autore:** Mirko Bechini
 
@@ -78,6 +78,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 | Auth cloud (`pdfeditor-api.mirkobechini.com`)        | Auth locale (sidecar)          | Il mobile non ha sidecar: per auth dipende dal cloud. Operazioni PDF restano offline.                                                                                                                |
 | Modalità offline quando JWT scade                    | Force logout                   | Se il refresh token fallisce (nessuna connessione), l'app entra in modalità offline invece di fare logout. L'utente può comunque usare i PDF locali. Alla riconnessione, refresh automatico del JWT. |
 | `react-native-blob-util`                             | `expo-file-system` only        | Usato dove serve encoding/decoding binario (react-native-pdf dipende da esso).                                                                                                                       |
+| Google OAuth via `expo-auth-session`                | Solo email/password            | Login Google su mobile con client ID Android/iOS dedicati (in `app.json` → `extra.googleClientId`). Il backend accetta l'audience Android (`GOOGLE_ANDROID_CLIENT_ID`). PR #751, #755, #756.          |
 | `i18next` + `react-i18next` + `expo-localization`    | next-intl (web)                | i18n leggero per React Native, con rilevamento lingua sistema tramite expo-localization.                                                                                                             |
 | `react-native-paper` MD3 tema dinamico               | Temi separati custom           | Paper Provider con tema live-switching (light/dark/system) gestito da AppSettingsContextuseCallback/useMemo.                                                                                         |
 | Auth: `loading` separato da `actionLoading`          | `loading: actionLoading        |                                                                                                                                                                                                      | loading` | Separazione evita che l'overlay di login venga coperto dalla schermata di caricamento della navigazione. |
