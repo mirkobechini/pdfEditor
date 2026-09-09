@@ -147,6 +147,15 @@
     "notAuthenticated": "Not authenticated",
     "googleAuthFailed": "Google authentication failed"
   },
+  "bugReport": {
+    "title": "Report a bug",
+    "titleLabel": "Title",
+    "descriptionLabel": "Description",
+    "categoryLabel": "Category",
+    "submit": "Submit",
+    "success": "Bug report sent. Thank you for your contribution!",
+    "required": "Please fill in title and description."
+  },
   "common": {
     "ok": "OK",
     "cancel": "Cancel",

@@ -9,6 +9,7 @@ import { useAppSettings } from "../shared/AppSettingsContext";
 import { useCloudSync, type SyncMode, type SyncConflict } from "../hooks/useCloudSync";
 import ConflictDialog from "./ConflictDialog";
 import ImportPdfDialog from "./ImportPdfDialog";
+import BugReportDialog from "../components/BugReportDialog";
 
 export default function SettingsScreen() {
     const theme = useTheme();
@@ -27,6 +28,7 @@ export default function SettingsScreen() {
     const [conflicts, setConflicts] = React.useState<SyncConflict[]>([]);
     const [conflictDialogVisible, setConflictDialogVisible] = React.useState(false);
     const [importDialogVisible, setImportDialogVisible] = React.useState(false);
+    const [bugReportVisible, setBugReportVisible] = React.useState(false);
 
     const themeLabel = themeMode === "system" ? t("settings.themeSystem") : themeMode === "light" ? t("settings.themeLight") : t("settings.themeDark");
     const langLabel = locale === "system" ? t("settings.languageSystem") : locale === "it" ? t("settings.languageIt") : t("settings.languageEn");
@@ -159,8 +161,18 @@ export default function SettingsScreen() {
                         description={appVersion}
                         left={(props) => <List.Icon {...props} icon="information" />}
                     />
+                    <List.Item
+                        title={t("bugReport.title")}
+                        left={(props) => <List.Icon {...props} icon="bug" />}
+                        onPress={() => setBugReportVisible(true)}
+                    />
                 </List.Section>
             </ScrollView>
+
+            <BugReportDialog
+                visible={bugReportVisible}
+                onDismiss={() => setBugReportVisible(false)}
+            />
 
             {/* Language Dialog */}
             <Portal>
