@@ -29,6 +29,7 @@ jest.mock("expo-file-system/legacy", () => ({
 
 jest.mock("../src/services/localDb", () => ({
   getLocalPdfById: jest.fn(),
+  getLocalPdfByCloudId: jest.fn(),
   savePdfLocally: jest.fn(),
   getUnsyncedPdfs: jest.fn(),
   markPdfCloudSynced: jest.fn(),

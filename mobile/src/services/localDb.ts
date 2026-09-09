@@ -51,6 +51,11 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
       await db.execAsync("ALTER TABLE pdfs ADD COLUMN cloud_synced_at TEXT");
     } catch {
       // Column already exists — ignore
+    } // Migration: add cloud_id column (for sync dedup)
+    try {
+      await db.execAsync("ALTER TABLE pdfs ADD COLUMN cloud_id TEXT");
+    } catch {
+      // Column already exists — ignore
     }
   }
   return db;
@@ -59,11 +64,12 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
 export async function savePdfLocally(pdf: LocalPdf): Promise<void> {
   const database = await getDb();
   await database.runAsync(
-    `INSERT OR REPLACE INTO pdfs (id, user_id, original_filename, file_size, page_count, title, author, uri, created_at, updated_at, cloud_synced, cloud_synced_at, cloud_synced_exclude)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO pdfs (id, user_id, cloud_id, original_filename, file_size, page_count, title, author, uri, created_at, updated_at, cloud_synced, cloud_synced_at, cloud_synced_exclude)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       pdf.id,
       pdf.user_id ?? "",
+      pdf.cloud_id ?? null,
       pdf.original_filename,
       pdf.file_size,
       pdf.page_count,
@@ -99,6 +105,17 @@ export async function getLocalPdfById(id: string): Promise<LocalPdf | null> {
   const row = await database.getFirstAsync<LocalPdf>(
     "SELECT *, COALESCE(cloud_synced, 0) as cloud_synced FROM pdfs WHERE id = ?",
     [id],
+  );
+  return row ?? null;
+}
+
+export async function getLocalPdfByCloudId(
+  cloudId: string,
+): Promise<LocalPdf | null> {
+  const database = await getDb();
+  const row = await database.getFirstAsync<LocalPdf>(
+    "SELECT *, COALESCE(cloud_synced, 0) as cloud_synced FROM pdfs WHERE cloud_id = ?",
+    [cloudId],
   );
   return row ?? null;
 }

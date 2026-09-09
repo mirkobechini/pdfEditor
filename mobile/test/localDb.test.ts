@@ -16,6 +16,7 @@ import {
   savePdfLocally,
   getLocalPdfs,
   getLocalPdfById,
+  getLocalPdfByCloudId,
   deleteLocalPdf,
   markPdfCloudSynced,
   markPdfCloudUnsynced,
@@ -80,6 +81,33 @@ describe("localDb", () => {
     mockDb.getFirstAsync.mockResolvedValue(null);
     const result = await getLocalPdfById("nonexistent");
     expect(result).toBeNull();
+  });
+
+  it("getLocalPdfByCloudId returns single PDF by cloud_id", async () => {
+    mockDb.getFirstAsync.mockResolvedValue(samplePdf);
+    const result = await getLocalPdfByCloudId("cloud-1");
+    expect(result).not.toBeNull();
+    expect(result!.id).toBe("test-1");
+    expect(mockDb.getFirstAsync).toHaveBeenCalledWith(
+      expect.stringContaining("cloud_id = ?"),
+      ["cloud-1"],
+    );
+  });
+
+  it("getLocalPdfByCloudId returns null when not found", async () => {
+    mockDb.getFirstAsync.mockResolvedValue(null);
+    const result = await getLocalPdfByCloudId("nonexistent");
+    expect(result).toBeNull();
+  });
+
+  it("savePdfLocally includes cloud_id in the insert", async () => {
+    mockDb.runAsync.mockResolvedValue(undefined);
+    const withCloud = { ...samplePdf, cloud_id: "cloud-1" };
+    await savePdfLocally(withCloud);
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("cloud_id"),
+      expect.arrayContaining(["cloud-1"]),
+    );
   });
 
   it("deleteLocalPdf calls runAsync with DELETE", async () => {
