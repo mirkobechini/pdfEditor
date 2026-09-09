@@ -11,6 +11,7 @@ import type {
   AuthResponse,
   UserResponse,
   LocalPdf,
+  BugReport,
 } from "./types";
 
 export type {
@@ -20,6 +21,7 @@ export type {
   AuthResponse,
   UserResponse,
   LocalPdf,
+  BugReport,
 };
 
 // Cloud backend URL
@@ -241,6 +243,22 @@ export class ApiClient {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, new_password: newPassword }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
+  // ─── Bug report endpoints ────────────────────────────────────────
+
+  async createBugReport(
+    title: string,
+    description: string,
+    platform: string = "mobile",
+  ): Promise<BugReport> {
+    const res = await this._fetch(`${this.baseUrl}/bugs`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ title, description, platform }),
     });
     if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();

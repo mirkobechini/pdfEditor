@@ -557,4 +557,45 @@ describe("ApiClient", () => {
       );
     });
   });
+
+  describe("createBugReport", () => {
+    it("sends POST to /bugs with title, description and platform", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "b1", title: "Bug", platform: "mobile" }),
+      );
+      const result = await client.createBugReport("Bug title", "Bug desc", "mobile");
+      expect(result.id).toBe("b1");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/bugs`,
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            title: "Bug title",
+            description: "Bug desc",
+            platform: "mobile",
+          }),
+        }),
+      );
+    });
+
+    it("defaults platform to mobile", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "b2", title: "Bug" }),
+      );
+      await client.createBugReport("Bug title", "Bug desc");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/bugs`,
+        expect.objectContaining({
+          body: expect.stringContaining('"platform":"mobile"'),
+        }),
+      );
+    });
+
+    it("throws on failure", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ detail: "Failed" }, 400),
+      );
+      await expect(client.createBugReport("t", "d")).rejects.toThrow();
+    });
+  });
 });

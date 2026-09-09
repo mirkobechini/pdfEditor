@@ -147,6 +147,15 @@
     "notAuthenticated": "Non autenticato",
     "googleAuthFailed": "Autenticazione Google fallita"
   },
+  "bugReport": {
+    "title": "Segnala un bug",
+    "titleLabel": "Titolo",
+    "descriptionLabel": "Descrizione",
+    "categoryLabel": "Categoria",
+    "submit": "Invia",
+    "success": "Segnalazione inviata. Grazie per il contributo!",
+    "required": "Compila titolo e descrizione."
+  },
   "common": {
     "ok": "OK",
     "cancel": "Annulla",
