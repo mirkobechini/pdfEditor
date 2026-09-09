@@ -25,6 +25,14 @@ jest.mock("../src/shared/OnboardingContext", () => ({
 }));
 jest.mock("../src/navigation/AppNavigator", () => () => null);
 jest.mock("../src/i18n", () => ({}));
+jest.mock("../src/hooks/useUpdateCheck", () => ({
+    useUpdateCheck: () => ({
+        updateAvailable: false,
+        latestVersion: "",
+        dismissUpdate: jest.fn(),
+    }),
+}));
+jest.mock("../src/components/UpdateDialog", () => () => null);
 
 import App from "../App";
 
