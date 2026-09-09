@@ -1,7 +1,21 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo svilupzo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-06
+> **Aggiornato:** 2026-09-09
+
+---
+
+## Loop su audience vuote non chiama mai la funzione mockata (CI rossa)
+
+> **Lezione appresa (2026-09-09):**
+
+Il PR #756 ha introdotto un loop sulle audience Google per supportare sia il client web che Android. Il loop faceva `if not aud: continue` per saltare le audience vuote. In CI `GOOGLE_CLIENT_ID` è vuoto (non impostato), quindi **tutte** le audience erano vuote → `verify_oauth2_token` non veniva mai chiamato → `info` restava `None` → `ValueError: Invalid or expired Google token`. 6 test fallivano.
+
+**Perché è subdolo:** i test mockano `verify_oauth2_token`, ma il mock non veniva mai invocato perché il loop lo saltava. L'errore non era nel mock né nella logica di validazione, ma nel fatto che la funzione non veniva proprio chiamata.
+
+**Fix:** rimosso lo skip delle audience vuote. Ora `verify_oauth2_token` viene sempre chiamato almeno una volta (con audience vuota il mock lo ignora).
+
+**Regola:** quando si itera su una lista di valori di configurazione (audience, client ID, URL) che possono essere vuoti in alcuni ambienti (CI, test), NON saltare l'iterazione con `continue` se questo impedisce di chiamare la funzione sotto test. Verificare SEMPRE che i test colpiscano davvero la funzione mockata (es. `assert mock.call_count > 0`).
 
 ---
 
