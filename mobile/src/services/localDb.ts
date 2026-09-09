@@ -51,12 +51,13 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
       await db.execAsync("ALTER TABLE pdfs ADD COLUMN cloud_synced_at TEXT");
     } catch {
       // Column already exists — ignore
-    }    // Migration: add cloud_id column (for sync dedup)
+    } // Migration: add cloud_id column (for sync dedup)
     try {
       await db.execAsync("ALTER TABLE pdfs ADD COLUMN cloud_id TEXT");
     } catch {
       // Column already exists — ignore
-    }  }
+    }
+  }
   return db;
 }
 
@@ -108,7 +109,9 @@ export async function getLocalPdfById(id: string): Promise<LocalPdf | null> {
   return row ?? null;
 }
 
-export async function getLocalPdfByCloudId(cloudId: string): Promise<LocalPdf | null> {
+export async function getLocalPdfByCloudId(
+  cloudId: string,
+): Promise<LocalPdf | null> {
   const database = await getDb();
   const row = await database.getFirstAsync<LocalPdf>(
     "SELECT *, COALESCE(cloud_synced, 0) as cloud_synced FROM pdfs WHERE cloud_id = ?",
