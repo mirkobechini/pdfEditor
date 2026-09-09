@@ -120,6 +120,7 @@
     "signIn": "Sign In",
     "register": "Register",
     "guest": "Continue as Guest",
+    "googleLogin": "Continue with Google",
     "email": "Email",
     "password": "Password",
     "fullName": "Full Name",
