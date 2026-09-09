@@ -2,6 +2,11 @@
 
 ## 2026-09-09
 
+### ✨ Google OAuth login mobile (issue #751)
+
+- **Google OAuth mobile**: aggiunto il login con Google su mobile (React Native/Expo), prima presente solo su web e desktop. Nuovo `GoogleLoginButton` con `expo-auth-session`, metodo `googleLogin` in api.ts e auth.tsx, integrato in LoginScreen. **Nota**: richiede client ID Android/iOS dedicati in Google Cloud Console (da configurare in app.json).
+- **Test**: 291 test mobile verdi (25 suite). Nuovi test per googleLogin.
+
 ### 🔐 Fix auth offline dopo login Google (issue #749, K5)
 
 - **Fix auth offline**: dopo login Google, se la connessione cade e il JWT scade, l'utente poteva perdere l'accesso ai PDF locali. Il profilo utente non veniva salvato in cache. Ora `shared/src/auth.tsx` salva il profilo in localStorage dopo ogni login (login, register, googleLogin, guestLogin), lo ripristina in `restoreSession()` quando offline, e lo cancella in `logout()`.
