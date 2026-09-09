@@ -2,6 +2,11 @@
 
 ## 2026-09-09
 
+### 🐛 Fix conflitto update mobile 0.2.1 (issue #745)
+
+- **Fix conflitto update**: l'update da 0.2.0 a 0.2.1 falliva con "conflitto con un pacchetto già esistente". Android richiede che il versionCode del nuovo APK sia maggiore del precedente. Aggiunto `android.versionCode: 3` esplicito in `app.json`, cambiato `appVersionSource` da 'remote' a 'local' in `eas.json` (EAS usa il versionCode da app.json), e `bump-version.js` ora incrementa `versionCode` a ogni bump.
+- **Test**: 284 test mobile verdi (24 suite). Type check OK.
+
 ### 🐛 Fix sync lento mobile (issue #743)
 
 - **Fix sync lento**: durante il sync, i PDF scaricati non apparivano in tempo reale — comparivano tutti alla fine. `HomeScreen.tsx` ora ricarica la lista quando `isSyncing` passa da true a false (sync completato), così i PDF appaiono subito dopo il sync.
