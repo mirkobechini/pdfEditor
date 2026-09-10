@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
+import { useApiError } from "../hooks/useApiError";
 
 interface ReplaceTextModalProps {
     open: boolean;
@@ -14,6 +15,7 @@ interface ReplaceTextModalProps {
 
 export default function ReplaceTextModal({ open, onClose, pdfId, onSuccess }: ReplaceTextModalProps) {
     const t = useTranslations("replaceTextDialog");
+    const { apiError } = useApiError();
     const [search, setSearch] = React.useState("");
     const [replaceWith, setReplaceWith] = React.useState("");
     const [replaceAll, setReplaceAll] = React.useState(true);
@@ -33,7 +35,7 @@ export default function ReplaceTextModal({ open, onClose, pdfId, onSuccess }: Re
             onClose();
             onSuccess?.(result);
         } catch (err) {
-            setError(t("replaceFailed") + ": " + (err instanceof Error ? err.message : String(err)));
+            setError(t("replaceFailed") + ": " + apiError(err));
         } finally {
             setReplacing(false);
         }

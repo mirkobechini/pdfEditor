@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
+import { useApiError } from "../hooks/useApiError";
 
 interface SplitPagesModalProps {
     open: boolean;
@@ -79,6 +80,7 @@ export default function SplitPagesModal({ open, pdfId, pdfName, totalPages, pdfU
     const [filename1, setFilename1] = React.useState("");
     const [filename2, setFilename2] = React.useState("");
     const ts = useTranslations("splitModal");
+    const { apiError } = useApiError();
 
     React.useEffect(() => {
         if (open) {
@@ -102,7 +104,7 @@ export default function SplitPagesModal({ open, pdfId, pdfName, totalPages, pdfU
             onSaved(result.items);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : ts("splitError"));
+            setError(apiError(err));
         } finally { setSaving(false); }
     }
 

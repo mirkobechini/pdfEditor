@@ -17,6 +17,7 @@ import ReplaceTextModal from "../../components/ReplaceTextModal";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
 import { useCloudSync } from "../../hooks/useCloudSync";
+import { useApiError } from "../../hooks/useApiError";
 import type { PdfDocument } from "../../shared/types";
 
 const API_BASE = getApiBaseUrl();
@@ -34,6 +35,7 @@ function getPlatformIcon(source?: string): string {
 
 export default function EditorPage() {
     const te = useTranslations("editor");
+    const { apiError } = useApiError();
     const { user } = useAuth();
     const { prefs } = usePreferences();
     const { status: syncStatus } = useCloudSync();
@@ -87,7 +89,7 @@ export default function EditorPage() {
             setDocs((prev) => [uploaded, ...prev]);
             setSelectedDoc(uploaded);
         } catch (err) {
-            const msg = err instanceof Error ? err.message : String(err);
+            const msg = apiError(err);
             console.error("Upload failed:", msg);
             setUploadError(msg);
         }

@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
+import { useApiError } from "../hooks/useApiError";
 
 interface LockUnlockModalProps {
     open: boolean;
@@ -16,6 +17,7 @@ interface LockUnlockModalProps {
 
 export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onClose, onSaved }: LockUnlockModalProps) {
     const tl = useTranslations("lockModal");
+    const { apiError } = useApiError();
     const [password, setPassword] = React.useState("");
     const [confirmPassword, setConfirmPassword] = React.useState("");
     const [showPassword, setShowPassword] = React.useState(false);
@@ -41,7 +43,7 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
             onSaved(updated);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : tl("lockError"));
+            setError(apiError(err));
         } finally { setSaving(false); }
     }
 
@@ -54,7 +56,7 @@ export default function LockUnlockModal({ open, pdfId, pdfName, isProtected, onC
             onSaved(updated);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : tl("unlockError"));
+            setError(apiError(err));
         } finally { setSaving(false); }
     }
 

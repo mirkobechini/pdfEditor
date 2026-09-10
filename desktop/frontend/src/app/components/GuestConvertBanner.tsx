@@ -5,9 +5,11 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "../../shared/auth";
 import { api } from "../../shared/api";
 import { useRouter } from "next/navigation";
+import { useApiError } from "../../hooks/useApiError";
 
 export default function GuestConvertBanner() {
     const tg = useTranslations("guestConvert");
+    const { apiError } = useApiError();
     const { user, logout } = useAuth();
     const router = useRouter();
     const [open, setOpen] = React.useState(false);
@@ -29,7 +31,7 @@ export default function GuestConvertBanner() {
             await logout();
             router.push("/login?converted=1");
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : tg("error"));
+            setError(apiError(err));
         } finally {
             setLoading(false);
         }
