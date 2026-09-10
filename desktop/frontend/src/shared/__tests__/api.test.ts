@@ -43,10 +43,10 @@ describe("ApiClient.extractError", () => {
       status: 429,
     });
     const error = await Client.extractError(res);
-    expect(error).toContain("Troppe richieste");
+    expect(error).toContain("RATE_LIMIT");
   });
 
-  it("translates INVALID_CREDENTIALS to Italian", async () => {
+  it("returns JSON {code, detail} for INVALID_CREDENTIALS", async () => {
     const res = new Response(
       JSON.stringify({
         detail: { code: "INVALID_CREDENTIALS", detail: "Incorrect password" },
@@ -54,10 +54,15 @@ describe("ApiClient.extractError", () => {
       { status: 403 },
     );
     const error = await Client.extractError(res);
-    expect(error).toBe("Password errata");
+    expect(error).toBe(
+      JSON.stringify({
+        code: "INVALID_CREDENTIALS",
+        detail: "Incorrect password",
+      }),
+    );
   });
 
-  it("translates PDF_LOCKED to Italian", async () => {
+  it("returns JSON {code, detail} for PDF_LOCKED", async () => {
     const res = new Response(
       JSON.stringify({
         detail: { code: "PDF_LOCKED", detail: "PDF is locked" },
@@ -65,7 +70,9 @@ describe("ApiClient.extractError", () => {
       { status: 403 },
     );
     const error = await Client.extractError(res);
-    expect(error).toContain("protetto da password");
+    expect(error).toBe(
+      JSON.stringify({ code: "PDF_LOCKED", detail: "PDF is locked" }),
+    );
   });
 });
 
