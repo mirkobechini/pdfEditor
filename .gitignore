@@ -56,6 +56,9 @@ desktop/src-tauri/binaries/*.dll
 desktop/src-tauri/binaries/_MEI*/
 secret.key
 
+# Web generated shared code (copied via prebuild script)
+frontend/src/shared/
+
 # Specs files (feature plans, archived, future)
 .specs/
 !desktop/frontend/src/shared/__tests__/
