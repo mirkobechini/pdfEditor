@@ -41,7 +41,10 @@ export class ApiClient {
   static async extractError(res: Response): Promise<string> {
     // Rate limit — user-friendly message
     if (res.status === 429) {
-      return "Troppe richieste. Riprova più tardi.";
+      return JSON.stringify({
+        code: "RATE_LIMIT",
+        detail: "Too many requests",
+      });
     }
     try {
       const body = await res.json();
@@ -50,7 +53,10 @@ export class ApiClient {
       const errDetail =
         body.detail && typeof body.detail === "object" ? body.detail : body;
       if (errDetail && errDetail.code && errDetail.detail) {
-        return ApiClient.translateError(errDetail.code, errDetail.detail);
+        return JSON.stringify({
+          code: errDetail.code,
+          detail: errDetail.detail,
+        });
       }
       if (typeof body.detail === "string") return body.detail;
       if (Array.isArray(body.detail))
@@ -59,37 +65,6 @@ export class ApiClient {
     } catch {
       return res.statusText;
     }
-  }
-
-  /** Map backend error codes to user-friendly Italian messages. */
-  private static translateError(code: string, fallback: string): string {
-    const messages: Record<string, string> = {
-      INVALID_CREDENTIALS: "Password errata",
-      WRONG_PASSWORD: "Password errata",
-      EMAIL_NOT_FOUND: "Email non trovata",
-      EMAIL_ALREADY_REGISTERED: "Email già registrata",
-      PASSWORD_TOO_WEAK: "Password troppo debole",
-      PDF_NOT_FOUND: "PDF non trovato",
-      PDF_FILE_NOT_FOUND: "File PDF non trovato sul disco",
-      UPLOAD_TOO_LARGE: "File troppo grande",
-      INVALID_PDF: "PDF non valido",
-      INVALID_FILE_TYPE: "Tipo di file non supportato",
-      VALIDATION_ERROR: "Dati non validi",
-      MERGE_TOO_FEW: "Servono almeno 2 PDF per unire",
-      SPLIT_INVALID_RANGE: "Intervallo pagine non valido",
-      NOT_AUTHENTICATED: "Non autenticato",
-      FORBIDDEN: "Accesso negato",
-      NOT_FOUND: "Risorsa non trovata",
-      RATE_LIMIT: "Troppe richieste. Riprova più tardi.",
-      GOOGLE_AUTH_FAILED: "Autenticazione Google fallita",
-      CONVERSION_FAILED: "Conversione fallita",
-      RESET_TOKEN_INVALID: "Token di reset non valido",
-      RESET_TOKEN_EXPIRED: "Token di reset scaduto",
-      SEARCH_TEXT_EMPTY: "Testo di ricerca vuoto",
-      PDF_LOCKED: "PDF protetto da password. Sbloccalo per visualizzarlo.",
-      INTERNAL_ERROR: "Errore interno del server",
-    };
-    return messages[code] || fallback;
   }
 
   private getHeaders(): Record<string, string> {
@@ -731,8 +706,17 @@ export class ApiClient {
     return res.json();
   }
 
-  async listBugReports(): Promise<{ items: BugReport[]; total: number }> {
-    const res = await this._fetch(`${this.baseUrl}/bugs`, {
+  async listBugReports(
+    skip = 0,
+    limit = 100,
+    status?: string,
+  ): Promise<{ items: BugReport[]; total: number }> {
+    const params = new URLSearchParams({
+      skip: String(skip),
+      limit: String(limit),
+    });
+    if (status) params.set("status", status);
+    const res = await this._fetch(`${this.baseUrl}/admin/bugs?${params}`, {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
@@ -766,6 +750,112 @@ export class ApiClient {
     const res = await this._fetch(
       `${this.baseUrl}/admin/users/${userId}/send-reset`,
       { method: "POST", headers: this.getHeaders() },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // ─── Web-compatible methods ──────────────────────────────────────
+  // These mirror the web's lib/api.ts surface so the web can use the
+  // shared ApiClient without breaking its existing call sites.
+
+  async listMyBugReports(): Promise<BugReport[]> {
+    const res = await this._fetch(`${this.baseUrl}/bugs/my`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async searchBugReports(query: string): Promise<BugReport[]> {
+    const res = await this._fetch(
+      `${this.baseUrl}/bugs/search?q=${encodeURIComponent(query)}`,
+      { headers: this.getHeaders() },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async voteBugReport(bugId: string): Promise<BugReport> {
+    const res = await this._fetch(`${this.baseUrl}/bugs/${bugId}/vote`, {
+      method: "POST",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async getLicenseFeatures(): Promise<
+    { id: string; tier: string; feature_key: string; enabled: boolean }[]
+  > {
+    const res = await this._fetch(`${this.baseUrl}/licenses/features`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async listUsers(
+    skip = 0,
+    limit = 100,
+  ): Promise<{ items: AdminUser[]; total: number }> {
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users?skip=${skip}&limit=${limit}`,
+      { headers: this.getHeaders() },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async updateUserLicense(
+    userId: string,
+    licenseTier: string,
+  ): Promise<AdminUser> {
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users/${userId}/license`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ license_tier: licenseTier }),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async updateUserAdmin(userId: string, isAdmin: boolean): Promise<AdminUser> {
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users/${userId}/admin`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ is_admin: isAdmin }),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async adminSendReset(userId: string): Promise<{ message: string }> {
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users/${userId}/send-reset`,
+      { method: "POST", headers: this.getHeaders() },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async updateBugReportStatus(
+    bugId: string,
+    status: string,
+  ): Promise<BugReport> {
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/bugs/${bugId}/status`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      },
     );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
