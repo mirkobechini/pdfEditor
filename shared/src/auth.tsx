@@ -87,6 +87,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const token = api.getToken();
       if (!token) {
+        // Web: the httpOnly cookie may still authenticate the session even
+        // without a localStorage token (remember-me not checked). Try getMe().
+        // Desktop: no token means not authenticated — skip.
+        if (!isTauri()) {
+          try {
+            const u = await api.getMe();
+            if (!cancelled) {
+              setUser(u);
+              setIsOffline(false);
+              api.refreshCsrf();
+              return;
+            }
+          } catch {
+            // No valid cookie — not authenticated
+          }
+        }
         if (!cancelled) setLoading(false);
         return;
       }
