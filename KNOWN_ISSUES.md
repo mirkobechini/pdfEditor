@@ -27,7 +27,7 @@
 | #737  | Merge/split S3: `pdf_merge_split_service` usa `get_file_content()` (S3-aware)   |
 | #749  | K5: auth offline — profilo utente salvato in cache per uso offline              |
 | #757  | Google login CI: `verify_oauth2_token` chiamato anche con audience vuota        |
-| #761  | Refactor unify auth web/desktop: web usa il shared (fix K5 + cookie restore)    |
+| #761  | Refactor unify: web re-exporta api/tauri/error-map dal shared (auth web resta cookie-based) |
 
 ---
 
