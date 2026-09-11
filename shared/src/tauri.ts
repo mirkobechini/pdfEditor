@@ -50,7 +50,11 @@ export function getApiBaseUrl(): string {
 
 /** Base URL for the cloud backend on Render (auth/register/login). */
 export function getCloudApiBaseUrl(): string {
-  return "https://pdfeditor-api.mirkobechini.com";
+  // Desktop (Tauri): the cloud backend is on Render.
+  if (isTauri()) return "https://pdfeditor-api.mirkobechini.com";
+  // Web: the backend is the same as the API base URL (same-origin in
+  // production, or env override in dev/E2E).
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 }
 
 /**
