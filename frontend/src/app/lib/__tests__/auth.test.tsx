@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 import { AuthProvider, useAuth } from "../auth";
 
-vi.mock("../../../shared/api", () => ({
+vi.mock("../api", () => ({
   api: {
     getMe: vi.fn(),
     login: vi.fn(),
@@ -14,23 +14,10 @@ vi.mock("../../../shared/api", () => ({
     setToken: vi.fn(),
     setCsrfToken: vi.fn(),
     refreshCsrf: vi.fn(),
-    getToken: vi.fn(),
-    syncUser: vi.fn(),
-    onTokenRefreshed: null,
-    onTokenRefreshFailed: null,
-  },
-  cloudApi: {
-    getMe: vi.fn(),
-    login: vi.fn(),
-    register: vi.fn(),
-    googleLogin: vi.fn(),
-    setToken: vi.fn(),
-    setCsrfToken: vi.fn(),
-    refreshCsrf: vi.fn(),
   },
 }));
 
-import { api, cloudApi } from "../../../shared/api";
+import { api } from "../api";
 
 function TestConsumer() {
   const { user, loading, login, register, googleLogin, guestLogin, logout } = useAuth();
@@ -75,7 +62,7 @@ describe("AuthProvider", () => {
     (api.getMe as any).mockRejectedValue(new Error("Not authenticated"));
     render(<AuthProvider><TestConsumer /></AuthProvider>);
     await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
-    (cloudApi.login as any).mockResolvedValue({ access_token: "token" });
+    (api.login as any).mockResolvedValue({ access_token: "token" });
     (api.getMe as any).mockResolvedValue({ id: "1", email: "a@b.com", full_name: "A B", is_active: true, is_admin: false, license_tier: "free", license_tier_source: "admin", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" });
     fireEvent.click(screen.getByTestId("btn-login"));
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("a@b.com"));
@@ -85,7 +72,7 @@ describe("AuthProvider", () => {
     (api.getMe as any).mockRejectedValue(new Error("Not authenticated"));
     render(<AuthProvider><TestConsumer /></AuthProvider>);
     await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
-    (cloudApi.register as any).mockResolvedValue({ access_token: "token" });
+    (api.register as any).mockResolvedValue({ access_token: "token" });
     (api.getMe as any).mockResolvedValue({ id: "1", email: "a@b.com", full_name: "A B", is_active: true, is_admin: false, license_tier: "free", license_tier_source: "admin", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" });
     fireEvent.click(screen.getByTestId("btn-register"));
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("a@b.com"));
@@ -95,7 +82,7 @@ describe("AuthProvider", () => {
     (api.getMe as any).mockRejectedValue(new Error("Not authenticated"));
     render(<AuthProvider><TestConsumer /></AuthProvider>);
     await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
-    (cloudApi.googleLogin as any).mockResolvedValue({ access_token: "token" });
+    (api.googleLogin as any).mockResolvedValue({ access_token: "token" });
     (api.getMe as any).mockResolvedValue({ id: "1", email: "google@test.com", full_name: "Google", is_active: true, is_admin: false, license_tier: "free", license_tier_source: "admin", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" });
     fireEvent.click(screen.getByTestId("btn-google"));
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("google@test.com"));
@@ -105,7 +92,7 @@ describe("AuthProvider", () => {
     (api.getMe as any).mockRejectedValue(new Error("Not authenticated"));
     render(<AuthProvider><TestConsumer /></AuthProvider>);
     await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
-    (cloudApi.login as any).mockResolvedValue({ access_token: "token" });
+    (api.login as any).mockResolvedValue({ access_token: "token" });
     (api.getMe as any).mockResolvedValue({ id: "1", email: "a@b.com", full_name: "A B", is_active: true, is_admin: false, license_tier: "free" });
     fireEvent.click(screen.getByTestId("btn-login"));
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("a@b.com"));
@@ -164,7 +151,7 @@ describe("AuthProvider", () => {
     (api.getMe as any).mockRejectedValue(new Error("Not authenticated"));
     render(<AuthProvider><TestConsumer /></AuthProvider>);
     await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("done"));
-    (cloudApi.login as any).mockResolvedValue({ access_token: "remember-token" });
+    (api.login as any).mockResolvedValue({ access_token: "remember-token" });
     (api.getMe as any).mockResolvedValue({ id: "1", email: "a@b.com", full_name: "A B", is_active: true, is_admin: false, license_tier: "free" });
     fireEvent.click(screen.getByTestId("btn-login-remember"));
     await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("a@b.com"));
