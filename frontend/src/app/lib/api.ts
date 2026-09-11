@@ -1,20 +1,749 @@
-/**
- * Re-export from shared (single source of truth).
- * The shared api.ts is copied to src/shared/ via the prebuild script.
- */
-export {
-  ApiClient,
-  api,
-  cloudApi,
-  startKeepWarm,
-  stopKeepWarm,
-} from "../../shared/api";
-export type {
+import { getApiBaseUrl } from "./tauri";
+
+const API_BASE = getApiBaseUrl();
+
+import type {
   PdfDocument,
   PdfListResponse,
   Metadata,
   BugReport,
   AdminUser,
   UserResponse,
-  AuthResponse,
-} from "../../shared/api";
+} from "./api-types";
+
+export type { PdfDocument, PdfListResponse, Metadata, BugReport, AdminUser };
+
+export class ApiClient {
+  private baseUrl: string;
+  private token: string | null = null;
+  private _csrfToken: string | null = null;
+  private _refreshingCsrf: boolean = false;
+
+  constructor(baseUrl?: string) {
+    this.baseUrl = baseUrl ?? getApiBaseUrl();
+  }
+
+  static async extractError(res: Response): Promise<string> {
+    // Rate limit — user-friendly message
+    if (res.status === 429) {
+      return JSON.stringify({
+        code: "RATE_LIMIT",
+        detail: "Too many requests",
+      });
+    }
+    try {
+      const body = await res.json();
+      // New format: {code, detail} from backend error_response helper
+      if (body && typeof body === "object" && body.code && body.detail) {
+        return JSON.stringify(body);
+      }
+      if (typeof body.detail === "string") return body.detail;
+      if (Array.isArray(body.detail))
+        return body.detail[0]?.msg || res.statusText;
+      return JSON.stringify(body);
+    } catch {
+      return res.statusText;
+    }
+  }
+
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {};
+    // Include Bearer token if available (used in local dev where cookie is cross-origin)
+    if (this.token) {
+      headers["Authorization"] = `Bearer ${this.token}`;
+    }
+    // Include CSRF token for state-changing requests (double-submit pattern)
+    const csrfToken = this._getCsrfToken();
+    if (csrfToken) {
+      headers["X-CSRF-Token"] = csrfToken;
+    }
+    return headers;
+  }
+
+  setToken(token: string | null) {
+    this.token = token;
+  }
+
+  setCsrfToken(token: string | null) {
+    this._csrfToken = token;
+  }
+
+  private _getCsrfToken(): string | null {
+    // Try in-memory first (works cross-origin where document.cookie is unreadable)
+    if (this._csrfToken) return this._csrfToken;
+    // Fallback to cookie (same-origin)
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+    return match ? match[1] : null;
+  }
+
+  private async _fetch(
+    url: string,
+    options: RequestInit = {},
+  ): Promise<Response> {
+    // For state-changing requests (POST/PUT/DELETE/PATCH) in a cross-origin
+    // context, the in-memory csrf_token may be null after a page reload while the
+    // backend still has the csrf_token cookie. Ensure we have a token by fetching
+    // /auth/csrf once before proceeding (a GET, so no recursion into _fetch here).
+    const method = (options.method || "GET").toUpperCase();
+    if (
+      ["POST", "PUT", "DELETE", "PATCH"].includes(method) &&
+      !this._getCsrfToken() &&
+      !this._refreshingCsrf
+    ) {
+      this._refreshingCsrf = true;
+      try {
+        await this.refreshCsrf();
+      } finally {
+        this._refreshingCsrf = false;
+      }
+    }
+    const headers = {
+      ...this.getHeaders(),
+      ...((options.headers as Record<string, string>) || {}),
+    };
+    // _fetch internal call — NOT replaced, uses raw fetch
+    return fetch(url, {
+      ...options,
+      credentials: "include",
+      headers,
+    });
+  }
+
+  // PDF endpoints
+  async uploadPdf(file: File): Promise<PdfDocument> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await this._fetch(`${this.baseUrl}/pdfs/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async uploadPdfWithProgress(
+    file: File,
+    onProgress?: (progress: number) => void,
+  ): Promise<PdfDocument> {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${this.baseUrl}/pdfs/upload`);
+
+      // Send httpOnly cookie (JWT) with cross-origin requests
+      xhr.withCredentials = true;
+
+      if (this.token) {
+        xhr.setRequestHeader("Authorization", `Bearer ${this.token}`);
+      }
+
+      // Include CSRF token for state-changing requests
+      const csrfToken = this._getCsrfToken();
+      if (csrfToken) {
+        xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+      }
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          // Try to parse JSON error body like extractError does
+          let message = xhr.statusText;
+          try {
+            const body = JSON.parse(xhr.responseText);
+            if (typeof body.detail === "string") message = body.detail;
+            else if (Array.isArray(body.detail) && body.detail[0]?.msg)
+              message = body.detail[0].msg;
+          } catch {
+            // Non-JSON response — use statusText
+          }
+          reject(new Error(message));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error("Network error"));
+      xhr.send(formData);
+    });
+  }
+
+  async listPdfs(skip = 0, limit = 100): Promise<PdfListResponse> {
+    const res = await this._fetch(
+      `${this.baseUrl}/pdfs?skip=${skip}&limit=${limit}`,
+      {
+        headers: this.getHeaders(),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async getPdf(id: string): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async deletePdf(id: string): Promise<void> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}`, {
+      method: "DELETE",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+  }
+
+  async downloadPdf(id: string): Promise<Blob> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/download`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.blob();
+  }
+
+  // Merge / Split
+  async mergePdfs(
+    pdfIds: string[],
+    outputFilename?: string,
+  ): Promise<PdfDocument> {
+    const body: Record<string, unknown> = { pdf_ids: pdfIds };
+    if (outputFilename) body.output_filename = outputFilename;
+    const res = await this._fetch(`${this.baseUrl}/pdfs/merge`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async splitPdf(
+    id: string,
+    mode: "every" | "range",
+    ranges?: string[],
+    outputFilename?: string,
+  ) {
+    const body: Record<string, unknown> = { mode };
+    if (ranges) body.ranges = ranges;
+    if (outputFilename) body.output_filename = outputFilename;
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/split`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // Reorder / Remove pages
+  async reorderPages(
+    id: string,
+    pageOrder: number[],
+    outputFilename?: string,
+  ): Promise<PdfDocument> {
+    const body: Record<string, unknown> = { page_order: pageOrder };
+    if (outputFilename) body.output_filename = outputFilename;
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/reorder`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async removePages(
+    id: string,
+    pageNumbers: number[],
+    outputFilename?: string,
+  ): Promise<PdfDocument> {
+    const body: Record<string, unknown> = { page_numbers: pageNumbers };
+    if (outputFilename) body.output_filename = outputFilename;
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/remove-pages`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // Text
+  async replaceText(
+    id: string,
+    search: string,
+    replace: string,
+    occurrence?: number,
+    outputFilename?: string,
+  ): Promise<PdfDocument> {
+    const body: Record<string, unknown> = { search, replace };
+    if (occurrence !== undefined) body.occurrence = occurrence;
+    if (outputFilename) body.output_filename = outputFilename;
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/replace-text`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async extractText(
+    id: string,
+    page?: number,
+  ): Promise<{ text: string; pages: number }> {
+    const params = page ? `?page=${page}` : "";
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/text${params}`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // Metadata
+  async getMetadata(id: string): Promise<Metadata> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // Password-protected PDFs
+  async unlockPdf(id: string, password: string): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/unlock`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async protectPdf(id: string, password: string): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/protect`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async updateMetadata(
+    id: string,
+    metadata: Partial<Metadata> & {
+      new_filename?: string;
+      overwrite?: boolean;
+    },
+  ): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/metadata`, {
+      method: "PUT",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(metadata),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // Export / Import
+  async exportPdf(id: string, format: string): Promise<Blob> {
+    const res = await this._fetch(
+      `${this.baseUrl}/pdfs/${id}/export?fmt=${format}`,
+      {
+        method: "POST",
+        headers: this.getHeaders(),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.blob();
+  }
+
+  async importFile(file: File): Promise<PdfDocument> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await this._fetch(`${this.baseUrl}/pdfs/import`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: formData,
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // Auth
+  async register(
+    email: string,
+    password: string,
+    fullName: string,
+  ): Promise<{
+    access_token: string;
+    token_type: string;
+    csrf_token?: string;
+  }> {
+    const res = await this._fetch(`${this.baseUrl}/auth/register`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, full_name: fullName }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
+  }
+
+  async login(
+    email: string,
+    password: string,
+  ): Promise<{
+    access_token: string;
+    token_type: string;
+    csrf_token?: string;
+  }> {
+    // Usa fetch diretto (non _fetch) per evitare che il 401 auto-refresh
+    // interferisca con EMAIL_NOT_FOUND / WRONG_PASSWORD
+    const res = await fetch(`${this.baseUrl}/auth/login`, {
+      method: "POST",
+      credentials: "include",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      const code =
+        body?.detail?.code || body?.code || (await ApiClient.extractError(res));
+      throw new Error(code);
+    }
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
+  }
+
+  async googleLogin(idToken: string): Promise<{
+    access_token: string;
+    token_type: string;
+    csrf_token?: string;
+  }> {
+    const res = await this._fetch(`${this.baseUrl}/auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_token: idToken }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
+  }
+
+  async guestLogin(): Promise<{
+    access_token: string;
+    token_type: string;
+    csrf_token?: string;
+    user: UserResponse;
+  }> {
+    const res = await this._fetch(`${this.baseUrl}/auth/guest`, {
+      method: "POST",
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
+  }
+
+  async convertGuest(
+    email: string,
+    password: string,
+    fullName: string,
+  ): Promise<{
+    access_token: string;
+    token_type: string;
+    csrf_token?: string;
+  }> {
+    const res = await this._fetch(`${this.baseUrl}/auth/guest/convert`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, full_name: fullName }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const res = await this._fetch(`${this.baseUrl}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<UserResponse> {
+    const res = await this._fetch(`${this.baseUrl}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, new_password: newPassword }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async getMe(): Promise<UserResponse> {
+    const res = await this._fetch(`${this.baseUrl}/auth/me`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async refreshCsrf(): Promise<void> {
+    try {
+      const res = await this._fetch(`${this.baseUrl}/auth/csrf`, {
+        headers: this.getHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+      }
+    } catch {
+      // Non-critical — the next state-changing request will fail and
+      // the user can retry. A GET /auth/csrf on mount is enough for most cases.
+    }
+  }
+
+  async updateProfile(data: { full_name: string }): Promise<UserResponse> {
+    const res = await this._fetch(`${this.baseUrl}/auth/me`, {
+      method: "PUT",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async unlinkGoogle(password: string): Promise<UserResponse> {
+    const res = await this._fetch(`${this.baseUrl}/auth/unlink/google`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async logout(): Promise<void> {
+    // POST to logout endpoint clears the httpOnly cookie
+    await this._fetch(`${this.baseUrl}/auth/logout`, { method: "POST" });
+  }
+
+  // Undo / Redo
+  async undoPdf(id: string): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/undo`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: "{}",
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async redoPdf(id: string): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/redo`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: "{}",
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // Bug reports
+  async createBugReport(
+    title: string,
+    description: string,
+    pageUrl?: string,
+  ): Promise<BugReport> {
+    const body: Record<string, unknown> = { title, description };
+    if (pageUrl) body.page_url = pageUrl;
+    const res = await this._fetch(`${this.baseUrl}/bugs`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async listMyBugReports(): Promise<BugReport[]> {
+    const res = await this._fetch(`${this.baseUrl}/bugs/my`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async searchBugReports(query: string): Promise<BugReport[]> {
+    const res = await this._fetch(
+      `${this.baseUrl}/bugs/search?q=${encodeURIComponent(query)}`,
+      {
+        headers: this.getHeaders(),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async voteBugReport(bugId: string): Promise<BugReport> {
+    const res = await this._fetch(`${this.baseUrl}/bugs/${bugId}/vote`, {
+      method: "POST",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // License
+  async getLicenseFeatures(): Promise<
+    { id: string; tier: string; feature_key: string; enabled: boolean }[]
+  > {
+    const res = await this._fetch(`${this.baseUrl}/licenses/features`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // Admin
+  async listUsers(
+    skip = 0,
+    limit = 100,
+  ): Promise<{ items: AdminUser[]; total: number }> {
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users?skip=${skip}&limit=${limit}`,
+      {
+        headers: this.getHeaders(),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async updateUserLicense(
+    userId: string,
+    licenseTier: string,
+  ): Promise<AdminUser> {
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users/${userId}/license`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ license_tier: licenseTier }),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async updateUserAdmin(userId: string, isAdmin: boolean): Promise<AdminUser> {
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users/${userId}/admin`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ is_admin: isAdmin }),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async adminSendReset(userId: string): Promise<{ message: string }> {
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/users/${userId}/send-reset`,
+      {
+        method: "POST",
+        headers: this.getHeaders(),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async listBugReports(
+    skip = 0,
+    limit = 100,
+    status?: string,
+  ): Promise<{ items: BugReport[]; total: number }> {
+    const params = new URLSearchParams({
+      skip: String(skip),
+      limit: String(limit),
+    });
+    if (status) params.set("status", status);
+    const res = await this._fetch(`${this.baseUrl}/admin/bugs?${params}`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async updateBugReportStatus(
+    bugId: string,
+    status: string,
+  ): Promise<BugReport> {
+    const res = await this._fetch(
+      `${this.baseUrl}/admin/bugs/${bugId}/status`,
+      {
+        method: "PUT",
+        headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+}
+
+export const api = new ApiClient();
+
+// ─── Keep-warm: evita cold start del backend su Render ──────────────
+
+let _keepWarmTimer: ReturnType<typeof setInterval> | null = null;
+const KEEP_WARM_INTERVAL = 5 * 60 * 1000; // 5 minuti
+
+/**
+ * Avvia il ping periodico al backend cloud per evitare il cold start.
+ * Il ping va a /health che è leggero e non richiede autenticazione.
+ */
+export function startKeepWarm(): void {
+  if (_keepWarmTimer) return; // già avviato
+  const url = `${API_BASE}/health`;
+  const ping = () => {
+    fetch(url).catch(() => {
+      // Ignora errori di rete — il backend potrebbe essere in cold start
+    });
+  };
+  ping(); // ping immediato all'avvio
+  _keepWarmTimer = setInterval(ping, KEEP_WARM_INTERVAL);
+}
+
+/** Ferma il keep-warm (utile per test o cleanup) */
+export function stopKeepWarm(): void {
+  if (_keepWarmTimer) {
+    clearInterval(_keepWarmTimer);
+    _keepWarmTimer = null;
+  }
+}
