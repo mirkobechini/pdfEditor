@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-09
+> **Aggiornato:** 2026-09-11
 
 ---
 
@@ -27,6 +27,7 @@
 | #737  | Merge/split S3: `pdf_merge_split_service` usa `get_file_content()` (S3-aware)   |
 | #749  | K5: auth offline — profilo utente salvato in cache per uso offline              |
 | #757  | Google login CI: `verify_oauth2_token` chiamato anche con audience vuota        |
+| #761  | Refactor unify auth web/desktop: web usa il shared (fix K5 + cookie restore)    |
 
 ---
 

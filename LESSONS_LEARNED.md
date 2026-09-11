@@ -1,7 +1,21 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo svilupzo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-09
+> **Aggiornato:** 2026-09-11
+
+---
+
+## Re-export dal shared: il mock dei test deve colpire il path reale
+
+> **Lezione appresa (2026-09-11):**
+
+Nel refactor unify auth (#761), il web ora re-exporta `lib/api.ts`/`lib/auth.tsx` dal shared (`src/shared/`). I test web che mockavano `../api` (il vecchio path) **non colpivano più** il shared auth, che importa da `./api` (src/shared/api.ts). Risultato: i test fallivano con `null` invece dell'utente atteso.
+
+**Perché è subdolo:** il re-export nasconde il path reale. Il test mocka `lib/api.ts`, ma il shared auth usa `src/shared/api.ts`. Il mock non viene applicato.
+
+**Fix:** aggiornare i mock per colpire il path reale del shared (`../../../shared/api` dal test in `src/app/lib/__tests__/`).
+
+**Regola:** quando si introduce un re-export, verificare che i test mockino il path **reale** del modulo importato, non il path del re-export. Un mock che non colpisce il modulo giusto produce fallimenti confusi (`null` invece dell'utente).
 
 ---
 

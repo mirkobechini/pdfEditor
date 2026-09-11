@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-09-09
+> **Aggiornato:** 2026-09-11
 
 ---
 
@@ -11,8 +11,8 @@
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
 | **Backend** (FastAPI/Python)   | pytest      | **383** | **94%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **566** | **94.96%** | ✅    |
-| **Desktop** (Tauri)            | vitest      | **907** | **90.84%** | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **567** | **94.96%** | ✅    |
+| **Desktop** (Tauri)            | vitest      | **916** | **90.84%** | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **294** | **98.7%**  | ✅    |
 | **E2E** (Playwright)           | playwright  | **13**  | —          | ✅    |
 

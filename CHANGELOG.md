@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-11
+
+### 🔄 Refactor unify auth web/desktop (issue #761)
+
+- **Auth unificata**: il web ora usa la stessa logica auth del desktop tramite il shared (`shared/src/`). Prima c'erano due versioni divergenti di `auth.tsx` (web 178 righe senza `cloudApi`/cache, desktop 407 righe con `cloudApi`/cache). Ora il web re-exporta dal shared → una sola source of truth, meno rischio di bug da code drift.
+- **Fix K5 nel web**: il web ora salva il profilo utente in cache (localStorage) dopo login/register/google/guest e lo ripristina offline. Prima il web non aveva questo fix.
+- **Cookie restore nel web**: `restoreSession()` ora chiama `getMe()` anche senza token nel web → la sessione cookie-based viene ripristinata dopo reload.
+- **Errori API unificati**: `extractError` ora ritorna JSON raw `{code, detail}` su tutte le piattaforme, tradotti con `mapError()` + i18n. Prima il desktop mostrava `err.message` raw.
+- **Nuovo hook `useApiError` (desktop)**: 11 modali/pagine desktop ora traducono gli errori in modo centralizzato.
+- **Copy-shared automatizzato nel web**: aggiunto `copy-shared.js` + `prebuild` (come desktop).
+- **Test**: web 567, desktop 916, mobile 294 — tutti verdi. Build web + desktop OK.
+
 ## 2026-09-09
 
 ### 🐛 Fix Google login CI (issue #757)
