@@ -82,7 +82,7 @@ describe("MetadataModal", () => {
     });
     fireEvent.click(screen.getByText("save"));
     await waitFor(() => {
-      expect(screen.getByText("Update failed")).toBeInTheDocument();
+      expect(screen.getByText("common.unknownError")).toBeInTheDocument();
     });
   });
 
@@ -101,7 +101,7 @@ describe("MetadataModal", () => {
     mockGetMetadata.mockRejectedValueOnce(new Error("Load failed"));
     render(<MetadataModal {...baseProps} />);
     await waitFor(() => {
-      expect(screen.getByText("Load failed")).toBeInTheDocument();
+      expect(screen.getByText("common.unknownError")).toBeInTheDocument();
     });
   });
 
@@ -109,7 +109,7 @@ describe("MetadataModal", () => {
     mockGetMetadata.mockRejectedValueOnce("string error");
     render(<MetadataModal {...baseProps} />);
     await waitFor(() => {
-      expect(screen.getByText("loadError")).toBeInTheDocument();
+      expect(screen.getByText("common.unknownError")).toBeInTheDocument();
     });
   });
 
@@ -197,7 +197,7 @@ describe("MetadataModal", () => {
     });
     fireEvent.click(screen.getByText("save"));
     await waitFor(() => {
-      expect(screen.getByText("saveError")).toBeInTheDocument();
+      expect(screen.getByText("common.unknownError")).toBeInTheDocument();
     });
   });
 

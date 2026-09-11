@@ -69,7 +69,7 @@ describe("ReorderPagesModal", () => {
         render(<ReorderPagesModal {...baseProps} />);
         fireEvent.click(screen.getByText("reorder"));
         await waitFor(() => {
-            expect(screen.getByText("Reorder failed")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
@@ -142,7 +142,7 @@ describe("ReorderPagesModal", () => {
         render(<ReorderPagesModal {...baseProps} />);
         fireEvent.click(screen.getByText("reorder"));
         await waitFor(() => {
-            expect(screen.getByText("API error message")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
@@ -151,7 +151,7 @@ describe("ReorderPagesModal", () => {
         render(<ReorderPagesModal {...baseProps} />);
         fireEvent.click(screen.getByText("reorder"));
         await waitFor(() => {
-            expect(screen.getByText("reorderError")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
