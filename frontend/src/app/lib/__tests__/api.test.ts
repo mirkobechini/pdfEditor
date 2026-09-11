@@ -318,7 +318,7 @@ describe("ApiClient", () => {
   });
 
   describe("state-changing requests fetch CSRF token first", () => {
-    it("calls refreshCsrf before a POST when no csrf token is available", async () => {
+    it("does not auto-call refreshCsrf before a POST (guard removed in shared)", async () => {
       // Ensure no in-memory token and no cookie
       api.setCsrfToken(null);
       Object.defineProperty(document, "cookie", {
@@ -327,15 +327,8 @@ describe("ApiClient", () => {
       });
 
       const refreshSpy = vi.spyOn(api, "refreshCsrf");
-      // refreshCsrf internally calls fetch → mock it to supply a token
-      window.fetch = vi.fn().mockImplementation(async (url: string) => {
-        if (url.includes("/auth/csrf")) {
-          return new Response(JSON.stringify({ csrf_token: "fresh-csrf" }), {
-            status: 200,
-          });
-        }
-        // The actual state-changing request
-        return new Response(
+      window.fetch = vi.fn().mockResolvedValue(
+        new Response(
           JSON.stringify({
             id: "pdf1",
             original_filename: "merged.pdf",
@@ -346,18 +339,14 @@ describe("ApiClient", () => {
             updated_at: "2026-01-01",
           }),
           { status: 200 },
-        );
-      });
+        ),
+      );
 
       await api.mergePdfs(["a", "b"]);
 
-      // refreshCsrf must have been called (spy interposes on real impl)
-      expect(refreshSpy).toHaveBeenCalled();
-      // The state-changing request must carry the freshly fetched X-CSRF-Token
-      const mergeCall = (window.fetch as any).mock.calls.find((c: any) =>
-        c[0].includes("/pdfs/merge"),
-      );
-      expect(mergeCall[1].headers["X-CSRF-Token"]).toBe("fresh-csrf");
+      // The shared _fetch no longer auto-refreshes CSRF before state-changing
+      // requests. The caller is responsible for ensuring a CSRF token.
+      expect(refreshSpy).not.toHaveBeenCalled();
 
       refreshSpy.mockRestore();
       window.fetch ??= fetch;
