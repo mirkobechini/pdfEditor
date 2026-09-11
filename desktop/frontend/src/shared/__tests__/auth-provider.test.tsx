@@ -157,7 +157,8 @@ describe("AuthProvider", () => {
 
   it("register falls back to cloudApi.getMe when api.getMe fails", async () => {
     mockCloudRegister.mockResolvedValueOnce({ access_token: "jwt123" });
-    mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
+    mockGetMe.mockRejectedValueOnce(new Error("no session")); // mount (web, no token)
+    mockGetMe.mockRejectedValueOnce(new Error("sidecar error")); // register
     mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "cloud-user@test.com" });
 
     render(<AuthProvider><TestConsumer /></AuthProvider>);
@@ -196,7 +197,8 @@ describe("AuthProvider", () => {
 
   it("guestLogin redirects on error", async () => {
     mockGuestLogin.mockResolvedValueOnce({ access_token: "guest-jwt" });
-    mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
+    mockGetMe.mockRejectedValueOnce(new Error("no session")); // mount (web, no token)
+    mockGetMe.mockRejectedValueOnce(new Error("sidecar error")); // guestLogin
     const originalHref = window.location.href;
     // Prevent actual navigation
     Object.defineProperty(window, "location", {
@@ -233,6 +235,7 @@ describe("AuthProvider", () => {
   });
 
   it("googleLogin with JWT handles api.getMe failure", async () => {
+    mockGetMe.mockRejectedValueOnce(new Error("no session")); // mount (web, no token)
     mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
     mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google-cloud@test.com" });
     mockSyncUser.mockResolvedValueOnce({
@@ -277,6 +280,7 @@ describe("AuthProvider", () => {
   });
 
   it("googleLogin with JWT keeps cloud token when syncUser returns null", async () => {
+    mockGetMe.mockRejectedValueOnce(new Error("no session")); // mount (web, no token)
     mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
     mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google-cloud@test.com" });
     mockSyncUser.mockResolvedValueOnce(null);
@@ -308,6 +312,7 @@ describe("AuthProvider", () => {
 
   it("googleLogin with id_token handles api.getMe failure", async () => {
     mockCloudGoogleLogin.mockResolvedValueOnce({ access_token: "exchanged-jwt" });
+    mockGetMe.mockRejectedValueOnce(new Error("no session")); // mount (web, no token)
     mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
     mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google-cloud-id@test.com" });
 
@@ -324,7 +329,7 @@ describe("AuthProvider", () => {
     localStorage.clear();
     mockGetToken.mockReturnValue(null);
     mockCloudLogin.mockResolvedValueOnce({ access_token: "jwt123" });
-    mockGetMe.mockResolvedValueOnce({ id: "u1", email: "cache@test.com" });
+    mockGetMe.mockResolvedValue({ id: "u1", email: "cache@test.com" });
 
     render(<AuthProvider><TestConsumer /></AuthProvider>);
     await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));

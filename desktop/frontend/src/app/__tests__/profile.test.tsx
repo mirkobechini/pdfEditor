@@ -118,7 +118,7 @@ describe("ProfilePage", () => {
         fireEvent.change(input, { target: { value: "mypass" } });
         fireEvent.click(screen.getByText("confirm"));
         await waitFor(() => {
-            expect(screen.getByText("Failed to unlink")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 

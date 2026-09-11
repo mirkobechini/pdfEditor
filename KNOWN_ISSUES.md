@@ -1,32 +1,33 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-09
+> **Aggiornato:** 2026-09-11
 
 ---
 
 ## ✅ Risolte in v0.1.35 (Sep 2026)
 
-| Issue | Fix                                                                             |
-| ----- | ------------------------------------------------------------------------------- |
-| B3    | Google login desktop (JWT sync corretto)                                        |
-| B4    | Startup page fallback rimosso (no silent passthrough)                           |
-| B5    | Wizard finish va a `/login` invece di `/app`                                    |
-| T3    | Migration auto-detect colonne mancanti                                          |
-| B2    | Replace text su web/desktop/mobile (preserva formato)                           |
-| #712  | Keep-warm 14min invece di 5min (fix compute exhaustion)                         |
-| #714  | CI release-desktop parte subito (no timeout 15min)                              |
-| CVE   | Security fix @xmldom/xmldom DoS vulnerability                                   |
-| #718  | Mobile: auto-refresh 401 gestisce formato errore {code, detail}                 |
-| #725  | Desktop: 500 su /pdfs — `_add_missing_columns` popola NULL con default          |
-| #727  | Desktop: download sidecar 403 — `syncResult` per token locale dopo login Google |
-| #728  | Upload cloud 403 CSRF — esentato CSRF per richieste Bearer-authenticated        |
-| #732  | Rename PDF: `Sidebar.tsx` salva via `updateMetadata(id, { new_filename })`      |
-| #733  | Merge CSRF: `_fetch` garantisce `X-CSRF-Token` prima dei POST state-changing    |
-| #736  | Test E2E merge riabilitato + `e2e/**` nei paths CI + license enforcement off    |
-| #737  | Merge/split S3: `pdf_merge_split_service` usa `get_file_content()` (S3-aware)   |
-| #749  | K5: auth offline — profilo utente salvato in cache per uso offline              |
-| #757  | Google login CI: `verify_oauth2_token` chiamato anche con audience vuota        |
+| Issue | Fix                                                                                         |
+| ----- | ------------------------------------------------------------------------------------------- |
+| B3    | Google login desktop (JWT sync corretto)                                                    |
+| B4    | Startup page fallback rimosso (no silent passthrough)                                       |
+| B5    | Wizard finish va a `/login` invece di `/app`                                                |
+| T3    | Migration auto-detect colonne mancanti                                                      |
+| B2    | Replace text su web/desktop/mobile (preserva formato)                                       |
+| #712  | Keep-warm 14min invece di 5min (fix compute exhaustion)                                     |
+| #714  | CI release-desktop parte subito (no timeout 15min)                                          |
+| CVE   | Security fix @xmldom/xmldom DoS vulnerability                                               |
+| #718  | Mobile: auto-refresh 401 gestisce formato errore {code, detail}                             |
+| #725  | Desktop: 500 su /pdfs — `_add_missing_columns` popola NULL con default                      |
+| #727  | Desktop: download sidecar 403 — `syncResult` per token locale dopo login Google             |
+| #728  | Upload cloud 403 CSRF — esentato CSRF per richieste Bearer-authenticated                    |
+| #732  | Rename PDF: `Sidebar.tsx` salva via `updateMetadata(id, { new_filename })`                  |
+| #733  | Merge CSRF: `_fetch` garantisce `X-CSRF-Token` prima dei POST state-changing                |
+| #736  | Test E2E merge riabilitato + `e2e/**` nei paths CI + license enforcement off                |
+| #737  | Merge/split S3: `pdf_merge_split_service` usa `get_file_content()` (S3-aware)               |
+| #749  | K5: auth offline — profilo utente salvato in cache per uso offline                          |
+| #757  | Google login CI: `verify_oauth2_token` chiamato anche con audience vuota                    |
+| #761  | Refactor unify: web re-exporta tauri/error-map dal shared; `api.ts` web ripristinato originale cookie-based (il re-export shared rompeva login/register e2e) |
 
 ---
 

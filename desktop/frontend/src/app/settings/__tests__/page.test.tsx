@@ -438,7 +438,7 @@ describe("SettingsPage", () => {
         fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test" } });
         fireEvent.click(screen.getByText("Invia"));
         await waitFor(() => {
-            expect(screen.getByText("Errore di rete")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
@@ -547,7 +547,7 @@ describe("SettingsPage", () => {
         fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test" } });
         fireEvent.click(screen.getByText("Invia"));
         await waitFor(() => {
-            expect(screen.getByText("Errore invio")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
@@ -684,7 +684,7 @@ describe("SettingsPage", () => {
         fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test" } });
         fireEvent.click(screen.getByText("Invia"));
         await waitFor(() => {
-            expect(screen.getByText("Errore invio")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
@@ -857,7 +857,7 @@ describe("SettingsPage", () => {
         fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test" } });
         fireEvent.click(screen.getByText("Invia"));
         await waitFor(() => {
-            expect(screen.getByText("Errore invio")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
@@ -1104,7 +1104,7 @@ describe("SettingsPage", () => {
         fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test" } });
         fireEvent.click(screen.getByText("Invia"));
         await waitFor(() => {
-            expect(screen.getByText("Errore invio")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 

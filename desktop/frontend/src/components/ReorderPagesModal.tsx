@@ -19,6 +19,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
+import { useApiError } from "../hooks/useApiError";
 
 interface ReorderPagesModalProps {
     open: boolean;
@@ -81,6 +82,7 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
     const scrollRef = React.useRef<HTMLDivElement>(null);
     const [dragging, setDragging] = React.useState(false);
     const tr = useTranslations("reorderModal");
+    const { apiError } = useApiError();
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -165,7 +167,7 @@ export default function ReorderPagesModal({ open, pdfId, pdfName, totalPages, pd
             onSaved(updated);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : tr("reorderError"));
+            setError(apiError(err));
         } finally { setSaving(false); }
     }
 

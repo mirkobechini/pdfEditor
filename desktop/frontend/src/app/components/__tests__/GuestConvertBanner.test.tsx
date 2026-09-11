@@ -76,7 +76,7 @@ describe("GuestConvertBanner", () => {
         fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: "pass1234" } });
         fireEvent.click(screen.getByText("convertAccount"));
         await waitFor(() => {
-            expect(screen.getByText("Conversion failed")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 

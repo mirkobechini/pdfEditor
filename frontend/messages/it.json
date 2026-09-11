@@ -182,6 +182,8 @@
     "registering": "Creazione account in corso...",
     "loginFailed": "Accesso fallito",
     "invalidCredentials": "Email o password non validi",
+    "emailNotFound": "Nessun account trovato con questa email",
+    "wrongPassword": "Password errata. Riprova o reimposta la password",
     "emailQuotaExceeded": "Limite email mensile raggiunto. Riprova il mese prossimo.",
     "rateLimitExceeded": "Troppi tentativi. Riprova tra un minuto.",
     "registerFailed": "Registrazione fallita",
@@ -211,7 +213,12 @@
     "resetting": "Reimpostazione in corso...",
     "resetInvalidToken": "Token di reset non valido o mancante.",
     "requestNewReset": "Richiedi un nuovo link di reset",
-    "sending": "Invio in corso..."
+    "sending": "Invio in corso...",
+    "notAuthenticated": "Accedi per continuare",
+    "emailAlreadyRegistered": "Questa email è già registrata",
+    "passwordTooWeak": "Password troppo debole",
+    "resetTokenExpired": "Questo link di reset è scaduto",
+    "googleAuthFailed": "Autenticazione Google fallita"
   },
   "admin": {
     "title": "Pannello Admin",
@@ -247,7 +254,9 @@
     "appVersion": "Versione App",
     "osInfo": "Info OS",
     "sendReset": "Invia Email Reset",
-    "sendResetSent": "Email di reset inviata!"
+    "sendResetSent": "Email di reset inviata!",
+    "cannotDemoteSuperAdmin": "Non puoi retrocedere un super admin",
+    "stripeLicenseLocked": "Licenza bloccata via Stripe"
   },
   "deleteModal": {
     "title": "Elimina PDF",

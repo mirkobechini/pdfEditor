@@ -3,11 +3,15 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-shared.js",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-shared.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "pretest": "node scripts/copy-shared.js",
     "test": "vitest run",
+    "precoverage": "node scripts/copy-shared.js",
     "coverage": "vitest run --coverage"
   },
   "dependencies": {

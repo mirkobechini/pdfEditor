@@ -87,7 +87,7 @@ describe("SplitPagesModal", () => {
     if (page3Btn) fireEvent.click(page3Btn);
     fireEvent.click(screen.getByText("split"));
     await waitFor(() => {
-      expect(screen.getByText("Split failed")).toBeInTheDocument();
+      expect(screen.getByText("common.unknownError")).toBeInTheDocument();
     });
   });
 
@@ -166,7 +166,7 @@ describe("SplitPagesModal", () => {
     if (page3Btn) fireEvent.click(page3Btn);
     fireEvent.click(screen.getByText("split"));
     await waitFor(() => {
-      expect(screen.getByText("splitError")).toBeInTheDocument();
+      expect(screen.getByText("common.unknownError")).toBeInTheDocument();
     });
   });
 

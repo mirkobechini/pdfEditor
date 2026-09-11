@@ -1,6 +1,6 @@
 # Feature Comparison: Web vs Desktop vs Mobile
 
-> **Ultimo aggiornamento:** 2026-09-09
+> **Ultimo aggiornamento:** 2026-09-11
 > Questo file traccia le differenze funzionali tra le tre piattaforme di PdfEditor.
 
 ---

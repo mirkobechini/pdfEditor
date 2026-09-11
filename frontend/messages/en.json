@@ -180,6 +180,8 @@
     "registering": "Creating account...",
     "loginFailed": "Login failed",
     "invalidCredentials": "Invalid email or password",
+    "emailNotFound": "No account found with this email",
+    "wrongPassword": "Wrong password. Try again or reset it",
     "emailQuotaExceeded": "Monthly email limit reached. Please try again next month.",
     "rateLimitExceeded": "Too many attempts. Please try again in a minute.",
     "registerFailed": "Registration failed",
@@ -209,7 +211,12 @@
     "resetting": "Resetting...",
     "resetInvalidToken": "Invalid or missing reset token.",
     "requestNewReset": "Request a new reset link",
-    "sending": "Sending..."
+    "sending": "Sending...",
+    "notAuthenticated": "Please sign in to continue",
+    "emailAlreadyRegistered": "This email is already registered",
+    "passwordTooWeak": "Password is too weak",
+    "resetTokenExpired": "This reset link has expired",
+    "googleAuthFailed": "Google authentication failed"
   },
   "admin": {
     "title": "Admin Dashboard",
@@ -245,7 +252,9 @@
     "appVersion": "App Version",
     "osInfo": "OS Info",
     "sendReset": "Send Reset Email",
-    "sendResetSent": "Reset email sent!"
+    "sendResetSent": "Reset email sent!",
+    "cannotDemoteSuperAdmin": "Cannot demote a super admin",
+    "stripeLicenseLocked": "License is locked via Stripe"
   },
   "deleteModal": {
     "title": "Delete PDF",

@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import type { Metadata, PdfDocument } from "../shared/types";
+import { useApiError } from "../hooks/useApiError";
 
 interface MetadataModalProps {
     open: boolean;
@@ -15,6 +16,7 @@ interface MetadataModalProps {
 
 export default function MetadataModal({ open, pdfId, pdfName, onClose, onSaved }: MetadataModalProps) {
     const tm = useTranslations("metadataModal");
+    const { apiError } = useApiError();
     const [loading, setLoading] = React.useState(false);
     const [saving, setSaving] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
@@ -35,7 +37,7 @@ export default function MetadataModal({ open, pdfId, pdfName, onClose, onSaved }
                 setLoading(false);
             })
             .catch((err) => {
-                setError(err instanceof Error ? err.message : tm("loadError"));
+                setError(apiError(err));
                 setLoading(false);
             });
     }, [open, pdfId, pdfName]);
@@ -53,7 +55,7 @@ export default function MetadataModal({ open, pdfId, pdfName, onClose, onSaved }
             onSaved(updated);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : tm("saveError"));
+            setError(apiError(err));
         } finally {
             setSaving(false);
         }

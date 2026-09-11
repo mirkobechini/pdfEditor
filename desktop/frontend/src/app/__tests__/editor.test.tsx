@@ -276,7 +276,7 @@ describe("EditorPage", () => {
     const file = new File(["test"], "test.pdf", { type: "application/pdf" });
     fireEvent.change(fileInput, { target: { files: [file] } });
     await waitFor(() => {
-      expect(screen.getByText("Upload failed")).toBeInTheDocument();
+      expect(screen.getByText("common.unknownError")).toBeInTheDocument();
     });
   });
 
@@ -468,7 +468,7 @@ describe("EditorPage", () => {
     const file = new File(["test"], "test.pdf", { type: "application/pdf" });
     fireEvent.change(fileInput, { target: { files: [file] } });
     await waitFor(() => {
-      expect(screen.getByText("string error")).toBeInTheDocument();
+      expect(screen.getByText("common.unknownError")).toBeInTheDocument();
     });
   });
 

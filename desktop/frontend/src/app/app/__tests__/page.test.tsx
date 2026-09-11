@@ -398,7 +398,7 @@ describe("EditorPage", () => {
             fireEvent.change(fileInput, { target: { files: [file] } });
         }
         await waitFor(() => {
-            expect(screen.getByText("Upload failed")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
@@ -1230,7 +1230,7 @@ describe("EditorPage", () => {
             fireEvent.change(fileInput, { target: { files: [file] } });
         }
         await waitFor(() => {
-            expect(screen.getByText("Upload error")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
@@ -1243,7 +1243,7 @@ describe("EditorPage", () => {
             fireEvent.change(fileInput, { target: { files: [file] } });
         }
         await waitFor(() => {
-            expect(screen.getByText("string error")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
@@ -1771,7 +1771,7 @@ describe("EditorPage", () => {
             fireEvent.change(fileInput, { target: { files: [file] } });
         }
         await waitFor(() => {
-            expect(screen.getByText("Upload error")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
@@ -1784,7 +1784,7 @@ describe("EditorPage", () => {
             fireEvent.change(fileInput, { target: { files: [file] } });
         }
         await waitFor(() => {
-            expect(screen.getByText("string error")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 

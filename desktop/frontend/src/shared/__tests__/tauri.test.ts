@@ -12,12 +12,24 @@ describe("tauri utilities", () => {
     expect(isTauri()).toBe(false);
   });
 
-  it("getApiBaseUrl returns localhost:7723", () => {
+  it("getApiBaseUrl returns localhost:7723 in Tauri", () => {
+    (window as any).__TAURI_INTERNALS__ = { invoke: vi.fn() };
     expect(getApiBaseUrl()).toBe("http://127.0.0.1:7723");
+    delete (window as any).__TAURI_INTERNALS__;
   });
 
-  it("getCloudApiBaseUrl returns Render URL", () => {
+  it("getApiBaseUrl returns web fallback when not in Tauri", () => {
+    expect(getApiBaseUrl()).toBe("http://localhost:8000");
+  });
+
+  it("getCloudApiBaseUrl returns Render URL in Tauri", () => {
+    (window as any).__TAURI_INTERNALS__ = { invoke: vi.fn() };
     expect(getCloudApiBaseUrl()).toBe("https://pdfeditor-api.mirkobechini.com");
+    delete (window as any).__TAURI_INTERNALS__;
+  });
+
+  it("getCloudApiBaseUrl returns web fallback when not in Tauri", () => {
+    expect(getCloudApiBaseUrl()).toBe("http://localhost:8000");
   });
 
   it("tauriInvoke returns null when not in Tauri", async () => {

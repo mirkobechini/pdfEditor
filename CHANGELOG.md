@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-11
+
+### 🔄 Refactor unify auth web/desktop (issue #761)
+
+- **Shared come source of truth per api/tauri/error-map**: il web ora re-exporta `lib/api.ts`, `lib/tauri.ts`, `lib/error-map.ts` dal shared (`shared/src/`). Prima c'erano due copie divergenti. `extractError` unificato a JSON raw + `mapError()` su web e desktop.
+- **Copy-shared automatizzato nel web**: aggiunto `copy-shared.js` + `prebuild` (come desktop).
+- **Nota**: il flusso auth web resta cookie-based con `api` (non usa il shared `auth.tsx`, che è desktop-first con sidecar+cloud). Il shared `auth.tsx` è usato solo dal desktop.
+- **Test**: web 567, desktop 917, mobile 294 — tutti verdi. Build web + desktop OK.
+
 ## 2026-09-09
 
 ### 🐛 Fix Google login CI (issue #757)
