@@ -4,7 +4,8 @@
 
 ### 🔄 Refactor unify auth web/desktop (issue #761)
 
-- **Shared come source of truth per api/tauri/error-map**: il web ora re-exporta `lib/api.ts`, `lib/tauri.ts`, `lib/error-map.ts` dal shared (`shared/src/`). Prima c'erano due copie divergenti. `extractError` unificato a JSON raw + `mapError()` su web e desktop.
+- **Shared come source of truth per tauri/error-map**: il web re-exporta `lib/tauri.ts`, `lib/error-map.ts` e i tipi dal shared (`shared/src/`). `extractError` unificato a JSON raw + `mapError()` su web e desktop.
+- **`api.ts` web ripristinato originale cookie-based**: il re-export di `api.ts` dal shared rompeva login/register e2e (il shared ha auto-refresh 401 e CSRF diverso). Il web usa la copia originale `lib/api.ts` (749 righe, cookie-based con CSRF pre-fetch guard).
 - **Copy-shared automatizzato nel web**: aggiunto `copy-shared.js` + `prebuild` (come desktop).
 - **Nota**: il flusso auth web resta cookie-based con `api` (non usa il shared `auth.tsx`, che è desktop-first con sidecar+cloud). Il shared `auth.tsx` è usato solo dal desktop.
 - **Test**: web 567, desktop 917, mobile 294 — tutti verdi. Build web + desktop OK.
