@@ -1,6 +1,6 @@
 # Feature Comparison: Web vs Desktop vs Mobile
 
-> **Ultimo aggiornamento:** 2026-09-11
+> **Ultimo aggiornamento:** 2026-09-12
 > Questo file traccia le differenze funzionali tra le tre piattaforme di PdfEditor.
 
 ---
@@ -67,7 +67,6 @@
 | Compressione PDF                | ❌  | ❌      | ❌     | Solo in roadmap                                                                                                                                      |
 | Cloud sync                      | ✅  | ✅      | ✅     | Web: funzionante via API cloud. Desktop: bidirezionale con useCloudSync + mappa persistente localId→cloudId. Mobile: bidirezionale con useCloudSync. |
 | Rework UI Penpot                | ❌  | ❌      | ❌     | Design da fare                                                                                                                                       |
-| Rework UI Penpot                | ❌  | ❌      | ❌     | Design da fare                                                                                                                                       |
 | **Cross-platform**              |     |         |        |                                                                                                                                                      |
 | Keep-warm backend               | ✅  | ✅      | ❌     | GitHub Actions 24/7 + frontend keep-warm quando l'app è aperta                                                                                       |
 | Icona origine piattaforma       | ✅  | ✅      | ✅     | 🌐 web, 💻 desktop, 📱 mobile — nessuna icona se dalla piattaforma corrente                                                                          |
@@ -90,7 +89,7 @@
 - **Auth:** Email/password, guest, Google OAuth (redirect flow via browser di sistema), JWT refresh automatico ✅
 - **Operazioni:** Sidecar locale (PyMuPDF) + cloud per auth
 - **Undo/Redo:** Supportato (history sul sidecar)
-- **Rispetto a web:** Stessa UI, Google OAuth non attivo
+- **Rispetto a web:** Stessa UI, Google OAuth attivo (redirect flow via browser di sistema)
 
 ### Mobile (`mobile/`)
 
@@ -101,7 +100,7 @@
 - **Undo/Redo:** Non supportato (pdf-lib non ha history)
 - **Download PDF:** ✅ tramite SAF (Storage Access Framework)
 - **Solo mobile:** Scanner, Share, Badge, Multi-select, Splash, Pull-to-refresh, Search, Swipe, Snackbar, Bottom tabs, Onboarding wizard, Sync badges
-- **Manca rispetto a web/desktop:** Replace text, Extract text, Import/Export, Undo/Redo
+- **Manca rispetto a web/desktop:** Extract text, Import/Export, Undo/Redo
 
 ---
 
@@ -110,5 +109,4 @@
 | Feature                  | Priorità | Note                                     |
 | ------------------------ | -------- | ---------------------------------------- |
 | Compressione PDF         | Media    | PyMuPDF (web/desktop) + pdf-lib (mobile) |
-| Cloud sync bidirezionale | Media    | Hook useSyncQueue già pronto su mobile   |
 | Rework UI (Penpot)       | Alta     | Design da completare                     |
