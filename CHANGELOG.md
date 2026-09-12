@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-09-12
+
+### 🐛 Fix CompressModal useApiError (issue #778)
+
+- **Fix build desktop**: la Desktop CI falliva con errore TypeScript in `CompressModal.tsx` (`error TS2349: This expression is not callable`). `useApiError()` restituisce un oggetto `{ apiError }`, non una funzione — corretto con destructuring `const { apiError } = useApiError()`. Aggiornato il mock nel test. 923 test desktop verdi, Desktop CI verde.
+
 ## 2026-09-11
 
 ### �️ Compressione PDF (issue #777)
