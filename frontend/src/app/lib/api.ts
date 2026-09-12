@@ -577,7 +577,7 @@ export class ApiClient {
     description: string,
     pageUrl?: string,
   ): Promise<BugReport> {
-    const body: Record<string, unknown> = { title, description };
+    const body: Record<string, unknown> = { title, description, platform: "web" };
     if (pageUrl) body.page_url = pageUrl;
     const res = await this._fetch(`${this.baseUrl}/bugs`, {
       method: "POST",

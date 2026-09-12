@@ -518,7 +518,7 @@ export default function SettingsPage() {
                                         if (!bugTitle.trim() || !bugDesc.trim()) { setBugError(ts("bugValidationError")); return; }
                                         setBugSending(true); setBugError("");
                                         try {
-                                            await api.createBugReport(bugTitle.trim(), bugDesc.trim(), "desktop-settings");
+                                            await api.createBugReport(bugTitle.trim(), bugDesc.trim());
                                             setBugDone(true);
                                             setBugTitle(""); setBugDesc("");
                                         } catch (err) {

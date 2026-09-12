@@ -424,7 +424,7 @@ describe("SettingsPage", () => {
         fireEvent.change(screen.getByPlaceholderText("Descrizione"), { target: { value: "Test descrizione" } });
         fireEvent.click(screen.getByText("Invia"));
         await waitFor(() => {
-            expect(mockCreateBugReport).toHaveBeenCalledWith("Test bug", "Test descrizione", "desktop-settings");
+            expect(mockCreateBugReport).toHaveBeenCalledWith("Test bug", "Test descrizione");
         });
         expect(screen.getByText("Grazie!")).toBeInTheDocument();
     });
