@@ -17,7 +17,8 @@
     "unlock": "Sblocca",
     "metadata": "Info",
     "replaceText": "Trova e Sostituisci",
-    "protect": "Proteggi"
+    "protect": "Proteggi",
+    "compress": "Comprimi"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -59,6 +60,19 @@
     "failed": "Divisione fallita",
     "outputName": "Nome file output",
     "outputNameHint": "Lascia vuoto per nome automatico"
+  },
+  "compressDialog": {
+    "title": "Comprimi PDF",
+    "qualityLabel": "Qualità",
+    "qualityLow": "Bassa (file più piccolo)",
+    "qualityMedium": "Media (bilanciata)",
+    "qualityHigh": "Alta (qualità migliore)",
+    "outputNameLabel": "Nome file output",
+    "overwriteLabel": "Sovrascrivi il PDF originale",
+    "cancel": "Annulla",
+    "confirm": "Comprimi",
+    "compressing": "Compressione in corso...",
+    "failed": "Compressione fallita"
   },
   "reorderDialog": {
     "title": "Riordina Pagine",

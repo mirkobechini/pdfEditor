@@ -17,7 +17,8 @@
     "unlock": "Unlock",
     "metadata": "Info",
     "replaceText": "Find & Replace",
-    "protect": "Protect"
+    "protect": "Protect",
+    "compress": "Compress"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -59,6 +60,19 @@
     "failed": "Split failed",
     "outputName": "Output filename",
     "outputNameHint": "Leave empty for auto-generated name"
+  },
+  "compressDialog": {
+    "title": "Compress PDF",
+    "qualityLabel": "Quality",
+    "qualityLow": "Low (smaller file)",
+    "qualityMedium": "Medium (balanced)",
+    "qualityHigh": "High (best quality)",
+    "outputNameLabel": "Output filename",
+    "overwriteLabel": "Overwrite the original PDF",
+    "cancel": "Cancel",
+    "confirm": "Compress",
+    "compressing": "Compressing...",
+    "failed": "Compression failed"
   },
   "reorderDialog": {
     "title": "Reorder Pages",

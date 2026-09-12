@@ -12,6 +12,7 @@ import RemovePagesModal from "../../components/RemovePagesModal";
 import ReorderPagesModal from "../../components/ReorderPagesModal";
 import SplitPagesModal from "../../components/SplitPagesModal";
 import MergeModal from "../../components/MergeModal";
+import CompressModal from "../../components/CompressModal";
 import LockUnlockModal from "../../components/LockUnlockModal";
 import ReplaceTextModal from "../../components/ReplaceTextModal";
 import GuestConvertBanner from "../components/GuestConvertBanner";
@@ -55,6 +56,7 @@ export default function EditorPage() {
     const [reorderOpen, setReorderOpen] = React.useState(false);
     const [splitOpen, setSplitOpen] = React.useState(false);
     const [mergeOpen, setMergeOpen] = React.useState(false);
+    const [compressOpen, setCompressOpen] = React.useState(false);
     const [lockOpen, setLockOpen] = React.useState(false);
     const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
@@ -408,6 +410,13 @@ export default function EditorPage() {
                                 {te("split")}
                             </button>
                             <button
+                                onClick={() => setCompressOpen(true)}
+                                disabled={!selectedDoc}
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                {te("compress")}
+                            </button>
+                            <button
                                 onClick={() => setReorderOpen(true)}
                                 disabled={!selectedDoc}
                                 className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
@@ -618,6 +627,18 @@ export default function EditorPage() {
                 onSaved={(newDocs) => {
                     setDocs((prev) => [...newDocs, ...prev]);
                     setSelectedDoc(newDocs[0]);
+                    setPdfRefreshKey((k) => k + 1);
+                }}
+            />
+
+            <CompressModal
+                open={compressOpen}
+                pdfId={selectedDoc?.id ?? ""}
+                pdfName={selectedDoc?.original_filename ?? ""}
+                onClose={() => setCompressOpen(false)}
+                onSaved={(newDoc) => {
+                    setDocs((prev) => [newDoc, ...prev]);
+                    setSelectedDoc(newDoc);
                     setPdfRefreshKey((k) => k + 1);
                 }}
             />
