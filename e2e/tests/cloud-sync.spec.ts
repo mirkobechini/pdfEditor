@@ -46,4 +46,26 @@ test.describe("Cloud sync", () => {
     expect(body).toHaveProperty("pushed");
     expect(body).toHaveProperty("synced_at");
   });
+
+  test("POST /auth/refresh issues a new token", async ({
+    request,
+    playwright,
+  }) => {
+    const email = uniqueEmail("refresh");
+    const token = await registerUser(request, email);
+
+    // Fresh context WITHOUT cookies — the refresh endpoint must accept the
+    // Bearer token from the Authorization header (no cookie required).
+    const noCookieCtx = await playwright.request.newContext();
+    const res = await noCookieCtx.post(`${API_BASE}/auth/refresh`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await res.json();
+    await noCookieCtx.dispose();
+
+    expect(res.status()).toBe(200);
+    expect(body).toHaveProperty("access_token");
+    expect(typeof body.access_token).toBe("string");
+    expect(body.access_token.length).toBeGreaterThan(0);
+  });
 });
