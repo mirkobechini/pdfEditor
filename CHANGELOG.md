@@ -2,7 +2,16 @@
 
 ## 2026-09-11
 
-### 🔄 Refactor unify auth web/desktop (issue #761)
+### �️ Compressione PDF (issue #777)
+
+- **Compressione PDF su tutte e 3 le piattaforme**: nuova operazione "Comprimi" che riduce la dimensione dei PDF scegliendo la qualità (bassa/media/alta). Il backend usa PyMuPDF con `garbage`/`deflate`/`deflate_images`/`deflate_fonts`/`compression_effort` (parametri `linear` e `image_quality` non validi in questa versione di PyMuPDF).
+- **Backend**: nuovo endpoint `POST /pdfs/{id}/compress` con schema `CompressRequest` (quality, output_filename, overwrite). Metodo `compress()` in `pdf_merge_split_service.py`. 6 test nuovi.
+- **Web**: nuovo `CompressDialog` (qualità, nome output, overwrite) integrato in `page.tsx` con pulsante "Comprimi" nella toolbar. 6 test nuovi.
+- **Desktop**: nuovo `CompressModal` integrato in `page.tsx` con pulsante "Comprimi". 6 test nuovi.
+- **Mobile**: pulsante "Comprimi" in `ToolsScreen` con dialog qualità + nome output. `compressPdf` in `pdfService` usa il cloud backend (upload → compress → download → salva locale) perché pdf-lib non ha compressione nativa. 5 test nuovi.
+- **Test**: backend 390, web 573, desktop 923, mobile 299 — tutti verdi.
+
+### �🔄 Refactor unify auth web/desktop (issue #761)
 
 - **Shared come source of truth per tauri/error-map**: il web re-exporta `lib/tauri.ts`, `lib/error-map.ts` e i tipi dal shared (`shared/src/`). `extractError` unificato a JSON raw + `mapError()` su web e desktop.
 - **`api.ts` web ripristinato originale cookie-based**: il re-export di `api.ts` dal shared rompeva login/register e2e (il shared ha auto-refresh 401 e CSRF diverso). Il web usa la copia originale `lib/api.ts` (749 righe, cookie-based con CSRF pre-fetch guard).
