@@ -7,26 +7,26 @@
 
 ## ✅ Risolte in v0.1.35 (Sep 2026)
 
-| Issue | Fix                                                                                         |
-| ----- | ------------------------------------------------------------------------------------------- |
-| B3    | Google login desktop (JWT sync corretto)                                                    |
-| B4    | Startup page fallback rimosso (no silent passthrough)                                       |
-| B5    | Wizard finish va a `/login` invece di `/app`                                                |
-| T3    | Migration auto-detect colonne mancanti                                                      |
-| B2    | Replace text su web/desktop/mobile (preserva formato)                                       |
-| #712  | Keep-warm 14min invece di 5min (fix compute exhaustion)                                     |
-| #714  | CI release-desktop parte subito (no timeout 15min)                                          |
-| CVE   | Security fix @xmldom/xmldom DoS vulnerability                                               |
-| #718  | Mobile: auto-refresh 401 gestisce formato errore {code, detail}                             |
-| #725  | Desktop: 500 su /pdfs — `_add_missing_columns` popola NULL con default                      |
-| #727  | Desktop: download sidecar 403 — `syncResult` per token locale dopo login Google             |
-| #728  | Upload cloud 403 CSRF — esentato CSRF per richieste Bearer-authenticated                    |
-| #732  | Rename PDF: `Sidebar.tsx` salva via `updateMetadata(id, { new_filename })`                  |
-| #733  | Merge CSRF: `_fetch` garantisce `X-CSRF-Token` prima dei POST state-changing                |
-| #736  | Test E2E merge riabilitato + `e2e/**` nei paths CI + license enforcement off                |
-| #737  | Merge/split S3: `pdf_merge_split_service` usa `get_file_content()` (S3-aware)               |
-| #749  | K5: auth offline — profilo utente salvato in cache per uso offline                          |
-| #757  | Google login CI: `verify_oauth2_token` chiamato anche con audience vuota                    |
+| Issue | Fix                                                                                                                                                          |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| B3    | Google login desktop (JWT sync corretto)                                                                                                                     |
+| B4    | Startup page fallback rimosso (no silent passthrough)                                                                                                        |
+| B5    | Wizard finish va a `/login` invece di `/app`                                                                                                                 |
+| T3    | Migration auto-detect colonne mancanti                                                                                                                       |
+| B2    | Replace text su web/desktop/mobile (preserva formato)                                                                                                        |
+| #712  | Keep-warm 14min invece di 5min (fix compute exhaustion)                                                                                                      |
+| #714  | CI release-desktop parte subito (no timeout 15min)                                                                                                           |
+| CVE   | Security fix @xmldom/xmldom DoS vulnerability                                                                                                                |
+| #718  | Mobile: auto-refresh 401 gestisce formato errore {code, detail}                                                                                              |
+| #725  | Desktop: 500 su /pdfs — `_add_missing_columns` popola NULL con default                                                                                       |
+| #727  | Desktop: download sidecar 403 — `syncResult` per token locale dopo login Google                                                                              |
+| #728  | Upload cloud 403 CSRF — esentato CSRF per richieste Bearer-authenticated                                                                                     |
+| #732  | Rename PDF: `Sidebar.tsx` salva via `updateMetadata(id, { new_filename })`                                                                                   |
+| #733  | Merge CSRF: `_fetch` garantisce `X-CSRF-Token` prima dei POST state-changing                                                                                 |
+| #736  | Test E2E merge riabilitato + `e2e/**` nei paths CI + license enforcement off                                                                                 |
+| #737  | Merge/split S3: `pdf_merge_split_service` usa `get_file_content()` (S3-aware)                                                                                |
+| #749  | K5: auth offline — profilo utente salvato in cache per uso offline                                                                                           |
+| #757  | Google login CI: `verify_oauth2_token` chiamato anche con audience vuota                                                                                     |
 | #761  | Refactor unify: web re-exporta tauri/error-map dal shared; `api.ts` web ripristinato originale cookie-based (il re-export shared rompeva login/register e2e) |
 
 ---
@@ -57,6 +57,8 @@ Tutti i bug minori precedenti sono stati risolti.
 **Descrizione:** 375 test backend (con `TestClient` same-origin) + 907 test desktop (vitest) + 279 test mobile. I test unitari non coprono i flussi cross-origin reali (cookie, CSRF, CORS).  
 **Risoluzione prevista:** Playwright (T7).  
 **Stato:** ✅ **Parziale (2026-09-12)** — Suite E2E Playwright in `e2e/` con **15 test verdi** (auth, CSRF/CORS, upload PDF, download, delete, merge, cloud sync, token refresh). Job `e2e` aggiunto a `ci-web.yml` con `e2e/**` nei paths. Il backend E2E parte con `DISABLE_LICENSE_ENFORCEMENT=true`. I flussi PDF avanzati (split/reorder/protect) restano fragili in E2E (pdf.js) e coperti da pytest. Vedi `.specs/active/roadmap-test-e2e.md`.
+
+**Nota (2026-09-12):** Il testing E2E del binario desktop Tauri **non è fattibile con Playwright** — Tauri usa WebDriver (Selenium/WebdriverIO) + `tauri-driver`. Se in futuro si vuole testare il binario desktop reale, usare **WebdriverIO + tauri-driver** (richiede build Tauri + sidecar PyInstaller, costoso in CI). I flussi desktop-specifici sono già coperti dai test unitari vitest (917 test).
 
 ### T3 — `@swc/helpers` lock file desync
 
