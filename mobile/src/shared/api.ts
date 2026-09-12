@@ -361,6 +361,23 @@ export class ApiClient {
     return res.json();
   }
 
+  async compressPdf(
+    id: string,
+    quality: "low" | "medium" | "high" = "medium",
+    outputFilename?: string,
+    overwrite = false,
+  ): Promise<PdfDocument> {
+    const body: Record<string, unknown> = { quality, overwrite };
+    if (outputFilename) body.output_filename = outputFilename;
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/compress`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
   async reorderPages(
     id: string,
     pageOrder: number[],
