@@ -130,19 +130,20 @@ Tutti i bug minori precedenti sono stati risolti.
 | **49** | `image-size` (mobile)            | 🔴 high     | <= 2.0.2             | ⛔ **Non fixabile**      | Stesso di #50.                                                                                                           |
 | **48** | `uuid` (mobile)                  | 🟡 medium   | < 7.0.3              | ⛔ **Non fixabile**      | Sub-dipendenza di xcode → expo-config-plugins. Saltare a 11.1.1 rompe breaking changes.                                  |
 | **32** | `glib::VariantStrIter` (Rust)    | 🟡 medium   | < 0.20.0             | ⏳ **Sconsigliato**      | Dipendenza indiretta di Tauri. Forzare glib 0.20.0 rischia di rompere cargo tauri build. CVE non esposto a input utente. |
-| —      | `postcss` (path traversal)       | 🔴 high     | 8.4.31 (via Next.js) | ⛔ **Non fixabile**      | Sub-dipendenza interna di `next@16.3.0`. In attesa che Next.js aggiorni il suo sub-dep.                                  |
-| —      | `sharp` / libvips                | 🔴 high     | < 0.35.0             | ✅ **Già a 0.35.3**      | Next.js 16.3.0 include sharp 0.35.3. Alert ancora aperto? Dismiss automatico.                                            |
+| —      | `postcss` (path traversal)       | 🔴 high     | 8.4.31 (via Next.js) | ⛔ **Non fixabile**      | Sub-dipendenza interna di `next@16.3.5`. In attesa che Next.js aggiorni il suo sub-dep.                                  |
+| —      | `sharp` / libvips                | 🔴 high     | < 0.35.0             | ✅ **Già a 0.35.4**      | Next.js 16.3.5 include sharp 0.35.4 (PR #781).                                                                          |
 | —      | `brace-expansion`                | 🔴 high     | 1.1.16 / 5.0.8       | ✅ **Falso positivo**    | DevDependency di eslint, non raggiungibile in produzione.                                                                |
 | —      | `js-yaml`                        | 🔴 high     | 4.0.0 / 4.3.1        | ✅ **Falso positivo**    | DevDependency di eslint, non raggiungibile in produzione.                                                                |
 | —      | `httpx` + `starlette.testclient` | —           | —                    | ⛔ **Non fixabile**      | `StarletteDeprecationWarning` — `httpx2` non esiste ancora.                                                              |
-| —      | `next` (web)                     | 🔴 critical | 16.3.0               | ⛔ **Non fixabile**      | RCE (GHSA-p293-qw3h-jr36, GHSA-2xp9-vwfh-vxw4). Fix in 16.3.4 fuori range dichiarato. In attesa bump.                    |
-| —      | `sharp` (web)                    | 🔴 high     | < 0.35.4             | ⛔ **Non fixabile**      | libheif (GHSA-rgj7-g3m4-5g8c). Sub-dep di Next.js.                                                                       |
+| —      | `next` (web)                     | 🔴 critical | 16.3.0               | ✅ **Fixato (16.3.5)** | RCE (GHSA-p293-qw3h-jr36, GHSA-2xp9-vwfh-vxw4). Bump a 16.3.5 (PR #781).                                                       |
+| —      | `sharp` (web)                    | 🔴 high     | < 0.35.4             | ✅ **Fixato (0.35.4)** | libheif (GHSA-rgj7-g3m4-5g8c). Sub-dep di Next.js, risolto con bump next 16.3.5 (PR #781).                                      |
 | —      | `pillow` (backend)               | 🔴 high     | 12.2.0               | ⛔ **Non fixabile**      | 20 CVE (PYSEC-2026-3453/54/93/94/95/96). Fix in 12.3.0. In attesa bump.                                                  |
 | —      | `pypdf` (backend)                | 🔴 high     | 6.14.2               | ⛔ **Non fixabile**      | 6 CVE (CVE-2026-84309/10/11, -82398). Fix in 6.16.1. In attesa bump.                                                     |
 | —      | `starlette` (backend)            | 🔴 high     | 0.38.6               | ⛔ **Non fixabile**      | 9 CVE (PYSEC-2026-161/248/249/1941/1943). Fix in 1.x. Richiede FastAPI compatibile.                                      |
 | —      | `pyasn1` (backend)               | 🟡 medium   | 0.6.3                | ⛔ **Non fixabile**      | 4 CVE (PYSEC-2026-3455/56/57). Fix in 0.6.4. In attesa bump.                                                             |
 | —      | `cryptography`/`ecdsa`/`httpx`   | 🟡 medium   | —                    | ⛔ **Non fixabile**      | 3 CVE backend. In attesa bump upstream.                                                                                  |
 | —      | `decode-uri-component` (mobile)  | 🟡 medium   | <= 0.4.2             | ⛔ **Non fixabile**      | DoS (GHSA-vcc3-ghjq-m6fr). Nessun fix disponibile.                                                                       |
+| —      | `vitest` (web/desktop)           | 🟡 moderate | 4.x                  | ⛔ **Accettato**        | Path traversal in @vitest/mocker (GHSA-82fw-gwwq-j7x9). DevDependency non esposta in produzione. Fix richiede upgrade major 4→5 (breaking changes: clearMocks default, vi.mock top-level, async assertion, coverage include/exclude). Costo sproporzionato per vuln moderate in dev tool. |
 
 ### Vulnerabilità risolte (non più segnalate da Dependabot)
 
@@ -151,6 +152,9 @@ Tutti i bug minori precedenti sono stati risolti.
 | `js-yaml`          | PR #392 (bump 4.2.0 → 4.3.0)                         |
 | `next`             | PR #393 (bump 16.2.9 → 16.2.11)                      |
 | `next` (CVE-2026)  | **bump 16.2.11 → 16.3.0** (3 high, 5 medium risolte) |
+| `next` (RCE)       | **PR #781 (bump 16.3.0 → 16.3.5)** — critical RCE risolto |
+| `js-yaml` (CPU DoS)| **PR #781 (bump → 4.3.2)** — high risolto            |
+| `sharp`/libvips    | **PR #781 (via next 16.3.5 → 0.35.4)** — high risolto |
 | `python-multipart` | PR #395 (bump 0.0.31 → 0.0.32)                       |
 | `PyJWT`            | Già a 2.13.0 (fixato)                                |
 | `python-jose`      | Rimosso (non in uso)                                 |
@@ -165,10 +169,11 @@ Tutti i bug minori precedenti sono stati risolti.
 | **brace-expansion** | sub-dep eslint  | 3 high (CVE-2026-13149, -14257, -69152)                           | DevDependency. Non in produzione.                                                                                                |
 | **js-yaml**         | sub-dep eslint  | 1 high (CVE-2026-59869)                                           | DevDependency. Non in produzione.                                                                                                |
 | **glib (Rust)**     | sub-dep Tauri   | 0 (1 medium)                                                      | Sub-dipendenza indiretta di Tauri. Forzare `glib 0.20.0` rischia di rompere `cargo tauri build`. CVE non esposto a input utente. |
+| **vitest**         | dev-dep web/desktop | 3 moderate (GHSA-82fw-gwwq-j7x9)                              | DevDependency non esposta in produzione. Fix richiede upgrade major 4→5 con breaking changes (clearMocks default, vi.mock top-level, async assertion, coverage include/exclude). Costo sproporzionato per vuln moderate in dev tool. |
 
-> **Totale:** 30 segnalazioni Dependabot. **12 risolte** (incluso bump Next.js 16.3.0), **18 accettate** come non fixabili o già all'ultima versione.
+> **Totale:** 30 segnalazioni Dependabot. **15 risolte** (incluso bump Next.js 16.3.5 + js-yaml 4.3.2 via PR #781), **18 accettate** come non fixabili o già all'ultima versione.
 >
-> **Audit 2026-09-09 (npm audit + pip-audit + cargo audit):** Web 6 vuln (1 critical Next.js RCE, 2 high, 3 moderate). Desktop frontend 2 vuln (1 critical, 1 high). Mobile 29 vuln (10 high, 19 moderate, 0 critical — quasi tutte in dev-deps jest/expo). Backend 49 vuln in 8 pacchetti (pillow 20, starlette 9, pypdf 6, pip 5, pyasn1 4, httpx 3, ecdsa, cryptography). Rust 8 warning (unmaintained/unsound, nessuna critical). Nessuna vulnerabilità fixabile senza breaking change o bump fuori range — tutte in attesa di aggiornamento upstream.
+> **Audit 2026-09-12 (npm audit + pip-audit + cargo audit):** Web 3 vuln (3 moderate vitest, critical/high risolti con next 16.3.5). Desktop frontend **0 vuln**. Mobile 29 vuln (10 high, 19 moderate, 0 critical — quasi tutte in dev-deps jest/expo). Backend 14 vuln in starlette 0.38.6 (richiede upgrade FastAPI). Rust 8 warning (unmaintained/unsound, nessuna critical). Nessuna vulnerabilità fixabile senza breaking change o bump fuori range — tutte in attesa di aggiornamento upstream.
 
 ---
 
