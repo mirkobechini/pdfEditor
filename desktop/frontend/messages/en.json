@@ -174,6 +174,7 @@
     "convert": "Convert",
     "merge": "Merge",
     "split": "Split",
+    "compress": "Compress",
     "reorder": "Reorder",
     "remove": "Remove",
     "metadata": "Metadata",
@@ -376,6 +377,18 @@
     "cancel": "Cancel",
     "merging": "Merging...",
     "merge": "Merge ({size})"
+  },
+  "compressModal": {
+    "title": "Compress PDF",
+    "qualityLabel": "Quality",
+    "qualityLow": "Low (smaller file)",
+    "qualityMedium": "Medium (balanced)",
+    "qualityHigh": "High (best quality)",
+    "outputNameLabel": "Output filename",
+    "overwriteLabel": "Overwrite the original PDF",
+    "cancel": "Cancel",
+    "confirm": "Compress",
+    "compressing": "Compressing..."
   },
   "lockModal": {
     "unlockTitle": "Unlock PDF",
