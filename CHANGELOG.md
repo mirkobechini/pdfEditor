@@ -10,12 +10,14 @@
 - **Mobile**: bump `expo` 57.0.11 → **57.0.22** (riduce 29 → 28 vuln). Le restanti sono in sub-dipendenze Expo non fixabili senza downgrade.
 - **Vitest** (web/desktop): 3 moderate accettate (dev tool non esposto in produzione, upgrade major 4→5 rischioso).
 - **Test**: backend 390, web 573, desktop 923, mobile 299 — tutti verdi. CI verde su tutte le piattaforme.
+
 ### 🔐 Fix sicurezza & privacy (issue #784, #786, #788, #790)
 
 - **Password PDF cifrate a riposo** (issue #784, PR #785): le password dei PDF protetti erano salvate **in chiaro** nella tabella `password_cache`. Ora cifrate con **Fernet** (cryptography), key derivata da `SECRET_KEY`. Nuovo `app/core/password_cipher.py`. Compatibilità retroattiva con entry legacy. 396 test backend verdi.
 - **Stop logging credenziali** (issue #786, PR #787): il reset token (email_service) e il Google id_token (auth_service) non sono più loggati in chiaro.
 - **Rimossi build dirs PyInstaller** (issue #788, PR #789): 4422 file di build temporanee `_MEI*/` rimossi dal tracking git (~192MB).
 - **Fix warning deprecazione** (issue #790, PR #791): `HTTP_422_UNPROCESSABLE_ENTITY` → `HTTP_422_UNPROCESSABLE_CONTENT` in test_compress.
+
 ### �🐛 Fix CompressModal useApiError (issue #778)
 
 - **Fix build desktop**: la Desktop CI falliva con errore TypeScript in `CompressModal.tsx` (`error TS2349: This expression is not callable`). `useApiError()` restituisce un oggetto `{ apiError }`, non una funzione — corretto con destructuring `const { apiError } = useApiError()`. Aggiornato il mock nel test. 923 test desktop verdi, Desktop CI verde.
