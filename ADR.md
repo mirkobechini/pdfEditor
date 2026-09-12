@@ -137,8 +137,8 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | Scelta                                      | Riferimento                                                     |
 | ------------------------------------------- | --------------------------------------------------------------- |
 | Stack mobile completo                       | [`mobile/ADR.md`](./mobile/ADR.md)                              |
-| Task 2 — Password protect/unlock (in pausa) | `mobile/ADR.md` + `.specs/plans/feature-mobile-improvements.md` |
-| Feature pianificate post-MVP                | `.specs/plans/feature-mobile-improvements.md`                   |
+| Task 2 — Password protect/unlock            | `mobile/ADR.md` (implementato con @cantoo/pdf-lib)              |
+| Feature pianificate post-MVP                | `mobile/ADR.md` + `.specs/active/`                              |
 
 ---
 
@@ -167,10 +167,11 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 ## Cosa NON è in scope (per ora)
 
 - Mobile React Native (Fase 4) — ✅ **MVP completato** — vedi [`mobile/ADR.md`](./mobile/ADR.md)
-- Integrazione pagamenti Stripe (pianificata — vedi `.specs/plans/feature-stripe-mcp-subscriptions.md`)
 - SSO Apple / Samsung (previsto come bonus futuro)
 - react-native-web (valutabile, non deciso)
-- **Annotazioni PDF** (drawing, highlight, commenti) — non implementate
+- **Annotazioni PDF** (drawing, highlight, commenti) — non implementate (plan in `.specs/active/feature-annotations-pdf.md`)
+- **Compressione PDF** — non implementata (plan in `.specs/active/`)
+- **Inline text editor** — non implementato (plan in `.specs/active/`)
 
 ## Roadmap
 
@@ -186,4 +187,4 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 > 📦 **Novità strutturate per la download page:** Vedi [`changelog.json`](./changelog.json) — file JSON con versioni e cambiamenti per desktop e mobile, fetchato dinamicamente dalla download page.
 > 🐞 **Bug aperti e debito tecnico:** Vedi [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md).
 > 📖 **Lezioni apprese:** Vedi [`LESSONS_LEARNED.md`](./LESSONS_LEARNED.md).
-> 📝 **Feature pianificate:** Vedi `.specs/plans/`.
+> 📝 **Feature pianificate:** Vedi `.specs/active/`.
