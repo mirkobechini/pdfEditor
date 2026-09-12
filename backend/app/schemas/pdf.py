@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -141,6 +142,14 @@ class BugReportStatusUpdate(BaseModel):
     """Schema for updating a bug report status."""
 
     status: str  # "open", "in_progress", "resolved", "closed"
+
+
+class CompressRequest(BaseModel):
+    """Schema for compressing a PDF."""
+
+    quality: Literal["low", "medium", "high"] = "medium"
+    output_filename: str | None = None
+    overwrite: bool = False
 
 
 class ErrorResponse(BaseModel):
