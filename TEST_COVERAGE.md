@@ -10,7 +10,7 @@
 
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
-| **Backend** (FastAPI/Python)   | pytest      | **390** | **94%**    | ✅    |
+| **Backend** (FastAPI/Python)   | pytest      | **396** | **94%**    | ✅    |
 | **Webapp** (Next.js/React)     | vitest      | **573** | **94.96%** | ✅    |
 | **Desktop** (Tauri)            | vitest      | **923** | **90.84%** | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **299** | **98.7%**  | ✅    |
@@ -42,6 +42,7 @@
 | Undo/redo                             | `test_undo_redo.py`                               | ✅       | Storico modifiche                                              |
 | Storage                               | `test_storage.py`, `test_s3_storage.py`           | ✅       | Locale e cloud (S3)                                            |
 | Security                              | `test_security.py`                                | ✅       | Token JWT, hash, encoding                                      |
+| Password cipher                       | `test_password_cipher.py`                         | ✅       | Cifratura password PDF cache (Fernet)                          |
 | License                               | `test_license.py`, `test_license_enforcement.py`  | ✅       | Tier, enforcement                                              |
 | Admin                                 | `test_admin_send_reset.py`                        | ✅       | Reset password admin                                           |
 | Config                                | `test_config.py`                                  | ✅       | Configurazione                                                 |
@@ -50,7 +51,7 @@
 | Health                                | `test_health.py`                                  | ✅       | Endpoint health                                                |
 | Errori                                | `test_validation_errors.py`, `test_edge_cases.py` | ✅       | Errori, edge cases                                             |
 
-**Totale: 390 test, ~94% coverage**
+**Totale: 396 test, ~94% coverage**
 
 ---
 
