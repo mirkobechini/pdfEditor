@@ -94,7 +94,7 @@ class AuthService:
         from google.oauth2 import id_token as google_id_token
         from google.auth.transport import requests as google_requests
 
-        logger.debug("Validating Google token (first 30 chars): %s...", id_token_str[:30])
+        # NOTE: never log the id_token (even partially) — it's a credential.
         try:
             # Try the web/desktop client ID first, then the Android client ID.
             # The mobile app uses a dedicated Android OAuth client, so its id_token
