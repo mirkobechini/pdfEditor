@@ -65,8 +65,6 @@
 | Admin panel                     | ✅  | ❌      | ❌     | Solo webapp                                                                                                                                          |
 | **Non implementato su nessuna** |     |         |        |                                                                                                                                                      |
 | Compressione PDF                | ❌  | ❌      | ❌     | Solo in roadmap                                                                                                                                      |
-| Cloud sync                      | ✅  | ✅      | ✅     | Web: funzionante via API cloud. Desktop: bidirezionale con useCloudSync + mappa persistente localId→cloudId. Mobile: bidirezionale con useCloudSync. |
-| Rework UI Penpot                | ❌  | ❌      | ❌     | Design da fare                                                                                                                                       |
 | **Cross-platform**              |     |         |        |                                                                                                                                                      |
 | Keep-warm backend               | ✅  | ✅      | ❌     | GitHub Actions 24/7 + frontend keep-warm quando l'app è aperta                                                                                       |
 | Icona origine piattaforma       | ✅  | ✅      | ✅     | 🌐 web, 💻 desktop, 📱 mobile — nessuna icona se dalla piattaforma corrente                                                                          |
@@ -109,4 +107,4 @@
 | Feature                  | Priorità | Note                                     |
 | ------------------------ | -------- | ---------------------------------------- |
 | Compressione PDF         | Media    | PyMuPDF (web/desktop) + pdf-lib (mobile) |
-| Rework UI (Penpot)       | Alta     | Design da completare                     |
+
