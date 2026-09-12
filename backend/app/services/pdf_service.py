@@ -3,6 +3,7 @@ import time
 from datetime import datetime, timezone
 
 from app.core.config import settings
+from app.core.password_cipher import encrypt_password, decrypt_password
 from app.core.storage import (
     save_pdf,
     validate_pdf,
@@ -38,7 +39,7 @@ def _get_cached_password(pdf_id: str) -> str | None:
                 created = created.replace(tzinfo=timezone.utc)
             age = (datetime.now(timezone.utc) - created).total_seconds()
             if age < _PASSWORD_CACHE_TTL:
-                return entry.password
+                return decrypt_password(entry.password)
             db.delete(entry)
             db.commit()
         return None
@@ -64,7 +65,7 @@ def _cache_password(pdf_id: str, password: str) -> None:
             db.delete(existing)
             db.commit()
 
-        entry = PasswordCache(pdf_id=pdf_id, password=password)
+        entry = PasswordCache(pdf_id=pdf_id, password=encrypt_password(password))
         db.add(entry)
         db.commit()
     finally:
