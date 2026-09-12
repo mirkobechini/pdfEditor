@@ -56,7 +56,7 @@ Tutti i bug minori precedenti sono stati risolti.
 
 **Descrizione:** 375 test backend (con `TestClient` same-origin) + 907 test desktop (vitest) + 279 test mobile. I test unitari non coprono i flussi cross-origin reali (cookie, CSRF, CORS).  
 **Risoluzione prevista:** Playwright (T7).  
-**Stato:** ✅ **Parziale (2026-09-08)** — Suite E2E Playwright in `e2e/` con **13 test verdi** (auth, CSRF/CORS, upload PDF, delete, merge, cloud sync). Job `e2e` aggiunto a `ci-web.yml` con `e2e/**` nei paths. Il backend E2E parte con `DISABLE_LICENSE_ENFORCEMENT=true`. I flussi PDF avanzati (split/reorder/protect) restano fragili in E2E (pdf.js) e coperti da pytest. Vedi `.specs/active/roadmap-test-e2e.md`.
+**Stato:** ✅ **Parziale (2026-09-12)** — Suite E2E Playwright in `e2e/` con **15 test verdi** (auth, CSRF/CORS, upload PDF, download, delete, merge, cloud sync, token refresh). Job `e2e` aggiunto a `ci-web.yml` con `e2e/**` nei paths. Il backend E2E parte con `DISABLE_LICENSE_ENFORCEMENT=true`. I flussi PDF avanzati (split/reorder/protect) restano fragili in E2E (pdf.js) e coperti da pytest. Vedi `.specs/active/roadmap-test-e2e.md`.
 
 ### T3 — `@swc/helpers` lock file desync
 

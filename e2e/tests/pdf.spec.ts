@@ -68,4 +68,48 @@ test.describe("PDF flows", () => {
     expect(status).toBe(201);
     expect(body.original_filename).toBe("api-test.pdf");
   });
+
+  test("download PDF via API returns valid PDF content", async ({
+    request,
+    playwright,
+  }) => {
+    const email = uniqueEmail("dl");
+    const token = await registerUser(request, email);
+
+    // Upload a PDF via API to get its ID
+    const uploadCtx = await playwright.request.newContext();
+    const uploadRes = await uploadCtx.post(
+      "http://localhost:8000/pdfs/upload",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        multipart: {
+          file: {
+            name: "download-me.pdf",
+            mimeType: "application/pdf",
+            buffer: makePdfBuffer(),
+          },
+        },
+      },
+    );
+    expect(uploadRes.status()).toBe(201);
+    const uploaded = await uploadRes.json();
+    const pdfId = uploaded.id;
+    await uploadCtx.dispose();
+
+    // Download the PDF via API with Bearer token
+    const downloadCtx = await playwright.request.newContext();
+    const dlRes = await downloadCtx.get(
+      `http://localhost:8000/pdfs/${pdfId}/download`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    const dlStatus = dlRes.status();
+    const dlBody = await dlRes.body();
+    const contentType = dlRes.headers()["content-type"] || "";
+    await downloadCtx.dispose();
+
+    expect(dlStatus).toBe(200);
+    expect(contentType).toContain("application/pdf");
+    // The downloaded content should be a valid PDF (starts with %PDF)
+    expect(dlBody.subarray(0, 4).toString()).toBe("%PDF");
+  });
 });
