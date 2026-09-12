@@ -283,6 +283,14 @@ Mancava in `ALLOWED_ORIGINS`, causando CORS error su tutte le fetch. Il dev mode
 
 ## Security audit
 
+### 2026-09-12 — Audit dipendenze: fixare prima le critical/high fixabili, accettare le moderate/non fixabili
+
+Audit completo (npm audit + pip-audit + cargo audit) con AGENT_FLOW 7.1. Risultato:
+
+- **Fixati**: next 16.3.5 (critical RCE), js-yaml 4.3.2 (high), sharp 0.35.4 (high), fastapi 0.141.1 → starlette 1.6.0 (14 CVE), expo 57.0.22.
+- **Accettati**: vitest 4.x (3 moderate, dev tool non esposto in produzione), Expo sub-deps (non fixabili senza downgrade).
+- **Lezione**: prima di accettare una vulnerabilità, verificare se è in produzione o in dev-deps, e se il fix richiede breaking changes. Le critical/high fixabili vanno sempre fixate; le moderate in dev tool si possono documentare e accettare.
+
 ### 2026-07-15 — I bug vanno cercati nel codice, non aspettare che emergano in produzione
 
 L'audit manuale del 2026-07-15 ha trovato 21 bug + 10 miglioramenti, tutti fixati con PR e CI. La lezione è che il testing automatizzato da solo non basta — serve revisione attiva del codice.
@@ -295,7 +303,7 @@ L'audit manuale del 2026-07-15 ha trovato 21 bug + 10 miglioramenti, tutti fixat
 
 ## Note tecniche
 
-- Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile — `httpx2` non esiste ancora.
+- Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` è stato risolto con l'upgrade a starlette 1.6.0 (PR #783) — ora usa `httpx2`.
 
 ### 2026-08-02 — Sync user non basta per CSRF sidecar
 
