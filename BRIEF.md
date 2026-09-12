@@ -295,40 +295,40 @@ _Ogni feature è un'issue GitHub separata. La numerazione è progressiva._
 
 ### Fase 1c — Desktop app (Tauri v2)
 
-- [ ] Setup Tauri + Next.js build statica
-- [ ] PyInstaller: bundle FastAPI in eseguibile
-- [ ] Sidecar: avvio FastAPI locale all'avvio
-- [ ] SQLite locale per dati offline
-- [ ] Salvataggio file su file system dell'utente
-- [ ] Installer per Windows (primario), macOS/Linux (secondario)
+- [x] Setup Tauri + Next.js build statica
+- [x] PyInstaller: bundle FastAPI in eseguibile
+- [x] Sidecar: avvio FastAPI locale all'avvio
+- [x] SQLite locale per dati offline
+- [x] Salvataggio file su file system dell'utente
+- [x] Installer per Windows (primario), macOS/Linux (secondario)
 
 ### Fase 2 — Web app (Next.js su cloud)
 
-- [ ] Deploy FastAPI su Railway/Render/Fly.io
-- [ ] Deploy Next.js su Vercel
-- [ ] PostgreSQL cloud
-- [ ] Upload file su S3 (o equivalente)
-- [ ] Stessa UI, backend remoto invece di locale
+- [x] Deploy FastAPI su Railway/Render/Fly.io
+- [x] Deploy Next.js su Vercel
+- [x] PostgreSQL cloud
+- [x] Upload file su S3 (o equivalente)
+- [x] Stessa UI, backend remoto invece di locale
 
 ### Fase 3 — Cloud sync
 
-- [ ] Sync bidirezionale SQLite → PostgreSQL (UUID + timestamp)
-- [ ] Risoluzione conflitti (lock ottimistico)
-- [ ] Modalità offline/online seamless
+- [x] Sync bidirezionale SQLite → PostgreSQL (UUID + timestamp)
+- [x] Risoluzione conflitti (lock ottimistico)
+- [x] Modalità offline/online seamless
 
 ### Fase 4 — Mobile app (React Native)
 
-- [ ] Setup React Native (Expo bare workflow)
-- [ ] Logica React condivisa (API client, hooks auth, utility PDF)
-- [ ] UI nativa: schermate con View/Text/TouchableOpacity
-- [ ] Viewer PDF.js via WebView
-- [ ] SSO Google login
-- [ ] Store deployment (Google Play / Apple)
+- [x] Setup React Native (Expo bare workflow)
+- [x] Logica React condivisa (API client, hooks auth, utility PDF)
+- [x] UI nativa: schermate con View/Text/TouchableOpacity
+- [x] Viewer PDF.js via WebView
+- [x] SSO Google login
+- [x] Store deployment (Google Play / Apple)
 
 ## Strategia di testing
 
 - **Ogni funzione atomica** deve avere il suo test prima di essere considerata completa
-- I test sono eseguiti con **pytest** (backend Python) e **vitest** (frontend React)
+- I test sono eseguiti con **pytest** (backend Python), **vitest** (frontend React) e **Playwright** (E2E cross-origin)
 - Prima di passare da una fase all'altra, **tutti i test devono essere eseguiti e passare**
 - Se un test fallisce, la fase non è completa
 - **Ordering**: il BRIEF definisce l'ordine di sviluppo. L'agente segue la roadmap senza saltare o riordinare feature
