@@ -24,7 +24,14 @@ class UserRepository:
         return self.db.query(User).filter(User.id == user_id).first()
 
     def get_all_users(self, skip: int = 0, limit: int = 100) -> list[User]:
-        return self.db.query(User).offset(skip).limit(limit).all()
+        # Exclude guest accounts from the admin user list (they are not real users)
+        return (
+            self.db.query(User)
+            .filter(User.is_guest.is_(False))
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def update_license_tier(self, user_id: str, tier: str) -> User | None:
         user = self.get_by_id(user_id)
