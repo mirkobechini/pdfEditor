@@ -24,7 +24,8 @@ class EmailService:
         # Skip if API key not configured (development mode)
         api_key = settings.SMTP_PASSWORD
         if not api_key:
-            logger.debug("DEV MODE: Password reset email not sent. Token for %s: %s", email, reset_token)
+            # NOTE: never log the reset token — it's a credential.
+            logger.debug("DEV MODE: Password reset email not sent for %s", email)
             return False
 
         try:
