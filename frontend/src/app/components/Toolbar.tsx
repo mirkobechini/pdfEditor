@@ -16,6 +16,7 @@ interface ToolbarProps {
   onReplaceText: () => void;
   onMetadata: () => void;
   onProtect: () => void;
+  onCompress: () => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -35,6 +36,7 @@ export default function Toolbar({
   onReplaceText,
   onMetadata,
   onProtect,
+  onCompress,
   canUndo,
   canRedo,
   onUndo,
@@ -166,6 +168,9 @@ export default function Toolbar({
       </button>
       <button className="px-3 py-1 text-xs rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50" onClick={onProtect}>
         {t("protect")}
+      </button>
+      <button className="px-3 py-1 text-xs rounded bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50" onClick={onCompress}>
+        {t("compress")}
       </button>
     </>
   );
