@@ -156,3 +156,77 @@ class PdfMergeSplitService:
         finally:
             source.close()
         return results
+
+    def compress(
+        self,
+        pdf_id: str,
+        user_id: str,
+        quality: str = "medium",
+        output_filename: str | None = None,
+        overwrite: bool = False,
+    ) -> PdfDocument:
+        """Compress a PDF by re-encoding images and removing redundant data.
+
+        quality: "low" | "medium" | "high" — controls the compression level.
+        If overwrite is True, the original PDF is replaced in place.
+        Otherwise a new document is created.
+        """
+        pdf = self._get_user_pdf(pdf_id, user_id)
+        content = self._get_file_content(pdf)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        source = fitz.open(stream=content, filetype="pdf")
+
+        # Compression params per quality level
+        # - garbage: remove unused objects (4 = aggressive)
+        # - deflate: compress streams
+        # - deflate_images: re-compress images
+        # - deflate_fonts: compress embedded fonts
+        # - compression_effort: zlib effort (0-9, higher = smaller)
+        params = {
+            "low": {"garbage": 3, "deflate": True, "clean": True},
+            "medium": {
+                "garbage": 4,
+                "deflate": True,
+                "clean": True,
+                "deflate_images": True,
+                "deflate_fonts": True,
+            },
+            "high": {
+                "garbage": 4,
+                "deflate": True,
+                "clean": True,
+                "deflate_images": True,
+                "deflate_fonts": True,
+                "compression_effort": 9,
+            },
+        }
+        compress_params = params.get(quality, params["medium"])
+
+        try:
+            out_bytes = source.tobytes(**compress_params)
+        finally:
+            source.close()
+
+        file_uuid = save_pdf(out_bytes)
+
+        if overwrite:
+            # Replace the original PDF in place (same id, new storage)
+            pdf.storage_filename = f"{file_uuid}.pdf"
+            pdf.file_size = len(out_bytes)
+            return self.repo.update(pdf)
+
+        # Create a new document
+        if output_filename:
+            name = output_filename if output_filename.endswith(".pdf") else output_filename + ".pdf"
+        else:
+            name = f"compressed_{pdf.original_filename}"
+        new_pdf = PdfDocument(
+            original_filename=name,
+            storage_filename=f"{file_uuid}.pdf",
+            file_size=len(out_bytes),
+            page_count=pdf.page_count,
+            user_id=user_id,
+        )
+        return self.repo.create(new_pdf)
