@@ -139,7 +139,7 @@ Tutti i bug minori precedenti sono stati risolti.
 | —      | `sharp` (web)                    | 🔴 high     | < 0.35.4             | ✅ **Fixato (0.35.4)**   | libheif (GHSA-rgj7-g3m4-5g8c). Sub-dep di Next.js, risolto con bump next 16.3.5 (PR #781).                                                                                                                                                                                                |
 | —      | `pillow` (backend)               | 🔴 high     | 12.2.0               | ⛔ **Non fixabile**      | 20 CVE (PYSEC-2026-3453/54/93/94/95/96). Fix in 12.3.0. In attesa bump.                                                                                                                                                                                                                   |
 | —      | `pypdf` (backend)                | 🔴 high     | 6.14.2               | ⛔ **Non fixabile**      | 6 CVE (CVE-2026-84309/10/11, -82398). Fix in 6.16.1. In attesa bump.                                                                                                                                                                                                                      |
-| —      | `starlette` (backend)            | 🔴 high     | 0.38.6               | ✅ **Fixato (1.6.0)**   | 14 CVE (PYSEC-2026-161/248/249/1941/1943/2280/2281). Upgrade fastapi 0.141.1 (PR #783). pip-audit: 0 vuln.                                                                                                                                                                               |
+| —      | `starlette` (backend)            | 🔴 high     | 0.38.6               | ✅ **Fixato (1.6.0)**    | 14 CVE (PYSEC-2026-161/248/249/1941/1943/2280/2281). Upgrade fastapi 0.141.1 (PR #783). pip-audit: 0 vuln.                                                                                                                                                                                |
 | —      | `pyasn1` (backend)               | 🟡 medium   | 0.6.3                | ⛔ **Non fixabile**      | 4 CVE (PYSEC-2026-3455/56/57). Fix in 0.6.4. In attesa bump.                                                                                                                                                                                                                              |
 | —      | `cryptography`/`ecdsa`/`httpx`   | 🟡 medium   | —                    | ⛔ **Non fixabile**      | 3 CVE backend. In attesa bump upstream.                                                                                                                                                                                                                                                   |
 | —      | `decode-uri-component` (mobile)  | 🟡 medium   | <= 0.4.2             | ⛔ **Non fixabile**      | DoS (GHSA-vcc3-ghjq-m6fr). Nessun fix disponibile.                                                                                                                                                                                                                                        |
@@ -147,18 +147,18 @@ Tutti i bug minori precedenti sono stati risolti.
 
 ### Vulnerabilità risolte (non più segnalate da Dependabot)
 
-| Pacchetto           | Fix                                                       |
-| ------------------- | --------------------------------------------------------- |
-| `js-yaml`           | PR #392 (bump 4.2.0 → 4.3.0)                              |
-| `next`              | PR #393 (bump 16.2.9 → 16.2.11)                           |
-| `next` (CVE-2026)   | **bump 16.2.11 → 16.3.0** (3 high, 5 medium risolte)      |
-| `next` (RCE)        | **PR #781 (bump 16.3.0 → 16.3.5)** — critical RCE risolto |
-| `js-yaml` (CPU DoS) | **PR #781 (bump → 4.3.2)** — high risolto                 |
-| `sharp`/libvips     | **PR #781 (via next 16.3.5 → 0.35.4)** — high risolto     |
+| Pacchetto           | Fix                                                              |
+| ------------------- | ---------------------------------------------------------------- |
+| `js-yaml`           | PR #392 (bump 4.2.0 → 4.3.0)                                     |
+| `next`              | PR #393 (bump 16.2.9 → 16.2.11)                                  |
+| `next` (CVE-2026)   | **bump 16.2.11 → 16.3.0** (3 high, 5 medium risolte)             |
+| `next` (RCE)        | **PR #781 (bump 16.3.0 → 16.3.5)** — critical RCE risolto        |
+| `js-yaml` (CPU DoS) | **PR #781 (bump → 4.3.2)** — high risolto                        |
+| `sharp`/libvips     | **PR #781 (via next 16.3.5 → 0.35.4)** — high risolto            |
 | `starlette`         | **PR #783 (fastapi 0.141.1 → starlette 1.6.0)** — 14 CVE risolte |
-| `python-multipart`  | PR #395 (bump 0.0.31 → 0.0.32)                            |
-| `PyJWT`             | Già a 2.13.0 (fixato)                                     |
-| `python-jose`       | Rimosso (non in uso)                                      |
+| `python-multipart`  | PR #395 (bump 0.0.31 → 0.0.32)                                   |
+| `PyJWT`             | Già a 2.13.0 (fixato)                                            |
+| `python-jose`       | Rimosso (non in uso)                                             |
 
 ### ⚠️ Vulnerabilità note non fixabili (accettate)
 
