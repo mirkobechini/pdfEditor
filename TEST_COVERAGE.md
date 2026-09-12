@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-09-11
+> **Aggiornato:** 2026-09-12
 
 ---
 
@@ -10,19 +10,19 @@
 
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
-| **Backend** (FastAPI/Python)   | pytest      | **383** | **94%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **567** | **94.96%** | ✅    |
-| **Desktop** (Tauri)            | vitest      | **916** | **90.84%** | ✅    |
-| **Mobile** (React Native/Expo) | jest        | **294** | **98.7%**  | ✅    |
+| **Backend** (FastAPI/Python)   | pytest      | **390** | **94%**    | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **573** | **94.96%** | ✅    |
+| **Desktop** (Tauri)            | vitest      | **923** | **90.84%** | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **299** | **98.7%**  | ✅    |
 | **E2E** (Playwright)           | playwright  | **13**  | —          | ✅    |
 
-> ℹ️ **Desktop**: 906 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +9 test ReplaceTextModal, +3 test googleLogin.
+> ℹ️ **Desktop**: 920 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +9 test ReplaceTextModal, +3 test googleLogin, +6 test CompressModal.
 >
 > ⚠️ **Nota:** `ReorderPagesModal` ha i callback DnD (`@dnd-kit/core`) non copribili in jsdom — richiedono test E2E con Playwright. Coverage ferma a 81.17% per quel file.
 >
-> ℹ️ **Mobile**: 294 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. +4 test api replaceText, +3 test googleLogin, +3 test createBugReport, +4 test useUpdateCheck.
+> ℹ️ **Mobile**: 299 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. +4 test api replaceText, +3 test googleLogin, +3 test createBugReport, +4 test useUpdateCheck, +5 test compressPdf.
 >
-> ℹ️ **Webapp**: 566 test (Vitest). Target 90% raggiunto (issue #700): **94.96% statements, 97.34% lines**. Tutti i file >= 90% statements.
+> ℹ️ **Webapp**: 573 test (Vitest). Target 90% raggiunto (issue #700): **94.96% statements, 97.34% lines**. Tutti i file >= 90% statements. +6 test CompressDialog.
 
 ---
 
@@ -38,6 +38,7 @@
 | Metadata                              | `test_metadata.py`                                | ✅       | Lettura/scrittura metadati                                     |
 | Text search/replace                   | `test_text.py`                                    | ✅       | Ricerca testo, replace                                         |
 | Protect/unlock                        | `test_protect.py`                                 | ✅       | Password encryption/decryption                                 |
+| Compressione                          | `test_compress.py`                                | ✅       | Qualità, output name, overwrite                                |
 | Undo/redo                             | `test_undo_redo.py`                               | ✅       | Storico modifiche                                              |
 | Storage                               | `test_storage.py`, `test_s3_storage.py`           | ✅       | Locale e cloud (S3)                                            |
 | Security                              | `test_security.py`                                | ✅       | Token JWT, hash, encoding                                      |
@@ -49,13 +50,13 @@
 | Health                                | `test_health.py`                                  | ✅       | Endpoint health                                                |
 | Errori                                | `test_validation_errors.py`, `test_edge_cases.py` | ✅       | Errori, edge cases                                             |
 
-**Totale: 369 test, ~94% coverage**
+**Totale: 390 test, ~94% coverage**
 
 ---
 
 ## Webapp (Next.js / React)
 
-**Coverage: 94.96% statements, 97.34% lines (565 test)** — issue #700
+**Coverage: 94.96% statements, 97.34% lines (573 test)** — issue #700
 
 | Area                                      | Test                                            | Coverage | Note                                                           |
 | ----------------------------------------- | ----------------------------------------------- | -------- | -------------------------------------------------------------- |
@@ -71,13 +72,13 @@
 | Componenti vari                           | Vari                                            | ✅       | PasswordInput 100%, GuestConvertBanner 100%, ClientLayout 100% |
 | Layout & home                             | `layout-pages.test.tsx`                         | ✅       | home page 100% (redirect Tauri), ClientLayout 100%             |
 
-**Totale: 565 test, 94.96% statements — tutti i file >= 90%**
+**Totale: 573 test, 94.96% statements — tutti i file >= 90%**
 
 ---
 
 ## Mobile (React Native / Expo)
 
-**Coverage: 98.7% statements, 100% lines (294 test)** — issue #696
+**Coverage: 98.7% statements, 100% lines (299 test)** — issue #696
 
 | Area                              | Test                          | Coverage | Note                                                                                                                                                                                 |
 | --------------------------------- | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -89,6 +90,7 @@
 | PDF service (pdf-lib)             | `pdfService.test.ts`          | ✅       | 7 test: merge, split, reorder, metadata in memory                                                                                                                                    |
 | PDF service (full)                | `pdfServiceFull.test.ts`      | ✅       | 15 test: mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, isPdfEncrypted, protectPdf, unlockPdf                                                                       |
 | PDF service (remove)              | `pdfService2.test.ts`         | ✅       | 2 test: removePages null cases                                                                                                                                                       |
+| PDF service (compress)            | `pdfService-compress.test.ts` | ✅       | 5 test: compressPdf upload→compress→download→save, qualità, errori                                                                                                                   |
 | Error mapping                     | `error-map.test.ts`           | ✅       | 13 test: mappatura errori API → i18n                                                                                                                                                 |
 | Cloud sync API                    | `cloudSyncApi.test.ts`        | ✅       | 4 test: uploadPdf, listPdfs, getPdf, deletePdf via API                                                                                                                               |
 | AppSettingsContext                | `AppSettingsContext.test.tsx` | ✅       | 8 test: theme mode persistenza, locale persistenza                                                                                                                                   |
@@ -102,7 +104,7 @@
 | Dialog (conflict, import, delete) | —                             | ❌       | Non testati (UI components)                                                                                                                                                          |
 | OnboardingWizard                  | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 
-**Totale: 182 test**
+**Totale: 299 test**
 
 ---
 
@@ -152,7 +154,9 @@ bash run-all-tests.sh
 
 ### Desktop (Tauri)
 
-370 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
+920 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
+
+> ⚠️ I conteggi per-componente sotto sono storici (non aggiornati a ogni release). Il totale autorevole è nel riepilogo in cima (923 test).
 
 | Componente                     | Test | Coverage | Note                                              |
 | ------------------------------ | ---- | -------- | ------------------------------------------------- |
