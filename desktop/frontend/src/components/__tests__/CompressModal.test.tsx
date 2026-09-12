@@ -23,7 +23,7 @@ vi.mock("../../shared/api", () => ({
 }));
 
 vi.mock("../../hooks/useApiError", () => ({
-  useApiError: () => (err: unknown) => (err instanceof Error ? err.message : String(err)),
+  useApiError: () => ({ apiError: (err: unknown) => (err instanceof Error ? err.message : String(err)) }),
 }));
 
 describe("CompressModal", () => {
