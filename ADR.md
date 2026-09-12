@@ -170,7 +170,6 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - SSO Apple / Samsung (previsto come bonus futuro)
 - react-native-web (valutabile, non deciso)
 - **Annotazioni PDF** (drawing, highlight, commenti) — non implementate (plan in `.specs/active/feature-annotations-pdf.md`)
-- **Compressione PDF** — non implementata (plan in `.specs/active/`)
 - **Inline text editor** — non implementato (plan in `.specs/active/`)
 
 ## Roadmap
