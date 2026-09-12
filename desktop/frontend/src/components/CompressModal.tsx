@@ -16,7 +16,7 @@ interface CompressModalProps {
 
 export default function CompressModal({ open, pdfId, pdfName, onClose, onSaved }: CompressModalProps) {
     const t = useTranslations("compressModal");
-    const apiError = useApiError();
+    const { apiError } = useApiError();
     const [saving, setSaving] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [quality, setQuality] = React.useState<"low" | "medium" | "high">("medium");
