@@ -2,7 +2,16 @@
 
 ## 2026-09-12
 
-### 🐛 Fix CompressModal useApiError (issue #778)
+### � Security audit & fix dipendenze (issue #780, #782)
+
+- **Security audit completo** (AGENT_FLOW 7.1): npm audit (web/desktop/mobile) + pip-audit (backend) + cargo audit (Rust).
+- **Web + Desktop**: bump `next` 16.3.0 → **16.3.5** (fix 🔴 critical RCE Windows + RCE AVIF), `js-yaml` → **4.3.2** (fix 🟠 high CPU DoS), `sharp` → **0.35.4** (fix 🟠 high libheif). Web: da 6 vuln → 3 moderate (vitest). Desktop: da 2 vuln → **0 vuln** (PR #781).
+- **Backend**: upgrade `fastapi` 0.115.0 → **0.141.1** + `slowapi` 0.1.9 → **0.1.10** (fix 14 CVE starlette, starlette 1.6.0). `httpx2` richiesto per TestClient. `pip-audit`: da 14 vuln → **0 vuln**. 390 test backend verdi (PR #783).
+- **Mobile**: bump `expo` 57.0.11 → **57.0.22** (riduce 29 → 28 vuln). Le restanti sono in sub-dipendenze Expo non fixabili senza downgrade.
+- **Vitest** (web/desktop): 3 moderate accettate (dev tool non esposto in produzione, upgrade major 4→5 rischioso).
+- **Test**: backend 390, web 573, desktop 923, mobile 299 — tutti verdi. CI verde su tutte le piattaforme.
+
+### �🐛 Fix CompressModal useApiError (issue #778)
 
 - **Fix build desktop**: la Desktop CI falliva con errore TypeScript in `CompressModal.tsx` (`error TS2349: This expression is not callable`). `useApiError()` restituisce un oggetto `{ apiError }`, non una funzione — corretto con destructuring `const { apiError } = useApiError()`. Aggiornato il mock nel test. 923 test desktop verdi, Desktop CI verde.
 
