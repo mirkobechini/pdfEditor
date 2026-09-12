@@ -14,6 +14,7 @@ from slowapi.errors import RateLimitExceeded
 from app.api.v1.admin import router as admin_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.bug_report import router as bug_report_router
+from app.api.v1.compress import router as compress_router
 from app.api.v1.convert import router as convert_router
 from app.api.v1.metadata import router as metadata_router
 from app.api.v1.merge_split import router as merge_split_router
@@ -282,6 +283,7 @@ app.include_router(admin_router)
 app.include_router(bug_report_router)
 app.include_router(pdf_router)
 app.include_router(merge_split_router)
+app.include_router(compress_router)
 app.include_router(metadata_router)
 app.include_router(convert_router)
 app.include_router(reorder_router)
