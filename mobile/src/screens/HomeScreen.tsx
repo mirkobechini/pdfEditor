@@ -179,6 +179,21 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         prevSyncingRef.current = isSyncing;
     }, [isSyncing]);
 
+    // Reload PDFs as sync progresses so downloaded PDFs appear one by one
+    // (progress.current advances on each upload/download step)
+    const prevProgressRef = useRef(progress?.current ?? 0);
+    useEffect(() => {
+        const current = progress?.current ?? 0;
+        if (isSyncing && current !== prevProgressRef.current) {
+            // Lightweight reload without loading spinner (avoid flicker during sync)
+            loadLocalPdfs(userId).then((local) => {
+                setPdfs(local);
+                onPdfCountChange?.(local.length);
+            }).catch(() => { });
+        }
+        prevProgressRef.current = current;
+    }, [progress, isSyncing]);
+
     async function loadPdfs() {
         setLoading(true);
         try {
