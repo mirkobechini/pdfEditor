@@ -110,6 +110,25 @@ describe("localDb", () => {
     );
   });
 
+  it("savePdfLocally includes upload_source in the insert", async () => {
+    mockDb.runAsync.mockResolvedValue(undefined);
+    const withSource = { ...samplePdf, upload_source: "web" };
+    await savePdfLocally(withSource);
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("upload_source"),
+      expect.arrayContaining(["web"]),
+    );
+  });
+
+  it("savePdfLocally defaults upload_source to mobile", async () => {
+    mockDb.runAsync.mockResolvedValue(undefined);
+    await savePdfLocally(samplePdf);
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("upload_source"),
+      expect.arrayContaining(["mobile"]),
+    );
+  });
+
   it("deleteLocalPdf calls runAsync with DELETE", async () => {
     mockDb.runAsync.mockResolvedValue(undefined);
     await deleteLocalPdf("test-1");
