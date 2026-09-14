@@ -1,9 +1,11 @@
 import React from "react";
 import { Button, Text, useTheme } from "react-native-paper";
+import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import * as Google from "expo-auth-session/providers/google";
 import Constants from "expo-constants";
 import { useAuth } from "../shared/auth";
+import GoogleIcon from "./GoogleIcon";
 
 export default function GoogleLoginButton() {
     const theme = useTheme();
@@ -47,7 +49,10 @@ export default function GoogleLoginButton() {
                 disabled={!request}
                 style={{ marginTop: 8 }}
             >
-                <Text>G {t("auth.googleLogin")}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <GoogleIcon size={20} />
+                    <Text style={{ marginLeft: 8 }}>{t("auth.googleLogin")}</Text>
+                </View>
             </Button>
             {error ? (
                 <Text style={{ color: theme.colors.error, fontSize: 12, marginTop: 4 }}>
