@@ -4,6 +4,7 @@
  */
 import React from "react";
 import { useFonts } from "expo-font";
+import renderer, { act } from "react-test-renderer";
 
 jest.mock("expo-font", () => ({
     useFonts: jest.fn(),
@@ -39,11 +40,21 @@ import App from "../App";
 describe("App font loading", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
     });
 
     it("loads MaterialCommunityIcons font via useFonts", () => {
-        (useFonts as jest.Mock).mockReturnValue([true]);
-        App();
+        // Use [false] so App returns null (splash) and doesn't render the full
+        // content tree (which would require more mocks). We only assert that
+        // useFonts is called with the correct font.
+        (useFonts as jest.Mock).mockReturnValue([false]);
+        act(() => {
+            renderer.create(<App />);
+        });
         expect(useFonts).toHaveBeenCalledWith({
             MaterialCommunityIcons: "MaterialCommunityIcons.ttf",
         });
@@ -51,7 +62,10 @@ describe("App font loading", () => {
 
     it("returns null (splash) while fonts are loading", () => {
         (useFonts as jest.Mock).mockReturnValue([false]);
-        const result = App();
-        expect(result).toBeNull();
+        let tree: renderer.ReactTestRendererJSON | null = null;
+        act(() => {
+            tree = renderer.create(<App />).toJSON();
+        });
+        expect(tree).toBeNull();
     });
 });
