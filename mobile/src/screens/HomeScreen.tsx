@@ -342,7 +342,13 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                                     margin: 12,
                                                 }}
                                             >
-                                                <IconButton icon="file-pdf-box" iconColor={isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant} size={28} />
+                                                {item.upload_source && item.upload_source !== "mobile" ? (
+                                                    <Text style={{ fontSize: 24, color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant }}>
+                                                        {item.upload_source === "web" ? "🌐" : item.upload_source === "desktop" ? "💻" : "📱"}
+                                                    </Text>
+                                                ) : (
+                                                    <IconButton icon="file-pdf-box" iconColor={isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant} size={28} />
+                                                )}
                                                 <Text
                                                     style={{
                                                         fontSize: 10,
@@ -356,9 +362,6 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                             </View>
                                             <View style={{ flex: 1, paddingRight: 12 }}>
                                                 <Text variant="titleMedium" style={{ fontWeight: "600" }} numberOfLines={1}>
-                                                    {item.upload_source && item.upload_source !== "mobile" ? (
-                                                        <Text>{item.upload_source === "web" ? "🌐 " : item.upload_source === "desktop" ? "💻 " : ""}</Text>
-                                                    ) : null}
                                                     {item.original_filename}
                                                 </Text>
                                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>

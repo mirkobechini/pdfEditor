@@ -57,6 +57,14 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
     } catch {
       // Column already exists — ignore
     }
+    // Migration: add upload_source column (web, desktop, mobile)
+    try {
+      await db.execAsync(
+        "ALTER TABLE pdfs ADD COLUMN upload_source TEXT DEFAULT 'mobile'",
+      );
+    } catch {
+      // Column already exists — ignore
+    }
   }
   return db;
 }
@@ -64,8 +72,8 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
 export async function savePdfLocally(pdf: LocalPdf): Promise<void> {
   const database = await getDb();
   await database.runAsync(
-    `INSERT OR REPLACE INTO pdfs (id, user_id, cloud_id, original_filename, file_size, page_count, title, author, uri, created_at, updated_at, cloud_synced, cloud_synced_at, cloud_synced_exclude)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR REPLACE INTO pdfs (id, user_id, cloud_id, original_filename, file_size, page_count, title, author, uri, created_at, updated_at, cloud_synced, cloud_synced_at, cloud_synced_exclude, upload_source)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       pdf.id,
       pdf.user_id ?? "",
@@ -81,6 +89,7 @@ export async function savePdfLocally(pdf: LocalPdf): Promise<void> {
       pdf.cloud_synced ?? 0,
       pdf.cloud_synced_at ?? null,
       pdf.cloud_synced_exclude ?? 0,
+      pdf.upload_source ?? "mobile",
     ],
   );
 }
