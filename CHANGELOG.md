@@ -1,5 +1,101 @@
 # Changelog
 
+## 2026-09-14
+
+### 🐛 Fix Google logo mobile (issue #793, PR #794)
+
+- **Google logo ufficiale**: il pulsante di login Google su mobile usava un'icona generica. Ora usa il logo Google ufficiale (SVG 4 colori) via nuovo `GoogleIcon.tsx` + `react-native-svg`. Aggiornato `GoogleLoginButton` e test.
+- **Fix font loading timeout** (issue #791): `App.tsx` ora ha un safety timeout di 3s per il caricamento font, evitando la schermata bianca se il font non si carica.
+- **Test**: 299 test mobile verdi.
+
+## 2026-09-12
+
+### � Security audit & fix dipendenze (issue #780, #782)
+
+- **Security audit completo** (AGENT_FLOW 7.1): npm audit (web/desktop/mobile) + pip-audit (backend) + cargo audit (Rust).
+- **Web + Desktop**: bump `next` 16.3.0 → **16.3.5** (fix 🔴 critical RCE Windows + RCE AVIF), `js-yaml` → **4.3.2** (fix 🟠 high CPU DoS), `sharp` → **0.35.4** (fix 🟠 high libheif). Web: da 6 vuln → 3 moderate (vitest). Desktop: da 2 vuln → **0 vuln** (PR #781).
+- **Backend**: upgrade `fastapi` 0.115.0 → **0.141.1** + `slowapi` 0.1.9 → **0.1.10** (fix 14 CVE starlette, starlette 1.6.0). `httpx2` richiesto per TestClient. `pip-audit`: da 14 vuln → **0 vuln**. 390 test backend verdi (PR #783).
+- **Mobile**: bump `expo` 57.0.11 → **57.0.22** (riduce 29 → 28 vuln). Le restanti sono in sub-dipendenze Expo non fixabili senza downgrade.
+- **Vitest** (web/desktop): 3 moderate accettate (dev tool non esposto in produzione, upgrade major 4→5 rischioso).
+- **Test**: backend 390, web 573, desktop 923, mobile 299 — tutti verdi. CI verde su tutte le piattaforme.
+
+### 🔐 Fix sicurezza & privacy (issue #784, #786, #788, #790)
+
+- **Password PDF cifrate a riposo** (issue #784, PR #785): le password dei PDF protetti erano salvate **in chiaro** nella tabella `password_cache`. Ora cifrate con **Fernet** (cryptography), key derivata da `SECRET_KEY`. Nuovo `app/core/password_cipher.py`. Compatibilità retroattiva con entry legacy. 396 test backend verdi.
+- **Stop logging credenziali** (issue #786, PR #787): il reset token (email_service) e il Google id_token (auth_service) non sono più loggati in chiaro.
+- **Rimossi build dirs PyInstaller** (issue #788, PR #789): 4422 file di build temporanee `_MEI*/` rimossi dal tracking git (~192MB).
+- **Fix warning deprecazione** (issue #790, PR #791): `HTTP_422_UNPROCESSABLE_ENTITY` → `HTTP_422_UNPROCESSABLE_CONTENT` in test_compress.
+
+### �🐛 Fix CompressModal useApiError (issue #778)
+
+- **Fix build desktop**: la Desktop CI falliva con errore TypeScript in `CompressModal.tsx` (`error TS2349: This expression is not callable`). `useApiError()` restituisce un oggetto `{ apiError }`, non una funzione — corretto con destructuring `const { apiError } = useApiError()`. Aggiornato il mock nel test. 923 test desktop verdi, Desktop CI verde.
+
+## 2026-09-11
+
+### �️ Compressione PDF (issue #777)
+
+- **Compressione PDF su tutte e 3 le piattaforme**: nuova operazione "Comprimi" che riduce la dimensione dei PDF scegliendo la qualità (bassa/media/alta). Il backend usa PyMuPDF con `garbage`/`deflate`/`deflate_images`/`deflate_fonts`/`compression_effort` (parametri `linear` e `image_quality` non validi in questa versione di PyMuPDF).
+- **Backend**: nuovo endpoint `POST /pdfs/{id}/compress` con schema `CompressRequest` (quality, output_filename, overwrite). Metodo `compress()` in `pdf_merge_split_service.py`. 6 test nuovi.
+- **Web**: nuovo `CompressDialog` (qualità, nome output, overwrite) integrato in `page.tsx` con pulsante "Comprimi" nella toolbar. 6 test nuovi.
+- **Desktop**: nuovo `CompressModal` integrato in `page.tsx` con pulsante "Comprimi". 6 test nuovi.
+- **Mobile**: pulsante "Comprimi" in `ToolsScreen` con dialog qualità + nome output. `compressPdf` in `pdfService` usa il cloud backend (upload → compress → download → salva locale) perché pdf-lib non ha compressione nativa. 5 test nuovi.
+- **Test**: backend 390, web 573, desktop 923, mobile 299 — tutti verdi.
+
+### �🔄 Refactor unify auth web/desktop (issue #761)
+
+- **Shared come source of truth per tauri/error-map**: il web re-exporta `lib/tauri.ts`, `lib/error-map.ts` e i tipi dal shared (`shared/src/`). `extractError` unificato a JSON raw + `mapError()` su web e desktop.
+- **`api.ts` web ripristinato originale cookie-based**: il re-export di `api.ts` dal shared rompeva login/register e2e (il shared ha auto-refresh 401 e CSRF diverso). Il web usa la copia originale `lib/api.ts` (749 righe, cookie-based con CSRF pre-fetch guard).
+- **Copy-shared automatizzato nel web**: aggiunto `copy-shared.js` + `prebuild` (come desktop).
+- **Nota**: il flusso auth web resta cookie-based con `api` (non usa il shared `auth.tsx`, che è desktop-first con sidecar+cloud). Il shared `auth.tsx` è usato solo dal desktop.
+- **Test**: web 567, desktop 917, mobile 294 — tutti verdi. Build web + desktop OK.
+
+## 2026-09-09
+
+### 🐛 Fix Google login CI (issue #757)
+
+- **Fix Google login CI**: il PR #756 ha introdotto un loop sulle audience Google. Quando `GOOGLE_CLIENT_ID` è vuoto (come in CI, dove non è impostato), il loop faceva `if not aud: continue` e non chiamava mai `verify_oauth2_token` → `info` restava `None` → `ValueError: Invalid or expired Google token`. 6 test fallivano (Web CI rossa). Fix: rimosso lo skip delle audience vuote, così `verify_oauth2_token` viene sempre chiamato almeno una volta.
+- **Test**: 6 test Google auth verdi (test_google_oauth.py + test_edge_cases.py).
+
+### ✨ Bug reports su mobile (issue #753)
+
+- **Bug reports mobile**: aggiunta la segnalazione bug su mobile (React Native/Expo), prima presente solo su web (e parzialmente su desktop). Nuovo `BugReportDialog` con titolo, descrizione e categoria, metodo `createBugReport` in api.ts (platform=mobile), integrato in SettingsScreen.
+- **Test**: 294 test mobile verdi (25 suite). Nuovi test per createBugReport.
+
+### ✨ Google OAuth login mobile (issue #751)
+
+- **Google OAuth mobile**: aggiunto il login con Google su mobile (React Native/Expo), prima presente solo su web e desktop. Nuovo `GoogleLoginButton` con `expo-auth-session`, metodo `googleLogin` in api.ts e auth.tsx, integrato in LoginScreen. **Nota**: richiede client ID Android/iOS dedicati in Google Cloud Console (da configurare in app.json).
+- **Test**: 291 test mobile verdi (25 suite). Nuovi test per googleLogin.
+
+### 🔐 Fix auth offline dopo login Google (issue #749, K5)
+
+- **Fix auth offline**: dopo login Google, se la connessione cade e il JWT scade, l'utente poteva perdere l'accesso ai PDF locali. Il profilo utente non veniva salvato in cache. Ora `shared/src/auth.tsx` salva il profilo in localStorage dopo ogni login (login, register, googleLogin, guestLogin), lo ripristina in `restoreSession()` quando offline, e lo cancella in `logout()`.
+- **Test**: 915 test desktop verdi (36 suite). Nuovi test per cache utente offline.
+
+### ✨ Notifica aggiornamento mobile (issue #747)
+
+- **Notifica aggiornamento**: quando viene rilasciata una nuova release su GitHub, l'app mobile mostra una notifica all'utente che esiste un aggiornamento disponibile. Nuovo hook `useUpdateCheck` che confronta la versione locale con l'ultima release mobile (semver), dialog "Nuova versione disponibile" con link alla release, persistenza in AsyncStorage per non ripetere la notifica.
+- **Test**: 288 test mobile verdi (25 suite). Nuovo test useUpdateCheck.test.ts.
+
+### 🐛 Fix conflitto update mobile 0.2.1 (issue #745)
+
+- **Fix conflitto update**: l'update da 0.2.0 a 0.2.1 falliva con "conflitto con un pacchetto già esistente". Android richiede che il versionCode del nuovo APK sia maggiore del precedente. Aggiunto `android.versionCode: 3` esplicito in `app.json`, cambiato `appVersionSource` da 'remote' a 'local' in `eas.json` (EAS usa il versionCode da app.json), e `bump-version.js` ora incrementa `versionCode` a ogni bump.
+- **Test**: 284 test mobile verdi (24 suite). Type check OK.
+
+### 🐛 Fix sync lento mobile (issue #743)
+
+- **Fix sync lento**: durante il sync, i PDF scaricati non apparivano in tempo reale — comparivano tutti alla fine. `HomeScreen.tsx` ora ricarica la lista quando `isSyncing` passa da true a false (sync completato), così i PDF appaiono subito dopo il sync.
+- **Test**: 284 test mobile verdi (24 suite). Type check OK.
+
+### 🐛 Fix icone mancanti mobile (issue #741)
+
+- **Fix icone mancanti**: nel mobile, al posto delle icone PDF appariva un quadratino nero con scritto "pdf". Il font MaterialCommunityIcons non veniva caricato esplicitamente con `expo-font` prima del render. In APK standalone il font non era disponibile al primo render → icone come quadratini neri. Fix: `App.tsx` ora carica il font con `useFonts` e mostra lo splash finché non è pronto.
+- **Test**: 284 test mobile verdi (24 suite). Nuovo test App.test.tsx per il caricamento font.
+
+### 🐛 Fix PDF duplicati mobile dopo reinstall (issue #739)
+
+- **Fix PDF duplicati**: il cloud sync mobile scaricava i PDF cloud con un nuovo ID locale ogni volta, senza rilevare che esistevano già → PDF duplicati dopo reinstall. Aggiunto campo `cloud_id` a `LocalPdf` (types.ts), colonna `cloud_id` + `getLocalPdfByCloudId()` (localDb.ts), e dedup nel sync (useCloudSync.ts usa `getLocalPdfByCloudId` invece di `getLocalPdfById`).
+- **Test**: 282 test mobile verdi (23 suite). Nuovi test per getLocalPdfByCloudId e savePdfLocally con cloud_id.
+
 ## 2026-09-08
 
 ### 🐛 Fix merge/split con storage S3 (issue #737)
@@ -19,7 +115,7 @@
 
 ### 🧪 Test E2E cross-origin (Playwright) — issue #731
 
-- **Suite E2E Playwright** in `e2e/` — **12 test verdi** che coprono i flussi cross-origin reali (cookie, CSRF, CORS) che i test unitari non possono verificare
+- **Suite E2E Playwright** in `e2e/` — **15 test verdi** che coprono i flussi cross-origin reali (cookie, CSRF, CORS) che i test unitari non possono verificare
 - **Test auth**: register, login, wrong password, logout
 - **Test CSRF/CORS**: Bearer senza CSRF, senza auth → 403, header CORS
 - **Test PDF**: upload UI, upload API Bearer

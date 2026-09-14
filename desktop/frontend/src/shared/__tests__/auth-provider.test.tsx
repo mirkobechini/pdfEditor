@@ -157,7 +157,8 @@ describe("AuthProvider", () => {
 
   it("register falls back to cloudApi.getMe when api.getMe fails", async () => {
     mockCloudRegister.mockResolvedValueOnce({ access_token: "jwt123" });
-    mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
+    mockGetMe.mockRejectedValueOnce(new Error("no session")); // mount (web, no token)
+    mockGetMe.mockRejectedValueOnce(new Error("sidecar error")); // register
     mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "cloud-user@test.com" });
 
     render(<AuthProvider><TestConsumer /></AuthProvider>);
@@ -196,7 +197,8 @@ describe("AuthProvider", () => {
 
   it("guestLogin redirects on error", async () => {
     mockGuestLogin.mockResolvedValueOnce({ access_token: "guest-jwt" });
-    mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
+    mockGetMe.mockRejectedValueOnce(new Error("no session")); // mount (web, no token)
+    mockGetMe.mockRejectedValueOnce(new Error("sidecar error")); // guestLogin
     const originalHref = window.location.href;
     // Prevent actual navigation
     Object.defineProperty(window, "location", {
@@ -233,6 +235,7 @@ describe("AuthProvider", () => {
   });
 
   it("googleLogin with JWT handles api.getMe failure", async () => {
+    mockGetMe.mockRejectedValueOnce(new Error("no session")); // mount (web, no token)
     mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
     mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google-cloud@test.com" });
     mockSyncUser.mockResolvedValueOnce({
@@ -277,6 +280,7 @@ describe("AuthProvider", () => {
   });
 
   it("googleLogin with JWT keeps cloud token when syncUser returns null", async () => {
+    mockGetMe.mockRejectedValueOnce(new Error("no session")); // mount (web, no token)
     mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
     mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google-cloud@test.com" });
     mockSyncUser.mockResolvedValueOnce(null);
@@ -308,6 +312,7 @@ describe("AuthProvider", () => {
 
   it("googleLogin with id_token handles api.getMe failure", async () => {
     mockCloudGoogleLogin.mockResolvedValueOnce({ access_token: "exchanged-jwt" });
+    mockGetMe.mockRejectedValueOnce(new Error("no session")); // mount (web, no token)
     mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
     mockCloudGetMe.mockResolvedValueOnce({ id: "u1", email: "google-cloud-id@test.com" });
 
@@ -318,5 +323,61 @@ describe("AuthProvider", () => {
     await waitFor(() => {
       expect(screen.getByTestId("user")).toHaveTextContent("google-cloud-id@test.com");
     });
+  });
+
+  it("login caches the user profile for offline use", async () => {
+    localStorage.clear();
+    mockGetToken.mockReturnValue(null);
+    mockCloudLogin.mockResolvedValueOnce({ access_token: "jwt123" });
+    mockGetMe.mockResolvedValue({ id: "u1", email: "cache@test.com" });
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    fireEvent.click(screen.getByTestId("btn-login"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("cache@test.com");
+    });
+    const cached = JSON.parse(localStorage.getItem("pdfeditor_user_cache") || "null");
+    expect(cached).not.toBeNull();
+    expect(cached.email).toBe("cache@test.com");
+  });
+
+  it("restores user from cache when offline (getMe and cloud fail)", async () => {
+    localStorage.clear();
+    localStorage.setItem("pdfeditor_user_cache", JSON.stringify({ id: "u1", email: "cached@test.com" }));
+    mockGetToken.mockReturnValue("token123");
+    mockGetMe.mockRejectedValueOnce(new Error("sidecar error"));
+    mockCloudGetMe.mockRejectedValueOnce(new Error("network error"));
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("cached@test.com");
+    });
+  });
+
+  it("logout clears the cached user profile", async () => {
+    localStorage.clear();
+    mockGetToken.mockReturnValue(null);
+    mockCloudLogin.mockResolvedValueOnce({ access_token: "jwt123" });
+    mockGetMe.mockResolvedValueOnce({ id: "u1", email: "cache@test.com" });
+    mockLogout.mockResolvedValueOnce(undefined);
+
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("user")).toHaveTextContent("null"));
+
+    // Login saves the user to cache
+    fireEvent.click(screen.getByTestId("btn-login"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("cache@test.com");
+    });
+    expect(localStorage.getItem("pdfeditor_user_cache")).not.toBeNull();
+
+    // Logout clears the cache
+    fireEvent.click(screen.getByTestId("btn-logout"));
+    await waitFor(() => {
+      expect(screen.getByTestId("user")).toHaveTextContent("null");
+    });
+    expect(localStorage.getItem("pdfeditor_user_cache")).toBeNull();
   });
 });

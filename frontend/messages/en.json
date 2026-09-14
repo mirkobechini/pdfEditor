@@ -17,7 +17,8 @@
     "unlock": "Unlock",
     "metadata": "Info",
     "replaceText": "Find & Replace",
-    "protect": "Protect"
+    "protect": "Protect",
+    "compress": "Compress"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -59,6 +60,19 @@
     "failed": "Split failed",
     "outputName": "Output filename",
     "outputNameHint": "Leave empty for auto-generated name"
+  },
+  "compressDialog": {
+    "title": "Compress PDF",
+    "qualityLabel": "Quality",
+    "qualityLow": "Low (smaller file)",
+    "qualityMedium": "Medium (balanced)",
+    "qualityHigh": "High (best quality)",
+    "outputNameLabel": "Output filename",
+    "overwriteLabel": "Overwrite the original PDF",
+    "cancel": "Cancel",
+    "confirm": "Compress",
+    "compressing": "Compressing...",
+    "failed": "Compression failed"
   },
   "reorderDialog": {
     "title": "Reorder Pages",
@@ -180,6 +194,8 @@
     "registering": "Creating account...",
     "loginFailed": "Login failed",
     "invalidCredentials": "Invalid email or password",
+    "emailNotFound": "No account found with this email",
+    "wrongPassword": "Wrong password. Try again or reset it",
     "emailQuotaExceeded": "Monthly email limit reached. Please try again next month.",
     "rateLimitExceeded": "Too many attempts. Please try again in a minute.",
     "registerFailed": "Registration failed",
@@ -209,7 +225,12 @@
     "resetting": "Resetting...",
     "resetInvalidToken": "Invalid or missing reset token.",
     "requestNewReset": "Request a new reset link",
-    "sending": "Sending..."
+    "sending": "Sending...",
+    "notAuthenticated": "Please sign in to continue",
+    "emailAlreadyRegistered": "This email is already registered",
+    "passwordTooWeak": "Password is too weak",
+    "resetTokenExpired": "This reset link has expired",
+    "googleAuthFailed": "Google authentication failed"
   },
   "admin": {
     "title": "Admin Dashboard",
@@ -245,7 +266,9 @@
     "appVersion": "App Version",
     "osInfo": "OS Info",
     "sendReset": "Send Reset Email",
-    "sendResetSent": "Reset email sent!"
+    "sendResetSent": "Reset email sent!",
+    "cannotDemoteSuperAdmin": "Cannot demote a super admin",
+    "stripeLicenseLocked": "License is locked via Stripe"
   },
   "deleteModal": {
     "title": "Delete PDF",

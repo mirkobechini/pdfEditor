@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useAuth } from "../../shared/auth";
 import { api } from "../../shared/api";
+import { useApiError } from "../../hooks/useApiError";
 
 export default function ProfilePage() {
     const tp = useTranslations("profile");
+    const { apiError } = useApiError();
     const { user, loading, logout, setUser } = useAuth();
     const [showUnlinkModal, setShowUnlinkModal] = React.useState(false);
     const [unlinkPassword, setUnlinkPassword] = React.useState("");
@@ -24,7 +26,7 @@ export default function ProfilePage() {
             setShowUnlinkModal(false);
             setUnlinkPassword("");
         } catch (err) {
-            setUnlinkError(err instanceof Error ? err.message : "Failed to unlink");
+            setUnlinkError(apiError(err));
         } finally {
             setUnlinking(false);
         }

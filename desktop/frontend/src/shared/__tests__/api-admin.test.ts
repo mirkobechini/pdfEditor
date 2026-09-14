@@ -114,6 +114,12 @@ describe("ApiClient admin methods", () => {
     });
     const result = await client.createBugReport("Bug", "Desc");
     expect(result).toEqual(report);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://test.local/bugs",
+      expect.objectContaining({
+        body: JSON.stringify({ title: "Bug", description: "Desc", platform: "desktop" }),
+      })
+    );
   });
 
   it("createBugReport sends page_url when provided", async () => {
@@ -125,7 +131,7 @@ describe("ApiClient admin methods", () => {
     expect(mockFetch).toHaveBeenCalledWith(
       "http://test.local/bugs",
       expect.objectContaining({
-        body: JSON.stringify({ title: "Bug", description: "Desc", page_url: "http://page" }),
+        body: JSON.stringify({ title: "Bug", description: "Desc", platform: "desktop", page_url: "http://page" }),
       })
     );
   });

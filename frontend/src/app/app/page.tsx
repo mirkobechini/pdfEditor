@@ -7,6 +7,7 @@ import Toolbar from "../components/Toolbar";
 import PdfViewer from "../components/PdfViewer";
 import MergeDialog from "../components/MergeDialog";
 import SplitDialog from "../components/SplitDialog";
+import CompressDialog from "../components/CompressDialog";
 import ReorderDialog from "../components/ReorderDialog";
 import RemoveDialog from "../components/RemoveDialog";
 import MetadataDialog from "../components/MetadataDialog";
@@ -26,6 +27,7 @@ export default function EditorPage() {
     const [zoom, setZoom] = React.useState(1);
     const [mergeOpen, setMergeOpen] = React.useState(false);
     const [splitOpen, setSplitOpen] = React.useState(false);
+    const [compressOpen, setCompressOpen] = React.useState(false);
     const [reorderOpen, setReorderOpen] = React.useState(false);
     const [removeOpen, setRemoveOpen] = React.useState(false);
     const [metadataOpen, setMetadataOpen] = React.useState(false);
@@ -158,6 +160,7 @@ export default function EditorPage() {
                         onZoomChange={setZoom}
                         onMerge={() => setMergeOpen(true)}
                         onSplit={() => setSplitOpen(true)}
+                        onCompress={() => setCompressOpen(true)}
                         onReorder={() => setReorderOpen(true)}
                         onRemovePages={() => setRemoveOpen(true)}
                         onReplaceText={() => setReplaceTextOpen(true)}
@@ -213,6 +216,13 @@ export default function EditorPage() {
                 selectedId={selectedId}
                 selectedName={selectedName}
                 totalPages={totalPages}
+                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
+            />
+            <CompressDialog
+                open={compressOpen}
+                onClose={() => setCompressOpen(false)}
+                selectedId={selectedId}
+                selectedName={selectedName}
                 onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
             />
             <ReorderDialog

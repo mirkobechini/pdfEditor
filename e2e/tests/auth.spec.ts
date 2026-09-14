@@ -46,7 +46,9 @@ test.describe("Auth flows", () => {
     await page.getByRole("button", { name: "Accedi", exact: true }).click();
 
     await expect(
-      page.getByText(/email o password non validi|invalid email or password/i),
+      page.getByText(
+        /email o password non validi|invalid email or password|password errata|wrong password/i,
+      ),
     ).toBeVisible();
   });
 

@@ -110,3 +110,28 @@ class TestGoogleAuth:
         # Verify same user returned
         assert user.email == "existing@gmail.com"
         assert token is not None
+
+    @patch("google.oauth2.id_token.verify_oauth2_token")
+    def test_google_login_accepts_android_client_id(self, mock_verify, db_session, monkeypatch):
+        """Should accept id_token with Android client ID as audience."""
+        from app.core.config import settings
+        monkeypatch.setattr(settings, "GOOGLE_ANDROID_CLIENT_ID", "android-client-id.apps.googleusercontent.com")
+
+        service = AuthService(db_session)
+
+        # First call (web client) raises, second call (Android client) succeeds
+        mock_verify.side_effect = [
+            ValueError("audience mismatch"),
+            {
+                "sub": "android-user-123",
+                "email": "android@gmail.com",
+                "name": "Android User",
+            },
+        ]
+
+        user, token = service.google_login("some.jwt.token")
+
+        assert user.email == "android@gmail.com"
+        assert token is not None
+        # verify_oauth2_token called twice (web + Android audience)
+        assert mock_verify.call_count == 2

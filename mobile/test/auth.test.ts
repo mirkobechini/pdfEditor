@@ -57,6 +57,21 @@ describe("Auth integration", () => {
     expect(res.access_token).toBe("guest-jwt");
   });
 
+  it("googleLogin exchanges id_token", async () => {
+    mockFetch.mockResolvedValueOnce(
+      ok({ access_token: "google-jwt", token_type: "bearer" }),
+    );
+    const res = await api.googleLogin("google-id-token");
+    expect(res.access_token).toBe("google-jwt");
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${BASE}/auth/google`,
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ id_token: "google-id-token" }),
+      }),
+    );
+  });
+
   it("getMe returns user with Authorization header", async () => {
     api.setToken("valid-jwt");
     mockFetch.mockResolvedValueOnce(ok({ id: "u1", email: "user@test.com" }));

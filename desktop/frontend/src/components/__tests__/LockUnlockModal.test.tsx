@@ -105,7 +105,7 @@ describe("LockUnlockModal", () => {
     fireEvent.change(confirm, { target: { value: "pass1234" } });
     fireEvent.click(screen.getByText("lock"));
     await waitFor(() => {
-      expect(screen.getByText("Failed to lock")).toBeInTheDocument();
+      expect(screen.getByText("common.unknownError")).toBeInTheDocument();
     });
   });
 
@@ -116,7 +116,7 @@ describe("LockUnlockModal", () => {
     fireEvent.change(pw, { target: { value: "wrong" } });
     fireEvent.click(screen.getByText("unlock"));
     await waitFor(() => {
-      expect(screen.getByText("Wrong password")).toBeInTheDocument();
+      expect(screen.getByText("common.unknownError")).toBeInTheDocument();
     });
   });
 

@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
+import { useApiError } from "../hooks/useApiError";
 
 interface RemovePagesModalProps {
     open: boolean;
@@ -78,6 +79,7 @@ export default function RemovePagesModal({ open, pdfId, pdfName, totalPages, pdf
     const [newFilename, setNewFilename] = React.useState(pdfName);
     const [overwrite, setOverwrite] = React.useState(false);
     const tr = useTranslations("removeModal");
+    const { apiError } = useApiError();
 
     React.useEffect(() => {
         if (open) {
@@ -139,7 +141,7 @@ export default function RemovePagesModal({ open, pdfId, pdfName, totalPages, pdf
             onSaved(updated);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : tr("removeError"));
+            setError(apiError(err));
         } finally {
             setSaving(false);
         }

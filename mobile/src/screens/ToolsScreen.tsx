@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
-import { Text, Card, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton, TextInput, Snackbar } from "react-native-paper";
+import { Text, Card, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton, TextInput, Snackbar, RadioButton } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf } from "../services/pdfService";
+import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf } from "../services/pdfService";
 import { useTranslation } from "react-i18next";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
@@ -38,6 +38,10 @@ export default function ToolsScreen() {
     // Name dialog state
     const [nameDialog, setNameDialog] = useState<{ type: "merge" | "split" | "reorder" | "remove"; data: any } | null>(null);
     const [nameInput, setNameInput] = useState("");
+    // Compress dialog state
+    const [compressDialog, setCompressDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
+    const [compressQuality, setCompressQuality] = useState<"low" | "medium" | "high">("medium");
+    const [compressNameInput, setCompressNameInput] = useState("");
     // Metadata dialog state
     const [metadataDialog, setMetadataDialog] = useState<{ pdfId: string; pdfName: string; title: string; author: string } | null>(null);
     // Password dialog state
@@ -249,6 +253,25 @@ export default function ToolsScreen() {
         setPasswordConfirm("");
     }
 
+    // ─── Compress ────────────────────────────────────────────────
+
+    function openCompressDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        if (!pdf) return;
+        setCompressDialog({ pdfId, pdfName: pdf.original_filename });
+    }
+
+    async function executeCompress(fileName?: string) {
+        if (!compressDialog) return;
+        setLoading(true);
+        const result_pdf = await compressPdf(compressDialog.pdfId, compressQuality, fileName);
+        if (result_pdf) showResult(t("tools.compressResult", { name: result_pdf.original_filename }));
+        else showResult(t("tools.compressFailed"));
+        setLoading(false);
+        setCompressDialog(null);
+        await reloadPdfs();
+    }
+
     async function executeProtect() {
         if (!passwordDialog || passwordDialog.mode !== "protect") return;
         if (passwordInput.length < 4) { showResult(t("tools.passwordShort")); return; }
@@ -304,6 +327,15 @@ export default function ToolsScreen() {
                         onPress={() => { setOperation("split"); setSelectedIds([]); }}
                     >
                         {t("tools.split")}
+                    </Button>
+                    <Button
+                        mode={operation === "compress" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "compress" ? theme.colors.primary : undefined}
+                        textColor={operation === "compress" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("compress"); setSelectedIds([]); }}
+                    >
+                        {t("tools.compress")}
                     </Button>
                     <Button
                         mode={operation === "reorder" ? "contained" : "outlined"}
@@ -400,6 +432,7 @@ export default function ToolsScreen() {
                                 onPress={() => {
                                     if (operation === "merge") toggleSelect(item.id);
                                     else if (operation === "split") openSplitDialog(item.id);
+                                    else if (operation === "compress") openCompressDialog(item.id);
                                     else if (operation === "reorder") openReorderDialog(item.id);
                                     else if (operation === "remove") openRemoveDialog(item.id);
                                     else if (operation === "metadata") openMetadataDialog(item.id);
@@ -537,6 +570,42 @@ export default function ToolsScreen() {
                     <Dialog.Actions>
                         <Button onPress={() => setMetadataDialog(null)}>{t("common.cancel")}</Button>
                         <Button onPress={saveMetadata}>{t("common.save")}</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Compress Dialog — choose quality and output name */}
+            <Portal>
+                <Dialog visible={compressDialog !== null} onDismiss={() => setCompressDialog(null)}>
+                    <Dialog.Title>{t("tools.compressTitle")}</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                            {t("tools.compressHint", { name: compressDialog?.pdfName || "" })}
+                        </Text>
+                        <RadioButton.Group
+                            onValueChange={(val) => setCompressQuality(val as "low" | "medium" | "high")}
+                            value={compressQuality}
+                        >
+                            <RadioButton.Item label={t("tools.compressLow")} value="low" />
+                            <RadioButton.Item label={t("tools.compressMedium")} value="medium" />
+                            <RadioButton.Item label={t("tools.compressHigh")} value="high" />
+                        </RadioButton.Group>
+                        <TextInput
+                            label={t("tools.fileNameOptional")}
+                            mode="outlined"
+                            value={compressNameInput}
+                            onChangeText={setCompressNameInput}
+                            style={{ marginTop: 12 }}
+                        />
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setCompressDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={() => {
+                            const fileName = compressNameInput.trim() || undefined;
+                            setCompressDialog(null);
+                            setCompressNameInput("");
+                            executeCompress(fileName);
+                        }}>{t("common.save")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

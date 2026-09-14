@@ -17,7 +17,8 @@
     "unlock": "Sblocca",
     "metadata": "Info",
     "replaceText": "Trova e Sostituisci",
-    "protect": "Proteggi"
+    "protect": "Proteggi",
+    "compress": "Comprimi"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -59,6 +60,19 @@
     "failed": "Divisione fallita",
     "outputName": "Nome file output",
     "outputNameHint": "Lascia vuoto per nome automatico"
+  },
+  "compressDialog": {
+    "title": "Comprimi PDF",
+    "qualityLabel": "Qualità",
+    "qualityLow": "Bassa (file più piccolo)",
+    "qualityMedium": "Media (bilanciata)",
+    "qualityHigh": "Alta (qualità migliore)",
+    "outputNameLabel": "Nome file output",
+    "overwriteLabel": "Sovrascrivi il PDF originale",
+    "cancel": "Annulla",
+    "confirm": "Comprimi",
+    "compressing": "Compressione in corso...",
+    "failed": "Compressione fallita"
   },
   "reorderDialog": {
     "title": "Riordina Pagine",
@@ -182,6 +196,8 @@
     "registering": "Creazione account in corso...",
     "loginFailed": "Accesso fallito",
     "invalidCredentials": "Email o password non validi",
+    "emailNotFound": "Nessun account trovato con questa email",
+    "wrongPassword": "Password errata. Riprova o reimposta la password",
     "emailQuotaExceeded": "Limite email mensile raggiunto. Riprova il mese prossimo.",
     "rateLimitExceeded": "Troppi tentativi. Riprova tra un minuto.",
     "registerFailed": "Registrazione fallita",
@@ -211,7 +227,12 @@
     "resetting": "Reimpostazione in corso...",
     "resetInvalidToken": "Token di reset non valido o mancante.",
     "requestNewReset": "Richiedi un nuovo link di reset",
-    "sending": "Invio in corso..."
+    "sending": "Invio in corso...",
+    "notAuthenticated": "Accedi per continuare",
+    "emailAlreadyRegistered": "Questa email è già registrata",
+    "passwordTooWeak": "Password troppo debole",
+    "resetTokenExpired": "Questo link di reset è scaduto",
+    "googleAuthFailed": "Autenticazione Google fallita"
   },
   "admin": {
     "title": "Pannello Admin",
@@ -247,7 +268,9 @@
     "appVersion": "Versione App",
     "osInfo": "Info OS",
     "sendReset": "Invia Email Reset",
-    "sendResetSent": "Email di reset inviata!"
+    "sendResetSent": "Email di reset inviata!",
+    "cannotDemoteSuperAdmin": "Non puoi retrocedere un super admin",
+    "stripeLicenseLocked": "Licenza bloccata via Stripe"
   },
   "deleteModal": {
     "title": "Elimina PDF",

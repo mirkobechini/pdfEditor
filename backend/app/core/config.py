@@ -103,6 +103,7 @@ class Settings(BaseSettings):
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""  # Set in .env for production
     GOOGLE_CLIENT_SECRET: str = ""  # Set in .env for production
+    GOOGLE_ANDROID_CLIENT_ID: str = ""  # Mobile Android client ID (for id_token audience check)
     PUBLIC_URL: str = ""  # Custom domain for OAuth redirect URIs (e.g. https://pdfeditor-api.mirkobechini.com)
 
     # Database — use as_posix() to get forward slashes for SQLAlchemy URI

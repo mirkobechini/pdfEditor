@@ -59,6 +59,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
         run: npm install
+      - name: Copy shared (prebuild)
+        run: node scripts/copy-shared.js
       - name: Run tests
         run: npx vitest run --reporter=verbose
       - name: Build check (catch compilation errors)

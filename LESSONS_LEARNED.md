@@ -1,7 +1,60 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo svilupzo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-06
+> **Aggiornato:** 2026-09-12
+
+---
+
+## Security audit: mai salvare credenziali in chiaro né loggarle
+
+> **Lezione appresa (2026-09-12):**
+
+L'analisi di sicurezza ha trovato 2 falle di privacy:
+
+1. **Password PDF in chiaro nel DB** (`password_cache`): le password dei PDF protetti erano salvate in chiaro. Fix: cifrate con **Fernet** (key da SECRET_KEY) in `app/core/password_cipher.py`.
+2. **Token loggati in chiaro**: il reset token (email_service) e il Google id_token (auth_service) erano loggati. Fix: rimossi dai log.
+
+**Regola per il futuro:** mai salvare password/token in chiaro nel DB, mai loggarli (nemmeno parzialmente). Se serve una cache di credenziali, cifrarla con la SECRET_KEY. Se serve un log di debug, loggare solo identificatori non sensibili (es. email).
+
+---
+
+## Re-export dal shared: il mock dei test deve colpire il path reale
+
+> **Lezione appresa (2026-09-11):**
+
+Nel refactor unify auth (#761), il web re-exportava `lib/api.ts`/`lib/tauri.ts`/`lib/error-map.ts` dal shared (`src/shared/`). I test web che mockavano `../api` (il vecchio path) **non colpivano più** il shared api, che importa da `./api` (src/shared/api.ts). Risultato: i test fallivano con `null` invece dell'utente atteso.
+
+**Perché è subdolo:** il re-export nasconde il path reale. Il test mocka `lib/api.ts`, ma il shared api usa `src/shared/api.ts`. Il mock non viene applicato.
+
+**Fix:** aggiornare i mock per colpire il path reale del shared (`../../../shared/api` dal test in `src/app/lib/__tests__/`). **Nota:** successivamente `api.ts` web è stato ripristinato all'originale (il re-export rompeva login/register e2e), quindi il web re-exporta solo `tauri.ts`/`error-map.ts`/tipi.
+
+**Regola:** quando si introduce un re-export, verificare che i test mockino il path **reale** del modulo importato, non il path del re-export. Un mock che non colpisce il modulo giusto produce fallimenti confusi (`null` invece dell'utente).
+
+---
+
+## Non forzare il shared auth nel web: modelli auth diversi
+
+> **Lezione appresa (2026-09-11):**
+
+Nel refactor #761 si è tentato di far usare al web il shared `auth.tsx` (desktop-first, con `cloudApi` per login/register). Questo ha **rotto il flusso auth web** (register/login non portavano più a `/app`), perché il web è cookie-based con un solo backend, mentre il desktop usa sidecar + cloud. Dopo 4 fix successivi (copy-shared, i18n, getCloudApiBaseUrl) il flusso restava rotto.
+
+**Fix:** revert del `lib/auth.tsx` web all'originale (cookie-based con `api`). Il web re-exporta solo `tauri.ts`/`error-map.ts` e i tipi dal shared, NON `auth.tsx` e NON `api.ts` (il shared `api.ts` ha auto-refresh 401 e CSRF diverso che rompevano login/register e2e — il web usa la copia originale `lib/api.ts` cookie-based).
+
+**Regola:** l'unificazione ha senso per moduli con logica identica (tauri helpers, error-map). NON forzare l'unificazione di moduli con modelli architetturali diversi (auth web cookie-based vs desktop sidecar+cloud, api client con auto-refresh vs CSRF guard). Il costo in regressioni supera il beneficio del code drift.
+
+---
+
+## Loop su audience vuote non chiama mai la funzione mockata (CI rossa)
+
+> **Lezione appresa (2026-09-09):**
+
+Il PR #756 ha introdotto un loop sulle audience Google per supportare sia il client web che Android. Il loop faceva `if not aud: continue` per saltare le audience vuote. In CI `GOOGLE_CLIENT_ID` è vuoto (non impostato), quindi **tutte** le audience erano vuote → `verify_oauth2_token` non veniva mai chiamato → `info` restava `None` → `ValueError: Invalid or expired Google token`. 6 test fallivano.
+
+**Perché è subdolo:** i test mockano `verify_oauth2_token`, ma il mock non veniva mai invocato perché il loop lo saltava. L'errore non era nel mock né nella logica di validazione, ma nel fatto che la funzione non veniva proprio chiamata.
+
+**Fix:** rimosso lo skip delle audience vuote. Ora `verify_oauth2_token` viene sempre chiamato almeno una volta (con audience vuota il mock lo ignora).
+
+**Regola:** quando si itera su una lista di valori di configurazione (audience, client ID, URL) che possono essere vuoti in alcuni ambienti (CI, test), NON saltare l'iterazione con `continue` se questo impedisce di chiamare la funzione sotto test. Verificare SEMPRE che i test colpiscano davvero la funzione mockata (es. `assert mock.call_count > 0`).
 
 ---
 
@@ -243,6 +296,14 @@ Mancava in `ALLOWED_ORIGINS`, causando CORS error su tutte le fetch. Il dev mode
 
 ## Security audit
 
+### 2026-09-12 — Audit dipendenze: fixare prima le critical/high fixabili, accettare le moderate/non fixabili
+
+Audit completo (npm audit + pip-audit + cargo audit) con AGENT_FLOW 7.1. Risultato:
+
+- **Fixati**: next 16.3.5 (critical RCE), js-yaml 4.3.2 (high), sharp 0.35.4 (high), fastapi 0.141.1 → starlette 1.6.0 (14 CVE), expo 57.0.22.
+- **Accettati**: vitest 4.x (3 moderate, dev tool non esposto in produzione), Expo sub-deps (non fixabili senza downgrade).
+- **Lezione**: prima di accettare una vulnerabilità, verificare se è in produzione o in dev-deps, e se il fix richiede breaking changes. Le critical/high fixabili vanno sempre fixate; le moderate in dev tool si possono documentare e accettare.
+
 ### 2026-07-15 — I bug vanno cercati nel codice, non aspettare che emergano in produzione
 
 L'audit manuale del 2026-07-15 ha trovato 21 bug + 10 miglioramenti, tutti fixati con PR e CI. La lezione è che il testing automatizzato da solo non basta — serve revisione attiva del codice.
@@ -255,7 +316,7 @@ L'audit manuale del 2026-07-15 ha trovato 21 bug + 10 miglioramenti, tutti fixat
 
 ## Note tecniche
 
-- Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` non è fixabile — `httpx2` non esiste ancora.
+- Il warning `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install httpx2 instead` è stato risolto con l'upgrade a starlette 1.6.0 (PR #783) — ora usa `httpx2`.
 
 ### 2026-08-02 — Sync user non basta per CSRF sidecar
 

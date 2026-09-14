@@ -85,7 +85,7 @@ describe("RemovePagesModal", () => {
         const removeBtn = screen.getByRole("button", { name: /remove/ });
         fireEvent.click(removeBtn);
         await waitFor(() => {
-            expect(screen.getByText("Remove failed")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 
@@ -158,7 +158,7 @@ describe("RemovePagesModal", () => {
         fireEvent.change(pageInput, { target: { value: "1" } });
         fireEvent.click(screen.getByRole("button", { name: /remove/ }));
         await waitFor(() => {
-            expect(screen.getByText("removeError")).toBeInTheDocument();
+            expect(screen.getByText("common.unknownError")).toBeInTheDocument();
         });
     });
 

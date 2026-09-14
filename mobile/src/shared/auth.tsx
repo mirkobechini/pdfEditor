@@ -14,6 +14,7 @@ interface AuthContextValue {
     actionLoading: boolean;
     login: (email: string, password: string, remember?: boolean) => Promise<void>;
     register: (email: string, password: string, fullName: string) => Promise<void>;
+    googleLogin: (idToken: string) => Promise<void>;
     guestLogin: () => Promise<void>;
     logout: () => Promise<void>;
     forgotPassword: (email: string) => Promise<void>;
@@ -176,6 +177,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    const googleLogin = useCallback(async (idToken: string) => {
+        setActionLoading(true);
+        try {
+            const res = await api.googleLogin(idToken);
+            api.setToken(res.access_token);
+            if (res.csrf_token) {
+                api.setCsrfToken(res.csrf_token);
+                await AsyncStorage.setItem(CSRF_TOKEN_KEY, res.csrf_token);
+            }
+            await AsyncStorage.setItem(REMEMBER_TOKEN_KEY, res.access_token);
+            const u = await api.getMe();
+            await AsyncStorage.setItem(REMEMBER_USER_KEY, JSON.stringify(u));
+            setUser(u);
+        } finally {
+            setActionLoading(false);
+        }
+    }, []);
+
     const logout = useCallback(async () => {
         try {
             await api.logout();
@@ -197,7 +216,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, loading, isOffline, actionLoading, login, register, guestLogin, logout, forgotPassword, setUser }}>
+        <AuthContext.Provider value={{ user, loading, isOffline, actionLoading, login, register, googleLogin, guestLogin, logout, forgotPassword, setUser }}>
             {children}
         </AuthContext.Provider>
     );

@@ -14,6 +14,12 @@
     "languageEn": "English",
     "languageSystem": "System language"
   },
+  "update": {
+    "title": "Update available",
+    "message": "A new version {{version}} is available.",
+    "download": "Download",
+    "later": "Later"
+  },
   "home": {
     "title": "Editor",
     "search": "Search PDFs",
@@ -61,6 +67,7 @@
     "title": "PDF Tools",
     "merge": "Merge",
     "split": "Split",
+    "compress": "Compress",
     "reorder": "Reorder",
     "remove": "Remove pages",
     "metadata": "Metadata",
@@ -71,6 +78,13 @@
     "mergeResult": "Merged into: {{name}}",
     "mergeFailed": "Merge failed",
     "splitResult": "Split into {{count}} PDFs",
+    "compressTitle": "Compress PDF",
+    "compressHint": "Compress {{name}} by choosing a quality.",
+    "compressLow": "Low (smaller file)",
+    "compressMedium": "Medium (recommended)",
+    "compressHigh": "High (best quality)",
+    "compressResult": "Compressed: {{name}}",
+    "compressFailed": "Compression failed",
     "reorderResult": "Reordered: {{name}}",
     "reorderFailed": "Reorder failed",
     "removeResult": "Removed pages: {{name}}",
@@ -114,6 +128,7 @@
     "signIn": "Sign In",
     "register": "Register",
     "guest": "Continue as Guest",
+    "googleLogin": "Continue with Google",
     "email": "Email",
     "password": "Password",
     "fullName": "Full Name",
@@ -139,6 +154,15 @@
     "resetTokenExpired": "Reset token has expired",
     "notAuthenticated": "Not authenticated",
     "googleAuthFailed": "Google authentication failed"
+  },
+  "bugReport": {
+    "title": "Report a bug",
+    "titleLabel": "Title",
+    "descriptionLabel": "Description",
+    "categoryLabel": "Category",
+    "submit": "Submit",
+    "success": "Bug report sent. Thank you for your contribution!",
+    "required": "Please fill in title and description."
   },
   "common": {
     "ok": "OK",

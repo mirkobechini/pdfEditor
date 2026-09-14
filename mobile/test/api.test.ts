@@ -101,6 +101,33 @@ describe("ApiClient", () => {
     });
   });
 
+  describe("googleLogin", () => {
+    it("sends POST to /auth/google with id_token", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({
+          access_token: "google-token",
+          token_type: "bearer",
+        }),
+      );
+      const result = await client.googleLogin("google-id-token");
+      expect(result.access_token).toBe("google-token");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/auth/google`,
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ id_token: "google-id-token" }),
+        }),
+      );
+    });
+
+    it("throws on failure", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ detail: "Google auth failed" }, 400),
+      );
+      await expect(client.googleLogin("bad-token")).rejects.toThrow();
+    });
+  });
+
   describe("getMe", () => {
     it("sends GET to /auth/me with Authorization header", async () => {
       client.setToken("my-jwt");
@@ -528,6 +555,51 @@ describe("ApiClient", () => {
           body: expect.stringContaining("reset-token"),
         }),
       );
+    });
+  });
+
+  describe("createBugReport", () => {
+    it("sends POST to /bugs with title, description and platform", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "b1", title: "Bug", platform: "mobile" }),
+      );
+      const result = await client.createBugReport(
+        "Bug title",
+        "Bug desc",
+        "mobile",
+      );
+      expect(result.id).toBe("b1");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/bugs`,
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            title: "Bug title",
+            description: "Bug desc",
+            platform: "mobile",
+          }),
+        }),
+      );
+    });
+
+    it("defaults platform to mobile", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ id: "b2", title: "Bug" }),
+      );
+      await client.createBugReport("Bug title", "Bug desc");
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE}/bugs`,
+        expect.objectContaining({
+          body: expect.stringContaining('"platform":"mobile"'),
+        }),
+      );
+    });
+
+    it("throws on failure", async () => {
+      mockFetch.mockResolvedValueOnce(
+        mockJsonResponse({ detail: "Failed" }, 400),
+      );
+      await expect(client.createBugReport("t", "d")).rejects.toThrow();
     });
   });
 });

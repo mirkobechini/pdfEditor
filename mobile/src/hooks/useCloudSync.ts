@@ -14,6 +14,7 @@ import { api } from "../shared/api";
 import type { LocalPdf } from "../shared/types";
 import {
   getLocalPdfById,
+  getLocalPdfByCloudId,
   savePdfLocally,
   getUnsyncedPdfs,
   markPdfCloudSynced,
@@ -267,6 +268,7 @@ export function useCloudSync(): UseCloudSyncReturn {
         await savePdfLocally({
           id: localId,
           user_id: user?.id ?? "",
+          cloud_id: pdfId,
           original_filename: cloudPdf.original_filename,
           file_size: blob.size,
           page_count: cloudPdf.page_count || 0,
@@ -494,7 +496,7 @@ export function useCloudSync(): UseCloudSyncReturn {
               total: totalSteps,
             });
 
-            const local = await getLocalPdfById(cloudPdf.id);
+            const local = await getLocalPdfByCloudId(cloudPdf.id);
 
             if (!local) {
               // Not in local → download

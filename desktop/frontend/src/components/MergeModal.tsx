@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
+import { useApiError } from "../hooks/useApiError";
 
 interface MergeModalProps {
     open: boolean;
@@ -15,6 +16,7 @@ interface MergeModalProps {
 
 export default function MergeModal({ open, pdfId, pdfName, onClose, onSaved }: MergeModalProps) {
     const tmm = useTranslations("mergeModal");
+    const { apiError } = useApiError();
     const [docs, setDocs] = React.useState<PdfDocument[]>([]);
     const [selected, setSelected] = React.useState<Set<string>>(new Set());
     const [merging, setMerging] = React.useState(false);
@@ -49,7 +51,7 @@ export default function MergeModal({ open, pdfId, pdfName, onClose, onSaved }: M
             onSaved(result);
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : tmm("mergeError"));
+            setError(apiError(err));
         } finally { setMerging(false); }
     }
 

@@ -6,6 +6,7 @@ import { PDFDocument } from "@cantoo/pdf-lib";
 import { File, Directory, Paths } from "expo-file-system";
 import { writeAsStringAsync, EncodingType } from "expo-file-system/legacy";
 import { getLocalPdfById, savePdfLocally } from "./localDb";
+import { api } from "../shared/api";
 import type { LocalPdf } from "../shared/types";
 
 function generateId(): string {
@@ -377,6 +378,66 @@ export async function unlockPdf(
     return result;
   } catch (e) {
     console.error("Unlock error:", e);
+    return null;
+  }
+}
+
+/**
+ * Compress a PDF via the cloud backend (pdf-lib has no native compression).
+ * Flow: upload local PDF → compress on backend → download → save locally.
+ */
+export async function compressPdf(
+  pdfId: string,
+  quality: "low" | "medium" | "high" = "medium",
+  fileName?: string,
+  overwrite = false,
+): Promise<LocalPdf | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    // Upload the local PDF to the cloud
+    const uploaded = await api.uploadPdf(
+      pdf.uri,
+      pdf.original_filename,
+      "application/pdf",
+    );
+
+    // Compress on the backend
+    const compressed = await api.compressPdf(
+      uploaded.id,
+      quality,
+      fileName || undefined,
+      overwrite,
+    );
+
+    // Download the compressed PDF
+    const blob = await api.downloadPdf(compressed.id);
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    // Save locally
+    const id = generateId();
+    const pdfDir = getPdfDir();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, bytes);
+
+    const now = new Date().toISOString();
+    const safeName = fileName
+      ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+      : `compressed_${pdf.original_filename}`;
+    const result: LocalPdf = {
+      id,
+      original_filename: safeName,
+      file_size: bytes.length,
+      page_count: compressed.page_count,
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("Compress error:", e);
     return null;
   }
 }

@@ -94,7 +94,7 @@ describe("MergeModal", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /merge/ }));
     await waitFor(() => {
-      expect(screen.getByText("Merge failed")).toBeInTheDocument();
+      expect(screen.getByText("common.unknownError")).toBeInTheDocument();
     });
   });
 

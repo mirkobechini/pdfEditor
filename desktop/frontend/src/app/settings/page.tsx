@@ -9,6 +9,7 @@ import { useLocaleSetter } from "../../lib/i18n";
 import { usePreferences } from "../../lib/preferences";
 import { isTauri, tauriInvoke } from "../../shared/tauri";
 import { useCloudSync } from "../../hooks/useCloudSync";
+import { useApiError } from "../../hooks/useApiError";
 
 const sections = [
     { id: "general", label: "general" },
@@ -111,6 +112,7 @@ function AboutSection({ title, rows, onAction }: { title: string; rows: readonly
 export default function SettingsPage() {
     const ts = useTranslations("settings");
     const tc = useTranslations("common");
+    const { apiError } = useApiError();
     const { user } = useAuth();
     const setLocale = useLocaleSetter();
     const { prefs, updatePrefs } = usePreferences();
@@ -516,11 +518,11 @@ export default function SettingsPage() {
                                         if (!bugTitle.trim() || !bugDesc.trim()) { setBugError(ts("bugValidationError")); return; }
                                         setBugSending(true); setBugError("");
                                         try {
-                                            await api.createBugReport(bugTitle.trim(), bugDesc.trim(), "desktop-settings");
+                                            await api.createBugReport(bugTitle.trim(), bugDesc.trim());
                                             setBugDone(true);
                                             setBugTitle(""); setBugDesc("");
                                         } catch (err) {
-                                            setBugError(err instanceof Error ? err.message : ts("bugSendError"));
+                                            setBugError(apiError(err));
                                         } finally { setBugSending(false); }
                                     }} disabled={bugSending} className="flex-1 rounded-xl bg-[#f7871f] py-2.5 text-sm font-semibold text-white disabled:opacity-50">
                                         {bugSending ? ts("bugSending") : ts("bugSend")}

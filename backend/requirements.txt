@@ -1,4 +1,4 @@
-fastapi==0.115.0
+fastapi==0.141.1
 uvicorn[standard]==0.30.0
 sqlalchemy==2.0.35
 alembic==1.13.2
@@ -15,7 +15,7 @@ psycopg[binary]==3.2.10
 PyMuPDF>=1.26,<1.27
 python-magic==0.4.27
 aiofiles==24.1.0
-slowapi==0.1.9
+slowapi==0.1.10
 
 # testing
 pytest==9.0.3

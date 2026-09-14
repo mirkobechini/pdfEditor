@@ -11,6 +11,7 @@ import type {
   AuthResponse,
   UserResponse,
   LocalPdf,
+  BugReport,
 } from "./types";
 
 export type {
@@ -20,6 +21,7 @@ export type {
   AuthResponse,
   UserResponse,
   LocalPdf,
+  BugReport,
 };
 
 // Cloud backend URL
@@ -199,6 +201,18 @@ export class ApiClient {
     return data;
   }
 
+  async googleLogin(idToken: string): Promise<AuthResponse> {
+    const res = await this._fetch(`${this.baseUrl}/auth/google`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ id_token: idToken }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    const data = await res.json();
+    if (data.csrf_token) this.setCsrfToken(data.csrf_token);
+    return data;
+  }
+
   async getMe(): Promise<UserResponse> {
     const res = await this._fetch(`${this.baseUrl}/auth/me`, {
       headers: this.getHeaders(),
@@ -229,6 +243,22 @@ export class ApiClient {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, new_password: newPassword }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
+  // ─── Bug report endpoints ────────────────────────────────────────
+
+  async createBugReport(
+    title: string,
+    description: string,
+    platform: string = "mobile",
+  ): Promise<BugReport> {
+    const res = await this._fetch(`${this.baseUrl}/bugs`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ title, description, platform }),
     });
     if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
@@ -323,6 +353,23 @@ export class ApiClient {
     if (ranges) body.ranges = ranges;
     if (outputFilename) body.output_filename = outputFilename;
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/split`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
+  async compressPdf(
+    id: string,
+    quality: "low" | "medium" | "high" = "medium",
+    outputFilename?: string,
+    overwrite = false,
+  ): Promise<PdfDocument> {
+    const body: Record<string, unknown> = { quality, overwrite };
+    if (outputFilename) body.output_filename = outputFilename;
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/compress`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(body),

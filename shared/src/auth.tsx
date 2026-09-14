@@ -7,6 +7,24 @@ import type { User } from "./types";
 
 const REMEMBER_TOKEN_KEY = "pdfeditor_remember_token";
 const CLOUD_TOKEN_KEY = "pdfeditor_cloud_token";
+const USER_CACHE_KEY = "pdfeditor_user_cache";
+
+function cacheUser(user: User | null) {
+  if (user) {
+    localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(USER_CACHE_KEY);
+  }
+}
+
+function getCachedUser(): User | null {
+  try {
+    const raw = localStorage.getItem(USER_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
+    return null;
+  }
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -69,6 +87,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const token = api.getToken();
       if (!token) {
+        // Web: the httpOnly cookie may still authenticate the session even
+        // without a localStorage token (remember-me not checked). Try getMe().
+        // Desktop: no token means not authenticated — skip.
+        if (!isTauri()) {
+          try {
+            const u = await api.getMe();
+            if (!cancelled) {
+              setUser(u);
+              setIsOffline(false);
+              api.refreshCsrf();
+              return;
+            }
+          } catch {
+            // No valid cookie — not authenticated
+          }
+        }
         if (!cancelled) setLoading(false);
         return;
       }
@@ -106,7 +140,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } catch {
             // Neanche il cloud risponde — offline mode
             setIsOffline(true);
-            // Keep the user from cache if we have one, otherwise null
+            // Restore user from cache so local PDFs remain usable offline
+            const cached = getCachedUser();
+            if (cached && !cancelled) {
+              setUser(cached);
+            }
           }
         }
       } finally {
@@ -192,6 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const u = await api.getMe();
       setUser(u);
+      cacheUser(u);
       api.refreshCsrf();
       cloudApi.refreshCsrf();
     } finally {
@@ -219,9 +258,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const u = await api.getMe();
         setUser(u);
+        cacheUser(u);
       } catch {
         const u = await cloudApi.getMe();
         setUser(u);
+        cacheUser(u);
       }
       api.refreshCsrf();
       cloudApi.refreshCsrf();
@@ -252,10 +293,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const u = await api.getMe();
           setUser(u);
+          cacheUser(u);
           setIsOffline(false);
         } catch {
           const u = await cloudApi.getMe();
           setUser(u);
+          cacheUser(u);
           setIsOffline(false);
           // Sync user to sidecar so local getMe/CSRF/listPdfs work.
           // syncUser returns a LOCAL JWT (signed by the sidecar secret) —
@@ -290,10 +333,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const u = await api.getMe();
           setUser(u);
+          cacheUser(u);
           setIsOffline(false);
         } catch {
           const u = await cloudApi.getMe();
           setUser(u);
+          cacheUser(u);
           setIsOffline(false);
           // Sync user to sidecar so local getMe/CSRF/listPdfs work.
           // syncUser returns a LOCAL JWT (signed by the sidecar secret) —
@@ -331,6 +376,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const u = await api.getMe();
         setUser(u);
+        cacheUser(u);
       } catch {
         window.location.href = "/";
         return;
@@ -353,6 +399,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       cloudApi.setCsrfToken?.(null);
       setUser(null);
       setIsOffline(false);
+      cacheUser(null);
       localStorage.removeItem(REMEMBER_TOKEN_KEY);
       localStorage.removeItem(CLOUD_TOKEN_KEY);
       // Desktop: cancella anche il JWT dal Tauri store persistente

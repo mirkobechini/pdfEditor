@@ -94,13 +94,28 @@ class AuthService:
         from google.oauth2 import id_token as google_id_token
         from google.auth.transport import requests as google_requests
 
-        logger.debug("Validating Google token (first 30 chars): %s...", id_token_str[:30])
+        # NOTE: never log the id_token (even partially) — it's a credential.
         try:
-            info = google_id_token.verify_oauth2_token(
-                id_token_str,
-                google_requests.Request(),
-                settings.GOOGLE_CLIENT_ID,
-            )
+            # Try the web/desktop client ID first, then the Android client ID.
+            # The mobile app uses a dedicated Android OAuth client, so its id_token
+            # has the Android client ID as audience.
+            audiences = [settings.GOOGLE_CLIENT_ID]
+            if settings.GOOGLE_ANDROID_CLIENT_ID:
+                audiences.append(settings.GOOGLE_ANDROID_CLIENT_ID)
+            info = None
+            last_err: Exception | None = None
+            for aud in audiences:
+                try:
+                    info = google_id_token.verify_oauth2_token(
+                        id_token_str,
+                        google_requests.Request(),
+                        aud,
+                    )
+                    break
+                except ValueError as e:
+                    last_err = e
+            if info is None:
+                raise last_err or ValueError("Invalid Google token")
         except ValueError as e:
             logger.warning("Google token validation failed: %s", e)
             raise ValueError("Invalid or expired Google token") from e

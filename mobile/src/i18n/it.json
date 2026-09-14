@@ -14,6 +14,12 @@
     "languageEn": "English",
     "languageSystem": "Lingua di sistema"
   },
+  "update": {
+    "title": "Aggiornamento disponibile",
+    "message": "È disponibile una nuova versione {{version}}.",
+    "download": "Scarica",
+    "later": "Più tardi"
+  },
   "home": {
     "title": "Editor",
     "search": "Cerca PDF",
@@ -61,6 +67,7 @@
     "title": "Strumenti PDF",
     "merge": "Unisci",
     "split": "Dividi",
+    "compress": "Comprimi",
     "reorder": "Riordina",
     "remove": "Rimuovi pagine",
     "metadata": "Metadati",
@@ -71,6 +78,13 @@
     "mergeResult": "Unito in: {{name}}",
     "mergeFailed": "Unione fallita",
     "splitResult": "Diviso in {{count}} PDF",
+    "compressTitle": "Comprimi PDF",
+    "compressHint": "Comprimi {{name}} scegliendo la qualità.",
+    "compressLow": "Bassa (file più piccolo)",
+    "compressMedium": "Media (consigliata)",
+    "compressHigh": "Alta (qualità migliore)",
+    "compressResult": "Compresso: {{name}}",
+    "compressFailed": "Compressione fallita",
     "reorderResult": "Riordinato: {{name}}",
     "reorderFailed": "Riordino fallito",
     "removeResult": "Pagine rimosse: {{name}}",
@@ -114,6 +128,7 @@
     "signIn": "Accedi",
     "register": "Registrati",
     "guest": "Continua come Ospite",
+    "googleLogin": "Continua con Google",
     "email": "Email",
     "password": "Password",
     "fullName": "Nome Completo",
@@ -139,6 +154,15 @@
     "resetTokenExpired": "Il token di reset è scaduto",
     "notAuthenticated": "Non autenticato",
     "googleAuthFailed": "Autenticazione Google fallita"
+  },
+  "bugReport": {
+    "title": "Segnala un bug",
+    "titleLabel": "Titolo",
+    "descriptionLabel": "Descrizione",
+    "categoryLabel": "Categoria",
+    "submit": "Invia",
+    "success": "Segnalazione inviata. Grazie per il contributo!",
+    "required": "Compila titolo e descrizione."
   },
   "common": {
     "ok": "OK",

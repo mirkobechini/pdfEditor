@@ -169,6 +169,16 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         }, [userId])
     );
 
+    // Reload PDFs when sync completes (isSyncing goes from true to false)
+    // so downloaded PDFs appear immediately instead of only on next focus
+    const prevSyncingRef = useRef(isSyncing);
+    useEffect(() => {
+        if (prevSyncingRef.current && !isSyncing) {
+            loadPdfs();
+        }
+        prevSyncingRef.current = isSyncing;
+    }, [isSyncing]);
+
     async function loadPdfs() {
         setLoading(true);
         try {

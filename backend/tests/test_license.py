@@ -79,6 +79,31 @@ class TestAdmin:
         data = response.json()
         assert len(data["items"]) >= 1
 
+    def test_admin_list_users_excludes_guests(self, client, db_engine):
+        """Guest accounts should NOT appear in the admin user list."""
+        admin_token = _create_admin(client, db_engine)
+
+        # Create a guest user
+        guest_resp = client.post("/auth/guest")
+        assert guest_resp.status_code == status.HTTP_201_CREATED
+        guest_email = guest_resp.json()["user"]["email"]
+
+        # Create a regular user
+        _register_and_login(client, email="regular@test.com")
+
+        response = client.get(
+            "/admin/users",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+
+        # The guest email must NOT be in the list
+        emails = [u["email"] for u in data["items"]]
+        assert guest_email not in emails
+        # The regular user must be present
+        assert "regular@test.com" in emails
+
     def test_admin_list_users_denied(self, client, db_engine):
         """Should deny non-admin users."""
         token = _register_and_login(client)
