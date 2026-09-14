@@ -62,9 +62,9 @@ describe("App font loading", () => {
 
     it("returns null (splash) while fonts are loading", () => {
         (useFonts as jest.Mock).mockReturnValue([false]);
-        let tree: renderer.ReactTestRendererJSON | null = null;
+        let tree: React.ReactElement | null = null;
         act(() => {
-            tree = renderer.create(<App />).toJSON();
+            tree = renderer.create(<App />).toJSON() as unknown as React.ReactElement | null;
         });
         expect(tree).toBeNull();
     });
