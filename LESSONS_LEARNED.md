@@ -10,6 +10,7 @@
 > **Lezione appresa (2026-09-12):**
 
 L'analisi di sicurezza ha trovato 2 falle di privacy:
+
 1. **Password PDF in chiaro nel DB** (`password_cache`): le password dei PDF protetti erano salvate in chiaro. Fix: cifrate con **Fernet** (key da SECRET_KEY) in `app/core/password_cipher.py`.
 2. **Token loggati in chiaro**: il reset token (email_service) e il Google id_token (auth_service) erano loggati. Fix: rimossi dai log.
 
