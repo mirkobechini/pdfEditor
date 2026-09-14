@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-14
+
+### 🐛 Fix Google logo mobile (issue #793, PR #794)
+
+- **Google logo ufficiale**: il pulsante di login Google su mobile usava un'icona generica. Ora usa il logo Google ufficiale (SVG 4 colori) via nuovo `GoogleIcon.tsx` + `react-native-svg`. Aggiornato `GoogleLoginButton` e test.
+- **Fix font loading timeout** (issue #791): `App.tsx` ora ha un safety timeout di 3s per il caricamento font, evitando la schermata bianca se il font non si carica.
+- **Test**: 299 test mobile verdi.
+
 ## 2026-09-12
 
 ### � Security audit & fix dipendenze (issue #780, #782)
@@ -107,7 +115,7 @@
 
 ### 🧪 Test E2E cross-origin (Playwright) — issue #731
 
-- **Suite E2E Playwright** in `e2e/` — **12 test verdi** che coprono i flussi cross-origin reali (cookie, CSRF, CORS) che i test unitari non possono verificare
+- **Suite E2E Playwright** in `e2e/` — **15 test verdi** che coprono i flussi cross-origin reali (cookie, CSRF, CORS) che i test unitari non possono verificare
 - **Test auth**: register, login, wrong password, logout
 - **Test CSRF/CORS**: Bearer senza CSRF, senza auth → 403, header CORS
 - **Test PDF**: upload UI, upload API Bearer
