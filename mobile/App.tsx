@@ -47,8 +47,15 @@ export default function App() {
   const [fontsLoaded] = useFonts({
     MaterialCommunityIcons: Icons.MaterialCommunityIcons.font,
   });
+  // Safety timeout: if fonts fail to load (e.g. dev mode), render anyway
+  // after 3s instead of staying stuck on a blank/grey screen.
+  const [fontTimeout, setFontTimeout] = React.useState(false);
+  React.useEffect(() => {
+    const t = setTimeout(() => setFontTimeout(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded && !fontTimeout) {
     return null; // Keep splash screen visible until fonts are ready
   }
 
