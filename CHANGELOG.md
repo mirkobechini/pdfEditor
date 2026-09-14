@@ -2,6 +2,12 @@
 
 ## 2026-09-14
 
+### ✨ Icone piattaforma di provenienza su mobile (issue #798, PR #799)
+
+- **Icone di provenienza**: i PDF su mobile ora mostrano l'icona della piattaforma di provenienza (🌐 web, 💻 desktop, 📱 mobile) nel riquadro PDF, al posto dell'icona generica pdf. Come su desktop.
+- **Fix**: aggiunta colonna `upload_source` alla tabella `pdfs` (con migrazione), `savePdfLocally` ora la salva (default 'mobile'), `downloadPdf` la popola dal cloud PDF.
+- **Test**: 301 test mobile verdi. Build locale APK verificata su dispositivo.
+
 ### 🐛 Fix Google logo mobile (issue #793, PR #794)
 
 - **Google logo ufficiale**: il pulsante di login Google su mobile usava un'icona generica. Ora usa il logo Google ufficiale (SVG 4 colori) via nuovo `GoogleIcon.tsx` + `react-native-svg`. Aggiornato `GoogleLoginButton` e test.
