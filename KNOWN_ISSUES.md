@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-11
+> **Aggiornato:** 2026-09-15
 
 ---
 
@@ -43,6 +43,13 @@
 **Se in futuro si volesse cambiare:** Aggiungere una MessageBox in `NSIS_HOOK_PREUNINSTALL` che chiede "Vuoi cancellare anche i tuoi PDF e dati utente?" e, se confermato, cancella `%APPDATA%/PdfEditor/`.
 
 **Stato:** Non pianificato.
+
+### M5 — Google login mobile "accesso negato" (issue #796)
+
+**File:** `mobile/src/components/GoogleLoginButton.tsx`
+**Descrizione:** Il login Google su mobile fallisce con "accesso negato". Il backend in produzione è aggiornato (fix Android client ID), ma il flusso `expo-auth-session` non completa l'autenticazione.
+**Causa probabile:** il redirect URI Android (`com.mirkobechini.pdfeditor:/oauthredirect`) non è configurato correttamente in Google Cloud Console. Il provider Google di `expo-auth-session` genera il redirect URI come `<android.package>:/oauthredirect` (un solo slash).
+**Stato:** In attesa che Google applichi le impostazioni (5 min → qualche ora). Vedi LESSONS_LEARNED.
 
 ## 🟡 Bug minori rimanenti
 
