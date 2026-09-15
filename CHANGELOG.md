@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-15
+
+### 🐛 Fix sync progress mobile (issue #797, PR #800)
+
+- **PDF appaiono uno alla volta durante il sync**: prima i PDF scaricati dal cloud apparivano tutti insieme solo a sync completato. Ora `HomeScreen` ricarica la lista a ogni avanzamento del progress, così ogni PDF appare subito dopo il download. Reload leggero senza spinner (evita flicker).
+- **Test**: 301 test mobile verdi. Build locale APK verificata su dispositivo.
+
 ## 2026-09-14
 
 ### ✨ Icone piattaforma di provenienza su mobile (issue #798, PR #799)
