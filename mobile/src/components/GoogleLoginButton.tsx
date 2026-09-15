@@ -3,9 +3,12 @@ import { Button, Text, useTheme } from "react-native-paper";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { useAuth } from "../shared/auth";
 import GoogleIcon from "./GoogleIcon";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function GoogleLoginButton() {
     const theme = useTheme();
