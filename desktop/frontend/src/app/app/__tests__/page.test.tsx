@@ -61,6 +61,7 @@ vi.mock("next-intl", () => ({
             minutesAgo: "m fa",
             hoursAgo: "h fa",
             daysAgo: "g fa",
+            print: "Stampa",
         };
         return map[key] || key;
     },
@@ -2160,5 +2161,44 @@ describe("EditorPage", () => {
             modalCallbacks.lock?.(updatedDoc);
         });
         expect(screen.getAllByText("locked.pdf").length).toBeGreaterThan(0);
+    });
+
+    // ── 1k: print ─────────────────────────────────────────
+
+    it("1k: handlePrint opens a hidden iframe and calls print", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByText("Stampa")).toBeInTheDocument();
+        });
+
+        // Mock iframe creation and print
+        const mockPrint = vi.fn();
+        const mockIframe = {
+            src: "",
+            style: {},
+            onload: null as any,
+            contentWindow: { focus: vi.fn(), print: mockPrint },
+        };
+        const createElementSpy = vi.spyOn(document, "createElement").mockReturnValue(mockIframe as any);
+        const appendSpy = vi.spyOn(document.body, "appendChild").mockImplementation(() => mockIframe as any);
+        const removeSpy = vi.spyOn(document.body, "removeChild").mockImplementation(() => mockIframe as any);
+
+        fireEvent.click(screen.getByText("Stampa"));
+        mockIframe.onload();
+
+        expect(createElementSpy).toHaveBeenCalledWith("iframe");
+        expect(mockPrint).toHaveBeenCalled();
+        expect(appendSpy).toHaveBeenCalled();
+
+        createElementSpy.mockRestore();
+        appendSpy.mockRestore();
+        removeSpy.mockRestore();
     });
 });
