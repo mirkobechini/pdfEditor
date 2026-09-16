@@ -35,7 +35,7 @@
   "mobile": [
     {
       "version": "v0.2.2-mobile",
-      "date": "2026-09-09",
+      "date": "2026-09-16",
       "changes": [
         "Fix PDF duplicati dopo reinstall: cloud sync usa cloud_id per il dedup",
         "Fix icone mancanti: font MaterialCommunityIcons caricato prima del render",
@@ -44,7 +44,13 @@
         "Notifica aggiornamento: avvisa quando esce una nuova release",
         "Google OAuth login: login con Google dal mobile",
         "Bug reports: segnalazione bug dal mobile (Settings)",
-        "294 test mobile — coverage 90%+"
+        "Fix Google login 'accesso negato': GOOGLE_ANDROID_CLIENT_ID in produzione, maybeCompleteAuthSession, scheme app.json, redirect URI Google Cloud Console",
+        "Errore Google normalizzato: messaggi leggibili invece di errori raw",
+        "Finestra Google più grande per la selezione account",
+        "Icone piattaforma di provenienza: 🌐 web, 💻 desktop, 📱 mobile nel riquadro PDF",
+        "Fix sync progress: i PDF appaiono uno alla volta durante il sync",
+        "Fix lag navigazione: CloudSync condiviso tra le schermate (sync duplicati eliminati)",
+        "301 test mobile — coverage 90%+"
       ]
     },
     {
