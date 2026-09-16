@@ -7,13 +7,16 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { getLocalPdfById } from "../services/localDb";
+import { printPdf } from "../services/pdfService";
 import Pdf from "react-native-pdf";
+import { useTranslation } from "react-i18next";
 
 type PdfViewerRouteProp = RouteProp<RootStackParamList, "PdfViewer">;
 type PdfViewerNavProp = NativeStackNavigationProp<RootStackParamList, "PdfViewer">;
 
 export default function PdfViewerScreen() {
     const theme = useTheme();
+    const { t } = useTranslation();
     const route = useRoute<PdfViewerRouteProp>();
     const navigation = useNavigation<PdfViewerNavProp>();
     const { pdfId, title } = route.params;
@@ -90,6 +93,11 @@ export default function PdfViewerScreen() {
 
     const zoomIn = () => setScale((s) => Math.min(s + 0.25, 3));
     const zoomOut = () => setScale((s) => Math.max(s - 0.25, 0.5));
+
+    const handlePrint = async () => {
+        if (!pdfUri) return;
+        await printPdf(pdfUri);
+    };
 
     if (error) {
         return (
@@ -172,6 +180,9 @@ export default function PdfViewerScreen() {
                 <IconButton icon="magnify-minus-outline" size={20} onPress={zoomOut} />
                 <Text variant="bodySmall">{Math.round(scale * 100)}%</Text>
                 <IconButton icon="magnify-plus-outline" size={20} onPress={zoomIn} />
+                <Button mode="outlined" compact onPress={handlePrint} style={{ borderRadius: 8 }}>
+                    {t("viewer.print")}
+                </Button>
             </View>
         </SafeAreaView>
     );
