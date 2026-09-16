@@ -403,6 +403,18 @@
       "metadata": {
         "title": "Metadati & Info",
         "description": "Visualizza e modifica titolo, autore, soggetto e keywords dei tuoi PDF."
+      },
+      "importexport": {
+        "title": "Importa & Esporta",
+        "description": "Converti file (txt, png, jpg, docx) in PDF ed esporta PDF in altri formati."
+      },
+      "docx": {
+        "title": "DOCX in PDF",
+        "description": "Importa documenti Word (.docx) e convertili in PDF in pochi secondi."
+      },
+      "print": {
+        "title": "Stampa PDF",
+        "description": "Stampa i tuoi PDF direttamente dall'app su web, desktop e mobile."
       }
     },
     "howItWorks": {
