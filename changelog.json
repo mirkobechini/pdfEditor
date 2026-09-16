@@ -45,7 +45,7 @@
   ],
   "mobile": [
     {
-      "version": "v0.2.2-mobile",
+      "version": "v0.2.3-mobile",
       "date": "2026-09-16",
       "changes": [
         "Fix PDF duplicati dopo reinstall: cloud sync usa cloud_id per il dedup",
