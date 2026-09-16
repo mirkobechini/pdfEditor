@@ -135,6 +135,34 @@ export default function EditorPage() {
         setFileToDelete(null);
     }
 
+    function handlePrint() {
+        if (!fileUrl) return;
+        // Open the PDF in a hidden iframe and trigger the browser print dialog.
+        // This prints the actual PDF (not the page) via the browser's native print.
+        const iframe = document.createElement("iframe");
+        iframe.src = fileUrl;
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "none";
+        iframe.style.visibility = "hidden";
+        iframe.onload = () => {
+            try {
+                iframe.contentWindow?.focus();
+                iframe.contentWindow?.print();
+            } catch (err) {
+                console.error("Print failed:", err);
+            }
+        };
+        document.body.appendChild(iframe);
+        // Clean up after a delay to allow the print dialog to open
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+        }, 60000);
+    }
+
     return (
         <>
             <AppLayout
@@ -169,6 +197,7 @@ export default function EditorPage() {
                         onMetadata={() => setMetadataOpen(true)}
                         onProtect={() => setProtectOpen(true)}
                         onImportExport={() => setImportExportOpen(true)}
+                        onPrint={handlePrint}
                         canUndo={!!selectedId}
                         canRedo={false}
                         onUndo={handleUndo}
