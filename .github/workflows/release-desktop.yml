@@ -139,6 +139,10 @@ jobs:
           set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # The runner is on a detached HEAD (tag checkout). Checkout main explicitly
+          # so we can commit the version bump to the main branch.
+          git fetch origin main
+          git checkout -B main origin/main
           git add desktop/src-tauri/tauri.conf.json frontend/package.json backend/pyproject.toml
           if git diff --cached --quiet; then
             echo "No version changes to commit"
