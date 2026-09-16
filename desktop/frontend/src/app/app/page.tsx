@@ -85,6 +85,32 @@ export default function EditorPage() {
         }
     }
 
+    function handlePrint() {
+        if (!pdfUrl) return;
+        // Open the PDF in a hidden iframe and trigger the webview print dialog.
+        const iframe = document.createElement("iframe");
+        iframe.src = pdfUrl;
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "none";
+        iframe.style.visibility = "hidden";
+        iframe.onload = () => {
+            try {
+                iframe.contentWindow?.focus();
+                iframe.contentWindow?.print();
+            } catch (err) {
+                console.error("Print failed:", err);
+            }
+        };
+        document.body.appendChild(iframe);
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+        }, 60000);
+    }
+
     async function handleUploadFile(file: File) {
         if (!file.name.toLowerCase().endsWith(".pdf")) return;
         setUploadError(null);
@@ -452,6 +478,13 @@ export default function EditorPage() {
                                 className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                             >
                                 {te("importExport")}
+                            </button>
+                            <button
+                                onClick={handlePrint}
+                                disabled={!selectedDoc}
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                {te("print")}
                             </button>
                         </div>
                     </header>
