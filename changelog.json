@@ -6,8 +6,9 @@
       "changes": [
         "Import/Export: nuova UI per importare file (txt/png/jpg/gif/bmp) ed esportare PDF (txt/png/jpg/svg) — funziona offline via sidecar locale",
         "Conversione DOCX → PDF: import .docx supportato (python-docx + reportlab nel sidecar, offline)",
+        "Stampa PDF: bottone Stampa in toolbar (window.print su iframe)",
         "Web: UI Import/Export online (backend)",
-        "937 test frontend — coverage 90%+"
+        "938 test frontend — coverage 90%+"
       ]
     },
     {
@@ -62,7 +63,8 @@
         "Fix lag navigazione: CloudSync condiviso tra le schermate (sync duplicati eliminati)",
         "Import/Export: nuova UI in Tools per importare file (txt/png/jpg/gif/bmp) ed esportare PDF (txt/png/jpg/svg) — online, con messaggio 'richiede connessione' quando offline",
         "Conversione DOCX → PDF: import .docx supportato (online, richiede connessione)",
-        "311 test mobile — coverage 90%+"
+        "Stampa PDF: bottone Stampa nel viewer (expo-print, AirPrint iOS/Android)",
+        "313 test mobile — coverage 90%+"
       ]
     },
     {
