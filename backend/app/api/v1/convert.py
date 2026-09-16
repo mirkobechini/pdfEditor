@@ -14,7 +14,7 @@ router = APIRouter(prefix="/pdfs", tags=["pdfs"])
 
 # Supported export/import formats
 EXPORT_FORMATS = {"txt", "png", "jpg", "jpeg", "svg"}
-IMPORT_EXTENSIONS = {"txt", "png", "jpg", "jpeg", "gif", "bmp"}
+IMPORT_EXTENSIONS = {"txt", "png", "jpg", "jpeg", "gif", "bmp", "docx"}
 
 # MIME type validation map for import
 IMPORT_MIME_MAP: dict[str, set[str]] = {
@@ -24,6 +24,11 @@ IMPORT_MIME_MAP: dict[str, set[str]] = {
     "jpeg": {"image/jpeg"},
     "gif": {"image/gif"},
     "bmp": {"image/bmp", "image/x-ms-bmp"},
+    "docx": {
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/octet-stream",
+        "application/zip",
+    },
 }
 
 EXPORT_FEATURE_MAP = {
@@ -41,6 +46,7 @@ IMPORT_FEATURE_MAP = {
     "jpeg": "import_images",
     "gif": "import_images",
     "bmp": "import_images",
+    "docx": "import_docx",
 }
 
 
