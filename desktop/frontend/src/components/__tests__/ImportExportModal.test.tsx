@@ -76,6 +76,25 @@ describe("ImportExportModal", () => {
         });
     });
 
+    it("imports a DOCX file via dialog_open and read_file_binary", async () => {
+        mockTauriInvoke.mockImplementation((cmd: string) => {
+            if (cmd === "dialog_open") return Promise.resolve("C:\\docs\\doc.docx");
+            if (cmd === "read_file_binary") return Promise.resolve([80, 75]);
+            return Promise.resolve(null);
+        });
+
+        render(<ImportExportModal {...baseProps} />);
+        fireEvent.click(screen.getByText("import"));
+
+        await waitFor(() => {
+            expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_open", {});
+            expect(mockTauriInvoke).toHaveBeenCalledWith("read_file_binary", { path: "C:\\docs\\doc.docx" });
+            expect(mockImportFile).toHaveBeenCalled();
+            expect(mockOnImported).toHaveBeenCalled();
+            expect(mockOnClose).toHaveBeenCalled();
+        });
+    });
+
     it("does nothing when dialog_open returns null", async () => {
         mockTauriInvoke.mockResolvedValue(null);
 

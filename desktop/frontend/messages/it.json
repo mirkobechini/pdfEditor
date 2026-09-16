@@ -397,7 +397,7 @@
     "exportTab": "Esporta",
     "importDesc": "Converti un file in PDF (offline)",
     "exportDesc": "Converti il PDF selezionato in un altro formato (offline)",
-    "importFormats": "txt, png, jpg, gif, bmp",
+    "importFormats": "txt, png, jpg, gif, bmp, docx",
     "exportFormats": "txt, png, jpg, svg",
     "chooseFile": "Scegli file",
     "exportFormat": "Formato di esportazione",

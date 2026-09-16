@@ -110,7 +110,7 @@
     "export": "Esporta",
     "importTitle": "Importa file",
     "exportTitle": "Esporta PDF",
-    "importHint": "Scegli un file (txt, png, jpg, gif, bmp) da convertire in PDF. Richiede connessione.",
+    "importHint": "Scegli un file (txt, png, jpg, gif, bmp, docx) da convertire in PDF. Richiede connessione.",
     "exportHint": "Esporta {{name}} in un altro formato. Richiede connessione.",
     "requiresConnection": "Questa operazione richiede una connessione internet.",
     "importAction": "Scegli file",

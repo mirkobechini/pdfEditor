@@ -625,6 +625,9 @@ class PdfService:
             pdf_bytes = doc.tobytes()
             doc.close()
 
+        elif ext == "docx":
+            pdf_bytes = self._convert_docx_to_pdf(content)
+
         else:
             raise ValueError(f"Unsupported import format: {ext}")
 
@@ -645,6 +648,74 @@ class PdfService:
             user_id=user_id,
         )
         return self.repo.create(pdf)
+
+    def _convert_docx_to_pdf(self, content: bytes) -> bytes:
+        """Convert a DOCX file to PDF bytes using python-docx + reportlab.
+
+        Reads paragraphs (and basic formatting) from the DOCX and renders
+        them into a PDF. Simple but functional — complex layouts (tables,
+        images, styles) may lose fidelity.
+        """
+        from io import BytesIO
+        from docx import Document
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.units import mm
+        from reportlab.pdfgen import canvas
+
+        try:
+            doc = Document(BytesIO(content))
+        except Exception as e:
+            raise ValueError(f"Invalid DOCX file: {e}")
+
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=A4)
+        width, height = A4
+        margin = 20 * mm
+        y = height - margin
+        line_height = 14
+
+        def new_page_if_needed():
+            nonlocal y
+            if y < margin:
+                c.showPage()
+                y = height - margin
+
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if not text:
+                y -= line_height
+                continue
+
+            # Basic font size from style (default 11pt)
+            font_size = 11
+            try:
+                if para.style and para.style.font and para.style.font.size:
+                    font_size = para.style.font.size.pt
+            except Exception:
+                pass
+
+            c.setFont("Helvetica", font_size)
+            # Wrap text to fit the page width
+            max_chars = int((width - 2 * margin) / (font_size * 0.5))
+            words = text.split()
+            line = ""
+            for word in words:
+                candidate = f"{line} {word}".strip()
+                if len(candidate) > max_chars:
+                    new_page_if_needed()
+                    c.drawString(margin, y, line)
+                    y -= line_height
+                    line = word
+                else:
+                    line = candidate
+            if line:
+                new_page_if_needed()
+                c.drawString(margin, y, line)
+                y -= line_height
+
+        c.showPage()
+        c.save()
+        return buffer.getvalue()
 
     def unlock(self, pdf_id: str, user_id: str, password: str) -> PdfDocument:
         """Try to unlock a password-protected PDF. Returns the PDF if successful."""
