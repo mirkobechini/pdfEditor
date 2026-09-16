@@ -10,19 +10,19 @@
 
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
-| **Backend** (FastAPI/Python)   | pytest      | **396** | **94%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **584** | **94.96%** | ✅    |
-| **Desktop** (Tauri)            | vitest      | **936** | **90.84%** | ✅    |
-| **Mobile** (React Native/Expo) | jest        | **310** | **98.7%**  | ✅    |
+| **Backend** (FastAPI/Python)   | pytest      | **399** | **94%**    | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **585** | **94.96%** | ✅    |
+| **Desktop** (Tauri)            | vitest      | **937** | **90.84%** | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **311** | **98.7%**  | ✅    |
 | **E2E** (Playwright)           | playwright  | **15**  | —          | ✅    |
 
-> ℹ️ **Desktop**: 933 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +13 test ImportExportModal (issue #805).
+> ℹ️ **Desktop**: 934 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +14 test ImportExportModal (issue #805, #807).
 >
 > ⚠️ **Nota:** `ReorderPagesModal` ha i callback DnD (`@dnd-kit/core`) non copribili in jsdom — richiedono test E2E con Playwright. Coverage ferma a 81.17% per quel file.
 >
-> ℹ️ **Mobile**: 310 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. +5 test exportPdf/importFile pdfService, +4 test api exportPdf/importFile (issue #805).
+> ℹ️ **Mobile**: 311 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. +6 test exportPdf/importFile pdfService, +4 test api exportPdf/importFile (issue #805, #807).
 >
-> ℹ️ **Webapp**: 584 test (Vitest). Target 90% raggiunto (issue #700): **94.96% statements, 97.34% lines**. Tutti i file >= 90% statements. +11 test ImportExportDialog (issue #805).
+> ℹ️ **Webapp**: 585 test (Vitest). Target 90% raggiunto (issue #700): **94.96% statements, 97.34% lines**. Tutti i file >= 90% statements. +12 test ImportExportDialog (issue #805, #807).
 
 ---
 

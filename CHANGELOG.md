@@ -2,6 +2,14 @@
 
 ## 2026-09-16
 
+### ✨ Conversione DOCX → PDF (issue #807)
+
+- **Backend**: aggiunto supporto `.docx` in `POST /pdfs/import` — conversione DOCX→PDF con python-docx + reportlab (web/mobile online).
+- **Web**: dialog Import/Export ora accetta `.docx`.
+- **Desktop**: sidecar ora include python-docx + reportlab — conversione DOCX→PDF **offline** (stesso codice del backend).
+- **Mobile**: dialog Import/Export ora accetta `.docx` (online, richiede connessione).
+- **Test**: 399 test backend, 585 test web, 937 test desktop, 311 test mobile verdi.
+
 ### ✨ Import/Export su tutte le piattaforme (issue #805)
 
 - **Web**: aggiunta UI Import/Export (bottone in toolbar) per importare file (txt/png/jpg/gif/bmp) ed esportare PDF (txt/png/jpg/svg) via backend online.

@@ -40,6 +40,7 @@
 | Edit metadata                   | ✅  | ✅      | ✅     |                                                                                                             |
 | **Import/Export**               |     |         |        |                                                                                                             |
 | Import file                     | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                         |
+| Import DOCX                     | ✅  | ✅      | ✅     | Web/Mobile online (python-docx+reportlab), Desktop offline (sidecar)                                        |
 | Export PDF                      | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                         |
 | **Testo**                       |     |         |        |                                                                                                             |
 | Extract text                    | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                      |

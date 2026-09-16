@@ -64,6 +64,14 @@
 
 Tutti i bug minori precedenti sono stati risolti.
 
+### DOCX → PDF — qualità media (issue #807)
+
+La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, desktop offline via sidecar). Supporta testo e paragrafi con formattazione base. **Limiti noti:**
+
+- Tabelle, immagini e stili complessi possono perdere fedeltà
+- Per conversione di alta qualità servirebbe LibreOffice (solo desktop)
+- PDF → DOCX NON è in scope (feature futura)
+
 ---
 
 ## 🔵 Debito tecnico
