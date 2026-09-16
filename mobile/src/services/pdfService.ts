@@ -7,6 +7,7 @@ import { File, Directory, Paths } from "expo-file-system";
 import { writeAsStringAsync, EncodingType } from "expo-file-system/legacy";
 import { getLocalPdfById, savePdfLocally } from "./localDb";
 import { api } from "../shared/api";
+import { printAsync } from "expo-print";
 import type { LocalPdf } from "../shared/types";
 
 function generateId(): string {
@@ -508,5 +509,19 @@ export async function importFile(
   } catch (e) {
     console.error("Import error:", e);
     return null;
+  }
+}
+
+/**
+ * Print a PDF using the native print dialog (iOS/Android AirPrint).
+ * Uses expo-print with the local file URI.
+ */
+export async function printPdf(uri: string): Promise<boolean> {
+  try {
+    await printAsync({ uri });
+    return true;
+  } catch (e) {
+    console.error("Print error:", e);
+    return false;
   }
 }
