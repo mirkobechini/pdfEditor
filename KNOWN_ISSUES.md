@@ -134,6 +134,7 @@ Tutti i bug minori precedenti sono stati risolti.
 | Desktop: PdfViewer         | 81.7%                 | ❌ No      | Rendering PDF.js in jsdom                                                                     |
 | Desktop: GoogleLoginButton | 76.31%                | ❌ No      | Redirect flow difficile da testare                                                            |
 | ReorderPagesModal DnD      | 81.17%                | ❌ No      | DnD handlers (@dnd-kit) non copribili in jsdom — richiedono test E2E con Playwright           |
+| Web: ImportExportDialog    | 98.14%                | ❌ No      | Guard `if (!importFile) return` non raggiungibile via UI (bottone import disabled senza file) |
 
 ---
 
