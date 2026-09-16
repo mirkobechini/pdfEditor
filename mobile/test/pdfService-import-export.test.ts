@@ -115,6 +115,23 @@ describe("importFile", () => {
     expect(result!.original_filename).toBe("imported.pdf");
   });
 
+  it("imports a DOCX file", async () => {
+    const result = await importFile(
+      "file:///docs/doc.docx",
+      "doc.docx",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
+
+    expect(mockImportFile).toHaveBeenCalledWith(
+      "file:///docs/doc.docx",
+      "doc.docx",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
+    expect(mockDownloadPdf).toHaveBeenCalledWith("cloud-1");
+    expect(mockSavePdfLocally).toHaveBeenCalled();
+    expect(result).not.toBeNull();
+  });
+
   it("returns null when the backend fails", async () => {
     mockImportFile.mockRejectedValue(new Error("backend error"));
 
