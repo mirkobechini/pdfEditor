@@ -18,7 +18,8 @@
     "metadata": "Info",
     "replaceText": "Trova e Sostituisci",
     "protect": "Proteggi",
-    "compress": "Comprimi"
+    "compress": "Comprimi",
+    "importExport": "Importa/Esporta"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -73,6 +74,29 @@
     "confirm": "Comprimi",
     "compressing": "Compressione in corso...",
     "failed": "Compressione fallita"
+  },
+  "importExportDialog": {
+    "title": "Importa / Esporta",
+    "importTab": "Importa",
+    "exportTab": "Esporta",
+    "importDesc": "Converti un file in PDF",
+    "exportDesc": "Converti il PDF selezionato in un altro formato",
+    "importFormats": "txt, png, jpg, gif, bmp",
+    "exportFormats": "txt, png, jpg, svg",
+    "chooseFile": "Scegli file",
+    "noFile": "Nessun file selezionato",
+    "exportFormat": "Formato di esportazione",
+    "exportName": "Nome file output",
+    "cancel": "Annulla",
+    "import": "Importa",
+    "export": "Esporta",
+    "importing": "Importazione in corso...",
+    "exporting": "Esportazione in corso...",
+    "importFailed": "Importazione fallita",
+    "exportFailed": "Esportazione fallita",
+    "importSuccess": "Importazione riuscita",
+    "exportSuccess": "Esportazione riuscita",
+    "noPdfSelected": "Seleziona prima un PDF"
   },
   "reorderDialog": {
     "title": "Riordina Pagine",

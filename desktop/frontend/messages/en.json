@@ -179,6 +179,7 @@
     "remove": "Remove",
     "metadata": "Metadata",
     "replaceText": "Replace Text",
+    "importExport": "Import/Export",
     "user": "User",
     "cloudSync": "Cloud Sync",
     "settings": "Settings",
@@ -389,6 +390,24 @@
     "cancel": "Cancel",
     "confirm": "Compress",
     "compressing": "Compressing..."
+  },
+  "importExportModal": {
+    "title": "Import / Export",
+    "importTab": "Import",
+    "exportTab": "Export",
+    "importDesc": "Convert a file to PDF (offline)",
+    "exportDesc": "Convert the selected PDF to another format (offline)",
+    "importFormats": "txt, png, jpg, gif, bmp",
+    "exportFormats": "txt, png, jpg, svg",
+    "chooseFile": "Choose file",
+    "exportFormat": "Export format",
+    "exportName": "Output filename",
+    "cancel": "Cancel",
+    "import": "Import",
+    "export": "Export",
+    "importing": "Importing...",
+    "exporting": "Exporting...",
+    "noPdfSelected": "Select a PDF first"
   },
   "lockModal": {
     "unlockTitle": "Unlock PDF",

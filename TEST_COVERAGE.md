@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-09-12
+> **Aggiornato:** 2026-09-16
 
 ---
 
@@ -11,18 +11,18 @@
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
 | **Backend** (FastAPI/Python)   | pytest      | **396** | **94%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **573** | **94.96%** | ✅    |
-| **Desktop** (Tauri)            | vitest      | **923** | **90.84%** | ✅    |
-| **Mobile** (React Native/Expo) | jest        | **299** | **98.7%**  | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **584** | **94.96%** | ✅    |
+| **Desktop** (Tauri)            | vitest      | **936** | **90.84%** | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **310** | **98.7%**  | ✅    |
 | **E2E** (Playwright)           | playwright  | **15**  | —          | ✅    |
 
-> ℹ️ **Desktop**: 920 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +9 test ReplaceTextModal, +3 test googleLogin, +6 test CompressModal.
+> ℹ️ **Desktop**: 933 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +13 test ImportExportModal (issue #805).
 >
 > ⚠️ **Nota:** `ReorderPagesModal` ha i callback DnD (`@dnd-kit/core`) non copribili in jsdom — richiedono test E2E con Playwright. Coverage ferma a 81.17% per quel file.
 >
-> ℹ️ **Mobile**: 299 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. +4 test api replaceText, +3 test googleLogin, +3 test createBugReport, +4 test useUpdateCheck, +5 test compressPdf.
+> ℹ️ **Mobile**: 310 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. +5 test exportPdf/importFile pdfService, +4 test api exportPdf/importFile (issue #805).
 >
-> ℹ️ **Webapp**: 573 test (Vitest). Target 90% raggiunto (issue #700): **94.96% statements, 97.34% lines**. Tutti i file >= 90% statements. +6 test CompressDialog.
+> ℹ️ **Webapp**: 584 test (Vitest). Target 90% raggiunto (issue #700): **94.96% statements, 97.34% lines**. Tutti i file >= 90% statements. +11 test ImportExportDialog (issue #805).
 
 ---
 

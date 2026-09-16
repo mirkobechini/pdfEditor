@@ -326,6 +326,38 @@ export class ApiClient {
     return res.blob();
   }
 
+  async exportPdf(id: string, format: string): Promise<Blob> {
+    const res = await this._fetch(
+      `${this.baseUrl}/pdfs/${id}/export?fmt=${format}`,
+      { method: "POST", headers: this.getHeaders() },
+    );
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.blob();
+  }
+
+  async importFile(
+    fileUri: string,
+    fileName: string,
+    mimeType: string,
+  ): Promise<PdfDocument> {
+    const formData = new FormData();
+    try {
+      const res = await fetch(fileUri);
+      const blob = await res.blob();
+      formData.append("file", blob, fileName);
+      const uploadRes = await this._fetch(`${this.baseUrl}/pdfs/import`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!uploadRes.ok)
+        throw new Error(await ApiClient.extractErrorResponse(uploadRes));
+      return uploadRes.json();
+    } catch (e) {
+      console.error("[api] importFile failed:", e);
+      throw e;
+    }
+  }
+
   // ─── Merge / Split / Reorder ─────────────────────────────────────
 
   async mergePdfs(

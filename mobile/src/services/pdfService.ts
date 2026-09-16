@@ -441,3 +441,72 @@ export async function compressPdf(
     return null;
   }
 }
+
+/**
+ * Export a PDF to another format (txt/png/jpg/svg).
+ * Requires connection — downloads the converted file from the cloud and saves it locally.
+ * Returns the saved file URI and name, or null on failure.
+ */
+export async function exportPdf(
+  pdfId: string,
+  format: string,
+  baseName: string,
+): Promise<{ uri: string; name: string } | null> {
+  try {
+    const blob = await api.exportPdf(pdfId, format);
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    const id = generateId();
+    const pdfDir = getPdfDir();
+    const safeBase = baseName
+      .replace(/\.pdf$/i, "")
+      .replace(/[^a-zA-Z0-9 _-]/g, "_");
+    const name = `${safeBase}.${format}`;
+    const uri = `${pdfDir.uri}${id}.${format}`;
+    await writePdfBytes(uri, bytes);
+
+    return { uri, name };
+  } catch (e) {
+    console.error("Export error:", e);
+    return null;
+  }
+}
+
+/**
+ * Import a file (txt/png/jpg/gif/bmp) and convert it to PDF.
+ * Requires connection — uploads the file to the cloud and returns the created PDF.
+ */
+export async function importFile(
+  fileUri: string,
+  fileName: string,
+  mimeType: string,
+): Promise<LocalPdf | null> {
+  try {
+    const uploaded = await api.importFile(fileUri, fileName, mimeType);
+
+    // Download the created PDF and save locally
+    const blob = await api.downloadPdf(uploaded.id);
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    const id = generateId();
+    const pdfDir = getPdfDir();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, bytes);
+
+    const now = new Date().toISOString();
+    const result: LocalPdf = {
+      id,
+      original_filename: uploaded.original_filename,
+      file_size: bytes.length,
+      page_count: uploaded.page_count,
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("Import error:", e);
+    return null;
+  }
+}
