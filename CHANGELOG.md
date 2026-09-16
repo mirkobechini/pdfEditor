@@ -2,6 +2,13 @@
 
 ## 2026-09-16
 
+### ✨ Stampa PDF da app (issue #809)
+
+- **Web**: aggiunto bottone Stampa in toolbar — apre il PDF in un iframe nascosto e chiama `window.print()` (stampa nativa del browser).
+- **Desktop**: aggiunto bottone Stampa in toolbar — stessa logica del web (iframe + `window.print()` nella webview).
+- **Mobile**: aggiunto bottone Stampa nel viewer — usa `expo-print` (`printAsync`) per la stampa nativa iOS/Android (AirPrint).
+- **Test**: 586 test web, 938 test desktop, 313 test mobile verdi.
+
 ### ✨ Conversione DOCX → PDF (issue #807)
 
 - **Backend**: aggiunto supporto `.docx` in `POST /pdfs/import` — conversione DOCX→PDF con python-docx + reportlab (web/mobile online).

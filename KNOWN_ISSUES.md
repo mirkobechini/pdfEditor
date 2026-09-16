@@ -72,6 +72,12 @@ La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, de
 - Per conversione di alta qualità servirebbe LibreOffice (solo desktop)
 - PDF → DOCX NON è in scope (feature futura)
 
+### Stampa PDF — limiti per piattaforma (issue #809)
+
+- **Web/Desktop**: `window.print()` su iframe — il layout dipende dal browser/webview
+- **Mobile**: `expo-print` stampa il PDF locale (AirPrint). Se il PDF è solo nel cloud (non scaricato localmente), serve prima il download
+- iOS non supporta asset URL locali in HTML (ma `printAsync({ uri })` con URI file funziona)
+
 ---
 
 ## 🔵 Debito tecnico

@@ -1,4 +1,7 @@
 {
+  "viewer": {
+    "print": "Stampa"
+  },
   "settings": {
     "title": "Impostazioni",
     "account": "Account",

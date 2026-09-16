@@ -19,7 +19,8 @@
     "replaceText": "Trova e Sostituisci",
     "protect": "Proteggi",
     "compress": "Comprimi",
-    "importExport": "Importa/Esporta"
+    "importExport": "Importa/Esporta",
+    "print": "Stampa"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",

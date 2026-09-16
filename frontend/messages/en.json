@@ -19,7 +19,8 @@
     "replaceText": "Find & Replace",
     "protect": "Protect",
     "compress": "Compress",
-    "importExport": "Import/Export"
+    "importExport": "Import/Export",
+    "print": "Print"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
