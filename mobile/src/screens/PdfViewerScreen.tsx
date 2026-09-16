@@ -7,7 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { getLocalPdfById } from "../services/localDb";
-import { printPdf } from "../services/pdfService";
+import { printPdf } from "../services/printService";
 import Pdf from "react-native-pdf";
 import { useTranslation } from "react-i18next";
 
