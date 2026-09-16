@@ -162,10 +162,13 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         }
     }
 
-    // Reload PDFs when screen is focused
+    // Reload PDFs when screen is focused (lightweight, no spinner to avoid lag)
     useFocusEffect(
         useCallback(() => {
-            loadPdfs();
+            loadLocalPdfs(userId).then((local) => {
+                setPdfs(local);
+                onPdfCountChange?.(local.length);
+            }).catch(() => { });
         }, [userId])
     );
 
