@@ -6,6 +6,7 @@ import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { useAuth } from "../shared/auth";
+import { mapError } from "../shared/error-map";
 import GoogleIcon from "./GoogleIcon";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -30,7 +31,7 @@ export default function GoogleLoginButton() {
         if (response?.type === "success" && response.authentication?.idToken) {
             const idToken = response.authentication.idToken;
             googleLogin(idToken).catch((err) => {
-                setError(String(err));
+                setError(t(mapError(err)));
             });
         }
     }, [response]);
@@ -40,7 +41,7 @@ export default function GoogleLoginButton() {
         try {
             await promptAsync();
         } catch (err) {
-            setError(String(err));
+            setError(t(mapError(err)));
         }
     };
 
