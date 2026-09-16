@@ -54,6 +54,8 @@ Write-Host "Running PyInstaller..." -ForegroundColor Yellow
     --hidden-import "pydantic_settings" `
     --hidden-import "slowapi" `
     --hidden-import "google.auth" `
+    --hidden-import "docx" `
+    --hidden-import "reportlab" `
     --hidden-import "app.main" `
     --hidden-import "app.core.config" `
     --hidden-import "app.core.database" `
