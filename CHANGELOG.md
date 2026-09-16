@@ -2,6 +2,13 @@
 
 ## 2026-09-16
 
+### ✨ Import/Export su tutte le piattaforme (issue #805)
+
+- **Web**: aggiunta UI Import/Export (bottone in toolbar) per importare file (txt/png/jpg/gif/bmp) ed esportare PDF (txt/png/jpg/svg) via backend online.
+- **Desktop**: aggiunta UI Import/Export (bottone in toolbar) che funziona **offline** via sidecar locale (dialogo nativo per aprire/salvare file).
+- **Mobile**: aggiunta UI Import/Export (bottoni in Tools) che funziona **online** via backend, con messaggio chiaro "richiede connessione" quando offline.
+- **Test**: 584 test web, 936 test desktop, 310 test mobile verdi.
+
 ### 🐛 Fix Google login mobile (issue #796)
 
 - **Google login mobile funzionante**: risolto "accesso negato". Cause: (1) `GOOGLE_ANDROID_CLIENT_ID` non configurato nel backend in produzione; (2) mancava `maybeCompleteAuthSession()`; (3) mancava lo scheme `com.mirkobechini.pdfeditor` in `app.json`; (4) redirect URI Android non configurato in Google Cloud Console.
