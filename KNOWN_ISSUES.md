@@ -52,13 +52,13 @@
 **Fix:** configurato `GOOGLE_ANDROID_CLIENT_ID` in produzione, aggiunto `maybeCompleteAuthSession()`, aggiunto scheme in `app.json`, configurato redirect URI in Google Cloud Console.
 **Stato:** ✅ Risolto (issue #796). Vedi LESSONS_LEARNED.
 
-### M6 — Lag nel passaggio tra Home e Settings (issue #801)
+### M6 — Lag nel passaggio tra Home e Settings (issue #801) ✅
 
 **File:** `mobile/src/hooks/useCloudSync.ts`, `mobile/src/screens/*.tsx`
-**Descrizione:** L'app lagga quando si passa tra la tab Home (editor) e Settings (impostazioni) e viceversa.
-**Causa:** `useCloudSync` è istanziato **3 volte** (HomeScreen, SettingsScreen, OnboardingWizard), ognuna con il proprio sync all'avvio → sync duplicati che bloccano il thread JS. Inoltre `useFocusEffect` ricarica i PDF a ogni focus con spinner.
-**Fix proposto:** condividere `useCloudSync` tramite un context provider (`CloudSyncContext`). Vedi `.specs/active/feature-share-cloudsync.md`.
-**Stato:** In corso (issue #801).
+**Descrizione:** L'app laggava quando si passava tra la tab Home (editor) e Settings (impostazioni) e viceversa.
+**Causa:** `useCloudSync` era istanziato **3 volte** (HomeScreen, SettingsScreen, OnboardingWizard), ognuna con il proprio sync all'avvio → sync duplicati che bloccavano il thread JS. Inoltre `useFocusEffect` ricaricava i PDF a ogni focus con spinner.
+**Fix:** creato `CloudSyncContext` provider che condivide una singola istanza di `useCloudSync`. Le schermate ora usano `useCloudSyncContext()`. Aggiunto `useCallback` per l'inline function in MainTabs e `freezeOnBlur: true`.
+**Stato:** ✅ Risolto (issue #801, PR #802).
 
 ## 🟡 Bug minori rimanenti
 

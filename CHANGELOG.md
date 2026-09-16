@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-16
+
+### 🐛 Fix Google login mobile (issue #796)
+
+- **Google login mobile funzionante**: risolto "accesso negato". Cause: (1) `GOOGLE_ANDROID_CLIENT_ID` non configurato nel backend in produzione; (2) mancava `maybeCompleteAuthSession()`; (3) mancava lo scheme `com.mirkobechini.pdfeditor` in `app.json`; (4) redirect URI Android non configurato in Google Cloud Console.
+- **Errore normalizzato**: il `GoogleLoginButton` ora usa `mapError` per mostrare messaggi leggibili ("Autenticazione Google fallita") invece dell'errore raw.
+- **Finestra Google più grande**: `windowFeatures` 900x700 per la selezione account.
+
+### ⚡ Fix lag navigazione mobile (issue #801, PR #802)
+
+- **Lag nel passaggio tra Home e Settings risolto**: `useCloudSync` era istanziato 3 volte (HomeScreen, SettingsScreen, OnboardingWizard), ognuna con il proprio sync all'avvio → sync duplicati che bloccavano il thread JS.
+- **Fix**: creato `CloudSyncContext` provider che condivide una singola istanza di `useCloudSync`. Le schermate ora usano `useCloudSyncContext()`. Aggiunto `useCallback` per l'inline function in MainTabs (evita rimount) e `freezeOnBlur: true`.
+- **Test**: 301 test mobile verdi. Build locale APK verificata su dispositivo.
+
 ## 2026-09-15
 
 ### 🐛 Fix sync progress mobile (issue #797, PR #800)
