@@ -14,7 +14,7 @@ interface ImportExportDialogProps {
     onImportSuccess?: (doc: { id: string; original_filename: string }) => void;
 }
 
-const IMPORT_ACCEPT = ".txt,.png,.jpg,.jpeg,.gif,.bmp";
+const IMPORT_ACCEPT = ".txt,.png,.jpg,.jpeg,.gif,.bmp,.docx";
 const EXPORT_FORMATS = ["txt", "png", "jpg", "svg"];
 
 export default function ImportExportDialog({

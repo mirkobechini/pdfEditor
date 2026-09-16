@@ -81,7 +81,7 @@
     "exportTab": "Esporta",
     "importDesc": "Converti un file in PDF",
     "exportDesc": "Converti il PDF selezionato in un altro formato",
-    "importFormats": "txt, png, jpg, gif, bmp",
+    "importFormats": "txt, png, jpg, gif, bmp, docx",
     "exportFormats": "txt, png, jpg, svg",
     "chooseFile": "Scegli file",
     "noFile": "Nessun file selezionato",
