@@ -1,6 +1,6 @@
 {
   "name": "mobile",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "main": "index.ts",
   "dependencies": {
     "@cantoo/pdf-lib": "^2.8.1",
@@ -24,6 +24,7 @@
     "expo-linking": "~57.0.9",
     "expo-localization": "~57.0.1",
     "expo-notifications": "~57.0.9",
+    "expo-print": "~57.0.2",
     "expo-sharing": "~57.0.10",
     "expo-splash-screen": "~57.0.5",
     "expo-sqlite": "~57.0.1",

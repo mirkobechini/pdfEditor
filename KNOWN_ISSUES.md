@@ -64,6 +64,20 @@
 
 Tutti i bug minori precedenti sono stati risolti.
 
+### DOCX → PDF — qualità media (issue #807)
+
+La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, desktop offline via sidecar). Supporta testo e paragrafi con formattazione base. **Limiti noti:**
+
+- Tabelle, immagini e stili complessi possono perdere fedeltà
+- Per conversione di alta qualità servirebbe LibreOffice (solo desktop)
+- PDF → DOCX NON è in scope (feature futura)
+
+### Stampa PDF — limiti per piattaforma (issue #809)
+
+- **Web/Desktop**: `window.print()` su iframe — il layout dipende dal browser/webview
+- **Mobile**: `expo-print` stampa il PDF locale (AirPrint). Se il PDF è solo nel cloud (non scaricato localmente), serve prima il download
+- iOS non supporta asset URL locali in HTML (ma `printAsync({ uri })` con URI file funziona)
+
 ---
 
 ## 🔵 Debito tecnico
@@ -134,6 +148,7 @@ Tutti i bug minori precedenti sono stati risolti.
 | Desktop: PdfViewer         | 81.7%                 | ❌ No      | Rendering PDF.js in jsdom                                                                     |
 | Desktop: GoogleLoginButton | 76.31%                | ❌ No      | Redirect flow difficile da testare                                                            |
 | ReorderPagesModal DnD      | 81.17%                | ❌ No      | DnD handlers (@dnd-kit) non copribili in jsdom — richiedono test E2E con Playwright           |
+| Web: ImportExportDialog    | 98.14%                | ❌ No      | Guard `if (!importFile) return` non raggiungibile via UI (bottone import disabled senza file) |
 
 ---
 

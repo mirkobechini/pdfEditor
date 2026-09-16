@@ -17,6 +17,8 @@ interface ToolbarProps {
   onMetadata: () => void;
   onProtect: () => void;
   onCompress: () => void;
+  onImportExport: () => void;
+  onPrint: () => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -37,6 +39,8 @@ export default function Toolbar({
   onMetadata,
   onProtect,
   onCompress,
+  onImportExport,
+  onPrint,
   canUndo,
   canRedo,
   onUndo,
@@ -171,6 +175,12 @@ export default function Toolbar({
       </button>
       <button className="px-3 py-1 text-xs rounded bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50" onClick={onCompress}>
         {t("compress")}
+      </button>
+      <button className="px-3 py-1 text-xs rounded bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50" onClick={onImportExport}>
+        {t("importExport")}
+      </button>
+      <button className="px-3 py-1 text-xs rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50" onClick={onPrint}>
+        {t("print")}
       </button>
     </>
   );

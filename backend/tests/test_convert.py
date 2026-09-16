@@ -81,7 +81,7 @@ class TestImport:
         response = client.post(
             "/pdfs/import",
             headers=pro_headers,
-            files={"file": ("doc.docx", b"fake docx content", "application/octet-stream")},
+            files={"file": ("doc.xlsx", b"fake xlsx content", "application/octet-stream")},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -149,3 +149,53 @@ class TestImport:
         )
         assert response.status_code == 413
         assert "File too large" in response.text
+
+    # ------------------------------------------------------------------
+    # DOCX import tests
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _make_docx(text: str = "Hello DOCX World") -> bytes:
+        """Create a minimal valid DOCX file in memory."""
+        from io import BytesIO
+        from docx import Document
+
+        doc = Document()
+        doc.add_paragraph(text)
+        buffer = BytesIO()
+        doc.save(buffer)
+        return buffer.getvalue()
+
+    def test_import_docx(self, client, pro_headers):
+        """Should import a DOCX file as PDF."""
+        docx_bytes = self._make_docx()
+        response = client.post(
+            "/pdfs/import",
+            headers=pro_headers,
+            files={"file": ("doc.docx", docx_bytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        )
+        assert response.status_code == status.HTTP_201_CREATED, response.text
+        data = response.json()
+        assert data["original_filename"] == "doc.docx"
+        assert data["page_count"] >= 1
+
+    def test_import_docx_multiple_paragraphs(self, client, pro_headers):
+        """Should import a DOCX with multiple paragraphs."""
+        docx_bytes = self._make_docx("First paragraph\nSecond paragraph\nThird paragraph")
+        response = client.post(
+            "/pdfs/import",
+            headers=pro_headers,
+            files={"file": ("multi.docx", docx_bytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        )
+        assert response.status_code == status.HTTP_201_CREATED, response.text
+        data = response.json()
+        assert data["page_count"] >= 1
+
+    def test_import_docx_invalid_content(self, client, pro_headers):
+        """Should reject a DOCX with invalid content."""
+        response = client.post(
+            "/pdfs/import",
+            headers=pro_headers,
+            files={"file": ("bad.docx", b"not a real docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST

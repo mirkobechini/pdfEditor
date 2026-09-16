@@ -7,7 +7,9 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf } from "../services/pdfService";
+import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, exportPdf, importFile } from "../services/pdfService";
+import { useCloudSyncContext } from "../hooks/CloudSyncContext";
+import * as DocumentPicker from "expo-document-picker";
 import { useTranslation } from "react-i18next";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
@@ -16,6 +18,7 @@ export default function ToolsScreen() {
     const theme = useTheme();
     const navigation = useNavigation<ToolsNavProp>();
     const { loadLocalPdfs } = usePdfStorage();
+    const { isOnline } = useCloudSyncContext();
     const { t } = useTranslation();
     const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
     const [loading, setLoading] = useState(true);
@@ -42,6 +45,10 @@ export default function ToolsScreen() {
     const [compressDialog, setCompressDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
     const [compressQuality, setCompressQuality] = useState<"low" | "medium" | "high">("medium");
     const [compressNameInput, setCompressNameInput] = useState("");
+    // Import/Export dialog state
+    const [importExportDialog, setImportExportDialog] = useState<{ mode: "import" | "export"; pdfId: string; pdfName: string } | null>(null);
+    const [exportFormat, setExportFormat] = useState("txt");
+    const [importExportBusy, setImportExportBusy] = useState(false);
     // Metadata dialog state
     const [metadataDialog, setMetadataDialog] = useState<{ pdfId: string; pdfName: string; title: string; author: string } | null>(null);
     // Password dialog state
@@ -272,6 +279,60 @@ export default function ToolsScreen() {
         await reloadPdfs();
     }
 
+    // ─── Import / Export ─────────────────────────────────────────
+
+    function openImportExportDialog(pdfId: string, mode: "import" | "export") {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        setImportExportDialog({ mode, pdfId, pdfName: pdf?.original_filename || "PDF" });
+        setExportFormat("txt");
+    }
+
+    async function executeImport() {
+        if (!importExportDialog) return;
+        setImportExportBusy(true);
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: "*/*",
+                copyToCacheDirectory: true,
+                multiple: false,
+            });
+            if (result.canceled || !result.assets?.[0]) return;
+            const asset = result.assets[0];
+            const imported = await importFile(asset.uri, asset.name || "document.txt", asset.mimeType || "application/octet-stream");
+            if (imported) {
+                showResult(t("tools.importResult", { name: imported.original_filename }));
+                await reloadPdfs();
+            } else {
+                showResult(t("tools.importFailed"));
+            }
+        } catch (e) {
+            console.error("Import error:", e);
+            showResult(t("tools.importFailed"));
+        } finally {
+            setImportExportBusy(false);
+            setImportExportDialog(null);
+        }
+    }
+
+    async function executeExport() {
+        if (!importExportDialog) return;
+        setImportExportBusy(true);
+        try {
+            const result = await exportPdf(importExportDialog.pdfId, exportFormat, importExportDialog.pdfName);
+            if (result) {
+                showResult(t("tools.exportResult", { name: result.name }));
+            } else {
+                showResult(t("tools.exportFailed"));
+            }
+        } catch (e) {
+            console.error("Export error:", e);
+            showResult(t("tools.exportFailed"));
+        } finally {
+            setImportExportBusy(false);
+            setImportExportDialog(null);
+        }
+    }
+
     async function executeProtect() {
         if (!passwordDialog || passwordDialog.mode !== "protect") return;
         if (passwordInput.length < 4) { showResult(t("tools.passwordShort")); return; }
@@ -382,6 +443,24 @@ export default function ToolsScreen() {
                     >
                         {t("tools.unlock")}
                     </Button>
+                    <Button
+                        mode={operation === "import" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "import" ? theme.colors.primary : undefined}
+                        textColor={operation === "import" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("import"); setSelectedIds([]); }}
+                    >
+                        {t("tools.import")}
+                    </Button>
+                    <Button
+                        mode={operation === "export" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "export" ? theme.colors.primary : undefined}
+                        textColor={operation === "export" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("export"); setSelectedIds([]); }}
+                    >
+                        {t("tools.export")}
+                    </Button>
                 </View>
             </View>
 
@@ -438,6 +517,7 @@ export default function ToolsScreen() {
                                     else if (operation === "metadata") openMetadataDialog(item.id);
                                     else if (operation === "protect") openPasswordDialog(item.id, "protect");
                                     else if (operation === "unlock") openPasswordDialog(item.id, "unlock");
+                                    else if (operation === "export") openImportExportDialog(item.id, "export");
                                 }}
                             >
                                 <Card.Content>
@@ -606,6 +686,46 @@ export default function ToolsScreen() {
                             setCompressNameInput("");
                             executeCompress(fileName);
                         }}>{t("common.save")}</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Import/Export Dialog — requires connection */}
+            <Portal>
+                <Dialog visible={importExportDialog !== null} onDismiss={() => setImportExportDialog(null)}>
+                    <Dialog.Title>{importExportDialog?.mode === "import" ? t("tools.importTitle") : t("tools.exportTitle")}</Dialog.Title>
+                    <Dialog.Content>
+                        {!isOnline && (
+                            <Text variant="bodyMedium" style={{ color: theme.colors.error, marginBottom: 12 }}>
+                                {t("tools.requiresConnection")}
+                            </Text>
+                        )}
+                        {importExportDialog?.mode === "import" ? (
+                            <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                                {t("tools.importHint")}
+                            </Text>
+                        ) : (
+                            <>
+                                <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                                    {t("tools.exportHint", { name: importExportDialog?.pdfName || "" })}
+                                </Text>
+                                <RadioButton.Group
+                                    onValueChange={(val) => setExportFormat(val as string)}
+                                    value={exportFormat}
+                                >
+                                    <RadioButton.Item label="txt" value="txt" />
+                                    <RadioButton.Item label="png" value="png" />
+                                    <RadioButton.Item label="jpg" value="jpg" />
+                                    <RadioButton.Item label="svg" value="svg" />
+                                </RadioButton.Group>
+                            </>
+                        )}
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setImportExportDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={importExportDialog?.mode === "import" ? executeImport : executeExport} loading={importExportBusy} disabled={importExportBusy || !isOnline}>
+                            {importExportDialog?.mode === "import" ? t("tools.importAction") : t("tools.exportAction")}
+                        </Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

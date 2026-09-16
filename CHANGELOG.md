@@ -2,6 +2,28 @@
 
 ## 2026-09-16
 
+### ✨ Stampa PDF da app (issue #809)
+
+- **Web**: aggiunto bottone Stampa in toolbar — apre il PDF in un iframe nascosto e chiama `window.print()` (stampa nativa del browser).
+- **Desktop**: aggiunto bottone Stampa in toolbar — stessa logica del web (iframe + `window.print()` nella webview).
+- **Mobile**: aggiunto bottone Stampa nel viewer — usa `expo-print` (`printAsync`) per la stampa nativa iOS/Android (AirPrint).
+- **Test**: 586 test web, 938 test desktop, 313 test mobile verdi.
+
+### ✨ Conversione DOCX → PDF (issue #807)
+
+- **Backend**: aggiunto supporto `.docx` in `POST /pdfs/import` — conversione DOCX→PDF con python-docx + reportlab (web/mobile online).
+- **Web**: dialog Import/Export ora accetta `.docx`.
+- **Desktop**: sidecar ora include python-docx + reportlab — conversione DOCX→PDF **offline** (stesso codice del backend).
+- **Mobile**: dialog Import/Export ora accetta `.docx` (online, richiede connessione).
+- **Test**: 399 test backend, 585 test web, 937 test desktop, 311 test mobile verdi.
+
+### ✨ Import/Export su tutte le piattaforme (issue #805)
+
+- **Web**: aggiunta UI Import/Export (bottone in toolbar) per importare file (txt/png/jpg/gif/bmp) ed esportare PDF (txt/png/jpg/svg) via backend online.
+- **Desktop**: aggiunta UI Import/Export (bottone in toolbar) che funziona **offline** via sidecar locale (dialogo nativo per aprire/salvare file).
+- **Mobile**: aggiunta UI Import/Export (bottoni in Tools) che funziona **online** via backend, con messaggio chiaro "richiede connessione" quando offline.
+- **Test**: 584 test web, 936 test desktop, 310 test mobile verdi.
+
 ### 🐛 Fix Google login mobile (issue #796)
 
 - **Google login mobile funzionante**: risolto "accesso negato". Cause: (1) `GOOGLE_ANDROID_CLIENT_ID` non configurato nel backend in produzione; (2) mancava `maybeCompleteAuthSession()`; (3) mancava lo scheme `com.mirkobechini.pdfeditor` in `app.json`; (4) redirect URI Android non configurato in Google Cloud Console.

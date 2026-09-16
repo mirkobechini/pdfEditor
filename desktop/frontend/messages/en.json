@@ -47,7 +47,7 @@
     "splitInvalidRange": "Invalid page range",
     "internalError": "An unexpected error occurred",
     "unknownError": "An unexpected error occurred",
-    "version": "v0.1.37",
+    "version": "v0.1.38",
     "license": "Open Source License"
   },
   "pdf": {
@@ -179,6 +179,8 @@
     "remove": "Remove",
     "metadata": "Metadata",
     "replaceText": "Replace Text",
+    "importExport": "Import/Export",
+    "print": "Print",
     "user": "User",
     "cloudSync": "Cloud Sync",
     "settings": "Settings",
@@ -389,6 +391,24 @@
     "cancel": "Cancel",
     "confirm": "Compress",
     "compressing": "Compressing..."
+  },
+  "importExportModal": {
+    "title": "Import / Export",
+    "importTab": "Import",
+    "exportTab": "Export",
+    "importDesc": "Convert a file to PDF (offline)",
+    "exportDesc": "Convert the selected PDF to another format (offline)",
+    "importFormats": "txt, png, jpg, gif, bmp, docx",
+    "exportFormats": "txt, png, jpg, svg",
+    "chooseFile": "Choose file",
+    "exportFormat": "Export format",
+    "exportName": "Output filename",
+    "cancel": "Cancel",
+    "import": "Import",
+    "export": "Export",
+    "importing": "Importing...",
+    "exporting": "Exporting...",
+    "noPdfSelected": "Select a PDF first"
   },
   "lockModal": {
     "unlockTitle": "Unlock PDF",

@@ -1,4 +1,7 @@
 {
+  "viewer": {
+    "print": "Stampa"
+  },
   "settings": {
     "title": "Impostazioni",
     "account": "Account",
@@ -106,6 +109,19 @@
     "cancel": "Annulla",
     "protect": "Proteggi",
     "unlockAction": "Sblocca",
+    "import": "Importa",
+    "export": "Esporta",
+    "importTitle": "Importa file",
+    "exportTitle": "Esporta PDF",
+    "importHint": "Scegli un file (txt, png, jpg, gif, bmp, docx) da convertire in PDF. Richiede connessione.",
+    "exportHint": "Esporta {{name}} in un altro formato. Richiede connessione.",
+    "requiresConnection": "Questa operazione richiede una connessione internet.",
+    "importAction": "Scegli file",
+    "exportAction": "Esporta",
+    "importResult": "Importato: {{name}}",
+    "importFailed": "Importazione fallita",
+    "exportResult": "Esportato: {{name}}",
+    "exportFailed": "Esportazione fallita",
     "selectMin2": "Seleziona almeno 2 PDF",
     "splitTitle": "Dividi \"{{name}}\"",
     "splitSelectPages": "Seleziona pagine da estrarre in un nuovo PDF:",

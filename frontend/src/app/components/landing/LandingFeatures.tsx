@@ -64,6 +64,30 @@ export default function LandingFeatures() {
             bgColor: "bg-cyan-100 dark:bg-cyan-900/40",
             iconColor: "text-cyan-600 dark:text-cyan-400",
         },
+        {
+            id: "importexport",
+            icon: "📥",
+            titleKey: "importexport.title",
+            descriptionKey: "importexport.description",
+            bgColor: "bg-indigo-100 dark:bg-indigo-900/40",
+            iconColor: "text-indigo-600 dark:text-indigo-400",
+        },
+        {
+            id: "docx",
+            icon: "📝",
+            titleKey: "docx.title",
+            descriptionKey: "docx.description",
+            bgColor: "bg-teal-100 dark:bg-teal-900/40",
+            iconColor: "text-teal-600 dark:text-teal-400",
+        },
+        {
+            id: "print",
+            icon: "🖨️",
+            titleKey: "print.title",
+            descriptionKey: "print.description",
+            bgColor: "bg-orange-100 dark:bg-orange-900/40",
+            iconColor: "text-orange-600 dark:text-orange-400",
+        },
     ];
 
     return (

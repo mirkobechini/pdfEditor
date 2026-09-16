@@ -53,7 +53,7 @@ vi.mock("../../components/Sidebar", () => ({
 }));
 
 vi.mock("../../components/Toolbar", () => ({
-    default: ({ onMerge, onSplit, onReorder, onRemovePages, onReplaceText, onMetadata, onProtect, onUndo, onRedo, canUndo, canRedo, currentPage, totalPages, zoom }: any) => (
+    default: ({ onMerge, onSplit, onReorder, onRemovePages, onReplaceText, onMetadata, onProtect, onUndo, onRedo, onPrint, canUndo, canRedo, currentPage, totalPages, zoom }: any) => (
         <div data-testid="toolbar" data-can-undo={canUndo} data-can-redo={canRedo}>
             <button data-testid="toolbar-merge" onClick={onMerge}>Merge</button>
             <button data-testid="toolbar-split" onClick={onSplit}>Split</button>
@@ -62,6 +62,7 @@ vi.mock("../../components/Toolbar", () => ({
             <button data-testid="toolbar-replacetext" onClick={onReplaceText}>ReplaceText</button>
             <button data-testid="toolbar-metadata" onClick={onMetadata}>Metadata</button>
             <button data-testid="toolbar-protect" onClick={onProtect}>Protect</button>
+            <button data-testid="toolbar-print" onClick={onPrint}>Print</button>
             <button data-testid="toolbar-undo" onClick={onUndo}>Undo</button>
             <button data-testid="toolbar-redo" onClick={onRedo}>Redo</button>
             <span data-testid="toolbar-page">{currentPage}/{totalPages}</span>
@@ -630,5 +631,37 @@ describe("EditorPage", () => {
             const sidebar = screen.getByTestId("sidebar");
             expect(sidebar.getAttribute("data-selected-id")).toBe("");
         });
+    });
+
+    it("handlePrint opens a hidden iframe and calls print", async () => {
+        mockGetPdf.mockResolvedValue(mockPdf);
+        render(<EditorPage />);
+        fireEvent.click(screen.getByTestId("sidebar-select"));
+        await waitFor(() => expect(mockDownloadPdf).toHaveBeenCalled());
+
+        // Mock iframe creation and print
+        const mockPrint = vi.fn();
+        const mockIframe = {
+            src: "",
+            style: {},
+            onload: null as any,
+            contentWindow: { focus: vi.fn(), print: mockPrint },
+        };
+        const createElementSpy = vi.spyOn(document, "createElement").mockReturnValue(mockIframe as any);
+        const appendSpy = vi.spyOn(document.body, "appendChild").mockImplementation(() => mockIframe as any);
+        const removeSpy = vi.spyOn(document.body, "removeChild").mockImplementation(() => mockIframe as any);
+
+        fireEvent.click(screen.getByTestId("toolbar-print"));
+        // Trigger the onload handler
+        mockIframe.onload();
+
+        expect(createElementSpy).toHaveBeenCalledWith("iframe");
+        expect(mockIframe.src).toBe("blob:mock-url");
+        expect(mockPrint).toHaveBeenCalled();
+        expect(appendSpy).toHaveBeenCalled();
+
+        createElementSpy.mockRestore();
+        appendSpy.mockRestore();
+        removeSpy.mockRestore();
     });
 });

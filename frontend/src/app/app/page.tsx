@@ -14,6 +14,7 @@ import MetadataDialog from "../components/MetadataDialog";
 import ReplaceTextDialog from "../components/ReplaceTextDialog";
 import ProtectDialog from "../components/ProtectDialog";
 import DeleteModal from "../components/DeleteModal";
+import ImportExportDialog from "../components/ImportExportDialog";
 import { api, PdfDocument } from "../lib/api";
 import { useAuth } from "../lib/auth";
 
@@ -33,6 +34,7 @@ export default function EditorPage() {
     const [metadataOpen, setMetadataOpen] = React.useState(false);
     const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [protectOpen, setProtectOpen] = React.useState(false);
+    const [importExportOpen, setImportExportOpen] = React.useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
     const [fileToDelete, setFileToDelete] = React.useState<PdfDocument | null>(null);
     const [sidebarRefreshKey, setSidebarRefreshKey] = React.useState(0);
@@ -133,6 +135,34 @@ export default function EditorPage() {
         setFileToDelete(null);
     }
 
+    function handlePrint() {
+        if (!fileUrl) return;
+        // Open the PDF in a hidden iframe and trigger the browser print dialog.
+        // This prints the actual PDF (not the page) via the browser's native print.
+        const iframe = document.createElement("iframe");
+        iframe.src = fileUrl;
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "none";
+        iframe.style.visibility = "hidden";
+        iframe.onload = () => {
+            try {
+                iframe.contentWindow?.focus();
+                iframe.contentWindow?.print();
+            } catch (err) {
+                console.error("Print failed:", err);
+            }
+        };
+        document.body.appendChild(iframe);
+        // Clean up after a delay to allow the print dialog to open
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+        }, 60000);
+    }
+
     return (
         <>
             <AppLayout
@@ -166,6 +196,8 @@ export default function EditorPage() {
                         onReplaceText={() => setReplaceTextOpen(true)}
                         onMetadata={() => setMetadataOpen(true)}
                         onProtect={() => setProtectOpen(true)}
+                        onImportExport={() => setImportExportOpen(true)}
+                        onPrint={handlePrint}
                         canUndo={!!selectedId}
                         canRedo={false}
                         onUndo={handleUndo}
@@ -281,6 +313,23 @@ export default function EditorPage() {
                 open={protectOpen}
                 onClose={() => setProtectOpen(false)}
                 pdfId={selectedId}
+            />
+            <ImportExportDialog
+                open={importExportOpen}
+                onClose={() => setImportExportOpen(false)}
+                selectedId={selectedId}
+                selectedName={selectedName}
+                onImportSuccess={(doc) => {
+                    setSidebarRefreshKey((prev) => prev + 1);
+                    setSelectedId(doc.id);
+                    setSelectedName(doc.original_filename);
+                    setRequiresPassword(false);
+                    void api.downloadPdf(doc.id).then((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        if (fileUrl) URL.revokeObjectURL(fileUrl);
+                        setFileUrl(url);
+                    });
+                }}
             />
             <DeleteModal
                 open={deleteModalOpen}

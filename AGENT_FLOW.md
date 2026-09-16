@@ -63,8 +63,8 @@ Prima di creare/modificare/cancellare QUALSIASI file, l'agente DEVE verificare m
   1. Completare tutti i commit del task
   2. Eseguire `npx expo export --platform android` (build locale) per verificare che bundle e asset siano corretti
   3. Se la build locale fallisce → fixare e ricominciare dal passo 1
-  4. Lanciare **EAS Build** (`npx eas build --platform android --profile preview --wait`) per generare un APK installabile
-  5. **Non creare la PR** — comunicare al developer che l'APK è pronto e chiedere di testarlo
+  4. **Build locale su telefono collegato via USB** (NON EAS Build): `npx expo run:android` (o `npx expo start` + installazione APK via USB) per installare l'app sul dispositivo collegato
+  5. **Non creare la PR** — comunicare al developer che l'app è installata sul telefono e chiedere di testarla
   6. Solo dopo approvazione del developer → creare PR e procedere con merge su dev
 - **Desktop development: build locale prima della PR.** Quando si lavora sul desktop, prima di creare la PR:
   1. Completare tutti i commit del task
@@ -276,7 +276,7 @@ Adattare i passi alle piattaforme del progetto corrente. Eseguire SOLO quelle ap
 **Mobile** (se presente):
 - TypeScript/type check: `npx tsc --noEmit` / `dart analyze` / equivalente
 - Test: `npx jest` / `flutter test` / equivalente
-- Build cloud o locale (EAS, Xcode, Android Studio, eas build, ecc.)
+- Build locale su telefono via USB: `npx expo run:android` (o equivalente per il framework)
 
 #### 7.3 Version bump
 
@@ -333,14 +333,14 @@ git tag vX.Y.Z && git push origin vX.Y.Z
 
 ## 8. Mobile app workflow
 
-Il mobile ha un flusso diverso da web/desktop: la build finale richiede spesso un servizio cloud (EAS, App Center, CI custom) o una macchina specifica (Xcode, Android Studio). Il test utente è tipicamente post-merge.
+Il mobile ha un flusso diverso da web/desktop: la build finale avviene in locale su un telefono collegato via USB (`npx expo run:android`). Il test utente è tipicamente post-merge.
 
 ### 8.1 Differenze principali dal flusso standard
 
 | Aspetto                    | Web/Desktop                     | Mobile                                    |
 | -------------------------- | ------------------------------- | ----------------------------------------- |
 | Build locale               | `npm run build` / equivalente   | Type check + lint (no build finale locale) |
-| Build finale               | Locale o CI                     | Cloud (EAS, App Center) o locale          |
+| Build finale               | Locale o CI                     | Locale su telefono via USB (`expo run:android`) |
 | Test PR                    | CI su GitHub                    | Type check + test suite                   |
 | Test utente                | Prima del merge (preview)       | **Dopo il merge** (build → installazione) |
 | Version alignment          | N file (script dedicato)        | `package.json` + `app.json` / `pubspec`   |
@@ -369,7 +369,7 @@ npm test
 # Stessa procedura del flusso standard (step 6)
 
 # 5. ⚠️ DOPO il merge su dev:
-#    - Creare una build (cloud o locale)
+#    - Creare una build locale su telefono collegato via USB (`npx expo run:android`)
 #    - L'utente testa su dispositivo
 #    - Se ci sono bug → nuova issue/branch → fix → PR → merge → nuova build
 
@@ -380,7 +380,7 @@ npm test
 
 1. **Type/compilation check obbligatorio** prima di ogni commit mobile. Se non passa, non si committa.
 2. **Test obbligatori** solo se esistono. Se non ci sono test per la nuova feature, documentare il motivo.
-3. **Build finale DOPO il merge**, non prima. Build cloud tipicamente richiedono 15-40 min, il branch intanto cambierebbe.
+3. **Build finale DOPO il merge**, non prima. Build locale su telefono via USB (`npx expo run:android`) — il branch intanto cambierebbe.
 4. **Version alignment**: `mobile/package.json` e `mobile/app.json` (expo.version) devono essere allineati. `scripts/bump-version.js` li aggiorna entrambi. **La versione mobile è INDIPENDENTE da web/desktop** — non usare la versione del web per una release mobile (lezione appresa 2026-08-07: tag `v0.1.34-build9` errato, corretto in `v0.1.0-mobile`).
 5. **Limitazioni del runtime**: alcune funzionalità JS/TS potrebbero non funzionare standalone (es. dynamic import, moduli Node-only). Verificare prima di usare.
 6. **KNOWN_ISSUES.md** va aggiornato con le limitazioni mobile scoperte.
@@ -395,8 +395,8 @@ npm test
 npx tsc --noEmit
 # Test
 npx jest
-# Build cloud (EAS)
-npx eas-cli build --platform android --profile preview
+# Build locale su telefono collegato via USB (NON EAS Build)
+npx expo run:android
 ```
 
 **Flutter:**

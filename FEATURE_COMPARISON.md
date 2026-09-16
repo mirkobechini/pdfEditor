@@ -39,8 +39,10 @@
 | View metadata                   | ✅  | ✅      | ✅     | Mobile: dialog dettagli                                                                                     |
 | Edit metadata                   | ✅  | ✅      | ✅     |                                                                                                             |
 | **Import/Export**               |     |         |        |                                                                                                             |
-| Import file                     | ✅  | ✅      | ❌     |                                                                                                             |
-| Export PDF                      | ✅  | ✅      | ❌     |                                                                                                             |
+| Import file                     | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                         |
+| Import DOCX                     | ✅  | ✅      | ✅     | Web/Mobile online (python-docx+reportlab), Desktop offline (sidecar)                                        |
+| Export PDF                      | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                         |
+| Stampa PDF                      | ✅  | ✅      | ✅     | Web/Desktop: window.print() su iframe. Mobile: expo-print (AirPrint)                                        |
 | **Testo**                       |     |         |        |                                                                                                             |
 | Extract text                    | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                      |
 | **Auth**                        |     |         |        |                                                                                                             |
@@ -98,7 +100,7 @@
 - **Undo/Redo:** Non supportato (pdf-lib non ha history)
 - **Download PDF:** ✅ tramite SAF (Storage Access Framework)
 - **Solo mobile:** Scanner, Share, Badge, Multi-select, Splash, Pull-to-refresh, Search, Swipe, Snackbar, Bottom tabs, Onboarding wizard, Sync badges
-- **Manca rispetto a web/desktop:** Extract text, Import/Export, Undo/Redo
+- **Manca rispetto a web/desktop:** Extract text, Undo/Redo
 
 ---
 

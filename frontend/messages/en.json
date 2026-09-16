@@ -18,7 +18,9 @@
     "metadata": "Info",
     "replaceText": "Find & Replace",
     "protect": "Protect",
-    "compress": "Compress"
+    "compress": "Compress",
+    "importExport": "Import/Export",
+    "print": "Print"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -73,6 +75,29 @@
     "confirm": "Compress",
     "compressing": "Compressing...",
     "failed": "Compression failed"
+  },
+  "importExportDialog": {
+    "title": "Import / Export",
+    "importTab": "Import",
+    "exportTab": "Export",
+    "importDesc": "Convert a file to PDF",
+    "exportDesc": "Convert the selected PDF to another format",
+    "importFormats": "txt, png, jpg, gif, bmp, docx",
+    "exportFormats": "txt, png, jpg, svg",
+    "chooseFile": "Choose file",
+    "noFile": "No file selected",
+    "exportFormat": "Export format",
+    "exportName": "Output filename",
+    "cancel": "Cancel",
+    "import": "Import",
+    "export": "Export",
+    "importing": "Importing...",
+    "exporting": "Exporting...",
+    "importFailed": "Import failed",
+    "exportFailed": "Export failed",
+    "importSuccess": "Imported successfully",
+    "exportSuccess": "Exported successfully",
+    "noPdfSelected": "Select a PDF first"
   },
   "reorderDialog": {
     "title": "Reorder Pages",
@@ -376,6 +401,18 @@
       "metadata": {
         "title": "Metadata & Info",
         "description": "View and edit title, author, subject and keywords of your PDFs."
+      },
+      "importexport": {
+        "title": "Import & Export",
+        "description": "Convert files (txt, png, jpg, docx) to PDF and export PDFs to other formats."
+      },
+      "docx": {
+        "title": "DOCX to PDF",
+        "description": "Import Word documents (.docx) and convert them to PDF in seconds."
+      },
+      "print": {
+        "title": "Print PDFs",
+        "description": "Print your PDFs directly from the app on web, desktop and mobile."
       }
     },
     "howItWorks": {
