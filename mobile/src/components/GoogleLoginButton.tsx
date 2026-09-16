@@ -39,7 +39,9 @@ export default function GoogleLoginButton() {
     const handlePress = async () => {
         setError(null);
         try {
-            await promptAsync();
+            await promptAsync({
+                windowFeatures: { width: 900, height: 700 },
+            });
         } catch (err) {
             setError(t(mapError(err)));
         }
