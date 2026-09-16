@@ -66,6 +66,36 @@ describe("ImportExportDialog", () => {
         });
     });
 
+    it("imports a DOCX file", async () => {
+        const onImportSuccess = vi.fn();
+        const onClose = vi.fn();
+        const mockDoc = { id: "new1", original_filename: "doc.pdf" };
+        (api.importFile as any).mockResolvedValue(mockDoc);
+
+        render(
+            <ImportExportDialog
+                open={true}
+                onClose={onClose}
+                selectedId={null}
+                selectedName=""
+                onImportSuccess={onImportSuccess}
+            />
+        );
+
+        const fileInput = screen.getByLabelText("chooseFile") as HTMLInputElement;
+        const file = new File(["docx"], "doc.docx", { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+        fireEvent.change(fileInput, { target: { files: [file] } });
+
+        const importBtn = screen.getByText("import");
+        fireEvent.click(importBtn);
+
+        await waitFor(() => {
+            expect(api.importFile).toHaveBeenCalledWith(file);
+            expect(onImportSuccess).toHaveBeenCalledWith(mockDoc);
+            expect(onClose).toHaveBeenCalled();
+        });
+    });
+
     it("shows error when import fails", async () => {
         (api.importFile as any).mockRejectedValue(new Error("boom"));
 
