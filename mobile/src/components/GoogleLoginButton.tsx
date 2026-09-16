@@ -3,9 +3,13 @@ import { Button, Text, useTheme } from "react-native-paper";
 import { View } from "react-native";
 import { useTranslation } from "react-i18next";
 import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { useAuth } from "../shared/auth";
+import { mapError } from "../shared/error-map";
 import GoogleIcon from "./GoogleIcon";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function GoogleLoginButton() {
     const theme = useTheme();
@@ -27,7 +31,7 @@ export default function GoogleLoginButton() {
         if (response?.type === "success" && response.authentication?.idToken) {
             const idToken = response.authentication.idToken;
             googleLogin(idToken).catch((err) => {
-                setError(String(err));
+                setError(t(mapError(err)));
             });
         }
     }, [response]);
@@ -35,9 +39,11 @@ export default function GoogleLoginButton() {
     const handlePress = async () => {
         setError(null);
         try {
-            await promptAsync();
+            await promptAsync({
+                windowFeatures: { width: 900, height: 700 },
+            });
         } catch (err) {
-            setError(String(err));
+            setError(t(mapError(err)));
         }
     };
 

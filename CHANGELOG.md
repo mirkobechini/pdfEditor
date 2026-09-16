@@ -1,6 +1,33 @@
 # Changelog
 
+## 2026-09-16
+
+### 🐛 Fix Google login mobile (issue #796)
+
+- **Google login mobile funzionante**: risolto "accesso negato". Cause: (1) `GOOGLE_ANDROID_CLIENT_ID` non configurato nel backend in produzione; (2) mancava `maybeCompleteAuthSession()`; (3) mancava lo scheme `com.mirkobechini.pdfeditor` in `app.json`; (4) redirect URI Android non configurato in Google Cloud Console.
+- **Errore normalizzato**: il `GoogleLoginButton` ora usa `mapError` per mostrare messaggi leggibili ("Autenticazione Google fallita") invece dell'errore raw.
+- **Finestra Google più grande**: `windowFeatures` 900x700 per la selezione account.
+
+### ⚡ Fix lag navigazione mobile (issue #801, PR #802)
+
+- **Lag nel passaggio tra Home e Settings risolto**: `useCloudSync` era istanziato 3 volte (HomeScreen, SettingsScreen, OnboardingWizard), ognuna con il proprio sync all'avvio → sync duplicati che bloccavano il thread JS.
+- **Fix**: creato `CloudSyncContext` provider che condivide una singola istanza di `useCloudSync`. Le schermate ora usano `useCloudSyncContext()`. Aggiunto `useCallback` per l'inline function in MainTabs (evita rimount) e `freezeOnBlur: true`.
+- **Test**: 301 test mobile verdi. Build locale APK verificata su dispositivo.
+
+## 2026-09-15
+
+### 🐛 Fix sync progress mobile (issue #797, PR #800)
+
+- **PDF appaiono uno alla volta durante il sync**: prima i PDF scaricati dal cloud apparivano tutti insieme solo a sync completato. Ora `HomeScreen` ricarica la lista a ogni avanzamento del progress, così ogni PDF appare subito dopo il download. Reload leggero senza spinner (evita flicker).
+- **Test**: 301 test mobile verdi. Build locale APK verificata su dispositivo.
+
 ## 2026-09-14
+
+### ✨ Icone piattaforma di provenienza su mobile (issue #798, PR #799)
+
+- **Icone di provenienza**: i PDF su mobile ora mostrano l'icona della piattaforma di provenienza (🌐 web, 💻 desktop, 📱 mobile) nel riquadro PDF, al posto dell'icona generica pdf. Come su desktop.
+- **Fix**: aggiunta colonna `upload_source` alla tabella `pdfs` (con migrazione), `savePdfLocally` ora la salva (default 'mobile'), `downloadPdf` la popola dal cloud PDF.
+- **Test**: 301 test mobile verdi. Build locale APK verificata su dispositivo.
 
 ### 🐛 Fix Google logo mobile (issue #793, PR #794)
 

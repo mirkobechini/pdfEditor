@@ -1,7 +1,33 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo svilupzo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-12
+> **Aggiornato:** 2026-09-15
+
+---
+
+## Google OAuth mobile: il redirect URI Android è `com.<package>:/oauthredirect`
+
+> **Lezione appresa (2026-09-15, issue #796):**
+
+Il login Google su mobile (Expo/React Native) falliva con "accesso negato" nonostante il backend fosse corretto e il client Android configurato in Google Cloud Console.
+
+**Causa:** il provider Google di `expo-auth-session` genera il redirect URI di default come:
+
+```
+${Application.applicationId}:/oauthredirect
+```
+
+Dove `Application.applicationId` è il `android.package` (`com.mirkobechini.pdfeditor`). Quindi il redirect URI esatto è:
+
+```
+com.mirkobechini.pdfeditor:/oauthredirect
+```
+
+**Nota critica:** ha **un solo slash** (`:/oauthredirect`), NON due (`://`). Google è preciso sul redirect URI — se configuri un URI diverso, rifiuta con "accesso negato".
+
+**Regola per il futuro:** per il Google OAuth su Android con `expo-auth-session`, il redirect URI autorizzato in Google Cloud Console deve essere `<android.package>:/oauthredirect` (un solo slash). Verificare sempre il redirect URI esatto generato dal provider (in `node_modules/expo-auth-session/src/providers/Google.ts`) prima di configurare la console Google.
+
+**Nota:** le impostazioni di Google Cloud Console possono richiedere da 5 minuti a qualche ora per essere applicate.
 
 ---
 

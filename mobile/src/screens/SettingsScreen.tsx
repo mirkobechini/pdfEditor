@@ -6,7 +6,8 @@ import { useAuth } from "../shared/auth";
 import Constants from "expo-constants";
 import { useTranslation } from "react-i18next";
 import { useAppSettings } from "../shared/AppSettingsContext";
-import { useCloudSync, type SyncMode, type SyncConflict } from "../hooks/useCloudSync";
+import { useCloudSyncContext } from "../hooks/CloudSyncContext";
+import type { SyncMode, SyncConflict } from "../hooks/useCloudSync";
 import ConflictDialog from "./ConflictDialog";
 import ImportPdfDialog from "./ImportPdfDialog";
 import BugReportDialog from "../components/BugReportDialog";
@@ -17,7 +18,7 @@ export default function SettingsScreen() {
     const appVersion = Constants.expoConfig?.version || "0.1.0";
     const { t } = useTranslation();
     const { themeMode, setThemeMode, locale, setLocale } = useAppSettings();
-    const { syncEnabled, setSyncEnabled, syncMode, setSyncMode, syncOnStartup, setSyncOnStartup, isSyncing, isOnline, syncAll, resolveConflict, importPdfs } = useCloudSync();
+    const { syncEnabled, setSyncEnabled, syncMode, setSyncMode, syncOnStartup, setSyncOnStartup, isSyncing, isOnline, syncAll, resolveConflict, importPdfs } = useCloudSyncContext();
     const [themeDialog, setThemeDialog] = React.useState(false);
     const [langDialog, setLangDialog] = React.useState(false);
     const [syncModeDialog, setSyncModeDialog] = React.useState(false);

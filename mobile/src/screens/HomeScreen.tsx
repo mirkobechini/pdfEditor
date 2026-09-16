@@ -15,7 +15,7 @@ import { Swipeable } from "react-native-gesture-handler";
 import { setBadgeCountAsync } from "expo-notifications";
 import * as Sharing from "expo-sharing";
 import { useTranslation } from "react-i18next";
-import { useCloudSync } from "../hooks/useCloudSync";
+import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import DeleteSyncDialog, { type DeleteSyncOption } from "./DeleteSyncDialog";
 import ReplaceTextDialog from "../components/ReplaceTextDialog";
 
@@ -32,7 +32,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const { t } = useTranslation();
     const { pickAndSavePdf, loadLocalPdfs, loading: storageLoading } = usePdfStorage();
     const { user } = useAuth();
-    const { status: syncStatus, syncEnabled, syncMode, progress, isSyncing, deletePdf, uploadPdf } = useCloudSync();
+    const { status: syncStatus, syncEnabled, syncMode, progress, isSyncing, deletePdf, uploadPdf } = useCloudSyncContext();
     const userId = user?.id || "";
     const [deleteTarget, setDeleteTarget] = React.useState<LocalPdf | null>(null);
     const [syncingPdf, setSyncingPdf] = React.useState(false);
@@ -162,10 +162,13 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         }
     }
 
-    // Reload PDFs when screen is focused
+    // Reload PDFs when screen is focused (lightweight, no spinner to avoid lag)
     useFocusEffect(
         useCallback(() => {
-            loadPdfs();
+            loadLocalPdfs(userId).then((local) => {
+                setPdfs(local);
+                onPdfCountChange?.(local.length);
+            }).catch(() => { });
         }, [userId])
     );
 
@@ -178,6 +181,21 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         }
         prevSyncingRef.current = isSyncing;
     }, [isSyncing]);
+
+    // Reload PDFs as sync progresses so downloaded PDFs appear one by one
+    // (progress.current advances on each upload/download step)
+    const prevProgressRef = useRef(progress?.current ?? 0);
+    useEffect(() => {
+        const current = progress?.current ?? 0;
+        if (isSyncing && current !== prevProgressRef.current) {
+            // Lightweight reload without loading spinner (avoid flicker during sync)
+            loadLocalPdfs(userId).then((local) => {
+                setPdfs(local);
+                onPdfCountChange?.(local.length);
+            }).catch(() => { });
+        }
+        prevProgressRef.current = current;
+    }, [progress, isSyncing]);
 
     async function loadPdfs() {
         setLoading(true);
@@ -342,7 +360,13 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                                     margin: 12,
                                                 }}
                                             >
-                                                <IconButton icon="file-pdf-box" iconColor={isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant} size={28} />
+                                                {item.upload_source && item.upload_source !== "mobile" ? (
+                                                    <Text style={{ fontSize: 24, color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant }}>
+                                                        {item.upload_source === "web" ? "🌐" : item.upload_source === "desktop" ? "💻" : "📱"}
+                                                    </Text>
+                                                ) : (
+                                                    <IconButton icon="file-pdf-box" iconColor={isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant} size={28} />
+                                                )}
                                                 <Text
                                                     style={{
                                                         fontSize: 10,
@@ -356,9 +380,6 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                                             </View>
                                             <View style={{ flex: 1, paddingRight: 12 }}>
                                                 <Text variant="titleMedium" style={{ fontWeight: "600" }} numberOfLines={1}>
-                                                    {item.upload_source && item.upload_source !== "mobile" ? (
-                                                        <Text>{item.upload_source === "web" ? "🌐 " : item.upload_source === "desktop" ? "💻 " : ""}</Text>
-                                                    ) : null}
                                                     {item.original_filename}
                                                 </Text>
                                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>

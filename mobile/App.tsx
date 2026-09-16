@@ -9,6 +9,7 @@ import { AppSettingsProvider, useAppSettings } from "./src/shared/AppSettingsCon
 import { OnboardingProvider } from "./src/shared/OnboardingContext";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { useUpdateCheck } from "./src/hooks/useUpdateCheck";
+import { CloudSyncProvider } from "./src/hooks/CloudSyncContext";
 import UpdateDialog from "./src/components/UpdateDialog";
 import * as Icons from "@expo/vector-icons";
 import "./src/i18n";
@@ -27,13 +28,15 @@ function AppContent() {
       <SafeAreaProvider>
         <OnboardingProvider>
           <AuthProvider>
-            <StatusBar style="auto" />
-            <AppNavigator />
-            <UpdateDialog
-              visible={updateAvailable}
-              version={latestVersion}
-              onDismiss={dismissUpdate}
-            />
+            <CloudSyncProvider>
+              <StatusBar style="auto" />
+              <AppNavigator />
+              <UpdateDialog
+                visible={updateAvailable}
+                version={latestVersion}
+                onDismiss={dismissUpdate}
+              />
+            </CloudSyncProvider>
           </AuthProvider>
         </OnboardingProvider>
       </SafeAreaProvider>

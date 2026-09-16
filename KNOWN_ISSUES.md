@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-11
+> **Aggiornato:** 2026-09-15
 
 ---
 
@@ -43,6 +43,22 @@
 **Se in futuro si volesse cambiare:** Aggiungere una MessageBox in `NSIS_HOOK_PREUNINSTALL` che chiede "Vuoi cancellare anche i tuoi PDF e dati utente?" e, se confermato, cancella `%APPDATA%/PdfEditor/`.
 
 **Stato:** Non pianificato.
+
+### M5 — Google login mobile "accesso negato" (issue #796) ✅
+
+**File:** `mobile/src/components/GoogleLoginButton.tsx`
+**Descrizione:** Il login Google su mobile falliva con "accesso negato". Il backend in produzione era aggiornato (fix Android client ID), ma il flusso `expo-auth-session` non completava l'autenticazione.
+**Causa:** (1) `GOOGLE_ANDROID_CLIENT_ID` non configurato nel backend in produzione; (2) mancava `maybeCompleteAuthSession()`; (3) mancava lo scheme `com.mirkobechini.pdfeditor` in `app.json`; (4) il redirect URI Android (`com.mirkobechini.pdfeditor:/oauthredirect`) non era configurato in Google Cloud Console.
+**Fix:** configurato `GOOGLE_ANDROID_CLIENT_ID` in produzione, aggiunto `maybeCompleteAuthSession()`, aggiunto scheme in `app.json`, configurato redirect URI in Google Cloud Console.
+**Stato:** ✅ Risolto (issue #796). Vedi LESSONS_LEARNED.
+
+### M6 — Lag nel passaggio tra Home e Settings (issue #801) ✅
+
+**File:** `mobile/src/hooks/useCloudSync.ts`, `mobile/src/screens/*.tsx`
+**Descrizione:** L'app laggava quando si passava tra la tab Home (editor) e Settings (impostazioni) e viceversa.
+**Causa:** `useCloudSync` era istanziato **3 volte** (HomeScreen, SettingsScreen, OnboardingWizard), ognuna con il proprio sync all'avvio → sync duplicati che bloccavano il thread JS. Inoltre `useFocusEffect` ricaricava i PDF a ogni focus con spinner.
+**Fix:** creato `CloudSyncContext` provider che condivide una singola istanza di `useCloudSync`. Le schermate ora usano `useCloudSyncContext()`. Aggiunto `useCallback` per l'inline function in MainTabs e `freezeOnBlur: true`.
+**Stato:** ✅ Risolto (issue #801, PR #802).
 
 ## 🟡 Bug minori rimanenti
 

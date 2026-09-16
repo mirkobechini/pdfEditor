@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { IconButton, useTheme } from "react-native-paper";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,13 @@ export default function MainTabs() {
     const { t } = useTranslation();
     const [pdfCount, setPdfCount] = useState(0);
 
+    // useCallback evita il rimount di HomeScreen a ogni render di MainTabs
+    // (l'inline function in children viene ricreata a ogni render → rimount → lag)
+    const renderHome = useCallback(
+        () => <HomeScreen onPdfCountChange={setPdfCount} />,
+        [],
+    );
+
     return (
         <Tab.Navigator
             screenOptions={{
@@ -24,11 +31,13 @@ export default function MainTabs() {
                     backgroundColor: theme.colors.surface,
                     borderTopColor: theme.colors.surfaceVariant,
                 },
+                // Congela le schermate inattive per evitare re-render quando si cambia tab
+                freezeOnBlur: true,
             }}
         >
             <Tab.Screen
                 name="HomeTab"
-                children={() => <HomeScreen onPdfCountChange={setPdfCount} />}
+                children={renderHome}
                 options={{
                     title: t("home.title"),
                     tabBarLabel: t("home.title"),

@@ -279,6 +279,7 @@ export function useCloudSync(): UseCloudSyncReturn {
           updated_at: new Date().toISOString(),
           cloud_synced: 1,
           cloud_synced_at: new Date().toISOString(),
+          upload_source: cloudPdf.upload_source || "mobile",
         });
 
         setStatus((prev) => ({ ...prev, [pdfId]: "synced" }));
