@@ -44,12 +44,21 @@
 
 **Stato:** Non pianificato.
 
-### M5 — Google login mobile "accesso negato" (issue #796)
+### M5 — Google login mobile "accesso negato" (issue #796) ✅
 
 **File:** `mobile/src/components/GoogleLoginButton.tsx`
-**Descrizione:** Il login Google su mobile fallisce con "accesso negato". Il backend in produzione è aggiornato (fix Android client ID), ma il flusso `expo-auth-session` non completa l'autenticazione.
-**Causa probabile:** il redirect URI Android (`com.mirkobechini.pdfeditor:/oauthredirect`) non è configurato correttamente in Google Cloud Console. Il provider Google di `expo-auth-session` genera il redirect URI come `<android.package>:/oauthredirect` (un solo slash).
-**Stato:** In attesa che Google applichi le impostazioni (5 min → qualche ora). Vedi LESSONS_LEARNED.
+**Descrizione:** Il login Google su mobile falliva con "accesso negato". Il backend in produzione era aggiornato (fix Android client ID), ma il flusso `expo-auth-session` non completava l'autenticazione.
+**Causa:** (1) `GOOGLE_ANDROID_CLIENT_ID` non configurato nel backend in produzione; (2) mancava `maybeCompleteAuthSession()`; (3) mancava lo scheme `com.mirkobechini.pdfeditor` in `app.json`; (4) il redirect URI Android (`com.mirkobechini.pdfeditor:/oauthredirect`) non era configurato in Google Cloud Console.
+**Fix:** configurato `GOOGLE_ANDROID_CLIENT_ID` in produzione, aggiunto `maybeCompleteAuthSession()`, aggiunto scheme in `app.json`, configurato redirect URI in Google Cloud Console.
+**Stato:** ✅ Risolto (issue #796). Vedi LESSONS_LEARNED.
+
+### M6 — Lag nel passaggio tra Home e Settings (issue #801)
+
+**File:** `mobile/src/hooks/useCloudSync.ts`, `mobile/src/screens/*.tsx`
+**Descrizione:** L'app lagga quando si passa tra la tab Home (editor) e Settings (impostazioni) e viceversa.
+**Causa:** `useCloudSync` è istanziato **3 volte** (HomeScreen, SettingsScreen, OnboardingWizard), ognuna con il proprio sync all'avvio → sync duplicati che bloccano il thread JS. Inoltre `useFocusEffect` ricarica i PDF a ogni focus con spinner.
+**Fix proposto:** condividere `useCloudSync` tramite un context provider (`CloudSyncContext`). Vedi `.specs/active/feature-share-cloudsync.md`.
+**Stato:** In corso (issue #801).
 
 ## 🟡 Bug minori rimanenti
 

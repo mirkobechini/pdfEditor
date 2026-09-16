@@ -15,7 +15,7 @@ import { Swipeable } from "react-native-gesture-handler";
 import { setBadgeCountAsync } from "expo-notifications";
 import * as Sharing from "expo-sharing";
 import { useTranslation } from "react-i18next";
-import { useCloudSync } from "../hooks/useCloudSync";
+import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import DeleteSyncDialog, { type DeleteSyncOption } from "./DeleteSyncDialog";
 import ReplaceTextDialog from "../components/ReplaceTextDialog";
 
@@ -32,7 +32,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const { t } = useTranslation();
     const { pickAndSavePdf, loadLocalPdfs, loading: storageLoading } = usePdfStorage();
     const { user } = useAuth();
-    const { status: syncStatus, syncEnabled, syncMode, progress, isSyncing, deletePdf, uploadPdf } = useCloudSync();
+    const { status: syncStatus, syncEnabled, syncMode, progress, isSyncing, deletePdf, uploadPdf } = useCloudSyncContext();
     const userId = user?.id || "";
     const [deleteTarget, setDeleteTarget] = React.useState<LocalPdf | null>(null);
     const [syncingPdf, setSyncingPdf] = React.useState(false);
@@ -162,10 +162,13 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         }
     }
 
-    // Reload PDFs when screen is focused
+    // Reload PDFs when screen is focused (lightweight, no spinner to avoid lag)
     useFocusEffect(
         useCallback(() => {
-            loadPdfs();
+            loadLocalPdfs(userId).then((local) => {
+                setPdfs(local);
+                onPdfCountChange?.(local.length);
+            }).catch(() => { });
         }, [userId])
     );
 

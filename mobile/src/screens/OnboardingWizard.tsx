@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useAppSettings } from "../shared/AppSettingsContext";
-import { useCloudSync } from "../hooks/useCloudSync";
+import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import { useOnboarding } from "../shared/OnboardingContext";
 
 type WizardStep =
@@ -26,7 +26,7 @@ export default function OnboardingWizard() {
     const theme = useTheme();
     const { t } = useTranslation();
     const { themeMode, setThemeMode, locale, setLocale } = useAppSettings();
-    const { syncEnabled, setSyncEnabled } = useCloudSync();
+    const { syncEnabled, setSyncEnabled } = useCloudSyncContext();
     const { completeOnboarding } = useOnboarding();
 
     const [step, setStep] = useState<WizardStep>("welcome");

@@ -24,6 +24,9 @@ jest.mock("../src/shared/AppSettingsContext", () => ({
 jest.mock("../src/shared/OnboardingContext", () => ({
     OnboardingProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
+jest.mock("../src/hooks/CloudSyncContext", () => ({
+    CloudSyncProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
 jest.mock("../src/navigation/AppNavigator", () => () => null);
 jest.mock("../src/i18n", () => ({}));
 jest.mock("../src/hooks/useUpdateCheck", () => ({
