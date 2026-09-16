@@ -1,38 +1,15 @@
 /**
- * Tests for pdfService printPdf operation.
+ * Tests for printService printPdf operation.
  * Uses expo-print to open the native print dialog.
  */
 
-// Mock expo-file-system (pdfService imports it)
-jest.mock("expo-file-system", () => ({
-  File: jest.fn(),
-  Directory: jest.fn(),
-  Paths: { document: "file:///documents" },
-}));
-
-jest.mock("expo-file-system/legacy", () => ({
-  writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
-  EncodingType: { Base64: "base64" },
-}));
-
-// Mock localDb (pdfService imports it)
-jest.mock("../src/services/localDb", () => ({
-  getLocalPdfById: jest.fn(),
-  savePdfLocally: jest.fn(),
-}));
-
-// Mock shared/api (pdfService imports it)
-jest.mock("../src/shared/api", () => ({
-  api: {},
-}));
-
-// Mock expo-print (dynamic import)
+// Mock expo-print (imported statically by printService)
 const mockPrintAsync = jest.fn();
 jest.mock("expo-print", () => ({
   printAsync: (...args: unknown[]) => mockPrintAsync(...args),
 }));
 
-import { printPdf } from "../src/services/pdfService";
+import { printPdf } from "../src/services/printService";
 
 describe("printPdf", () => {
   beforeEach(() => {
