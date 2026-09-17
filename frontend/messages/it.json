@@ -382,7 +382,7 @@
       "goToApp": "Vai all'App"
     },
     "hero": {
-      "badge": "Nuovo: Proteggi e sblocca con password",
+      "badge": "Nuovo: Firma PDF",
       "title": "Il tuo editor PDF",
       "subtitle": "semplice, veloce, offline",
       "description": "Unisci, dividi, riordina e modifica i tuoi PDF direttamente dal browser. Gratuito, sicuro e senza pubblicità.",
@@ -430,6 +430,10 @@
       "print": {
         "title": "Stampa PDF",
         "description": "Stampa i tuoi PDF direttamente dall'app su web, desktop e mobile."
+      },
+      "sign": {
+        "title": "Firma PDF",
+        "description": "Disegna o carica la tua firma e posizionala su qualsiasi pagina del PDF."
       }
     },
     "howItWorks": {

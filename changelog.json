@@ -1,6 +1,16 @@
 {
   "desktop": [
     {
+      "version": "v0.1.39",
+      "date": "2026-09-17",
+      "changes": [
+        "Firma digitale PDF: bottone Firma in toolbar — disegna la firma (canvas) o carica un'immagine, scegli la pagina e salva (issue #814)",
+        "Backend: POST /pdfs/{id}/sign — inserisce immagine firma con PyMuPDF (feature pro/enterprise)",
+        "Web: dialog Firma con canvas + upload immagine",
+        "Mobile: operazione Firma in Tools — scegli immagine firma dalla galleria (offline, pdf-lib)"
+      ]
+    },
+    {
       "version": "v0.1.38",
       "date": "2026-09-16",
       "changes": [

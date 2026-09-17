@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-17
+
+### ✨ Firma digitale PDF (issue #814)
+
+- **Backend**: aggiunto `POST /pdfs/{id}/sign` — inserisce un'immagine firma (PNG) su una pagina del PDF con PyMuPDF (`page.insert_image`). Feature gated per tier pro/enterprise.
+- **Web**: aggiunto bottone Firma in toolbar — dialog con canvas per disegnare la firma o upload immagine, scelta pagina, salvataggio.
+- **Desktop**: aggiunto bottone Firma in toolbar — stesso dialog del web (canvas + upload immagine).
+- **Mobile**: aggiunta operazione Firma in Tools — scegli un'immagine firma dalla galleria e posizionala su una pagina (offline, pdf-lib `embedPng` + `drawImage`).
+- **Test**: 8 test backend, 7 test web, 7 test desktop, 4 test mobile.
+
 ## 2026-09-16
 
 ### ✨ Stampa PDF da app (issue #809)
