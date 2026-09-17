@@ -84,11 +84,11 @@ La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, de
 
 ### T2 — Test E2E cross-origin (Playwright) — ✅ PARZIALE
 
-**Descrizione:** 375 test backend (con `TestClient` same-origin) + 907 test desktop (vitest) + 279 test mobile. I test unitari non coprono i flussi cross-origin reali (cookie, CSRF, CORS).  
+**Descrizione:** 399 test backend (con `TestClient` same-origin) + 938 test desktop (vitest) + 313 test mobile. I test unitari non coprono i flussi cross-origin reali (cookie, CSRF, CORS).  
 **Risoluzione prevista:** Playwright (T7).  
 **Stato:** ✅ **Parziale (2026-09-12)** — Suite E2E Playwright in `e2e/` con **15 test verdi** (auth, CSRF/CORS, upload PDF, download, delete, merge, cloud sync, token refresh). Job `e2e` aggiunto a `ci-web.yml` con `e2e/**` nei paths. Il backend E2E parte con `DISABLE_LICENSE_ENFORCEMENT=true`. I flussi PDF avanzati (split/reorder/protect) restano fragili in E2E (pdf.js) e coperti da pytest. Vedi `.specs/active/roadmap-test-e2e.md`.
 
-**Nota (2026-09-12):** Il testing E2E del binario desktop Tauri **non è fattibile con Playwright** — Tauri usa WebDriver (Selenium/WebdriverIO) + `tauri-driver`. Se in futuro si vuole testare il binario desktop reale, usare **WebdriverIO + tauri-driver** (richiede build Tauri + sidecar PyInstaller, costoso in CI). I flussi desktop-specifici sono già coperti dai test unitari vitest (917 test).
+**Nota (2026-09-12):** Il testing E2E del binario desktop Tauri **non è fattibile con Playwright** — Tauri usa WebDriver (Selenium/WebdriverIO) + `tauri-driver`. Se in futuro si vuole testare il binario desktop reale, usare **WebdriverIO + tauri-driver** (richiede build Tauri + sidecar PyInstaller, costoso in CI). I flussi desktop-specifici sono già coperti dai test unitari vitest (938 test).
 
 ### T3 — `@swc/helpers` lock file desync
 
@@ -137,18 +137,18 @@ La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, de
 
 ## 📊 Coverage gaps (non bloccanti)
 
-| Area                       | Coverage              | Bloccante? | Note                                                                                          |
-| -------------------------- | --------------------- | ---------- | --------------------------------------------------------------------------------------------- |
-| Backend totale             | 94% (359 test)        | ❌ No      | 1 pre-existing fail (test_seed_super_admin)                                                   |
-| **Webapp totale**          | **94.96% (565 test)** | ❌ No      | Target 90% raggiunto (issue #700). Tutti i file >= 90% statements                             |
-| **Desktop totale**         | **90.84% (906 test)** | ❌ No      | Target 90% raggiunto (issue #693). +9 test ReplaceTextModal, +3 test googleLogin token locale |
-| **Mobile totale**          | **98.7% (276 test)**  | ❌ No      | +4 test api replaceText                                                                       |
-| Desktop: Settings/Profile  | 51% / 38%             | ❌ No      | Da migliorare (non bloccante)                                                                 |
-| Desktop: Wizard/Startup    | 66% / 46%             | ❌ No      | Da migliorare (non bloccante)                                                                 |
-| Desktop: PdfViewer         | 81.7%                 | ❌ No      | Rendering PDF.js in jsdom                                                                     |
-| Desktop: GoogleLoginButton | 76.31%                | ❌ No      | Redirect flow difficile da testare                                                            |
-| ReorderPagesModal DnD      | 81.17%                | ❌ No      | DnD handlers (@dnd-kit) non copribili in jsdom — richiedono test E2E con Playwright           |
-| Web: ImportExportDialog    | 98.14%                | ❌ No      | Guard `if (!importFile) return` non raggiungibile via UI (bottone import disabled senza file) |
+| Area                       | Coverage              | Bloccante? | Note                                                                                                  |
+| -------------------------- | --------------------- | ---------- | ----------------------------------------------------------------------------------------------------- |
+| Backend totale             | 94% (399 test)        | ❌ No      | 1 pre-existing fail (test_seed_super_admin)                                                           |
+| **Webapp totale**          | **94.96% (586 test)** | ❌ No      | Target 90% raggiunto (issue #700). Tutti i file >= 90% statements                                     |
+| **Desktop totale**         | **90.84% (938 test)** | ❌ No      | Target 90% raggiunto (issue #693). +15 test ImportExportModal, +1 test print (issue #805, #807, #809) |
+| **Mobile totale**          | **98.7% (313 test)**  | ❌ No      | +6 test exportPdf/importFile, +4 test api, +2 test printPdf (issue #805, #807, #809)                  |
+| Desktop: Settings/Profile  | 51% / 38%             | ❌ No      | Da migliorare (non bloccante)                                                                         |
+| Desktop: Wizard/Startup    | 66% / 46%             | ❌ No      | Da migliorare (non bloccante)                                                                         |
+| Desktop: PdfViewer         | 81.7%                 | ❌ No      | Rendering PDF.js in jsdom                                                                             |
+| Desktop: GoogleLoginButton | 76.31%                | ❌ No      | Redirect flow difficile da testare                                                                    |
+| ReorderPagesModal DnD      | 81.17%                | ❌ No      | DnD handlers (@dnd-kit) non copribili in jsdom — richiedono test E2E con Playwright                   |
+| Web: ImportExportDialog    | 98.14%                | ❌ No      | Guard `if (!importFile) return` non raggiungibile via UI (bottone import disabled senza file)         |
 
 ---
 

@@ -99,7 +99,7 @@ Il progetto sarà **open source** (no intenzione commerciale), quindi la licenza
 - **Cache**: la password viene tenuta in memoria per la sessione (non salvata su disco)
 - **Fallback**: se la password è errata, l'API restituisce errore e l'utente può riprovare
 
-> ⚠️ **Nota mobile (2026-08-07):** `pdf-lib@1.17.1` (usato sul mobile) **non supporta** encryption/decryption. La feature "Password protect/unlock" è in pausa per mancanza di libreria compatibile con React Native. Vedi `mobile/ADR.md` e `.specs/plans/feature-mobile-improvements.md`.
+> ✅ **Nota mobile (aggiornata 2026-09-17):** La feature "Password protect/unlock" è **implementata** sul mobile tramite `@cantoo/pdf-lib` (fork con supporto encryption/decryption). `protectPdf`/`unlockPdf` in `mobile/src/services/pdfService.ts`. Vedi `mobile/ADR.md`.
 
 ### 8. Undo/redo per modifiche PDF
 

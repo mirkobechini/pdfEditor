@@ -51,13 +51,13 @@
 | Health                                | `test_health.py`                                  | ✅       | Endpoint health                                                |
 | Errori                                | `test_validation_errors.py`, `test_edge_cases.py` | ✅       | Errori, edge cases                                             |
 
-**Totale: 396 test, ~94% coverage**
+**Totale: 399 test, ~94% coverage**
 
 ---
 
 ## Webapp (Next.js / React)
 
-**Coverage: 94.96% statements, 97.34% lines (573 test)** — issue #700
+**Coverage: 94.96% statements, 97.34% lines (586 test)** — issue #700
 
 | Area                                      | Test                                            | Coverage | Note                                                           |
 | ----------------------------------------- | ----------------------------------------------- | -------- | -------------------------------------------------------------- |
@@ -73,13 +73,13 @@
 | Componenti vari                           | Vari                                            | ✅       | PasswordInput 100%, GuestConvertBanner 100%, ClientLayout 100% |
 | Layout & home                             | `layout-pages.test.tsx`                         | ✅       | home page 100% (redirect Tauri), ClientLayout 100%             |
 
-**Totale: 573 test, 94.96% statements — tutti i file >= 90%**
+**Totale: 586 test, 94.96% statements — tutti i file >= 90%**
 
 ---
 
 ## Mobile (React Native / Expo)
 
-**Coverage: 98.7% statements, 100% lines (299 test)** — issue #696
+**Coverage: 98.7% statements, 100% lines (313 test)** — issue #696
 
 | Area                              | Test                          | Coverage | Note                                                                                                                                                                                 |
 | --------------------------------- | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -105,7 +105,7 @@
 | Dialog (conflict, import, delete) | —                             | ❌       | Non testati (UI components)                                                                                                                                                          |
 | OnboardingWizard                  | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 
-**Totale: 299 test**
+**Totale: 313 test**
 
 ---
 
@@ -155,9 +155,9 @@ bash run-all-tests.sh
 
 ### Desktop (Tauri)
 
-920 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
+938 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
 
-> ⚠️ I conteggi per-componente sotto sono storici (non aggiornati a ogni release). Il totale autorevole è nel riepilogo in cima (923 test).
+> ⚠️ I conteggi per-componente sotto sono storici (non aggiornati a ogni release). Il totale autorevole è nel riepilogo in cima (938 test).
 
 | Componente                     | Test | Coverage | Note                                              |
 | ------------------------------ | ---- | -------- | ------------------------------------------------- |
