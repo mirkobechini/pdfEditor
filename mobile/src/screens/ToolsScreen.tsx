@@ -7,9 +7,10 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, exportPdf, importFile } from "../services/pdfService";
+import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, exportPdf, importFile, signPdf } from "../services/pdfService";
 import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import * as DocumentPicker from "expo-document-picker";
+import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
 import { useTranslation } from "react-i18next";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
@@ -53,6 +54,9 @@ export default function ToolsScreen() {
     const [metadataDialog, setMetadataDialog] = useState<{ pdfId: string; pdfName: string; title: string; author: string } | null>(null);
     // Password dialog state
     const [passwordDialog, setPasswordDialog] = useState<{ pdfId: string; pdfName: string; mode: "protect" | "unlock" } | null>(null);
+    // Sign dialog state
+    const [signDialog, setSignDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number } | null>(null);
+    const [signPage, setSignPage] = useState(1);
     const [passwordInput, setPasswordInput] = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
 
@@ -287,6 +291,44 @@ export default function ToolsScreen() {
         setExportFormat("txt");
     }
 
+    // ─── Sign ───────────────────────────────────────────────────
+
+    function openSignDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        setSignDialog({ pdfId, pdfName: pdf?.original_filename || "PDF", totalPages: pdf?.page_count || 1 });
+        setSignPage(1);
+    }
+
+    async function executeSign() {
+        if (!signDialog) return;
+        setSignDialog(null);
+        setLoading(true);
+        try {
+            // Let the user pick a signature image (PNG) from the gallery
+            const result = await DocumentPicker.getDocumentAsync({
+                type: "image/*",
+                copyToCacheDirectory: true,
+                multiple: false,
+            });
+            if (result.canceled || !result.assets?.[0]) {
+                setLoading(false);
+                return;
+            }
+            const asset = result.assets[0];
+            // Read the image as base64
+            const base64 = await readAsStringAsync(asset.uri, { encoding: EncodingType.Base64 });
+            const result_pdf = await signPdf(signDialog.pdfId, base64, signPage, 50, 50, 200, 80);
+            if (result_pdf) showResult(t("tools.signResult", { name: result_pdf.original_filename }));
+            else showResult(t("tools.signFailed"));
+        } catch (e) {
+            console.error("Sign error:", e);
+            showResult(t("tools.signFailed"));
+        } finally {
+            setLoading(false);
+            await reloadPdfs();
+        }
+    }
+
     async function executeImport() {
         if (!importExportDialog) return;
         setImportExportBusy(true);
@@ -444,6 +486,15 @@ export default function ToolsScreen() {
                         {t("tools.unlock")}
                     </Button>
                     <Button
+                        mode={operation === "sign" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "sign" ? theme.colors.primary : undefined}
+                        textColor={operation === "sign" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("sign"); setSelectedIds([]); }}
+                    >
+                        {t("tools.sign")}
+                    </Button>
+                    <Button
                         mode={operation === "import" ? "contained" : "outlined"}
                         compact
                         buttonColor={operation === "import" ? theme.colors.primary : undefined}
@@ -517,6 +568,7 @@ export default function ToolsScreen() {
                                     else if (operation === "metadata") openMetadataDialog(item.id);
                                     else if (operation === "protect") openPasswordDialog(item.id, "protect");
                                     else if (operation === "unlock") openPasswordDialog(item.id, "unlock");
+                                    else if (operation === "sign") openSignDialog(item.id);
                                     else if (operation === "export") openImportExportDialog(item.id, "export");
                                 }}
                             >
@@ -762,6 +814,32 @@ export default function ToolsScreen() {
                         <Button onPress={() => setPasswordDialog(null)}>{t("common.cancel")}</Button>
                         <Button onPress={passwordDialog?.mode === "protect" ? executeProtect : executeUnlock}>
                             {passwordDialog?.mode === "protect" ? t("tools.protect") : t("tools.unlockAction")}
+                        </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Sign Dialog — choose page then pick signature image */}
+            <Portal>
+                <Dialog visible={signDialog !== null} onDismiss={() => setSignDialog(null)}>
+                    <Dialog.Title>{t("tools.signTitle")}</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                            {t("tools.signHint", { name: signDialog?.pdfName || "" })}
+                        </Text>
+                        <TextInput
+                            label={t("tools.signPageLabel")}
+                            value={String(signPage)}
+                            onChangeText={(val) => setSignPage(Math.max(1, parseInt(val) || 1))}
+                            mode="outlined"
+                            keyboardType="numeric"
+                            style={{ marginBottom: 12 }}
+                        />
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setSignDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={executeSign} loading={loading} disabled={loading}>
+                            {t("tools.signAction")}
                         </Button>
                     </Dialog.Actions>
                 </Dialog>
