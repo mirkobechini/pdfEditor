@@ -20,7 +20,8 @@
     "protect": "Proteggi",
     "compress": "Comprimi",
     "importExport": "Importa/Esporta",
-    "print": "Stampa"
+    "print": "Stampa",
+    "sign": "Firma"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -177,6 +178,20 @@
     "passwordMismatch": "Le password non corrispondono",
     "passwordTooShort": "La password deve avere almeno 4 caratteri",
     "protectFailed": "Protezione PDF fallita"
+  },
+  "signDialog": {
+    "title": "Firma PDF",
+    "drawLabel": "Disegna la tua firma",
+    "drawPlaceholder": "Disegna qui",
+    "uploadLabel": "Oppure carica un'immagine",
+    "uploadButton": "Carica immagine",
+    "clear": "Cancella",
+    "pageLabel": "Pagina",
+    "sign": "Firma",
+    "signing": "Firma in corso...",
+    "cancel": "Annulla",
+    "signFailed": "Firma PDF fallita",
+    "noSignature": "Disegna o carica prima una firma"
   },
   "bugReport": {
     "title": "Segnala un Bug",
