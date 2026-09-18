@@ -19,6 +19,7 @@ interface ToolbarProps {
   onCompress: () => void;
   onImportExport: () => void;
   onPrint: () => void;
+  onSign: () => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -41,6 +42,7 @@ export default function Toolbar({
   onCompress,
   onImportExport,
   onPrint,
+  onSign,
   canUndo,
   canRedo,
   onUndo,
@@ -181,6 +183,9 @@ export default function Toolbar({
       </button>
       <button className="px-3 py-1 text-xs rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50" onClick={onPrint}>
         {t("print")}
+      </button>
+      <button className="px-3 py-1 text-xs rounded bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50" onClick={onSign}>
+        {t("sign")}
       </button>
     </>
   );

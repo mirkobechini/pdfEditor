@@ -181,6 +181,7 @@
     "replaceText": "Sostituisci testo",
     "importExport": "Importa/Esporta",
     "print": "Stampa",
+    "sign": "Firma",
     "user": "Utente",
     "cloudSync": "Cloud Sync",
     "settings": "Impostazioni",
@@ -431,6 +432,18 @@
     "locking": "Blocco in corso...",
     "unlock": "Sblocca",
     "lock": "Blocca"
+  },
+  "signModal": {
+    "title": "Firma PDF",
+    "drawLabel": "Disegna la tua firma",
+    "uploadLabel": "Oppure carica un'immagine",
+    "clear": "Cancella",
+    "pageLabel": "Pagina",
+    "sign": "Firma",
+    "signing": "Firma in corso...",
+    "cancel": "Annulla",
+    "signFailed": "Firma PDF fallita",
+    "noSignature": "Disegna o carica prima una firma"
   },
   "passwordInput": {
     "hide": "Nascondi",

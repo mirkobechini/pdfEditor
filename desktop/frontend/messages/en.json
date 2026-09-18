@@ -181,6 +181,7 @@
     "replaceText": "Replace Text",
     "importExport": "Import/Export",
     "print": "Print",
+    "sign": "Sign",
     "user": "User",
     "cloudSync": "Cloud Sync",
     "settings": "Settings",
@@ -431,6 +432,18 @@
     "locking": "Locking...",
     "unlock": "Unlock",
     "lock": "Lock"
+  },
+  "signModal": {
+    "title": "Sign PDF",
+    "drawLabel": "Draw your signature",
+    "uploadLabel": "Or upload an image",
+    "clear": "Clear",
+    "pageLabel": "Page",
+    "sign": "Sign",
+    "signing": "Signing...",
+    "cancel": "Cancel",
+    "signFailed": "Failed to sign PDF",
+    "noSignature": "Please draw or upload a signature first"
   },
   "passwordInput": {
     "hide": "Hide",

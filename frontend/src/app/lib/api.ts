@@ -356,6 +356,31 @@ export class ApiClient {
     return res.json();
   }
 
+  async signPdf(
+    id: string,
+    signatureImageB64: string,
+    pageNumber: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/sign`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        signature_image_b64: signatureImageB64,
+        page_number: pageNumber,
+        x,
+        y,
+        width,
+        height,
+      }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
   async updateMetadata(
     id: string,
     metadata: Partial<Metadata> & {
@@ -594,7 +619,11 @@ export class ApiClient {
     description: string,
     pageUrl?: string,
   ): Promise<BugReport> {
-    const body: Record<string, unknown> = { title, description, platform: "web" };
+    const body: Record<string, unknown> = {
+      title,
+      description,
+      platform: "web",
+    };
     if (pageUrl) body.page_url = pageUrl;
     const res = await this._fetch(`${this.baseUrl}/bugs`, {
       method: "POST",

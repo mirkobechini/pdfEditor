@@ -20,7 +20,8 @@
     "protect": "Proteggi",
     "compress": "Comprimi",
     "importExport": "Importa/Esporta",
-    "print": "Stampa"
+    "print": "Stampa",
+    "sign": "Firma"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -177,6 +178,20 @@
     "passwordMismatch": "Le password non corrispondono",
     "passwordTooShort": "La password deve avere almeno 4 caratteri",
     "protectFailed": "Protezione PDF fallita"
+  },
+  "signDialog": {
+    "title": "Firma PDF",
+    "drawLabel": "Disegna la tua firma",
+    "drawPlaceholder": "Disegna qui",
+    "uploadLabel": "Oppure carica un'immagine",
+    "uploadButton": "Carica immagine",
+    "clear": "Cancella",
+    "pageLabel": "Pagina",
+    "sign": "Firma",
+    "signing": "Firma in corso...",
+    "cancel": "Annulla",
+    "signFailed": "Firma PDF fallita",
+    "noSignature": "Disegna o carica prima una firma"
   },
   "bugReport": {
     "title": "Segnala un Bug",
@@ -367,7 +382,7 @@
       "goToApp": "Vai all'App"
     },
     "hero": {
-      "badge": "Nuovo: Proteggi e sblocca con password",
+      "badge": "Nuovo: Firma PDF",
       "title": "Il tuo editor PDF",
       "subtitle": "semplice, veloce, offline",
       "description": "Unisci, dividi, riordina e modifica i tuoi PDF direttamente dal browser. Gratuito, sicuro e senza pubblicità.",
@@ -415,6 +430,10 @@
       "print": {
         "title": "Stampa PDF",
         "description": "Stampa i tuoi PDF direttamente dall'app su web, desktop e mobile."
+      },
+      "sign": {
+        "title": "Firma PDF",
+        "description": "Disegna o carica la tua firma e posizionala su qualsiasi pagina del PDF."
       }
     },
     "howItWorks": {

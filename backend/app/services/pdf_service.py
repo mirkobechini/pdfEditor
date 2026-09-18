@@ -831,3 +831,63 @@ class PdfService:
         _cache_password(pdf_id, password)
 
         return self.repo.update(pdf)
+
+    def sign_pdf(
+        self,
+        pdf_id: str,
+        user_id: str,
+        signature_image: bytes,
+        page_number: int,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+    ) -> PdfDocument:
+        """Insert a signature image onto a PDF page and save as a new PDF.
+
+        Args:
+            pdf_id: the PDF to sign.
+            user_id: owner of the PDF.
+            signature_image: PNG/JPEG bytes of the signature.
+            page_number: 1-based page index to place the signature on.
+            x, y: top-left coordinates (in PDF points) where to place the image.
+            width, height: size of the signature image in PDF points.
+        """
+        import fitz
+
+        pdf = self._get_user_pdf(pdf_id, user_id)
+        self._create_snapshot(pdf_id, user_id)
+
+        content = self._read_file_with_password(pdf_id, user_id)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        doc = fitz.open(stream=content, filetype="pdf")
+        try:
+            if page_number < 1 or page_number > doc.page_count:
+                raise ValueError(
+                    f"Page {page_number} out of range (1-{doc.page_count})"
+                )
+            page = doc[page_number - 1]
+            # Validate the signature image is a real image fitz can embed
+            try:
+                page.insert_image(
+                    fitz.Rect(x, y, x + width, y + height),
+                    stream=signature_image,
+                )
+            except Exception as e:
+                raise ValueError(f"Invalid signature image: {e}")
+            output_bytes = doc.tobytes()
+        finally:
+            doc.close()
+
+        if not validate_pdf(output_bytes):
+            raise ValueError("Signing produced an invalid PDF")
+
+        file_uuid = save_pdf(output_bytes)
+
+        # Update the existing PDF record with the signed content
+        pdf.storage_filename = f"{file_uuid}.pdf"
+        pdf.file_size = len(output_bytes)
+
+        return self.repo.update(pdf)

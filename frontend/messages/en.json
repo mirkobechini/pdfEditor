@@ -20,7 +20,8 @@
     "protect": "Protect",
     "compress": "Compress",
     "importExport": "Import/Export",
-    "print": "Print"
+    "print": "Print",
+    "sign": "Sign"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -175,6 +176,20 @@
     "passwordMismatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 4 characters",
     "protectFailed": "Failed to protect PDF"
+  },
+  "signDialog": {
+    "title": "Sign PDF",
+    "drawLabel": "Draw your signature",
+    "drawPlaceholder": "Draw here",
+    "uploadLabel": "Or upload an image",
+    "uploadButton": "Upload image",
+    "clear": "Clear",
+    "pageLabel": "Page",
+    "sign": "Sign",
+    "signing": "Signing...",
+    "cancel": "Cancel",
+    "signFailed": "Failed to sign PDF",
+    "noSignature": "Please draw or upload a signature first"
   },
   "bugReport": {
     "title": "Report a Bug",
@@ -365,7 +380,7 @@
       "download": "Download"
     },
     "hero": {
-      "badge": "New: Password protect & Unlock",
+      "badge": "New: Sign PDF",
       "title": "Your PDF editor",
       "subtitle": "simple, fast, offline",
       "description": "Merge, split, reorder and edit your PDFs directly from your browser. Free, secure and ad-free.",
@@ -413,6 +428,10 @@
       "print": {
         "title": "Print PDFs",
         "description": "Print your PDFs directly from the app on web, desktop and mobile."
+      },
+      "sign": {
+        "title": "Sign PDFs",
+        "description": "Draw or upload your signature and place it on any page of your PDF."
       }
     },
     "howItWorks": {
