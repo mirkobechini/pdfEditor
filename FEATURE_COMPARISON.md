@@ -43,6 +43,7 @@
 | Import DOCX                     | ✅  | ✅      | ✅     | Web/Mobile online (python-docx+reportlab), Desktop offline (sidecar)                                        |
 | Export PDF                      | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                         |
 | Stampa PDF                      | ✅  | ✅      | ✅     | Web/Desktop: window.print() su iframe. Mobile: expo-print (AirPrint)                                        |
+| Drag & drop file                | ✅  | ❌      | ❌     | Solo Web: trascina PDF per aprirlo, altri file per importarli (overlay feedback)                            |
 | Firma PDF                       | ✅  | ✅      | ✅     | Web/Desktop: canvas + upload immagine. Mobile: scegli immagine (pdf-lib). Backend: PyMuPDF (pro/enterprise) |
 | **Testo**                       |     |         |        |                                                                                                             |
 | Extract text                    | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                      |

@@ -2,6 +2,11 @@
 
 ## 2026-09-17
 
+### ✨ Drag & drop web (issue #816)
+
+- **Web**: aggiunto supporto drag & drop — trascina un file PDF nell'editor per aprirlo, o un file immagine/altro per importarlo. Overlay di feedback visivo durante il drag.
+- **Test**: 6 test web per drag & drop (overlay, upload PDF, import non-PDF, file non supportati, drop vuoto).
+
 ### ✨ Firma digitale PDF (issue #814)
 
 - **Backend**: aggiunto `POST /pdfs/{id}/sign` — inserisce un'immagine firma (PNG) su una pagina del PDF con PyMuPDF (`page.insert_image`). Feature gated per tier pro/enterprise.

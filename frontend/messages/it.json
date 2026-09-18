@@ -21,7 +21,8 @@
     "compress": "Comprimi",
     "importExport": "Importa/Esporta",
     "print": "Stampa",
-    "sign": "Firma"
+    "sign": "Firma",
+    "dropHere": "Rilascia qui il tuo file"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",

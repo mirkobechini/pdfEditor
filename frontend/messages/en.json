@@ -21,7 +21,8 @@
     "compress": "Compress",
     "importExport": "Import/Export",
     "print": "Print",
-    "sign": "Sign"
+    "sign": "Sign",
+    "dropHere": "Drop your file here"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
