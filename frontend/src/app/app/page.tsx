@@ -16,7 +16,9 @@ import ProtectDialog from "../components/ProtectDialog";
 import SignDialog from "../components/SignDialog";
 import DeleteModal from "../components/DeleteModal";
 import ImportExportDialog from "../components/ImportExportDialog";
+import DropOverlay from "../components/DropOverlay";
 import { api, PdfDocument } from "../lib/api";
+import { mapError } from "../lib/error-map";
 import { useAuth } from "../lib/auth";
 
 export default function EditorPage() {
@@ -36,6 +38,7 @@ export default function EditorPage() {
     const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [protectOpen, setProtectOpen] = React.useState(false);
     const [signOpen, setSignOpen] = React.useState(false);
+    const [dragOver, setDragOver] = React.useState(false);
     const [importExportOpen, setImportExportOpen] = React.useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
     const [fileToDelete, setFileToDelete] = React.useState<PdfDocument | null>(null);
@@ -165,8 +168,46 @@ export default function EditorPage() {
         }, 60000);
     }
 
+    async function handleDrop(e: React.DragEvent) {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+
+        const isPdf = file.name.toLowerCase().endsWith(".pdf");
+        const isImportable = /\.(txt|png|jpg|jpeg|gif|bmp|docx)$/i.test(file.name);
+
+        try {
+            let doc: PdfDocument;
+            if (isPdf) {
+                doc = await api.uploadPdf(file);
+            } else if (isImportable) {
+                doc = await api.importFile(file);
+            } else {
+                alert("Unsupported file type. Drop a PDF, image, text or DOCX file.");
+                return;
+            }
+            setSidebarRefreshKey((prev) => prev + 1);
+            setSelectedId(doc.id);
+            setSelectedName(doc.original_filename);
+            setRequiresPassword(false);
+            void api.downloadPdf(doc.id).then((blob) => {
+                const url = URL.createObjectURL(blob);
+                if (fileUrl) URL.revokeObjectURL(fileUrl);
+                setFileUrl(url);
+            });
+        } catch (err) {
+            alert("Upload failed: " + mapError(err));
+        }
+    }
+
     return (
-        <>
+        <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+        >
+            <DropOverlay visible={dragOver} />
             <AppLayout
                 sidebar={
                     <Sidebar
@@ -359,6 +400,6 @@ export default function EditorPage() {
                     void handleDelete(fileToDelete);
                 }}
             />
-        </>
+        </div>
     );
 }
