@@ -89,7 +89,7 @@ export default function SignModal({ open, pdfId, pdfName, totalPages, onClose, o
         const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.readAsDataURL(file).then((dataUrl) => {
+        (reader as any).readAsDataURL(file).then((dataUrl: string) => {
             const img = document.createElement("img");
             img.onload = () => {
                 const canvas = canvasRef.current;
