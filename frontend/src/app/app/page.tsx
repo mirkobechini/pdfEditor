@@ -203,6 +203,7 @@ export default function EditorPage() {
 
     return (
         <div
+            data-testid="editor-drop-zone"
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
