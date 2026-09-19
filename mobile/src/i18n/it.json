@@ -145,7 +145,8 @@
     "passwordUnlockHint": "Inserisci la password per sbloccare \"{{name}}\"",
     "namePdfTitle": "Nome del PDF",
     "fileNameOptional": "Nome file (opzionale)",
-    "pagesInfo": "{{count}} pagine • {{size}} KB"
+    "pagesInfo": "{{count}} pagine • {{size}} KB",
+    "compressOfflineHint": "Offline: la compressione sarà parziale (re-save locale)"
   },
   "auth": {
     "signIn": "Accedi",

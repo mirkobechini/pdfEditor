@@ -95,7 +95,7 @@
     "metadataResult": "Metadata updated for {{name}}",
     "metadataFailed": "Metadata update failed",
     "protectResult": "Protected: {{name}}",
-    "protectFailed": "Protect failed \u2014 file may already be encrypted",
+    "protectFailed": "Protect failed — file may already be encrypted",
     "unlockResult": "Unlocked: {{name}}",
     "unlockFailed": "Wrong password or file is not encrypted",
     "passwordShort": "Password must be at least 4 characters",
@@ -145,7 +145,8 @@
     "passwordUnlockHint": "Enter the password to unlock \"{{name}}\"",
     "namePdfTitle": "Name your PDF",
     "fileNameOptional": "File name (optional)",
-    "pagesInfo": "{{count}} pages \u2022 {{size}} KB"
+    "pagesInfo": "{{count}} pages • {{size}} KB",
+    "compressOfflineHint": "Offline: compression will be partial (local re-save)"
   },
   "auth": {
     "signIn": "Sign In",

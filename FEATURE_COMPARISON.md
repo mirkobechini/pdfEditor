@@ -33,7 +33,7 @@
 | Replace text                        | ✅  | ✅      | ✅     | Web/desktop: aggiorna viewer, preserva font/size. Mobile: via cloud API                                     |
 | Password protect                    | ✅  | ✅      | ✅     | Mobile: @cantoo/pdf-lib (fork con encrypt)                                                                  |
 | Unlock PDF                          | ✅  | ✅      | ✅     |                                                                                                             |
-| Compressione PDF                    | ✅  | ✅      | ✅     | Web/desktop: PyMuPDF (qualità bassa/media/alta). Mobile: via cloud API (pdf-lib non ha compressione nativa) |
+| Compressione PDF                    | ✅  | ✅      | ✅     | Web/desktop: PyMuPDF. Mobile: online → cloud API, offline → re-save pdf-lib (parziale) (issue #827)         |
 | Undo/Redo                           | ✅  | ✅      | ❌     | Solo backend (history)                                                                                      |
 | **Metadata**                        |     |         |        |                                                                                                             |
 | View metadata                       | ✅  | ✅      | ✅     | Mobile: dialog dettagli                                                                                     |
@@ -46,7 +46,7 @@
 | Drag & drop file                    | ✅  | ❌      | ❌     | Solo Web: trascina PDF per aprirlo, altri file per importarli (overlay feedback)                            |
 | Browse documents (Internet Archive) | ✅  | ❌      | ❌     | Solo Web: catalogo PDF reali da Internet Archive via microservizio pdf-documents-api (porta 8001)           |
 | Firma PDF                           | ✅  | ✅      | ✅     | Web/Desktop: canvas + upload immagine. Mobile: scegli immagine (pdf-lib). Backend: PyMuPDF (pro/enterprise) |
-| Annotazioni PDF                     | ✅  | ❌      | ❌     | Solo Web: evidenzia/sottolinea/barrato/commento/testo. Backend: PyMuPDF embedded (pro/enterprise)            |
+| Annotazioni PDF                     | ✅  | ❌      | ❌     | Solo Web: evidenzia/sottolinea/barrato/commento/testo. Backend: PyMuPDF embedded (pro/enterprise)           |
 | **Testo**                           |     |         |        |                                                                                                             |
 | Extract text                        | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                      |
 | **Auth**                            |     |         |        |                                                                                                             |
@@ -100,7 +100,7 @@
 
 - **Stack:** Expo SDK 57 (managed), React Native Paper, pdf-lib locale
 - **Auth:** Email/password, guest, Google OAuth (expo-auth-session), forgot/reset password ✅, JWT refresh automatico ✅
-- **Operazioni:** Locali con @cantoo/pdf-lib (nessun backend necessario), eccetto Compressione PDF che usa il cloud API (pdf-lib non ha compressione nativa)
+- **Operazioni:** Locali con @cantoo/pdf-lib (nessun backend necessario). Compressione PDF: online → cloud API (PyMuPDF), offline → re-save pdf-lib (parziale, issue #827)
 - **Cloud sync:** ✅ Bidirezionale con useCloudSync (upload/download, conflitti, offline)
 - **Undo/Redo:** Non supportato (pdf-lib non ha history)
 - **Download PDF:** ✅ tramite SAF (Storage Access Framework)

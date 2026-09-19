@@ -1,8 +1,8 @@
 # Architecture Decision Record
 
 **Progetto:** PdfEditor
-**Data:** 2026-06-25 (ultimo aggiornamento 2026-09-17)
-**Versioni ADR incluse:** v0.1.24 → v0.1.38
+**Data:** 2026-06-25 (ultimo aggiornamento 2026-09-19)
+**Versioni ADR incluse:** v0.1.24 → v0.1.40
 **Autore:** Mirko Bechini
 
 ## Decisione
@@ -172,7 +172,6 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - Mobile React Native (Fase 4) — ✅ **MVP completato** — vedi [`mobile/ADR.md`](./mobile/ADR.md)
 - SSO Apple / Samsung (previsto come bonus futuro)
 - react-native-web (valutabile, non deciso)
-- **Annotazioni PDF** (drawing, highlight, commenti) — non implementate (plan in `.specs/active/feature-annotations-pdf.md`)
 - **Inline text editor** — non implementato (plan in `.specs/active/`)
 
 ## Roadmap
