@@ -149,7 +149,7 @@
     "thirdPartyDesc": "Complete list of dependencies",
     "pdfEngineValue": "PyMuPDF 1.24.9",
     "shellValue": "Tauri 2.1",
-    "sidecarValue": "FastAPI \u2022 Python 3.12",
+    "sidecarValue": "FastAPI • Python 3.12",
     "appLicenseValue": "AGPL-3.0",
     "thirdPartyValue": "View",
     "licenseKey": "License key",
@@ -209,7 +209,14 @@
     "daysAgo": "d ago",
     "bytes": "B",
     "kilobytes": "KB",
-    "megabytes": "MB"
+    "megabytes": "MB",
+    "select": "Select",
+    "done": "Done",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "selected": "selected",
+    "deleteSelected": "Delete selected",
+    "exportSelected": "Export selected"
   },
   "removeModal": {
     "title": "Remove Pages",
@@ -223,7 +230,7 @@
     "removeError": "Failed to remove pages",
     "validationError": "Select or enter at least one page to remove.",
     "manualInputLabel": "Or enter page numbers manually",
-    "pageInputHint": "Single: 1,3,5 \u00b7 Range: 5-8 \u00b7 Max: {max}",
+    "pageInputHint": "Single: 1,3,5 · Range: 5-8 · Max: {max}",
     "filenameLabel": "Filename"
   },
   "reorderModal": {
@@ -267,7 +274,7 @@
     "skip": "Skip",
     "back": "Back",
     "continue": "Continue",
-    "finish": "Finish \u00b7 launch the app"
+    "finish": "Finish · launch the app"
   },
   "login": {
     "heroTitle": "Precision PDF editing. Locally.",
@@ -279,14 +286,14 @@
     "backendUnavailable": "Backend unavailable. Login and guest may not work.",
     "welcomeBack": "WELCOME BACK",
     "emailPlaceholder": "email@example.com",
-    "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
+    "passwordPlaceholder": "••••••••••••",
     "forgotPassword": "Recover password"
   },
   "register": {
     "namePlaceholder": "Mario Rossi",
     "emailPlaceholder": "email@example.com",
-    "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
-    "confirmPasswordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+    "passwordPlaceholder": "••••••••••••",
+    "confirmPasswordPlaceholder": "••••••••••••"
   },
   "profile": {
     "loading": "Loading...",
@@ -330,7 +337,7 @@
     "fatalError": "Cannot reach the backend. Verify that the sidecar is running on port 7723.",
     "startingApp": "Starting PdfEditor",
     "retry": "Retry",
-    "ready": "\u2713 Ready! Redirecting to login...",
+    "ready": "✓ Ready! Redirecting to login...",
     "license": "AGPL-3.0"
   },
   "guestConvert": {

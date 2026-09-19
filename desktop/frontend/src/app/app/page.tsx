@@ -67,6 +67,8 @@ export default function EditorPage() {
     const [renameValue, setRenameValue] = React.useState("");
     const [pdfRefreshKey, setPdfRefreshKey] = React.useState(0);
     const pdfUrlRef = React.useRef<string | null>(null);
+    const [multiSelect, setMultiSelect] = React.useState(false);
+    const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
 
     async function handleDownload() {
         if (!selectedDoc) return;
@@ -125,6 +127,74 @@ export default function EditorPage() {
             console.error("Upload failed:", msg);
             setUploadError(msg);
         }
+    }
+
+    // ─── Multi-select batch ──────────────────────────────────────
+    function toggleMultiSelect() {
+        setMultiSelect((prev) => {
+            if (prev) setSelectedIds(new Set());
+            return !prev;
+        });
+    }
+
+    function toggleSelect(id: string) {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }
+
+    function toggleSelectAll() {
+        if (selectedIds.size === docs.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(docs.map((d) => d.id)));
+        }
+    }
+
+    function exitMultiSelect() {
+        setMultiSelect(false);
+        setSelectedIds(new Set());
+    }
+
+    async function handleBatchDelete() {
+        if (selectedIds.size === 0) return;
+        for (const id of selectedIds) {
+            try {
+                await api.deletePdf(id);
+            } catch (err) {
+                console.error("Batch delete failed for", id, err);
+            }
+        }
+        setDocs((prev) => prev.filter((d) => !selectedIds.has(d.id)));
+        if (selectedDoc && selectedIds.has(selectedDoc.id)) {
+            setSelectedDoc(null);
+            setPdfUrl(null);
+        }
+        exitMultiSelect();
+    }
+
+    async function handleBatchExport() {
+        if (selectedIds.size === 0) return;
+        for (const id of selectedIds) {
+            const doc = docs.find((d) => d.id === id);
+            if (!doc) continue;
+            try {
+                const blob = await api.downloadPdf(id);
+                const arrayBuf = await blob.arrayBuffer();
+                const data = Array.from(new Uint8Array(arrayBuf));
+                await tauriInvoke<string>("dialog_save", {
+                    defaultName: doc.original_filename,
+                    data,
+                    defaultFolder: prefs.default_save_folder || null,
+                });
+            } catch (err) {
+                console.error("Batch export failed for", id, err);
+            }
+        }
+        exitMultiSelect();
     }
 
     // Refresh CSRF token on mount (required for sidecar writes)
@@ -292,6 +362,48 @@ export default function EditorPage() {
 
                     <div className="flex-1 overflow-y-auto border-y border-white/8 px-5 py-5 min-h-0">
                         <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-[#918476]">{te("recentDocuments")}</p>
+                        {/* Multi-select toolbar */}
+                        <div className="mb-2 flex items-center gap-2">
+                            <button
+                                onClick={toggleMultiSelect}
+                                className={`rounded-lg px-2 py-1 text-[12px] font-medium transition ${multiSelect ? "bg-[#f7871f] text-white" : "border border-white/10 text-[#9a8d80] hover:bg-white/5"}`}
+                                data-testid="multi-select-toggle"
+                            >
+                                {multiSelect ? te("done") : te("select")}
+                            </button>
+                            {multiSelect && (
+                                <>
+                                    <button
+                                        onClick={toggleSelectAll}
+                                        className="rounded-lg border border-white/10 px-2 py-1 text-[12px] font-medium text-[#9a8d80] transition hover:bg-white/5"
+                                        data-testid="multi-select-all"
+                                    >
+                                        {selectedIds.size === docs.length ? te("deselectAll") : te("selectAll")}
+                                    </button>
+                                    <span className="text-[12px] text-[#9a8d80]" data-testid="multi-select-count">
+                                        {selectedIds.size} {te("selected")}
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                        {multiSelect && selectedIds.size > 0 && (
+                            <div className="mb-2 flex items-center gap-2 rounded-xl bg-[#f7871f]/10 p-2" data-testid="batch-actions">
+                                <button
+                                    onClick={handleBatchDelete}
+                                    className="rounded-lg bg-red-500 px-2 py-1 text-[12px] font-medium text-white transition hover:bg-red-600"
+                                    data-testid="batch-delete"
+                                >
+                                    🗑️ {te("deleteSelected")}
+                                </button>
+                                <button
+                                    onClick={handleBatchExport}
+                                    className="rounded-lg bg-[#f7871f] px-2 py-1 text-[12px] font-medium text-white transition hover:bg-[#e07a10]"
+                                    data-testid="batch-export"
+                                >
+                                    ⬇ {te("exportSelected")}
+                                </button>
+                            </div>
+                        )}
                         {loading ? (
                             <div className="space-y-3">
                                 {[1, 2, 3].map((i) => (
@@ -305,12 +417,22 @@ export default function EditorPage() {
                                 {docs.map((doc) => (
                                     <div
                                         key={doc.id}
-                                        className={`doc-item rounded-2xl border p-3 cursor-pointer transition ${selectedDoc?.id === doc.id ? "border-white/10 bg-white/[0.03]" : "border-transparent hover:bg-white/[0.02]"
-                                            }`}
+                                        className={`doc-item rounded-2xl border p-3 cursor-pointer transition ${selectedDoc?.id === doc.id ? "border-white/10 bg-white/[0.03]" : "border-transparent hover:bg-white/[0.02]"} ${multiSelect && selectedIds.has(doc.id) ? "border-[#f7871f]/40 bg-[#f7871f]/5" : ""}`}
+                                        data-testid={`file-item-${doc.id}`}
                                     >
                                         <div className="flex items-center gap-3">
+                                            {multiSelect && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.has(doc.id)}
+                                                    onChange={() => toggleSelect(doc.id)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="h-4 w-4 accent-[#f7871f]"
+                                                    data-testid={`file-checkbox-${doc.id}`}
+                                                />
+                                            )}
                                             <div
-                                                onClick={() => setSelectedDoc(doc)}
+                                                onClick={() => multiSelect ? toggleSelect(doc.id) : setSelectedDoc(doc)}
                                                 className="flex items-center gap-3 flex-1 min-w-0"
                                             >
                                                 <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-xl shrink-0 ${selectedDoc?.id === doc.id ? "bg-[#3e2717]" : "bg-white/8"

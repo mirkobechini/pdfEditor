@@ -118,7 +118,7 @@
     "syncing": "Sync in corso...",
     "syncNow": "Sincronizza ora",
     "syncComplete": "Sync completato",
-    "noPdfsToSync": "Nessun PDF da sincronizzare. Tutti gi\u00e0 allineati.",
+    "noPdfsToSync": "Nessun PDF da sincronizzare. Tutti già allineati.",
     "syncProgress": "Sync in corso... ({current}/{total})",
     "syncEnabled": "Sync abilitato",
     "syncEnabledDesc": "Carica e scarica PDF dal cloud",
@@ -149,7 +149,7 @@
     "thirdPartyDesc": "Elenco completo delle dipendenze",
     "pdfEngineValue": "PyMuPDF 1.24.9",
     "shellValue": "Tauri 2.1",
-    "sidecarValue": "FastAPI \u2022 Python 3.12",
+    "sidecarValue": "FastAPI • Python 3.12",
     "appLicenseValue": "AGPL-3.0",
     "thirdPartyValue": "Visualizza",
     "licenseKey": "Chiave licenza",
@@ -209,7 +209,14 @@
     "daysAgo": "g fa",
     "bytes": "B",
     "kilobytes": "KB",
-    "megabytes": "MB"
+    "megabytes": "MB",
+    "select": "Seleziona",
+    "done": "Fine",
+    "selectAll": "Seleziona tutti",
+    "deselectAll": "Deseleziona tutti",
+    "selected": "selezionati",
+    "deleteSelected": "Elimina selezionati",
+    "exportSelected": "Esporta selezionati"
   },
   "removeModal": {
     "title": "Rimuovi Pagine",
@@ -223,7 +230,7 @@
     "removeError": "Rimozione pagine fallita",
     "validationError": "Seleziona o inserisci almeno una pagina da rimuovere.",
     "manualInputLabel": "Oppure inserisci i numeri di pagina manualmente",
-    "pageInputHint": "Singole: 1,3,5 \u00b7 Intervallo: 5-8 \u00b7 Max: {max}",
+    "pageInputHint": "Singole: 1,3,5 · Intervallo: 5-8 · Max: {max}",
     "filenameLabel": "Nome file"
   },
   "reorderModal": {
@@ -252,7 +259,7 @@
     "step01": "STEP 01",
     "step02": "STEP 02",
     "welcomeTitle": "Benvenuto in PdfEditor",
-    "welcomeDesc": "Editing PDF di precisione, in locale. Il tuo workspace \u00e8 cifrato nel keychain del sistema operativo. Funziona offline e si sincronizza quando torni online.",
+    "welcomeDesc": "Editing PDF di precisione, in locale. Il tuo workspace è cifrato nel keychain del sistema operativo. Funziona offline e si sincronizza quando torni online.",
     "acceptTerms": "Accetto i",
     "licenseTerms": "termini di licenza",
     "privacyPolicy": "privacy policy",
@@ -260,18 +267,18 @@
     "workFolderDesc": "Scegli dove salvare i tuoi PDF e abilita l'indicizzazione per ritrovarli velocemente.",
     "folderPath": "PERCORSO CARTELLA",
     "folderPlaceholder": "C:\\Users\\Utente\\Documents\\PDF",
-    "browse": "Sfoglia\u2026",
+    "browse": "Sfoglia…",
     "fileIndexing": "Indicizzazione file",
     "fileIndexingDesc": "Cerca e organizza automaticamente i PDF",
     "setupProgress": "SETUP {current} DI {total}",
     "skip": "Salta",
     "back": "Indietro",
     "continue": "Continua",
-    "finish": "Fine \u00b7 avvia l'app"
+    "finish": "Fine · avvia l'app"
   },
   "login": {
     "heroTitle": "Editing PDF di precisione. In locale.",
-    "heroDesc": "Il tuo workspace \u00e8 cifrato nel keychain del sistema operativo. Funziona offline e si sincronizza quando torni online.",
+    "heroDesc": "Il tuo workspace è cifrato nel keychain del sistema operativo. Funziona offline e si sincronizza quando torni online.",
     "badgeOffline": "OFFLINE-FIRST",
     "badgeE2e": "E2E",
     "badgeAgpl": "AGPL",
@@ -279,14 +286,14 @@
     "backendUnavailable": "Backend non disponibile. Login e guest potrebbero non funzionare.",
     "welcomeBack": "WELCOME BACK",
     "emailPlaceholder": "email@esempio.com",
-    "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
+    "passwordPlaceholder": "••••••••••••",
     "forgotPassword": "Recupera password"
   },
   "register": {
     "namePlaceholder": "Mario Rossi",
     "emailPlaceholder": "email@esempio.com",
-    "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
-    "confirmPasswordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+    "passwordPlaceholder": "••••••••••••",
+    "confirmPasswordPlaceholder": "••••••••••••"
   },
   "profile": {
     "loading": "Caricamento...",
@@ -330,7 +337,7 @@
     "fatalError": "Impossibile contattare il backend. Verifica che il sidecar sia presente sulla porta 7723.",
     "startingApp": "Avvio di PdfEditor",
     "retry": "Riprova",
-    "ready": "\u2713 Pronto! Reindirizzamento al login...",
+    "ready": "✓ Pronto! Reindirizzamento al login...",
     "license": "AGPL-3.0"
   },
   "guestConvert": {
@@ -414,15 +421,15 @@
   "lockModal": {
     "unlockTitle": "Sblocca PDF",
     "lockTitle": "Blocca PDF",
-    "unlockDesc": "Questo PDF \u00e8 protetto da password. Inserisci la password per sbloccarlo.",
-    "lockDesc": "Proteggi questo PDF con una password (cifratura AES-256). La password verr\u00e0 cacheata in memoria per 30 minuti.",
+    "unlockDesc": "Questo PDF è protetto da password. Inserisci la password per sbloccarlo.",
+    "lockDesc": "Proteggi questo PDF con una password (cifratura AES-256). La password verrà cacheata in memoria per 30 minuti.",
     "password": "Password",
     "newPassword": "Nuova password",
     "enterPassword": "Inserisci password",
     "enterNewPassword": "Inserisci nuova password",
     "confirmPassword": "Conferma password",
     "reEnterPassword": "Re-inserisci password",
-    "passwordRequired": "La password \u00e8 obbligatoria",
+    "passwordRequired": "La password è obbligatoria",
     "passwordMinLength": "La password deve essere di almeno 4 caratteri",
     "passwordsDoNotMatch": "Le password non coincidono",
     "lockError": "Blocco PDF fallito",

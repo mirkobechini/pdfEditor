@@ -2,6 +2,13 @@
 
 ## 2026-09-19
 
+### ✨ Multi-selezione PDF per operazioni batch (issue #821)
+
+- **Web**: aggiunta modalità multi-selezione nella Sidebar — checkbox per selezionare più PDF, barra azioni batch con **delete** ed **export** (download singoli).
+- **Desktop**: aggiunta modalità multi-selezione nella lista documenti — checkbox, select all, delete batch ed export batch (dialog salvataggio nativo).
+- **Mobile**: già presente (multi-select + merge/delete batch).
+- **Test**: 7 test web + 5 test desktop.
+
 ### ✨ Browse documents — integrazione microservizio (issue #818)
 
 - **Microservizio**: `pdf-documents-api` spostato su porta 8001 (era 8000, in conflitto col backend) + aggiunto CORS per web/desktop/mobile.

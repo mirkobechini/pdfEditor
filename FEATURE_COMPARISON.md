@@ -58,7 +58,7 @@
 | Scanner camera                      | ❌  | ❌      | ✅     | expo-camera                                                                                                 |
 | Share PDF                           | ❌  | ❌      | ✅     | expo-sharing                                                                                                |
 | Badge count icona                   | ❌  | ❌      | ✅     | expo-notifications                                                                                          |
-| Multi-select                        | ❌  | ❌      | ✅     | Checkbox + batch delete                                                                                     |
+| Multi-select                        | ✅  | ✅      | ✅     | Web/Desktop: checkbox + batch delete/export. Mobile: checkbox + batch delete                                |
 | Splash screen                       | ❌  | ❌      | ✅     | Sfondo arancione                                                                                            |
 | Pull-to-refresh                     | ❌  | ❌      | ✅     | RefreshControl                                                                                              |
 | Search/filtro                       | ❌  | ❌      | ✅     | Searchbar + useMemo                                                                                         |

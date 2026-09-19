@@ -34,7 +34,14 @@
     "loadFailed": "Failed to load PDF list",
     "rename": "Rename",
     "delete": "Delete",
-    "confirmDelete": "Confirm delete"
+    "confirmDelete": "Confirm delete",
+    "select": "Select",
+    "done": "Done",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "selected": "selected",
+    "deleteSelected": "Delete selected",
+    "exportSelected": "Export selected"
   },
   "mergeDialog": {
     "title": "Merge PDFs",

@@ -34,7 +34,14 @@
     "loadFailed": "Caricamento PDF fallito",
     "rename": "Rinomina",
     "delete": "Elimina",
-    "confirmDelete": "Conferma eliminazione"
+    "confirmDelete": "Conferma eliminazione",
+    "select": "Seleziona",
+    "done": "Fine",
+    "selectAll": "Seleziona tutti",
+    "deselectAll": "Deseleziona tutti",
+    "selected": "selezionati",
+    "deleteSelected": "Elimina selezionati",
+    "exportSelected": "Esporta selezionati"
   },
   "mergeDialog": {
     "title": "Unisci PDF",
