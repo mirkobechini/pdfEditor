@@ -393,7 +393,13 @@ export class ApiClient {
     id: string,
     annotation: {
       page: number;
-      type: "highlight" | "underline" | "strikeout" | "text" | "free_text" | "draw";
+      type:
+        | "highlight"
+        | "underline"
+        | "strikeout"
+        | "text"
+        | "free_text"
+        | "draw";
       rect: number[];
       color?: string;
       content?: string | null;
