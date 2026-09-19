@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-19
+
+### ✨ Browse documents — integrazione microservizio (issue #818)
+
+- **Microservizio**: `pdf-documents-api` spostato su porta 8001 (era 8000, in conflitto col backend) + aggiunto CORS per web/desktop/mobile.
+- **Web**: nuova pagina `/browse` — catalogo di documenti PDF reali da Internet Archive con card (titolo, autore, lingua, download count), ricerca e paginazione.
+- **Test**: 11 test web (6 pagina browse + 5 client API).
+
 ## 2026-09-17
 
 ### ✨ Drag & drop web (issue #816)
