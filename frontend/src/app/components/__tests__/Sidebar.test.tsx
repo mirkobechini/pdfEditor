@@ -119,6 +119,77 @@ describe("Sidebar", () => {
         });
     });
 
+    // ─── Multi-select batch ──────────────────────────────────────
+
+    it("enters multi-select mode and shows checkboxes", async () => {
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        fireEvent.click(screen.getByTestId("multi-select-toggle"));
+        expect(screen.getByTestId("file-checkbox-1")).toBeInTheDocument();
+        expect(screen.getByTestId("file-checkbox-2")).toBeInTheDocument();
+    });
+
+    it("selects files and shows batch actions", async () => {
+        const onBatchDelete = vi.fn();
+        const onBatchExport = vi.fn();
+        render(<Sidebar {...defaultProps} onBatchDelete={onBatchDelete} onBatchExport={onBatchExport} />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        fireEvent.click(screen.getByTestId("multi-select-toggle"));
+        fireEvent.click(screen.getByTestId("file-checkbox-1"));
+        fireEvent.click(screen.getByTestId("file-checkbox-2"));
+
+        expect(screen.getByTestId("batch-actions")).toBeInTheDocument();
+        expect(screen.getByTestId("multi-select-count").textContent).toContain("2");
+    });
+
+    it("selects all files with select all button", async () => {
+        render(<Sidebar {...defaultProps} />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        fireEvent.click(screen.getByTestId("multi-select-toggle"));
+        fireEvent.click(screen.getByTestId("multi-select-all"));
+
+        expect(screen.getByTestId("multi-select-count").textContent).toContain("2");
+    });
+
+    it("calls onBatchDelete with selected ids", async () => {
+        const onBatchDelete = vi.fn();
+        render(<Sidebar {...defaultProps} onBatchDelete={onBatchDelete} />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        fireEvent.click(screen.getByTestId("multi-select-toggle"));
+        fireEvent.click(screen.getByTestId("file-checkbox-1"));
+        fireEvent.click(screen.getByTestId("batch-delete"));
+
+        expect(onBatchDelete).toHaveBeenCalledWith(["1"]);
+    });
+
+    it("calls onBatchExport with selected ids", async () => {
+        const onBatchExport = vi.fn();
+        render(<Sidebar {...defaultProps} onBatchExport={onBatchExport} />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        fireEvent.click(screen.getByTestId("multi-select-toggle"));
+        fireEvent.click(screen.getByTestId("file-checkbox-2"));
+        fireEvent.click(screen.getByTestId("batch-export"));
+
+        expect(onBatchExport).toHaveBeenCalledWith(["2"]);
+    });
+
+    it("exits multi-select mode after batch action", async () => {
+        const onBatchDelete = vi.fn();
+        render(<Sidebar {...defaultProps} onBatchDelete={onBatchDelete} />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        fireEvent.click(screen.getByTestId("multi-select-toggle"));
+        fireEvent.click(screen.getByTestId("file-checkbox-1"));
+        fireEvent.click(screen.getByTestId("batch-delete"));
+
+        expect(screen.queryByTestId("batch-actions")).not.toBeInTheDocument();
+    });
+
     it("shows platform icon for desktop uploads", async () => {
         const desktopFiles = {
             items: [
