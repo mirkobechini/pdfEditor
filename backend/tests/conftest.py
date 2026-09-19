@@ -82,6 +82,7 @@ def per_test_db(tmp_path):
     from app.models.license import LicenseFeature
     from app.models.bug_report import BugReport
     from app.models.password_cache import PasswordCache
+    from app.models.share_link import ShareLink
     
     db_path = os.path.join(tmp_path, f"test_{uuid.uuid4().hex}.db")
     engine = create_engine(

@@ -22,7 +22,8 @@
     "importExport": "Import/Export",
     "print": "Print",
     "sign": "Sign",
-    "dropHere": "Drop your file here"
+    "dropHere": "Drop your file here",
+    "share": "Share"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -793,5 +794,33 @@
     "prev": "Prev",
     "next": "Next",
     "page": "Page"
+  },
+  "shareDialog": {
+    "title": "Share PDF",
+    "createTitle": "Create a new share link",
+    "passwordPlaceholder": "Password (optional)",
+    "expiryPlaceholder": "Expires in days (optional)",
+    "create": "Create link",
+    "creating": "Creating...",
+    "noLinks": "No share links yet",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "revoke": "Revoke",
+    "expires": "Expires",
+    "close": "Close",
+    "loadFailed": "Failed to load links",
+    "createFailed": "Failed to create link",
+    "revokeFailed": "Failed to revoke link"
+  },
+  "share": {
+    "loading": "Loading...",
+    "notFound": "This share link is invalid or has expired",
+    "wrongPassword": "Incorrect password",
+    "backHome": "Back to home",
+    "protectedTitle": "Protected PDF",
+    "protectedDesc": "This PDF is password protected. Enter the password to view it",
+    "passwordPlaceholder": "Password",
+    "unlock": "Unlock",
+    "download": "Download"
   }
 }

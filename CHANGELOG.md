@@ -2,6 +2,12 @@
 
 ## 2026-09-19
 
+### ✨ Condivisione PDF via link (issue #823)
+
+- **Backend**: nuovo modello `ShareLink` + endpoint `POST /pdfs/{id}/share` (genera link), `GET /share/{token}` (info pubblica), `POST /share/{token}/download` (download con password opzionale), `DELETE /pdfs/{id}/share/{token}` (revoca). Token UUID casuale, scadenza e password opzionali.
+- **Web**: dialog "Condividi" in toolbar (genera/copia/revoca link) + pagina pubblica `/share/[token]` per visualizzare e scaricare il PDF senza account (con sblocco password se protetto).
+- **Test**: 12 test backend + 13 test web.
+
 ### ✨ Multi-selezione PDF per operazioni batch (issue #821)
 
 - **Web**: aggiunta modalità multi-selezione nella Sidebar — checkbox per selezionare più PDF, barra azioni batch con **delete** ed **export** (download singoli).
