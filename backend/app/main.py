@@ -12,6 +12,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.api.v1.admin import router as admin_router
+from app.api.v1.annotations import router as annotations_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.bug_report import router as bug_report_router
 from app.api.v1.compress import router as compress_router
@@ -282,6 +283,7 @@ app.add_middleware(
 # Routers
 app.include_router(auth_router)
 app.include_router(admin_router)
+app.include_router(annotations_router)
 app.include_router(bug_report_router)
 app.include_router(pdf_router)
 app.include_router(merge_split_router)
