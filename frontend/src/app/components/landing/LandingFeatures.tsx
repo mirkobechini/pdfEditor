@@ -96,6 +96,22 @@ export default function LandingFeatures() {
             bgColor: "bg-rose-100 dark:bg-rose-900/40",
             iconColor: "text-rose-600 dark:text-rose-400",
         },
+        {
+            id: "multiselect",
+            icon: "☑️",
+            titleKey: "multiselect.title",
+            descriptionKey: "multiselect.description",
+            bgColor: "bg-cyan-100 dark:bg-cyan-900/40",
+            iconColor: "text-cyan-600 dark:text-cyan-400",
+        },
+        {
+            id: "sharelink",
+            icon: "🔗",
+            titleKey: "sharelink.title",
+            descriptionKey: "sharelink.description",
+            bgColor: "bg-indigo-100 dark:bg-indigo-900/40",
+            iconColor: "text-indigo-600 dark:text-indigo-400",
+        },
     ];
 
     return (

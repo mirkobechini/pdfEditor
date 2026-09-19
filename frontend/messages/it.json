@@ -443,6 +443,14 @@
       "sign": {
         "title": "Firma PDF",
         "description": "Disegna o carica la tua firma e posizionala su qualsiasi pagina del PDF."
+      },
+      "multiselect": {
+        "title": "Multi-selezione",
+        "description": "Seleziona più PDF e applica operazioni batch (elimina, esporta)"
+      },
+      "sharelink": {
+        "title": "Condividi via link",
+        "description": "Condividi un PDF con un link pubblico, con password e scadenza opzionali"
       }
     },
     "howItWorks": {

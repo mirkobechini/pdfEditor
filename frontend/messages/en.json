@@ -441,6 +441,14 @@
       "sign": {
         "title": "Sign PDFs",
         "description": "Draw or upload your signature and place it on any page of your PDF."
+      },
+      "multiselect": {
+        "title": "Multi-select",
+        "description": "Select multiple PDFs and apply batch operations (delete, export)"
+      },
+      "sharelink": {
+        "title": "Share via link",
+        "description": "Share a PDF with a public link, with optional password and expiry"
       }
     },
     "howItWorks": {
