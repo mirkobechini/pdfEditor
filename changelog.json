@@ -1,6 +1,14 @@
 {
   "desktop": [
     {
+      "version": "v0.1.40",
+      "date": "2026-09-19",
+      "changes": [
+        "Browse documents: nuova pagina /browse — catalogo PDF reali da Internet Archive con card, ricerca e paginazione (issue #818)",
+        "Microservizio pdf-documents-api: porta 8001 + CORS per web/desktop/mobile"
+      ]
+    },
+    {
       "version": "v0.1.39",
       "date": "2026-09-17",
       "changes": [
