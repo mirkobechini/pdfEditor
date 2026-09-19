@@ -16,6 +16,7 @@ export default defineConfig({
         "src/**/*.d.ts",
         "src/app/lib/i18n.ts",
         "src/app/lib/api.ts",
+        "src/shared/**",
         "src/messages/**",
       ],
     },
