@@ -513,6 +513,68 @@ export async function compressPdf(
 }
 
 /**
+ * Compress a PDF offline using pdf-lib re-save.
+ *
+ * pdf-lib does not support true compression, but re-saving the document
+ * removes unused objects and metadata, producing a smaller file. This is a
+ * partial compression that works fully offline (no cloud dependency).
+ *
+ * Returns the new LocalPdf, or null on failure.
+ */
+export async function compressPdfOffline(
+  pdfId: string,
+  quality: "low" | "medium" | "high" = "medium",
+  fileName?: string,
+): Promise<LocalPdf | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const bytes = await readPdfBytes(pdf.uri);
+    const doc = await PDFDocument.load(bytes);
+
+    // Remove metadata to reduce size (partial compression)
+    doc.setTitle("");
+    doc.setAuthor("");
+    doc.setSubject("");
+    doc.setKeywords([]);
+    doc.setProducer("");
+    doc.setCreator("");
+    doc.setCreationDate(new Date(0));
+    doc.setModificationDate(new Date(0));
+
+    // Re-save with object compression (useObjectStreams) for smaller output
+    const pdfBytes = await doc.save({
+      useObjectStreams: quality === "low" || quality === "medium",
+    });
+
+    const pdfDir = getPdfDir();
+    const id = generateId();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, pdfBytes);
+
+    const now = new Date().toISOString();
+    const safeName = fileName
+      ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+      : `compressed_${pdf.original_filename}`;
+    const result: LocalPdf = {
+      id,
+      original_filename: safeName,
+      file_size: pdfBytes.length,
+      page_count: doc.getPageCount(),
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("Compress offline error:", e);
+    return null;
+  }
+}
+
+/**
  * Export a PDF to another format (txt/png/jpg/svg).
  * Requires connection — downloads the converted file from the cloud and saves it locally.
  * Returns the saved file URI and name, or null on failure.
