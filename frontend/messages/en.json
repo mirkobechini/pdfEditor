@@ -23,7 +23,8 @@
     "print": "Print",
     "sign": "Sign",
     "dropHere": "Drop your file here",
-    "share": "Share"
+    "share": "Share",
+    "annotate": "Annotate"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -830,5 +831,21 @@
     "passwordPlaceholder": "Password",
     "unlock": "Unlock",
     "download": "Download"
+  },
+  "annotationDialog": {
+    "title": "Add annotation",
+    "type": "Type",
+    "highlight": "Highlight",
+    "underline": "Underline",
+    "strikeout": "Strikeout",
+    "text": "Comment",
+    "free_text": "Free text",
+    "color": "Color",
+    "page": "Page",
+    "content": "Content",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "failed": "Failed to add annotation"
   }
 }
