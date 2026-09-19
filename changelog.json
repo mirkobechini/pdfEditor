@@ -4,6 +4,7 @@
       "version": "v0.1.40",
       "date": "2026-09-19",
       "changes": [
+        "Multi-selezione PDF: modalità multi-select nella lista documenti con delete batch ed export batch (issue #821)",
         "Browse documents: nuova pagina /browse — catalogo PDF reali da Internet Archive con card, ricerca e paginazione (issue #818)",
         "Microservizio pdf-documents-api: porta 8001 + CORS per web/desktop/mobile"
       ]
