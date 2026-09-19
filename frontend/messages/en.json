@@ -450,6 +450,10 @@
       "sharelink": {
         "title": "Share via link",
         "description": "Share a PDF with a public link, with optional password and expiry"
+      },
+      "annotations": {
+        "title": "Annotations",
+        "description": "Highlight, underline, comment and draw on your PDFs"
       }
     },
     "howItWorks": {

@@ -452,6 +452,10 @@
       "sharelink": {
         "title": "Condividi via link",
         "description": "Condividi un PDF con un link pubblico, con password e scadenza opzionali"
+      },
+      "annotations": {
+        "title": "Annotazioni",
+        "description": "Evidenzia, sottolinea, commenta e disegna sui tuoi PDF"
       }
     },
     "howItWorks": {
