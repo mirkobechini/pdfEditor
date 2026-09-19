@@ -19,6 +19,7 @@ import ImportExportDialog from "../components/ImportExportDialog";
 import DropOverlay from "../components/DropOverlay";
 import { api, PdfDocument } from "../lib/api";
 import { mapError } from "../lib/error-map";
+import { downloadBlob } from "../lib/download";
 import { useAuth } from "../lib/auth";
 
 export default function EditorPage() {
@@ -140,6 +141,33 @@ export default function EditorPage() {
         setFileToDelete(null);
     }
 
+    async function handleBatchDelete(ids: string[]) {
+        for (const id of ids) {
+            try {
+                await api.deletePdf(id);
+            } catch (err) {
+                console.error("Batch delete failed for", id, err);
+            }
+        }
+        if (selectedId && ids.includes(selectedId)) {
+            setSelectedId(null);
+            setFileUrl(null);
+        }
+        setSidebarRefreshKey((prev) => prev + 1);
+    }
+
+    async function handleBatchExport(ids: string[]) {
+        for (const id of ids) {
+            try {
+                const blob = await api.downloadPdf(id);
+                const name = `pdf_${id}.pdf`;
+                downloadBlob(blob, name);
+            } catch (err) {
+                console.error("Batch export failed for", id, err);
+            }
+        }
+    }
+
     function handlePrint() {
         if (!fileUrl) return;
         // Open the PDF in a hidden iframe and trigger the browser print dialog.
@@ -222,6 +250,8 @@ export default function EditorPage() {
                             setFileToDelete(doc);
                             setDeleteModalOpen(true);
                         }}
+                        onBatchDelete={handleBatchDelete}
+                        onBatchExport={handleBatchExport}
                         refreshKey={sidebarRefreshKey}
                     />
                 }
