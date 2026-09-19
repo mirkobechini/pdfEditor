@@ -62,6 +62,13 @@ vi.mock("next-intl", () => ({
             hoursAgo: "h fa",
             daysAgo: "g fa",
             print: "Stampa",
+            select: "Seleziona",
+            done: "Fine",
+            selectAll: "Seleziona tutti",
+            deselectAll: "Deseleziona tutti",
+            selected: "selezionati",
+            deleteSelected: "Elimina selezionati",
+            exportSelected: "Esporta selezionati",
         };
         return map[key] || key;
     },
@@ -2200,5 +2207,97 @@ describe("EditorPage", () => {
         createElementSpy.mockRestore();
         appendSpy.mockRestore();
         removeSpy.mockRestore();
+    });
+
+    // ─── Multi-select batch ──────────────────────────────────────
+
+    it("enters multi-select mode and shows checkboxes", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc1.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+                { id: "p2", original_filename: "doc2.pdf", file_size: 2048, page_count: 5, created_at: "2025-01-02T00:00:00Z", upload_source: "desktop" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        fireEvent.click(screen.getByTestId("multi-select-toggle"));
+        expect(screen.getByTestId("file-checkbox-p1")).toBeInTheDocument();
+        expect(screen.getByTestId("file-checkbox-p2")).toBeInTheDocument();
+    });
+
+    it("selects files and shows batch actions", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc1.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+                { id: "p2", original_filename: "doc2.pdf", file_size: 2048, page_count: 5, created_at: "2025-01-02T00:00:00Z", upload_source: "desktop" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        fireEvent.click(screen.getByTestId("multi-select-toggle"));
+        fireEvent.click(screen.getByTestId("file-checkbox-p1"));
+        fireEvent.click(screen.getByTestId("file-checkbox-p2"));
+
+        expect(screen.getByTestId("batch-actions")).toBeInTheDocument();
+        expect(screen.getByTestId("multi-select-count").textContent).toContain("2");
+    });
+
+    it("selects all files with select all button", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc1.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+                { id: "p2", original_filename: "doc2.pdf", file_size: 2048, page_count: 5, created_at: "2025-01-02T00:00:00Z", upload_source: "desktop" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        fireEvent.click(screen.getByTestId("multi-select-toggle"));
+        fireEvent.click(screen.getByTestId("multi-select-all"));
+
+        expect(screen.getByTestId("multi-select-count").textContent).toContain("2");
+    });
+
+    it("deletes selected files in batch", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc1.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+                { id: "p2", original_filename: "doc2.pdf", file_size: 2048, page_count: 5, created_at: "2025-01-02T00:00:00Z", upload_source: "desktop" },
+            ],
+        });
+        render(<EditorPage />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        fireEvent.click(screen.getByTestId("multi-select-toggle"));
+        fireEvent.click(screen.getByTestId("file-checkbox-p1"));
+        fireEvent.click(screen.getByTestId("batch-delete"));
+
+        await waitFor(() => {
+            expect(mockDeletePdf).toHaveBeenCalledWith("p1");
+        });
+        expect(screen.queryByTestId("batch-actions")).not.toBeInTheDocument();
+    });
+
+    it("exports selected files in batch", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc1.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+                { id: "p2", original_filename: "doc2.pdf", file_size: 2048, page_count: 5, created_at: "2025-01-02T00:00:00Z", upload_source: "desktop" },
+            ],
+        });
+        mockDownloadPdf.mockResolvedValue(new Blob([new Uint8Array([1, 2, 3])], { type: "application/pdf" }));
+        render(<EditorPage />);
+        await waitFor(() => expect(screen.getByText("doc1.pdf")).toBeInTheDocument());
+
+        fireEvent.click(screen.getByTestId("multi-select-toggle"));
+        fireEvent.click(screen.getByTestId("file-checkbox-p2"));
+        fireEvent.click(screen.getByTestId("batch-export"));
+
+        await waitFor(() => {
+            expect(mockDownloadPdf).toHaveBeenCalledWith("p2");
+        });
+        expect(mockTauriInvoke).toHaveBeenCalled();
     });
 });
