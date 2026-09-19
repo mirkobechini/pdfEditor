@@ -7,7 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, exportPdf, importFile, signPdf } from "../services/pdfService";
+import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, compressPdfOffline, exportPdf, importFile, signPdf } from "../services/pdfService";
 import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import * as DocumentPicker from "expo-document-picker";
 import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
@@ -275,7 +275,10 @@ export default function ToolsScreen() {
     async function executeCompress(fileName?: string) {
         if (!compressDialog) return;
         setLoading(true);
-        const result_pdf = await compressPdf(compressDialog.pdfId, compressQuality, fileName);
+        // Online → cloud API (PyMuPDF, better quality). Offline → local re-save (pdf-lib).
+        const result_pdf = isOnline
+            ? await compressPdf(compressDialog.pdfId, compressQuality, fileName)
+            : await compressPdfOffline(compressDialog.pdfId, compressQuality, fileName);
         if (result_pdf) showResult(t("tools.compressResult", { name: result_pdf.original_filename }));
         else showResult(t("tools.compressFailed"));
         setLoading(false);
@@ -714,6 +717,11 @@ export default function ToolsScreen() {
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.compressHint", { name: compressDialog?.pdfName || "" })}
                         </Text>
+                        {!isOnline && (
+                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
+                                {t("tools.compressOfflineHint")}
+                            </Text>
+                        )}
                         <RadioButton.Group
                             onValueChange={(val) => setCompressQuality(val as "low" | "medium" | "high")}
                             value={compressQuality}
