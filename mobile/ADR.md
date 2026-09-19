@@ -86,6 +86,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 | CSRF token persistito in AsyncStorage                | Solo cookie                    | Su RN i cookie non funzionano come su web. Il CSRF token salvato in storage viene ripristinato al riavvio (fix 403 CSRF).                                                                            |
 | Sync per-PDF (menu contestuale + dialog post-upload) | Sync automatico globale        | Ogni PDF può essere caricato/rimosso dal cloud singolarmente dal menu long press. Dopo l'upload un dialog chiede se sincronizzare subito.                                                            |
 | Test con Jest (jest-expo)                            | @testing-library/react-native  | `@testing-library/react-native` incompatibile con questa versione di RN (TurboModule). I test coprono logica pura (API, DB, hook).                                                                   |
+| Compressione offline con **re-save pdf-lib**         | react-native-pdf-lib (nativo)  | `react-native-pdf-lib` è vecchia (7 anni) e richiede modifiche native Android/iOS + rebuild APK. Il re-save pdf-lib (rimozione metadati + object streams) è sicuro, offline, senza moduli nativi. Compressione parziale. Fallback: online → cloud API (PyMuPDF, qualità migliore). (issue #827) |
 
 ---
 
@@ -114,7 +115,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 ## Limiti e vincoli noti
 
 - **`react-native-pdf` cache**: il viewer non rimonta automaticamente per un secondo PDF — serve `key={refreshKey}` incrementata in `useEffect([pdfId])` dopo aver settato `pdfUri`.
-- **pdf-lib non supporta**: estrazione testo, form icing, annotazioni. Solo manipolazione strutturale (pagine, metadati, merge/split).
+- **pdf-lib non supporta**: estrazione testo, form icing, annotazioni, compressione vera. Solo manipolazione strutturale (pagine, metadati, merge/split) + re-save per compressione parziale.
 - **Sync cloud attivo**: i PDF si sincronizzano col cloud (upload/download bidirezionale). Il sync richiede login reale (guest esclusi). Token JWT scade dopo 1h → refresh automatico implementato (issue #623, endpoint `/auth/refresh` + retry automatico).
 - **Tema scuro non completo**: error container in LoginScreen/ForgotPasswordScreen ha `#FFE0E0` hardcoded (non si adatta a dark mode).
 - **Replace text**: Rotto su TUTTE le piattaforme (non solo mobile). Vedi FEATURE_COMPARISON.md.
@@ -127,7 +128,6 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 - Modalità sync auto/ibrido/chiedi collegati alle operazioni (solo "differito" attivo)
 - EAS CI Integration (F2 — pianificato)
 - Rework UI completo con design Penpot (F8 — priorità alta futura)
-- Annotazioni PDF (drawing, highlight, commenti)
 
 ---
 

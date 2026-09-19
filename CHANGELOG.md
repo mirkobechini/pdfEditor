@@ -2,6 +2,11 @@
 
 ## 2026-09-19
 
+### ✨ Compressione PDF offline su mobile (issue #827)
+
+- **Mobile**: aggiunta `compressPdfOffline` — compressione locale con re-save pdf-lib (rimozione metadati + object streams), senza dipendere dal cloud. Fallback automatico: online → cloud API (PyMuPDF, qualità migliore); offline → re-save locale.
+- **Test**: 4 test mobile.
+
 ### ✨ Annotazioni PDF (issue #825)
 
 - **Backend**: nuovo endpoint `POST /pdfs/{id}/annotations` — aggiunge annotazioni PDF standard (highlight, underline, strikeout, text, free_text, draw) con PyMuPDF, embedded nel file. Feature gated per tier pro/enterprise.

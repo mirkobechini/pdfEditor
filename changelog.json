@@ -4,6 +4,7 @@
       "version": "v0.1.40",
       "date": "2026-09-19",
       "changes": [
+        "Compressione PDF offline mobile: re-save pdf-lib locale con fallback automatico online/offline (issue #827)",
         "Annotazioni PDF: dialog Annota in toolbar — evidenzia/sottolinea/barrato/commento/testo con PyMuPDF embedded (issue #825)",
         "Backend: endpoint POST /pdfs/{id}/annotations (feature pro/enterprise)",
         "Condivisione PDF via link: dialog Condividi + pagina pubblica /share/[token] con password e scadenza opzionali (issue #823)",
