@@ -14,6 +14,7 @@ import MetadataDialog from "../components/MetadataDialog";
 import ReplaceTextDialog from "../components/ReplaceTextDialog";
 import ProtectDialog from "../components/ProtectDialog";
 import SignDialog from "../components/SignDialog";
+import ShareDialog from "../components/ShareDialog";
 import DeleteModal from "../components/DeleteModal";
 import ImportExportDialog from "../components/ImportExportDialog";
 import DropOverlay from "../components/DropOverlay";
@@ -39,6 +40,7 @@ export default function EditorPage() {
     const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [protectOpen, setProtectOpen] = React.useState(false);
     const [signOpen, setSignOpen] = React.useState(false);
+    const [shareOpen, setShareOpen] = React.useState(false);
     const [dragOver, setDragOver] = React.useState(false);
     const [importExportOpen, setImportExportOpen] = React.useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
@@ -273,6 +275,7 @@ export default function EditorPage() {
                         onImportExport={() => setImportExportOpen(true)}
                         onPrint={handlePrint}
                         onSign={() => setSignOpen(true)}
+                        onShare={() => setShareOpen(true)}
                         canUndo={!!selectedId}
                         canRedo={false}
                         onUndo={handleUndo}
@@ -404,6 +407,11 @@ export default function EditorPage() {
                         setFileUrl(url);
                     });
                 }}
+            />
+            <ShareDialog
+                open={shareOpen}
+                onClose={() => setShareOpen(false)}
+                pdfId={selectedId}
             />
             <ImportExportDialog
                 open={importExportOpen}
