@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-09-16
+> **Aggiornato:** 2026-09-19
 
 ---
 
@@ -10,11 +10,15 @@
 
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
-| **Backend** (FastAPI/Python)   | pytest      | **399** | **94%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **586** | **94.96%** | ✅    |
+| **Backend** (FastAPI/Python)   | pytest      | **407** | **94%**    | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **610** | **94.96%** | ✅    |
 | **Desktop** (Tauri)            | vitest      | **938** | **90.84%** | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **313** | **98.7%**  | ✅    |
 | **E2E** (Playwright)           | playwright  | **15**  | —          | ✅    |
+
+> ℹ️ **Backend**: 407 test (pytest). +8 test sign (issue #814).
+>
+> ℹ️ **Webapp**: 610 test (Vitest). +6 test drag & drop (issue #816), +11 test browse documents (issue #818).
 
 > ℹ️ **Desktop**: 935 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +15 test ImportExportModal, +1 test print (issue #805, #807, #809).
 >
