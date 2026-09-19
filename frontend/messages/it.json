@@ -22,7 +22,8 @@
     "importExport": "Importa/Esporta",
     "print": "Stampa",
     "sign": "Firma",
-    "dropHere": "Rilascia qui il tuo file"
+    "dropHere": "Rilascia qui il tuo file",
+    "share": "Condividi"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -795,5 +796,33 @@
     "prev": "Prec",
     "next": "Succ",
     "page": "Pagina"
+  },
+  "shareDialog": {
+    "title": "Condividi PDF",
+    "createTitle": "Crea un nuovo link di condivisione",
+    "passwordPlaceholder": "Password (opzionale)",
+    "expiryPlaceholder": "Scade tra giorni (opzionale)",
+    "create": "Crea link",
+    "creating": "Creazione...",
+    "noLinks": "Nessun link di condivisione",
+    "copy": "Copia",
+    "copied": "Copiato!",
+    "revoke": "Revoca",
+    "expires": "Scade",
+    "close": "Chiudi",
+    "loadFailed": "Impossibile caricare i link",
+    "createFailed": "Impossibile creare il link",
+    "revokeFailed": "Impossibile revocare il link"
+  },
+  "share": {
+    "loading": "Caricamento...",
+    "notFound": "Questo link di condivisione non è valido o è scaduto",
+    "wrongPassword": "Password errata",
+    "backHome": "Torna alla home",
+    "protectedTitle": "PDF protetto",
+    "protectedDesc": "Questo PDF è protetto da password. Inserisci la password per visualizzarlo",
+    "passwordPlaceholder": "Password",
+    "unlock": "Sblocca",
+    "download": "Scarica"
   }
 }
