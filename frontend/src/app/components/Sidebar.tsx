@@ -24,10 +24,12 @@ interface SidebarProps {
   onSelect: (id: string) => void;
   onUpload: (doc: PdfDocument) => void;
   onDeleteClick: (file: PdfDocument) => void;
+  onBatchDelete?: (ids: string[]) => void;
+  onBatchExport?: (ids: string[]) => void;
   refreshKey?: number;
 }
 
-export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick, refreshKey }: SidebarProps) {
+export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick, onBatchDelete, onBatchExport, refreshKey }: SidebarProps) {
   const t = useTranslations("sidebar");
   const [files, setFiles] = React.useState<PdfDocument[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -37,6 +39,8 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
   const [uploadProgress, setUploadProgress] = React.useState<number | null>(null);
   const [uploading, setUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [multiSelect, setMultiSelect] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
 
   // Load files on mount and when refreshKey changes
   React.useEffect(() => {
@@ -103,6 +107,48 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
     }
   }
 
+  // ─── Multi-select batch ────────────────────────────────────────
+  function toggleMultiSelect() {
+    setMultiSelect((prev) => {
+      if (prev) setSelectedIds(new Set());
+      return !prev;
+    });
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === files.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(files.map((f) => f.id)));
+    }
+  }
+
+  function exitMultiSelect() {
+    setMultiSelect(false);
+    setSelectedIds(new Set());
+  }
+
+  function handleBatchDelete() {
+    if (selectedIds.size === 0 || !onBatchDelete) return;
+    onBatchDelete(Array.from(selectedIds));
+    exitMultiSelect();
+  }
+
+  function handleBatchExport() {
+    if (selectedIds.size === 0 || !onBatchExport) return;
+    onBatchExport(Array.from(selectedIds));
+    exitMultiSelect();
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Upload area */}
@@ -147,6 +193,50 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
 
       {/* File list */}
       <div className="flex-1 overflow-y-auto px-3 pb-3">
+        {/* Multi-select toolbar */}
+        <div className="flex items-center gap-2 mb-2">
+          <button
+            onClick={toggleMultiSelect}
+            className={`text-xs px-2 py-1 rounded border ${multiSelect ? "bg-blue-600 text-white border-blue-600" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400"}`}
+            data-testid="multi-select-toggle"
+          >
+            {multiSelect ? t("done") : t("select")}
+          </button>
+          {multiSelect && (
+            <>
+              <button
+                onClick={toggleSelectAll}
+                className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400"
+                data-testid="multi-select-all"
+              >
+                {selectedIds.size === files.length ? t("deselectAll") : t("selectAll")}
+              </button>
+              <span className="text-xs text-gray-500 dark:text-gray-400" data-testid="multi-select-count">
+                {selectedIds.size} {t("selected")}
+              </span>
+            </>
+          )}
+        </div>
+
+        {multiSelect && selectedIds.size > 0 && (
+          <div className="flex items-center gap-2 mb-2 p-2 rounded bg-blue-50 dark:bg-blue-900/20" data-testid="batch-actions">
+            <button
+              onClick={handleBatchDelete}
+              className="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white"
+              data-testid="batch-delete"
+            >
+              🗑️ {t("deleteSelected")}
+            </button>
+            <button
+              onClick={handleBatchExport}
+              className="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white"
+              data-testid="batch-export"
+            >
+              ⬇ {t("exportSelected")}
+            </button>
+          </div>
+        )}
+
         {loading && <div className="text-center text-sm text-gray-400">{t("loading")}</div>}
         {error && (
           <div className="mx-2 p-2 text-sm text-red-700 bg-red-100 dark:bg-red-900/30 rounded">
@@ -159,10 +249,20 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
         {files.map((file) => (
           <div
             key={file.id}
-            className={`p-2 mb-1 rounded cursor-pointer flex items-center justify-between text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedId === file.id ? "bg-blue-100 dark:bg-blue-900/30" : ""
-              }`}
-            onClick={() => onSelect(file.id)}
+            className={`p-2 mb-1 rounded cursor-pointer flex items-center justify-between text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${selectedId === file.id ? "bg-blue-100 dark:bg-blue-900/30" : ""} ${multiSelect && selectedIds.has(file.id) ? "bg-blue-100 dark:bg-blue-900/30" : ""}`}
+            onClick={() => multiSelect ? toggleSelect(file.id) : onSelect(file.id)}
+            data-testid={`file-item-${file.id}`}
           >
+            {multiSelect && (
+              <input
+                type="checkbox"
+                checked={selectedIds.has(file.id)}
+                onChange={() => toggleSelect(file.id)}
+                onClick={(e) => e.stopPropagation()}
+                className="mr-1"
+                data-testid={`file-checkbox-${file.id}`}
+              />
+            )}
             {renameId === file.id ? (
               <input
                 autoFocus
