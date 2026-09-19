@@ -57,6 +57,7 @@
 | **UX Mobile-specifiche**            |     |         |        |                                                                                                             |
 | Scanner camera                      | ❌  | ❌      | ✅     | expo-camera                                                                                                 |
 | Share PDF                           | ❌  | ❌      | ✅     | expo-sharing                                                                                                |
+| Share via link                      | ✅  | ❌      | ❌     | Solo Web: dialog Condividi + pagina pubblica /share/[token] (password/scadenza opzionali)                   |
 | Badge count icona                   | ❌  | ❌      | ✅     | expo-notifications                                                                                          |
 | Multi-select                        | ✅  | ✅      | ✅     | Web/Desktop: checkbox + batch delete/export. Mobile: checkbox + batch delete                                |
 | Splash screen                       | ❌  | ❌      | ✅     | Sfondo arancione                                                                                            |
