@@ -18,58 +18,61 @@
 
 ## Tabella comparativa
 
-| Funzionalità                    | Web | Desktop | Mobile | Note                                                                                                        |
-| ------------------------------- | --- | ------- | ------ | ----------------------------------------------------------------------------------------------------------- |
-| **PDF CRUD**                    |     |         |        |                                                                                                             |
-| Upload PDF                      | ✅  | ✅      | ✅     | Mobile: da file system o scanner                                                                            |
-| List PDFs                       | ✅  | ✅      | ✅     |                                                                                                             |
-| Download PDF                    | ✅  | ✅      | ✅     | SAF storage access framework                                                                                |
-| Delete PDF                      | ✅  | ✅      | ✅     | Mobile: swipe-to-delete + multi-select                                                                      |
-| **Editing PDF**                 |     |         |        |                                                                                                             |
-| Merge PDF                       | ✅  | ✅      | ✅     |                                                                                                             |
-| Split PDF                       | ✅  | ✅      | ✅     | Mobile: split interattivo (scegli pagine)                                                                   |
-| Reorder pagine                  | ✅  | ✅      | ✅     | Mobile: pulsanti su/giù                                                                                     |
-| Remove pagine                   | ✅  | ✅      | ✅     |                                                                                                             |
-| Replace text                    | ✅  | ✅      | ✅     | Web/desktop: aggiorna viewer, preserva font/size. Mobile: via cloud API                                     |
-| Password protect                | ✅  | ✅      | ✅     | Mobile: @cantoo/pdf-lib (fork con encrypt)                                                                  |
-| Unlock PDF                      | ✅  | ✅      | ✅     |                                                                                                             |
-| Compressione PDF                | ✅  | ✅      | ✅     | Web/desktop: PyMuPDF (qualità bassa/media/alta). Mobile: via cloud API (pdf-lib non ha compressione nativa) |
-| Undo/Redo                       | ✅  | ✅      | ❌     | Solo backend (history)                                                                                      |
-| **Metadata**                    |     |         |        |                                                                                                             |
-| View metadata                   | ✅  | ✅      | ✅     | Mobile: dialog dettagli                                                                                     |
-| Edit metadata                   | ✅  | ✅      | ✅     |                                                                                                             |
-| **Import/Export**               |     |         |        |                                                                                                             |
-| Import file                     | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                         |
-| Import DOCX                     | ✅  | ✅      | ✅     | Web/Mobile online (python-docx+reportlab), Desktop offline (sidecar)                                        |
-| Export PDF                      | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                         |
-| Stampa PDF                      | ✅  | ✅      | ✅     | Web/Desktop: window.print() su iframe. Mobile: expo-print (AirPrint)                                        |
-| **Testo**                       |     |         |        |                                                                                                             |
-| Extract text                    | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                      |
-| **Auth**                        |     |         |        |                                                                                                             |
-| Email/password                  | ✅  | ✅      | ✅     |                                                                                                             |
-| Guest mode                      | ✅  | ✅      | ✅     |                                                                                                             |
-| Google OAuth                    | ✅  | ✅      | ✅     | Desktop: redirect flow via browser. Mobile: expo-auth-session (richiede client ID Android/iOS)              |
-| Forgot/reset password           | ✅  | ✅      | ✅     |                                                                                                             |
-| JWT token refresh               | ✅  | ✅      | ✅     | Automatico su 401 (issue #623)                                                                              |
-| **UX Mobile-specifiche**        |     |         |        |                                                                                                             |
-| Scanner camera                  | ❌  | ❌      | ✅     | expo-camera                                                                                                 |
-| Share PDF                       | ❌  | ❌      | ✅     | expo-sharing                                                                                                |
-| Badge count icona               | ❌  | ❌      | ✅     | expo-notifications                                                                                          |
-| Multi-select                    | ❌  | ❌      | ✅     | Checkbox + batch delete                                                                                     |
-| Splash screen                   | ❌  | ❌      | ✅     | Sfondo arancione                                                                                            |
-| Pull-to-refresh                 | ❌  | ❌      | ✅     | RefreshControl                                                                                              |
-| Search/filtro                   | ❌  | ❌      | ✅     | Searchbar + useMemo                                                                                         |
-| Swipe-to-delete                 | ❌  | ❌      | ✅     | react-native-gesture-handler                                                                                |
-| Snackbar notifiche              | ❌  | ❌      | ✅     | React Native Paper                                                                                          |
-| Bottom tabs                     | ❌  | ❌      | ✅     | Home + Settings                                                                                             |
-| **UX Web/Desktop**              |     |         |        |                                                                                                             |
-| Bug reports                     | ✅  | 🟡      | ✅     | Web: completo. Desktop: UI inline in Settings. Mobile: BugReportDialog in Settings                          |
-| License management              | ✅  | ❌      | ❌     | Solo webapp                                                                                                 |
-| Admin panel                     | ✅  | ❌      | ❌     | Solo webapp                                                                                                 |
-| **Non implementato su nessuna** |     |         |        |                                                                                                             |
-| **Cross-platform**              |     |         |        |                                                                                                             |
-| Keep-warm backend               | ✅  | ✅      | ❌     | GitHub Actions 24/7 + frontend keep-warm quando l'app è aperta                                              |
-| Icona origine piattaforma       | ✅  | ✅      | ✅     | 🌐 web, 💻 desktop, 📱 mobile — nessuna icona se dalla piattaforma corrente                                 |
+| Funzionalità                        | Web | Desktop | Mobile | Note                                                                                                        |
+| ----------------------------------- | --- | ------- | ------ | ----------------------------------------------------------------------------------------------------------- |
+| **PDF CRUD**                        |     |         |        |                                                                                                             |
+| Upload PDF                          | ✅  | ✅      | ✅     | Mobile: da file system o scanner                                                                            |
+| List PDFs                           | ✅  | ✅      | ✅     |                                                                                                             |
+| Download PDF                        | ✅  | ✅      | ✅     | SAF storage access framework                                                                                |
+| Delete PDF                          | ✅  | ✅      | ✅     | Mobile: swipe-to-delete + multi-select                                                                      |
+| **Editing PDF**                     |     |         |        |                                                                                                             |
+| Merge PDF                           | ✅  | ✅      | ✅     |                                                                                                             |
+| Split PDF                           | ✅  | ✅      | ✅     | Mobile: split interattivo (scegli pagine)                                                                   |
+| Reorder pagine                      | ✅  | ✅      | ✅     | Mobile: pulsanti su/giù                                                                                     |
+| Remove pagine                       | ✅  | ✅      | ✅     |                                                                                                             |
+| Replace text                        | ✅  | ✅      | ✅     | Web/desktop: aggiorna viewer, preserva font/size. Mobile: via cloud API                                     |
+| Password protect                    | ✅  | ✅      | ✅     | Mobile: @cantoo/pdf-lib (fork con encrypt)                                                                  |
+| Unlock PDF                          | ✅  | ✅      | ✅     |                                                                                                             |
+| Compressione PDF                    | ✅  | ✅      | ✅     | Web/desktop: PyMuPDF (qualità bassa/media/alta). Mobile: via cloud API (pdf-lib non ha compressione nativa) |
+| Undo/Redo                           | ✅  | ✅      | ❌     | Solo backend (history)                                                                                      |
+| **Metadata**                        |     |         |        |                                                                                                             |
+| View metadata                       | ✅  | ✅      | ✅     | Mobile: dialog dettagli                                                                                     |
+| Edit metadata                       | ✅  | ✅      | ✅     |                                                                                                             |
+| **Import/Export**                   |     |         |        |                                                                                                             |
+| Import file                         | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                         |
+| Import DOCX                         | ✅  | ✅      | ✅     | Web/Mobile online (python-docx+reportlab), Desktop offline (sidecar)                                        |
+| Export PDF                          | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                         |
+| Stampa PDF                          | ✅  | ✅      | ✅     | Web/Desktop: window.print() su iframe. Mobile: expo-print (AirPrint)                                        |
+| Drag & drop file                    | ✅  | ❌      | ❌     | Solo Web: trascina PDF per aprirlo, altri file per importarli (overlay feedback)                            |
+| Browse documents (Internet Archive) | ✅  | ❌      | ❌     | Solo Web: catalogo PDF reali da Internet Archive via microservizio pdf-documents-api (porta 8001)           |
+| Firma PDF                           | ✅  | ✅      | ✅     | Web/Desktop: canvas + upload immagine. Mobile: scegli immagine (pdf-lib). Backend: PyMuPDF (pro/enterprise) |
+| **Testo**                           |     |         |        |                                                                                                             |
+| Extract text                        | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                      |
+| **Auth**                            |     |         |        |                                                                                                             |
+| Email/password                      | ✅  | ✅      | ✅     |                                                                                                             |
+| Guest mode                          | ✅  | ✅      | ✅     |                                                                                                             |
+| Google OAuth                        | ✅  | ✅      | ✅     | Desktop: redirect flow via browser. Mobile: expo-auth-session (richiede client ID Android/iOS)              |
+| Forgot/reset password               | ✅  | ✅      | ✅     |                                                                                                             |
+| JWT token refresh                   | ✅  | ✅      | ✅     | Automatico su 401 (issue #623)                                                                              |
+| **UX Mobile-specifiche**            |     |         |        |                                                                                                             |
+| Scanner camera                      | ❌  | ❌      | ✅     | expo-camera                                                                                                 |
+| Share PDF                           | ❌  | ❌      | ✅     | expo-sharing                                                                                                |
+| Badge count icona                   | ❌  | ❌      | ✅     | expo-notifications                                                                                          |
+| Multi-select                        | ❌  | ❌      | ✅     | Checkbox + batch delete                                                                                     |
+| Splash screen                       | ❌  | ❌      | ✅     | Sfondo arancione                                                                                            |
+| Pull-to-refresh                     | ❌  | ❌      | ✅     | RefreshControl                                                                                              |
+| Search/filtro                       | ❌  | ❌      | ✅     | Searchbar + useMemo                                                                                         |
+| Swipe-to-delete                     | ❌  | ❌      | ✅     | react-native-gesture-handler                                                                                |
+| Snackbar notifiche                  | ❌  | ❌      | ✅     | React Native Paper                                                                                          |
+| Bottom tabs                         | ❌  | ❌      | ✅     | Home + Settings                                                                                             |
+| **UX Web/Desktop**                  |     |         |        |                                                                                                             |
+| Bug reports                         | ✅  | 🟡      | ✅     | Web: completo. Desktop: UI inline in Settings. Mobile: BugReportDialog in Settings                          |
+| License management                  | ✅  | ❌      | ❌     | Solo webapp                                                                                                 |
+| Admin panel                         | ✅  | ❌      | ❌     | Solo webapp                                                                                                 |
+| **Non implementato su nessuna**     |     |         |        |                                                                                                             |
+| **Cross-platform**                  |     |         |        |                                                                                                             |
+| Keep-warm backend                   | ✅  | ✅      | ❌     | GitHub Actions 24/7 + frontend keep-warm quando l'app è aperta                                              |
+| Icona origine piattaforma           | ✅  | ✅      | ✅     | 🌐 web, 💻 desktop, 📱 mobile — nessuna icona se dalla piattaforma corrente                                 |
 
 ---
 

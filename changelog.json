@@ -1,6 +1,25 @@
 {
   "desktop": [
     {
+      "version": "v0.1.40",
+      "date": "2026-09-19",
+      "changes": [
+        "Browse documents: nuova pagina /browse — catalogo PDF reali da Internet Archive con card, ricerca e paginazione (issue #818)",
+        "Microservizio pdf-documents-api: porta 8001 + CORS per web/desktop/mobile"
+      ]
+    },
+    {
+      "version": "v0.1.39",
+      "date": "2026-09-17",
+      "changes": [
+        "Drag & drop web: trascina un PDF nell'editor per aprirlo, o un file immagine/altro per importarlo — overlay di feedback visivo (issue #816)",
+        "Firma digitale PDF: bottone Firma in toolbar — disegna la firma (canvas) o carica un'immagine, scegli la pagina e salva (issue #814)",
+        "Backend: POST /pdfs/{id}/sign — inserisce immagine firma con PyMuPDF (feature pro/enterprise)",
+        "Web: dialog Firma con canvas + upload immagine",
+        "Mobile: operazione Firma in Tools — scegli immagine firma dalla galleria (offline, pdf-lib)"
+      ]
+    },
+    {
       "version": "v0.1.38",
       "date": "2026-09-16",
       "changes": [

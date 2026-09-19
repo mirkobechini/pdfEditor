@@ -19,6 +19,8 @@ const mockReorderPages = vi.fn();
 const mockRemovePages = vi.fn();
 const mockUpdateMetadata = vi.fn();
 const mockDeletePdf = vi.fn();
+const mockUploadPdf = vi.fn();
+const mockImportFile = vi.fn();
 vi.mock("../../lib/api", () => ({
     api: {
         getPdf: (...args: any[]) => mockGetPdf(...args),
@@ -31,6 +33,8 @@ vi.mock("../../lib/api", () => ({
         removePages: (...args: any[]) => mockRemovePages(...args),
         updateMetadata: (...args: any[]) => mockUpdateMetadata(...args),
         deletePdf: (...args: any[]) => mockDeletePdf(...args),
+        uploadPdf: (...args: any[]) => mockUploadPdf(...args),
+        importFile: (...args: any[]) => mockImportFile(...args),
     },
 }));
 
@@ -663,5 +667,65 @@ describe("EditorPage", () => {
         createElementSpy.mockRestore();
         appendSpy.mockRestore();
         removeSpy.mockRestore();
+    });
+
+    it("shows drop overlay on drag over", () => {
+        render(<EditorPage />);
+        fireEvent.dragOver(screen.getByTestId("editor-drop-zone"));
+        expect(screen.getByText("dropHere")).toBeInTheDocument();
+    });
+
+    it("hides drop overlay on drag leave", () => {
+        render(<EditorPage />);
+        fireEvent.dragOver(screen.getByTestId("editor-drop-zone"));
+        expect(screen.getByText("dropHere")).toBeInTheDocument();
+        fireEvent.dragLeave(screen.getByTestId("editor-drop-zone"));
+        expect(screen.queryByText("dropHere")).not.toBeInTheDocument();
+    });
+
+    it("uploads PDF on drop", async () => {
+        mockGetPdf.mockResolvedValue(mockPdf);
+        mockUploadPdf.mockResolvedValue(mockPdf);
+        mockDownloadPdf.mockResolvedValue(new Blob([new Uint8Array([1, 2, 3])], { type: "application/pdf" }));
+        render(<EditorPage />);
+
+        const file = new File(["pdf"], "test.pdf", { type: "application/pdf" });
+        fireEvent.drop(screen.getByTestId("editor-drop-zone"), { dataTransfer: { files: [file] } });
+
+        await waitFor(() => {
+            expect(mockUploadPdf).toHaveBeenCalledWith(file);
+        });
+    });
+
+    it("imports non-PDF file on drop", async () => {
+        mockGetPdf.mockResolvedValue(mockPdf);
+        mockImportFile.mockResolvedValue(mockPdf);
+        mockDownloadPdf.mockResolvedValue(new Blob([new Uint8Array([1, 2, 3])], { type: "application/pdf" }));
+        render(<EditorPage />);
+
+        const file = new File(["txt"], "notes.txt", { type: "text/plain" });
+        fireEvent.drop(screen.getByTestId("editor-drop-zone"), { dataTransfer: { files: [file] } });
+
+        await waitFor(() => {
+            expect(mockImportFile).toHaveBeenCalledWith(file);
+        });
+    });
+
+    it("ignores unsupported file on drop", async () => {
+        mockGetPdf.mockResolvedValue(mockPdf);
+        render(<EditorPage />);
+
+        const file = new File(["exe"], "app.exe", { type: "application/octet-stream" });
+        fireEvent.drop(screen.getByTestId("editor-drop-zone"), { dataTransfer: { files: [file] } });
+
+        expect(mockUploadPdf).not.toHaveBeenCalled();
+        expect(mockImportFile).not.toHaveBeenCalled();
+    });
+
+    it("ignores drop with no file", () => {
+        render(<EditorPage />);
+        fireEvent.drop(screen.getByTestId("editor-drop-zone"), { dataTransfer: { files: [] } });
+        expect(mockUploadPdf).not.toHaveBeenCalled();
+        expect(mockImportFile).not.toHaveBeenCalled();
     });
 });

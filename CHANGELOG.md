@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-19
+
+### ✨ Browse documents — integrazione microservizio (issue #818)
+
+- **Microservizio**: `pdf-documents-api` spostato su porta 8001 (era 8000, in conflitto col backend) + aggiunto CORS per web/desktop/mobile.
+- **Web**: nuova pagina `/browse` — catalogo di documenti PDF reali da Internet Archive con card (titolo, autore, lingua, download count), ricerca e paginazione.
+- **Test**: 11 test web (6 pagina browse + 5 client API).
+
+## 2026-09-17
+
+### ✨ Drag & drop web (issue #816)
+
+- **Web**: aggiunto supporto drag & drop — trascina un file PDF nell'editor per aprirlo, o un file immagine/altro per importarlo. Overlay di feedback visivo durante il drag.
+- **Test**: 6 test web per drag & drop (overlay, upload PDF, import non-PDF, file non supportati, drop vuoto).
+
+### ✨ Firma digitale PDF (issue #814)
+
+- **Backend**: aggiunto `POST /pdfs/{id}/sign` — inserisce un'immagine firma (PNG) su una pagina del PDF con PyMuPDF (`page.insert_image`). Feature gated per tier pro/enterprise.
+- **Web**: aggiunto bottone Firma in toolbar — dialog con canvas per disegnare la firma o upload immagine, scelta pagina, salvataggio.
+- **Desktop**: aggiunto bottone Firma in toolbar — stesso dialog del web (canvas + upload immagine).
+- **Mobile**: aggiunta operazione Firma in Tools — scegli un'immagine firma dalla galleria e posizionala su una pagina (offline, pdf-lib `embedPng` + `drawImage`).
+- **Test**: 8 test backend, 7 test web, 7 test desktop, 4 test mobile.
+
 ## 2026-09-16
 
 ### ✨ Stampa PDF da app (issue #809)

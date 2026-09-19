@@ -16,6 +16,7 @@ import CompressModal from "../../components/CompressModal";
 import LockUnlockModal from "../../components/LockUnlockModal";
 import ReplaceTextModal from "../../components/ReplaceTextModal";
 import ImportExportModal from "../../components/ImportExportModal";
+import SignModal from "../../components/SignModal";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
 import { useCloudSync } from "../../hooks/useCloudSync";
@@ -59,6 +60,7 @@ export default function EditorPage() {
     const [mergeOpen, setMergeOpen] = React.useState(false);
     const [compressOpen, setCompressOpen] = React.useState(false);
     const [importExportOpen, setImportExportOpen] = React.useState(false);
+    const [signOpen, setSignOpen] = React.useState(false);
     const [lockOpen, setLockOpen] = React.useState(false);
     const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
@@ -486,6 +488,13 @@ export default function EditorPage() {
                             >
                                 {te("print")}
                             </button>
+                            <button
+                                onClick={() => setSignOpen(true)}
+                                disabled={!selectedDoc}
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                {te("sign")}
+                            </button>
                         </div>
                     </header>
 
@@ -693,6 +702,19 @@ export default function EditorPage() {
                 onImported={(newDoc) => {
                     setDocs((prev) => [newDoc, ...prev]);
                     setSelectedDoc(newDoc);
+                    setPdfRefreshKey((k) => k + 1);
+                }}
+            />
+
+            <SignModal
+                open={signOpen}
+                pdfId={selectedDoc?.id ?? ""}
+                pdfName={selectedDoc?.original_filename ?? ""}
+                totalPages={selectedDoc?.page_count ?? 1}
+                onClose={() => setSignOpen(false)}
+                onSaved={(updatedDoc) => {
+                    setDocs((prev) => prev.map((d) => (d.id === updatedDoc.id ? updatedDoc : d)));
+                    setSelectedDoc(updatedDoc);
                     setPdfRefreshKey((k) => k + 1);
                 }}
             />

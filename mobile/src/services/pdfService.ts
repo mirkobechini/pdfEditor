@@ -383,6 +383,76 @@ export async function unlockPdf(
 }
 
 /**
+ * Sign a PDF by inserting a signature image onto a page (offline, pdf-lib).
+ * The signature image is base64-encoded PNG bytes.
+ */
+export async function signPdf(
+  pdfId: string,
+  signatureImageB64: string,
+  pageNumber: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  fileName?: string,
+): Promise<LocalPdf | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const bytes = await readPdfBytes(pdf.uri);
+    const doc = await PDFDocument.load(bytes);
+
+    if (pageNumber < 1 || pageNumber > doc.getPageCount()) {
+      console.error("Sign error: page out of range");
+      return null;
+    }
+
+    // Decode base64 PNG signature
+    const binary = atob(signatureImageB64);
+    const imgBytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      imgBytes[i] = binary.charCodeAt(i);
+    }
+
+    const pngImage = await doc.embedPng(imgBytes);
+    const page = doc.getPage(pageNumber - 1);
+    page.drawImage(pngImage, {
+      x,
+      y,
+      width,
+      height,
+    });
+
+    const pdfBytes = await doc.save();
+
+    const pdfDir = getPdfDir();
+    const id = generateId();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, pdfBytes);
+
+    const now = new Date().toISOString();
+    const safeName = fileName
+      ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+      : `signed_${now.slice(0, 10)}.pdf`;
+    const result: LocalPdf = {
+      id,
+      original_filename: safeName,
+      file_size: pdfBytes.length,
+      page_count: doc.getPageCount(),
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("Sign error:", e);
+    return null;
+  }
+}
+
+/**
  * Compress a PDF via the cloud backend (pdf-lib has no native compression).
  * Flow: upload local PDF → compress on backend → download → save locally.
  */

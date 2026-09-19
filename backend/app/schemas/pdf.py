@@ -27,6 +27,20 @@ class UnlockRequest(BaseModel):
     password: str
 
 
+class SignRequest(BaseModel):
+    """Schema for signing a PDF with a signature image.
+
+    The signature image is sent as base64-encoded bytes. Coordinates are
+    in PDF points (1/72 inch), with the origin at the top-left of the page.
+    """
+    signature_image_b64: str
+    page_number: int = 1
+    x: float = 0.0
+    y: float = 0.0
+    width: float = 200.0
+    height: float = 80.0
+
+
 class PdfListResponse(BaseModel):
     """Schema for list of PDF documents."""
 

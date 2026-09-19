@@ -407,6 +407,31 @@ export class ApiClient {
     return res.json();
   }
 
+  async signPdf(
+    id: string,
+    signatureImageB64: string,
+    pageNumber: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/sign`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        signature_image_b64: signatureImageB64,
+        page_number: pageNumber,
+        x,
+        y,
+        width,
+        height,
+      }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
   // ─── Export / Import ─────────────────────────────────────────────
 
   async exportPdf(id: string, format: string): Promise<Blob> {

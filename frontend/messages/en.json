@@ -20,7 +20,9 @@
     "protect": "Protect",
     "compress": "Compress",
     "importExport": "Import/Export",
-    "print": "Print"
+    "print": "Print",
+    "sign": "Sign",
+    "dropHere": "Drop your file here"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -175,6 +177,20 @@
     "passwordMismatch": "Passwords do not match",
     "passwordTooShort": "Password must be at least 4 characters",
     "protectFailed": "Failed to protect PDF"
+  },
+  "signDialog": {
+    "title": "Sign PDF",
+    "drawLabel": "Draw your signature",
+    "drawPlaceholder": "Draw here",
+    "uploadLabel": "Or upload an image",
+    "uploadButton": "Upload image",
+    "clear": "Clear",
+    "pageLabel": "Page",
+    "sign": "Sign",
+    "signing": "Signing...",
+    "cancel": "Cancel",
+    "signFailed": "Failed to sign PDF",
+    "noSignature": "Please draw or upload a signature first"
   },
   "bugReport": {
     "title": "Report a Bug",
@@ -365,7 +381,7 @@
       "download": "Download"
     },
     "hero": {
-      "badge": "New: Password protect & Unlock",
+      "badge": "New: Sign PDF",
       "title": "Your PDF editor",
       "subtitle": "simple, fast, offline",
       "description": "Merge, split, reorder and edit your PDFs directly from your browser. Free, secure and ad-free.",
@@ -413,6 +429,10 @@
       "print": {
         "title": "Print PDFs",
         "description": "Print your PDFs directly from the app on web, desktop and mobile."
+      },
+      "sign": {
+        "title": "Sign PDFs",
+        "description": "Draw or upload your signature and place it on any page of your PDF."
       }
     },
     "howItWorks": {
@@ -438,7 +458,7 @@
       "free": {
         "title": "Free",
         "description": "For occasional use",
-        "price": "â‚¬0",
+        "price": "Ã¢â€šÂ¬0",
         "feature1": "Up to 50 pages",
         "feature2": "Merge, Split, Reorder",
         "feature3": "5 PDFs per day",
@@ -449,7 +469,7 @@
       "premium": {
         "title": "Premium",
         "description": "For professional use",
-        "price": "â‚¬9",
+        "price": "Ã¢â€šÂ¬9",
         "feature1": "Unlimited pages",
         "feature2": "All features",
         "feature3": "Unlimited PDFs",
@@ -460,7 +480,7 @@
       "enterprise": {
         "title": "Enterprise",
         "description": "For teams and companies",
-        "price": "â‚¬29",
+        "price": "Ã¢â€šÂ¬29",
         "feature1": "Everything in Premium",
         "feature2": "Unlimited users",
         "feature3": "Dedicated API",
@@ -497,7 +517,8 @@
         "cookies": "Cookies"
       },
       "copyright": "All rights reserved."
-    }
+    },
+    "browse": "Browse"
   },
   "privacy": {
     "title": "Privacy Policy",
@@ -507,7 +528,7 @@
       "title": "Information We Collect",
       "description": "The personal information that you are asked to provide, and the reasons why you are asked to provide it, will be made clear to you at the point we ask you to provide your personal information.",
       "item1": "Account information: email address and full name (when you register)",
-      "item2": "PDF files you upload for editing — stored temporarily and automatically deleted after your session",
+      "item2": "PDF files you upload for editing â€” stored temporarily and automatically deleted after your session",
       "item3": "Usage data: pages visited, features used (anonymized for analytics)",
       "item4": "Technical data: browser type and version, device type, operating system"
     },
@@ -538,11 +559,11 @@
     "yourRights": {
       "title": "Your Data Protection Rights (GDPR/CCPA)",
       "description": "Depending on your jurisdiction, you may have the following data protection rights:",
-      "item1": "The right to access — request copies of your personal data",
-      "item2": "The right to rectification — request correction of inaccurate data",
-      "item3": "The right to erasure — request deletion of your personal data",
-      "item4": "The right to restrict processing — request limitation of how we use your data",
-      "item5": "The right to data portability — request transfer of your data to another organization"
+      "item1": "The right to access â€” request copies of your personal data",
+      "item2": "The right to rectification â€” request correction of inaccurate data",
+      "item3": "The right to erasure â€” request deletion of your personal data",
+      "item4": "The right to restrict processing â€” request limitation of how we use your data",
+      "item5": "The right to data portability â€” request transfer of your data to another organization"
     },
     "cookiesSection": {
       "title": "Cookies",
@@ -751,5 +772,19 @@
       "title": "Get Involved",
       "content": "Check our GitHub repository for open issues and contribution guidelines."
     }
+  },
+  "browse": {
+    "title": "Browse documents",
+    "subtitle": "Real PDF documents from Internet Archive",
+    "searchPlaceholder": "Search by title or author...",
+    "search": "Search",
+    "loading": "Loading...",
+    "empty": "No documents found",
+    "error": "Failed to load documents. Is the documents service running?",
+    "open": "Open",
+    "unknownAuthor": "Unknown author",
+    "prev": "Prev",
+    "next": "Next",
+    "page": "Page"
   }
 }
