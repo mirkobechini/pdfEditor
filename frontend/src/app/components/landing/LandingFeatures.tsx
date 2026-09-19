@@ -112,6 +112,14 @@ export default function LandingFeatures() {
             bgColor: "bg-indigo-100 dark:bg-indigo-900/40",
             iconColor: "text-indigo-600 dark:text-indigo-400",
         },
+        {
+            id: "annotations",
+            icon: "🖍️",
+            titleKey: "annotations.title",
+            descriptionKey: "annotations.description",
+            bgColor: "bg-yellow-100 dark:bg-yellow-900/40",
+            iconColor: "text-yellow-600 dark:text-yellow-400",
+        },
     ];
 
     return (

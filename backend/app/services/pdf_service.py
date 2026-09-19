@@ -891,3 +891,90 @@ class PdfService:
         pdf.file_size = len(output_bytes)
 
         return self.repo.update(pdf)
+
+    def add_annotation(
+        self,
+        pdf_id: str,
+        user_id: str,
+        page_number: int,
+        annotation_type: str,
+        rect: tuple[float, float, float, float],
+        color: str = "#FFFF00",
+        content: str | None = None,
+        points: list[tuple[float, float]] | None = None,
+        opacity: float = 0.3,
+    ) -> PdfDocument:
+        """Add an annotation to a PDF page and save as a new PDF.
+
+        Supported types: highlight, underline, strikeout, text, free_text, draw.
+        Annotations are embedded in the PDF (standard PDF annotations).
+        """
+        import fitz
+
+        pdf = self._get_user_pdf(pdf_id, user_id)
+        self._create_snapshot(pdf_id, user_id)
+
+        content_bytes = self._read_file_with_password(pdf_id, user_id)
+        if not content_bytes:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        doc = fitz.open(stream=content_bytes, filetype="pdf")
+        try:
+            if page_number < 1 or page_number > doc.page_count:
+                raise ValueError(
+                    f"Page {page_number} out of range (1-{doc.page_count})"
+                )
+            page = doc[page_number - 1]
+            rect_obj = fitz.Rect(*rect)
+
+            if annotation_type == "highlight":
+                annot = page.add_highlight_annot(rect_obj)
+            elif annotation_type == "underline":
+                annot = page.add_underline_annot(rect_obj)
+            elif annotation_type == "strikeout":
+                annot = page.add_strikeout_annot(rect_obj)
+            elif annotation_type == "text":
+                annot = page.add_text_annot(rect_obj, content or "")
+            elif annotation_type == "free_text":
+                annot = page.add_freetext_annot(
+                    rect_obj, content or "", fontsize=11
+                )
+            elif annotation_type == "draw":
+                if not points or len(points) < 2:
+                    raise ValueError("Draw annotation requires at least 2 points")
+                annot = page.add_polyline_annot(
+                    [fitz.Point(p[0], p[1]) for p in points]
+                )
+            else:
+                raise ValueError(f"Unsupported annotation type: {annotation_type}")
+
+            # Apply color (hex → RGB float)
+            try:
+                color_hex = color.lstrip("#")
+                r = int(color_hex[0:2], 16) / 255
+                g = int(color_hex[2:4], 16) / 255
+                b = int(color_hex[4:6], 16) / 255
+                annot.set_colors(stroke=(r, g, b))
+            except Exception:
+                pass
+
+            if opacity is not None:
+                try:
+                    annot.set_opacity(opacity)
+                except Exception:
+                    pass
+
+            output_bytes = doc.tobytes()
+        finally:
+            doc.close()
+
+        if not validate_pdf(output_bytes):
+            raise ValueError("Annotation produced an invalid PDF")
+
+        file_uuid = save_pdf(output_bytes)
+
+        # Update the existing PDF record with the annotated content
+        pdf.storage_filename = f"{file_uuid}.pdf"
+        pdf.file_size = len(output_bytes)
+
+        return self.repo.update(pdf)

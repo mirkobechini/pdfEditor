@@ -389,6 +389,27 @@ export class ApiClient {
     return res.json();
   }
 
+  async addAnnotation(
+    id: string,
+    annotation: {
+      page: number;
+      type: "highlight" | "underline" | "strikeout" | "text" | "free_text" | "draw";
+      rect: number[];
+      color?: string;
+      content?: string | null;
+      points?: number[][];
+      opacity?: number;
+    },
+  ): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/annotations`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(annotation),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
   // Share links
   async createShareLink(
     id: string,

@@ -23,7 +23,8 @@
     "print": "Print",
     "sign": "Sign",
     "dropHere": "Drop your file here",
-    "share": "Share"
+    "share": "Share",
+    "annotate": "Annotate"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -449,6 +450,10 @@
       "sharelink": {
         "title": "Share via link",
         "description": "Share a PDF with a public link, with optional password and expiry"
+      },
+      "annotations": {
+        "title": "Annotations",
+        "description": "Highlight, underline, comment and draw on your PDFs"
       }
     },
     "howItWorks": {
@@ -830,5 +835,21 @@
     "passwordPlaceholder": "Password",
     "unlock": "Unlock",
     "download": "Download"
+  },
+  "annotationDialog": {
+    "title": "Add annotation",
+    "type": "Type",
+    "highlight": "Highlight",
+    "underline": "Underline",
+    "strikeout": "Strikeout",
+    "text": "Comment",
+    "free_text": "Free text",
+    "color": "Color",
+    "page": "Page",
+    "content": "Content",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "failed": "Failed to add annotation"
   }
 }

@@ -23,7 +23,8 @@
     "print": "Stampa",
     "sign": "Firma",
     "dropHere": "Rilascia qui il tuo file",
-    "share": "Condividi"
+    "share": "Condividi",
+    "annotate": "Annota"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -451,6 +452,10 @@
       "sharelink": {
         "title": "Condividi via link",
         "description": "Condividi un PDF con un link pubblico, con password e scadenza opzionali"
+      },
+      "annotations": {
+        "title": "Annotazioni",
+        "description": "Evidenzia, sottolinea, commenta e disegna sui tuoi PDF"
       }
     },
     "howItWorks": {
@@ -832,5 +837,21 @@
     "passwordPlaceholder": "Password",
     "unlock": "Sblocca",
     "download": "Scarica"
+  },
+  "annotationDialog": {
+    "title": "Aggiungi annotazione",
+    "type": "Tipo",
+    "highlight": "Evidenzia",
+    "underline": "Sottolinea",
+    "strikeout": "Barrato",
+    "text": "Commento",
+    "free_text": "Testo libero",
+    "color": "Colore",
+    "page": "Pagina",
+    "content": "Contenuto",
+    "save": "Salva",
+    "saving": "Salvataggio...",
+    "cancel": "Annulla",
+    "failed": "Impossibile aggiungere l'annotazione"
   }
 }

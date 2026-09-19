@@ -41,6 +41,21 @@ class SignRequest(BaseModel):
     height: float = 80.0
 
 
+class AnnotationRequest(BaseModel):
+    """Schema for adding an annotation to a PDF page.
+
+    rect is [x0, y0, x1, y1] in PDF points (origin top-left).
+    points is used for draw/freehand annotations.
+    """
+    page: int
+    type: Literal["highlight", "underline", "strikeout", "text", "free_text", "draw"]
+    rect: list[float]  # [x0, y0, x1, y1]
+    color: str = "#FFFF00"
+    content: str | None = None
+    points: list[list[float]] | None = None  # [[x, y], ...] for draw
+    opacity: float = 0.3
+
+
 class PdfListResponse(BaseModel):
     """Schema for list of PDF documents."""
 

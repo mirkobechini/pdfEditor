@@ -2,6 +2,12 @@
 
 ## 2026-09-19
 
+### ✨ Annotazioni PDF (issue #825)
+
+- **Backend**: nuovo endpoint `POST /pdfs/{id}/annotations` — aggiunge annotazioni PDF standard (highlight, underline, strikeout, text, free_text, draw) con PyMuPDF, embedded nel file. Feature gated per tier pro/enterprise.
+- **Web**: dialog "Annota" in toolbar — scegli tipo (evidenzia/sottolinea/barrato/commento/testo), colore e pagina, salva l'annotazione nel PDF.
+- **Test**: 12 test backend + 6 test web.
+
 ### ✨ Condivisione PDF via link (issue #823)
 
 - **Backend**: nuovo modello `ShareLink` + endpoint `POST /pdfs/{id}/share` (genera link), `GET /share/{token}` (info pubblica), `POST /share/{token}/download` (download con password opzionale), `DELETE /pdfs/{id}/share/{token}` (revoca). Token UUID casuale, scadenza e password opzionali.
