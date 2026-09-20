@@ -345,7 +345,8 @@
     "conversionFailed": "Failed to convert the file.",
     "searchTextEmpty": "Please enter search text.",
     "mergeTooFew": "Please select at least 2 PDFs to merge.",
-    "splitInvalidRange": "Invalid page range specified."
+    "splitInvalidRange": "Invalid page range specified.",
+    "ocrUnavailable": "OCR is not available on this server. Please contact the administrator."
   },
   "pdf": {
     "notFound": "PDF not found.",

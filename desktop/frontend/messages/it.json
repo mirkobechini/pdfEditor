@@ -46,6 +46,7 @@
     "mergeTooFew": "Servono almeno due documenti per unire",
     "splitInvalidRange": "Intervallo pagine non valido",
     "internalError": "Errore interno imprevisto",
+    "ocrUnavailable": "L'OCR non è disponibile su questo server. Contatta l'amministratore.",
     "unknownError": "Errore imprevisto",
     "version": "v0.1.38",
     "license": "Open Source License"

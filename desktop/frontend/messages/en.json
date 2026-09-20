@@ -46,6 +46,7 @@
     "mergeTooFew": "At least two documents are required to merge",
     "splitInvalidRange": "Invalid page range",
     "internalError": "An unexpected error occurred",
+    "ocrUnavailable": "OCR is not available on this server. Please contact the administrator.",
     "unknownError": "An unexpected error occurred",
     "version": "v0.1.38",
     "license": "Open Source License"

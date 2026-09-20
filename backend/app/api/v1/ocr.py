@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.core.errors import error_response, ErrorCode
+from app.core.tesseract import OcrUnavailableError
 from app.api.deps import check_feature_access, get_current_user, get_db, get_pdf_service
 from app.models.user import User
 from app.schemas.pdf import OcrRequest, PdfResponse
@@ -29,11 +30,26 @@ def ocr_pdf(
             current_user.id,
             language=req.language,
         )
+    except OcrUnavailableError as e:
+        # tesseract binary not installed → clear 503, not a generic 400/500
+        raise error_response(
+            ErrorCode.OCR_UNAVAILABLE,
+            str(e),
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
     except ValueError as e:
         raise error_response(
             ErrorCode.VALIDATION_ERROR,
             str(e),
             status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    except EnvironmentError as e:
+        # pytesseract raises TesseractNotFoundError (subclass of EnvironmentError)
+        # when the `tesseract` binary is not installed on the system.
+        raise error_response(
+            ErrorCode.OCR_UNAVAILABLE,
+            f"OCR is unavailable: {e}",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
     return PdfResponse.model_validate(pdf)

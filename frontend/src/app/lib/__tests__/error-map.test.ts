@@ -185,6 +185,13 @@ describe("mapError — JSON error codes", () => {
     expect(mapError(err)).toBe("common.internalError");
   });
 
+  it("maps OCR_UNAVAILABLE", () => {
+    const err = new Error(
+      JSON.stringify({ code: "OCR_UNAVAILABLE", detail: "No tesseract" }),
+    );
+    expect(mapError(err)).toBe("common.ocrUnavailable");
+  });
+
   it("maps unknown code to unknownError", () => {
     const err = new Error(
       JSON.stringify({ code: "SOMETHING_NEW", detail: "X" }),
