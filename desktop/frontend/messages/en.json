@@ -186,6 +186,7 @@
     "ocr": "OCR",
     "annotate": "Annotate",
     "share": "Share",
+    "browse": "Browse documents",
     "user": "User",
     "cloudSync": "Cloud Sync",
     "settings": "Settings",
@@ -515,5 +516,19 @@
     "loadFailed": "Failed to load links",
     "createFailed": "Failed to create link",
     "revokeFailed": "Failed to revoke link"
+  },
+  "browse": {
+    "title": "Browse documents",
+    "subtitle": "Real PDF documents from Internet Archive",
+    "searchPlaceholder": "Search by title or author...",
+    "search": "Search",
+    "loading": "Loading...",
+    "empty": "No documents found",
+    "error": "Failed to load documents. Is the documents service running?",
+    "open": "Open",
+    "unknownAuthor": "Unknown author",
+    "prev": "Prev",
+    "next": "Next",
+    "page": "Page"
   }
 }

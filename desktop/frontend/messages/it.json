@@ -186,6 +186,7 @@
     "ocr": "OCR",
     "annotate": "Annota",
     "share": "Condividi",
+    "browse": "Sfoglia documenti",
     "user": "Utente",
     "cloudSync": "Cloud Sync",
     "settings": "Impostazioni",
@@ -515,5 +516,19 @@
     "loadFailed": "Impossibile caricare i link",
     "createFailed": "Impossibile creare il link",
     "revokeFailed": "Impossibile revocare il link"
+  },
+  "browse": {
+    "title": "Sfoglia documenti",
+    "subtitle": "Documenti PDF reali da Internet Archive",
+    "searchPlaceholder": "Cerca per titolo o autore...",
+    "search": "Cerca",
+    "loading": "Caricamento...",
+    "empty": "Nessun documento trovato",
+    "error": "Impossibile caricare i documenti. Il servizio documenti è attivo?",
+    "open": "Apri",
+    "unknownAuthor": "Autore sconosciuto",
+    "prev": "Prec",
+    "next": "Succ",
+    "page": "Pagina"
   }
 }
