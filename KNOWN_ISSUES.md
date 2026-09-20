@@ -60,13 +60,12 @@
 **Fix:** creato `CloudSyncContext` provider che condivide una singola istanza di `useCloudSync`. Le schermate ora usano `useCloudSyncContext()`. Aggiunto `useCallback` per l'inline function in MainTabs e `freezeOnBlur: true`.
 **Stato:** ✅ Risolto (issue #801, PR #802).
 
-### OCR — Binary `tesseract` non incluso nel sidecar desktop (issue #829, fix #831)
+### OCR — Binary `tesseract` incluso nel sidecar desktop (issue #829, fix #831) ✅
 
-**File:** `backend/app/services/pdf_service.py`, `desktop/build-sidecar.ps1`, `desktop/build-sidecar.sh`
-**Descrizione:** La funzione OCR richiede il binary `tesseract` (motore OCR) oltre alla libreria Python `pytesseract`. Il binary **non** è incluso nel sidecar PyInstaller del desktop, quindi l'OCR desktop fallisce con `503 OCR_UNAVAILABLE` se l'utente non ha tesseract installato a parte.
-**Comportamento attuale:** L'API restituisce un messaggio chiaro (`503 OCR_UNAVAILABLE`) invece di un 500 generico. Il deploy web installa tesseract via `apt-get` in `render.yaml`.
-**Da fare (futuro):** Includere il binary tesseract nel sidecar PyInstaller (via `--add-binary` + `TESSERACT_CMD` a runtime) oppure documentare il requisito per l'utente desktop.
-**Stato:** ⚠️ Parziale — gestione errori fixata, binary non incluso nel sidecar.
+**File:** `backend/app/core/tesseract.py`, `backend/app/services/pdf_service.py`, `desktop/build-sidecar.ps1`, `desktop/build-sidecar.sh`, `desktop/run_backend.py`
+**Descrizione:** La funzione OCR richiede il binary `tesseract` (motore OCR) oltre alla libreria Python `pytesseract`. Il binary **non** è incluso nel sidecar PyInstaller del desktop, quindi l'OCR desktop falliva con `503 OCR_UNAVAILABLE` se l'utente non aveva tesseract installato a parte.
+**Fix:** Il binary `tesseract` + i language pack (eng/ita/fra/deu/spa) sono ora **inclusi nel sidecar PyInstaller** (`tesseract/` + `tessdata/`). `app/core/tesseract.py` centralizza la discovery del binary (PATH, bundle, env var `TESSERACT_CMD`). `run_backend.py` imposta `TESSERACT_CMD` e `TESSDATA_PREFIX` dal bundle. L'utente finale **non deve installare nulla**.
+**Stato:** ✅ Risolto (issue #831, PR #832).
 
 ## 🟡 Bug minori rimanenti
 

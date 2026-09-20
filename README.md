@@ -46,9 +46,9 @@
 > **⚠️ Prerequisito OCR**: la funzione OCR richiede il **binary `tesseract`** installato sul sistema (oltre alla libreria Python `pytesseract`). Il binary **non** viene installato automaticamente da `pip`. Se manca, l'API restituisce `503 OCR_UNAVAILABLE` con un messaggio chiaro.
 >
 > - **Web (deploy)**: installato automaticamente via `apt-get` in `render.yaml` (tesseract-ocr + language pack eng/ita/fra/deu/spa).
-> - **Desktop (sidecar)**: il binary **non** è incluso nel sidecar PyInstaller. Per usare l'OCR desktop, installare tesseract a parte sul sistema.
+> - **Desktop (sidecar)**: il binary `tesseract` + i language pack sono **inclusi nel sidecar PyInstaller** (`tesseract/` + `tessdata/`). L'utente finale **non deve installare nulla** — l'OCR funziona out-of-the-box.
 > - **Sviluppo locale**:
->   - Windows: `choco install tesseract` o installer UB-Mannheim
+>   - Windows: `winget install UB-Mannheim.TesseractOCR` o installer UB-Mannheim
 >   - macOS: `brew install tesseract`
 >   - Linux: `sudo apt install tesseract-ocr tesseract-ocr-eng tesseract-ocr-ita`
 
