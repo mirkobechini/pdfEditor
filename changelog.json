@@ -2,8 +2,10 @@
   "desktop": [
     {
       "version": "v0.1.40",
-      "date": "2026-09-19",
+      "date": "2026-09-20",
       "changes": [
+        "OCR per PDF scansionati: dialog OCR in toolbar — riconosce il testo con Tesseract e lo rende ricercabile (issue #829)",
+        "Backend: endpoint POST /pdfs/{id}/ocr (feature pro/enterprise)",
         "Compressione PDF offline mobile: re-save pdf-lib locale con fallback automatico online/offline (issue #827)",
         "Annotazioni PDF: dialog Annota in toolbar — evidenzia/sottolinea/barrato/commento/testo con PyMuPDF embedded (issue #825)",
         "Backend: endpoint POST /pdfs/{id}/annotations (feature pro/enterprise)",

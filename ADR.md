@@ -38,6 +38,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | API backend per merge/split/riordino                | pdf-lib lato client        | pdf-lib sostituito da API backend per affidabilità — refactoring PR #72.                                                                                                                                                                                                           |
 | Provider i18n custom → next-intl client-side        | next-intl con middleware   | next-intl già installato ma inutilizzato. Rifattorizzato in PR #94: NextIntlClientProvider client-side (compatibile con output: 'export').                                                                                                                                         |
 | pytest per test backend                             | unittest                   | Standard di fatto per FastAPI. Coverage 94%.                                                                                                                                                                                                                                       |
+| OCR con **Tesseract (pytesseract)**                | EasyOCR, PaddleOCR         | Tesseract è leggero e standard. Richiede il binary `tesseract` sul sistema (non incluso nel sidecar desktop per ora). Se il PDF ha già testo, l'OCR non viene eseguito. (issue #829)                                                                                                |
 
 ---
 

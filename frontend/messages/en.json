@@ -455,6 +455,10 @@
       "annotations": {
         "title": "Annotations",
         "description": "Highlight, underline, comment and draw on your PDFs"
+      },
+      "ocr": {
+        "title": "OCR",
+        "description": "Recognize text in scanned PDFs and make it searchable"
       }
     },
     "howItWorks": {

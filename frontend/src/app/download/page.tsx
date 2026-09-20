@@ -331,6 +331,7 @@ export default function DownloadPage() {
                                             { name: "Print PDF", w: "✅", d: "✅", m: "✅" },
                                             { name: "Sign PDF", w: "✅", d: "✅", m: "✅" },
                                             { name: "Annotations", w: "✅", d: "❌", m: "❌" },
+                                            { name: "OCR", w: "✅", d: "❌", m: "❌" },
                                             { name: "Multi-select", w: "✅", d: "✅", m: "✅" },
                                             { name: "Share via link", w: "✅", d: "❌", m: "❌" },
                                             { name: "Browse documents", w: "✅", d: "❌", m: "❌" },

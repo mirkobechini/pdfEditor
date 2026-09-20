@@ -457,6 +457,10 @@
       "annotations": {
         "title": "Annotazioni",
         "description": "Evidenzia, sottolinea, commenta e disegna sui tuoi PDF"
+      },
+      "ocr": {
+        "title": "OCR",
+        "description": "Riconosci il testo nei PDF scansionati e rendilo ricercabile"
       }
     },
     "howItWorks": {

@@ -47,6 +47,7 @@
 | Browse documents (Internet Archive) | ✅  | ❌      | ❌     | Solo Web: catalogo PDF reali da Internet Archive via microservizio pdf-documents-api (porta 8001)           |
 | Firma PDF                           | ✅  | ✅      | ✅     | Web/Desktop: canvas + upload immagine. Mobile: scegli immagine (pdf-lib). Backend: PyMuPDF (pro/enterprise) |
 | Annotazioni PDF                     | ✅  | ❌      | ❌     | Solo Web: evidenzia/sottolinea/barrato/commento/testo. Backend: PyMuPDF embedded (pro/enterprise)           |
+| OCR PDF scansionati                 | ✅  | ❌      | ❌     | Solo Web: riconosce testo con Tesseract (pytesseract). Backend: searchable PDF (pro/enterprise)             |
 | **Testo**                           |     |         |        |                                                                                                             |
 | Extract text                        | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                      |
 | **Auth**                            |     |         |        |                                                                                                             |
