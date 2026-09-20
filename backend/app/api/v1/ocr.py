@@ -35,5 +35,13 @@ def ocr_pdf(
             str(e),
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+    except EnvironmentError as e:
+        # pytesseract raises TesseractNotFoundError (subclass of EnvironmentError)
+        # when the `tesseract` binary is not installed on the system.
+        raise error_response(
+            ErrorCode.OCR_UNAVAILABLE,
+            f"OCR is unavailable: {e}",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
     return PdfResponse.model_validate(pdf)
