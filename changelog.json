@@ -1,144 +1,49 @@
 {
   "desktop": [
     {
-      "version": "v0.1.40",
+      "version": "v0.1.39",
       "date": "2026-09-20",
       "changes": [
-        "OCR per PDF scansionati: dialog OCR in toolbar — riconosce il testo con Tesseract e lo rende ricercabile (issue #829)",
-        "Backend: endpoint POST /pdfs/{id}/ocr (feature pro/enterprise)",
-        "Compressione PDF offline mobile: re-save pdf-lib locale con fallback automatico online/offline (issue #827)",
-        "Annotazioni PDF: dialog Annota in toolbar — evidenzia/sottolinea/barrato/commento/testo con PyMuPDF embedded (issue #825)",
-        "Backend: endpoint POST /pdfs/{id}/annotations (feature pro/enterprise)",
-        "Condivisione PDF via link: dialog Condividi + pagina pubblica /share/[token] con password e scadenza opzionali (issue #823)",
-        "Backend: modello ShareLink + endpoint share (create, info, download, revoke)",
-        "Multi-selezione PDF: modalità multi-select nella lista documenti con delete batch ed export batch (issue #821)",
-        "Browse documents: nuova pagina /browse — catalogo PDF reali da Internet Archive con card, ricerca e paginazione (issue #818)",
-        "Microservizio pdf-documents-api: porta 8001 + CORS per web/desktop/mobile"
-      ]
-    },
-    {
-      "version": "v0.1.39",
-      "date": "2026-09-17",
-      "changes": [
-        "Drag & drop web: trascina un PDF nell'editor per aprirlo, o un file immagine/altro per importarlo — overlay di feedback visivo (issue #816)",
-        "Firma digitale PDF: bottone Firma in toolbar — disegna la firma (canvas) o carica un'immagine, scegli la pagina e salva (issue #814)",
-        "Backend: POST /pdfs/{id}/sign — inserisce immagine firma con PyMuPDF (feature pro/enterprise)",
-        "Web: dialog Firma con canvas + upload immagine",
-        "Mobile: operazione Firma in Tools — scegli immagine firma dalla galleria (offline, pdf-lib)"
+        "OCR: riconosci il testo nei PDF scansionati e rendilo ricercabile",
+        "Annotazioni: evidenzia, sottolinea, commenta e disegna sui tuoi PDF",
+        "Condivisione via link: condividi un PDF con un link pubblico, con password e scadenza opzionali",
+        "Multi-selezione: seleziona più PDF e applica operazioni in blocco (elimina, esporta)",
+        "Browse documents: esplora un catalogo di documenti PDF da Internet Archive",
+        "Firma digitale: firma i tuoi PDF disegnando o caricando un'immagine",
+        "Drag & drop: trascina un PDF nell'editor per aprirlo, o un'immagine per importarla",
+        "Compressione offline: comprimi i PDF anche senza connessione"
       ]
     },
     {
       "version": "v0.1.38",
       "date": "2026-09-16",
       "changes": [
-        "Import/Export: nuova UI per importare file (txt/png/jpg/gif/bmp) ed esportare PDF (txt/png/jpg/svg) — funziona offline via sidecar locale",
-        "Conversione DOCX → PDF: import .docx supportato (python-docx + reportlab nel sidecar, offline)",
-        "Stampa PDF: bottone Stampa in toolbar (window.print su iframe)",
-        "Web: UI Import/Export online (backend)",
-        "938 test frontend — coverage 90%+"
-      ]
-    },
-    {
-      "version": "v0.1.37",
-      "date": "2026-09-06",
-      "changes": [
-        "Fix Google login: PDF locali ora visibili dopo il login Google",
-        "Fix download sidecar 403: token locale del sidecar usato dopo login Google",
-        "Fix 500 su /pdfs: colonne mancanti popolate con default (upload_source)",
-        "Fix upload cloud 403 CSRF: esentato per richieste Bearer-authenticated",
-        "Fix Replace Text: aggiorna il viewer dopo la sostituzione, preserva font/size/posizione",
-        "Fix migrazione DB: nuove colonne rilevate automaticamente all'avvio",
-        "Fix wizard: al termine ora va alla pagina di login",
-        "Fix startup page: mostra errore se il sidecar non parte (nessun passthrough silenzioso)",
-        "Fix sidecar zombie: porta 7723 liberata all'avvio da istanze precedenti",
-        "JWT persistente: token sopravvive ai riavvii del sidecar",
-        "Login offline: funzionante dopo il primo sync dal cloud",
-        "Cloud sync: feedback dialog, PDF protetti saltati, deletePdf local/cloud/both",
-        "i18n completa: wizard, login, register, profile, license, startup, modali",
-        "Fix keep-warm: ping ogni 14min invece di 5min (evita esaurimento compute Neon)",
-        "Devtools: Ctrl+Shift+D per aprire la console",
-        "907 test frontend — coverage 90%+ su tutti i file"
-      ]
-    },
-    {
-      "version": "v0.1.35",
-      "date": "2026-08-21",
-      "changes": [
-        "Test suite desktop: 370 test Vitest, coverage 71% lines",
-        "CI ristrutturata per piattaforma: ci-web, ci-desktop, ci-mobile separati",
-        "Path filter per ogni CI: si attiva solo sui file della piattaforma"
+        "Import/Export: importa file (testo, immagini) ed esporta i tuoi PDF in altri formati",
+        "Conversione DOCX → PDF: apri e converti documenti Word",
+        "Stampa PDF: stampa direttamente dall'app"
       ]
     }
   ],
   "mobile": [
     {
+      "version": "v0.2.4-mobile",
+      "date": "2026-09-20",
+      "changes": [
+        "Compressione offline: comprimi i PDF anche senza connessione"
+      ]
+    },
+    {
       "version": "v0.2.3-mobile",
       "date": "2026-09-16",
       "changes": [
-        "Fix PDF duplicati dopo reinstall: cloud sync usa cloud_id per il dedup",
-        "Fix icone mancanti: font MaterialCommunityIcons caricato prima del render",
-        "Fix sync lento: la lista PDF si aggiorna quando il sync finisce",
-        "Fix conflitto update: versionCode esplicito in app.json (update 0.2.1 funzionante)",
-        "Notifica aggiornamento: avvisa quando esce una nuova release",
-        "Google OAuth login: login con Google dal mobile",
-        "Bug reports: segnalazione bug dal mobile (Settings)",
-        "Fix Google login 'accesso negato': GOOGLE_ANDROID_CLIENT_ID in produzione, maybeCompleteAuthSession, scheme app.json, redirect URI Google Cloud Console",
-        "Errore Google normalizzato: messaggi leggibili invece di errori raw",
-        "Finestra Google più grande per la selezione account",
-        "Icone piattaforma di provenienza: 🌐 web, 💻 desktop, 📱 mobile nel riquadro PDF",
-        "Fix sync progress: i PDF appaiono uno alla volta durante il sync",
-        "Fix lag navigazione: CloudSync condiviso tra le schermate (sync duplicati eliminati)",
-        "Import/Export: nuova UI in Tools per importare file (txt/png/jpg/gif/bmp) ed esportare PDF (txt/png/jpg/svg) — online, con messaggio 'richiede connessione' quando offline",
-        "Conversione DOCX → PDF: import .docx supportato (online, richiede connessione)",
-        "Stampa PDF: bottone Stampa nel viewer (expo-print, AirPrint iOS/Android)",
-        "313 test mobile — coverage 90%+"
-      ]
-    },
-    {
-      "version": "v0.2.1-mobile",
-      "date": "2026-09-03",
-      "changes": [
-        "Fix cloud sync: auto-refresh 401 gestisce formato errore {code, detail} — risolve 'impossibile recuperare lista PDF'",
-        "Replace Text: nuovo componente ReplaceTextDialog via cloud API",
-        "Fix Replace Text api: metodo replaceText aggiunto al client API",
-        "Test coverage 90%: 276 test, 98.7% statements, 100% lines",
-        "Remember me con schermata di caricamento",
-        "Snackbar errore upload cloud",
-        "PDF salvati in cartella PdfEditor/",
-        "CI mobile: ora esegue test Jest"
-      ]
-    },
-    {
-      "version": "v0.2.0-mobile",
-      "date": "2026-08-11",
-      "changes": [
-        "Cloud sync bidirezionale (upload/download, conflitti, offline)",
-        "Onboarding wizard alla prima installazione",
-        "179 test mobile, copertura 100% su localDb, error-map, i18n"
-      ]
-    }
-  ],
-  "web": [
-    {
-      "version": "v0.2.0",
-      "date": "2026-09-08",
-      "changes": [
-        "Fix Replace Text: aggiorna il viewer dopo la sostituzione",
-        "Fix Replace Text font/size: backend preserva font, dimensione e baseline originali",
-        "Fix keep-warm: ping ogni 14min invece di 5min (evita esaurimento compute Neon)",
-        "Test coverage 90%: 566 test, 94.96% statements — tutti i file >= 90%",
-        "Dead code rimosso: EditorPage, admin page",
-        "Keep-warm: GitHub Actions pinga /health ogni 14 minuti",
-        "Icona origine piattaforma: 🌐 💻 📱 accanto ai PDF"
-      ]
-    },
-    {
-      "version": "v0.1.36",
-      "date": "2026-08-23",
-      "changes": [
-        "Test coverage 70%: 508 test, 85.01% statements",
-        "Nuovi test: layout-pages, download, error-map, MonkeyLogo",
-        "Backend: upload_source (web/desktop/mobile) su modello e API"
+        "Login con Google",
+        "Notifica aggiornamenti: avvisa quando esce una nuova versione",
+        "Segnalazione bug direttamente dall'app",
+        "Import/Export: importa file ed esporta PDF",
+        "Conversione DOCX → PDF",
+        "Stampa PDF",
+        "Icone piattaforma: vedi da dove arriva ogni PDF (web, desktop, mobile)",
+        "Fix vari: PDF duplicati, sync più veloce, icone mancanti"
       ]
     }
   ]
