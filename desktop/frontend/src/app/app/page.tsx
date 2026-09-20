@@ -505,6 +505,9 @@ export default function EditorPage() {
                             <span className="h-2.5 w-2.5 rounded-full bg-[#3ec35f]" />
                         </div>
                         <div className="flex items-center gap-3">
+                            <Link href="/browse" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm hover:bg-white/15 transition-colors" title={te("browse")}>
+                                <span className="text-[#9a8d80]">📚</span>
+                            </Link>
                             <Link href="/settings" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm hover:bg-white/15 transition-colors" title={te("settings")}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#9a8d80]">
                                     <circle cx="12" cy="12" r="3" />
