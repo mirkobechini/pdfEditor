@@ -978,3 +978,72 @@ class PdfService:
         pdf.file_size = len(output_bytes)
 
         return self.repo.update(pdf)
+
+    def ocr_pdf(
+        self,
+        pdf_id: str,
+        user_id: str,
+        language: str = "eng",
+    ) -> PdfDocument:
+        """Run OCR on a scanned PDF and return a searchable PDF.
+
+        If the PDF already has a text layer, it is returned unchanged.
+        Otherwise, each page is rendered to an image and passed to Tesseract.
+        The recognized text is added as an invisible layer (searchable PDF).
+
+        Requires the `tesseract` binary to be installed on the system.
+        """
+        import fitz
+
+        pdf = self._get_user_pdf(pdf_id, user_id)
+        self._create_snapshot(pdf_id, user_id)
+
+        content = self._read_file_with_password(pdf_id, user_id)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        doc = fitz.open(stream=content, filetype="pdf")
+        try:
+            # Check if the PDF already has a text layer
+            has_text = any(doc[i].get_text().strip() for i in range(doc.page_count))
+            if has_text:
+                # Already searchable — return unchanged
+                return pdf
+
+            import pytesseract
+
+            for page_num in range(doc.page_count):
+                page = doc[page_num]
+                # Render page to image at 200 DPI for OCR
+                pix = page.get_pixmap(dpi=200)
+                img_bytes = pix.tobytes("png")
+
+                # Run OCR on the page image
+                text = pytesseract.image_to_string(
+                    img_bytes, lang=language, config="--psm 3"
+                )
+                if text.strip():
+                    # Insert recognized text as invisible text layer
+                    page.insert_textbox(
+                        fitz.Rect(0, 0, page.rect.width, page.rect.height),
+                        text,
+                        fontsize=1,
+                        color=(1, 1, 1),
+                        render_mode=3,  # invisible text
+                        overlay=True,
+                    )
+
+            output_bytes = doc.tobytes()
+        finally:
+            doc.close()
+
+        if not validate_pdf(output_bytes):
+            raise ValueError("OCR produced an invalid PDF")
+
+        file_uuid = save_pdf(output_bytes)
+
+        # Update the existing PDF record with the OCR'd content
+        pdf.storage_filename = f"{file_uuid}.pdf"
+        pdf.file_size = len(output_bytes)
+
+        return self.repo.update(pdf)

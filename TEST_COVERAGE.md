@@ -10,13 +10,13 @@
 
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
-| **Backend** (FastAPI/Python)   | pytest      | **431** | **89%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **635** | **91.84%** | ✅    |
+| **Backend** (FastAPI/Python)   | pytest      | **436** | **89%**    | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **640** | **91.84%** | ✅    |
 | **Desktop** (Tauri)            | vitest      | **950** | **90.84%** | ✅    |
 | **Mobile** (React Native/Expo) | jest        | **321** | **98.7%**  | ✅    |
 | **E2E** (Playwright)           | playwright  | **15**  | —          | ✅    |
 
-> ℹ️ **Backend**: 431 test (pytest), 89% statements. +12 test annotazioni (issue #825).
+> ℹ️ **Backend**: 436 test (pytest), 89% statements. +5 test OCR (issue #829).
 >
 > ℹ️ **Webapp**: 610 test (Vitest), 91.84% statements / 94.91% lines. `src/shared/**` escluso dal coverage (copiato dal prebuild, gitignored). +6 test drag & drop (issue #816), +11 test browse documents (issue #818).
 

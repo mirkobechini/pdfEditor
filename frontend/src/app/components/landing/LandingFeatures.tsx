@@ -120,6 +120,14 @@ export default function LandingFeatures() {
             bgColor: "bg-yellow-100 dark:bg-yellow-900/40",
             iconColor: "text-yellow-600 dark:text-yellow-400",
         },
+        {
+            id: "ocr",
+            icon: "🔍",
+            titleKey: "ocr.title",
+            descriptionKey: "ocr.description",
+            bgColor: "bg-purple-100 dark:bg-purple-900/40",
+            iconColor: "text-purple-600 dark:text-purple-400",
+        },
     ];
 
     return (

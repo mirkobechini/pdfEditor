@@ -24,7 +24,8 @@
     "sign": "Firma",
     "dropHere": "Rilascia qui il tuo file",
     "share": "Condividi",
-    "annotate": "Annota"
+    "annotate": "Annota",
+    "ocr": "OCR"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -456,6 +457,10 @@
       "annotations": {
         "title": "Annotazioni",
         "description": "Evidenzia, sottolinea, commenta e disegna sui tuoi PDF"
+      },
+      "ocr": {
+        "title": "OCR",
+        "description": "Riconosci il testo nei PDF scansionati e rendilo ricercabile"
       }
     },
     "howItWorks": {
@@ -853,5 +858,14 @@
     "saving": "Salvataggio...",
     "cancel": "Annulla",
     "failed": "Impossibile aggiungere l'annotazione"
+  },
+  "ocrModal": {
+    "title": "OCR PDF",
+    "description": "Riconosci il testo nei PDF scansionati e rendilo ricercabile",
+    "language": "Lingua",
+    "run": "Esegui OCR",
+    "running": "Esecuzione...",
+    "cancel": "Annulla",
+    "failed": "OCR fallito"
   }
 }

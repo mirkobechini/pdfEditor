@@ -24,7 +24,8 @@
     "sign": "Sign",
     "dropHere": "Drop your file here",
     "share": "Share",
-    "annotate": "Annotate"
+    "annotate": "Annotate",
+    "ocr": "OCR"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -454,6 +455,10 @@
       "annotations": {
         "title": "Annotations",
         "description": "Highlight, underline, comment and draw on your PDFs"
+      },
+      "ocr": {
+        "title": "OCR",
+        "description": "Recognize text in scanned PDFs and make it searchable"
       }
     },
     "howItWorks": {
@@ -851,5 +856,14 @@
     "saving": "Saving...",
     "cancel": "Cancel",
     "failed": "Failed to add annotation"
+  },
+  "ocrModal": {
+    "title": "OCR PDF",
+    "description": "Recognize text in scanned PDFs and make it searchable",
+    "language": "Language",
+    "run": "Run OCR",
+    "running": "Running...",
+    "cancel": "Cancel",
+    "failed": "OCR failed"
   }
 }

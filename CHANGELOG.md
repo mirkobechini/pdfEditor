@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-20
+
+### ✨ OCR per PDF scansionati (issue #829)
+
+- **Backend**: nuovo endpoint `POST /pdfs/{id}/ocr` — riconosce il testo nei PDF scansionati con Tesseract (pytesseract) e lo aggiunge come layer invisibile (searchable PDF). Se il PDF ha già testo, lo lascia invariato. Feature gated pro/enterprise.
+- **Web**: dialog "OCR" in toolbar — scegli la lingua e avvia il riconoscimento.
+- **Test**: 5 test backend + 5 test web.
+
 ## 2026-09-19
 
 ### ✨ Compressione PDF offline su mobile (issue #827)
