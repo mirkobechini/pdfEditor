@@ -48,7 +48,7 @@
     "internalError": "An unexpected error occurred",
     "ocrUnavailable": "OCR is not available on this server. Please contact the administrator.",
     "unknownError": "An unexpected error occurred",
-    "version": "v0.1.38",
+    "version": "v0.1.40",
     "license": "Open Source License"
   },
   "pdf": {
