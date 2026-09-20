@@ -36,6 +36,7 @@ export const ErrorCode = {
   BUG_NOT_FOUND: "BUG_NOT_FOUND",
   BUG_VOTE_NOT_FOUND: "BUG_VOTE_NOT_FOUND",
   INTERNAL_ERROR: "INTERNAL_ERROR",
+  OCR_UNAVAILABLE: "OCR_UNAVAILABLE",
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -129,6 +130,7 @@ function codeToI18nKey(code: string): string {
     BUG_NOT_FOUND: "bugReport.notFound",
     BUG_VOTE_NOT_FOUND: "bugReport.voteNotFound",
     INTERNAL_ERROR: "common.internalError",
+    OCR_UNAVAILABLE: "common.ocrUnavailable",
   };
   return map[code] || "common.unknownError";
 }
