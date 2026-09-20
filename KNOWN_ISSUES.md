@@ -67,6 +67,14 @@
 **Fix:** Il binary `tesseract` + i language pack (eng/ita/fra/deu/spa) sono ora **inclusi nel sidecar PyInstaller** (`tesseract/` + `tessdata/`). `app/core/tesseract.py` centralizza la discovery del binary (PATH, bundle, env var `TESSERACT_CMD`). `run_backend.py` imposta `TESSERACT_CMD` e `TESSDATA_PREFIX` dal bundle. L'utente finale **non deve installare nulla**.
 **Stato:** ✅ Risolto (issue #831, PR #832).
 
+### Browse documents — microservizio non deployato (tutte le piattaforme)
+
+**File:** `frontend/src/app/lib/documentsApi.ts`, `desktop/frontend/src/lib/documentsApi.ts`, `render.yaml`
+**Descrizione:** La feature "Browse documents" (catalogo PDF da Internet Archive) non funziona in produzione su **nessuna piattaforma** (web, desktop, mobile). Il microservizio `pdf-documents-api` (FastAPI + SQLite, porta 8001) è in un **repo separato** (`pdfEditorMicroservices/`) e **non è deployato** (non è in render.yaml) né incluso nel sidecar desktop.
+**Stato attuale:** Web e desktop puntano a `http://localhost:8001` (funziona solo in locale avviando il microservizio manualmente). Mobile non implementato.
+**Da fare:** Deployare il microservizio (Render) e configurare web/desktop/mobile per puntare all'URL cloud, oppure includerlo nel sidecar desktop. Poi implementare Browse su desktop e mobile.
+**Stato:** ⚠️ Aperto — non funziona in produzione.
+
 ## 🟡 Bug minori rimanenti
 
 Tutti i bug minori precedenti sono stati risolti.
