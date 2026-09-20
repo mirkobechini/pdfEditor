@@ -410,6 +410,16 @@ export class ApiClient {
     return res.json();
   }
 
+  async ocrPdf(id: string, language = "eng"): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/ocr`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ language }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
   // Share links
   async createShareLink(
     id: string,
