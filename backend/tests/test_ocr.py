@@ -101,3 +101,22 @@ class TestOcr:
         text = doc[0].get_text()
         assert "Hello OCR world" in text
         doc.close()
+
+    def test_ocr_returns_503_when_tesseract_binary_missing(self, client, pro_headers):
+        """When the `tesseract` binary is not installed, pytesseract raises
+        TesseractNotFoundError (subclass of EnvironmentError). The API must
+        return a clear 503 instead of an unhandled 500."""
+        from pytesseract import TesseractNotFoundError
+
+        pdf_id = self._upload(client, pro_headers, _make_scanned_pdf())
+        with patch(
+            "pytesseract.image_to_string",
+            side_effect=TesseractNotFoundError(),
+        ):
+            resp = client.post(
+                f"/pdfs/{pdf_id}/ocr",
+                json={},
+                headers=pro_headers,
+            )
+        assert resp.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+        assert resp.json()["detail"]["code"] == "OCR_UNAVAILABLE"
