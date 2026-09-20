@@ -642,3 +642,169 @@ export async function importFile(
     return null;
   }
 }
+
+// ─── OCR (cloud) ──────────────────────────────────────────────────
+
+/**
+ * Run OCR on a scanned PDF via the cloud backend.
+ * Uploads the local PDF, runs OCR, downloads the searchable PDF, saves locally.
+ */
+export async function ocrPdf(
+  pdfId: string,
+  language = "eng",
+  fileName?: string,
+): Promise<LocalPdf | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const uploaded = await api.uploadPdf(
+      pdf.uri,
+      pdf.original_filename,
+      "application/pdf",
+    );
+    const ocrResult = await api.ocrPdf(uploaded.id, language);
+    const blob = await api.downloadPdf(ocrResult.id);
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    const id = generateId();
+    const pdfDir = getPdfDir();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, bytes);
+
+    const now = new Date().toISOString();
+    const safeName = fileName
+      ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+      : `ocr_${pdf.original_filename}`;
+    const result: LocalPdf = {
+      id,
+      original_filename: safeName,
+      file_size: bytes.length,
+      page_count: ocrResult.page_count,
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("OCR error:", e);
+    return null;
+  }
+}
+
+// ─── Annotations (cloud) ──────────────────────────────────────────
+
+/**
+ * Add an annotation to a PDF via the cloud backend.
+ * Uploads the local PDF, adds the annotation, downloads the updated PDF, saves locally.
+ */
+export async function addAnnotation(
+  pdfId: string,
+  annotation: {
+    page: number;
+    type:
+      | "highlight"
+      | "underline"
+      | "strikeout"
+      | "text"
+      | "free_text"
+      | "draw";
+    rect: number[];
+    color?: string;
+    content?: string | null;
+    opacity?: number;
+  },
+  fileName?: string,
+): Promise<LocalPdf | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const uploaded = await api.uploadPdf(
+      pdf.uri,
+      pdf.original_filename,
+      "application/pdf",
+    );
+    const annotated = await api.addAnnotation(uploaded.id, annotation);
+    const blob = await api.downloadPdf(annotated.id);
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    const id = generateId();
+    const pdfDir = getPdfDir();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, bytes);
+
+    const now = new Date().toISOString();
+    const safeName = fileName
+      ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+      : `annotated_${pdf.original_filename}`;
+    const result: LocalPdf = {
+      id,
+      original_filename: safeName,
+      file_size: bytes.length,
+      page_count: annotated.page_count,
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("Annotation error:", e);
+    return null;
+  }
+}
+
+// ─── Share links (cloud) ──────────────────────────────────────────
+
+export async function createShareLink(
+  pdfId: string,
+  password?: string,
+  expiresInDays?: number,
+) {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+    const uploaded = await api.uploadPdf(
+      pdf.uri,
+      pdf.original_filename,
+      "application/pdf",
+    );
+    return await api.createShareLink(uploaded.id, password, expiresInDays);
+  } catch (e) {
+    console.error("Create share link error:", e);
+    return null;
+  }
+}
+
+export async function listShareLinks(pdfId: string) {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return [];
+    const uploaded = await api.uploadPdf(
+      pdf.uri,
+      pdf.original_filename,
+      "application/pdf",
+    );
+    return await api.listShareLinks(uploaded.id);
+  } catch (e) {
+    console.error("List share links error:", e);
+    return [];
+  }
+}
+
+export async function revokeShareLink(pdfId: string, token: string) {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return;
+    const uploaded = await api.uploadPdf(
+      pdf.uri,
+      pdf.original_filename,
+      "application/pdf",
+    );
+    await api.revokeShareLink(uploaded.id, token);
+  } catch (e) {
+    console.error("Revoke share link error:", e);
+  }
+}
