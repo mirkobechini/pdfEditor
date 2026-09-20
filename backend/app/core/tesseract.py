@@ -23,6 +23,13 @@ import sys
 SUPPORTED_LANGS = ("eng", "ita", "fra", "deu", "spa")
 
 
+class OcrUnavailableError(RuntimeError):
+    """Raised when the tesseract binary is not available on the system.
+
+    The API maps this to `503 OCR_UNAVAILABLE` (not a generic 400/500).
+    """
+
+
 def _is_frozen() -> bool:
     """Return True when running inside a PyInstaller bundle."""
     return hasattr(sys, "_MEIPASS")
