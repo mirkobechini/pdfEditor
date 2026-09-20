@@ -120,3 +120,20 @@ class TestOcr:
             )
         assert resp.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
         assert resp.json()["detail"]["code"] == "OCR_UNAVAILABLE"
+
+    def test_ocr_passes_pil_image_to_pytesseract(self, client, pro_headers):
+        """pytesseract needs a PIL Image (not raw bytes). Verify the service
+        converts the rendered page to a PIL Image before calling OCR."""
+        from PIL import Image
+
+        pdf_id = self._upload(client, pro_headers, _make_scanned_pdf())
+        with patch("pytesseract.image_to_string", return_value="text") as mock_ocr:
+            resp = client.post(
+                f"/pdfs/{pdf_id}/ocr",
+                json={},
+                headers=pro_headers,
+            )
+        assert resp.status_code == status.HTTP_200_OK
+        # The first positional arg passed to pytesseract must be a PIL Image
+        first_arg = mock_ocr.call_args[0][0]
+        assert isinstance(first_arg, Image.Image)
