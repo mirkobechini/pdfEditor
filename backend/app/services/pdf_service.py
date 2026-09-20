@@ -1012,15 +1012,31 @@ class PdfService:
 
             import pytesseract
 
+            # Locate the tesseract binary (PATH, bundled sidecar, or env var).
+            # Raises a clear error if the binary is not installed.
+            from app.core.tesseract import configure_tesseract
+
+            if not configure_tesseract():
+                raise ValueError(
+                    "OCR is unavailable: the tesseract binary is not installed "
+                    "on this system. Install it or contact the administrator."
+                )
+
             for page_num in range(doc.page_count):
                 page = doc[page_num]
                 # Render page to image at 200 DPI for OCR
                 pix = page.get_pixmap(dpi=200)
                 img_bytes = pix.tobytes("png")
 
+                # pytesseract needs a PIL Image (or a file path), not raw bytes.
+                from PIL import Image
+                import io
+
+                img = Image.open(io.BytesIO(img_bytes))
+
                 # Run OCR on the page image
                 text = pytesseract.image_to_string(
-                    img_bytes, lang=language, config="--psm 3"
+                    img, lang=language, config="--psm 3"
                 )
                 if text.strip():
                     # Insert recognized text as invisible text layer
