@@ -104,3 +104,14 @@ export interface LocalPdf {
   cloud_synced_exclude?: number; // 1 = excluded from sync (keep only local)
   upload_source?: string; // web, desktop, mobile — da dove è stato caricato
 }
+
+/** A shareable link for a PDF document. */
+export interface ShareLink {
+  id: string;
+  pdf_id: string;
+  token: string;
+  url: string;
+  has_password: boolean;
+  expires_at: string | null;
+  created_at: string;
+}
