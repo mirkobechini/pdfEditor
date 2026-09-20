@@ -1014,10 +1014,10 @@ class PdfService:
 
             # Locate the tesseract binary (PATH, bundled sidecar, or env var).
             # Raises a clear error if the binary is not installed.
-            from app.core.tesseract import configure_tesseract
+            from app.core.tesseract import configure_tesseract, OcrUnavailableError
 
             if not configure_tesseract():
-                raise ValueError(
+                raise OcrUnavailableError(
                     "OCR is unavailable: the tesseract binary is not installed "
                     "on this system. Install it or contact the administrator."
                 )
