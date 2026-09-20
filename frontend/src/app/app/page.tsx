@@ -16,6 +16,7 @@ import ProtectDialog from "../components/ProtectDialog";
 import SignDialog from "../components/SignDialog";
 import ShareDialog from "../components/ShareDialog";
 import AnnotationDialog from "../components/AnnotationDialog";
+import OcrModal from "../components/OcrModal";
 import DeleteModal from "../components/DeleteModal";
 import ImportExportDialog from "../components/ImportExportDialog";
 import DropOverlay from "../components/DropOverlay";
@@ -43,6 +44,7 @@ export default function EditorPage() {
     const [signOpen, setSignOpen] = React.useState(false);
     const [shareOpen, setShareOpen] = React.useState(false);
     const [annotateOpen, setAnnotateOpen] = React.useState(false);
+    const [ocrOpen, setOcrOpen] = React.useState(false);
     const [dragOver, setDragOver] = React.useState(false);
     const [importExportOpen, setImportExportOpen] = React.useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
@@ -279,6 +281,7 @@ export default function EditorPage() {
                         onSign={() => setSignOpen(true)}
                         onShare={() => setShareOpen(true)}
                         onAnnotate={() => setAnnotateOpen(true)}
+                        onOcr={() => setOcrOpen(true)}
                         canUndo={!!selectedId}
                         canRedo={false}
                         onUndo={handleUndo}
@@ -421,6 +424,12 @@ export default function EditorPage() {
                 onClose={() => setAnnotateOpen(false)}
                 pdfId={selectedId}
                 currentPage={currentPage}
+                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
+            />
+            <OcrModal
+                open={ocrOpen}
+                onClose={() => setOcrOpen(false)}
+                pdfId={selectedId}
                 onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
             />
             <ImportExportDialog
