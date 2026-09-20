@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-09-19 (full suite coverage)
+> **Aggiornato:** 2026-09-20 (full suite coverage misurato)
 
 ---
 
@@ -10,23 +10,21 @@
 
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
-| **Backend** (FastAPI/Python)   | pytest      | **436** | **89%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **640** | **91.84%** | ✅    |
-| **Desktop** (Tauri)            | vitest      | **950** | **90.84%** | ✅    |
-| **Mobile** (React Native/Expo) | jest        | **321** | **98.7%**  | ✅    |
+| **Backend** (FastAPI/Python)   | pytest      | **438** | **88%**    | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **641** | **90.21%** | ✅    |
+| **Desktop** (Tauri)            | vitest      | **950** | **86.88%** | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **321** | **92.26%** | ✅    |
 | **E2E** (Playwright)           | playwright  | **15**  | —          | ✅    |
 
-> ℹ️ **Backend**: 436 test (pytest), 89% statements. +5 test OCR (issue #829).
+> ℹ️ **Backend**: 438 test (pytest), 88% statements. +2 test OCR (issue #831): binary mancante → 503, PIL Image passato a pytesseract.
 >
-> ℹ️ **Webapp**: 610 test (Vitest), 91.84% statements / 94.91% lines. `src/shared/**` escluso dal coverage (copiato dal prebuild, gitignored). +6 test drag & drop (issue #816), +11 test browse documents (issue #818).
-
-> ℹ️ **Desktop**: 935 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. Target 90% raggiunto (issue #693): **90.84% statements**. +15 test ImportExportModal, +1 test print (issue #805, #807, #809).
+> ℹ️ **Webapp**: 641 test (Vitest), 90.21% statements / 93.53% lines. `src/shared/**` escluso dal coverage (copiato dal prebuild, gitignored). +1 test mapping OCR_UNAVAILABLE (issue #831).
+>
+> ℹ️ **Desktop**: 950 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. 86.88% statements / 90.82% lines.
 >
 > ⚠️ **Nota:** `ReorderPagesModal` ha i callback DnD (`@dnd-kit/core`) non copribili in jsdom — richiedono test E2E con Playwright. Coverage ferma a 81.17% per quel file.
 >
-> ℹ️ **Mobile**: 313 test (jest). Target 90% raggiunto (issue #696): **98.7% statements, 100% lines**. +6 test exportPdf/importFile pdfService, +4 test api exportPdf/importFile, +2 test printPdf (issue #805, #807, #809).
->
-> ℹ️ **Webapp**: 586 test (Vitest). Target 90% raggiunto (issue #700): **94.96% statements, 97.34% lines**. Tutti i file >= 90% statements. +12 test ImportExportDialog, +1 test print (issue #805, #807, #809).
+> ℹ️ **Mobile**: 321 test (jest), 92.26% statements / 93.59% lines.
 
 ---
 
@@ -55,13 +53,13 @@
 | Health                                | `test_health.py`                                  | ✅       | Endpoint health                                                |
 | Errori                                | `test_validation_errors.py`, `test_edge_cases.py` | ✅       | Errori, edge cases                                             |
 
-**Totale: 399 test, ~94% coverage**
+**Totale: 438 test, 88% coverage**
 
 ---
 
 ## Webapp (Next.js / React)
 
-**Coverage: 94.96% statements, 97.34% lines (586 test)** — issue #700
+**Coverage: 90.21% statements, 93.53% lines (641 test)** — misurato 2026-09-20
 
 | Area                                      | Test                                            | Coverage | Note                                                           |
 | ----------------------------------------- | ----------------------------------------------- | -------- | -------------------------------------------------------------- |
@@ -77,13 +75,13 @@
 | Componenti vari                           | Vari                                            | ✅       | PasswordInput 100%, GuestConvertBanner 100%, ClientLayout 100% |
 | Layout & home                             | `layout-pages.test.tsx`                         | ✅       | home page 100% (redirect Tauri), ClientLayout 100%             |
 
-**Totale: 586 test, 94.96% statements — tutti i file >= 90%**
+**Totale: 641 test, 90.21% statements**
 
 ---
 
 ## Mobile (React Native / Expo)
 
-**Coverage: 98.7% statements, 100% lines (313 test)** — issue #696
+**Coverage: 92.26% statements, 93.59% lines (321 test)** — misurato 2026-09-20
 
 | Area                              | Test                          | Coverage | Note                                                                                                                                                                                 |
 | --------------------------------- | ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -109,7 +107,7 @@
 | Dialog (conflict, import, delete) | —                             | ❌       | Non testati (UI components)                                                                                                                                                          |
 | OnboardingWizard                  | —                             | ❌       | Non testato (UI components)                                                                                                                                                          |
 
-**Totale: 313 test**
+**Totale: 321 test**
 
 ---
 
@@ -159,9 +157,9 @@ bash run-all-tests.sh
 
 ### Desktop (Tauri)
 
-938 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
+950 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
 
-> ⚠️ I conteggi per-componente sotto sono storici (non aggiornati a ogni release). Il totale autorevole è nel riepilogo in cima (938 test).
+> ⚠️ I conteggi per-componente sotto sono storici (non aggiornati a ogni release). Il totale autorevole è nel riepilogo in cima (950 test).
 
 | Componente                     | Test | Coverage | Note                                              |
 | ------------------------------ | ---- | -------- | ------------------------------------------------- |
