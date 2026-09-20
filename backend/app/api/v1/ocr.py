@@ -1,0 +1,39 @@
+"""Endpoint for running OCR on scanned PDFs."""
+
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
+
+from app.core.errors import error_response, ErrorCode
+from app.api.deps import check_feature_access, get_current_user, get_db, get_pdf_service
+from app.models.user import User
+from app.schemas.pdf import OcrRequest, PdfResponse
+from app.services.pdf_service import PdfService
+
+router = APIRouter(prefix="/pdfs", tags=["pdfs"])
+
+
+@router.post("/{pdf_id}/ocr", response_model=PdfResponse)
+def ocr_pdf(
+    pdf_id: str,
+    req: OcrRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    service: PdfService = Depends(get_pdf_service),
+) -> PdfResponse:
+    """Run OCR on a scanned PDF and return a searchable PDF."""
+    check_feature_access(current_user, db, "ocr")
+
+    try:
+        pdf = service.ocr_pdf(
+            pdf_id,
+            current_user.id,
+            language=req.language,
+        )
+    except ValueError as e:
+        raise error_response(
+            ErrorCode.VALIDATION_ERROR,
+            str(e),
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    return PdfResponse.model_validate(pdf)

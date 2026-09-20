@@ -19,6 +19,8 @@ slowapi==0.1.10
 # DOCX → PDF conversion (web/mobile online)
 python-docx==1.2.0
 reportlab==5.0.1
+# OCR — richiede anche il binary `tesseract` installato sul sistema
+pytesseract==0.3.13
 
 # testing
 pytest==9.0.3
