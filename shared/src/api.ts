@@ -7,6 +7,7 @@ import type {
   AdminUser,
   UserResponse,
   AuthResponse,
+  ShareLink,
 } from "./types";
 
 export type {
@@ -17,6 +18,7 @@ export type {
   AdminUser,
   UserResponse,
   AuthResponse,
+  ShareLink,
 };
 
 export class ApiClient {
@@ -737,7 +739,11 @@ export class ApiClient {
     description: string,
     pageUrl?: string,
   ): Promise<BugReport> {
-    const body: Record<string, string> = { title, description, platform: "desktop" };
+    const body: Record<string, string> = {
+      title,
+      description,
+      platform: "desktop",
+    };
     if (pageUrl) body.page_url = pageUrl;
     const res = await this._fetch(`${this.baseUrl}/bugs`, {
       method: "POST",
@@ -901,6 +907,82 @@ export class ApiClient {
     );
     if (!res.ok) throw new Error(await ApiClient.extractError(res));
     return res.json();
+  }
+
+  // ─── Annotations ────────────────────────────────────────────────
+
+  async addAnnotation(
+    id: string,
+    annotation: {
+      page: number;
+      type:
+        | "highlight"
+        | "underline"
+        | "strikeout"
+        | "text"
+        | "free_text"
+        | "draw";
+      rect: number[];
+      color?: string;
+      content?: string | null;
+      points?: number[][];
+      opacity?: number;
+    },
+  ): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/annotations`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(annotation),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // ─── OCR ────────────────────────────────────────────────────────
+
+  async ocrPdf(id: string, language = "eng"): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/ocr`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ language }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  // ─── Share links ────────────────────────────────────────────────
+
+  async createShareLink(
+    id: string,
+    password?: string,
+    expiresInDays?: number,
+  ): Promise<ShareLink> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/share`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        password: password || null,
+        expires_in_days: expiresInDays || null,
+      }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async listShareLinks(id: string): Promise<ShareLink[]> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/shares`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
+    return res.json();
+  }
+
+  async revokeShareLink(id: string, token: string): Promise<void> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/share/${token}`, {
+      method: "DELETE",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractError(res));
   }
 }
 
