@@ -32,6 +32,39 @@ fi
 # Install PyInstaller if missing
 $PYTHON -m pip install pyinstaller --quiet
 
+# ─── Locate tesseract binary + language packs ───────────────────────────────
+# The OCR feature needs the tesseract binary. We bundle it inside the sidecar
+# so the end user does NOT need to install anything.
+TESSERACT_BIN=""
+for cand in "$TESSERACT_CMD" "/usr/bin/tesseract" "/usr/local/bin/tesseract" "/opt/homebrew/bin/tesseract"; do
+    if [ -n "$cand" ] && [ -f "$cand" ]; then
+        TESSERACT_BIN="$cand"
+        break
+    fi
+done
+if [ -z "$TESSERACT_BIN" ]; then
+    echo "WARNING: tesseract binary not found. OCR will be unavailable in the desktop app."
+    echo "Install it (e.g. 'brew install tesseract' or 'apt install tesseract-ocr') and rebuild."
+else
+    echo "Bundling tesseract: $TESSERACT_BIN"
+fi
+
+# Locate tessdata (language packs) next to the binary
+TESSDATA_DIR=""
+if [ -n "$TESSERACT_BIN" ]; then
+    TESSDATA_DIR="$(dirname "$TESSERACT_BIN")/tessdata"
+    [ -d "$TESSDATA_DIR" ] || TESSDATA_DIR=""
+fi
+
+# Build the PyInstaller args for bundling tesseract
+BUNDLE_ARGS=()
+if [ -n "$TESSERACT_BIN" ]; then
+    BUNDLE_ARGS+=(--add-binary "$TESSERACT_BIN:tesseract")
+fi
+if [ -n "$TESSDATA_DIR" ]; then
+    BUNDLE_ARGS+=(--add-data "$TESSDATA_DIR:tessdata")
+fi
+
 # Build with PyInstaller
 echo "Running PyInstaller..."
 $PYTHON -m PyInstaller \
@@ -65,7 +98,11 @@ $PYTHON -m PyInstaller \
     --hidden-import "app.repositories" \
     --hidden-import "app.services" \
     --hidden-import "app.api.v1" \
+    --hidden-import "app.core.tesseract" \
+    --hidden-import "pytesseract" \
+    --hidden-import "PIL" \
     --add-data "$PROJECT_ROOT/desktop/.env.desktop:." \
+    "${BUNDLE_ARGS[@]}" \
     "$ENTRY_POINT"
 
 # Clean up temp build files

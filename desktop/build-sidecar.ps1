@@ -34,6 +34,49 @@ else {
 # Install PyInstaller if missing
 & $Python -m pip install pyinstaller 2>&1 | Out-Null
 
+# ─── Locate tesseract binary + language packs ───────────────────────────────
+# The OCR feature needs the tesseract binary. We bundle it inside the sidecar
+# so the end user does NOT need to install anything.
+$TesseractBin = ""
+$TesseractCandidates = @(
+    $env:TESSERACT_CMD,
+    "C:\Program Files\Tesseract-OCR\tesseract.exe",
+    "C:\Program Files\UB-Mannheim\Tesseract-OCR\tesseract.exe",
+    "$env:LOCALAPPDATA\Programs\Tesseract-OCR\tesseract.exe"
+)
+foreach ($cand in $TesseractCandidates) {
+    if ($cand -and (Test-Path $cand)) {
+        $TesseractBin = $cand
+        break
+    }
+}
+if (-not $TesseractBin) {
+    Write-Host "WARNING: tesseract binary not found. OCR will be unavailable in the desktop app." -ForegroundColor Yellow
+    Write-Host "Install it (e.g. 'winget install UB-Mannheim.TesseractOCR') and rebuild." -ForegroundColor Yellow
+} else {
+    Write-Host "Bundling tesseract: $TesseractBin" -ForegroundColor Cyan
+}
+
+# Locate tessdata (language packs). Prefer the system tessdata dir next to the binary.
+$TessdataDir = ""
+if ($TesseractBin) {
+    $TessdataDir = Join-Path (Split-Path $TesseractBin) "tessdata"
+    if (-not (Test-Path $TessdataDir)) {
+        $TessdataDir = ""
+    }
+}
+
+# Build the PyInstaller args for bundling tesseract
+$BundleArgs = @()
+if ($TesseractBin) {
+    $BundleArgs += "--add-binary"
+    $BundleArgs += "$TesseractBin;tesseract"
+}
+if ($TessdataDir) {
+    $BundleArgs += "--add-data"
+    $BundleArgs += "$TessdataDir;tessdata"
+}
+
 # Build with PyInstaller
 Write-Host "Running PyInstaller..." -ForegroundColor Yellow
 & $Python -m PyInstaller `
@@ -66,7 +109,11 @@ Write-Host "Running PyInstaller..." -ForegroundColor Yellow
     --hidden-import "app.repositories" `
     --hidden-import "app.services" `
     --hidden-import "app.api.v1" `
+    --hidden-import "app.core.tesseract" `
+    --hidden-import "pytesseract" `
+    --hidden-import "PIL" `
     --add-data "$ProjectRoot\desktop\.env.desktop;." `
+    $BundleArgs `
     $EntryPoint
 
 # Clean up temp build files
