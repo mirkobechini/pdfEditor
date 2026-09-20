@@ -43,6 +43,15 @@
 ![Neon PostgreSQL](https://img.shields.io/badge/Neon_PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 ![Cloudflare R2](https://img.shields.io/badge/Cloudflare_R2-F38020?logo=cloudflare&logoColor=white)
 
+> **⚠️ Prerequisito OCR**: la funzione OCR richiede il **binary `tesseract`** installato sul sistema (oltre alla libreria Python `pytesseract`). Il binary **non** viene installato automaticamente da `pip`. Se manca, l'API restituisce `503 OCR_UNAVAILABLE` con un messaggio chiaro.
+>
+> - **Web (deploy)**: installato automaticamente via `apt-get` in `render.yaml` (tesseract-ocr + language pack eng/ita/fra/deu/spa).
+> - **Desktop (sidecar)**: il binary **non** è incluso nel sidecar PyInstaller. Per usare l'OCR desktop, installare tesseract a parte sul sistema.
+> - **Sviluppo locale**:
+>   - Windows: `choco install tesseract` o installer UB-Mannheim
+>   - macOS: `brew install tesseract`
+>   - Linux: `sudo apt install tesseract-ocr tesseract-ocr-eng tesseract-ocr-ita`
+
 ### Web
 
 ![Next.js](https://img.shields.io/badge/Next.js_16-000?logo=next.js&logoColor=white)

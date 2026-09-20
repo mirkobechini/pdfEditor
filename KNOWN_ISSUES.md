@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-15
+> **Aggiornato:** 2026-09-20
 
 ---
 
@@ -59,6 +59,14 @@
 **Causa:** `useCloudSync` era istanziato **3 volte** (HomeScreen, SettingsScreen, OnboardingWizard), ognuna con il proprio sync all'avvio → sync duplicati che bloccavano il thread JS. Inoltre `useFocusEffect` ricaricava i PDF a ogni focus con spinner.
 **Fix:** creato `CloudSyncContext` provider che condivide una singola istanza di `useCloudSync`. Le schermate ora usano `useCloudSyncContext()`. Aggiunto `useCallback` per l'inline function in MainTabs e `freezeOnBlur: true`.
 **Stato:** ✅ Risolto (issue #801, PR #802).
+
+### OCR — Binary `tesseract` non incluso nel sidecar desktop (issue #829, fix #831)
+
+**File:** `backend/app/services/pdf_service.py`, `desktop/build-sidecar.ps1`, `desktop/build-sidecar.sh`
+**Descrizione:** La funzione OCR richiede il binary `tesseract` (motore OCR) oltre alla libreria Python `pytesseract`. Il binary **non** è incluso nel sidecar PyInstaller del desktop, quindi l'OCR desktop fallisce con `503 OCR_UNAVAILABLE` se l'utente non ha tesseract installato a parte.
+**Comportamento attuale:** L'API restituisce un messaggio chiaro (`503 OCR_UNAVAILABLE`) invece di un 500 generico. Il deploy web installa tesseract via `apt-get` in `render.yaml`.
+**Da fare (futuro):** Includere il binary tesseract nel sidecar PyInstaller (via `--add-binary` + `TESSERACT_CMD` a runtime) oppure documentare il requisito per l'utente desktop.
+**Stato:** ⚠️ Parziale — gestione errori fixata, binary non incluso nel sidecar.
 
 ## 🟡 Bug minori rimanenti
 
