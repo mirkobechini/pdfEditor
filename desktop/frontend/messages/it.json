@@ -183,6 +183,9 @@
     "importExport": "Importa/Esporta",
     "print": "Stampa",
     "sign": "Firma",
+    "ocr": "OCR",
+    "annotate": "Annota",
+    "share": "Condividi",
     "user": "Utente",
     "cloudSync": "Cloud Sync",
     "settings": "Impostazioni",
@@ -470,5 +473,47 @@
     "replaceFailed": "Sostituzione fallita",
     "outputName": "Nome file output",
     "outputNameHint": "Lascia vuoto per nome auto-generato"
+  },
+  "ocrModal": {
+    "title": "OCR PDF",
+    "description": "Riconosci il testo nei PDF scansionati e rendilo ricercabile",
+    "language": "Lingua",
+    "run": "Esegui OCR",
+    "running": "Esecuzione...",
+    "cancel": "Annulla",
+    "failed": "OCR fallito"
+  },
+  "annotationDialog": {
+    "title": "Aggiungi annotazione",
+    "type": "Tipo",
+    "highlight": "Evidenzia",
+    "underline": "Sottolinea",
+    "strikeout": "Barrato",
+    "text": "Commento",
+    "free_text": "Testo libero",
+    "color": "Colore",
+    "page": "Pagina",
+    "content": "Contenuto",
+    "save": "Salva",
+    "saving": "Salvataggio...",
+    "cancel": "Annulla",
+    "failed": "Impossibile aggiungere l'annotazione"
+  },
+  "shareDialog": {
+    "title": "Condividi PDF",
+    "createTitle": "Crea un nuovo link di condivisione",
+    "passwordPlaceholder": "Password (opzionale)",
+    "expiryPlaceholder": "Scade tra giorni (opzionale)",
+    "create": "Crea link",
+    "creating": "Creazione...",
+    "noLinks": "Nessun link di condivisione",
+    "copy": "Copia",
+    "copied": "Copiato!",
+    "revoke": "Revoca",
+    "expires": "Scade",
+    "close": "Chiudi",
+    "loadFailed": "Impossibile caricare i link",
+    "createFailed": "Impossibile creare il link",
+    "revokeFailed": "Impossibile revocare il link"
   }
 }
