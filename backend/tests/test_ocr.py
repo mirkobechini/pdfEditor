@@ -43,7 +43,9 @@ class TestOcr:
 
     def test_ocr_scanned_pdf(self, client, pro_headers):
         pdf_id = self._upload(client, pro_headers, _make_scanned_pdf())
-        with patch("pytesseract.image_to_string", return_value="Recognized text"):
+        with patch("pytesseract.image_to_string", return_value="Recognized text"), patch(
+            "app.core.tesseract.configure_tesseract", return_value="/fake/tesseract"
+        ):
             resp = client.post(
                 f"/pdfs/{pdf_id}/ocr",
                 json={"language": "eng"},
@@ -86,7 +88,9 @@ class TestOcr:
 
     def test_ocr_produces_searchable_pdf(self, client, pro_headers):
         pdf_id = self._upload(client, pro_headers, _make_scanned_pdf())
-        with patch("pytesseract.image_to_string", return_value="Hello OCR world"):
+        with patch("pytesseract.image_to_string", return_value="Hello OCR world"), patch(
+            "app.core.tesseract.configure_tesseract", return_value="/fake/tesseract"
+        ):
             resp = client.post(
                 f"/pdfs/{pdf_id}/ocr",
                 json={},
@@ -103,16 +107,11 @@ class TestOcr:
         doc.close()
 
     def test_ocr_returns_503_when_tesseract_binary_missing(self, client, pro_headers):
-        """When the `tesseract` binary is not installed, pytesseract raises
-        TesseractNotFoundError (subclass of EnvironmentError). The API must
+        """When the `tesseract` binary is not installed, configure_tesseract()
+        returns None and the service raises OcrUnavailableError. The API must
         return a clear 503 instead of an unhandled 500."""
-        from pytesseract import TesseractNotFoundError
-
         pdf_id = self._upload(client, pro_headers, _make_scanned_pdf())
-        with patch(
-            "pytesseract.image_to_string",
-            side_effect=TesseractNotFoundError(),
-        ):
+        with patch("app.core.tesseract.configure_tesseract", return_value=None):
             resp = client.post(
                 f"/pdfs/{pdf_id}/ocr",
                 json={},
@@ -127,7 +126,9 @@ class TestOcr:
         from PIL import Image
 
         pdf_id = self._upload(client, pro_headers, _make_scanned_pdf())
-        with patch("pytesseract.image_to_string", return_value="text") as mock_ocr:
+        with patch("pytesseract.image_to_string", return_value="text") as mock_ocr, patch(
+            "app.core.tesseract.configure_tesseract", return_value="/fake/tesseract"
+        ):
             resp = client.post(
                 f"/pdfs/{pdf_id}/ocr",
                 json={},
