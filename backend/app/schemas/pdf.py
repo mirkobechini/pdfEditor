@@ -56,6 +56,11 @@ class AnnotationRequest(BaseModel):
     opacity: float = 0.3
 
 
+class OcrRequest(BaseModel):
+    """Schema for OCR request on a scanned PDF."""
+    language: str = "eng"  # Tesseract language code (e.g. eng, ita)
+
+
 class PdfListResponse(BaseModel):
     """Schema for list of PDF documents."""
 
