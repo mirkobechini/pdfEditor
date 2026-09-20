@@ -7,7 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, compressPdfOffline, exportPdf, importFile, signPdf } from "../services/pdfService";
+import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, compressPdfOffline, exportPdf, importFile, signPdf, ocrPdf, addAnnotation, createShareLink, listShareLinks, revokeShareLink } from "../services/pdfService";
 import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import * as DocumentPicker from "expo-document-picker";
 import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
@@ -332,6 +332,97 @@ export default function ToolsScreen() {
         }
     }
 
+    // ─── OCR ────────────────────────────────────────────────────
+
+    const [ocrDialog, setOcrDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
+    const [ocrLanguage, setOcrLanguage] = useState("eng");
+
+    function openOcrDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        setOcrDialog({ pdfId, pdfName: pdf?.original_filename || "PDF" });
+        setOcrLanguage("eng");
+    }
+
+    async function executeOcr() {
+        if (!ocrDialog) return;
+        setLoading(true);
+        const result_pdf = await ocrPdf(ocrDialog.pdfId, ocrLanguage);
+        if (result_pdf) showResult(t("tools.ocrResult", { name: result_pdf.original_filename }));
+        else showResult(t("tools.ocrFailed"));
+        setLoading(false);
+        setOcrDialog(null);
+        await reloadPdfs();
+    }
+
+    // ─── Annotate ───────────────────────────────────────────────
+
+    const [annotateDialog, setAnnotateDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
+    const [annotateType, setAnnotateType] = useState("highlight");
+    const [annotateColor, setAnnotateColor] = useState("#FFFF00");
+    const [annotateContent, setAnnotateContent] = useState("");
+
+    function openAnnotateDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        setAnnotateDialog({ pdfId, pdfName: pdf?.original_filename || "PDF" });
+        setAnnotateType("highlight");
+        setAnnotateColor("#FFFF00");
+        setAnnotateContent("");
+    }
+
+    async function executeAnnotate() {
+        if (!annotateDialog) return;
+        setLoading(true);
+        const result_pdf = await addAnnotation(annotateDialog.pdfId, {
+            page: 1,
+            type: annotateType as any,
+            rect: [50, 50, 250, 100],
+            color: annotateColor,
+            content: annotateContent.trim() || null,
+            opacity: 0.3,
+        });
+        if (result_pdf) showResult(t("tools.annotateResult", { name: result_pdf.original_filename }));
+        else showResult(t("tools.annotateFailed"));
+        setLoading(false);
+        setAnnotateDialog(null);
+        await reloadPdfs();
+    }
+
+    // ─── Share ──────────────────────────────────────────────────
+
+    const [shareDialog, setShareDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
+    const [shareLinks, setShareLinks] = useState<any[]>([]);
+    const [sharePassword, setSharePassword] = useState("");
+    const [shareExpiry, setShareExpiry] = useState("");
+
+    async function openShareDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        setShareDialog({ pdfId, pdfName: pdf?.original_filename || "PDF" });
+        setSharePassword("");
+        setShareExpiry("");
+        const links = await listShareLinks(pdfId);
+        setShareLinks(links);
+    }
+
+    async function executeCreateShare() {
+        if (!shareDialog) return;
+        const expires = shareExpiry ? parseInt(shareExpiry, 10) : undefined;
+        const link = await createShareLink(shareDialog.pdfId, sharePassword.trim() || undefined, expires);
+        if (link) {
+            showResult(t("tools.shareCreated"));
+            const links = await listShareLinks(shareDialog.pdfId);
+            setShareLinks(links);
+        } else {
+            showResult(t("tools.shareFailed"));
+        }
+    }
+
+    async function executeRevokeShare(token: string) {
+        if (!shareDialog) return;
+        await revokeShareLink(shareDialog.pdfId, token);
+        const links = await listShareLinks(shareDialog.pdfId);
+        setShareLinks(links);
+    }
+
     async function executeImport() {
         if (!importExportDialog) return;
         setImportExportBusy(true);
@@ -498,6 +589,33 @@ export default function ToolsScreen() {
                         {t("tools.sign")}
                     </Button>
                     <Button
+                        mode={operation === "ocr" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "ocr" ? theme.colors.primary : undefined}
+                        textColor={operation === "ocr" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("ocr"); setSelectedIds([]); }}
+                    >
+                        {t("tools.ocr")}
+                    </Button>
+                    <Button
+                        mode={operation === "annotate" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "annotate" ? theme.colors.primary : undefined}
+                        textColor={operation === "annotate" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("annotate"); setSelectedIds([]); }}
+                    >
+                        {t("tools.annotate")}
+                    </Button>
+                    <Button
+                        mode={operation === "share" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "share" ? theme.colors.primary : undefined}
+                        textColor={operation === "share" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("share"); setSelectedIds([]); }}
+                    >
+                        {t("tools.share")}
+                    </Button>
+                    <Button
                         mode={operation === "import" ? "contained" : "outlined"}
                         compact
                         buttonColor={operation === "import" ? theme.colors.primary : undefined}
@@ -572,6 +690,9 @@ export default function ToolsScreen() {
                                     else if (operation === "protect") openPasswordDialog(item.id, "protect");
                                     else if (operation === "unlock") openPasswordDialog(item.id, "unlock");
                                     else if (operation === "sign") openSignDialog(item.id);
+                                    else if (operation === "ocr") openOcrDialog(item.id);
+                                    else if (operation === "annotate") openAnnotateDialog(item.id);
+                                    else if (operation === "share") openShareDialog(item.id);
                                     else if (operation === "export") openImportExportDialog(item.id, "export");
                                 }}
                             >
@@ -849,6 +970,113 @@ export default function ToolsScreen() {
                         <Button onPress={executeSign} loading={loading} disabled={loading}>
                             {t("tools.signAction")}
                         </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* OCR Dialog */}
+            <Portal>
+                <Dialog visible={ocrDialog !== null} onDismiss={() => setOcrDialog(null)}>
+                    <Dialog.Title>{t("tools.ocrTitle")}</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                            {t("tools.ocrHint", { name: ocrDialog?.pdfName || "" })}
+                        </Text>
+                        <TextInput
+                            label={t("tools.ocrLanguageLabel")}
+                            value={ocrLanguage}
+                            onChangeText={setOcrLanguage}
+                            mode="outlined"
+                            style={{ marginBottom: 12 }}
+                        />
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setOcrDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={executeOcr} loading={loading} disabled={loading}>
+                            {t("tools.ocrAction")}
+                        </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Annotate Dialog */}
+            <Portal>
+                <Dialog visible={annotateDialog !== null} onDismiss={() => setAnnotateDialog(null)}>
+                    <Dialog.Title>{t("tools.annotateTitle")}</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                            {t("tools.annotateHint", { name: annotateDialog?.pdfName || "" })}
+                        </Text>
+                        <TextInput
+                            label={t("tools.annotateTypeLabel")}
+                            value={annotateType}
+                            onChangeText={setAnnotateType}
+                            mode="outlined"
+                            style={{ marginBottom: 12 }}
+                        />
+                        <TextInput
+                            label={t("tools.annotateColorLabel")}
+                            value={annotateColor}
+                            onChangeText={setAnnotateColor}
+                            mode="outlined"
+                            style={{ marginBottom: 12 }}
+                        />
+                        <TextInput
+                            label={t("tools.annotateContentLabel")}
+                            value={annotateContent}
+                            onChangeText={setAnnotateContent}
+                            mode="outlined"
+                            multiline
+                            style={{ marginBottom: 12 }}
+                        />
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setAnnotateDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={executeAnnotate} loading={loading} disabled={loading}>
+                            {t("tools.annotateAction")}
+                        </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Share Dialog */}
+            <Portal>
+                <Dialog visible={shareDialog !== null} onDismiss={() => setShareDialog(null)}>
+                    <Dialog.Title>{t("tools.shareTitle")}</Dialog.Title>
+                    <Dialog.Content>
+                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                            {t("tools.shareHint", { name: shareDialog?.pdfName || "" })}
+                        </Text>
+                        <TextInput
+                            label={t("tools.sharePasswordLabel")}
+                            value={sharePassword}
+                            onChangeText={setSharePassword}
+                            mode="outlined"
+                            secureTextEntry
+                            style={{ marginBottom: 12 }}
+                        />
+                        <TextInput
+                            label={t("tools.shareExpiryLabel")}
+                            value={shareExpiry}
+                            onChangeText={setShareExpiry}
+                            mode="outlined"
+                            keyboardType="numeric"
+                            style={{ marginBottom: 12 }}
+                        />
+                        <Button mode="contained" onPress={executeCreateShare} style={{ marginBottom: 12 }}>
+                            {t("tools.shareCreateAction")}
+                        </Button>
+                        {shareLinks.map((link) => (
+                            <View key={link.token} style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+                                <Text style={{ flex: 1, fontSize: 12 }} numberOfLines={1}>{link.url}</Text>
+                                <Button compact onPress={() => executeRevokeShare(link.token)}>
+                                    {t("tools.shareRevokeAction")}
+                                </Button>
+                            </View>
+                        ))}
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setShareDialog(null)}>{t("common.cancel")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
