@@ -115,7 +115,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 ## Limiti e vincoli noti
 
 - **`react-native-pdf` cache**: il viewer non rimonta automaticamente per un secondo PDF — serve `key={refreshKey}` incrementata in `useEffect([pdfId])` dopo aver settato `pdfUri`.
-- **pdf-lib non supporta**: estrazione testo, form icing, annotazioni, compressione vera. Solo manipolazione strutturale (pagine, metadati, merge/split) + re-save per compressione parziale.
+- **pdf-lib non supporta**: estrazione testo, form icing, annotazioni, compressione vera. Solo manipolazione strutturale (pagine, metadati, merge/split) + re-save per compressione parziale. Le operazioni che richiedono il backend (OCR, annotazioni, share link, replace text) usano il **cloud API** (richiedono connessione).
 - **Sync cloud attivo**: i PDF si sincronizzano col cloud (upload/download bidirezionale). Il sync richiede login reale (guest esclusi). Token JWT scade dopo 1h → refresh automatico implementato (issue #623, endpoint `/auth/refresh` + retry automatico).
 - **Tema scuro non completo**: error container in LoginScreen/ForgotPasswordScreen ha `#FFE0E0` hardcoded (non si adatta a dark mode).
 - **Replace text**: Rotto su TUTTE le piattaforme (non solo mobile). Vedi FEATURE_COMPARISON.md.

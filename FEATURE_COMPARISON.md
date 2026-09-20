@@ -1,6 +1,6 @@
 # Feature Comparison: Web vs Desktop vs Mobile
 
-> **Ultimo aggiornamento:** 2026-09-12
+> **Ultimo aggiornamento:** 2026-09-20
 > Questo file traccia le differenze funzionali tra le tre piattaforme di PdfEditor.
 
 ---
@@ -43,11 +43,11 @@
 | Import DOCX                         | ✅  | ✅      | ✅     | Web/Mobile online (python-docx+reportlab), Desktop offline (sidecar)                                        |
 | Export PDF                          | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                         |
 | Stampa PDF                          | ✅  | ✅      | ✅     | Web/Desktop: window.print() su iframe. Mobile: expo-print (AirPrint)                                        |
-| Drag & drop file                    | ✅  | ❌      | ❌     | Solo Web: trascina PDF per aprirlo, altri file per importarli (overlay feedback)                            |
-| Browse documents (Internet Archive) | ✅  | ❌      | ❌     | Solo Web: catalogo PDF reali da Internet Archive via microservizio pdf-documents-api (porta 8001)           |
+| Drag & drop file                    | ✅  | ✅      | ❌     | Web/Desktop: trascina PDF per aprirlo, altri file per importarli (overlay feedback)                         |
+| Browse documents (Internet Archive) | 🟡  | 🟡      | ❌     | ⚠️ Microservizio non deployato — non funziona in produzione (vedi KNOWN_ISSUES)                             |
 | Firma PDF                           | ✅  | ✅      | ✅     | Web/Desktop: canvas + upload immagine. Mobile: scegli immagine (pdf-lib). Backend: PyMuPDF (pro/enterprise) |
-| Annotazioni PDF                     | ✅  | ❌      | ❌     | Solo Web: evidenzia/sottolinea/barrato/commento/testo. Backend: PyMuPDF embedded (pro/enterprise)           |
-| OCR PDF scansionati                 | ✅  | ❌      | ❌     | Solo Web: riconosce testo con Tesseract (pytesseract). Backend: searchable PDF (pro/enterprise)             |
+| Annotazioni PDF                     | ✅  | ✅      | ✅     | Web/Desktop: dialog Annota. Mobile: operazione Annota (cloud). Backend: PyMuPDF embedded (pro/enterprise)   |
+| OCR PDF scansionati                 | ✅  | ✅      | ✅     | Web/Desktop: dialog OCR. Mobile: operazione OCR (cloud). Backend: searchable PDF (pro/enterprise)           |
 | **Testo**                           |     |         |        |                                                                                                             |
 | Extract text                        | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                      |
 | **Auth**                            |     |         |        |                                                                                                             |
@@ -59,7 +59,7 @@
 | **UX Mobile-specifiche**            |     |         |        |                                                                                                             |
 | Scanner camera                      | ❌  | ❌      | ✅     | expo-camera                                                                                                 |
 | Share PDF                           | ❌  | ❌      | ✅     | expo-sharing                                                                                                |
-| Share via link                      | ✅  | ❌      | ❌     | Solo Web: dialog Condividi + pagina pubblica /share/[token] (password/scadenza opzionali)                   |
+| Share via link                      | ✅  | ✅      | ✅     | Web/Desktop: dialog Condividi. Mobile: operazione Condividi (cloud). Link pubblico /share/[token]           |
 | Badge count icona                   | ❌  | ❌      | ✅     | expo-notifications                                                                                          |
 | Multi-select                        | ✅  | ✅      | ✅     | Web/Desktop: checkbox + batch delete/export. Mobile: checkbox + batch delete                                |
 | Splash screen                       | ❌  | ❌      | ✅     | Sfondo arancione                                                                                            |

@@ -2,6 +2,14 @@
 
 ## 2026-09-20
 
+### ✨ Feature parity cross-platform (OCR, Annotazioni, Share su desktop e mobile)
+
+- **Desktop**: aggiunti dialog OCR, Annota e Condividi (prima solo web). Aggiunta pagina `/browse` (catalogo Internet Archive).
+- **Mobile**: aggiunte operazioni OCR, Annota e Condividi in Tools (prima solo web). Con controllo offline (richiede connessione).
+- **Shared API**: aggiunti metodi `addAnnotation`, `ocrPdf`, `createShareLink`, `listShareLinks`, `revokeShareLink` + type `ShareLink`.
+- **Test**: +16 test desktop, +5 test mobile.
+- **Nota**: Browse documents non funziona in produzione (microservizio non deployato) — vedi KNOWN_ISSUES.
+
 ### ✨ OCR per PDF scansionati (issue #829)
 
 - **Backend**: nuovo endpoint `POST /pdfs/{id}/ocr` — riconosce il testo nei PDF scansionati con Tesseract (pytesseract) e lo aggiunge come layer invisibile (searchable PDF). Se il PDF ha già testo, lo lascia invariato. Feature gated pro/enterprise.
