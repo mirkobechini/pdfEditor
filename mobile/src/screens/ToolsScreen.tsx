@@ -979,6 +979,11 @@ export default function ToolsScreen() {
                 <Dialog visible={ocrDialog !== null} onDismiss={() => setOcrDialog(null)}>
                     <Dialog.Title>{t("tools.ocrTitle")}</Dialog.Title>
                     <Dialog.Content>
+                        {!isOnline && (
+                            <Text variant="bodyMedium" style={{ color: theme.colors.error, marginBottom: 12 }}>
+                                {t("tools.requiresConnection")}
+                            </Text>
+                        )}
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.ocrHint", { name: ocrDialog?.pdfName || "" })}
                         </Text>
@@ -992,7 +997,7 @@ export default function ToolsScreen() {
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setOcrDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={executeOcr} loading={loading} disabled={loading}>
+                        <Button onPress={executeOcr} loading={loading} disabled={loading || !isOnline}>
                             {t("tools.ocrAction")}
                         </Button>
                     </Dialog.Actions>
@@ -1004,6 +1009,11 @@ export default function ToolsScreen() {
                 <Dialog visible={annotateDialog !== null} onDismiss={() => setAnnotateDialog(null)}>
                     <Dialog.Title>{t("tools.annotateTitle")}</Dialog.Title>
                     <Dialog.Content>
+                        {!isOnline && (
+                            <Text variant="bodyMedium" style={{ color: theme.colors.error, marginBottom: 12 }}>
+                                {t("tools.requiresConnection")}
+                            </Text>
+                        )}
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.annotateHint", { name: annotateDialog?.pdfName || "" })}
                         </Text>
@@ -1032,7 +1042,7 @@ export default function ToolsScreen() {
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setAnnotateDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={executeAnnotate} loading={loading} disabled={loading}>
+                        <Button onPress={executeAnnotate} loading={loading} disabled={loading || !isOnline}>
                             {t("tools.annotateAction")}
                         </Button>
                     </Dialog.Actions>
@@ -1044,6 +1054,11 @@ export default function ToolsScreen() {
                 <Dialog visible={shareDialog !== null} onDismiss={() => setShareDialog(null)}>
                     <Dialog.Title>{t("tools.shareTitle")}</Dialog.Title>
                     <Dialog.Content>
+                        {!isOnline && (
+                            <Text variant="bodyMedium" style={{ color: theme.colors.error, marginBottom: 12 }}>
+                                {t("tools.requiresConnection")}
+                            </Text>
+                        )}
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.shareHint", { name: shareDialog?.pdfName || "" })}
                         </Text>
@@ -1063,7 +1078,7 @@ export default function ToolsScreen() {
                             keyboardType="numeric"
                             style={{ marginBottom: 12 }}
                         />
-                        <Button mode="contained" onPress={executeCreateShare} style={{ marginBottom: 12 }}>
+                        <Button mode="contained" onPress={executeCreateShare} disabled={!isOnline} style={{ marginBottom: 12 }}>
                             {t("tools.shareCreateAction")}
                         </Button>
                         {shareLinks.map((link) => (

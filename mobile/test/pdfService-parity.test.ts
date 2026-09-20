@@ -58,7 +58,13 @@ jest.mock("../src/shared/api", () => ({
   },
 }));
 
-import { ocrPdf, addAnnotation, createShareLink, listShareLinks, revokeShareLink } from "../src/services/pdfService";
+import {
+  ocrPdf,
+  addAnnotation,
+  createShareLink,
+  listShareLinks,
+  revokeShareLink,
+} from "../src/services/pdfService";
 
 const localPdf = {
   id: "local1",
