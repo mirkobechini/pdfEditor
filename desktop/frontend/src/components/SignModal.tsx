@@ -5,23 +5,27 @@ import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import type { PdfDocument } from "../shared/types";
 import { useApiError } from "../hooks/useApiError";
+import PositionSelector from "./PositionSelector";
 
 interface SignModalProps {
     open: boolean;
     pdfId: string;
     pdfName: string;
     totalPages: number;
+    pdfUrl?: string | null;
     onClose: () => void;
     onSaved: (updatedDoc: PdfDocument) => void;
 }
 
-export default function SignModal({ open, pdfId, pdfName, totalPages, onClose, onSaved }: SignModalProps) {
+export default function SignModal({ open, pdfId, pdfName, totalPages, pdfUrl, onClose, onSaved }: SignModalProps) {
     const t = useTranslations("signModal");
     const { apiError } = useApiError();
     const canvasRef = React.useRef<HTMLCanvasElement>(null);
     const [drawing, setDrawing] = React.useState(false);
     const [hasSignature, setHasSignature] = React.useState(false);
     const [pageNumber, setPageNumber] = React.useState(1);
+    const [signX, setSignX] = React.useState(50);
+    const [signY, setSignY] = React.useState(50);
     const [saving, setSaving] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
 
@@ -127,7 +131,7 @@ export default function SignModal({ open, pdfId, pdfName, totalPages, onClose, o
 
         setSaving(true); setError(null);
         try {
-            const doc = await api.signPdf(pdfId, signatureB64, pageNumber, 50, 50, 200, 80);
+            const doc = await api.signPdf(pdfId, signatureB64, pageNumber, signX, signY, 200, 80);
             onSaved(doc);
             onClose();
         } catch (err) {
@@ -188,6 +192,16 @@ export default function SignModal({ open, pdfId, pdfName, totalPages, onClose, o
                             value={pageNumber}
                             onChange={(e) => setPageNumber(Math.max(1, parseInt(e.target.value) || 1))}
                             className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("positionLabel")}</label>
+                        <PositionSelector
+                            pdfUrl={pdfUrl ?? null}
+                            pageNumber={pageNumber}
+                            boxSize={{ width: 200, height: 80 }}
+                            onPositionChange={(x, y) => { setSignX(x); setSignY(y); }}
                         />
                     </div>
 
