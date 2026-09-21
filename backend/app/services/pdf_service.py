@@ -934,7 +934,11 @@ class PdfService:
             elif annotation_type == "strikeout":
                 annot = page.add_strikeout_annot(rect_obj)
             elif annotation_type == "text":
-                annot = page.add_text_annot(rect_obj, content or "")
+                # Use free-text annotation so the comment text is visible on
+                # the page (add_text_annot creates a popup icon with hidden text).
+                annot = page.add_freetext_annot(
+                    rect_obj, content or "", fontsize=11
+                )
             elif annotation_type == "free_text":
                 annot = page.add_freetext_annot(
                     rect_obj, content or "", fontsize=11
