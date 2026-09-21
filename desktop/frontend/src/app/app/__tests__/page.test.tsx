@@ -90,6 +90,14 @@ vi.mock("../../../shared/tauri", () => ({
     tauriInvoke: (...args: any[]) => mockTauriInvoke(...args),
 }));
 
+// Mock Tauri webview drag-drop API
+const mockOnDragDropEvent = vi.fn();
+vi.mock("@tauri-apps/api/webview", () => ({
+    getCurrentWebview: () => ({
+        onDragDropEvent: (...args: any[]) => mockOnDragDropEvent(...args),
+    }),
+}));
+
 vi.mock("../../../lib/preferences", () => ({
     usePreferences: () => ({
         prefs: mockPrefs,
@@ -1667,6 +1675,30 @@ describe("EditorPage", () => {
             }));
         });
         localStorage.removeItem("pdfeditor_work_folder");
+    });
+
+    it("1b: registers Tauri drag-drop and uploads dropped file", async () => {
+        mockIsTauri = true;
+        mockTauriInvoke
+            .mockResolvedValueOnce([37, 80, 68, 70]); // read_file_binary
+        mockUploadPdf.mockResolvedValue({ id: "p1", original_filename: "dropped.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" });
+        render(<EditorPage />);
+
+        // Simulate the Tauri drag-drop registration
+        await waitFor(() => {
+            expect(mockOnDragDropEvent).toHaveBeenCalled();
+        });
+
+        // Capture the callback and simulate a drop
+        const callback = mockOnDragDropEvent.mock.calls[0][0];
+        await act(async () => {
+            callback({ payload: { type: "drop", paths: ["C:\\docs\\dropped.pdf"] } });
+        });
+
+        await waitFor(() => {
+            expect(mockTauriInvoke).toHaveBeenCalledWith("read_file_binary", { path: "C:\\docs\\dropped.pdf" });
+            expect(mockUploadPdf).toHaveBeenCalled();
+        });
     });
 
     // ── 1c: rename ─────────────────────────────────────────
