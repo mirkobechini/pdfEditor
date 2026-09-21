@@ -183,6 +183,9 @@
     "importExport": "Import/Export",
     "print": "Print",
     "sign": "Sign",
+    "ocr": "OCR",
+    "annotate": "Annotate",
+    "share": "Share",
     "user": "User",
     "cloudSync": "Cloud Sync",
     "settings": "Settings",
@@ -470,5 +473,47 @@
     "replaceFailed": "Failed to replace text",
     "outputName": "Output filename",
     "outputNameHint": "Leave empty for auto-generated name"
+  },
+  "ocrModal": {
+    "title": "OCR PDF",
+    "description": "Recognize text in scanned PDFs and make it searchable",
+    "language": "Language",
+    "run": "Run OCR",
+    "running": "Running...",
+    "cancel": "Cancel",
+    "failed": "OCR failed"
+  },
+  "annotationDialog": {
+    "title": "Add annotation",
+    "type": "Type",
+    "highlight": "Highlight",
+    "underline": "Underline",
+    "strikeout": "Strikeout",
+    "text": "Comment",
+    "free_text": "Free text",
+    "color": "Color",
+    "page": "Page",
+    "content": "Content",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "failed": "Failed to add annotation"
+  },
+  "shareDialog": {
+    "title": "Share PDF",
+    "createTitle": "Create a new share link",
+    "passwordPlaceholder": "Password (optional)",
+    "expiryPlaceholder": "Expires in days (optional)",
+    "create": "Create link",
+    "creating": "Creating...",
+    "noLinks": "No share links",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "revoke": "Revoke",
+    "expires": "Expires",
+    "close": "Close",
+    "loadFailed": "Failed to load links",
+    "createFailed": "Failed to create link",
+    "revokeFailed": "Failed to revoke link"
   }
 }
