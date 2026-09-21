@@ -45,9 +45,9 @@ export default function ImportExportModal({ open, pdfId, pdfName, onClose, onImp
         try {
             const filePath = await tauriInvoke<string>("dialog_open", {
                 filters: [
-                    ["Immagini", ["png", "jpg", "jpeg", "gif", "bmp"]],
-                    ["Documenti", ["txt", "docx"]],
-                    ["Tutti i file", ["*"]],
+                    { name: "Immagini", extensions: ["png", "jpg", "jpeg", "gif", "bmp"] },
+                    { name: "Documenti", extensions: ["txt", "docx"] },
+                    { name: "Tutti i file", extensions: ["*"] },
                 ],
             });
             if (!filePath) return;
