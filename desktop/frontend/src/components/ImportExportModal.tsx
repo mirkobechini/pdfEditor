@@ -43,7 +43,13 @@ export default function ImportExportModal({ open, pdfId, pdfName, onClose, onImp
     async function handleImport() {
         setBusy(true); setError(null);
         try {
-            const filePath = await tauriInvoke<string>("dialog_open", {});
+            const filePath = await tauriInvoke<string>("dialog_open", {
+                filters: [
+                    ["Immagini", ["png", "jpg", "jpeg", "gif", "bmp"]],
+                    ["Documenti", ["txt", "docx"]],
+                    ["Tutti i file", ["*"]],
+                ],
+            });
             if (!filePath) return;
             const raw = await tauriInvoke<number[]>("read_file_binary", { path: filePath });
             if (!raw) return;
