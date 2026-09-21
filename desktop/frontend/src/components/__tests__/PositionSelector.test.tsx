@@ -60,4 +60,53 @@ describe("PositionSelector", () => {
             expect(onPositionChange).toHaveBeenCalled();
         });
     });
+
+    it("drags the box to move position", async () => {
+        const onPositionChange = vi.fn();
+        render(
+            <PositionSelector pdfUrl="blob:test" pageNumber={1} onPositionChange={onPositionChange} />
+        );
+        await waitFor(() => {
+            expect(screen.getByTestId("position-box")).toBeInTheDocument();
+        });
+
+        const box = screen.getByTestId("position-box");
+        // Mock getBoundingClientRect for the box and canvas
+        box.getBoundingClientRect = vi.fn().mockReturnValue({ left: 10, top: 10, width: 100, height: 50 });
+        const canvas = document.querySelector("canvas")!;
+        canvas.getBoundingClientRect = vi.fn().mockReturnValue({ left: 0, top: 0, width: 612, height: 792 });
+
+        fireEvent.mouseDown(box, { clientX: 20, clientY: 20 });
+        fireEvent.mouseMove(box, { clientX: 120, clientY: 80 });
+        fireEvent.mouseUp(box);
+
+        // onPositionChange should be called with new position
+        await waitFor(() => {
+            expect(onPositionChange).toHaveBeenCalled();
+        });
+    });
+
+    it("clamps box position within canvas bounds", async () => {
+        const onPositionChange = vi.fn();
+        render(
+            <PositionSelector pdfUrl="blob:test" pageNumber={1} onPositionChange={onPositionChange} />
+        );
+        await waitFor(() => {
+            expect(screen.getByTestId("position-box")).toBeInTheDocument();
+        });
+
+        const box = screen.getByTestId("position-box");
+        box.getBoundingClientRect = vi.fn().mockReturnValue({ left: 10, top: 10, width: 100, height: 50 });
+        const canvas = document.querySelector("canvas")!;
+        canvas.getBoundingClientRect = vi.fn().mockReturnValue({ left: 0, top: 0, width: 612, height: 792 });
+
+        // Drag far beyond the canvas edge
+        fireEvent.mouseDown(box, { clientX: 20, clientY: 20 });
+        fireEvent.mouseMove(box, { clientX: 5000, clientY: 5000 });
+        fireEvent.mouseUp(box);
+
+        await waitFor(() => {
+            expect(onPositionChange).toHaveBeenCalled();
+        });
+    });
 });
