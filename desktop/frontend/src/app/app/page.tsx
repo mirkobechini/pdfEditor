@@ -239,12 +239,54 @@ export default function EditorPage() {
         document.addEventListener("dragover", onDragOver);
         document.addEventListener("dragleave", onDragLeave);
         document.addEventListener("drop", onDrop);
+
+        // In Tauri, dragging files from the OS does not populate
+        // dataTransfer.files reliably. Use the native drag-drop event to get
+        // the file paths, then read them via the read_file_binary IPC command.
+        let unlistenDragDrop: (() => void) | undefined;
+        if (isTauri()) {
+            (async () => {
+                try {
+                    const { getCurrentWebview } = await import("@tauri-apps/api/webview");
+                    unlistenDragDrop = await getCurrentWebview().onDragDropEvent((event) => {
+                        if (event.payload.type === "drop") {
+                            setDragOver(false);
+                            const path = event.payload.paths?.[0];
+                            if (path) handleDroppedPath(path);
+                        } else if (event.payload.type === "over") {
+                            setDragOver(true);
+                        } else if (event.payload.type === "leave") {
+                            setDragOver(false);
+                        }
+                    });
+                } catch (err) {
+                    console.error("Failed to register Tauri drag-drop:", err);
+                }
+            })();
+        }
+
         return () => {
             document.removeEventListener("dragover", onDragOver);
             document.removeEventListener("dragleave", onDragLeave);
             document.removeEventListener("drop", onDrop);
+            unlistenDragDrop?.();
         };
     }, []);
+
+    // Read a dropped file path (Tauri) and upload it
+    async function handleDroppedPath(filePath: string) {
+        try {
+            const raw = await tauriInvoke<number[]>("read_file_binary", { path: filePath });
+            if (!raw) return;
+            const name = filePath.split(/[/\\]/).pop() || "document.pdf";
+            const isPdf = name.toLowerCase().endsWith(".pdf");
+            const blob = new Blob([new Uint8Array(raw)], { type: isPdf ? "application/pdf" : "application/octet-stream" });
+            const file = new File([blob], name, { type: isPdf ? "application/pdf" : "application/octet-stream" });
+            handleUploadFile(file);
+        } catch (err) {
+            console.error("Failed to read dropped file:", err);
+        }
+    }
 
     // Open native file picker, optionally starting from wizard folder
     async function handleOpenLocal() {
