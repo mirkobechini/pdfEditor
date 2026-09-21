@@ -182,6 +182,7 @@
     "replaceText": "Replace Text",
     "importExport": "Import/Export",
     "print": "Print",
+    "printSent": "Sending to printer...",
     "sign": "Sign",
     "ocr": "OCR",
     "annotate": "Annotate",

@@ -182,6 +182,7 @@
     "replaceText": "Sostituisci testo",
     "importExport": "Importa/Esporta",
     "print": "Stampa",
+    "printSent": "Invio alla stampante...",
     "sign": "Firma",
     "ocr": "OCR",
     "annotate": "Annota",
