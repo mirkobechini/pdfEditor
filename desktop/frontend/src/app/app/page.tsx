@@ -122,10 +122,13 @@ export default function EditorPage() {
     }
 
     async function handleUploadFile(file: File) {
-        if (!file.name.toLowerCase().endsWith(".pdf")) return;
+        const name = file.name.toLowerCase();
+        const isPdf = name.endsWith(".pdf");
+        const isImage = /\.(png|jpe?g|gif|bmp)$/.test(name);
+        if (!isPdf && !isImage) return;
         setUploadError(null);
         try {
-            const uploaded = await api.uploadPdf(file);
+            const uploaded = isPdf ? await api.uploadPdf(file) : await api.importFile(file);
             setDocs((prev) => [uploaded, ...prev]);
             setSelectedDoc(uploaded);
         } catch (err) {
