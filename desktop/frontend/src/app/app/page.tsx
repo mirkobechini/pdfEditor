@@ -868,6 +868,7 @@ export default function EditorPage() {
                 pdfId={selectedDoc?.id ?? ""}
                 pdfName={selectedDoc?.original_filename ?? ""}
                 totalPages={selectedDoc?.page_count ?? 1}
+                pdfUrl={pdfUrl}
                 onClose={() => setSignOpen(false)}
                 onSaved={(updatedDoc) => {
                     setDocs((prev) => prev.map((d) => (d.id === updatedDoc.id ? updatedDoc : d)));
@@ -887,6 +888,7 @@ export default function EditorPage() {
                 open={annotateOpen}
                 pdfId={selectedDoc?.id ?? null}
                 currentPage={currentPage}
+                pdfUrl={pdfUrl}
                 onClose={() => setAnnotateOpen(false)}
                 onSuccess={() => setPdfRefreshKey((k) => k + 1)}
             />
