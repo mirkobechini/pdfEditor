@@ -4,23 +4,27 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import { mapError } from "../shared/error-map";
+import PositionSelector from "./PositionSelector";
 
 interface AnnotationDialogProps {
     open: boolean;
     onClose: () => void;
     pdfId: string | null;
     currentPage: number;
+    pdfUrl?: string | null;
     onSuccess?: () => void;
 }
 
 const ANNOTATION_TYPES = ["highlight", "underline", "strikeout", "text", "free_text"];
 
-export default function AnnotationDialog({ open, onClose, pdfId, currentPage, onSuccess }: AnnotationDialogProps) {
+export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pdfUrl, onSuccess }: AnnotationDialogProps) {
     const t = useTranslations("annotationDialog");
     const [type, setType] = React.useState("highlight");
     const [color, setColor] = React.useState("#FFFF00");
     const [content, setContent] = React.useState("");
     const [page, setPage] = React.useState(1);
+    const [rectX, setRectX] = React.useState(50);
+    const [rectY, setRectY] = React.useState(50);
     const [saving, setSaving] = React.useState(false);
     const [error, setError] = React.useState("");
 
@@ -37,8 +41,8 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
         setSaving(true);
         setError("");
         try {
-            // Default rect covering a reasonable area of the page
-            const rect = [50, 50, 250, 100];
+            // Rect positioned by the user via the drag selector
+            const rect = [rectX, rectY, rectX + 200, rectY + 100];
             await api.addAnnotation(pdfId, {
                 page,
                 type: type as any,
@@ -107,6 +111,16 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
                             onChange={(e) => setPage(parseInt(e.target.value, 10) || 1)}
                             className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
                             data-testid="annotation-page"
+                        />
+                    </label>
+
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t("position")}
+                        <PositionSelector
+                            pdfUrl={pdfUrl ?? null}
+                            pageNumber={page}
+                            boxSize={{ width: 200, height: 100 }}
+                            onPositionChange={(x, y) => { setRectX(x); setRectY(y); }}
                         />
                     </label>
 
