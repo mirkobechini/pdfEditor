@@ -32,9 +32,9 @@ function mockCanvas() {
     stroke: vi.fn(),
     clearRect: vi.fn(),
     drawImage: vi.fn(),
-    set strokeStyle(v: string) {},
-    set lineWidth(v: number) {},
-    set lineCap(v: string) {},
+    set strokeStyle(v: string) { },
+    set lineWidth(v: number) { },
+    set lineCap(v: string) { },
   };
   HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue(ctx);
   HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue("data:image/png;base64,c2ln");
@@ -111,5 +111,39 @@ describe("SignModal", () => {
     fireEvent.click(screen.getByText("clear"));
     const ctx = HTMLCanvasElement.prototype.getContext as any;
     expect(ctx).toHaveBeenCalled();
+  });
+
+  it("loads uploaded image onto canvas", async () => {
+    render(<SignModal {...baseProps} />);
+
+    // Mock FileReader as a class so `new FileReader()` works
+    class MockFileReader {
+      result = "data:image/png;base64,aW1n";
+      onload: (() => void) | null = null;
+      readAsDataURL() {
+        this.onload?.();
+      }
+    }
+    vi.stubGlobal("FileReader", MockFileReader);
+
+    // Mock Image so onload fires when src is set
+    class MockImage {
+      onload: (() => void) | null = null;
+      set src(_v: string) {
+        setTimeout(() => this.onload?.(), 0);
+      }
+    }
+    vi.stubGlobal("Image", MockImage);
+
+    const file = new File(["img"], "sig.png", { type: "image/png" });
+    const input = document.querySelector('input[type="file"]')!;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => {
+      const ctx = HTMLCanvasElement.prototype.getContext as any;
+      expect(ctx).toHaveBeenCalled();
+    });
+
+    vi.unstubAllGlobals();
   });
 });
