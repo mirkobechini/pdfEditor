@@ -8,6 +8,7 @@ import EditorPage from "../page";
 const mockListPdfs = vi.fn();
 const mockDownloadPdf = vi.fn();
 const mockUploadPdf = vi.fn();
+const mockImportFile = vi.fn();
 const mockDeletePdf = vi.fn();
 const mockUpdateMetadata = vi.fn();
 const mockRefreshCsrf = vi.fn();
@@ -107,6 +108,7 @@ vi.mock("../../../shared/api", () => ({
         listPdfs: (...args: any[]) => mockListPdfs(...args),
         downloadPdf: (...args: any[]) => mockDownloadPdf(...args),
         uploadPdf: (...args: any[]) => mockUploadPdf(...args),
+        importFile: (...args: any[]) => mockImportFile(...args),
         deletePdf: (...args: any[]) => mockDeletePdf(...args),
         updateMetadata: (...args: any[]) => mockUpdateMetadata(...args),
         refreshCsrf: (...args: any[]) => mockRefreshCsrf(...args),
@@ -1157,6 +1159,18 @@ describe("EditorPage", () => {
         const file = new File(["fake"], "test.txt", { type: "text/plain" });
         const dataTransfer = { files: [file] };
         fireEvent.drop(document, { dataTransfer });
+        expect(mockUploadPdf).not.toHaveBeenCalled();
+    });
+
+    it("imports image file on drop", async () => {
+        mockImportFile.mockResolvedValue({ id: "p2", original_filename: "photo.png", file_size: 1024, page_count: 1, created_at: "2025-01-01T00:00:00Z", upload_source: "web" });
+        render(<EditorPage />);
+        const file = new File(["img"], "photo.png", { type: "image/png" });
+        const dataTransfer = { files: [file] };
+        fireEvent.drop(document, { dataTransfer });
+        await waitFor(() => {
+            expect(mockImportFile).toHaveBeenCalledWith(file);
+        });
         expect(mockUploadPdf).not.toHaveBeenCalled();
     });
 
