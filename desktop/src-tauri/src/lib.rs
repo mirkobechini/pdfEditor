@@ -148,14 +148,26 @@ fn read_file_binary(path: String) -> Result<Vec<u8>, String> {
     fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
-/// Open a native file dialog with an optional default path.
+/// Open a native file dialog with an optional default path and filters.
 #[tauri::command]
-fn dialog_open(app: tauri::AppHandle, default_path: Option<String>) -> Result<Option<String>, String> {
+fn dialog_open(
+    app: tauri::AppHandle,
+    default_path: Option<String>,
+    filters: Option<Vec<(String, Vec<String>)>>,
+) -> Result<Option<String>, String> {
     use tauri_plugin_dialog::DialogExt;
 
-    let mut builder = app.dialog()
-        .file()
-        .add_filter("PDF", &["pdf"]);
+    let mut builder = app.dialog().file();
+
+    // Apply filters if provided, otherwise default to PDF.
+    if let Some(filters) = filters {
+        for (name, extensions) in filters {
+            let ext_refs: Vec<&str> = extensions.iter().map(|e| e.as_str()).collect();
+            builder = builder.add_filter(name, &ext_refs);
+        }
+    } else {
+        builder = builder.add_filter("PDF", &["pdf"]);
+    }
 
     if let Some(ref path) = default_path {
         builder = builder.set_directory(path);
