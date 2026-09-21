@@ -95,6 +95,7 @@ describe("EditorPage", () => {
     await screen.findByText("doc2.pdf");
     // Select a document first
     fireEvent.click(screen.getByText("doc1.pdf"));
+    fireEvent.click(screen.getByTestId("toolbar-organize"));
     const mergeBtns = screen.getAllByText("merge");
     fireEvent.click(mergeBtns[0]);
     expect(await screen.findByText(/title/)).toBeInTheDocument();
@@ -104,6 +105,7 @@ describe("EditorPage", () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
     fireEvent.click(screen.getByText("doc1.pdf"));
+    fireEvent.click(screen.getByTestId("toolbar-organize"));
     const splitBtns = screen.getAllByText("split");
     fireEvent.click(splitBtns[0]);
     expect(await screen.findByText(/Split PDF/)).toBeInTheDocument();
@@ -113,6 +115,7 @@ describe("EditorPage", () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
     fireEvent.click(screen.getByText("doc1.pdf"));
+    fireEvent.click(screen.getByTestId("toolbar-organize"));
     const reorderBtns = screen.getAllByText("reorder");
     fireEvent.click(reorderBtns[0]);
     expect(await screen.findByText(/Reorder Pages/)).toBeInTheDocument();
@@ -122,6 +125,7 @@ describe("EditorPage", () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
     fireEvent.click(screen.getByText("doc1.pdf"));
+    fireEvent.click(screen.getByTestId("toolbar-organize"));
     const removeBtns = screen.getAllByText("remove");
     fireEvent.click(removeBtns[0]);
     expect(await screen.findByText(/title/)).toBeInTheDocument();
@@ -131,6 +135,7 @@ describe("EditorPage", () => {
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
     fireEvent.click(screen.getByText("doc1.pdf"));
+    fireEvent.click(screen.getByTestId("toolbar-convert"));
     const metadataBtns = screen.getAllByText("metadata");
     fireEvent.click(metadataBtns[0]);
     expect(await screen.findByText(/modalTitle/)).toBeInTheDocument();
