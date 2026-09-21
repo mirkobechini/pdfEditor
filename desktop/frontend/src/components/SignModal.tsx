@@ -89,7 +89,8 @@ export default function SignModal({ open, pdfId, pdfName, totalPages, onClose, o
         const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
-        (reader as any).readAsDataURL(file).then((dataUrl: string) => {
+        reader.onload = () => {
+            const dataUrl = reader.result as string;
             const img = document.createElement("img");
             img.onload = () => {
                 const canvas = canvasRef.current;
@@ -101,7 +102,8 @@ export default function SignModal({ open, pdfId, pdfName, totalPages, onClose, o
                 setHasSignature(true);
             };
             img.src = dataUrl;
-        });
+        };
+        reader.readAsDataURL(file);
     }
 
     function getSignatureBase64(): string | null {
