@@ -86,3 +86,13 @@ export interface AuthResponse {
   csrf_token?: string;
   user?: UserResponse;
 }
+
+export interface ShareLink {
+  id: string;
+  pdf_id: string;
+  token: string;
+  url: string;
+  has_password: boolean;
+  expires_at: string | null;
+  created_at: string;
+}
