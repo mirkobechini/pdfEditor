@@ -17,6 +17,9 @@ import LockUnlockModal from "../../components/LockUnlockModal";
 import ReplaceTextModal from "../../components/ReplaceTextModal";
 import ImportExportModal from "../../components/ImportExportModal";
 import SignModal from "../../components/SignModal";
+import OcrModal from "../../components/OcrModal";
+import AnnotationDialog from "../../components/AnnotationDialog";
+import ShareDialog from "../../components/ShareDialog";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
 import { useCloudSync } from "../../hooks/useCloudSync";
@@ -61,6 +64,9 @@ export default function EditorPage() {
     const [compressOpen, setCompressOpen] = React.useState(false);
     const [importExportOpen, setImportExportOpen] = React.useState(false);
     const [signOpen, setSignOpen] = React.useState(false);
+    const [ocrOpen, setOcrOpen] = React.useState(false);
+    const [annotateOpen, setAnnotateOpen] = React.useState(false);
+    const [shareOpen, setShareOpen] = React.useState(false);
     const [lockOpen, setLockOpen] = React.useState(false);
     const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
@@ -617,6 +623,30 @@ export default function EditorPage() {
                             >
                                 {te("sign")}
                             </button>
+                            <button
+                                onClick={() => setOcrOpen(true)}
+                                disabled={!selectedDoc}
+                                data-testid="toolbar-ocr"
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                {te("ocr")}
+                            </button>
+                            <button
+                                onClick={() => setAnnotateOpen(true)}
+                                disabled={!selectedDoc}
+                                data-testid="toolbar-annotate"
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                {te("annotate")}
+                            </button>
+                            <button
+                                onClick={() => setShareOpen(true)}
+                                disabled={!selectedDoc}
+                                data-testid="toolbar-share"
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                {te("share")}
+                            </button>
                         </div>
                     </header>
 
@@ -729,11 +759,14 @@ export default function EditorPage() {
                                 {selectedDoc?.is_password_protected ? "UNLOCK" : "LOCK"}
                             </p>
                         </button>
-                        {["OCR"].map((k) => (
-                            <button key={k} disabled className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed">
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">{k}</p>
-                            </button>
-                        ))}
+                        <button
+                            onClick={() => setOcrOpen(true)}
+                            disabled={!selectedDoc}
+                            data-testid="fast-action-ocr"
+                            className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">OCR</p>
+                        </button>
                     </div>
                 </aside>
             </div>
@@ -839,6 +872,27 @@ export default function EditorPage() {
                     setSelectedDoc(updatedDoc);
                     setPdfRefreshKey((k) => k + 1);
                 }}
+            />
+
+            <OcrModal
+                open={ocrOpen}
+                pdfId={selectedDoc?.id ?? null}
+                onClose={() => setOcrOpen(false)}
+                onSuccess={() => setPdfRefreshKey((k) => k + 1)}
+            />
+
+            <AnnotationDialog
+                open={annotateOpen}
+                pdfId={selectedDoc?.id ?? null}
+                currentPage={currentPage}
+                onClose={() => setAnnotateOpen(false)}
+                onSuccess={() => setPdfRefreshKey((k) => k + 1)}
+            />
+
+            <ShareDialog
+                open={shareOpen}
+                pdfId={selectedDoc?.id ?? null}
+                onClose={() => setShareOpen(false)}
             />
 
             <LockUnlockModal
