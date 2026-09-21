@@ -17,6 +17,14 @@ vi.mock("../../shared/api", () => ({
     },
 }));
 
+vi.mock("../PositionSelector", () => ({
+    default: ({ onPositionChange }: any) => (
+        <div data-testid="position-selector">
+            <button onClick={() => onPositionChange(120, 80)}>set-pos</button>
+        </div>
+    ),
+}));
+
 describe("AnnotationDialog", () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -46,7 +54,7 @@ describe("AnnotationDialog", () => {
             expect(mockAddAnnotation).toHaveBeenCalledWith("p1", {
                 page: 1,
                 type: "highlight",
-                rect: [50, 50, 250, 100],
+                rect: [50, 50, 250, 150],
                 color: "#FFFF00",
                 content: null,
                 opacity: 0.3,
@@ -54,6 +62,26 @@ describe("AnnotationDialog", () => {
         });
         expect(onSuccess).toHaveBeenCalled();
         expect(onClose).toHaveBeenCalled();
+    });
+
+    it("uses position selected via PositionSelector", async () => {
+        render(<AnnotationDialog open={true} onClose={() => { }} pdfId="p1" currentPage={1} />);
+
+        // Move the position box to (120, 80)
+        fireEvent.click(screen.getByText("set-pos"));
+
+        fireEvent.click(screen.getByTestId("annotation-save"));
+
+        await waitFor(() => {
+            expect(mockAddAnnotation).toHaveBeenCalledWith("p1", {
+                page: 1,
+                type: "highlight",
+                rect: [120, 80, 320, 180],
+                color: "#FFFF00",
+                content: null,
+                opacity: 0.3,
+            });
+        });
     });
 
     it("shows content field for text annotation", () => {
@@ -72,7 +100,7 @@ describe("AnnotationDialog", () => {
             expect(mockAddAnnotation).toHaveBeenCalledWith("p1", {
                 page: 1,
                 type: "text",
-                rect: [50, 50, 250, 100],
+                rect: [50, 50, 250, 150],
                 color: "#FFFF00",
                 content: "Hello",
                 opacity: 0.3,
