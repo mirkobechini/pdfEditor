@@ -128,4 +128,9 @@ class TestAnnotations:
         page = doc[0]
         annots = list(page.annots()) if page.annots() else []
         assert len(annots) > 0
+        # The comment text should be visible on the page (free-text annotation)
+        page_text = page.get_text()
+        assert "persisted" in page_text, (
+            f"Annotation text should be visible on the page, got: {page_text!r}"
+        )
         doc.close()
