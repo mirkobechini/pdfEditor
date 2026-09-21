@@ -67,6 +67,13 @@ export default function EditorPage() {
     const [ocrOpen, setOcrOpen] = React.useState(false);
     const [annotateOpen, setAnnotateOpen] = React.useState(false);
     const [shareOpen, setShareOpen] = React.useState(false);
+    const [organizeOpen, setOrganizeOpen] = React.useState(false);
+    const [convertOpen, setConvertOpen] = React.useState(false);
+    const [annotateMenuOpen, setAnnotateMenuOpen] = React.useState(false);
+    const organizeRef = React.useRef<HTMLDivElement>(null);
+    const convertRef = React.useRef<HTMLDivElement>(null);
+    const annotateMenuRef = React.useRef<HTMLDivElement>(null);
+    const [printToast, setPrintToast] = React.useState(false);
     const [lockOpen, setLockOpen] = React.useState(false);
     const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
@@ -97,6 +104,9 @@ export default function EditorPage() {
 
     function handlePrint() {
         if (!pdfUrl) return;
+        // Show a toast to give feedback that printing was triggered.
+        setPrintToast(true);
+        setTimeout(() => setPrintToast(false), 2500);
         // Open the PDF in a hidden iframe and trigger the webview print dialog.
         const iframe = document.createElement("iframe");
         iframe.src = pdfUrl;
@@ -270,6 +280,23 @@ export default function EditorPage() {
         // Reset so the same file can be picked again
         e.target.value = "";
     }
+
+    // Close toolbar dropdowns when clicking outside
+    React.useEffect(() => {
+        function onClickOutside(e: MouseEvent) {
+            if (organizeRef.current && !organizeRef.current.contains(e.target as Node)) {
+                setOrganizeOpen(false);
+            }
+            if (convertRef.current && !convertRef.current.contains(e.target as Node)) {
+                setConvertOpen(false);
+            }
+            if (annotateMenuRef.current && !annotateMenuRef.current.contains(e.target as Node)) {
+                setAnnotateMenuOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", onClickOutside);
+        return () => document.removeEventListener("mousedown", onClickOutside);
+    }, []);
 
     React.useEffect(() => {
         let cancelled = false;
@@ -556,90 +583,94 @@ export default function EditorPage() {
                                 <span className="w-10 text-center">{Math.round(zoom * 100)}%</span>
                                 <button onClick={() => setZoom(Math.min(3, zoom + 0.25))} className="h-7 w-7 rounded hover:bg-white/6">+</button>
                             </div>
-                            <button
-                                onClick={() => setMergeOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("merge")}
-                            </button>
-                            <button
-                                onClick={() => setSplitOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("split")}
-                            </button>
-                            <button
-                                onClick={() => setCompressOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("compress")}
-                            </button>
-                            <button
-                                onClick={() => setReorderOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("reorder")}
-                            </button>
-                            <button
-                                onClick={() => setRemovePagesOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("remove")}
-                            </button>
-                            <button
-                                onClick={() => setMetadataOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("metadata")}
-                            </button>
-                            <button
-                                onClick={() => setReplaceTextOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("replaceText")}
-                            </button>
-                            <button
-                                onClick={() => setImportExportOpen(true)}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white"
-                            >
-                                {te("importExport")}
-                            </button>
+
+                            {/* Organizza dropdown */}
+                            <div className="relative" ref={organizeRef}>
+                                <button
+                                    onClick={() => { setOrganizeOpen((v) => !v); setConvertOpen(false); setAnnotateMenuOpen(false); }}
+                                    disabled={!selectedDoc}
+                                    data-testid="toolbar-organize"
+                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    {te("organize")} ▾
+                                </button>
+                                {organizeOpen && (
+                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
+                                        <button onClick={() => { setMergeOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("merge")}
+                                        </button>
+                                        <button onClick={() => { setSplitOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("split")}
+                                        </button>
+                                        <button onClick={() => { setReorderOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("reorder")}
+                                        </button>
+                                        <button onClick={() => { setRemovePagesOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("remove")}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Converti dropdown */}
+                            <div className="relative" ref={convertRef}>
+                                <button
+                                    onClick={() => { setConvertOpen((v) => !v); setOrganizeOpen(false); setAnnotateMenuOpen(false); }}
+                                    data-testid="toolbar-convert"
+                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white"
+                                >
+                                    {te("convert")} ▾
+                                </button>
+                                {convertOpen && (
+                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
+                                        <button onClick={() => { setCompressOpen(true); setConvertOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("compress")}
+                                        </button>
+                                        <button onClick={() => { setImportExportOpen(true); setConvertOpen(false); }} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white">
+                                            {te("importExport")}
+                                        </button>
+                                        <button onClick={() => { setReplaceTextOpen(true); setConvertOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("replaceText")}
+                                        </button>
+                                        <button onClick={() => { setMetadataOpen(true); setConvertOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("metadata")}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Annota dropdown */}
+                            <div className="relative" ref={annotateMenuRef}>
+                                <button
+                                    onClick={() => { setAnnotateMenuOpen((v) => !v); setOrganizeOpen(false); setConvertOpen(false); }}
+                                    disabled={!selectedDoc}
+                                    data-testid="toolbar-annotate-menu"
+                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    {te("annotate")} ▾
+                                </button>
+                                {annotateMenuOpen && (
+                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
+                                        <button onClick={() => { setSignOpen(true); setAnnotateMenuOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("sign")}
+                                        </button>
+                                        <button onClick={() => { setOcrOpen(true); setAnnotateMenuOpen(false); }} disabled={!selectedDoc} data-testid="toolbar-ocr" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("ocr")}
+                                        </button>
+                                        <button onClick={() => { setAnnotateOpen(true); setAnnotateMenuOpen(false); }} disabled={!selectedDoc} data-testid="toolbar-annotate" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("annotate")}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
                             <button
                                 onClick={handlePrint}
                                 disabled={!selectedDoc}
+                                data-testid="toolbar-print"
                                 className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                             >
                                 {te("print")}
-                            </button>
-                            <button
-                                onClick={() => setSignOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("sign")}
-                            </button>
-                            <button
-                                onClick={() => setOcrOpen(true)}
-                                disabled={!selectedDoc}
-                                data-testid="toolbar-ocr"
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("ocr")}
-                            </button>
-                            <button
-                                onClick={() => setAnnotateOpen(true)}
-                                disabled={!selectedDoc}
-                                data-testid="toolbar-annotate"
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("annotate")}
                             </button>
                             <button
                                 onClick={() => setShareOpen(true)}
@@ -651,6 +682,12 @@ export default function EditorPage() {
                             </button>
                         </div>
                     </header>
+
+                    {printToast && (
+                        <div className="pointer-events-none absolute right-4 top-16 z-50 rounded-lg bg-[#f7871f] px-4 py-2 text-sm font-medium text-white shadow-lg" data-testid="print-toast">
+                            {te("printSent")}
+                        </div>
+                    )}
 
                     <div className="flex-1 bg-black p-6 overflow-hidden relative">
                         {dragOver && (
