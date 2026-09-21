@@ -23,6 +23,14 @@ vi.mock("../../shared/api", () => ({
   },
 }));
 
+vi.mock("../PositionSelector", () => ({
+  default: ({ onPositionChange }: any) => (
+    <div data-testid="position-selector">
+      <button onClick={() => onPositionChange(120, 80)}>set-pos</button>
+    </div>
+  ),
+}));
+
 // Mock canvas context so drawing works in jsdom
 function mockCanvas() {
   const ctx = {
@@ -77,6 +85,23 @@ describe("SignModal", () => {
     fireEvent.click(screen.getByText("sign"));
     await waitFor(() => {
       expect(mockSignPdf).toHaveBeenCalledWith("p1", "c2ln", 1, 50, 50, 200, 80);
+    });
+  });
+
+  it("uses position selected via PositionSelector", async () => {
+    mockSignPdf.mockResolvedValue({ id: "p1", original_filename: "test.pdf" });
+    render(<SignModal {...baseProps} />);
+
+    const canvas = document.querySelector("canvas")!;
+    fireEvent.mouseDown(canvas, { clientX: 10, clientY: 10 });
+    fireEvent.mouseUp(canvas);
+
+    // Move the position box to (120, 80)
+    fireEvent.click(screen.getByText("set-pos"));
+
+    fireEvent.click(screen.getByText("sign"));
+    await waitFor(() => {
+      expect(mockSignPdf).toHaveBeenCalledWith("p1", "c2ln", 1, 120, 80, 200, 80);
     });
   });
 
