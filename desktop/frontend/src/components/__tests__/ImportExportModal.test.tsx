@@ -68,7 +68,7 @@ describe("ImportExportModal", () => {
         fireEvent.click(screen.getByText("import"));
 
         await waitFor(() => {
-            expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_open", {});
+            expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_open", expect.objectContaining({ filters: expect.any(Array) }));
             expect(mockTauriInvoke).toHaveBeenCalledWith("read_file_binary", { path: "C:\\docs\\hello.txt" });
             expect(mockImportFile).toHaveBeenCalled();
             expect(mockOnImported).toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe("ImportExportModal", () => {
         fireEvent.click(screen.getByText("import"));
 
         await waitFor(() => {
-            expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_open", {});
+            expect(mockTauriInvoke).toHaveBeenCalledWith("dialog_open", expect.objectContaining({ filters: expect.any(Array) }));
             expect(mockTauriInvoke).toHaveBeenCalledWith("read_file_binary", { path: "C:\\docs\\doc.docx" });
             expect(mockImportFile).toHaveBeenCalled();
             expect(mockOnImported).toHaveBeenCalled();
