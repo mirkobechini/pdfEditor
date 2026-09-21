@@ -62,6 +62,10 @@ vi.mock("next-intl", () => ({
             hoursAgo: "h fa",
             daysAgo: "g fa",
             print: "Stampa",
+            sign: "Firma",
+            ocr: "OCR",
+            annotate: "Annota",
+            share: "Condividi",
             select: "Seleziona",
             done: "Fine",
             selectAll: "Seleziona tutti",
@@ -166,6 +170,18 @@ vi.mock("../../../components/LockUnlockModal", () => ({
 
 vi.mock("../../components/GuestConvertBanner", () => ({
     default: () => <div data-testid="guest-banner">Guest</div>,
+}));
+
+vi.mock("../../../components/OcrModal", () => ({
+    default: ({ open }: any) => (open ? <div data-testid="ocr-modal">OCR</div> : null),
+}));
+
+vi.mock("../../../components/AnnotationDialog", () => ({
+    default: ({ open }: any) => (open ? <div data-testid="annotation-modal">Annotation</div> : null),
+}));
+
+vi.mock("../../../components/ShareDialog", () => ({
+    default: ({ open }: any) => (open ? <div data-testid="share-modal">Share</div> : null),
 }));
 
 // ─── Tests ────────────────────────────────────────────────────────
@@ -557,7 +573,60 @@ describe("EditorPage", () => {
         expect(screen.getByText("MERGE")).toBeInTheDocument();
         expect(screen.getByText("SPLIT")).toBeInTheDocument();
         expect(screen.getByText("LOCK")).toBeInTheDocument();
-        expect(screen.getByText("OCR")).toBeInTheDocument();
+        expect(screen.getByTestId("fast-action-ocr")).toBeInTheDocument();
+    });
+
+    it("opens OCR dialog from fast actions when a doc is selected", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        expect(screen.queryByTestId("ocr-modal")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByTestId("fast-action-ocr"));
+        expect(screen.getByTestId("ocr-modal")).toBeInTheDocument();
+    });
+
+    it("opens OCR dialog from toolbar when a doc is selected", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-ocr"));
+        expect(screen.getByTestId("ocr-modal")).toBeInTheDocument();
+    });
+
+    it("opens annotation dialog from toolbar when a doc is selected", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-annotate"));
+        expect(screen.getByTestId("annotation-modal")).toBeInTheDocument();
+    });
+
+    it("opens share dialog from toolbar when a doc is selected", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-share"));
+        expect(screen.getByTestId("share-modal")).toBeInTheDocument();
     });
 
     it("shows UNLOCK for password-protected doc in fast actions", async () => {
