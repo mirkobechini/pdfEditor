@@ -306,7 +306,8 @@ describe("EditorPage", () => {
         await screen.findByText("doc.pdf");
         // Click on doc to select it
         fireEvent.click(screen.getByText("doc.pdf"));
-        // Click metadata button
+        // Click metadata button (in Converti dropdown)
+        fireEvent.click(screen.getByTestId("toolbar-convert"));
         fireEvent.click(screen.getByText("Metadati"));
         expect(screen.getByTestId("metadata-modal")).toBeInTheDocument();
     });
@@ -320,6 +321,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Rimuovi"));
         expect(screen.getByTestId("remove-modal")).toBeInTheDocument();
     });
@@ -333,6 +335,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Riordina"));
         expect(screen.getByTestId("reorder-modal")).toBeInTheDocument();
     });
@@ -346,6 +349,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Dividi"));
         expect(screen.getByTestId("split-modal")).toBeInTheDocument();
     });
@@ -359,6 +363,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Unisci"));
         expect(screen.getByTestId("merge-modal")).toBeInTheDocument();
     });
@@ -606,6 +611,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-annotate-menu"));
         fireEvent.click(screen.getByTestId("toolbar-ocr"));
         expect(screen.getByTestId("ocr-modal")).toBeInTheDocument();
     });
@@ -619,6 +625,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-annotate-menu"));
         fireEvent.click(screen.getByTestId("toolbar-annotate"));
         expect(screen.getByTestId("annotation-modal")).toBeInTheDocument();
     });
@@ -641,6 +648,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("Documenti recenti");
         expect(screen.queryByTestId("import-export-modal")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByTestId("toolbar-convert"));
         fireEvent.click(screen.getByText("Importa/Esporta"));
         expect(screen.getByTestId("import-export-modal")).toBeInTheDocument();
     });
@@ -940,29 +948,19 @@ describe("EditorPage", () => {
         });
     });
 
-    it("shows merge button disabled when no doc selected", () => {
+    it("shows organize dropdown disabled when no doc selected", () => {
         render(<EditorPage />);
-        expect(screen.getByText("Unisci")).toBeDisabled();
+        expect(screen.getByTestId("toolbar-organize")).toBeDisabled();
     });
 
-    it("shows split button disabled when no doc selected", () => {
+    it("shows convert dropdown enabled when no doc selected (import available)", () => {
         render(<EditorPage />);
-        expect(screen.getByText("Dividi")).toBeDisabled();
+        expect(screen.getByTestId("toolbar-convert")).not.toBeDisabled();
     });
 
-    it("shows reorder button disabled when no doc selected", () => {
+    it("shows annotate dropdown disabled when no doc selected", () => {
         render(<EditorPage />);
-        expect(screen.getByText("Riordina")).toBeDisabled();
-    });
-
-    it("shows remove button disabled when no doc selected", () => {
-        render(<EditorPage />);
-        expect(screen.getByText("Rimuovi")).toBeDisabled();
-    });
-
-    it("shows metadata button disabled when no doc selected", () => {
-        render(<EditorPage />);
-        expect(screen.getByText("Metadati")).toBeDisabled();
+        expect(screen.getByTestId("toolbar-annotate-menu")).toBeDisabled();
     });
 
     it("handles rename on double-click and Enter key", async () => {
@@ -2163,6 +2161,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-convert"));
         fireEvent.click(screen.getByText("Metadati"));
         expect(screen.getByTestId("metadata-modal")).toBeInTheDocument();
         // Trigger onSaved
@@ -2182,6 +2181,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Rimuovi"));
         expect(screen.getByTestId("remove-modal")).toBeInTheDocument();
         const updatedDoc = { id: "p1", original_filename: "removed.pdf", file_size: 1024, page_count: 2, created_at: "2025-01-01T00:00:00Z", upload_source: "web" };
@@ -2200,6 +2200,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Riordina"));
         expect(screen.getByTestId("reorder-modal")).toBeInTheDocument();
         const updatedDoc = { id: "p1", original_filename: "reordered.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" };
@@ -2218,6 +2219,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Unisci"));
         expect(screen.getByTestId("merge-modal")).toBeInTheDocument();
         const updatedDoc = { id: "p1", original_filename: "merged.pdf", file_size: 1024, page_count: 6, created_at: "2025-01-01T00:00:00Z", upload_source: "web" };
@@ -2236,6 +2238,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Dividi"));
         expect(screen.getByTestId("split-modal")).toBeInTheDocument();
         const newDocs = [
@@ -2279,10 +2282,10 @@ describe("EditorPage", () => {
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
         await waitFor(() => {
-            expect(screen.getByText("Stampa")).toBeInTheDocument();
+            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
         });
 
-        // Mock iframe creation and print
+        // Mock iframe creation and print (delegate non-iframe elements to real impl)
         const mockPrint = vi.fn();
         const mockIframe = {
             src: "",
@@ -2290,16 +2293,56 @@ describe("EditorPage", () => {
             onload: null as any,
             contentWindow: { focus: vi.fn(), print: mockPrint },
         };
-        const createElementSpy = vi.spyOn(document, "createElement").mockReturnValue(mockIframe as any);
+        const realCreateElement = document.createElement.bind(document);
+        const createElementSpy = vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
+            if (tag === "iframe") return mockIframe as any;
+            return realCreateElement(tag);
+        });
         const appendSpy = vi.spyOn(document.body, "appendChild").mockImplementation(() => mockIframe as any);
         const removeSpy = vi.spyOn(document.body, "removeChild").mockImplementation(() => mockIframe as any);
 
-        fireEvent.click(screen.getByText("Stampa"));
+        fireEvent.click(screen.getByTestId("toolbar-print"));
         mockIframe.onload();
 
         expect(createElementSpy).toHaveBeenCalledWith("iframe");
         expect(mockPrint).toHaveBeenCalled();
         expect(appendSpy).toHaveBeenCalled();
+
+        createElementSpy.mockRestore();
+        appendSpy.mockRestore();
+        removeSpy.mockRestore();
+    });
+
+    it("1k: shows print toast when print triggered", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
+        });
+
+        const mockPrint = vi.fn();
+        const mockIframe = {
+            src: "",
+            style: {},
+            onload: null as any,
+            contentWindow: { focus: vi.fn(), print: mockPrint },
+        };
+        const realCreateElement = document.createElement.bind(document);
+        const createElementSpy = vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
+            if (tag === "iframe") return mockIframe as any;
+            return realCreateElement(tag);
+        });
+        const appendSpy = vi.spyOn(document.body, "appendChild").mockImplementation(() => mockIframe as any);
+        const removeSpy = vi.spyOn(document.body, "removeChild").mockImplementation(() => mockIframe as any);
+
+        fireEvent.click(screen.getByTestId("toolbar-print"));
+        expect(screen.getByTestId("print-toast")).toBeInTheDocument();
 
         createElementSpy.mockRestore();
         appendSpy.mockRestore();
