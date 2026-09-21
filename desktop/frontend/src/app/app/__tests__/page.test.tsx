@@ -66,6 +66,7 @@ vi.mock("next-intl", () => ({
             ocr: "OCR",
             annotate: "Annota",
             share: "Condividi",
+            importExport: "Importa/Esporta",
             select: "Seleziona",
             done: "Fine",
             selectAll: "Seleziona tutti",
@@ -182,6 +183,10 @@ vi.mock("../../../components/AnnotationDialog", () => ({
 
 vi.mock("../../../components/ShareDialog", () => ({
     default: ({ open }: any) => (open ? <div data-testid="share-modal">Share</div> : null),
+}));
+
+vi.mock("../../../components/ImportExportModal", () => ({
+    default: ({ open }: any) => (open ? <div data-testid="import-export-modal">ImportExport</div> : null),
 }));
 
 // ─── Tests ────────────────────────────────────────────────────────
@@ -627,6 +632,15 @@ describe("EditorPage", () => {
         fireEvent.click(screen.getByText("doc.pdf"));
         fireEvent.click(screen.getByTestId("toolbar-share"));
         expect(screen.getByTestId("share-modal")).toBeInTheDocument();
+    });
+
+    it("opens import/export dialog without a selected PDF", async () => {
+        mockListPdfs.mockResolvedValue({ items: [] });
+        render(<EditorPage />);
+        await screen.findByText("Documenti recenti");
+        expect(screen.queryByTestId("import-export-modal")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText("Importa/Esporta"));
+        expect(screen.getByTestId("import-export-modal")).toBeInTheDocument();
     });
 
     it("shows UNLOCK for password-protected doc in fast actions", async () => {
