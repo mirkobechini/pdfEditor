@@ -604,8 +604,7 @@ export default function EditorPage() {
                             </button>
                             <button
                                 onClick={() => setImportExportOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white"
                             >
                                 {te("importExport")}
                             </button>
