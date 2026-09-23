@@ -17,6 +17,7 @@ CSRF_EXEMPT_PATHS = {
     "/auth/register",
     "/auth/google",
     "/auth/logout",
+    "/auth/refresh",
     "/auth/forgot-password",
     "/auth/reset-password",
     "/auth/guest",
@@ -27,6 +28,7 @@ CSRF_EXEMPT_PATHS = {
     "/api/v1/auth/register", 
     "/api/v1/auth/google",
     "/api/v1/auth/logout",
+    "/api/v1/auth/refresh",
     "/api/v1/auth/forgot-password",
     "/api/v1/auth/reset-password",
     "/api/v1/auth/guest",
@@ -119,6 +121,16 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             csrf_cookie = request.cookies.get("csrf_token")
             csrf_header = request.headers.get("X-CSRF-Token", "")
 
+            # A valid Bearer JWT is explicit authentication (not automatic from
+            # the browser), so CSRF is redundant for Bearer-authenticated clients
+            # (mobile, desktop cloud, API). This takes priority over the cookie
+            # check: cross-origin clients (Tauri webview) cannot read the
+            # csrf_token cookie, so requiring a matching header would break them.
+            auth_header = request.headers.get("Authorization", "")
+            has_bearer = auth_header.startswith("Bearer ") and bool(auth_header[7:])
+            if has_bearer and decode_access_token(auth_header[len("Bearer "):]) is not None:
+                return await call_next(request)
+
             # If cookie is present, validate header matches cookie (double-submit pattern)
             if csrf_cookie:
                 if not csrf_header or csrf_cookie != csrf_header:
@@ -133,8 +145,6 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 # CSRF protects cookie/session-based requests. A valid Bearer JWT
                 # is explicit authentication (not automatic from the browser), so
                 # CSRF is redundant when the request is authenticated via Bearer.
-                auth_header = request.headers.get("Authorization", "")
-                has_bearer = auth_header.startswith("Bearer ") and bool(auth_header[7:])
                 if has_bearer:
                     # Only exempt if the Bearer token is actually valid.
                     token = auth_header[len("Bearer "):]
