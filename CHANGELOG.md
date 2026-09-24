@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-09-24
+
+### ✨ Firma PDF: flusso a step + anteprima + resize + undo/redo (issue #836)
+
+- **Desktop**: `SignModal` riorganizzato in **2 step** — (1) scegli la firma (disegna o carica immagine), (2) posizionala sulla pagina.
+- **Anteprima in tempo reale**: il `PositionSelector` ora mostra la firma dentro il riquadro mentre lo trascini, non più un box vuoto.
+- **Resize**: il riquadro firma è ridimensionabile trascinando l'angolo in basso a destra (le dimensioni in punti PDF vengono riportate al backend).
+- **Undo/redo**: nel disegno della firma ora ci sono i bottoni Annulla/Ripeti (stack di snapshot del canvas), così un errore non cancella tutto.
+- **Upload immagine**: il bottone "Carica un'immagine" è ora un vero bottone stilizzato (prima era un `<input type="file">` nudo non cliccabile).
+- **Test**: 17 test desktop (SignModal + PositionSelector) passano.
+
+### ✨ Login desktop: feedback di stato progressivo
+
+- **Desktop**: il bottone "Accedi" ora mostra uno spinner + messaggio di stato progressivo durante il login ("Verifica account locale...", "Connessione al cloud...", "Sincronizzazione account...", "Completamento accesso...") invece del generico "Caricamento...". Così si capisce se l'app sta lavorando o è bloccata.
+- **Backend**: `login()` in `auth.tsx` accetta un callback `onPhase` per segnalare lo stato.
+
+### 🐛 Fix dal test manuale (2° ciclo)
+
+- **Bottone accesso in italiano**: `loginButton` era "Sign in" nel namespace `auth` di `it.json` → corretto a "Accedi".
+- **Scritta di stato duplicata**: il messaggio di stato del login appariva sia nel bottone che sotto → rimosso il `<p>` ridondante (gli errori restano nel box rosso separato).
+- **Firma: undo non rimuoveva lo scarabocchio**: `undo()`/`redo()` ridisegnavano il canvas ma non aggiornavano `signatureDataUrl` (usato per la firma finale) → alla conferma veniva usato lo stato vecchio con lo scarabocchio. Fix: `signatureDataUrl` viene aggiornato dopo undo/redo.
+
+### 🐛 Fix backend
+
+- **Import immagini (GIF/BMP)**: `import_file_to_pdf` ora normalizza le immagini a PNG via Pillow prima di passarle a PyMuPDF (fitz non apriva direttamente GIF/BMP). Fix drag & drop immagini nel desktop.
+- **database.py**: fix crash su URL Postgres — la creazione della directory ora avviene solo per URL SQLite.
+
 ## 2026-09-20
 
 ### ✨ OCR per PDF scansionati (issue #829)

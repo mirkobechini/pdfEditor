@@ -1,7 +1,21 @@
 # Lessons Learned
 
-> **Scopo:** Documentare le lezioni apprese durante lo svilupzo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-15
+> **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
+> **Aggiornato:** 2026-09-24
+
+---
+
+## Undo/redo con `useRef` non triggera il re-render dei bottoni
+
+> **Lezione appresa (2026-09-24, firma PDF):**
+
+Nel `SignModal` ho implementato undo/redo con due stack (`undoStackRef`/`redoStackRef`) come `useRef`. I bottoni Annulla/Ripeti avevano `disabled={undoStackRef.current.length === 0}`. Dopo `undo()`, lo stack redo veniva popolato ma il bottone **restava disabilitato**.
+
+**Causa:** mutare un `useRef.current` NON triggera un re-render di React. Il bottone leggeva `redoStackRef.current.length` al render iniziale (0) e non veniva mai ri-renderizzato, anche se lo stack ora aveva 1 elemento.
+
+**Soluzione:** aggiunto uno state `historyVersion` (incrementato ogni volta che uno stack cambia) e referenziato nel render (es. `data-history={historyVersion}` sul container). Così React ri-renderizza e i bottoni si aggiornano.
+
+**Regola per il futuro:** quando si usa un `useRef` per dati che influenzano l'UI (es. stack, cache), serve uno state separato (contatore/versione) per forzare il re-render. Un `useRef` mutato non basta — React non lo osserva.
 
 ---
 
