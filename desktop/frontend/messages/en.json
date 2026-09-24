@@ -496,7 +496,7 @@
     "running": "Running...",
     "cancel": "Cancel",
     "failed": "OCR failed",
-    "success": "OCR completed. The PDF is now searchable.",
+    "success": "OCR completed. The text is now selectable and searchable: try selecting it with the mouse or use Ctrl+F to search.",
     "processing": "Recognizing text... this may take a moment"
   },
   "annotationDialog": {
