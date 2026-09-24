@@ -11,9 +11,11 @@ from app.core.config import settings
 # Register datetime adapter for SQLite to suppress Python 3.12+ deprecation warning
 sqlite3.register_adapter(datetime.datetime, lambda dt: dt.isoformat())
 
-# Ensure the database directory exists (important for PyInstaller bundles)
-db_path = Path(settings.DATABASE_URL.replace("sqlite:///", ""))
-db_path.parent.mkdir(parents=True, exist_ok=True)
+# Ensure the database directory exists (important for PyInstaller bundles).
+# Only applies to SQLite file URLs — Postgres URLs are not filesystem paths.
+if settings.DATABASE_URL.startswith("sqlite:///"):
+    db_path = Path(settings.DATABASE_URL.replace("sqlite:///", ""))
+    db_path.parent.mkdir(parents=True, exist_ok=True)
 
 # Ensure the PDF storage directory exists (important for PyInstaller bundles)
 storage_path = Path(settings.UPLOAD_DIR)

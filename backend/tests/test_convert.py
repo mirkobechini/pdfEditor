@@ -76,6 +76,32 @@ class TestImport:
         assert data["original_filename"] == "hello.txt"
         assert data["page_count"] >= 1
 
+    def test_import_jpg(self, client, pro_headers):
+        """Should import a real JPG image and convert it to PDF.
+
+        Regression test: image documents must be converted with
+        convert_to_pdf(), not tobytes()/save() which raises AssertionError.
+        """
+        import io
+
+        try:
+            from PIL import Image
+        except ImportError:
+            pytest.skip("Pillow not installed")
+
+        buf = io.BytesIO()
+        Image.new("RGB", (200, 100), color="blue").save(buf, format="JPEG")
+        response = client.post(
+            "/pdfs/import",
+            headers=pro_headers,
+            files={"file": ("photo.jpg", buf.getvalue(), "image/jpeg")},
+        )
+        assert response.status_code == status.HTTP_201_CREATED, response.text
+        data = response.json()
+        assert data["original_filename"] == "photo.jpg"
+        assert data["page_count"] == 1
+        assert data["file_size"] > 0
+
     def test_import_invalid_format(self, client, pro_headers):
         """Should reject unsupported file format."""
         response = client.post(
@@ -84,6 +110,37 @@ class TestImport:
             files={"file": ("doc.xlsx", b"fake xlsx content", "application/octet-stream")},
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    @pytest.mark.parametrize("fmt,ext,mime", [
+        ("PNG", "png", "image/png"),
+        ("GIF", "gif", "image/gif"),
+        ("BMP", "bmp", "image/bmp"),
+    ])
+    def test_import_image_formats(self, client, pro_headers, fmt, ext, mime):
+        """Should import PNG/GIF/BMP images and convert them to PDF.
+
+        Regression test: PyMuPDF does not reliably open GIF/BMP streams
+        directly. Images are normalized to PNG via Pillow first.
+        """
+        import io
+
+        try:
+            from PIL import Image
+        except ImportError:
+            pytest.skip("Pillow not installed")
+
+        buf = io.BytesIO()
+        Image.new("RGB", (120, 80), color="red").save(buf, format=fmt)
+        response = client.post(
+            "/pdfs/import",
+            headers=pro_headers,
+            files={"file": (f"photo.{ext}", buf.getvalue(), mime)},
+        )
+        assert response.status_code == status.HTTP_201_CREATED, response.text
+        data = response.json()
+        assert data["original_filename"] == f"photo.{ext}"
+        assert data["page_count"] == 1
+        assert data["file_size"] > 0
 
     def test_import_no_filename(self, client, pro_headers):
         """Should reject file without filename."""

@@ -621,8 +621,32 @@ class PdfService:
             doc.close()
 
         elif ext in ("png", "jpg", "jpeg", "gif", "bmp"):
-            doc = fitz.open(stream=content, filetype=ext)
-            pdf_bytes = doc.tobytes()
+            # Normalize the image to PNG via Pillow before passing to fitz.
+            # PyMuPDF does not reliably open GIF/BMP streams directly with
+            # filetype="gif"/"bmp" (raises on some builds), and jpg needs
+            # filetype="jpeg". Converting to PNG first makes all image
+            # formats work uniformly and robustly.
+            from io import BytesIO
+            from PIL import Image
+
+            try:
+                img = Image.open(BytesIO(content))
+                img.load()
+            except Exception as e:
+                raise ValueError(f"Invalid or unsupported image: {e}")
+
+            png_buf = BytesIO()
+            # Preserve alpha channel if present (e.g. transparent PNG/GIF).
+            if img.mode in ("RGBA", "LA", "P"):
+                img = img.convert("RGBA")
+            else:
+                img = img.convert("RGB")
+            img.save(png_buf, format="PNG")
+
+            doc = fitz.open(stream=png_buf.getvalue(), filetype="png")
+            # convert_to_pdf() is required for image documents; tobytes()/save()
+            # only works on PDF documents and raises AssertionError otherwise.
+            pdf_bytes = doc.convert_to_pdf()
             doc.close()
 
         elif ext == "docx":
