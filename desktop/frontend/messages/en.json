@@ -292,7 +292,12 @@
     "welcomeBack": "WELCOME BACK",
     "emailPlaceholder": "email@example.com",
     "passwordPlaceholder": "••••••••••••",
-    "forgotPassword": "Recover password"
+    "forgotPassword": "Forgot password",
+    "loggingIn": "Signing in...",
+    "checkingLocal": "Checking local account...",
+    "connectingCloud": "Connecting to cloud...",
+    "syncingAccount": "Syncing account...",
+    "finalizing": "Finalizing sign-in..."
   },
   "register": {
     "namePlaceholder": "Mario Rossi",
@@ -447,11 +452,18 @@
   },
   "signModal": {
     "title": "Sign PDF",
+    "stepChoose": "1. Choose your signature",
+    "stepPosition": "2. Position the signature",
     "drawLabel": "Draw your signature",
-    "uploadLabel": "Or upload an image",
+    "uploadLabel": "Upload an image",
     "clear": "Clear",
+    "undo": "Undo",
+    "redo": "Redo",
+    "next": "Continue",
+    "back": "Back",
     "pageLabel": "Page",
     "positionLabel": "Position (drag the box)",
+    "resizeHint": "Drag the corners to resize",
     "sign": "Sign",
     "signing": "Signing...",
     "cancel": "Cancel",
@@ -483,7 +495,9 @@
     "run": "Run OCR",
     "running": "Running...",
     "cancel": "Cancel",
-    "failed": "OCR failed"
+    "failed": "OCR failed",
+    "success": "OCR completed. The PDF is now searchable.",
+    "processing": "Recognizing text... this may take a moment"
   },
   "annotationDialog": {
     "title": "Add annotation",

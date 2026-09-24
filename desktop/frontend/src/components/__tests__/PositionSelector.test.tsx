@@ -109,4 +109,27 @@ describe("PositionSelector", () => {
             expect(onPositionChange).toHaveBeenCalled();
         });
     });
+
+    it("reports size change when resizing via handle", async () => {
+        const onSizeChange = vi.fn();
+        render(
+            <PositionSelector pdfUrl="blob:test" pageNumber={1} onPositionChange={() => { }} onSizeChange={onSizeChange} />
+        );
+        await waitFor(() => {
+            expect(screen.getByTestId("resize-handle")).toBeInTheDocument();
+        });
+
+        const handle = screen.getByTestId("resize-handle");
+        const canvas = document.querySelector("canvas")!;
+        canvas.getBoundingClientRect = vi.fn().mockReturnValue({ left: 0, top: 0, width: 612, height: 792 });
+
+        // Drag the resize handle to enlarge the box
+        fireEvent.mouseDown(handle, { clientX: 100, clientY: 100 });
+        fireEvent.mouseMove(handle, { clientX: 200, clientY: 150 });
+        fireEvent.mouseUp(handle);
+
+        await waitFor(() => {
+            expect(onSizeChange).toHaveBeenCalled();
+        });
+    });
 });
