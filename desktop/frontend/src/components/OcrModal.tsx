@@ -25,10 +25,12 @@ export default function OcrModal({ open, onClose, pdfId, onSuccess }: OcrModalPr
     const [language, setLanguage] = React.useState("eng");
     const [running, setRunning] = React.useState(false);
     const [error, setError] = React.useState("");
+    const [success, setSuccess] = React.useState(false);
 
     React.useEffect(() => {
         if (open) {
             setError("");
+            setSuccess(false);
             setLanguage("eng");
         }
     }, [open]);
@@ -37,10 +39,11 @@ export default function OcrModal({ open, onClose, pdfId, onSuccess }: OcrModalPr
         if (!pdfId) return;
         setRunning(true);
         setError("");
+        setSuccess(false);
         try {
             await api.ocrPdf(pdfId, language);
+            setSuccess(true);
             onSuccess?.();
-            onClose();
         } catch (err) {
             setError(t("failed") + ": " + mapError(err));
         } finally {
@@ -66,11 +69,25 @@ export default function OcrModal({ open, onClose, pdfId, onSuccess }: OcrModalPr
                     </div>
                 )}
 
+                {success && (
+                    <div className="mb-4 p-3 text-sm text-green-700 bg-green-100 dark:bg-green-900/30 rounded" data-testid="ocr-success">
+                        {t("success")}
+                    </div>
+                )}
+
+                {running && (
+                    <div className="mb-4 p-3 text-sm text-blue-700 bg-blue-100 dark:bg-blue-900/30 rounded flex items-center gap-2" data-testid="ocr-processing">
+                        <span className="inline-block h-3 w-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+                        {t("processing")}
+                    </div>
+                )}
+
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     {t("language")}
                     <select
                         value={language}
                         onChange={(e) => setLanguage(e.target.value)}
+                        disabled={running}
                         className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
                         data-testid="ocr-language"
                     >
@@ -83,6 +100,7 @@ export default function OcrModal({ open, onClose, pdfId, onSuccess }: OcrModalPr
                 <div className="mt-4 flex gap-3">
                     <button
                         onClick={onClose}
+                        disabled={running}
                         className="flex-1 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm"
                     >
                         {t("cancel")}

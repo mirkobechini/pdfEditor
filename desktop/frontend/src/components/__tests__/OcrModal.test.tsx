@@ -45,7 +45,26 @@ describe("OcrModal", () => {
             expect(mockOcrPdf).toHaveBeenCalledWith("p1", "eng");
         });
         expect(onSuccess).toHaveBeenCalled();
-        expect(onClose).toHaveBeenCalled();
+        // Dialog stays open to show the success feedback
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it("shows success feedback after OCR completes", async () => {
+        render(<OcrModal open={true} onClose={() => { }} pdfId="p1" />);
+
+        fireEvent.click(screen.getByTestId("ocr-run"));
+
+        expect(await screen.findByTestId("ocr-success")).toBeInTheDocument();
+    });
+
+    it("shows processing state while OCR runs", async () => {
+        // Never resolve so the running state persists
+        mockOcrPdf.mockImplementation(() => new Promise(() => { }));
+        render(<OcrModal open={true} onClose={() => { }} pdfId="p1" />);
+
+        fireEvent.click(screen.getByTestId("ocr-run"));
+
+        expect(await screen.findByTestId("ocr-processing")).toBeInTheDocument();
     });
 
     it("runs OCR with selected language", async () => {

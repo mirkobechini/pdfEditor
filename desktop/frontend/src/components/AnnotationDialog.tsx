@@ -65,7 +65,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pd
     return (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={onClose}>
             <div
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6 max-h-[90vh] flex flex-col"
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6 max-h-[90vh] flex flex-col overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>

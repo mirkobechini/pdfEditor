@@ -40,6 +40,21 @@ export default function ImportExportModal({ open, pdfId, pdfName, onClose, onImp
 
     if (!open) return null;
 
+    const MIME_BY_EXT: Record<string, string> = {
+        png: "image/png",
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        gif: "image/gif",
+        bmp: "image/bmp",
+        txt: "text/plain",
+        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    };
+
+    function mimeFromName(filename: string): string {
+        const ext = filename.toLowerCase().split(".").pop() || "";
+        return MIME_BY_EXT[ext] || "application/octet-stream";
+    }
+
     async function handleImport() {
         setBusy(true); setError(null);
         try {
@@ -54,8 +69,9 @@ export default function ImportExportModal({ open, pdfId, pdfName, onClose, onImp
             const raw = await tauriInvoke<number[]>("read_file_binary", { path: filePath });
             if (!raw) return;
             const name = filePath.split(/[/\\]/).pop() || "document.txt";
-            const blob = new Blob([new Uint8Array(raw)], { type: "application/octet-stream" });
-            const file = new File([blob], name, { type: "application/octet-stream" });
+            const mime = mimeFromName(name);
+            const blob = new Blob([new Uint8Array(raw)], { type: mime });
+            const file = new File([blob], name, { type: mime });
             const doc = await api.importFile(file);
             onImported(doc);
             onClose();
