@@ -26,11 +26,22 @@ function getCachedUser(): User | null {
   }
 }
 
+export type LoginPhase =
+  | "checkingLocal"
+  | "connectingCloud"
+  | "syncingAccount"
+  | "finalizing";
+
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   isOffline: boolean;
-  login: (email: string, password: string, remember?: boolean) => Promise<void>;
+  login: (
+    email: string,
+    password: string,
+    remember?: boolean,
+    onPhase?: (phase: LoginPhase) => void,
+  ) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   googleLogin: (idToken: string) => Promise<void>;
   guestLogin: () => Promise<void>;
@@ -158,7 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; };
   }, []);
 
-  const login = useCallback(async (email: string, password: string, remember?: boolean) => {
+  const login = useCallback(async (email: string, password: string, remember?: boolean, onPhase?: (phase: LoginPhase) => void) => {
     _pendingAuthRef.current = true;
     setLoading(true);
     try {
@@ -166,6 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (isTauri()) {
         // Desktop: prova login locale (SQLite) prima
+        onPhase?.("checkingLocal");
         try {
           res = await api.login(email, password);
         } catch {
@@ -174,11 +186,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         if (!res) {
           // Login via cloud — tieni il JWT cloud separato per cloudApi
+          onPhase?.("connectingCloud");
           const cloudRes = await cloudApi.login(email, password);
           if (!cloudRes) throw new Error("Login failed");
           const cloudToken = cloudRes.access_token;
 
           // Sync utente cloud in SQLite locale con password
+          onPhase?.("syncingAccount");
           cloudApi.setToken(cloudToken);
           const u = await cloudApi.getMe();
           api.setToken(cloudToken);
@@ -228,6 +242,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem(REMEMBER_TOKEN_KEY);
       }
 
+      onPhase?.("finalizing");
       const u = await api.getMe();
       setUser(u);
       cacheUser(u);
