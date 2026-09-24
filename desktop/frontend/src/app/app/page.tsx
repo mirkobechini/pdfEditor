@@ -233,6 +233,10 @@ export default function EditorPage() {
         function onDrop(e: DragEvent) {
             e.preventDefault();
             setDragOver(false);
+            // In Tauri, dataTransfer.files is NOT populated reliably (the
+            // native onDragDropEvent handler below reads the file paths via
+            // read_file_binary). Only use the standard drop handler on web.
+            if (isTauri()) return;
             const file = e.dataTransfer?.files?.[0];
             if (file) handleUploadFile(file);
         }
@@ -274,14 +278,30 @@ export default function EditorPage() {
     }, []);
 
     // Read a dropped file path (Tauri) and upload it
+    const MIME_BY_EXT: Record<string, string> = {
+        png: "image/png",
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        gif: "image/gif",
+        bmp: "image/bmp",
+        txt: "text/plain",
+        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    };
+
+    function mimeFromName(filename: string): string {
+        const ext = filename.toLowerCase().split(".").pop() || "";
+        return MIME_BY_EXT[ext] || "application/octet-stream";
+    }
+
     async function handleDroppedPath(filePath: string) {
         try {
             const raw = await tauriInvoke<number[]>("read_file_binary", { path: filePath });
             if (!raw) return;
             const name = filePath.split(/[/\\]/).pop() || "document.pdf";
             const isPdf = name.toLowerCase().endsWith(".pdf");
-            const blob = new Blob([new Uint8Array(raw)], { type: isPdf ? "application/pdf" : "application/octet-stream" });
-            const file = new File([blob], name, { type: isPdf ? "application/pdf" : "application/octet-stream" });
+            const mime = isPdf ? "application/pdf" : mimeFromName(name);
+            const blob = new Blob([new Uint8Array(raw)], { type: mime });
+            const file = new File([blob], name, { type: mime });
             handleUploadFile(file);
         } catch (err) {
             console.error("Failed to read dropped file:", err);

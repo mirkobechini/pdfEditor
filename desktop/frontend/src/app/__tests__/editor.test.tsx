@@ -9,6 +9,7 @@ const mockUpdateMetadata = vi.fn();
 const mockUploadPdf = vi.fn();
 const mockGetMetadata = vi.fn();
 const mockTauriInvoke = vi.fn();
+let mockIsTauri = true;
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("next-intl", () => ({ useTranslations: () => (k: string) => k }));
@@ -32,7 +33,10 @@ vi.mock("../../shared/api", () => ({
   },
 }));
 vi.mock("../../shared/auth", () => ({ useAuth: () => ({ user: { id: "u1", full_name: "Test User", license_tier: "Free" } }) }));
-vi.mock("../../shared/tauri", () => ({ isTauri: () => true, tauriInvoke: (...args: any[]) => mockTauriInvoke(...args), getApiBaseUrl: () => "http://127.0.0.1:7723" }));
+vi.mock("../../shared/tauri", () => ({ isTauri: () => mockIsTauri, tauriInvoke: (...args: any[]) => mockTauriInvoke(...args), getApiBaseUrl: () => "http://127.0.0.1:7723" }));
+vi.mock("@tauri-apps/api/webview", () => ({
+  getCurrentWebview: () => ({ onDragDropEvent: () => () => { } }),
+}));
 vi.mock("../../lib/preferences", () => ({ usePreferences: () => ({ prefs: { default_zoom: 100, theme: "dark", language: "it", antialiasing: true, density: "comfortable" }, updatePrefs: vi.fn() }) }));
 vi.mock("../../hooks/useCloudSync", () => ({ useCloudSync: () => ({ status: {}, syncEnabled: false, setSyncEnabled: vi.fn(), syncOnStartup: false, setSyncOnStartup: vi.fn(), isOnline: true, isSyncing: false, progress: null, syncAll: vi.fn(), lastSyncResult: null, clearSyncResult: vi.fn(), refreshStatus: vi.fn(), uploadPdf: vi.fn(), downloadPdf: vi.fn(), deletePdf: vi.fn() }) }));
 
@@ -56,6 +60,7 @@ describe("EditorPage", () => {
       if (cmd === "read_file_binary") return Promise.resolve([37, 80, 68, 70]);
       return Promise.resolve(null);
     });
+    mockIsTauri = true;
   });
 
   it("renders without crashing", () => {
@@ -339,6 +344,7 @@ describe("EditorPage", () => {
   });
 
   it("handles drop event", async () => {
+    mockIsTauri = false;
     render(<EditorPage />);
     await screen.findByText("doc2.pdf");
     const file = new File(["test"], "dropped.pdf", { type: "application/pdf" });
