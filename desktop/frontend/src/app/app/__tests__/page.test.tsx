@@ -204,6 +204,7 @@ vi.mock("../../../components/ImportExportModal", () => ({
 describe("EditorPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockIsTauri = false;
         mockListPdfs.mockResolvedValue({ items: [] });
         mockDownloadPdf.mockResolvedValue(new Blob(["fake-pdf-content"], { type: "application/pdf" }));
         mockRefreshCsrf.mockResolvedValue(undefined);
@@ -2304,7 +2305,7 @@ describe("EditorPage", () => {
 
     // ── 1k: print ─────────────────────────────────────────
 
-    it("1k: handlePrint opens a hidden iframe and calls print", async () => {
+    it("1k: handlePrint converts canvas to img and calls window.print", async () => {
         mockListPdfs.mockResolvedValue({
             items: [
                 { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
@@ -2317,68 +2318,29 @@ describe("EditorPage", () => {
             expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
         });
 
-        // Mock iframe creation and print (delegate non-iframe elements to real impl)
+        // Mock canvas methods at prototype level (doesn't break React)
+        const fakeCtx = { drawImage: vi.fn() };
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(fakeCtx as any);
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,test");
+        vi.spyOn(document, "querySelector").mockReturnValue(document.createElement("canvas"));
+
         const mockPrint = vi.fn();
-        const mockIframe = {
-            src: "",
-            style: {},
-            onload: null as any,
-            contentWindow: { focus: vi.fn(), print: mockPrint },
-        };
-        const realCreateElement = document.createElement.bind(document);
-        const createElementSpy = vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
-            if (tag === "iframe") return mockIframe as any;
-            return realCreateElement(tag);
-        });
-        const appendSpy = vi.spyOn(document.body, "appendChild").mockImplementation(() => mockIframe as any);
-        const removeSpy = vi.spyOn(document.body, "removeChild").mockImplementation(() => mockIframe as any);
+        vi.spyOn(window, "print").mockImplementation(mockPrint);
 
         fireEvent.click(screen.getByTestId("toolbar-print"));
-        mockIframe.onload();
 
-        expect(createElementSpy).toHaveBeenCalledWith("iframe");
         expect(mockPrint).toHaveBeenCalled();
-        expect(appendSpy).toHaveBeenCalled();
 
-        createElementSpy.mockRestore();
-        appendSpy.mockRestore();
-        removeSpy.mockRestore();
+        vi.restoreAllMocks();
     });
 
-    it("1k: shows print toast when print triggered", async () => {
-        mockListPdfs.mockResolvedValue({
-            items: [
-                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
-            ],
-        });
+    it("1k: handlePrint does nothing when no document selected", async () => {
+        mockListPdfs.mockResolvedValue({ items: [] });
         render(<EditorPage />);
-        await screen.findByText("doc.pdf");
-        fireEvent.click(screen.getByText("doc.pdf"));
+        // The print button exists but is disabled; handlePrint returns early
         await waitFor(() => {
-            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
+            expect(screen.getByTestId("toolbar-print")).toBeDisabled();
         });
-
-        const mockPrint = vi.fn();
-        const mockIframe = {
-            src: "",
-            style: {},
-            onload: null as any,
-            contentWindow: { focus: vi.fn(), print: mockPrint },
-        };
-        const realCreateElement = document.createElement.bind(document);
-        const createElementSpy = vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
-            if (tag === "iframe") return mockIframe as any;
-            return realCreateElement(tag);
-        });
-        const appendSpy = vi.spyOn(document.body, "appendChild").mockImplementation(() => mockIframe as any);
-        const removeSpy = vi.spyOn(document.body, "removeChild").mockImplementation(() => mockIframe as any);
-
-        fireEvent.click(screen.getByTestId("toolbar-print"));
-        expect(screen.getByTestId("print-toast")).toBeInTheDocument();
-
-        createElementSpy.mockRestore();
-        appendSpy.mockRestore();
-        removeSpy.mockRestore();
     });
 
     // ─── Multi-select batch ──────────────────────────────────────

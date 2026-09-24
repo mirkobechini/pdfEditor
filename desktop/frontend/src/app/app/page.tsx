@@ -73,7 +73,6 @@ export default function EditorPage() {
     const organizeRef = React.useRef<HTMLDivElement>(null);
     const convertRef = React.useRef<HTMLDivElement>(null);
     const annotateMenuRef = React.useRef<HTMLDivElement>(null);
-    const [printToast, setPrintToast] = React.useState(false);
     const [lockOpen, setLockOpen] = React.useState(false);
     const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
@@ -102,33 +101,61 @@ export default function EditorPage() {
         }
     }
 
-    function handlePrint() {
-        if (!pdfUrl) return;
-        // Show a toast to give feedback that printing was triggered.
-        setPrintToast(true);
-        setTimeout(() => setPrintToast(false), 2500);
-        // Open the PDF in a hidden iframe and trigger the webview print dialog.
-        const iframe = document.createElement("iframe");
-        iframe.src = pdfUrl;
-        iframe.style.position = "fixed";
-        iframe.style.right = "0";
-        iframe.style.bottom = "0";
-        iframe.style.width = "0";
-        iframe.style.height = "0";
-        iframe.style.border = "none";
-        iframe.style.visibility = "hidden";
-        iframe.onload = () => {
-            try {
-                iframe.contentWindow?.focus();
-                iframe.contentWindow?.print();
-            } catch (err) {
-                console.error("Print failed:", err);
+    async function handlePrint() {
+        if (!selectedDoc) return;
+
+        // In WebView2, the GPU-accelerated canvas toDataURL() returns blank.
+        // Clone the visible canvas content onto a fresh 2d canvas, then
+        // convert to <img> and print via the standard Windows print dialog.
+        const srcCanvas = document.querySelector("canvas");
+        if (!srcCanvas) return;
+
+        const clone = document.createElement("canvas");
+        clone.width = srcCanvas.width;
+        clone.height = srcCanvas.height;
+        const ctx = clone.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(srcCanvas, 0, 0);
+        const dataUrl = clone.toDataURL("image/png");
+
+        const style = document.createElement("style");
+        style.id = "print-style";
+        style.textContent = `
+            @media print {
+                body > *:not(#print-overlay) { display: none !important; }
+                @page { margin: 0; }
+                #print-overlay {
+                    display: flex !important;
+                    position: fixed !important;
+                    inset: 0 !important;
+                    z-index: 99999 !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    background: white !important;
+                }
+                #print-overlay img {
+                    max-width: 100%;
+                    max-height: 100vh;
+                    object-fit: contain;
+                }
             }
-        };
-        document.body.appendChild(iframe);
+        `;
+        document.head.appendChild(style);
+
+        const div = document.createElement("div");
+        div.id = "print-overlay";
+        div.style.cssText = "display:none;";
+        div.innerHTML = `<img src="${dataUrl}" alt="" />`;
+        document.body.appendChild(div);
+
+        window.print();
+
         setTimeout(() => {
-            document.body.removeChild(iframe);
-        }, 60000);
+            const s = document.getElementById("print-style");
+            if (s) document.head.removeChild(s);
+            const d = document.getElementById("print-overlay");
+            if (d) document.body.removeChild(d);
+        }, 1000);
     }
 
     async function handleUploadFile(file: File) {
@@ -744,12 +771,6 @@ export default function EditorPage() {
                             </button>
                         </div>
                     </header>
-
-                    {printToast && (
-                        <div className="pointer-events-none absolute right-4 top-16 z-50 rounded-lg bg-[#f7871f] px-4 py-2 text-sm font-medium text-white shadow-lg" data-testid="print-toast">
-                            {te("printSent")}
-                        </div>
-                    )}
 
                     <div className="flex-1 bg-black p-6 overflow-hidden relative">
                         {dragOver && (

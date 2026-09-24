@@ -69,7 +69,12 @@
 
 ## 🟡 Bug minori rimanenti
 
-Tutti i bug minori precedenti sono stati risolti.
+### Stampa desktop — anteprima bianca (issue #8, plan 0138-0139)
+
+**File:** `desktop/frontend/src/app/app/page.tsx` (handlePrint)
+**Descrizione:** La stampa in Tauri (WebView2) non funziona correttamente. Il canvas del PdfViewer non si stampa (bianco). Vari tentativi falliti: iframe con blob URL (non renderizzato), data URL base64 (non renderizzato), comando Rust `print_pdf` (apre viewer esterno — rifiutato), modal anteprima in-app (rifiutato), `webview.print()` (stampa tutto il DOM).
+**Stato attuale:** canvas clone + `<img>` overlay + `window.print()` — l'anteprima appare ancora bianca. Da investigare se `drawImage` del canvas WebView2 funziona correttamente.
+**Workaround:** nessuno al momento.
 
 ### DOCX → PDF — qualità media (issue #807)
 

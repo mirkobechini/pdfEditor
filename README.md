@@ -31,7 +31,7 @@
 
 | Platform   | Latest version                                                                      |
 | ---------- | ----------------------------------------------------------------------------------- |
-| 🖥️ Desktop | [Download v0.1.35](https://github.com/mirkobechini/pdfEditor/releases/latest)       |
+| 🖥️ Desktop | [Download v0.1.38](https://github.com/mirkobechini/pdfEditor/releases/latest)       |
 | 📱 Mobile  | [Download v0.1.0](https://github.com/mirkobechini/pdfEditor/releases) (APK Android) |
 
 ## 🛠️ Tech stack
@@ -43,7 +43,7 @@
 ![Neon PostgreSQL](https://img.shields.io/badge/Neon_PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 ![Cloudflare R2](https://img.shields.io/badge/Cloudflare_R2-F38020?logo=cloudflare&logoColor=white)
 
-> **⚠️ Prerequisito OCR**: la funzione OCR richiede il **binary `tesseract`** installato sul sistema (oltre alla libreria Python `pytesseract`). Il binary **non** viene installato automaticamente da `pip`. Se manca, l'API restituisce `503 OCR_UNAVAILABLE` con un messaggio chiaro.
+> **⚠️ Prerequisito OCR**: la funzione OCR richiede il **binary `tesseract`** installato sul sistema (oltre alla libreria Python `pytesseract`).
 >
 > - **Web (deploy)**: installato automaticamente via `apt-get` in `render.yaml` (tesseract-ocr + language pack eng/ita/fra/deu/spa).
 > - **Desktop (sidecar)**: il binary `tesseract` + i language pack sono **inclusi nel sidecar PyInstaller** (`tesseract/` + `tessdata/`). L'utente finale **non deve installare nulla** — l'OCR funziona out-of-the-box.

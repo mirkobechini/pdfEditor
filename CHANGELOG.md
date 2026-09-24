@@ -2,6 +2,13 @@
 
 ## 2026-09-24
 
+### 🐛 Fix stampa desktop (issue #8, plan 0138-0139)
+
+- **beforeBuildCommand**: aggiunto a `tauri.conf.json` — la build Tauri ora ricompila il frontend prima di impacchettare (prima usava sempre il `out/` vecchio).
+- **Stampa**: vari tentativi per far funzionare la stampa in Tauri (WebView2). L'iframe con blob URL non renderizza, i data URL base64 nemmeno, il comando Rust `print_pdf` apre un viewer esterno (rifiutato), il modal anteprima in-app è stato rifiutato, `webview.print()` stampa tutto il DOM. Stato attuale: canvas clone + `<img>` overlay + `window.print()` — anteprima ancora bianca, da fixare.
+- **Rimosso**: `PrintModal.tsx`, comando Rust `print_pdf`, helper `printWebview()`, permesso `core:webview:allow-print`, toast `print-toast`.
+- **Test**: 989 test desktop passano.
+
 ### ✨ Firma PDF: flusso a step + anteprima + resize + undo/redo (issue #836)
 
 - **Desktop**: `SignModal` riorganizzato in **2 step** — (1) scegli la firma (disegna o carica immagine), (2) posizionala sulla pagina.
