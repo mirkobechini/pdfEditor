@@ -117,6 +117,23 @@ describe("ShareDialog", () => {
         expect(screen.queryByText("http://localhost:3000/share/tok1")).not.toBeInTheDocument();
     });
 
+    it("shows 'copied' only for the link that was actually copied (regression)", async () => {
+        const twoLinks = [
+            mockLinks[0],
+            { ...mockLinks[0], token: "tok2", url: "http://localhost:3000/share/tok2" },
+        ];
+        mockListShareLinks.mockResolvedValue(twoLinks);
+        Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
+
+        render(<ShareDialog open={true} onClose={() => { }} pdfId="p1" />);
+        await screen.findByText("http://localhost:3000/share/tok1");
+
+        fireEvent.click(screen.getByTestId("share-copy-tok1"));
+
+        expect(screen.getByTestId("share-copy-tok1")).toHaveTextContent("copied");
+        expect(screen.getByTestId("share-copy-tok2")).toHaveTextContent("copy");
+    });
+
     it("shows empty state when no links", async () => {
         mockListShareLinks.mockResolvedValue([]);
         render(<ShareDialog open={true} onClose={() => { }} pdfId="p1" />);

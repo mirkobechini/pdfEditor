@@ -18,12 +18,12 @@ export default function ShareDialog({ open, onClose, pdfId }: ShareDialogProps) 
     const [expiresInDays, setExpiresInDays] = React.useState("");
     const [creating, setCreating] = React.useState(false);
     const [error, setError] = React.useState("");
-    const [copied, setCopied] = React.useState(false);
+    const [copiedToken, setCopiedToken] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         if (open && pdfId) {
             setError("");
-            setCopied(false);
+            setCopiedToken(null);
             loadLinks();
         }
     }, [open, pdfId]);
@@ -69,10 +69,10 @@ export default function ShareDialog({ open, onClose, pdfId }: ShareDialogProps) 
         }
     }
 
-    function copyLink(url: string) {
+    function copyLink(token: string, url: string) {
         navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setCopiedToken(token);
+        setTimeout(() => setCopiedToken((t) => (t === token ? null : t)), 2000);
     }
 
     if (!open) return null;
@@ -135,11 +135,11 @@ export default function ShareDialog({ open, onClose, pdfId }: ShareDialogProps) 
                                 {link.has_password && <span className="text-gray-500">🔒</span>}
                                 {link.expires_at && <span className="text-gray-500">{t("expires")}: {new Date(link.expires_at).toLocaleDateString()}</span>}
                                 <button
-                                    onClick={() => copyLink(link.url)}
+                                    onClick={() => copyLink(link.token, link.url)}
                                     className="text-blue-600 hover:text-blue-700"
                                     data-testid={`share-copy-${link.token}`}
                                 >
-                                    {copied ? t("copied") : t("copy")}
+                                    {copiedToken === link.token ? t("copied") : t("copy")}
                                 </button>
                                 <button
                                     onClick={() => handleRevoke(link.token)}
