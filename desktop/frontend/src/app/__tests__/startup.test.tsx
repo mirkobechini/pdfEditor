@@ -16,6 +16,10 @@ vi.mock("../../shared/tauri", () => ({
     getApiBaseUrl: () => "http://127.0.0.1:7723",
 }));
 
+vi.mock("../../shared/auth", () => ({
+    useAuth: () => ({ refreshSession: vi.fn().mockResolvedValue(null) }),
+}));
+
 describe("StartupPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();
