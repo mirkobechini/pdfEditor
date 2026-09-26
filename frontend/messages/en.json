@@ -870,5 +870,28 @@
     "successAlreadySearchable": "This PDF already has selectable text — OCR wasn't needed.",
     "successNoText": "OCR completed, but no text was recognized in this document.",
     "processing": "Recognizing text... this may take a moment"
+  },
+  "printOptionsModal": {
+    "title": "Print options",
+    "color": "Color",
+    "colorColor": "Color",
+    "colorGrayscale": "Black and white",
+    "pages": "Pages",
+    "pagesAll": "All",
+    "pagesRange": "Range",
+    "pagesRangePlaceholder": "e.g. 1-3, 5",
+    "orientation": "Orientation",
+    "orientationAuto": "Automatic",
+    "orientationPortrait": "Portrait",
+    "orientationLandscape": "Landscape",
+    "margin": "Margins",
+    "marginNormal": "Normal",
+    "marginNone": "None",
+    "cancel": "Cancel",
+    "print": "Print",
+    "previewUnavailable": "Preview unavailable",
+    "previewPrev": "Previous page",
+    "previewNext": "Next page",
+    "previewPage": "Page"
   }
 }

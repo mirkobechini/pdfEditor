@@ -872,5 +872,28 @@
     "successAlreadySearchable": "Questo PDF contiene già del testo selezionabile — non serve OCR.",
     "successNoText": "OCR completato, ma non è stato riconosciuto nessun testo in questo documento.",
     "processing": "Riconoscimento testo in corso... potrebbe richiedere qualche istante"
+  },
+  "printOptionsModal": {
+    "title": "Opzioni di stampa",
+    "color": "Colore",
+    "colorColor": "A colori",
+    "colorGrayscale": "Bianco e nero",
+    "pages": "Pagine",
+    "pagesAll": "Tutte",
+    "pagesRange": "Intervallo",
+    "pagesRangePlaceholder": "es. 1-3, 5",
+    "orientation": "Orientamento",
+    "orientationAuto": "Automatico",
+    "orientationPortrait": "Verticale",
+    "orientationLandscape": "Orizzontale",
+    "margin": "Margini",
+    "marginNormal": "Normali",
+    "marginNone": "Nessuno",
+    "cancel": "Annulla",
+    "print": "Stampa",
+    "previewUnavailable": "Anteprima non disponibile",
+    "previewPrev": "Pagina precedente",
+    "previewNext": "Pagina successiva",
+    "previewPage": "Pagina"
   }
 }

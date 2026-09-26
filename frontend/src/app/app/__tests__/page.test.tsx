@@ -21,6 +21,8 @@ const mockUpdateMetadata = vi.fn();
 const mockDeletePdf = vi.fn();
 const mockUploadPdf = vi.fn();
 const mockImportFile = vi.fn();
+const mockRenderPagesToDataUrls = vi.fn();
+const mockPrintPagesInBrowser = vi.fn();
 vi.mock("../../lib/api", () => ({
     api: {
         getPdf: (...args: any[]) => mockGetPdf(...args),
@@ -158,6 +160,25 @@ vi.mock("../../components/ProtectDialog", () => ({
             <button data-testid="protect-close" onClick={onClose}>Close Protect</button>
         </div> : null
     ),
+}));
+
+vi.mock("../../components/PrintOptionsModal", () => ({
+    default: ({ open, onClose, onConfirm }: any) => (
+        open ? <div data-testid="print-options-modal">
+            <button data-testid="print-close" onClick={onClose}>Close Print</button>
+            <button
+                data-testid="print-confirm"
+                onClick={() => onConfirm?.({ orientation: "auto", margin: "normal", color: "color", pageRange: "" })}
+            >
+                Confirm Print
+            </button>
+        </div> : null
+    ),
+}));
+
+vi.mock("../../lib/printPages", () => ({
+    renderPagesToDataUrls: (...args: any[]) => mockRenderPagesToDataUrls(...args),
+    printPagesInBrowser: (...args: any[]) => mockPrintPagesInBrowser(...args),
 }));
 
 vi.mock("../../components/DeleteModal", () => ({
@@ -637,36 +658,28 @@ describe("EditorPage", () => {
         });
     });
 
-    it("handlePrint opens a hidden iframe and calls print", async () => {
+    it("handlePrint opens the print options modal, then renders and prints the chosen pages on confirm", async () => {
         mockGetPdf.mockResolvedValue(mockPdf);
+        mockRenderPagesToDataUrls.mockResolvedValue({ dataUrls: ["data:image/png;base64,abc"], firstIsLandscape: false });
+        mockPrintPagesInBrowser.mockResolvedValue(undefined);
         render(<EditorPage />);
         fireEvent.click(screen.getByTestId("sidebar-select"));
         await waitFor(() => expect(mockDownloadPdf).toHaveBeenCalled());
+        fireEvent.click(screen.getByTestId("viewer-total-change")); // sets totalPages to 10
 
-        // Mock iframe creation and print
-        const mockPrint = vi.fn();
-        const mockIframe = {
-            src: "",
-            style: {},
-            onload: null as any,
-            contentWindow: { focus: vi.fn(), print: mockPrint },
-        };
-        const createElementSpy = vi.spyOn(document, "createElement").mockReturnValue(mockIframe as any);
-        const appendSpy = vi.spyOn(document.body, "appendChild").mockImplementation(() => mockIframe as any);
-        const removeSpy = vi.spyOn(document.body, "removeChild").mockImplementation(() => mockIframe as any);
-
+        expect(screen.queryByTestId("print-options-modal")).not.toBeInTheDocument();
         fireEvent.click(screen.getByTestId("toolbar-print"));
-        // Trigger the onload handler
-        mockIframe.onload();
+        expect(screen.getByTestId("print-options-modal")).toBeInTheDocument();
 
-        expect(createElementSpy).toHaveBeenCalledWith("iframe");
-        expect(mockIframe.src).toBe("blob:mock-url");
-        expect(mockPrint).toHaveBeenCalled();
-        expect(appendSpy).toHaveBeenCalled();
+        fireEvent.click(screen.getByTestId("print-confirm"));
 
-        createElementSpy.mockRestore();
-        appendSpy.mockRestore();
-        removeSpy.mockRestore();
+        await waitFor(() => expect(mockRenderPagesToDataUrls).toHaveBeenCalledWith("blob:mock-url", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
+        expect(mockPrintPagesInBrowser).toHaveBeenCalledWith(
+            ["data:image/png;base64,abc"],
+            false,
+            { orientation: "auto", margin: "normal", color: "color", pageRange: "" },
+        );
+        expect(screen.queryByTestId("print-options-modal")).not.toBeInTheDocument();
     });
 
     it("shows drop overlay on drag over", () => {

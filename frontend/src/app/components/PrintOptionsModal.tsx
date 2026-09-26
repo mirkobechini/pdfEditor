@@ -2,11 +2,8 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { isTauri, tauriInvoke } from "../shared/tauri";
-import { parsePageRangeList } from "../shared/print";
-
-const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+import { usePdfJs } from "../lib/usePdfJs";
+import { parsePageRangeList } from "../lib/print";
 
 // Fixed "paper" size for the preview, based on an A4-ish ratio (1:1.414).
 // Explicit px dimensions (rather than the CSS `aspect-ratio` property) avoid
@@ -14,10 +11,6 @@ const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174
 // behavior, which otherwise distorted the landscape preview.
 const PAPER_SHORT_PX = 260;
 const PAPER_LONG_PX = Math.round(PAPER_SHORT_PX * 1.414);
-
-// Re-exported for callers that imported it from this module directly
-// (canonical implementation now lives in shared/src/print.ts).
-export { parsePageRangeList };
 
 export type PrintOrientation = "auto" | "portrait" | "landscape";
 export type PrintMargin = "none" | "normal";
@@ -27,17 +20,9 @@ export type PrintPageMode = "all" | "range";
 export interface PrintOptions {
     orientation: PrintOrientation;
     margin: PrintMargin;
-    /** Empty string when custom silent printing isn't available (browser fallback). */
-    printerName: string;
-    copies: number;
     color: PrintColorMode;
     /** "" means all pages; otherwise a range string like "1-3,5". */
     pageRange: string;
-}
-
-interface PrinterList {
-    printers: string[];
-    defaultPrinter: string | null;
 }
 
 interface PrintOptionsModalProps {
@@ -51,25 +36,25 @@ interface PrintOptionsModalProps {
     totalPages?: number;
 }
 
+/**
+ * In-app print options dialog (pages, color, orientation, margins) with a
+ * live preview, matching the desktop app's dialog. Unlike desktop there is
+ * no printer/copies selection or silent printing — the browser's own print
+ * dialog handles printer and copies; this only decides which pages get
+ * rendered and how, before handing off to `window.print()`.
+ */
 export default function PrintOptionsModal({ open, onClose, onConfirm, pdfUrl, initialPage = 1, totalPages = 1 }: PrintOptionsModalProps) {
     const t = useTranslations("printOptionsModal");
     const [orientation, setOrientation] = React.useState<PrintOrientation>("auto");
     const [margin, setMargin] = React.useState<PrintMargin>("normal");
     const [color, setColor] = React.useState<PrintColorMode>("color");
-    const [copies, setCopies] = React.useState(1);
     const [pageMode, setPageMode] = React.useState<PrintPageMode>("all");
     const [pageRangeText, setPageRangeText] = React.useState("");
-
-    const supportsCustomPrint = isTauri();
-    const [printers, setPrinters] = React.useState<string[]>([]);
-    const [selectedPrinter, setSelectedPrinter] = React.useState("");
-    const [loadingPrinters, setLoadingPrinters] = React.useState(false);
-    const [printerError, setPrinterError] = React.useState("");
 
     // ── Live page preview (rendered on demand via pdf.js, not a static snapshot) ──
     const canvasRef = React.useRef<HTMLCanvasElement>(null);
     const pdfDocRef = React.useRef<any>(null);
-    const [pdfJsLoaded, setPdfJsLoaded] = React.useState(false);
+    const pdfJsLoaded = usePdfJs();
     // Index into `selectablePages` below — NOT a raw page number. Keeping the
     // preview constrained to an index into the actually-selected pages (all,
     // or the parsed range) means browsing it can never land on a page that
@@ -85,50 +70,14 @@ export default function PrintOptionsModal({ open, onClose, onConfirm, pdfUrl, in
     const previewPage = selectablePages[Math.min(previewIndex, selectablePages.length - 1)] ?? 1;
 
     React.useEffect(() => {
-        if ((window as any).pdfjsLib) {
-            (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
-            setPdfJsLoaded(true);
-            return;
-        }
-        const script = document.createElement("script");
-        script.src = PDFJS_URL;
-        script.async = true;
-        script.onload = () => {
-            (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
-            setPdfJsLoaded(true);
-        };
-        document.body.appendChild(script);
-    }, []);
-
-    React.useEffect(() => {
         if (!open) return;
         setOrientation("auto");
         setMargin("normal");
         setColor("color");
-        setCopies(1);
         setPageMode("all");
         setPageRangeText("");
-        setPrinterError("");
         setPreviewIndex(Math.max(0, Math.min(totalPages - 1, initialPage - 1)));
-
-        if (!supportsCustomPrint) return;
-        setLoadingPrinters(true);
-        // tauriInvoke never rejects — it resolves to null on any IPC/command
-        // error, which we treat the same as "couldn't load printers".
-        tauriInvoke<PrinterList>("list_printers")
-            .then((list) => {
-                if (!list) {
-                    setPrinters([]);
-                    setSelectedPrinter("");
-                    setPrinterError(t("printersFailed"));
-                    return;
-                }
-                setPrinters(list.printers);
-                setSelectedPrinter(list.defaultPrinter || list.printers[0] || "");
-            })
-            .finally(() => setLoadingPrinters(false));
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` from useTranslations is not referentially stable; including it would re-run this on every render.
-    }, [open, supportsCustomPrint, initialPage, totalPages]);
+    }, [open, initialPage, totalPages]);
 
     // The loaded document is tied to pdfUrl — drop it as soon as the PDF changes
     // so the render effect below knows to fetch a fresh one.
@@ -204,14 +153,11 @@ export default function PrintOptionsModal({ open, onClose, onConfirm, pdfUrl, in
     // itself is never rotated, matching how a real printer handles a
     // portrait page sent to a landscape sheet (scaled to fit, not spun).
     const paperIsLandscape = orientation === "auto" ? previewLandscape : orientation === "landscape";
-    const canConfirm = !supportsCustomPrint || (!loadingPrinters && selectedPrinter !== "");
 
     function handleConfirm() {
         onConfirm({
             orientation,
             margin,
-            printerName: supportsCustomPrint ? selectedPrinter : "",
-            copies,
             color,
             pageRange: pageMode === "range" ? pageRangeText.trim() : "",
         });
@@ -289,79 +235,31 @@ export default function PrintOptionsModal({ open, onClose, onConfirm, pdfUrl, in
                 <div className="flex-1 min-w-0 flex flex-col">
                     <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
 
-                    {supportsCustomPrint && (
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                {t("printer")}
-                            </label>
-                            {printerError ? (
-                                <p className="text-xs text-red-600 dark:text-red-400" data-testid="print-printer-error">
-                                    {printerError}
-                                </p>
-                            ) : loadingPrinters ? (
-                                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400" data-testid="print-printer-loading">
-                                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-orange-600 border-t-transparent" />
-                                    {t("printersLoading")}
-                                </div>
-                            ) : (
-                                <select
-                                    value={selectedPrinter}
-                                    onChange={(e) => setSelectedPrinter(e.target.value)}
-                                    data-testid="print-printer-select"
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            {t("color")}
+                        </label>
+                        <div className="flex gap-2">
+                            {colorOptions.map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setColor(opt.value)}
+                                    data-testid={`print-color-${opt.value}`}
+                                    aria-pressed={color === opt.value}
+                                    className={`flex-1 rounded-lg border px-2 py-2 text-xs font-medium transition-all duration-100 active:scale-95 ${
+                                        color === opt.value
+                                            ? "border-orange-600 bg-orange-600 text-white"
+                                            : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    }`}
                                 >
-                                    {printers.length === 0 && <option value="">{t("printersNone")}</option>}
-                                    {printers.map((p) => (
-                                        <option key={p} value={p}>{p}</option>
-                                    ))}
-                                </select>
-                            )}
+                                    {opt.label}
+                                </button>
+                            ))}
                         </div>
-                    )}
+                    </div>
 
-                    {supportsCustomPrint && (
-                        <div className="mb-4 flex gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    {t("copies")}
-                                </label>
-                                <input
-                                    type="number"
-                                    min={1}
-                                    max={99}
-                                    value={copies}
-                                    onChange={(e) => setCopies(Math.max(1, Math.min(99, Number(e.target.value) || 1)))}
-                                    data-testid="print-copies"
-                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
-                                />
-                            </div>
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    {t("color")}
-                                </label>
-                                <div className="flex gap-2">
-                                    {colorOptions.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            type="button"
-                                            onClick={() => setColor(opt.value)}
-                                            data-testid={`print-color-${opt.value}`}
-                                            aria-pressed={color === opt.value}
-                                            className={`flex-1 rounded-lg border px-2 py-2 text-xs font-medium transition-all duration-100 active:scale-95 ${
-                                                color === opt.value
-                                                    ? "border-orange-600 bg-orange-600 text-white"
-                                                    : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                            }`}
-                                        >
-                                            {opt.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {supportsCustomPrint && totalPages > 1 && (
+                    {totalPages > 1 && (
                         <fieldset className="mb-4">
                             <legend className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 {t("pages")}
@@ -464,9 +362,8 @@ export default function PrintOptionsModal({ open, onClose, onConfirm, pdfUrl, in
                         </button>
                         <button
                             onClick={handleConfirm}
-                            disabled={!canConfirm}
                             data-testid="print-confirm"
-                            className="flex-1 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium"
+                            className="flex-1 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-sm font-medium"
                         >
                             {t("print")}
                         </button>
