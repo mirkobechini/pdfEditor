@@ -13,6 +13,7 @@
 | ❌      | Non implementato           |
 | ⏸       | In pausa / bloccato        |
 | 🟡      | Parziale (vedi note)       |
+| ➖      | Non applicabile alla piattaforma |
 
 ---
 
@@ -35,6 +36,7 @@
 | Unlock PDF                          | ✅  | ✅      | ✅     |                                                                                                                                                                                        |
 | Compressione PDF                    | ✅  | ✅      | ✅     | Web/desktop: PyMuPDF. Mobile: online → cloud API, offline → re-save pdf-lib (parziale) (issue #827)                                                                                    |
 | Undo/Redo                           | ✅  | ✅      | ❌     | Solo backend (history)                                                                                                                                                                 |
+| Cloud sync bidirezionale            | ➖  | ✅      | ✅     | Web è sempre cloud-native (nessuno storage locale da sincronizzare). Desktop/Mobile: `useCloudSync` — upload/download, conflitti, offline, sync su avvio                              |
 | **Metadata**                        |     |         |        |                                                                                                                                                                                        |
 | View metadata                       | ✅  | ✅      | ✅     | Mobile: dialog dettagli                                                                                                                                                                |
 | Edit metadata                       | ✅  | ✅      | ✅     |                                                                                                                                                                                        |
