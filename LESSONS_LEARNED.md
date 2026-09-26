@@ -5,6 +5,25 @@
 
 ---
 
+## Endpoint pubblici con path dinamico + middleware di sicurezza disabilitato nei test = bug invisibile
+
+> **Lezione appresa (2026-09-26, link di condivisione PDF sempre rotto in produzione):**
+
+`POST /share/{token}/download` restituiva sempre `403 CSRF validation failed` — nessun link di condivisione avrebbe mai funzionato per un visitatore esterno. Eppure 12 test su `test_share.py` passavano tutti, incluso uno che chiamava esattamente quell'endpoint.
+
+**Causa doppia:**
+1. `CSRF_EXEMPT_PATHS` è un `set` di stringhe esatte (`request.url.path in CSRF_EXEMPT_PATHS`). Un path con un segmento dinamico come `/share/{token}/download` non può MAI comparire lì dentro come stringa letterale — l'endpoint quindi non è mai stato davvero esente, nonostante fosse pubblico e non richiedesse autenticazione.
+2. `conftest.py` disabilita il CSRF globalmente per **tutta** la suite (`DISABLE_CSRF=True`), e solo `test_csrf.py`/`test_csrf_validation.py` lo riattivano esplicitamente per i propri test. `test_share.py` non lo faceva mai, quindi i suoi test verificavano solo la logica di business, non il comportamento reale con la sicurezza attiva.
+
+**Il bug è stato trovato leggendo il codice** (ragionando sul flusso reale: browser anonimo → nessun cookie cross-origin → nessun header CSRF → endpoint non esente → 403), non da un test che falliva o da una build manuale.
+
+**Regola per il futuro:**
+- Quando un endpoint pubblico/non autenticato ha un segmento di path dinamico, verificare ESPLICITAMENTE come funziona il meccanismo di esenzione dai middleware di sicurezza (CSRF, rate limit, auth) — un controllo per stringa esatta non copre path parametrici, serve un prefisso o una regex.
+- Ogni endpoint pubblico dovrebbe avere almeno un test che gira con il middleware di sicurezza **realmente attivo** (non nel setup di default disabilitato), altrimenti il test verifica solo che la funzione esista, non che sia raggiungibile.
+- Prima di deployare/testare manualmente una feature "implementata ma mai verificata in build reale", vale la pena una code review mirata al flusso end-to-end reale (richiesta anonima → middleware → handler), non solo ai singoli file toccati.
+
+---
+
 ## `desktop/frontend/src/shared/` è una copia generata — modificarla non serve a nulla
 
 > **Lezione appresa (2026-09-26, dialogo di stampa custom + fix auto-login):**

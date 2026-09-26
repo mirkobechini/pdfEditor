@@ -97,6 +97,14 @@ La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, de
 **Fix:** nuovo `refreshSession()` nel context di autenticazione, richiamato esplicitamente dalla startup page dopo la conferma che backend/DB/API sono pronti; redirect diretto a `/app` se la sessione è valida.
 **Stato:** ✅ Risolto e verificato in build reale (2026-09-26).
 
+### Link di condivisione PDF sempre rotto — 403 CSRF (plan 0138-0139, #C) ✅
+
+**File:** `backend/app/core/csrf.py`, `backend/app/api/v1/share.py`
+**Descrizione:** `POST /share/{token}/download` (download pubblico, non autenticato) restituiva sempre `403 CSRF validation failed`. Nessun link di condivisione avrebbe mai funzionato per un visitatore esterno.
+**Causa:** `CSRF_EXEMPT_PATHS` è un set di stringhe esatte, incompatibile con un path a segmento dinamico (`{token}`). I test non l'hanno mai intercettato perché `conftest.py` disabilita il CSRF globalmente e `test_share.py` non lo riattivava per testare il percorso reale. Trovato in code review pre-deploy, non da un test manuale.
+**Fix:** nuovo meccanismo a prefisso (`CSRF_EXEMPT_PATH_PREFIXES`) per esentare `/share/` (pubblico, nessuna sessione da proteggere). Aggiunto anche rate limiting (10/min per IP) mancante sul download, per evitare brute-force della password di un link protetto.
+**Stato:** ✅ Risolto e testato (test di regressione verificato: fallisce senza il fix). **Non ancora testato con un deploy reale.**
+
 ---
 
 ## 🔵 Debito tecnico
