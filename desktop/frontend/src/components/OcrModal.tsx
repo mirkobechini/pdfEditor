@@ -4,6 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
 import { mapError } from "../shared/error-map";
+import type { OcrResult } from "../shared/types";
 
 interface OcrModalProps {
     open: boolean;
@@ -25,12 +26,12 @@ export default function OcrModal({ open, onClose, pdfId, onSuccess }: OcrModalPr
     const [language, setLanguage] = React.useState("eng");
     const [running, setRunning] = React.useState(false);
     const [error, setError] = React.useState("");
-    const [success, setSuccess] = React.useState(false);
+    const [result, setResult] = React.useState<OcrResult | null>(null);
 
     React.useEffect(() => {
         if (open) {
             setError("");
-            setSuccess(false);
+            setResult(null);
             setLanguage("eng");
         }
     }, [open]);
@@ -39,10 +40,10 @@ export default function OcrModal({ open, onClose, pdfId, onSuccess }: OcrModalPr
         if (!pdfId) return;
         setRunning(true);
         setError("");
-        setSuccess(false);
+        setResult(null);
         try {
-            await api.ocrPdf(pdfId, language);
-            setSuccess(true);
+            const res = await api.ocrPdf(pdfId, language);
+            setResult(res);
             onSuccess?.();
         } catch (err) {
             setError(t("failed") + ": " + mapError(err));
@@ -50,6 +51,14 @@ export default function OcrModal({ open, onClose, pdfId, onSuccess }: OcrModalPr
             setRunning(false);
         }
     }
+
+    const successMessage = !result
+        ? ""
+        : result.already_searchable
+            ? t("successAlreadySearchable")
+            : result.character_count > 0
+                ? t("success", { count: result.character_count })
+                : t("successNoText");
 
     if (!open) return null;
 
@@ -69,9 +78,9 @@ export default function OcrModal({ open, onClose, pdfId, onSuccess }: OcrModalPr
                     </div>
                 )}
 
-                {success && (
+                {result && (
                     <div className="mb-4 p-3 text-sm text-green-700 bg-green-100 dark:bg-green-900/30 rounded" data-testid="ocr-success">
-                        {t("success")}
+                        {successMessage}
                     </div>
                 )}
 

@@ -865,6 +865,10 @@
     "run": "Run OCR",
     "running": "Running...",
     "cancel": "Cancel",
-    "failed": "OCR failed"
+    "failed": "OCR failed",
+    "success": "OCR completed: recognized {count} characters. The text is now selectable and searchable: try selecting it with the mouse or use Ctrl+F to search.",
+    "successAlreadySearchable": "This PDF already has selectable text — OCR wasn't needed.",
+    "successNoText": "OCR completed, but no text was recognized in this document.",
+    "processing": "Recognizing text... this may take a moment"
   }
 }

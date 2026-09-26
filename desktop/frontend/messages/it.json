@@ -524,7 +524,9 @@
     "running": "Esecuzione...",
     "cancel": "Annulla",
     "failed": "OCR fallito",
-    "success": "OCR completato. Il testo è ora selezionabile e ricercabile: prova a selezionarlo con il mouse o usa Ctrl+F per cercare.",
+    "success": "OCR completato: riconosciuti {count} caratteri. Il testo è ora selezionabile e ricercabile: prova a selezionarlo con il mouse o usa Ctrl+F per cercare.",
+    "successAlreadySearchable": "Questo PDF contiene già del testo selezionabile — non serve OCR.",
+    "successNoText": "OCR completato, ma non è stato riconosciuto nessun testo in questo documento.",
     "processing": "Riconoscimento testo in corso... potrebbe richiedere qualche istante"
   },
   "annotationDialog": {

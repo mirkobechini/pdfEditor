@@ -33,6 +33,12 @@ export interface PdfListResponse {
   total: number;
 }
 
+export interface OcrResult {
+  pdf: PdfDocument;
+  character_count: number;
+  already_searchable: boolean;
+}
+
 export interface Metadata {
   title?: string | null;
   author?: string | null;

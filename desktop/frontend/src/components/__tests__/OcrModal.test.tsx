@@ -20,7 +20,11 @@ vi.mock("../../shared/api", () => ({
 describe("OcrModal", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockOcrPdf.mockResolvedValue({ id: "p1" });
+        mockOcrPdf.mockResolvedValue({
+            pdf: { id: "p1" },
+            character_count: 42,
+            already_searchable: false,
+        });
     });
 
     it("returns null when closed", () => {
@@ -49,12 +53,41 @@ describe("OcrModal", () => {
         expect(onClose).not.toHaveBeenCalled();
     });
 
-    it("shows success feedback after OCR completes", async () => {
+    it("shows success feedback with recognized character count", async () => {
         render(<OcrModal open={true} onClose={() => { }} pdfId="p1" />);
 
         fireEvent.click(screen.getByTestId("ocr-run"));
 
-        expect(await screen.findByTestId("ocr-success")).toBeInTheDocument();
+        const successEl = await screen.findByTestId("ocr-success");
+        expect(successEl).toHaveTextContent("success");
+    });
+
+    it("shows a distinct message when the PDF already had selectable text", async () => {
+        mockOcrPdf.mockResolvedValue({
+            pdf: { id: "p1" },
+            character_count: 0,
+            already_searchable: true,
+        });
+        render(<OcrModal open={true} onClose={() => { }} pdfId="p1" />);
+
+        fireEvent.click(screen.getByTestId("ocr-run"));
+
+        const successEl = await screen.findByTestId("ocr-success");
+        expect(successEl).toHaveTextContent("successAlreadySearchable");
+    });
+
+    it("shows a distinct message when no text was recognized", async () => {
+        mockOcrPdf.mockResolvedValue({
+            pdf: { id: "p1" },
+            character_count: 0,
+            already_searchable: false,
+        });
+        render(<OcrModal open={true} onClose={() => { }} pdfId="p1" />);
+
+        fireEvent.click(screen.getByTestId("ocr-run"));
+
+        const successEl = await screen.findByTestId("ocr-success");
+        expect(successEl).toHaveTextContent("successNoText");
     });
 
     it("shows processing state while OCR runs", async () => {
