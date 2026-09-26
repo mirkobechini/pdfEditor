@@ -1,6 +1,17 @@
 {
   "viewer": {
-    "print": "Print"
+    "print": "Print",
+    "printOptionsTitle": "Print options",
+    "printOptionsPages": "Pages",
+    "printOptionsPagesAll": "All",
+    "printOptionsPagesRange": "Range",
+    "printOptionsPagesRangePlaceholder": "e.g. 1-3, 5",
+    "printOptionsOrientation": "Orientation",
+    "printOptionsOrientationAuto": "Automatic",
+    "printOptionsOrientationPortrait": "Portrait",
+    "printOptionsOrientationLandscape": "Landscape",
+    "printOptionsCancel": "Cancel",
+    "printOptionsConfirm": "Print"
   },
   "settings": {
     "title": "Settings",

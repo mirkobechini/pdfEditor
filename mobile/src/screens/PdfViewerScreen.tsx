@@ -7,7 +7,8 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RouteProp } from "@react-navigation/native";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { getLocalPdfById } from "../services/localDb";
-import { printPdf } from "../services/printService";
+import { printPdf, type PrintOptions } from "../services/printService";
+import PrintOptionsDialog from "./PrintOptionsDialog";
 import Pdf from "react-native-pdf";
 import { useTranslation } from "react-i18next";
 
@@ -29,6 +30,7 @@ export default function PdfViewerScreen() {
     const [scale, setScale] = useState(1);
     const PdfRef = useRef<any>(null);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [printOptionsVisible, setPrintOptionsVisible] = useState(false);
 
     // Load PDF URI from local DB
     React.useEffect(() => {
@@ -94,9 +96,15 @@ export default function PdfViewerScreen() {
     const zoomIn = () => setScale((s) => Math.min(s + 0.25, 3));
     const zoomOut = () => setScale((s) => Math.max(s - 0.25, 0.5));
 
-    const handlePrint = async () => {
+    const handlePrint = () => {
         if (!pdfUri) return;
-        await printPdf(pdfUri);
+        setPrintOptionsVisible(true);
+    };
+
+    const handlePrintConfirm = async (options: PrintOptions) => {
+        setPrintOptionsVisible(false);
+        if (!pdfUri) return;
+        await printPdf(pdfUri, numPages, options);
     };
 
     if (error) {
@@ -184,6 +192,13 @@ export default function PdfViewerScreen() {
                     {t("viewer.print")}
                 </Button>
             </View>
+
+            <PrintOptionsDialog
+                visible={printOptionsVisible}
+                totalPages={numPages}
+                onDismiss={() => setPrintOptionsVisible(false)}
+                onConfirm={handlePrintConfirm}
+            />
         </SafeAreaView>
     );
 }
