@@ -7,11 +7,11 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, compressPdfOffline, exportPdf, importFile, signPdf } from "../services/pdfService";
+import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, compressPdfOffline, exportPdf, importFile } from "../services/pdfService";
 import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import * as DocumentPicker from "expo-document-picker";
-import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
 import { useTranslation } from "react-i18next";
+import SignFlowDialog from "../components/SignFlowDialog";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 
@@ -55,8 +55,7 @@ export default function ToolsScreen() {
     // Password dialog state
     const [passwordDialog, setPasswordDialog] = useState<{ pdfId: string; pdfName: string; mode: "protect" | "unlock" } | null>(null);
     // Sign dialog state
-    const [signDialog, setSignDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number } | null>(null);
-    const [signPage, setSignPage] = useState(1);
+    const [signDialog, setSignDialog] = useState<{ pdfId: string; pdfName: string; pdfUri: string; totalPages: number } | null>(null);
     const [passwordInput, setPasswordInput] = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
 
@@ -298,38 +297,18 @@ export default function ToolsScreen() {
 
     function openSignDialog(pdfId: string) {
         const pdf = pdfs.find((p) => p.id === pdfId);
-        setSignDialog({ pdfId, pdfName: pdf?.original_filename || "PDF", totalPages: pdf?.page_count || 1 });
-        setSignPage(1);
+        if (!pdf) return;
+        setSignDialog({ pdfId, pdfName: pdf.original_filename, pdfUri: pdf.uri, totalPages: pdf.page_count || 1 });
     }
 
-    async function executeSign() {
-        if (!signDialog) return;
-        setSignDialog(null);
-        setLoading(true);
-        try {
-            // Let the user pick a signature image (PNG) from the gallery
-            const result = await DocumentPicker.getDocumentAsync({
-                type: "image/*",
-                copyToCacheDirectory: true,
-                multiple: false,
-            });
-            if (result.canceled || !result.assets?.[0]) {
-                setLoading(false);
-                return;
-            }
-            const asset = result.assets[0];
-            // Read the image as base64
-            const base64 = await readAsStringAsync(asset.uri, { encoding: EncodingType.Base64 });
-            const result_pdf = await signPdf(signDialog.pdfId, base64, signPage, 50, 50, 200, 80);
-            if (result_pdf) showResult(t("tools.signResult", { name: result_pdf.original_filename }));
-            else showResult(t("tools.signFailed"));
-        } catch (e) {
-            console.error("Sign error:", e);
-            showResult(t("tools.signFailed"));
-        } finally {
-            setLoading(false);
-            await reloadPdfs();
-        }
+    async function handleSigned(result: LocalPdf) {
+        showResult(t("tools.signResult", { name: result.original_filename }));
+        await reloadPdfs();
+    }
+
+    async function handleSignFailed() {
+        showResult(t("tools.signFailed"));
+        await reloadPdfs();
     }
 
     async function executeImport() {
@@ -827,31 +806,19 @@ export default function ToolsScreen() {
                 </Dialog>
             </Portal>
 
-            {/* Sign Dialog — choose page then pick signature image */}
-            <Portal>
-                <Dialog visible={signDialog !== null} onDismiss={() => setSignDialog(null)}>
-                    <Dialog.Title>{t("tools.signTitle")}</Dialog.Title>
-                    <Dialog.Content>
-                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                            {t("tools.signHint", { name: signDialog?.pdfName || "" })}
-                        </Text>
-                        <TextInput
-                            label={t("tools.signPageLabel")}
-                            value={String(signPage)}
-                            onChangeText={(val) => setSignPage(Math.max(1, parseInt(val) || 1))}
-                            mode="outlined"
-                            keyboardType="numeric"
-                            style={{ marginBottom: 12 }}
-                        />
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button onPress={() => setSignDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={executeSign} loading={loading} disabled={loading}>
-                            {t("tools.signAction")}
-                        </Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
+            {/* Sign flow — choose signature (draw/gallery) then position it */}
+            {signDialog && (
+                <SignFlowDialog
+                    visible={signDialog !== null}
+                    pdfId={signDialog.pdfId}
+                    pdfName={signDialog.pdfName}
+                    pdfUri={signDialog.pdfUri}
+                    totalPages={signDialog.totalPages}
+                    onDismiss={() => setSignDialog(null)}
+                    onSigned={handleSigned}
+                    onFailed={handleSignFailed}
+                />
+            )}
 
             {/* Name Dialog — ask for file name before executing */}
             <Portal>
