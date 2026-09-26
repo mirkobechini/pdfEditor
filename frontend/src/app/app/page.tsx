@@ -20,10 +20,13 @@ import OcrModal from "../components/OcrModal";
 import DeleteModal from "../components/DeleteModal";
 import ImportExportDialog from "../components/ImportExportDialog";
 import DropOverlay from "../components/DropOverlay";
+import PrintOptionsModal, { type PrintOptions } from "../components/PrintOptionsModal";
 import { api, PdfDocument } from "../lib/api";
 import { mapError } from "../lib/error-map";
 import { downloadBlob } from "../lib/download";
 import { useAuth } from "../lib/auth";
+import { parsePageRangeList } from "../lib/print";
+import { renderPagesToDataUrls, printPagesInBrowser } from "../lib/printPages";
 
 export default function EditorPage() {
     const { user, loading } = useAuth();
@@ -47,6 +50,7 @@ export default function EditorPage() {
     const [ocrOpen, setOcrOpen] = React.useState(false);
     const [dragOver, setDragOver] = React.useState(false);
     const [importExportOpen, setImportExportOpen] = React.useState(false);
+    const [printOptionsOpen, setPrintOptionsOpen] = React.useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
     const [fileToDelete, setFileToDelete] = React.useState<PdfDocument | null>(null);
     const [sidebarRefreshKey, setSidebarRefreshKey] = React.useState(0);
@@ -176,30 +180,19 @@ export default function EditorPage() {
 
     function handlePrint() {
         if (!fileUrl) return;
-        // Open the PDF in a hidden iframe and trigger the browser print dialog.
-        // This prints the actual PDF (not the page) via the browser's native print.
-        const iframe = document.createElement("iframe");
-        iframe.src = fileUrl;
-        iframe.style.position = "fixed";
-        iframe.style.right = "0";
-        iframe.style.bottom = "0";
-        iframe.style.width = "0";
-        iframe.style.height = "0";
-        iframe.style.border = "none";
-        iframe.style.visibility = "hidden";
-        iframe.onload = () => {
-            try {
-                iframe.contentWindow?.focus();
-                iframe.contentWindow?.print();
-            } catch (err) {
-                console.error("Print failed:", err);
-            }
-        };
-        document.body.appendChild(iframe);
-        // Clean up after a delay to allow the print dialog to open
-        setTimeout(() => {
-            document.body.removeChild(iframe);
-        }, 60000);
+        setPrintOptionsOpen(true);
+    }
+
+    async function executePrint(options: PrintOptions) {
+        setPrintOptionsOpen(false);
+        if (!fileUrl) return;
+        try {
+            const pageNumbers = parsePageRangeList(options.pageRange, totalPages || 1);
+            const { dataUrls, firstIsLandscape } = await renderPagesToDataUrls(fileUrl, pageNumbers);
+            await printPagesInBrowser(dataUrls, firstIsLandscape, options);
+        } catch (err) {
+            console.error("Print failed:", err);
+        }
     }
 
     // Shared by handleDrop and SignDialog.onSuccess: point the viewer at a
@@ -394,6 +387,14 @@ export default function EditorPage() {
                 open={protectOpen}
                 onClose={() => setProtectOpen(false)}
                 pdfId={selectedId}
+            />
+            <PrintOptionsModal
+                open={printOptionsOpen}
+                onClose={() => setPrintOptionsOpen(false)}
+                onConfirm={executePrint}
+                pdfUrl={fileUrl}
+                initialPage={currentPage}
+                totalPages={totalPages || 1}
             />
             <SignDialog
                 open={signOpen}
