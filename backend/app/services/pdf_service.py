@@ -1012,7 +1012,7 @@ class PdfService:
         pdf_id: str,
         user_id: str,
         language: str = "eng",
-    ) -> PdfDocument:
+    ) -> tuple[PdfDocument, int, bool]:
         """Run OCR on a scanned PDF and return a searchable PDF.
 
         If the PDF already has a text layer, it is returned unchanged.
@@ -1020,6 +1020,11 @@ class PdfService:
         The recognized text is added as an invisible layer (searchable PDF).
 
         Requires the `tesseract` binary to be installed on the system.
+
+        Returns (pdf, character_count, already_searchable). OCR adds an
+        invisible text layer, so the PDF looks visually unchanged — the
+        caller uses character_count/already_searchable to tell the user
+        something actually happened.
         """
         import fitz
 
@@ -1036,7 +1041,7 @@ class PdfService:
             has_text = any(doc[i].get_text().strip() for i in range(doc.page_count))
             if has_text:
                 # Already searchable — return unchanged
-                return pdf
+                return pdf, 0, True
 
             import pytesseract
 
@@ -1050,6 +1055,7 @@ class PdfService:
                     "on this system. Install it or contact the administrator."
                 )
 
+            character_count = 0
             for page_num in range(doc.page_count):
                 page = doc[page_num]
                 # Render page to image at 200 DPI for OCR
@@ -1066,7 +1072,9 @@ class PdfService:
                 text = pytesseract.image_to_string(
                     img, lang=language, config="--psm 3"
                 )
-                if text.strip():
+                stripped = text.strip()
+                if stripped:
+                    character_count += len(stripped)
                     # Insert recognized text as invisible text layer
                     page.insert_textbox(
                         fitz.Rect(0, 0, page.rect.width, page.rect.height),
@@ -1090,4 +1098,4 @@ class PdfService:
         pdf.storage_filename = f"{file_uuid}.pdf"
         pdf.file_size = len(output_bytes)
 
-        return self.repo.update(pdf)
+        return self.repo.update(pdf), character_count, False

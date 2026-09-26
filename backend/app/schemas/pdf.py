@@ -61,6 +61,16 @@ class OcrRequest(BaseModel):
     language: str = "eng"  # Tesseract language code (e.g. eng, ita)
 
 
+class OcrResponse(BaseModel):
+    """Schema for OCR response — the updated PDF plus what OCR actually did,
+    so the UI can tell the user something happened (OCR adds an invisible
+    text layer, so the PDF looks visually unchanged)."""
+
+    pdf: PdfResponse
+    character_count: int
+    already_searchable: bool = False
+
+
 class PdfListResponse(BaseModel):
     """Schema for list of PDF documents."""
 
