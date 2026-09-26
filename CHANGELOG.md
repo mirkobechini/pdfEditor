@@ -2,6 +2,13 @@
 
 ## 2026-09-26
 
+### 🐛 Fix bloccante: link di condivisione PDF sempre rotto (plan 0138-0139, #C)
+
+- **Trovato in code review pre-deploy**, prima di qualunque test manuale: `POST /share/{token}/download` restituiva sempre `403 CSRF validation failed`, perché `CSRF_EXEMPT_PATHS` è un set di stringhe esatte e non può contenere un path con un segmento dinamico (`{token}`). Nessun link di condivisione avrebbe mai funzionato per un visitatore esterno. I test non l'hanno mai intercettato perché disabilitano il CSRF globalmente.
+- **Fix:** nuovo meccanismo a prefisso (`CSRF_EXEMPT_PATH_PREFIXES`) in `csrf.py` per esentare `/share/` (endpoint pubblico, nessuna sessione da proteggere). Aggiunto test di regressione (verificato che fallisce senza il fix).
+- **Fix di sicurezza correlato:** aggiunto rate limiting (10/minuto per IP) su `/share/{token}/download`, che prima permetteva brute-force illimitato della password di un link protetto.
+- **Fix UI minore:** `ShareDialog` (desktop e web) mostrava "Copiato" su **tutti** i link quando se ne copiava uno solo (booleano condiviso invece di tracciare il token copiato).
+
 ### ✨ OCR: messaggio di risultato reale invece di un generico "completato" (plan 0138-0139, #D)
 
 - **Motivo:** l'OCR aggiunge un layer di testo invisibile al PDF, quindi il documento appare identico prima e dopo — l'utente non aveva modo di sapere se aveva funzionato.
