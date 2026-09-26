@@ -37,6 +37,14 @@ CSRF_EXEMPT_PATHS = {
     "/health",
 }
 
+# Path *prefixes* exempt from CSRF, for public endpoints with a dynamic
+# segment (e.g. a share token) that can't be listed as exact strings in
+# CSRF_EXEMPT_PATHS. These are all fully public/unauthenticated — CSRF
+# protects session cookies, and there's no session to protect here.
+CSRF_EXEMPT_PATH_PREFIXES = (
+    "/share/",
+)
+
 
 def generate_csrf_token() -> str:
     """Generate a cryptographically secure CSRF token."""
@@ -112,8 +120,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 set_csrf_cookie(response, request=request)
             return response
 
-        # Skip CSRF validation for exempt paths (auth endpoints, health)
-        if request.url.path in CSRF_EXEMPT_PATHS:
+        # Skip CSRF validation for exempt paths (auth endpoints, health) and
+        # exempt prefixes (public endpoints with a dynamic path segment).
+        if request.url.path in CSRF_EXEMPT_PATHS or request.url.path.startswith(
+            CSRF_EXEMPT_PATH_PREFIXES
+        ):
             return await call_next(request)
 
         # State-changing methods on non-exempt paths: validate CSRF
