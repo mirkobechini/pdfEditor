@@ -362,6 +362,35 @@ class TestAuthServiceEdgeCases:
 
         _clear_password_cache()
 
+    def test_delete_pdf_with_cached_password(self, client, free_headers, db_session):
+        """Regression: deleting a PDF with a cached password must not fail.
+        PasswordCache.pdf_id has no ondelete=CASCADE (same gap as
+        ShareLink — see test_share.py's test_delete_pdf_with_active_share_link)
+        — Postgres (production) would 500 with an IntegrityError unless the
+        service explicitly deletes the PasswordCache row first."""
+        import fitz
+        from app.models.password_cache import PasswordCache
+
+        doc = fitz.open()
+        doc.new_page(width=200, height=200)
+        content = doc.tobytes()
+        doc.close()
+
+        resp = client.post(
+            "/pdfs/upload",
+            headers=free_headers,
+            files={"file": ("cached.pdf", content, "application/pdf")},
+        )
+        pdf_id = resp.json()["id"]
+
+        db_session.add(PasswordCache(pdf_id=pdf_id, password="cached-secret"))
+        db_session.commit()
+
+        resp = client.delete(f"/pdfs/{pdf_id}", headers=free_headers)
+        assert resp.status_code == 204
+
+        assert db_session.query(PasswordCache).filter(PasswordCache.pdf_id == pdf_id).first() is None
+
     def test_password_cache_lazy_cleanup(self, db_session):
         """Test lazy cleanup on cache write."""
         from app.services.pdf_service import _cache_password, _get_cached_password, _clear_password_cache
