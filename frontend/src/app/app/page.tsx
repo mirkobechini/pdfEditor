@@ -401,6 +401,7 @@ export default function EditorPage() {
                 onClose={() => setSignOpen(false)}
                 pdfId={selectedId}
                 totalPages={totalPages}
+                pdfUrl={fileUrl}
                 onSuccess={loadDocIntoViewer}
             />
             <ShareDialog
