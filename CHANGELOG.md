@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-09-26
+
+### ✨ Dialogo di stampa completamente custom + stampa silenziosa (issue #8, plan 0138-0139)
+
+- **Motivo:** dopo il fix del timing (anteprima bianca), il dialogo nativo restava inadeguato: quello "Browser" di Edge è dispersivo, quello "System" di Windows (`ShowPrintUI`) non mostra anteprima e non permette di scegliere pagine/colore dalla nostra UI.
+- **Nuovo modal `PrintOptionsModal`:** anteprima live via pdf.js (navigabile pagina per pagina, si aggiorna in tempo reale con orientamento/margini/colore), selezione stampante (elenco reale delle stampanti installate), copie, colore/bianco e nero, pagine (tutte o intervallo — con anteprima vincolata alle sole pagine dell'intervallo scelto), orientamento (il contenuto non viene mai ruotato: solo la forma del foglio cambia, come farebbe una stampante reale), margini.
+- **Stampa silenziosa:** nessun dialogo di sistema si apre più. Nuovi comandi Rust `list_printers` e `print_pages` (in `desktop/src-tauri/src/lib.rs`) invocano script PowerShell (`desktop/src-tauri/scripts/*.ps1`) che usano `System.Drawing.Printing.PrintDocument` per stampare le pagine renderizzate (PNG) con le impostazioni scelte, senza passare da WebView2.
+- **Bug di race condition risolto:** caricamento del PDF nella preview e rendering della pagina selezionata erano in due `useEffect` separati — un caricamento lento poteva sovrascrivere la pagina appena scelta dall'utente con una pagina stale. Unificati in un solo effect.
+- **Lezione:** `desktop/frontend/src/shared/` è una copia generata da `shared/src/` (script di prebuild `copy-shared.js`) — va sempre modificato il sorgente canonico in `shared/src/`, mai la copia locale, altrimenti la build la sovrascrive silenziosamente.
+- **Verificato in build reale.**
+
+### 🐛 Fix auto-login lento all'avvio (desktop)
+
+- **Sintomo:** con una sessione già salvata, l'app mostrava per alcuni secondi la pagina di login prima di reindirizzare automaticamente a `/app`.
+- **Causa:** `restoreSession()` (in `shared/src/auth.tsx`) parte al boot dell'app in parallelo con l'avvio del sidecar Python e spesso perde questa "gara" su installazioni fresche (sidecar non ancora pronto) — il tentativo fallisce silenziosamente e l'utente atterra sul login, salvo poi essere rediretto più tardi da un secondo trigger.
+- **Fix:** aggiunto `refreshSession()` al context di autenticazione. La startup page (`desktop/frontend/src/app/startup/page.tsx`) lo richiama esplicitamente dopo aver confermato che backend/DB/API sono pronti, e reindirizza direttamente a `/app` se la sessione risulta valida.
+- **Verificato in build reale.**
+
+## 2026-09-25
+
+### 🐛 Fix stampa desktop: anteprima bianca (issue #8, plan 0138-0139)
+
+- **Causa reale trovata:** non era un problema di canvas GPU/`toDataURL()` (il canvas di PDF.js è un context 2D normale, non taintato) ma un **problema di timing**: `window.print()` veniva chiamato nello stesso tick in cui l'`<img>` con il data URL base64 veniva inserito nel DOM. Il motore di stampa di WebView2 cattura lo snapshot del DOM prima che l'immagine finisca di decodificare → pagina bianca.
+- **Fix:** `handlePrint` ora crea l'`<img>`, attende `img.decode()` (con fallback su `onload`/`onerror` se `decode()` non è supportato), poi aspetta due `requestAnimationFrame` prima di chiamare `window.print()`. Rimosso il clone-canvas inutile (no-op su un context 2D non taintato). Cleanup dell'overlay ora su evento `afterprint` invece di un `setTimeout(…, 1000)` a tempo fisso (con fallback di sicurezza a 15s).
+- **Test:** aggiornato test `1k: handlePrint` per il nuovo flusso async (mock `HTMLImageElement.prototype.decode`).
+- **Da verificare:** in build reale — vedi `.specs/active/fix-desktop-build-0138-0139-unified.md`.
+
 ## 2026-09-24
 
 ### 🐛 Fix stampa desktop (issue #8, plan 0138-0139)

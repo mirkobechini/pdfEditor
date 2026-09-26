@@ -1,7 +1,19 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-24
+> **Aggiornato:** 2026-09-26
+
+---
+
+## `desktop/frontend/src/shared/` è una copia generata — modificarla non serve a nulla
+
+> **Lezione appresa (2026-09-26, dialogo di stampa custom + fix auto-login):**
+
+Ho modificato `desktop/frontend/src/shared/auth.tsx` per aggiungere `refreshSession()`. `npx tsc --noEmit` passava, tutti i test passavano. Poi `npm run build` (dentro `tauri build`) falliva con `Property 'refreshSession' does not exist` — come se le mie modifiche non esistessero.
+
+**Causa:** `desktop/frontend/src/shared/` **non è codice sorgente** — è generata dallo script di prebuild `copy-shared.js`, che copia `shared/src/*.ts(x)` (il vero sorgente condiviso tra desktop/web/mobile) dentro `desktop/frontend/src/shared/` **ad ogni build**, sovrascrivendo qualsiasi modifica locale. `tsc --noEmit` da riga di comando non esegue il prebuild, quindi vedeva la mia copia modificata — ma `npm run build` sì, e la sovrascriveva prima di compilare.
+
+**Regola per il futuro:** prima di modificare un file sotto `desktop/frontend/src/shared/` (o l'equivalente in `frontend/src/shared/`), controllare se esiste un file con lo stesso nome in `shared/src/` — se sì, è quello il sorgente da modificare. Un `grep -rn "copy-shared\|prebuild"` nei `package.json` del progetto conferma rapidamente se un pacchetto ha questo pattern.
 
 ---
 
