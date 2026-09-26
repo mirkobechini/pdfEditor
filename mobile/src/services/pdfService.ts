@@ -13,13 +13,13 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
 }
 
-async function readPdfBytes(uri: string): Promise<Uint8Array> {
+export async function readPdfBytes(uri: string): Promise<Uint8Array> {
   const file = new File(uri);
   const buffer = await file.arrayBuffer();
   return new Uint8Array(buffer);
 }
 
-async function writePdfBytes(uri: string, bytes: Uint8Array): Promise<void> {
+export async function writePdfBytes(uri: string, bytes: Uint8Array): Promise<void> {
   let binary = "";
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]);

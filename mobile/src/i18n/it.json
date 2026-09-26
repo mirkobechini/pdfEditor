@@ -1,6 +1,17 @@
 {
   "viewer": {
-    "print": "Stampa"
+    "print": "Stampa",
+    "printOptionsTitle": "Opzioni di stampa",
+    "printOptionsPages": "Pagine",
+    "printOptionsPagesAll": "Tutte",
+    "printOptionsPagesRange": "Intervallo",
+    "printOptionsPagesRangePlaceholder": "es. 1-3, 5",
+    "printOptionsOrientation": "Orientamento",
+    "printOptionsOrientationAuto": "Automatico",
+    "printOptionsOrientationPortrait": "Verticale",
+    "printOptionsOrientationLandscape": "Orizzontale",
+    "printOptionsCancel": "Annulla",
+    "printOptionsConfirm": "Stampa"
   },
   "settings": {
     "title": "Impostazioni",
