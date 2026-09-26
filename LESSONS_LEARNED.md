@@ -5,6 +5,23 @@
 
 ---
 
+## `backend/.env` locale (gitignored) può mascherare fallimenti che solo la CI vede
+
+> **Lezione appresa (2026-09-26, prima vera esecuzione CI del branch `feature/desktop-0139-fixes`):**
+
+Aperta la PR #845 dopo settimane di lavoro su questo branch (62 commit), la suite locale era sempre stata verde. La CI invece ha fallito subito: `test_import_jpg` e `test_import_image_formats` (aggiunti in un commit precedente per GIF/BMP) si aspettavano `201` con un utente tier **pro**, ma `import_images` è una feature **enterprise-only** — `license_seed.py` lo dichiara esplicitamente, e non era mai stato vero il contrario.
+
+**Perché in locale non falliva mai:** `backend/.env` (gitignored, non versionato) contiene `DISABLE_LICENSE_ENFORCEMENT=True` — impostato per comodità di sviluppo. Ogni esecuzione locale di questi test bypassava completamente il controllo tier, mascherando l'assunzione sbagliata nel test. La CI non ha (giustamente) questo file, quindi girava con l'enforcement reale.
+
+**Fix:** aggiunta fixture `enterprise_headers` in `conftest.py`, aggiornati i test per usarla, aggiunto un test negativo che verifica che `pro` riceva davvero 403.
+
+**Regola per il futuro:**
+- Prima di aprire una PR/fare un merge dopo un lungo periodo di sviluppo locale, eseguire la suite con le stesse variabili d'ambiente della CI (es. `DISABLE_LICENSE_ENFORCEMENT=False python -m pytest`), non fidarsi solo del verde locale se esiste un `.env` locale con override di sicurezza/feature flag.
+- Quando un test usa `pro_headers`/`free_headers`/ecc. per una feature gated, verificare il tier richiesto in `license_seed.py` — non assumerlo dal nome del fixture usato altrove nello stesso file.
+- Un branch che accumula molti commit senza mai passare per una vera esecuzione CI (PR aperta solo a lavoro concluso) rischia di scoprire più bug "vecchi" tutti insieme, proprio come qui.
+
+---
+
 ## Endpoint pubblici con path dinamico + middleware di sicurezza disabilitato nei test = bug invisibile
 
 > **Lezione appresa (2026-09-26, link di condivisione PDF sempre rotto in produzione):**

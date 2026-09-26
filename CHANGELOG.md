@@ -2,6 +2,11 @@
 
 ## 2026-09-26
 
+### 🐛 Fix CI: test import immagini usavano il tier sbagliato
+
+- **PR #845, prima vera esecuzione CI del branch dopo 62 commit locali**: `test_import_jpg`/`test_import_image_formats` usavano `pro_headers` aspettandosi successo, ma `import_images` è enterprise-only per `license_seed.py`. In locale non falliva mai perché `backend/.env` (gitignored) disabilita l'enforcement delle licenze per comodità di sviluppo.
+- **Fix:** nuova fixture `enterprise_headers` in `conftest.py`, test aggiornati, aggiunto un test negativo che verifica il 403 per il tier `pro`. Verificata l'intera suite con `DISABLE_LICENSE_ENFORCEMENT=False` forzato, per matchare esattamente l'ambiente CI.
+
 ### 🐛 Fix bloccante: link di condivisione PDF sempre rotto (plan 0138-0139, #C)
 
 - **Trovato in code review pre-deploy**, prima di qualunque test manuale: `POST /share/{token}/download` restituiva sempre `403 CSRF validation failed`, perché `CSRF_EXEMPT_PATHS` è un set di stringhe esatte e non può contenere un path con un segmento dinamico (`{token}`). Nessun link di condivisione avrebbe mai funzionato per un visitatore esterno. I test non l'hanno mai intercettato perché disabilitano il CSRF globalmente.
