@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 import time
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Any, Callable
 
 from app.core.config import settings
 from app.core.password_cipher import encrypt_password, decrypt_password
@@ -16,6 +18,7 @@ from app.core.storage import (
 )
 from app.models.pdf import PdfDocument
 from app.models.password_cache import PasswordCache
+from app.models.share_link import ShareLink
 from app.repositories.pdf_repo import PdfRepository
 from app.schemas.pdf import PdfListResponse, PdfResponse
 
@@ -23,6 +26,15 @@ from app.schemas.pdf import PdfListResponse, PdfResponse
 # DB-backed password cache for password-protected PDFs (supports multi-worker)
 # Entries auto-expire after 30 minutes (cleaned on read/write)
 _PASSWORD_CACHE_TTL = 1800  # 30 minutes in seconds
+
+
+@dataclass
+class _NoChange:
+    """Sentinel returned by a `_mutate_pdf_document` callback to signal that
+    the document was left unchanged and shouldn't be re-saved (e.g. OCR on a
+    PDF that already has a text layer)."""
+
+    value: Any
 
 
 def _get_cached_password(pdf_id: str) -> str | None:
@@ -202,6 +214,15 @@ class PdfService:
             pdf = self._get_user_pdf(pdf_id, user_id)
         except ValueError:
             return False
+        # Delete child rows first: ShareLink/PasswordCache have a pdf_id
+        # ForeignKey with no ondelete=CASCADE (this project has no Alembic —
+        # the auto-migration only adds tables/columns, it can't alter an
+        # existing FK constraint). SQLite (tests, desktop sidecar) doesn't
+        # enforce FKs by default, so this was never caught locally, but
+        # Postgres (production) does — deleting a PDF with an active share
+        # link or a cached password would 500 with an IntegrityError.
+        self.repo.db.query(ShareLink).filter(ShareLink.pdf_id == pdf_id).delete()
+        self.repo.db.query(PasswordCache).filter(PasswordCache.pdf_id == pdf_id).delete()
         self.repo.delete(pdf)
         # storage_filename is "{uuid}.pdf" — extract UUID for delete_pdf
         file_uuid = pdf.storage_filename.replace(".pdf", "")
@@ -856,6 +877,51 @@ class PdfService:
 
         return self.repo.update(pdf)
 
+    def _mutate_pdf_document(
+        self,
+        pdf_id: str,
+        user_id: str,
+        mutate: Callable[[Any], Any],
+        error_label: str,
+    ) -> tuple[PdfDocument, Any]:
+        """Shared boilerplate for operations that rewrite a PDF's content in
+        place (sign/annotate/OCR): load the owned PDF, snapshot it, open it
+        with fitz, run `mutate(doc)`, validate the result, save it as the new
+        content and update the DB record.
+
+        `mutate` receives the open fitz.Document and returns whatever extra
+        value the caller needs back (e.g. OCR's character count), or a
+        `_NoChange(extra)` to skip saving/updating (e.g. OCR on a PDF that's
+        already searchable). Returns (pdf, extra).
+        """
+        import fitz
+
+        pdf = self._get_user_pdf(pdf_id, user_id)
+        self._create_snapshot(pdf_id, user_id)
+
+        content = self._read_file_with_password(pdf_id, user_id)
+        if not content:
+            raise ValueError(f"PDF {pdf_id} file not found on disk")
+
+        doc = fitz.open(stream=content, filetype="pdf")
+        try:
+            extra = mutate(doc)
+            if isinstance(extra, _NoChange):
+                return pdf, extra.value
+            output_bytes = doc.tobytes()
+        finally:
+            doc.close()
+
+        if not validate_pdf(output_bytes):
+            raise ValueError(f"{error_label} produced an invalid PDF")
+
+        file_uuid = save_pdf(output_bytes)
+
+        pdf.storage_filename = f"{file_uuid}.pdf"
+        pdf.file_size = len(output_bytes)
+
+        return self.repo.update(pdf), extra
+
     def sign_pdf(
         self,
         pdf_id: str,
@@ -879,15 +945,7 @@ class PdfService:
         """
         import fitz
 
-        pdf = self._get_user_pdf(pdf_id, user_id)
-        self._create_snapshot(pdf_id, user_id)
-
-        content = self._read_file_with_password(pdf_id, user_id)
-        if not content:
-            raise ValueError(f"PDF {pdf_id} file not found on disk")
-
-        doc = fitz.open(stream=content, filetype="pdf")
-        try:
+        def mutate(doc):
             if page_number < 1 or page_number > doc.page_count:
                 raise ValueError(
                     f"Page {page_number} out of range (1-{doc.page_count})"
@@ -901,20 +959,9 @@ class PdfService:
                 )
             except Exception as e:
                 raise ValueError(f"Invalid signature image: {e}")
-            output_bytes = doc.tobytes()
-        finally:
-            doc.close()
 
-        if not validate_pdf(output_bytes):
-            raise ValueError("Signing produced an invalid PDF")
-
-        file_uuid = save_pdf(output_bytes)
-
-        # Update the existing PDF record with the signed content
-        pdf.storage_filename = f"{file_uuid}.pdf"
-        pdf.file_size = len(output_bytes)
-
-        return self.repo.update(pdf)
+        pdf, _ = self._mutate_pdf_document(pdf_id, user_id, mutate, "Signing")
+        return pdf
 
     def add_annotation(
         self,
@@ -935,15 +982,7 @@ class PdfService:
         """
         import fitz
 
-        pdf = self._get_user_pdf(pdf_id, user_id)
-        self._create_snapshot(pdf_id, user_id)
-
-        content_bytes = self._read_file_with_password(pdf_id, user_id)
-        if not content_bytes:
-            raise ValueError(f"PDF {pdf_id} file not found on disk")
-
-        doc = fitz.open(stream=content_bytes, filetype="pdf")
-        try:
+        def mutate(doc):
             if page_number < 1 or page_number > doc.page_count:
                 raise ValueError(
                     f"Page {page_number} out of range (1-{doc.page_count})"
@@ -992,20 +1031,8 @@ class PdfService:
                 except Exception:
                     pass
 
-            output_bytes = doc.tobytes()
-        finally:
-            doc.close()
-
-        if not validate_pdf(output_bytes):
-            raise ValueError("Annotation produced an invalid PDF")
-
-        file_uuid = save_pdf(output_bytes)
-
-        # Update the existing PDF record with the annotated content
-        pdf.storage_filename = f"{file_uuid}.pdf"
-        pdf.file_size = len(output_bytes)
-
-        return self.repo.update(pdf)
+        pdf, _ = self._mutate_pdf_document(pdf_id, user_id, mutate, "Annotation")
+        return pdf
 
     def ocr_pdf(
         self,
@@ -1028,20 +1055,12 @@ class PdfService:
         """
         import fitz
 
-        pdf = self._get_user_pdf(pdf_id, user_id)
-        self._create_snapshot(pdf_id, user_id)
-
-        content = self._read_file_with_password(pdf_id, user_id)
-        if not content:
-            raise ValueError(f"PDF {pdf_id} file not found on disk")
-
-        doc = fitz.open(stream=content, filetype="pdf")
-        try:
+        def mutate(doc):
             # Check if the PDF already has a text layer
             has_text = any(doc[i].get_text().strip() for i in range(doc.page_count))
             if has_text:
                 # Already searchable — return unchanged
-                return pdf, 0, True
+                return _NoChange((0, True))
 
             import pytesseract
 
@@ -1085,17 +1104,9 @@ class PdfService:
                         overlay=True,
                     )
 
-            output_bytes = doc.tobytes()
-        finally:
-            doc.close()
+            return character_count, False
 
-        if not validate_pdf(output_bytes):
-            raise ValueError("OCR produced an invalid PDF")
-
-        file_uuid = save_pdf(output_bytes)
-
-        # Update the existing PDF record with the OCR'd content
-        pdf.storage_filename = f"{file_uuid}.pdf"
-        pdf.file_size = len(output_bytes)
-
-        return self.repo.update(pdf), character_count, False
+        pdf, (character_count, already_searchable) = self._mutate_pdf_document(
+            pdf_id, user_id, mutate, "OCR"
+        )
+        return pdf, character_count, already_searchable

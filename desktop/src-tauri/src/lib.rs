@@ -373,55 +373,64 @@ fn print_pages(request: PrintPagesRequest) -> Result<(), String> {
     ));
     std::fs::create_dir_all(&job_dir).map_err(|e| format!("Failed to create temp dir: {}", e))?;
 
-    let mut image_paths = Vec::with_capacity(request.images.len());
-    for (i, image_b64) in request.images.iter().enumerate() {
-        let bytes = base64::engine::general_purpose::STANDARD
-            .decode(image_b64)
-            .map_err(|e| format!("Failed to decode page {}: {}", i + 1, e))?;
-        let path = job_dir.join(format!("page-{:03}.png", i + 1));
-        std::fs::write(&path, bytes).map_err(|e| format!("Failed to write page {}: {}", i + 1, e))?;
-        image_paths.push(path);
-    }
+    // Run the fallible decode/write/print steps in a closure so a single
+    // cleanup call below covers every early-return path (decode failure,
+    // write failure, PowerShell spawn failure, or a failed print job) —
+    // previously the `?` operators on decode/write skipped cleanup entirely.
+    let result = (|| -> Result<(), String> {
+        let mut image_paths = Vec::with_capacity(request.images.len());
+        for (i, image_b64) in request.images.iter().enumerate() {
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(image_b64)
+                .map_err(|e| format!("Failed to decode page {}: {}", i + 1, e))?;
+            let path = job_dir.join(format!("page-{:03}.png", i + 1));
+            std::fs::write(&path, bytes)
+                .map_err(|e| format!("Failed to write page {}: {}", i + 1, e))?;
+            image_paths.push(path);
+        }
 
-    let mut cmd = std::process::Command::new("powershell");
-    cmd.args([
-        "-NoProfile",
-        "-NonInteractive",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-    ])
-    .arg(&script_path)
-    .arg("-PrinterName")
-    .arg(&request.printer_name)
-    .arg("-Copies")
-    .arg(request.copies.to_string())
-    .arg("-Color")
-    .arg(if request.color { "1" } else { "0" })
-    .arg("-Orientation")
-    .arg(&request.orientation)
-    .arg("-MarginMm")
-    .arg(request.margin_mm.to_string())
-    .arg("-ImagePaths");
-    for path in &image_paths {
-        cmd.arg(path);
-    }
+        let mut cmd = std::process::Command::new("powershell");
+        cmd.args([
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+        ])
+        .arg(&script_path)
+        .arg("-PrinterName")
+        .arg(&request.printer_name)
+        .arg("-Copies")
+        .arg(request.copies.to_string())
+        .arg("-Color")
+        .arg(if request.color { "1" } else { "0" })
+        .arg("-Orientation")
+        .arg(&request.orientation)
+        .arg("-MarginMm")
+        .arg(request.margin_mm.to_string())
+        .arg("-ImagePaths");
+        for path in &image_paths {
+            cmd.arg(path);
+        }
 
-    let output = cmd
-        .output()
-        .map_err(|e| format!("Failed to run PowerShell: {}", e))?;
+        let output = cmd
+            .output()
+            .map_err(|e| format!("Failed to run PowerShell: {}", e))?;
+
+        if !output.status.success() {
+            return Err(format!(
+                "Stampa fallita: {}",
+                String::from_utf8_lossy(&output.stderr)
+            ));
+        }
+
+        Ok(())
+    })();
 
     // Clean up temp page images regardless of outcome.
     let _ = std::fs::remove_dir_all(&job_dir);
 
-    if !output.status.success() {
-        return Err(format!(
-            "Stampa fallita: {}",
-            String::from_utf8_lossy(&output.stderr)
-        ));
-    }
-
-    Ok(())
+    result
 }
 
 #[cfg(not(target_os = "windows"))]

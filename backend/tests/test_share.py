@@ -146,6 +146,25 @@ class TestShare:
         resp = client.get(f"/share/{token}")
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
+    def test_delete_pdf_with_active_share_link(self, client, free_headers):
+        """Regression: deleting a PDF that still has a share link must not
+        fail. ShareLink.pdf_id has no ondelete=CASCADE (this project has no
+        Alembic — the auto-migration can't alter an existing FK constraint),
+        and Postgres (production) enforces FK constraints unlike SQLite
+        (used by every test and by desktop's sidecar) — so this always
+        passed here but would 500 with an IntegrityError in production
+        unless the service explicitly deletes the ShareLink row first."""
+        pdf_id = self._upload(client, free_headers, _make_pdf())
+        share = client.post(f"/pdfs/{pdf_id}/share", json={}, headers=free_headers).json()
+        token = share["token"]
+
+        resp = client.delete(f"/pdfs/{pdf_id}", headers=free_headers)
+        assert resp.status_code == status.HTTP_204_NO_CONTENT
+
+        # The orphaned share link must be gone too, not left dangling.
+        resp = client.get(f"/share/{token}")
+        assert resp.status_code == status.HTTP_404_NOT_FOUND
+
     def test_list_share_links(self, client, free_headers):
         pdf_id = self._upload(client, free_headers, _make_pdf())
         client.post(f"/pdfs/{pdf_id}/share", json={}, headers=free_headers)
