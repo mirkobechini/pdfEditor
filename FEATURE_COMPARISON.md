@@ -1,6 +1,6 @@
 # Feature Comparison: Web vs Desktop vs Mobile
 
-> **Ultimo aggiornamento:** 2026-09-12
+> **Ultimo aggiornamento:** 2026-09-26
 > Questo file traccia le differenze funzionali tra le tre piattaforme di PdfEditor.
 
 ---
@@ -42,12 +42,12 @@
 | Import file                         | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                                                                                                    |
 | Import DOCX                         | ✅  | ✅      | ✅     | Web/Mobile online (python-docx+reportlab), Desktop offline (sidecar)                                                                                                                   |
 | Export PDF                          | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                                                                                                    |
-| Stampa PDF                          | ✅  | 🟡      | ✅     | Web: window.print() su iframe. Desktop: 🚧 in corso — canvas clone + img overlay, anteprima bianca da fixare. Mobile: expo-print (AirPrint)                                            |
-| Drag & drop file                    | ✅  | ❌      | ❌     | Solo Web: trascina PDF per aprirlo, altri file per importarli (overlay feedback)                                                                                                       |
+| Stampa PDF                          | ✅  | ✅      | ✅     | Web: window.print() su iframe. Desktop: dialogo custom con anteprima live, scelta stampante/copie/colore/pagine/orientamento/margini e stampa silenziosa (nessun dialogo di sistema). Mobile: expo-print (AirPrint)                                            |
+| Drag & drop file                    | ✅  | ✅      | ❌     | Web: trascina PDF per aprirlo, altri file per importarli (overlay feedback). Desktop: stesso comportamento via eventi Tauri (immagini normalizzate a PNG per GIF/BMP)                                                                                                       |
 | Browse documents (Internet Archive) | ✅  | ❌      | ❌     | Solo Web: catalogo PDF reali da Internet Archive via microservizio pdf-documents-api (porta 8001)                                                                                      |
 | Firma PDF                           | ✅  | ✅      | ✅     | Web/Desktop: canvas + upload immagine. Desktop: flusso a 2 step (scegli/posiziona), anteprima, resize, undo/redo. Mobile: scegli immagine (pdf-lib). Backend: PyMuPDF (pro/enterprise) |
-| Annotazioni PDF                     | ✅  | ❌      | ❌     | Solo Web: evidenzia/sottolinea/barrato/commento/testo. Backend: PyMuPDF embedded (pro/enterprise)                                                                                      |
-| OCR PDF scansionati                 | ✅  | ❌      | ❌     | Solo Web: riconosce testo con Tesseract (pytesseract). Backend: searchable PDF (pro/enterprise)                                                                                        |
+| Annotazioni PDF                     | ✅  | ✅      | ❌     | Web e Desktop: evidenzia/sottolinea/barrato/commento/testo. Backend: PyMuPDF embedded (pro/enterprise)                                                                                      |
+| OCR PDF scansionati                 | ✅  | ✅      | ❌     | Web e Desktop: riconosce testo con Tesseract (pytesseract), mostra caratteri riconosciuti. Backend: searchable PDF (pro/enterprise)                                                                                        |
 | **Testo**                           |     |         |        |                                                                                                                                                                                        |
 | Extract text                        | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                                                                                                 |
 | **Auth**                            |     |         |        |                                                                                                                                                                                        |
@@ -59,7 +59,7 @@
 | **UX Mobile-specifiche**            |     |         |        |                                                                                                                                                                                        |
 | Scanner camera                      | ❌  | ❌      | ✅     | expo-camera                                                                                                                                                                            |
 | Share PDF                           | ❌  | ❌      | ✅     | expo-sharing                                                                                                                                                                           |
-| Share via link                      | ✅  | ❌      | ❌     | Solo Web: dialog Condividi + pagina pubblica /share/[token] (password/scadenza opzionali)                                                                                              |
+| Share via link                      | ✅  | ✅      | ❌     | Web e Desktop: dialog Condividi + pagina pubblica /share/[token] (password/scadenza opzionali). Desktop carica il PDF sul cloud per generare il link. ⚠️ Non ancora verificato end-to-end con un deploy reale                                                                                              |
 | Badge count icona                   | ❌  | ❌      | ✅     | expo-notifications                                                                                                                                                                     |
 | Multi-select                        | ✅  | ✅      | ✅     | Web/Desktop: checkbox + batch delete/export. Mobile: checkbox + batch delete                                                                                                           |
 | Splash screen                       | ❌  | ❌      | ✅     | Sfondo arancione                                                                                                                                                                       |
