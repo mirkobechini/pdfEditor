@@ -5,6 +5,24 @@
 
 ---
 
+## Sistema di licenze/tier: disattivato di default finché non è progettato bene
+
+> **Decisione (2026-09-26), dopo una mappatura completa del sistema di tier nella codebase:**
+
+Il fallimento CI del punto precedente (test import immagini con tier sbagliato) ha fatto emergere un problema più ampio: il default nel codice (`DISABLE_LICENSE_ENFORCEMENT: bool = False`, cioè enforcement **attivo**) contraddiceva sia il template tracciato `.env.example` (che dice `True`) sia il `.env` locale di sviluppo (anch'esso `True`) — e **né la CI né (probabilmente) la produzione su Render avevano un override**, quindi entrambe giravano con l'enforcement realmente attivo, mentre l'intenzione era che fosse spento ovunque finché il sistema di tier non è progettato in modo compiuto.
+
+**Mappatura trovata (non esaustiva, vedi commit per dettagli):**
+- Solo 3 feature (`annotations`, `ocr`, `sign_pdf`) + export/import sono davvero applicate via `check_feature_access`/`verify_feature_access`; altre definite in `license_seed.py` (`merge_pdf`, `split_pdf`, `reorder_pages`, ecc.) SONO applicate ma solo tramite `Depends(verify_feature_access(...))`, un pattern diverso dalla chiamata diretta — facile da perdere in un grep superficiale.
+- Il tier `lifetime` è assegnabile da admin ma non ha nessuna feature seedata in `license_seed.py` → un utente lifetime non-admin fallirebbe ogni check.
+- Naming incoerente: backend/admin usa `pro`, la landing page marketing usa `premium` per lo stesso piano.
+- `BRIEF.md` (documento di design originale) dichiarava esplicitamente che il sistema di abbonamento NON era previsto per la prima versione, solo "architettura preparata" — mai formalizzato come "spento di default" nel codice.
+
+**Decisione presa:** flip del default a `DISABLE_LICENSE_ENFORCEMENT = True` in `backend/app/core/config.py` — enforcement spento ovunque (locale, CI, produzione) finché il sistema di tier non viene ridisegnato con calma. I test che verificano esplicitamente il comportamento di blocco (`test_license_enforcement.py`, `test_annotations.py`, `test_ocr.py`, `test_sign.py`, e ora anche `test_import_jpg_requires_enterprise_tier`) forzano l'enforcement a `False` con `monkeypatch`/`patch.object`, quindi restano validi e continuano a testare il comportamento reale quando serve.
+
+**Da verificare manualmente:** su Render, controllare se la variabile d'ambiente `DISABLE_LICENSE_ENFORCEMENT` è impostata esplicitamente sul servizio backend. Se è assente, il nuovo default (`True`) si applica automaticamente al prossimo deploy. Se è impostata a `False` a mano, va rimossa o cambiata in `True`.
+
+---
+
 ## `backend/.env` locale (gitignored) può mascherare fallimenti che solo la CI vede
 
 > **Lezione appresa (2026-09-26, prima vera esecuzione CI del branch `feature/desktop-0139-fixes`):**

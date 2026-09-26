@@ -2,6 +2,12 @@
 
 ## 2026-09-26
 
+### 🔧 Sistema di licenze/tier disattivato di default (in attesa di redesign)
+
+- **Motivo:** il sistema di tier (free/pro/enterprise) è ancora in fase di progettazione (naming incoerente tra backend e marketing, tier `lifetime` senza feature seedate, feature definite ma non tutte applicate uniformemente). Il default nel codice era `DISABLE_LICENSE_ENFORCEMENT=False` (enforcement attivo), in contraddizione con `.env.example` e il `.env` locale (entrambi `True`) — CI e produzione (senza override) giravano quindi con l'enforcement realmente attivo, mai deciso esplicitamente.
+- **Fix:** default cambiato a `True` in `backend/app/core/config.py` — enforcement spento ovunque per default. I test che verificano il comportamento di blocco continuano a forzarlo esplicitamente a `False`.
+- **Da fare:** verificare su Render se la variabile è impostata esplicitamente sul servizio backend (vedi `LESSONS_LEARNED.md`).
+
 ### 🐛 Fix CI: test import immagini usavano il tier sbagliato
 
 - **PR #845, prima vera esecuzione CI del branch dopo 62 commit locali**: `test_import_jpg`/`test_import_image_formats` usavano `pro_headers` aspettandosi successo, ma `import_images` è enterprise-only per `license_seed.py`. In locale non falliva mai perché `backend/.env` (gitignored) disabilita l'enforcement delle licenze per comodità di sviluppo.
