@@ -2,6 +2,13 @@
 
 ## 2026-09-26
 
+### ✨ OCR: messaggio di risultato reale invece di un generico "completato" (plan 0138-0139, #D)
+
+- **Motivo:** l'OCR aggiunge un layer di testo invisibile al PDF, quindi il documento appare identico prima e dopo — l'utente non aveva modo di sapere se aveva funzionato.
+- **Backend:** `POST /pdfs/{id}/ocr` ora restituisce `{pdf, character_count, already_searchable}` invece del solo PDF.
+- **Desktop e web (parity):** il dialog OCR mostra ora "riconosciuti N caratteri", oppure "il PDF ha già del testo selezionabile" o "nessun testo riconosciuto", invece del generico messaggio di successo. Il dialog web resta aperto a mostrare il risultato invece di chiudersi subito.
+- **Test:** 7 backend + 9 desktop + 9 web aggiornati/aggiunti.
+
 ### ✨ Dialogo di stampa completamente custom + stampa silenziosa (issue #8, plan 0138-0139)
 
 - **Motivo:** dopo il fix del timing (anteprima bianca), il dialogo nativo restava inadeguato: quello "Browser" di Edge è dispersivo, quello "System" di Windows (`ShowPrintUI`) non mostra anteprima e non permette di scegliere pagine/colore dalla nostra UI.
