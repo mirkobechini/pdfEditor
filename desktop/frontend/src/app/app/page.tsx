@@ -70,9 +70,7 @@ export default function EditorPage() {
     const [printPreview, setPrintPreview] = React.useState<{ dataUrl: string; isLandscape: boolean } | null>(null);
     const [annotateOpen, setAnnotateOpen] = React.useState(false);
     const [shareOpen, setShareOpen] = React.useState(false);
-    const [organizeOpen, setOrganizeOpen] = React.useState(false);
-    const [convertOpen, setConvertOpen] = React.useState(false);
-    const [annotateMenuOpen, setAnnotateMenuOpen] = React.useState(false);
+    const [openMenu, setOpenMenu] = React.useState<"organize" | "convert" | "annotate" | null>(null);
     const organizeRef = React.useRef<HTMLDivElement>(null);
     const convertRef = React.useRef<HTMLDivElement>(null);
     const annotateMenuRef = React.useRef<HTMLDivElement>(null);
@@ -84,6 +82,19 @@ export default function EditorPage() {
     const pdfUrlRef = React.useRef<string | null>(null);
     const [multiSelect, setMultiSelect] = React.useState(false);
     const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+
+    // Shared by every modal that replaces the selected doc with an updated
+    // version (remove pages, reorder, merge, lock/unlock, metadata, replace
+    // text): swap it into `docs` in place, select it, and refresh the preview.
+    const handleDocUpdated = React.useCallback((updatedDoc: PdfDocument) => {
+        setDocs((prev) => {
+            const oldId = selectedDoc?.id;
+            if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
+            return [updatedDoc, ...prev];
+        });
+        setSelectedDoc(updatedDoc);
+        setPdfRefreshKey((k) => k + 1);
+    }, [selectedDoc?.id]);
 
     async function handleDownload() {
         if (!selectedDoc) return;
@@ -462,14 +473,15 @@ export default function EditorPage() {
     // Close toolbar dropdowns when clicking outside
     React.useEffect(() => {
         function onClickOutside(e: MouseEvent) {
-            if (organizeRef.current && !organizeRef.current.contains(e.target as Node)) {
-                setOrganizeOpen(false);
+            const target = e.target as Node;
+            if (organizeRef.current && !organizeRef.current.contains(target)) {
+                setOpenMenu((m) => (m === "organize" ? null : m));
             }
-            if (convertRef.current && !convertRef.current.contains(e.target as Node)) {
-                setConvertOpen(false);
+            if (convertRef.current && !convertRef.current.contains(target)) {
+                setOpenMenu((m) => (m === "convert" ? null : m));
             }
-            if (annotateMenuRef.current && !annotateMenuRef.current.contains(e.target as Node)) {
-                setAnnotateMenuOpen(false);
+            if (annotateMenuRef.current && !annotateMenuRef.current.contains(target)) {
+                setOpenMenu((m) => (m === "annotate" ? null : m));
             }
         }
         document.addEventListener("mousedown", onClickOutside);
@@ -765,25 +777,25 @@ export default function EditorPage() {
                             {/* Organizza dropdown */}
                             <div className="relative" ref={organizeRef}>
                                 <button
-                                    onClick={() => { setOrganizeOpen((v) => !v); setConvertOpen(false); setAnnotateMenuOpen(false); }}
+                                    onClick={() => setOpenMenu((m) => (m === "organize" ? null : "organize"))}
                                     disabled={!selectedDoc}
                                     data-testid="toolbar-organize"
                                     className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                     {te("organize")} ▾
                                 </button>
-                                {organizeOpen && (
+                                {openMenu === "organize" && (
                                     <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
-                                        <button onClick={() => { setMergeOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                        <button onClick={() => { setMergeOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
                                             {te("merge")}
                                         </button>
-                                        <button onClick={() => { setSplitOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                        <button onClick={() => { setSplitOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
                                             {te("split")}
                                         </button>
-                                        <button onClick={() => { setReorderOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                        <button onClick={() => { setReorderOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
                                             {te("reorder")}
                                         </button>
-                                        <button onClick={() => { setRemovePagesOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                        <button onClick={() => { setRemovePagesOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
                                             {te("remove")}
                                         </button>
                                     </div>
@@ -793,24 +805,24 @@ export default function EditorPage() {
                             {/* Converti dropdown */}
                             <div className="relative" ref={convertRef}>
                                 <button
-                                    onClick={() => { setConvertOpen((v) => !v); setOrganizeOpen(false); setAnnotateMenuOpen(false); }}
+                                    onClick={() => setOpenMenu((m) => (m === "convert" ? null : "convert"))}
                                     data-testid="toolbar-convert"
                                     className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white"
                                 >
                                     {te("convert")} ▾
                                 </button>
-                                {convertOpen && (
+                                {openMenu === "convert" && (
                                     <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
-                                        <button onClick={() => { setCompressOpen(true); setConvertOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                        <button onClick={() => { setCompressOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
                                             {te("compress")}
                                         </button>
-                                        <button onClick={() => { setImportExportOpen(true); setConvertOpen(false); }} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white">
+                                        <button onClick={() => { setImportExportOpen(true); setOpenMenu(null); }} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white">
                                             {te("importExport")}
                                         </button>
-                                        <button onClick={() => { setReplaceTextOpen(true); setConvertOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                        <button onClick={() => { setReplaceTextOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
                                             {te("replaceText")}
                                         </button>
-                                        <button onClick={() => { setMetadataOpen(true); setConvertOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                        <button onClick={() => { setMetadataOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
                                             {te("metadata")}
                                         </button>
                                     </div>
@@ -820,22 +832,22 @@ export default function EditorPage() {
                             {/* Annota dropdown */}
                             <div className="relative" ref={annotateMenuRef}>
                                 <button
-                                    onClick={() => { setAnnotateMenuOpen((v) => !v); setOrganizeOpen(false); setConvertOpen(false); }}
+                                    onClick={() => setOpenMenu((m) => (m === "annotate" ? null : "annotate"))}
                                     disabled={!selectedDoc}
                                     data-testid="toolbar-annotate-menu"
                                     className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                     {te("annotate")} ▾
                                 </button>
-                                {annotateMenuOpen && (
+                                {openMenu === "annotate" && (
                                     <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
-                                        <button onClick={() => { setSignOpen(true); setAnnotateMenuOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                        <button onClick={() => { setSignOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
                                             {te("sign")}
                                         </button>
-                                        <button onClick={() => { setOcrOpen(true); setAnnotateMenuOpen(false); }} disabled={!selectedDoc} data-testid="toolbar-ocr" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                        <button onClick={() => { setOcrOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} data-testid="toolbar-ocr" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
                                             {te("ocr")}
                                         </button>
-                                        <button onClick={() => { setAnnotateOpen(true); setAnnotateMenuOpen(false); }} disabled={!selectedDoc} data-testid="toolbar-annotate" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                        <button onClick={() => { setAnnotateOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} data-testid="toolbar-annotate" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
                                             {te("annotate")}
                                         </button>
                                     </div>
@@ -989,15 +1001,7 @@ export default function EditorPage() {
                 totalPages={selectedDoc?.page_count ?? 0}
                 pdfUrl={pdfUrl}
                 onClose={() => setRemovePagesOpen(false)}
-                onSaved={(updatedDoc) => {
-                    setDocs((prev) => {
-                        const oldId = selectedDoc?.id;
-                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
-                        return [updatedDoc, ...prev];
-                    });
-                    setSelectedDoc(updatedDoc);
-                    setPdfRefreshKey((k) => k + 1);
-                }}
+                onSaved={handleDocUpdated}
             />
 
             <ReorderPagesModal
@@ -1007,15 +1011,7 @@ export default function EditorPage() {
                 totalPages={selectedDoc?.page_count ?? 0}
                 pdfUrl={pdfUrl}
                 onClose={() => setReorderOpen(false)}
-                onSaved={(updatedDoc) => {
-                    setDocs((prev) => {
-                        const oldId = selectedDoc?.id;
-                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
-                        return [updatedDoc, ...prev];
-                    });
-                    setSelectedDoc(updatedDoc);
-                    setPdfRefreshKey((k) => k + 1);
-                }}
+                onSaved={handleDocUpdated}
             />
 
             <MergeModal
@@ -1023,15 +1019,7 @@ export default function EditorPage() {
                 pdfId={selectedDoc?.id ?? ""}
                 pdfName={selectedDoc?.original_filename ?? ""}
                 onClose={() => setMergeOpen(false)}
-                onSaved={(updatedDoc) => {
-                    setDocs((prev) => {
-                        const oldId = selectedDoc?.id;
-                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
-                        return [updatedDoc, ...prev];
-                    });
-                    setSelectedDoc(updatedDoc);
-                    setPdfRefreshKey((k) => k + 1);
-                }}
+                onSaved={handleDocUpdated}
             />
 
             <SplitPagesModal
@@ -1123,15 +1111,7 @@ export default function EditorPage() {
                 pdfName={selectedDoc?.original_filename ?? ""}
                 isProtected={selectedDoc?.is_password_protected ?? false}
                 onClose={() => setLockOpen(false)}
-                onSaved={(updatedDoc) => {
-                    setDocs((prev) => {
-                        const oldId = selectedDoc?.id;
-                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
-                        return [updatedDoc, ...prev];
-                    });
-                    setSelectedDoc(updatedDoc);
-                    setPdfRefreshKey((k) => k + 1);
-                }}
+                onSaved={handleDocUpdated}
             />
 
             <MetadataModal
@@ -1139,30 +1119,14 @@ export default function EditorPage() {
                 pdfId={selectedDoc?.id ?? ""}
                 pdfName={selectedDoc?.original_filename ?? ""}
                 onClose={() => setMetadataOpen(false)}
-                onSaved={(updatedDoc) => {
-                    setDocs((prev) => {
-                        const oldId = selectedDoc?.id;
-                        if (oldId) return [updatedDoc, ...prev.filter((d) => d.id !== oldId)];
-                        return [updatedDoc, ...prev];
-                    });
-                    setSelectedDoc(updatedDoc);
-                    setPdfRefreshKey((k) => k + 1);
-                }}
+                onSaved={handleDocUpdated}
             />
 
             <ReplaceTextModal
                 open={replaceTextOpen}
                 onClose={() => setReplaceTextOpen(false)}
                 pdfId={selectedDoc?.id ?? null}
-                onSuccess={(doc) => {
-                    setDocs((prev) => {
-                        const oldId = selectedDoc?.id;
-                        if (oldId) return [doc, ...prev.filter((d) => d.id !== oldId)];
-                        return [doc, ...prev];
-                    });
-                    setSelectedDoc(doc);
-                    setPdfRefreshKey((k) => k + 1);
-                }}
+                onSuccess={handleDocUpdated}
             />
 
             {/* Delete confirmation dialog */}

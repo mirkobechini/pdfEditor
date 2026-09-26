@@ -202,6 +202,19 @@ export default function EditorPage() {
         }, 60000);
     }
 
+    // Shared by handleDrop and SignDialog.onSuccess: point the viewer at a
+    // freshly created/updated doc and refresh its content from the server.
+    function loadDocIntoViewer(doc: { id: string; original_filename: string }) {
+        setSidebarRefreshKey((prev) => prev + 1);
+        setSelectedId(doc.id);
+        setSelectedName(doc.original_filename);
+        void api.downloadPdf(doc.id).then((blob) => {
+            const url = URL.createObjectURL(blob);
+            if (fileUrl) URL.revokeObjectURL(fileUrl);
+            setFileUrl(url);
+        });
+    }
+
     async function handleDrop(e: React.DragEvent) {
         e.preventDefault();
         setDragOver(false);
@@ -221,15 +234,8 @@ export default function EditorPage() {
                 alert("Unsupported file type. Drop a PDF, image, text or DOCX file.");
                 return;
             }
-            setSidebarRefreshKey((prev) => prev + 1);
-            setSelectedId(doc.id);
-            setSelectedName(doc.original_filename);
+            loadDocIntoViewer(doc);
             setRequiresPassword(false);
-            void api.downloadPdf(doc.id).then((blob) => {
-                const url = URL.createObjectURL(blob);
-                if (fileUrl) URL.revokeObjectURL(fileUrl);
-                setFileUrl(url);
-            });
         } catch (err) {
             alert("Upload failed: " + mapError(err));
         }
@@ -382,16 +388,7 @@ export default function EditorPage() {
                 open={replaceTextOpen}
                 onClose={() => setReplaceTextOpen(false)}
                 pdfId={selectedId}
-                onSuccess={(doc) => {
-                    setSidebarRefreshKey((prev) => prev + 1);
-                    setSelectedId(doc.id);
-                    setSelectedName(doc.original_filename);
-                    void api.downloadPdf(doc.id).then((blob) => {
-                        const url = URL.createObjectURL(blob);
-                        if (fileUrl) URL.revokeObjectURL(fileUrl);
-                        setFileUrl(url);
-                    });
-                }}
+                onSuccess={loadDocIntoViewer}
             />
             <ProtectDialog
                 open={protectOpen}
@@ -403,16 +400,7 @@ export default function EditorPage() {
                 onClose={() => setSignOpen(false)}
                 pdfId={selectedId}
                 totalPages={totalPages}
-                onSuccess={(doc) => {
-                    setSidebarRefreshKey((prev) => prev + 1);
-                    setSelectedId(doc.id);
-                    setSelectedName(doc.original_filename);
-                    void api.downloadPdf(doc.id).then((blob) => {
-                        const url = URL.createObjectURL(blob);
-                        if (fileUrl) URL.revokeObjectURL(fileUrl);
-                        setFileUrl(url);
-                    });
-                }}
+                onSuccess={loadDocIntoViewer}
             />
             <ShareDialog
                 open={shareOpen}

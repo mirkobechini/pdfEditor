@@ -81,13 +81,15 @@ export default function SignModal({ open, pdfId, pdfName, totalPages, pdfUrl, on
         setHistoryVersion((v) => v + 1);
     }
 
-    function undo() {
+    // Shared by undo/redo: pop `dataUrl` from `fromStack`, push the canvas's
+    // current state onto `toStack` (so the other direction can restore it),
+    // then paint `dataUrl` onto the canvas.
+    function restoreFrom(fromStack: React.RefObject<string[]>, toStack: React.RefObject<string[]>) {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const prev = undoStackRef.current.pop();
-        if (!prev) return;
-        // Push current state to redo stack
-        redoStackRef.current.push(canvas.toDataURL("image/png"));
+        const dataUrl = fromStack.current.pop();
+        if (!dataUrl) return;
+        toStack.current.push(canvas.toDataURL("image/png"));
         setHistoryVersion((v) => v + 1);
         const img = document.createElement("img");
         img.onload = () => {
@@ -99,27 +101,15 @@ export default function SignModal({ open, pdfId, pdfName, totalPages, pdfUrl, on
             // Persist the restored state so the final signature reflects it
             setSignatureDataUrl(canvas.toDataURL("image/png"));
         };
-        img.src = prev;
+        img.src = dataUrl;
+    }
+
+    function undo() {
+        restoreFrom(undoStackRef, redoStackRef);
     }
 
     function redo() {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const next = redoStackRef.current.pop();
-        if (!next) return;
-        undoStackRef.current.push(canvas.toDataURL("image/png"));
-        setHistoryVersion((v) => v + 1);
-        const img = document.createElement("img");
-        img.onload = () => {
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-            setHasSignature(true);
-            // Persist the restored state so the final signature reflects it
-            setSignatureDataUrl(canvas.toDataURL("image/png"));
-        };
-        img.src = next;
+        restoreFrom(redoStackRef, undoStackRef);
     }
 
     function getCanvasPoint(e: React.MouseEvent<HTMLCanvasElement>) {

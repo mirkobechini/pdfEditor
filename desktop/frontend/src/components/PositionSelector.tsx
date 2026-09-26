@@ -119,40 +119,30 @@ export default function PositionSelector({
         };
     }, [pdfUrl, pageNumber, pdfJsLoaded]);
 
+    // PDF points per displayed pixel, in each axis — shared by the position
+    // and size reporting effects below, which both convert a displayed-pixel
+    // quantity into PDF points via the same canvas/page ratio.
+    function ptPerPx(pageSize: { width: number; height: number }, canvas: HTMLCanvasElement) {
+        const canvasRect = canvas.getBoundingClientRect();
+        return {
+            x: pageSize.width / canvasRect.width,
+            y: pageSize.height / canvasRect.height,
+        };
+    }
+
     // Report position whenever the box moves
     React.useEffect(() => {
-        if (!pageSize || !containerRef.current) return;
-        const container = containerRef.current;
-        const containerRect = container.getBoundingClientRect();
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const canvasRect = canvas.getBoundingClientRect();
-
-        // Scale factor: PDF points per displayed pixel
-        const scaleX = pageSize.width / canvasRect.width;
-        const scaleY = pageSize.height / canvasRect.height;
-
-        // Box position relative to the canvas (in displayed pixels)
-        const boxLeft = boxPos.x;
-        const boxTop = boxPos.y;
-
-        // Convert to PDF points
-        const ptX = boxLeft * scaleX;
-        const ptY = boxTop * scaleY;
-        onPositionChange(Math.round(ptX), Math.round(ptY));
+        if (!pageSize || !canvasRef.current) return;
+        const scale = ptPerPx(pageSize, canvasRef.current);
+        onPositionChange(Math.round(boxPos.x * scale.x), Math.round(boxPos.y * scale.y));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [boxPos, pageSize]);
 
     // Report box size whenever it changes
     React.useEffect(() => {
         if (!pageSize || !boxSizePx || !canvasRef.current) return;
-        const canvas = canvasRef.current;
-        const canvasRect = canvas.getBoundingClientRect();
-        const scaleX = pageSize.width / canvasRect.width;
-        const scaleY = pageSize.height / canvasRect.height;
-        const ptW = boxSizePx.width * scaleX;
-        const ptH = boxSizePx.height * scaleY;
-        onSizeChange?.(Math.round(ptW), Math.round(ptH));
+        const scale = ptPerPx(pageSize, canvasRef.current);
+        onSizeChange?.(Math.round(boxSizePx.width * scale.x), Math.round(boxSizePx.height * scale.y));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [boxSizePx, pageSize]);
 
