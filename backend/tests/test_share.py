@@ -105,6 +105,23 @@ class TestShare:
         assert resp.status_code == status.HTTP_200_OK
         assert len(resp.content) > 0
 
+    def test_download_shared_pdf_works_with_csrf_enabled(self, client, free_headers, monkeypatch):
+        """Regression: /share/{token}/download is public/unauthenticated, so it
+        must be exempt from CSRF validation. CSRF_EXEMPT_PATHS only matches
+        exact strings and can't list a path with a dynamic {token} segment,
+        so this used to always 403 once CSRF was actually enabled — masked by
+        conftest.py disabling CSRF globally for the rest of the test suite."""
+        monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
+        pdf_id = self._upload(client, free_headers, _make_pdf())
+        share = client.post(f"/pdfs/{pdf_id}/share", json={}, headers=free_headers).json()
+        token = share["token"]
+
+        # No CSRF cookie, no X-CSRF-Token header, no auth — exactly how an
+        # anonymous visitor's browser calls this endpoint.
+        resp = client.post(f"/share/{token}/download", json={})
+        assert resp.status_code == status.HTTP_200_OK
+        assert len(resp.content) > 0
+
     def test_download_shared_pdf_missing_password(self, client, free_headers):
         pdf_id = self._upload(client, free_headers, _make_pdf())
         share = client.post(

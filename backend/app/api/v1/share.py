@@ -3,12 +3,13 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.errors import error_response, ErrorCode
+from app.core.limiter import limiter
 from app.api.deps import get_current_user, get_db, get_pdf_service
 from app.core.security import get_password_hash, verify_password
 from app.models.share_link import ShareLink
@@ -111,13 +112,19 @@ def get_share_info(
 
 
 @router.post("/share/{token}/download")
+@limiter.limit("10/minute")
 def download_shared_pdf(
+    request: Request,
     token: str,
     req: ShareAccessRequest,
     db: Session = Depends(get_db),
     service: PdfService = Depends(get_pdf_service),
 ):
-    """Public download of a shared PDF (password required if set)."""
+    """Public download of a shared PDF (password required if set).
+
+    Rate-limited per IP: this is a public, unauthenticated endpoint, and a
+    password-protected link's password is otherwise guessable by brute force.
+    """
     link = db.query(ShareLink).filter(ShareLink.token == token).first()
     if not link:
         raise error_response(

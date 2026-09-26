@@ -1,5 +1,91 @@
 # Changelog
 
+## 2026-09-26
+
+### 🔧 Sistema di licenze/tier disattivato di default (in attesa di redesign)
+
+- **Motivo:** il sistema di tier (free/pro/enterprise) è ancora in fase di progettazione (naming incoerente tra backend e marketing, tier `lifetime` senza feature seedate, feature definite ma non tutte applicate uniformemente). Il default nel codice era `DISABLE_LICENSE_ENFORCEMENT=False` (enforcement attivo), in contraddizione con `.env.example` e il `.env` locale (entrambi `True`) — CI e produzione (senza override) giravano quindi con l'enforcement realmente attivo, mai deciso esplicitamente.
+- **Fix:** default cambiato a `True` in `backend/app/core/config.py` — enforcement spento ovunque per default. I test che verificano il comportamento di blocco continuano a forzarlo esplicitamente a `False`.
+- **Da fare:** verificare su Render se la variabile è impostata esplicitamente sul servizio backend (vedi `LESSONS_LEARNED.md`).
+
+### 🐛 Fix CI: test import immagini usavano il tier sbagliato
+
+- **PR #845, prima vera esecuzione CI del branch dopo 62 commit locali**: `test_import_jpg`/`test_import_image_formats` usavano `pro_headers` aspettandosi successo, ma `import_images` è enterprise-only per `license_seed.py`. In locale non falliva mai perché `backend/.env` (gitignored) disabilita l'enforcement delle licenze per comodità di sviluppo.
+- **Fix:** nuova fixture `enterprise_headers` in `conftest.py`, test aggiornati, aggiunto un test negativo che verifica il 403 per il tier `pro`. Verificata l'intera suite con `DISABLE_LICENSE_ENFORCEMENT=False` forzato, per matchare esattamente l'ambiente CI.
+
+### 🐛 Fix bloccante: link di condivisione PDF sempre rotto (plan 0138-0139, #C)
+
+- **Trovato in code review pre-deploy**, prima di qualunque test manuale: `POST /share/{token}/download` restituiva sempre `403 CSRF validation failed`, perché `CSRF_EXEMPT_PATHS` è un set di stringhe esatte e non può contenere un path con un segmento dinamico (`{token}`). Nessun link di condivisione avrebbe mai funzionato per un visitatore esterno. I test non l'hanno mai intercettato perché disabilitano il CSRF globalmente.
+- **Fix:** nuovo meccanismo a prefisso (`CSRF_EXEMPT_PATH_PREFIXES`) in `csrf.py` per esentare `/share/` (endpoint pubblico, nessuna sessione da proteggere). Aggiunto test di regressione (verificato che fallisce senza il fix).
+- **Fix di sicurezza correlato:** aggiunto rate limiting (10/minuto per IP) su `/share/{token}/download`, che prima permetteva brute-force illimitato della password di un link protetto.
+- **Fix UI minore:** `ShareDialog` (desktop e web) mostrava "Copiato" su **tutti** i link quando se ne copiava uno solo (booleano condiviso invece di tracciare il token copiato).
+
+### ✨ OCR: messaggio di risultato reale invece di un generico "completato" (plan 0138-0139, #D)
+
+- **Motivo:** l'OCR aggiunge un layer di testo invisibile al PDF, quindi il documento appare identico prima e dopo — l'utente non aveva modo di sapere se aveva funzionato.
+- **Backend:** `POST /pdfs/{id}/ocr` ora restituisce `{pdf, character_count, already_searchable}` invece del solo PDF.
+- **Desktop e web (parity):** il dialog OCR mostra ora "riconosciuti N caratteri", oppure "il PDF ha già del testo selezionabile" o "nessun testo riconosciuto", invece del generico messaggio di successo. Il dialog web resta aperto a mostrare il risultato invece di chiudersi subito.
+- **Test:** 7 backend + 9 desktop + 9 web aggiornati/aggiunti.
+
+### ✨ Dialogo di stampa completamente custom + stampa silenziosa (issue #8, plan 0138-0139)
+
+- **Motivo:** dopo il fix del timing (anteprima bianca), il dialogo nativo restava inadeguato: quello "Browser" di Edge è dispersivo, quello "System" di Windows (`ShowPrintUI`) non mostra anteprima e non permette di scegliere pagine/colore dalla nostra UI.
+- **Nuovo modal `PrintOptionsModal`:** anteprima live via pdf.js (navigabile pagina per pagina, si aggiorna in tempo reale con orientamento/margini/colore), selezione stampante (elenco reale delle stampanti installate), copie, colore/bianco e nero, pagine (tutte o intervallo — con anteprima vincolata alle sole pagine dell'intervallo scelto), orientamento (il contenuto non viene mai ruotato: solo la forma del foglio cambia, come farebbe una stampante reale), margini.
+- **Stampa silenziosa:** nessun dialogo di sistema si apre più. Nuovi comandi Rust `list_printers` e `print_pages` (in `desktop/src-tauri/src/lib.rs`) invocano script PowerShell (`desktop/src-tauri/scripts/*.ps1`) che usano `System.Drawing.Printing.PrintDocument` per stampare le pagine renderizzate (PNG) con le impostazioni scelte, senza passare da WebView2.
+- **Bug di race condition risolto:** caricamento del PDF nella preview e rendering della pagina selezionata erano in due `useEffect` separati — un caricamento lento poteva sovrascrivere la pagina appena scelta dall'utente con una pagina stale. Unificati in un solo effect.
+- **Lezione:** `desktop/frontend/src/shared/` è una copia generata da `shared/src/` (script di prebuild `copy-shared.js`) — va sempre modificato il sorgente canonico in `shared/src/`, mai la copia locale, altrimenti la build la sovrascrive silenziosamente.
+- **Verificato in build reale.**
+
+### 🐛 Fix auto-login lento all'avvio (desktop)
+
+- **Sintomo:** con una sessione già salvata, l'app mostrava per alcuni secondi la pagina di login prima di reindirizzare automaticamente a `/app`.
+- **Causa:** `restoreSession()` (in `shared/src/auth.tsx`) parte al boot dell'app in parallelo con l'avvio del sidecar Python e spesso perde questa "gara" su installazioni fresche (sidecar non ancora pronto) — il tentativo fallisce silenziosamente e l'utente atterra sul login, salvo poi essere rediretto più tardi da un secondo trigger.
+- **Fix:** aggiunto `refreshSession()` al context di autenticazione. La startup page (`desktop/frontend/src/app/startup/page.tsx`) lo richiama esplicitamente dopo aver confermato che backend/DB/API sono pronti, e reindirizza direttamente a `/app` se la sessione risulta valida.
+- **Verificato in build reale.**
+
+## 2026-09-25
+
+### 🐛 Fix stampa desktop: anteprima bianca (issue #8, plan 0138-0139)
+
+- **Causa reale trovata:** non era un problema di canvas GPU/`toDataURL()` (il canvas di PDF.js è un context 2D normale, non taintato) ma un **problema di timing**: `window.print()` veniva chiamato nello stesso tick in cui l'`<img>` con il data URL base64 veniva inserito nel DOM. Il motore di stampa di WebView2 cattura lo snapshot del DOM prima che l'immagine finisca di decodificare → pagina bianca.
+- **Fix:** `handlePrint` ora crea l'`<img>`, attende `img.decode()` (con fallback su `onload`/`onerror` se `decode()` non è supportato), poi aspetta due `requestAnimationFrame` prima di chiamare `window.print()`. Rimosso il clone-canvas inutile (no-op su un context 2D non taintato). Cleanup dell'overlay ora su evento `afterprint` invece di un `setTimeout(…, 1000)` a tempo fisso (con fallback di sicurezza a 15s).
+- **Test:** aggiornato test `1k: handlePrint` per il nuovo flusso async (mock `HTMLImageElement.prototype.decode`).
+- **Da verificare:** in build reale — vedi `.specs/active/fix-desktop-build-0138-0139-unified.md`.
+
+## 2026-09-24
+
+### 🐛 Fix stampa desktop (issue #8, plan 0138-0139)
+
+- **beforeBuildCommand**: aggiunto a `tauri.conf.json` — la build Tauri ora ricompila il frontend prima di impacchettare (prima usava sempre il `out/` vecchio).
+- **Stampa**: vari tentativi per far funzionare la stampa in Tauri (WebView2). L'iframe con blob URL non renderizza, i data URL base64 nemmeno, il comando Rust `print_pdf` apre un viewer esterno (rifiutato), il modal anteprima in-app è stato rifiutato, `webview.print()` stampa tutto il DOM. Stato attuale: canvas clone + `<img>` overlay + `window.print()` — anteprima ancora bianca, da fixare.
+- **Rimosso**: `PrintModal.tsx`, comando Rust `print_pdf`, helper `printWebview()`, permesso `core:webview:allow-print`, toast `print-toast`.
+- **Test**: 989 test desktop passano.
+
+### ✨ Firma PDF: flusso a step + anteprima + resize + undo/redo (issue #836)
+
+- **Desktop**: `SignModal` riorganizzato in **2 step** — (1) scegli la firma (disegna o carica immagine), (2) posizionala sulla pagina.
+- **Anteprima in tempo reale**: il `PositionSelector` ora mostra la firma dentro il riquadro mentre lo trascini, non più un box vuoto.
+- **Resize**: il riquadro firma è ridimensionabile trascinando l'angolo in basso a destra (le dimensioni in punti PDF vengono riportate al backend).
+- **Undo/redo**: nel disegno della firma ora ci sono i bottoni Annulla/Ripeti (stack di snapshot del canvas), così un errore non cancella tutto.
+- **Upload immagine**: il bottone "Carica un'immagine" è ora un vero bottone stilizzato (prima era un `<input type="file">` nudo non cliccabile).
+- **Test**: 17 test desktop (SignModal + PositionSelector) passano.
+
+### ✨ Login desktop: feedback di stato progressivo
+
+- **Desktop**: il bottone "Accedi" ora mostra uno spinner + messaggio di stato progressivo durante il login ("Verifica account locale...", "Connessione al cloud...", "Sincronizzazione account...", "Completamento accesso...") invece del generico "Caricamento...". Così si capisce se l'app sta lavorando o è bloccata.
+- **Backend**: `login()` in `auth.tsx` accetta un callback `onPhase` per segnalare lo stato.
+
+### 🐛 Fix dal test manuale (2° ciclo)
+
+- **Bottone accesso in italiano**: `loginButton` era "Sign in" nel namespace `auth` di `it.json` → corretto a "Accedi".
+- **Scritta di stato duplicata**: il messaggio di stato del login appariva sia nel bottone che sotto → rimosso il `<p>` ridondante (gli errori restano nel box rosso separato).
+- **Firma: undo non rimuoveva lo scarabocchio**: `undo()`/`redo()` ridisegnavano il canvas ma non aggiornavano `signatureDataUrl` (usato per la firma finale) → alla conferma veniva usato lo stato vecchio con lo scarabocchio. Fix: `signatureDataUrl` viene aggiornato dopo undo/redo.
+
+### 🐛 Fix backend
+
+- **Import immagini (GIF/BMP)**: `import_file_to_pdf` ora normalizza le immagini a PNG via Pillow prima di passarle a PyMuPDF (fitz non apriva direttamente GIF/BMP). Fix drag & drop immagini nel desktop.
+- **database.py**: fix crash su URL Postgres — la creazione della directory ora avviene solo per URL SQLite.
+
 ## 2026-09-20
 
 ### ✨ OCR per PDF scansionati (issue #829)

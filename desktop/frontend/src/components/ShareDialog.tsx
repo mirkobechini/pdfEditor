@@ -2,8 +2,9 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { api, ShareLink } from "../lib/api";
-import { mapError } from "../lib/error-map";
+import { api, cloudApi, ShareLink } from "../shared/api";
+import { isTauri } from "../shared/tauri";
+import { mapError } from "../shared/error-map";
 
 interface ShareDialogProps {
     open: boolean;
@@ -28,11 +29,54 @@ export default function ShareDialog({ open, onClose, pdfId }: ShareDialogProps) 
         }
     }, [open, pdfId]);
 
+    // ─── Cloud helpers (desktop only) ─────────────────────────────
+    // In desktop (Tauri), the PDF lives on the local sidecar. To create a
+    // publicly shareable link, we must first upload the PDF to the cloud
+    // backend, then create the link there. The local→cloud id mapping is
+    // persisted in localStorage (same key used by useCloudSync).
+    const SYNC_MAP_KEY = "pdfeditor_sync_id_map";
+
+    function getCloudId(localId: string): string | undefined {
+        try {
+            const map = JSON.parse(localStorage.getItem(SYNC_MAP_KEY) || "{}");
+            return map[localId];
+        } catch {
+            return undefined;
+        }
+    }
+
+    function saveCloudId(localId: string, cloudId: string): void {
+        try {
+            const map = JSON.parse(localStorage.getItem(SYNC_MAP_KEY) || "{}");
+            map[localId] = cloudId;
+            localStorage.setItem(SYNC_MAP_KEY, JSON.stringify(map));
+        } catch {
+            // ignore
+        }
+    }
+
+    async function ensureCloudUploaded(localId: string): Promise<string> {
+        const existing = getCloudId(localId);
+        if (existing) return existing;
+        // Download the PDF from the local sidecar and upload it to the cloud.
+        const blob = await api.downloadPdf(localId);
+        const file = new File([blob], `${localId}.pdf`, { type: "application/pdf" });
+        const cloudPdf = await cloudApi.uploadPdf(file);
+        saveCloudId(localId, cloudPdf.id);
+        return cloudPdf.id;
+    }
+
     async function loadLinks() {
         if (!pdfId) return;
         try {
-            const res = await api.listShareLinks(pdfId);
-            setLinks(res);
+            if (isTauri()) {
+                const cloudId = await ensureCloudUploaded(pdfId);
+                const res = await cloudApi.listShareLinks(cloudId);
+                setLinks(res);
+            } else {
+                const res = await api.listShareLinks(pdfId);
+                setLinks(res);
+            }
         } catch (err) {
             setError(t("loadFailed") + ": " + mapError(err));
         }
@@ -44,11 +88,21 @@ export default function ShareDialog({ open, onClose, pdfId }: ShareDialogProps) 
         setError("");
         try {
             const expires = expiresInDays ? parseInt(expiresInDays, 10) : undefined;
-            const link = await api.createShareLink(
-                pdfId,
-                password.trim() || undefined,
-                expires,
-            );
+            let link: ShareLink;
+            if (isTauri()) {
+                const cloudId = await ensureCloudUploaded(pdfId);
+                link = await cloudApi.createShareLink(
+                    cloudId,
+                    password.trim() || undefined,
+                    expires,
+                );
+            } else {
+                link = await api.createShareLink(
+                    pdfId,
+                    password.trim() || undefined,
+                    expires,
+                );
+            }
             setLinks((prev) => [link, ...prev]);
             setPassword("");
             setExpiresInDays("");
@@ -62,7 +116,12 @@ export default function ShareDialog({ open, onClose, pdfId }: ShareDialogProps) 
     async function handleRevoke(token: string) {
         if (!pdfId) return;
         try {
-            await api.revokeShareLink(pdfId, token);
+            if (isTauri()) {
+                const cloudId = await ensureCloudUploaded(pdfId);
+                await cloudApi.revokeShareLink(cloudId, token);
+            } else {
+                await api.revokeShareLink(pdfId, token);
+            }
             setLinks((prev) => prev.filter((l) => l.token !== token));
         } catch (err) {
             setError(t("revokeFailed") + ": " + mapError(err));

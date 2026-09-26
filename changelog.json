@@ -9,9 +9,11 @@
         "Condivisione via link: condividi un PDF con un link pubblico, con password e scadenza opzionali",
         "Multi-selezione: seleziona più PDF e applica operazioni in blocco (elimina, esporta)",
         "Browse documents: esplora un catalogo di documenti PDF da Internet Archive",
-        "Firma digitale: firma i tuoi PDF disegnando o caricando un'immagine",
+        "Firma digitale migliorata: anteprima in tempo reale, ridimensionamento, undo/redo",
         "Drag & drop: trascina un PDF nell'editor per aprirlo, o un'immagine per importarla",
-        "Compressione offline: comprimi i PDF anche senza connessione"
+        "Compressione offline: comprimi i PDF anche senza connessione",
+        "Login con feedback di stato: vedi cosa sta facendo l'app durante l'accesso",
+        "Import immagini migliorato: supporto per GIF e BMP"
       ]
     },
     {
@@ -19,8 +21,7 @@
       "date": "2026-09-16",
       "changes": [
         "Import/Export: importa file (testo, immagini) ed esporta i tuoi PDF in altri formati",
-        "Conversione DOCX → PDF: apri e converti documenti Word",
-        "Stampa PDF: stampa direttamente dall'app"
+        "Conversione DOCX → PDF: apri e converti documenti Word"
       ]
     }
   ],

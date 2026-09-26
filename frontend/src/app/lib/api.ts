@@ -10,6 +10,7 @@ import type {
   AdminUser,
   UserResponse,
   ShareLink,
+  OcrResult,
 } from "./api-types";
 
 export type {
@@ -19,6 +20,7 @@ export type {
   BugReport,
   AdminUser,
   ShareLink,
+  OcrResult,
 };
 
 export class ApiClient {
@@ -410,7 +412,7 @@ export class ApiClient {
     return res.json();
   }
 
-  async ocrPdf(id: string, language = "eng"): Promise<PdfDocument> {
+  async ocrPdf(id: string, language = "eng"): Promise<OcrResult> {
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/ocr`, {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },

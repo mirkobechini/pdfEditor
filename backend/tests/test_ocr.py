@@ -52,7 +52,9 @@ class TestOcr:
                 headers=pro_headers,
             )
         assert resp.status_code == status.HTTP_200_OK
-        assert resp.json()["id"] == pdf_id
+        assert resp.json()["pdf"]["id"] == pdf_id
+        assert resp.json()["character_count"] == len("Recognized text")
+        assert resp.json()["already_searchable"] is False
 
     def test_ocr_pdf_with_text_returns_unchanged(self, client, pro_headers):
         pdf_id = self._upload(client, pro_headers, _make_text_pdf())
@@ -65,6 +67,8 @@ class TestOcr:
         assert resp.status_code == status.HTTP_200_OK
         # Tesseract should NOT be called since the PDF already has text
         mock_ocr.assert_not_called()
+        assert resp.json()["already_searchable"] is True
+        assert resp.json()["character_count"] == 0
 
     def test_ocr_requires_pro_tier(self, client, free_headers):
         from app.core.config import settings

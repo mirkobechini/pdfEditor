@@ -17,6 +17,10 @@ import LockUnlockModal from "../../components/LockUnlockModal";
 import ReplaceTextModal from "../../components/ReplaceTextModal";
 import ImportExportModal from "../../components/ImportExportModal";
 import SignModal from "../../components/SignModal";
+import OcrModal from "../../components/OcrModal";
+import PrintOptionsModal, { type PrintOptions, parsePageRangeList } from "../../components/PrintOptionsModal";
+import AnnotationDialog from "../../components/AnnotationDialog";
+import ShareDialog from "../../components/ShareDialog";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
 import { useCloudSync } from "../../hooks/useCloudSync";
@@ -61,6 +65,17 @@ export default function EditorPage() {
     const [compressOpen, setCompressOpen] = React.useState(false);
     const [importExportOpen, setImportExportOpen] = React.useState(false);
     const [signOpen, setSignOpen] = React.useState(false);
+    const [ocrOpen, setOcrOpen] = React.useState(false);
+    const [printOptionsOpen, setPrintOptionsOpen] = React.useState(false);
+    const [printPreview, setPrintPreview] = React.useState<{ dataUrl: string; isLandscape: boolean } | null>(null);
+    const [annotateOpen, setAnnotateOpen] = React.useState(false);
+    const [shareOpen, setShareOpen] = React.useState(false);
+    const [organizeOpen, setOrganizeOpen] = React.useState(false);
+    const [convertOpen, setConvertOpen] = React.useState(false);
+    const [annotateMenuOpen, setAnnotateMenuOpen] = React.useState(false);
+    const organizeRef = React.useRef<HTMLDivElement>(null);
+    const convertRef = React.useRef<HTMLDivElement>(null);
+    const annotateMenuRef = React.useRef<HTMLDivElement>(null);
     const [lockOpen, setLockOpen] = React.useState(false);
     const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
@@ -90,36 +105,156 @@ export default function EditorPage() {
     }
 
     function handlePrint() {
-        if (!pdfUrl) return;
-        // Open the PDF in a hidden iframe and trigger the webview print dialog.
-        const iframe = document.createElement("iframe");
-        iframe.src = pdfUrl;
-        iframe.style.position = "fixed";
-        iframe.style.right = "0";
-        iframe.style.bottom = "0";
-        iframe.style.width = "0";
-        iframe.style.height = "0";
-        iframe.style.border = "none";
-        iframe.style.visibility = "hidden";
-        iframe.onload = () => {
-            try {
-                iframe.contentWindow?.focus();
-                iframe.contentWindow?.print();
-            } catch (err) {
-                console.error("Print failed:", err);
+        if (!selectedDoc) return;
+        const srcCanvas = document.querySelector("canvas");
+        if (!srcCanvas) return;
+        setPrintPreview({
+            dataUrl: srcCanvas.toDataURL("image/png"),
+            isLandscape: srcCanvas.width > srcCanvas.height,
+        });
+        setPrintOptionsOpen(true);
+    }
+
+    /** Render the given PDF pages to PNG (base64, no data: prefix) via pdf.js. */
+    async function renderPagesToPngBase64(fileUrl: string, pageNumbers: number[]): Promise<{ images: string[]; firstIsLandscape: boolean }> {
+        const pdfjsLib = (window as any).pdfjsLib;
+        const pdf = await pdfjsLib.getDocument(fileUrl).promise;
+        const images: string[] = [];
+        let firstIsLandscape = false;
+        const PRINT_SCALE = 2; // ~144 DPI at the PDF's native 72pt/inch base
+        for (let i = 0; i < pageNumbers.length; i++) {
+            const page = await pdf.getPage(pageNumbers[i]);
+            const viewport = page.getViewport({ scale: PRINT_SCALE });
+            const canvas = document.createElement("canvas");
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) continue;
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            if (i === 0) firstIsLandscape = viewport.width > viewport.height;
+            images.push(canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, ""));
+        }
+        return { images, firstIsLandscape };
+    }
+
+    /** Browser/dev fallback: prints only the currently visible page via window.print(). */
+    async function printCurrentPageViaBrowser(dataUrl: string, isLandscapeImage: boolean, options: PrintOptions) {
+        // WebView2's print pipeline snapshots the DOM synchronously. If the
+        // <img> hasn't finished decoding the data URL yet, the snapshot is
+        // blank. Build a real Image, await decode(), THEN insert it and wait
+        // a couple of frames for layout/paint before calling print().
+        const img = new Image();
+        img.src = dataUrl;
+        try {
+            await img.decode();
+        } catch {
+            // Fall back to the load event if decode() is unsupported/fails.
+            await new Promise<void>((resolve) => {
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+            });
+        }
+
+        const pageOrientation =
+            options.orientation === "auto" ? (isLandscapeImage ? "landscape" : "portrait") : options.orientation;
+        const pageMargin = options.margin === "none" ? "0" : "1.2cm";
+
+        const style = document.createElement("style");
+        style.id = "print-style";
+        style.textContent = `
+            @media print {
+                body > *:not(#print-overlay) { display: none !important; }
+                @page { size: ${pageOrientation}; margin: ${pageMargin}; }
+                #print-overlay {
+                    display: flex !important;
+                    position: fixed !important;
+                    inset: 0 !important;
+                    z-index: 99999 !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    background: white !important;
+                }
+                #print-overlay img {
+                    max-width: 100%;
+                    max-height: 100vh;
+                    object-fit: contain;
+                }
             }
+        `;
+        document.head.appendChild(style);
+
+        const div = document.createElement("div");
+        div.id = "print-overlay";
+        div.style.cssText = "display:none;";
+        div.appendChild(img);
+        document.body.appendChild(div);
+
+        const cleanup = () => {
+            const s = document.getElementById("print-style");
+            if (s) document.head.removeChild(s);
+            const d = document.getElementById("print-overlay");
+            if (d) document.body.removeChild(d);
+            window.removeEventListener("afterprint", cleanup);
         };
-        document.body.appendChild(iframe);
-        setTimeout(() => {
-            document.body.removeChild(iframe);
-        }, 60000);
+        window.addEventListener("afterprint", cleanup);
+        // Safety net in case `afterprint` doesn't fire (some WebView2 builds).
+        setTimeout(cleanup, 15000);
+
+        // Two animation frames give WebView2 time to lay out and paint the
+        // decoded image before the print snapshot is taken.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                window.print();
+            });
+        });
+    }
+
+    async function executePrint(options: PrintOptions) {
+        setPrintOptionsOpen(false);
+        if (!printPreview || !selectedDoc) return;
+
+        // No printer chosen (browser/dev fallback, or the platform doesn't
+        // support silent printing): fall back to the standard print flow,
+        // limited to the currently visible page.
+        if (!options.printerName) {
+            await printCurrentPageViaBrowser(printPreview.dataUrl, printPreview.isLandscape, options);
+            return;
+        }
+
+        try {
+            const totalPages = selectedDoc.page_count || 1;
+            const pageNumbers = parsePageRangeList(options.pageRange, totalPages);
+            if (!pdfUrl) return;
+            const { images, firstIsLandscape } = await renderPagesToPngBase64(pdfUrl, pageNumbers);
+            if (images.length === 0) return;
+
+            const pageOrientation =
+                options.orientation === "auto" ? (firstIsLandscape ? "landscape" : "portrait") : options.orientation;
+            const marginMm = options.margin === "none" ? 0 : 12;
+
+            await tauriInvoke("print_pages", {
+                request: {
+                    printerName: options.printerName,
+                    copies: options.copies,
+                    color: options.color === "color",
+                    orientation: pageOrientation,
+                    marginMm,
+                    images,
+                },
+            });
+        } catch (err) {
+            console.error("Print failed:", err);
+        }
     }
 
     async function handleUploadFile(file: File) {
-        if (!file.name.toLowerCase().endsWith(".pdf")) return;
+        const name = file.name.toLowerCase();
+        const isPdf = name.endsWith(".pdf");
+        const isImage = /\.(png|jpe?g|gif|bmp)$/.test(name);
+        if (!isPdf && !isImage) return;
         setUploadError(null);
         try {
-            const uploaded = await api.uploadPdf(file);
+            const uploaded = isPdf ? await api.uploadPdf(file) : await api.importFile(file);
             setDocs((prev) => [uploaded, ...prev]);
             setSelectedDoc(uploaded);
         } catch (err) {
@@ -214,18 +349,80 @@ export default function EditorPage() {
         function onDrop(e: DragEvent) {
             e.preventDefault();
             setDragOver(false);
+            // In Tauri, dataTransfer.files is NOT populated reliably (the
+            // native onDragDropEvent handler below reads the file paths via
+            // read_file_binary). Only use the standard drop handler on web.
+            if (isTauri()) return;
             const file = e.dataTransfer?.files?.[0];
             if (file) handleUploadFile(file);
         }
         document.addEventListener("dragover", onDragOver);
         document.addEventListener("dragleave", onDragLeave);
         document.addEventListener("drop", onDrop);
+
+        // In Tauri, dragging files from the OS does not populate
+        // dataTransfer.files reliably. Use the native drag-drop event to get
+        // the file paths, then read them via the read_file_binary IPC command.
+        let unlistenDragDrop: (() => void) | undefined;
+        if (isTauri()) {
+            (async () => {
+                try {
+                    const { getCurrentWebview } = await import("@tauri-apps/api/webview");
+                    unlistenDragDrop = await getCurrentWebview().onDragDropEvent((event) => {
+                        if (event.payload.type === "drop") {
+                            setDragOver(false);
+                            const path = event.payload.paths?.[0];
+                            if (path) handleDroppedPath(path);
+                        } else if (event.payload.type === "over") {
+                            setDragOver(true);
+                        } else if (event.payload.type === "leave") {
+                            setDragOver(false);
+                        }
+                    });
+                } catch (err) {
+                    console.error("Failed to register Tauri drag-drop:", err);
+                }
+            })();
+        }
+
         return () => {
             document.removeEventListener("dragover", onDragOver);
             document.removeEventListener("dragleave", onDragLeave);
             document.removeEventListener("drop", onDrop);
+            unlistenDragDrop?.();
         };
     }, []);
+
+    // Read a dropped file path (Tauri) and upload it
+    const MIME_BY_EXT: Record<string, string> = {
+        png: "image/png",
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        gif: "image/gif",
+        bmp: "image/bmp",
+        txt: "text/plain",
+        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    };
+
+    function mimeFromName(filename: string): string {
+        const ext = filename.toLowerCase().split(".").pop() || "";
+        return MIME_BY_EXT[ext] || "application/octet-stream";
+    }
+
+    async function handleDroppedPath(filePath: string) {
+        try {
+            const raw = await tauriInvoke<number[]>("read_file_binary", { path: filePath });
+            if (!raw) return;
+            const name = filePath.split(/[/\\]/).pop() || "document.pdf";
+            const isPdf = name.toLowerCase().endsWith(".pdf");
+            const mime = isPdf ? "application/pdf" : mimeFromName(name);
+            const blob = new Blob([new Uint8Array(raw)], { type: mime });
+            const file = new File([blob], name, { type: mime });
+            handleUploadFile(file);
+        } catch (err) {
+            console.error("Failed to read dropped file:", err);
+        }
+    }
 
     // Open native file picker, optionally starting from wizard folder
     async function handleOpenLocal() {
@@ -261,6 +458,23 @@ export default function EditorPage() {
         // Reset so the same file can be picked again
         e.target.value = "";
     }
+
+    // Close toolbar dropdowns when clicking outside
+    React.useEffect(() => {
+        function onClickOutside(e: MouseEvent) {
+            if (organizeRef.current && !organizeRef.current.contains(e.target as Node)) {
+                setOrganizeOpen(false);
+            }
+            if (convertRef.current && !convertRef.current.contains(e.target as Node)) {
+                setConvertOpen(false);
+            }
+            if (annotateMenuRef.current && !annotateMenuRef.current.contains(e.target as Node)) {
+                setAnnotateMenuOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", onClickOutside);
+        return () => document.removeEventListener("mousedown", onClickOutside);
+    }, []);
 
     React.useEffect(() => {
         let cancelled = false;
@@ -547,75 +761,102 @@ export default function EditorPage() {
                                 <span className="w-10 text-center">{Math.round(zoom * 100)}%</span>
                                 <button onClick={() => setZoom(Math.min(3, zoom + 0.25))} className="h-7 w-7 rounded hover:bg-white/6">+</button>
                             </div>
-                            <button
-                                onClick={() => setMergeOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("merge")}
-                            </button>
-                            <button
-                                onClick={() => setSplitOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("split")}
-                            </button>
-                            <button
-                                onClick={() => setCompressOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("compress")}
-                            </button>
-                            <button
-                                onClick={() => setReorderOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("reorder")}
-                            </button>
-                            <button
-                                onClick={() => setRemovePagesOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("remove")}
-                            </button>
-                            <button
-                                onClick={() => setMetadataOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("metadata")}
-                            </button>
-                            <button
-                                onClick={() => setReplaceTextOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("replaceText")}
-                            </button>
-                            <button
-                                onClick={() => setImportExportOpen(true)}
-                                disabled={!selectedDoc}
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("importExport")}
-                            </button>
+
+                            {/* Organizza dropdown */}
+                            <div className="relative" ref={organizeRef}>
+                                <button
+                                    onClick={() => { setOrganizeOpen((v) => !v); setConvertOpen(false); setAnnotateMenuOpen(false); }}
+                                    disabled={!selectedDoc}
+                                    data-testid="toolbar-organize"
+                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    {te("organize")} ▾
+                                </button>
+                                {organizeOpen && (
+                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
+                                        <button onClick={() => { setMergeOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("merge")}
+                                        </button>
+                                        <button onClick={() => { setSplitOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("split")}
+                                        </button>
+                                        <button onClick={() => { setReorderOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("reorder")}
+                                        </button>
+                                        <button onClick={() => { setRemovePagesOpen(true); setOrganizeOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("remove")}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Converti dropdown */}
+                            <div className="relative" ref={convertRef}>
+                                <button
+                                    onClick={() => { setConvertOpen((v) => !v); setOrganizeOpen(false); setAnnotateMenuOpen(false); }}
+                                    data-testid="toolbar-convert"
+                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white"
+                                >
+                                    {te("convert")} ▾
+                                </button>
+                                {convertOpen && (
+                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
+                                        <button onClick={() => { setCompressOpen(true); setConvertOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("compress")}
+                                        </button>
+                                        <button onClick={() => { setImportExportOpen(true); setConvertOpen(false); }} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white">
+                                            {te("importExport")}
+                                        </button>
+                                        <button onClick={() => { setReplaceTextOpen(true); setConvertOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("replaceText")}
+                                        </button>
+                                        <button onClick={() => { setMetadataOpen(true); setConvertOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("metadata")}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Annota dropdown */}
+                            <div className="relative" ref={annotateMenuRef}>
+                                <button
+                                    onClick={() => { setAnnotateMenuOpen((v) => !v); setOrganizeOpen(false); setConvertOpen(false); }}
+                                    disabled={!selectedDoc}
+                                    data-testid="toolbar-annotate-menu"
+                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                    {te("annotate")} ▾
+                                </button>
+                                {annotateMenuOpen && (
+                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
+                                        <button onClick={() => { setSignOpen(true); setAnnotateMenuOpen(false); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("sign")}
+                                        </button>
+                                        <button onClick={() => { setOcrOpen(true); setAnnotateMenuOpen(false); }} disabled={!selectedDoc} data-testid="toolbar-ocr" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("ocr")}
+                                        </button>
+                                        <button onClick={() => { setAnnotateOpen(true); setAnnotateMenuOpen(false); }} disabled={!selectedDoc} data-testid="toolbar-annotate" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
+                                            {te("annotate")}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
                             <button
                                 onClick={handlePrint}
                                 disabled={!selectedDoc}
+                                data-testid="toolbar-print"
                                 className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                             >
                                 {te("print")}
                             </button>
                             <button
-                                onClick={() => setSignOpen(true)}
+                                onClick={() => setShareOpen(true)}
                                 disabled={!selectedDoc}
+                                data-testid="toolbar-share"
                                 className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
                             >
-                                {te("sign")}
+                                {te("share")}
                             </button>
                         </div>
                     </header>
@@ -729,11 +970,14 @@ export default function EditorPage() {
                                 {selectedDoc?.is_password_protected ? "UNLOCK" : "LOCK"}
                             </p>
                         </button>
-                        {["OCR"].map((k) => (
-                            <button key={k} disabled className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed">
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">{k}</p>
-                            </button>
-                        ))}
+                        <button
+                            onClick={() => setOcrOpen(true)}
+                            disabled={!selectedDoc}
+                            data-testid="fast-action-ocr"
+                            className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">OCR</p>
+                        </button>
                     </div>
                 </aside>
             </div>
@@ -833,12 +1077,44 @@ export default function EditorPage() {
                 pdfId={selectedDoc?.id ?? ""}
                 pdfName={selectedDoc?.original_filename ?? ""}
                 totalPages={selectedDoc?.page_count ?? 1}
+                pdfUrl={pdfUrl}
                 onClose={() => setSignOpen(false)}
                 onSaved={(updatedDoc) => {
                     setDocs((prev) => prev.map((d) => (d.id === updatedDoc.id ? updatedDoc : d)));
                     setSelectedDoc(updatedDoc);
                     setPdfRefreshKey((k) => k + 1);
                 }}
+            />
+
+            <OcrModal
+                open={ocrOpen}
+                pdfId={selectedDoc?.id ?? null}
+                onClose={() => setOcrOpen(false)}
+                onSuccess={() => setPdfRefreshKey((k) => k + 1)}
+            />
+
+            <PrintOptionsModal
+                open={printOptionsOpen}
+                onClose={() => setPrintOptionsOpen(false)}
+                onConfirm={executePrint}
+                pdfUrl={pdfUrl}
+                initialPage={currentPage}
+                totalPages={selectedDoc?.page_count ?? 1}
+            />
+
+            <AnnotationDialog
+                open={annotateOpen}
+                pdfId={selectedDoc?.id ?? null}
+                currentPage={currentPage}
+                pdfUrl={pdfUrl}
+                onClose={() => setAnnotateOpen(false)}
+                onSuccess={() => setPdfRefreshKey((k) => k + 1)}
+            />
+
+            <ShareDialog
+                open={shareOpen}
+                pdfId={selectedDoc?.id ?? null}
+                onClose={() => setShareOpen(false)}
             />
 
             <LockUnlockModal

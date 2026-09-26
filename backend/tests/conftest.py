@@ -240,6 +240,39 @@ def pro_headers(pro_token):
     return {"Authorization": f"Bearer {pro_token}"}
 
 
+@pytest.fixture()
+def enterprise_token(client, db_engine):
+    """Register + login an enterprise-tier user, promote to enterprise, return the JWT."""
+    client.post(
+        "/auth/register",
+        json={"email": "enterprise@test.com", "password": "EntPass123", "full_name": "Enterprise"},
+    )
+    resp = client.post(
+        "/auth/login",
+        json={"email": "enterprise@test.com", "password": "EntPass123"},
+    )
+    token = resp.json()["access_token"]
+
+    me = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    user_id = me.json()["id"]
+
+    from sqlalchemy import text
+    with db_engine.connect() as conn:
+        conn.execute(
+            text("UPDATE users SET license_tier = 'enterprise' WHERE id = :uid"),
+            {"uid": user_id},
+        )
+        conn.commit()
+
+    return token
+
+
+@pytest.fixture()
+def enterprise_headers(enterprise_token):
+    """HTTP headers with enterprise-tier JWT."""
+    return {"Authorization": f"Bearer {enterprise_token}"}
+
+
 def upload_pdf(client, headers, content, filename="test.pdf"):
     """Helper: upload a PDF with auth headers, return the doc ID."""
     resp = client.post(

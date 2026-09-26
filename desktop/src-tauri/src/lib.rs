@@ -148,14 +148,33 @@ fn read_file_binary(path: String) -> Result<Vec<u8>, String> {
     fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
-/// Open a native file dialog with an optional default path.
+/// File filter for native dialogs ({ name, extensions }).
+#[derive(serde::Deserialize)]
+struct DialogFilter {
+    name: String,
+    extensions: Vec<String>,
+}
+
+/// Open a native file dialog with an optional default path and filters.
 #[tauri::command]
-fn dialog_open(app: tauri::AppHandle, default_path: Option<String>) -> Result<Option<String>, String> {
+fn dialog_open(
+    app: tauri::AppHandle,
+    default_path: Option<String>,
+    filters: Option<Vec<DialogFilter>>,
+) -> Result<Option<String>, String> {
     use tauri_plugin_dialog::DialogExt;
 
-    let mut builder = app.dialog()
-        .file()
-        .add_filter("PDF", &["pdf"]);
+    let mut builder = app.dialog().file();
+
+    // Apply filters if provided, otherwise default to PDF.
+    if let Some(filters) = filters {
+        for filter in filters {
+            let ext_refs: Vec<&str> = filter.extensions.iter().map(|e| e.as_str()).collect();
+            builder = builder.add_filter(&filter.name, &ext_refs);
+        }
+    } else {
+        builder = builder.add_filter("PDF", &["pdf"]);
+    }
 
     if let Some(ref path) = default_path {
         builder = builder.set_directory(path);
@@ -233,6 +252,182 @@ fn dialog_save(app: tauri::AppHandle, default_name: String, data: Vec<u8>, defau
 #[tauri::command]
 fn open_devtools(window: tauri::WebviewWindow) {
     let _ = window.open_devtools();
+}
+
+/// List of installed Windows printers, with the system default (if any).
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PrinterList {
+    printers: Vec<String>,
+    default_printer: Option<String>,
+}
+
+/// Write an embedded PowerShell script to a fixed temp path (overwriting any
+/// stale copy from a previous version) and return that path.
+#[cfg(target_os = "windows")]
+fn write_embedded_script(filename: &str, contents: &str) -> Result<std::path::PathBuf, String> {
+    let path = std::env::temp_dir().join(filename);
+    std::fs::write(&path, contents).map_err(|e| format!("Failed to write {}: {}", filename, e))?;
+    Ok(path)
+}
+
+/// List installed printers via .NET's PrinterSettings (System.Drawing),
+/// invoked through a small bundled PowerShell script.
+#[cfg(target_os = "windows")]
+#[tauri::command]
+fn list_printers() -> Result<PrinterList, String> {
+    let script_path = write_embedded_script(
+        "pdfeditor_list_printers.ps1",
+        include_str!("../scripts/list_printers.ps1"),
+    )?;
+
+    let output = std::process::Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+        ])
+        .arg(&script_path)
+        .output()
+        .map_err(|e| format!("Failed to run PowerShell: {}", e))?;
+
+    if !output.status.success() {
+        return Err(format!(
+            "PowerShell exited with error: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut printers = Vec::new();
+    let mut default_printer = None;
+    let mut in_default = false;
+    for line in stdout.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if line == "---DEFAULT---" {
+            in_default = true;
+            continue;
+        }
+        if in_default {
+            default_printer = Some(line.to_string());
+        } else {
+            printers.push(line.to_string());
+        }
+    }
+
+    Ok(PrinterList {
+        printers,
+        default_printer,
+    })
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tauri::command]
+fn list_printers() -> Result<PrinterList, String> {
+    Err("La stampa personalizzata è disponibile solo su Windows".to_string())
+}
+
+/// A page image (PNG, base64-encoded) plus the print job settings that apply
+/// to the whole job.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PrintPagesRequest {
+    printer_name: String,
+    copies: i32,
+    color: bool,
+    orientation: String,
+    margin_mm: f64,
+    /// Base64-encoded PNG data for each page, in print order (no `data:` prefix).
+    images: Vec<String>,
+}
+
+/// Silently print pre-rendered page images to a specific printer with the
+/// app's own settings (pages, copies, color, orientation, margins) — no
+/// Windows/Edge print dialog is ever shown.
+#[cfg(target_os = "windows")]
+#[tauri::command]
+fn print_pages(request: PrintPagesRequest) -> Result<(), String> {
+    use base64::Engine;
+
+    if request.images.is_empty() {
+        return Err("Nessuna pagina da stampare".to_string());
+    }
+
+    let script_path = write_embedded_script(
+        "pdfeditor_print_pages.ps1",
+        include_str!("../scripts/print_pages.ps1"),
+    )?;
+
+    // Decode each page to a temp PNG file for the script to read.
+    let job_dir = std::env::temp_dir().join(format!(
+        "pdfeditor_print_{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis())
+            .unwrap_or(0)
+    ));
+    std::fs::create_dir_all(&job_dir).map_err(|e| format!("Failed to create temp dir: {}", e))?;
+
+    let mut image_paths = Vec::with_capacity(request.images.len());
+    for (i, image_b64) in request.images.iter().enumerate() {
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(image_b64)
+            .map_err(|e| format!("Failed to decode page {}: {}", i + 1, e))?;
+        let path = job_dir.join(format!("page-{:03}.png", i + 1));
+        std::fs::write(&path, bytes).map_err(|e| format!("Failed to write page {}: {}", i + 1, e))?;
+        image_paths.push(path);
+    }
+
+    let mut cmd = std::process::Command::new("powershell");
+    cmd.args([
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+    ])
+    .arg(&script_path)
+    .arg("-PrinterName")
+    .arg(&request.printer_name)
+    .arg("-Copies")
+    .arg(request.copies.to_string())
+    .arg("-Color")
+    .arg(if request.color { "1" } else { "0" })
+    .arg("-Orientation")
+    .arg(&request.orientation)
+    .arg("-MarginMm")
+    .arg(request.margin_mm.to_string())
+    .arg("-ImagePaths");
+    for path in &image_paths {
+        cmd.arg(path);
+    }
+
+    let output = cmd
+        .output()
+        .map_err(|e| format!("Failed to run PowerShell: {}", e))?;
+
+    // Clean up temp page images regardless of outcome.
+    let _ = std::fs::remove_dir_all(&job_dir);
+
+    if !output.status.success() {
+        return Err(format!(
+            "Stampa fallita: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+#[tauri::command]
+fn print_pages(_request: PrintPagesRequest) -> Result<(), String> {
+    Err("La stampa personalizzata è disponibile solo su Windows".to_string())
 }
 
 pub fn run() {
@@ -346,6 +541,8 @@ pub fn run() {
             dialog_open_folder,
             dialog_save,
             open_devtools,
+            list_printers,
+            print_pages,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

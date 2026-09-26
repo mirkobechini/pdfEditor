@@ -621,8 +621,32 @@ class PdfService:
             doc.close()
 
         elif ext in ("png", "jpg", "jpeg", "gif", "bmp"):
-            doc = fitz.open(stream=content, filetype=ext)
-            pdf_bytes = doc.tobytes()
+            # Normalize the image to PNG via Pillow before passing to fitz.
+            # PyMuPDF does not reliably open GIF/BMP streams directly with
+            # filetype="gif"/"bmp" (raises on some builds), and jpg needs
+            # filetype="jpeg". Converting to PNG first makes all image
+            # formats work uniformly and robustly.
+            from io import BytesIO
+            from PIL import Image
+
+            try:
+                img = Image.open(BytesIO(content))
+                img.load()
+            except Exception as e:
+                raise ValueError(f"Invalid or unsupported image: {e}")
+
+            png_buf = BytesIO()
+            # Preserve alpha channel if present (e.g. transparent PNG/GIF).
+            if img.mode in ("RGBA", "LA", "P"):
+                img = img.convert("RGBA")
+            else:
+                img = img.convert("RGB")
+            img.save(png_buf, format="PNG")
+
+            doc = fitz.open(stream=png_buf.getvalue(), filetype="png")
+            # convert_to_pdf() is required for image documents; tobytes()/save()
+            # only works on PDF documents and raises AssertionError otherwise.
+            pdf_bytes = doc.convert_to_pdf()
             doc.close()
 
         elif ext == "docx":
@@ -934,7 +958,11 @@ class PdfService:
             elif annotation_type == "strikeout":
                 annot = page.add_strikeout_annot(rect_obj)
             elif annotation_type == "text":
-                annot = page.add_text_annot(rect_obj, content or "")
+                # Use free-text annotation so the comment text is visible on
+                # the page (add_text_annot creates a popup icon with hidden text).
+                annot = page.add_freetext_annot(
+                    rect_obj, content or "", fontsize=11
+                )
             elif annotation_type == "free_text":
                 annot = page.add_freetext_annot(
                     rect_obj, content or "", fontsize=11
@@ -984,7 +1012,7 @@ class PdfService:
         pdf_id: str,
         user_id: str,
         language: str = "eng",
-    ) -> PdfDocument:
+    ) -> tuple[PdfDocument, int, bool]:
         """Run OCR on a scanned PDF and return a searchable PDF.
 
         If the PDF already has a text layer, it is returned unchanged.
@@ -992,6 +1020,11 @@ class PdfService:
         The recognized text is added as an invisible layer (searchable PDF).
 
         Requires the `tesseract` binary to be installed on the system.
+
+        Returns (pdf, character_count, already_searchable). OCR adds an
+        invisible text layer, so the PDF looks visually unchanged — the
+        caller uses character_count/already_searchable to tell the user
+        something actually happened.
         """
         import fitz
 
@@ -1008,7 +1041,7 @@ class PdfService:
             has_text = any(doc[i].get_text().strip() for i in range(doc.page_count))
             if has_text:
                 # Already searchable — return unchanged
-                return pdf
+                return pdf, 0, True
 
             import pytesseract
 
@@ -1022,6 +1055,7 @@ class PdfService:
                     "on this system. Install it or contact the administrator."
                 )
 
+            character_count = 0
             for page_num in range(doc.page_count):
                 page = doc[page_num]
                 # Render page to image at 200 DPI for OCR
@@ -1038,7 +1072,9 @@ class PdfService:
                 text = pytesseract.image_to_string(
                     img, lang=language, config="--psm 3"
                 )
-                if text.strip():
+                stripped = text.strip()
+                if stripped:
+                    character_count += len(stripped)
                     # Insert recognized text as invisible text layer
                     page.insert_textbox(
                         fitz.Rect(0, 0, page.rect.width, page.rect.height),
@@ -1062,4 +1098,4 @@ class PdfService:
         pdf.storage_filename = f"{file_uuid}.pdf"
         pdf.file_size = len(output_bytes)
 
-        return self.repo.update(pdf)
+        return self.repo.update(pdf), character_count, False

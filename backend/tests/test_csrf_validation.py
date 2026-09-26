@@ -73,6 +73,108 @@ class TestCSRFValidation:
         assert response.status_code != status.HTTP_403_FORBIDDEN
         assert called_next["value"] is True
 
+    def test_post_with_valid_bearer_without_csrf_succeeds(self, monkeypatch):
+        """Should accept POST with a valid Bearer token even without CSRF.
+
+        Regression test: cross-origin clients (Tauri desktop webview) cannot
+        read the csrf_token cookie, so a valid Bearer JWT must be sufficient
+        authentication (CSRF is redundant for explicit Bearer auth).
+        """
+        import anyio
+        from fastapi.responses import JSONResponse
+        from starlette.requests import Request
+
+        from app.core.csrf import CSRFMiddleware
+        from app.core.security import create_access_token
+        from app.main import app
+
+        monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
+
+        # Create a valid Bearer token for a fake user.
+        token = create_access_token({"sub": "test-user-id"})
+
+        async def _receive():
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+            "http_version": "1.1",
+            "method": "POST",
+            "scheme": "http",
+            "path": "/pdfs/upload",
+            "raw_path": b"/pdfs/upload",
+            "query_string": b"",
+            "headers": [
+                (b"authorization", f"Bearer {token}".encode()),
+            ],
+            "client": ("testclient", 50000),
+            "server": ("testserver", 80),
+        }
+        request = Request(scope, _receive)
+
+        middleware = CSRFMiddleware(app)
+        called_next = {"value": False}
+
+        async def call_next(_request):
+            called_next["value"] = True
+            return JSONResponse({"ok": True}, status_code=200)
+
+        response = anyio.run(middleware.dispatch, request, call_next)
+        assert response.status_code != status.HTTP_403_FORBIDDEN
+        assert called_next["value"] is True
+
+    def test_post_with_valid_bearer_and_stale_cookie_succeeds(self, monkeypatch):
+        """Should accept POST with valid Bearer even if a stale csrf cookie exists.
+
+        Regression test: the cloud sets a csrf_token cookie on GET, but the
+        Tauri webview cannot read it cross-origin. A valid Bearer must take
+        priority over the cookie check.
+        """
+        import anyio
+        from fastapi.responses import JSONResponse
+        from starlette.requests import Request
+
+        from app.core.csrf import CSRFMiddleware
+        from app.core.security import create_access_token
+        from app.main import app
+
+        monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
+
+        token = create_access_token({"sub": "test-user-id"})
+
+        async def _receive():
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+            "http_version": "1.1",
+            "method": "POST",
+            "scheme": "http",
+            "path": "/pdfs/upload",
+            "raw_path": b"/pdfs/upload",
+            "query_string": b"",
+            "headers": [
+                (b"authorization", f"Bearer {token}".encode()),
+                (b"cookie", b"csrf_token=stale-cookie-value"),
+            ],
+            "client": ("testclient", 50000),
+            "server": ("testserver", 80),
+        }
+        request = Request(scope, _receive)
+
+        middleware = CSRFMiddleware(app)
+        called_next = {"value": False}
+
+        async def call_next(_request):
+            called_next["value"] = True
+            return JSONResponse({"ok": True}, status_code=200)
+
+        response = anyio.run(middleware.dispatch, request, call_next)
+        assert response.status_code != status.HTTP_403_FORBIDDEN
+        assert called_next["value"] is True
+
 
 class TestCSRFRegression:
     """Regression tests for CSRF — login then upload with CSRF enabled.

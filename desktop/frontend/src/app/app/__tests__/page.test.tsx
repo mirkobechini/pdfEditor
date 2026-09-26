@@ -8,6 +8,7 @@ import EditorPage from "../page";
 const mockListPdfs = vi.fn();
 const mockDownloadPdf = vi.fn();
 const mockUploadPdf = vi.fn();
+const mockImportFile = vi.fn();
 const mockDeletePdf = vi.fn();
 const mockUpdateMetadata = vi.fn();
 const mockRefreshCsrf = vi.fn();
@@ -62,6 +63,11 @@ vi.mock("next-intl", () => ({
             hoursAgo: "h fa",
             daysAgo: "g fa",
             print: "Stampa",
+            sign: "Firma",
+            ocr: "OCR",
+            annotate: "Annota",
+            share: "Condividi",
+            importExport: "Importa/Esporta",
             select: "Seleziona",
             done: "Fine",
             selectAll: "Seleziona tutti",
@@ -84,6 +90,14 @@ vi.mock("../../../shared/tauri", () => ({
     tauriInvoke: (...args: any[]) => mockTauriInvoke(...args),
 }));
 
+// Mock Tauri webview drag-drop API
+const mockOnDragDropEvent = vi.fn();
+vi.mock("@tauri-apps/api/webview", () => ({
+    getCurrentWebview: () => ({
+        onDragDropEvent: (...args: any[]) => mockOnDragDropEvent(...args),
+    }),
+}));
+
 vi.mock("../../../lib/preferences", () => ({
     usePreferences: () => ({
         prefs: mockPrefs,
@@ -102,6 +116,7 @@ vi.mock("../../../shared/api", () => ({
         listPdfs: (...args: any[]) => mockListPdfs(...args),
         downloadPdf: (...args: any[]) => mockDownloadPdf(...args),
         uploadPdf: (...args: any[]) => mockUploadPdf(...args),
+        importFile: (...args: any[]) => mockImportFile(...args),
         deletePdf: (...args: any[]) => mockDeletePdf(...args),
         updateMetadata: (...args: any[]) => mockUpdateMetadata(...args),
         refreshCsrf: (...args: any[]) => mockRefreshCsrf(...args),
@@ -168,11 +183,28 @@ vi.mock("../../components/GuestConvertBanner", () => ({
     default: () => <div data-testid="guest-banner">Guest</div>,
 }));
 
+vi.mock("../../../components/OcrModal", () => ({
+    default: ({ open }: any) => (open ? <div data-testid="ocr-modal">OCR</div> : null),
+}));
+
+vi.mock("../../../components/AnnotationDialog", () => ({
+    default: ({ open }: any) => (open ? <div data-testid="annotation-modal">Annotation</div> : null),
+}));
+
+vi.mock("../../../components/ShareDialog", () => ({
+    default: ({ open }: any) => (open ? <div data-testid="share-modal">Share</div> : null),
+}));
+
+vi.mock("../../../components/ImportExportModal", () => ({
+    default: ({ open }: any) => (open ? <div data-testid="import-export-modal">ImportExport</div> : null),
+}));
+
 // ─── Tests ────────────────────────────────────────────────────────
 
 describe("EditorPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockIsTauri = false;
         mockListPdfs.mockResolvedValue({ items: [] });
         mockDownloadPdf.mockResolvedValue(new Blob(["fake-pdf-content"], { type: "application/pdf" }));
         mockRefreshCsrf.mockResolvedValue(undefined);
@@ -283,7 +315,8 @@ describe("EditorPage", () => {
         await screen.findByText("doc.pdf");
         // Click on doc to select it
         fireEvent.click(screen.getByText("doc.pdf"));
-        // Click metadata button
+        // Click metadata button (in Converti dropdown)
+        fireEvent.click(screen.getByTestId("toolbar-convert"));
         fireEvent.click(screen.getByText("Metadati"));
         expect(screen.getByTestId("metadata-modal")).toBeInTheDocument();
     });
@@ -297,6 +330,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Rimuovi"));
         expect(screen.getByTestId("remove-modal")).toBeInTheDocument();
     });
@@ -310,6 +344,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Riordina"));
         expect(screen.getByTestId("reorder-modal")).toBeInTheDocument();
     });
@@ -323,6 +358,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Dividi"));
         expect(screen.getByTestId("split-modal")).toBeInTheDocument();
     });
@@ -336,6 +372,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Unisci"));
         expect(screen.getByTestId("merge-modal")).toBeInTheDocument();
     });
@@ -557,7 +594,72 @@ describe("EditorPage", () => {
         expect(screen.getByText("MERGE")).toBeInTheDocument();
         expect(screen.getByText("SPLIT")).toBeInTheDocument();
         expect(screen.getByText("LOCK")).toBeInTheDocument();
-        expect(screen.getByText("OCR")).toBeInTheDocument();
+        expect(screen.getByTestId("fast-action-ocr")).toBeInTheDocument();
+    });
+
+    it("opens OCR dialog from fast actions when a doc is selected", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        expect(screen.queryByTestId("ocr-modal")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByTestId("fast-action-ocr"));
+        expect(screen.getByTestId("ocr-modal")).toBeInTheDocument();
+    });
+
+    it("opens OCR dialog from toolbar when a doc is selected", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-annotate-menu"));
+        fireEvent.click(screen.getByTestId("toolbar-ocr"));
+        expect(screen.getByTestId("ocr-modal")).toBeInTheDocument();
+    });
+
+    it("opens annotation dialog from toolbar when a doc is selected", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-annotate-menu"));
+        fireEvent.click(screen.getByTestId("toolbar-annotate"));
+        expect(screen.getByTestId("annotation-modal")).toBeInTheDocument();
+    });
+
+    it("opens share dialog from toolbar when a doc is selected", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-share"));
+        expect(screen.getByTestId("share-modal")).toBeInTheDocument();
+    });
+
+    it("opens import/export dialog without a selected PDF", async () => {
+        mockListPdfs.mockResolvedValue({ items: [] });
+        render(<EditorPage />);
+        await screen.findByText("Documenti recenti");
+        expect(screen.queryByTestId("import-export-modal")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByTestId("toolbar-convert"));
+        fireEvent.click(screen.getByText("Importa/Esporta"));
+        expect(screen.getByTestId("import-export-modal")).toBeInTheDocument();
     });
 
     it("shows UNLOCK for password-protected doc in fast actions", async () => {
@@ -855,29 +957,19 @@ describe("EditorPage", () => {
         });
     });
 
-    it("shows merge button disabled when no doc selected", () => {
+    it("shows organize dropdown disabled when no doc selected", () => {
         render(<EditorPage />);
-        expect(screen.getByText("Unisci")).toBeDisabled();
+        expect(screen.getByTestId("toolbar-organize")).toBeDisabled();
     });
 
-    it("shows split button disabled when no doc selected", () => {
+    it("shows convert dropdown enabled when no doc selected (import available)", () => {
         render(<EditorPage />);
-        expect(screen.getByText("Dividi")).toBeDisabled();
+        expect(screen.getByTestId("toolbar-convert")).not.toBeDisabled();
     });
 
-    it("shows reorder button disabled when no doc selected", () => {
+    it("shows annotate dropdown disabled when no doc selected", () => {
         render(<EditorPage />);
-        expect(screen.getByText("Riordina")).toBeDisabled();
-    });
-
-    it("shows remove button disabled when no doc selected", () => {
-        render(<EditorPage />);
-        expect(screen.getByText("Rimuovi")).toBeDisabled();
-    });
-
-    it("shows metadata button disabled when no doc selected", () => {
-        render(<EditorPage />);
-        expect(screen.getByText("Metadati")).toBeDisabled();
+        expect(screen.getByTestId("toolbar-annotate-menu")).toBeDisabled();
     });
 
     it("handles rename on double-click and Enter key", async () => {
@@ -1074,6 +1166,18 @@ describe("EditorPage", () => {
         const file = new File(["fake"], "test.txt", { type: "text/plain" });
         const dataTransfer = { files: [file] };
         fireEvent.drop(document, { dataTransfer });
+        expect(mockUploadPdf).not.toHaveBeenCalled();
+    });
+
+    it("imports image file on drop", async () => {
+        mockImportFile.mockResolvedValue({ id: "p2", original_filename: "photo.png", file_size: 1024, page_count: 1, created_at: "2025-01-01T00:00:00Z", upload_source: "web" });
+        render(<EditorPage />);
+        const file = new File(["img"], "photo.png", { type: "image/png" });
+        const dataTransfer = { files: [file] };
+        fireEvent.drop(document, { dataTransfer });
+        await waitFor(() => {
+            expect(mockImportFile).toHaveBeenCalledWith(file);
+        });
         expect(mockUploadPdf).not.toHaveBeenCalled();
     });
 
@@ -1574,6 +1678,30 @@ describe("EditorPage", () => {
         localStorage.removeItem("pdfeditor_work_folder");
     });
 
+    it("1b: registers Tauri drag-drop and uploads dropped file", async () => {
+        mockIsTauri = true;
+        mockTauriInvoke
+            .mockResolvedValueOnce([37, 80, 68, 70]); // read_file_binary
+        mockUploadPdf.mockResolvedValue({ id: "p1", original_filename: "dropped.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" });
+        render(<EditorPage />);
+
+        // Simulate the Tauri drag-drop registration
+        await waitFor(() => {
+            expect(mockOnDragDropEvent).toHaveBeenCalled();
+        });
+
+        // Capture the callback and simulate a drop
+        const callback = mockOnDragDropEvent.mock.calls[0][0];
+        await act(async () => {
+            callback({ payload: { type: "drop", paths: ["C:\\docs\\dropped.pdf"] } });
+        });
+
+        await waitFor(() => {
+            expect(mockTauriInvoke).toHaveBeenCalledWith("read_file_binary", { path: "C:\\docs\\dropped.pdf" });
+            expect(mockUploadPdf).toHaveBeenCalled();
+        });
+    });
+
     // ── 1c: rename ─────────────────────────────────────────
 
     it("1c: handles rename with same filename (no API call)", async () => {
@@ -2066,6 +2194,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-convert"));
         fireEvent.click(screen.getByText("Metadati"));
         expect(screen.getByTestId("metadata-modal")).toBeInTheDocument();
         // Trigger onSaved
@@ -2085,6 +2214,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Rimuovi"));
         expect(screen.getByTestId("remove-modal")).toBeInTheDocument();
         const updatedDoc = { id: "p1", original_filename: "removed.pdf", file_size: 1024, page_count: 2, created_at: "2025-01-01T00:00:00Z", upload_source: "web" };
@@ -2103,6 +2233,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Riordina"));
         expect(screen.getByTestId("reorder-modal")).toBeInTheDocument();
         const updatedDoc = { id: "p1", original_filename: "reordered.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" };
@@ -2121,6 +2252,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Unisci"));
         expect(screen.getByTestId("merge-modal")).toBeInTheDocument();
         const updatedDoc = { id: "p1", original_filename: "merged.pdf", file_size: 1024, page_count: 6, created_at: "2025-01-01T00:00:00Z", upload_source: "web" };
@@ -2139,6 +2271,7 @@ describe("EditorPage", () => {
         render(<EditorPage />);
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
+        fireEvent.click(screen.getByTestId("toolbar-organize"));
         fireEvent.click(screen.getByText("Dividi"));
         expect(screen.getByTestId("split-modal")).toBeInTheDocument();
         const newDocs = [
@@ -2172,7 +2305,7 @@ describe("EditorPage", () => {
 
     // ── 1k: print ─────────────────────────────────────────
 
-    it("1k: handlePrint opens a hidden iframe and calls print", async () => {
+    it("1k: toolbar print button opens print options modal", async () => {
         mockListPdfs.mockResolvedValue({
             items: [
                 { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
@@ -2182,31 +2315,215 @@ describe("EditorPage", () => {
         await screen.findByText("doc.pdf");
         fireEvent.click(screen.getByText("doc.pdf"));
         await waitFor(() => {
-            expect(screen.getByText("Stampa")).toBeInTheDocument();
+            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
         });
 
-        // Mock iframe creation and print
+        // handlePrint captures the canvas preview synchronously on click.
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,test");
+        vi.spyOn(document, "querySelector").mockReturnValue(document.createElement("canvas"));
+
+        fireEvent.click(screen.getByTestId("toolbar-print"));
+
+        expect(screen.getByTestId("print-options-modal")).toBeInTheDocument();
+        vi.restoreAllMocks();
+    });
+
+    it("1k: confirming print options converts canvas to img and calls window.print", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
+        });
+
+        // Mock canvas/image methods at prototype level (doesn't break React)
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,test");
+        vi.spyOn(document, "querySelector").mockReturnValue(document.createElement("canvas"));
+        // jsdom doesn't implement HTMLImageElement.decode() at all.
+        (HTMLImageElement.prototype as any).decode = vi.fn().mockResolvedValue(undefined);
+
+        fireEvent.click(screen.getByTestId("toolbar-print"));
+        await waitFor(() => {
+            expect(screen.getByTestId("print-confirm")).toBeInTheDocument();
+        });
+
         const mockPrint = vi.fn();
-        const mockIframe = {
-            src: "",
-            style: {},
-            onload: null as any,
-            contentWindow: { focus: vi.fn(), print: mockPrint },
+        vi.spyOn(window, "print").mockImplementation(mockPrint);
+
+        fireEvent.click(screen.getByTestId("print-confirm"));
+
+        await waitFor(() => {
+            expect(mockPrint).toHaveBeenCalled();
+        });
+        expect(screen.queryByTestId("print-options-modal")).not.toBeInTheDocument();
+
+        delete (HTMLImageElement.prototype as any).decode;
+        vi.restoreAllMocks();
+    });
+
+    it("1k: in Tauri, confirming print options silently prints via print_pages (no OS dialog)", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        mockIsTauri = true;
+        mockTauriInvoke.mockImplementation((cmd: string) => {
+            if (cmd === "list_printers") {
+                return Promise.resolve({ printers: ["HP LaserJet"], defaultPrinter: "HP LaserJet" });
+            }
+            return Promise.resolve(null);
+        });
+        (window as any).pdfjsLib = {
+            GlobalWorkerOptions: {},
+            getDocument: () => ({
+                promise: Promise.resolve({
+                    getPage: () => Promise.resolve({
+                        getViewport: () => ({ width: 100, height: 140 }),
+                        render: () => ({ promise: Promise.resolve() }),
+                    }),
+                }),
+            }),
         };
-        const createElementSpy = vi.spyOn(document, "createElement").mockReturnValue(mockIframe as any);
-        const appendSpy = vi.spyOn(document.body, "appendChild").mockImplementation(() => mockIframe as any);
-        const removeSpy = vi.spyOn(document.body, "removeChild").mockImplementation(() => mockIframe as any);
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
+        });
 
-        fireEvent.click(screen.getByText("Stampa"));
-        mockIframe.onload();
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,test");
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage: vi.fn() } as any);
+        vi.spyOn(document, "querySelector").mockReturnValue(document.createElement("canvas"));
+        (HTMLImageElement.prototype as any).decode = vi.fn().mockResolvedValue(undefined);
 
-        expect(createElementSpy).toHaveBeenCalledWith("iframe");
-        expect(mockPrint).toHaveBeenCalled();
-        expect(appendSpy).toHaveBeenCalled();
+        fireEvent.click(screen.getByTestId("toolbar-print"));
+        await waitFor(() => {
+            expect(screen.getByTestId("print-printer-select")).toBeInTheDocument();
+        });
 
-        createElementSpy.mockRestore();
-        appendSpy.mockRestore();
-        removeSpy.mockRestore();
+        const mockPrint = vi.fn();
+        vi.spyOn(window, "print").mockImplementation(mockPrint);
+
+        fireEvent.click(screen.getByTestId("print-confirm"));
+
+        await waitFor(() => {
+            expect(mockTauriInvoke).toHaveBeenCalledWith(
+                "print_pages",
+                expect.objectContaining({
+                    request: expect.objectContaining({ printerName: "HP LaserJet", images: expect.any(Array) }),
+                }),
+            );
+        });
+        expect(mockPrint).not.toHaveBeenCalled();
+
+        delete (HTMLImageElement.prototype as any).decode;
+        delete (window as any).pdfjsLib;
+        vi.restoreAllMocks();
+        mockIsTauri = false;
+    });
+
+    it("1k: a custom page range only renders and prints the selected pages", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        mockIsTauri = true;
+        mockTauriInvoke.mockImplementation((cmd: string) => {
+            if (cmd === "list_printers") {
+                return Promise.resolve({ printers: ["HP LaserJet"], defaultPrinter: "HP LaserJet" });
+            }
+            return Promise.resolve(null);
+        });
+        const getPage = vi.fn().mockResolvedValue({
+            getViewport: () => ({ width: 100, height: 140 }),
+            render: () => ({ promise: Promise.resolve() }),
+        });
+        (window as any).pdfjsLib = {
+            GlobalWorkerOptions: {},
+            getDocument: () => ({ promise: Promise.resolve({ getPage }) }),
+        };
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
+        });
+
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,test");
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage: vi.fn() } as any);
+        vi.spyOn(document, "querySelector").mockReturnValue(document.createElement("canvas"));
+        (HTMLImageElement.prototype as any).decode = vi.fn().mockResolvedValue(undefined);
+
+        fireEvent.click(screen.getByTestId("toolbar-print"));
+        await waitFor(() => {
+            expect(screen.getByTestId("print-pages-range")).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByTestId("print-pages-range"));
+        fireEvent.change(screen.getByTestId("print-pages-range-input"), { target: { value: "1,3" } });
+        fireEvent.click(screen.getByTestId("print-confirm"));
+
+        await waitFor(() => {
+            expect(mockTauriInvoke).toHaveBeenCalledWith(
+                "print_pages",
+                expect.objectContaining({
+                    request: expect.objectContaining({ images: [expect.any(String), expect.any(String)] }),
+                }),
+            );
+        });
+        expect(getPage).toHaveBeenCalledWith(1);
+        expect(getPage).toHaveBeenCalledWith(3);
+        expect(getPage).not.toHaveBeenCalledWith(2);
+
+        delete (HTMLImageElement.prototype as any).decode;
+        delete (window as any).pdfjsLib;
+        vi.restoreAllMocks();
+        mockIsTauri = false;
+    });
+
+    it("1k: print options modal lets user choose orientation and margin before printing", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
+        });
+
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,test");
+        vi.spyOn(document, "querySelector").mockReturnValue(document.createElement("canvas"));
+
+        fireEvent.click(screen.getByTestId("toolbar-print"));
+
+        fireEvent.click(screen.getByTestId("print-orientation-landscape"));
+        fireEvent.click(screen.getByTestId("print-margin-none"));
+        expect(screen.getByTestId("print-orientation-landscape")).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getByTestId("print-margin-none")).toHaveAttribute("aria-pressed", "true");
+
+        fireEvent.click(screen.getByTestId("print-options-modal")); // click inside (backdrop stopPropagation) should not close
+        expect(screen.getByTestId("print-options-modal")).toBeInTheDocument();
+
+        vi.restoreAllMocks();
+    });
+
+    it("1k: handlePrint does nothing when no document selected", async () => {
+        mockListPdfs.mockResolvedValue({ items: [] });
+        render(<EditorPage />);
+        // The print button exists but is disabled; handlePrint returns early
+        await waitFor(() => {
+            expect(screen.getByTestId("toolbar-print")).toBeDisabled();
+        });
     });
 
     // ─── Multi-select batch ──────────────────────────────────────

@@ -70,6 +70,7 @@ export default function LoginPage() {
     const [remember, setRemember] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
     const [submitting, setSubmitting] = React.useState(false);
+    const [loginPhase, setLoginPhase] = React.useState<string | null>(null);
     const [googleResetKey, setGoogleResetKey] = React.useState(0);
     const hasStoredToken = React.useMemo(() => {
         if (typeof window === "undefined") return false;
@@ -87,9 +88,12 @@ export default function LoginPage() {
         if (!email.trim() || !password.trim()) return;
         setSubmitting(true);
         setError(null);
+        setLoginPhase(null);
         setGoogleResetKey((k) => k + 1);
         try {
-            await login(email.trim(), password, remember);
+            await login(email.trim(), password, remember, (phase) => {
+                setLoginPhase(phase);
+            });
             window.location.href = "/app";
         } catch (err) {
             const key = mapError(err);
@@ -98,6 +102,7 @@ export default function LoginPage() {
             setError(ns === "common" ? tc(k) : t(k));
         } finally {
             setSubmitting(false);
+            setLoginPhase(null);
         }
     }
 
@@ -194,9 +199,16 @@ export default function LoginPage() {
                             <button
                                 type="submit"
                                 disabled={submitting || !email.trim() || !password.trim()}
-                                className="mb-4 w-full cursor-pointer rounded-xl bg-[#f7871f] py-3 text-sm font-semibold text-white shadow-sm shadow-[#f7871f]/30 transition-colors hover:bg-[#ce5a00] disabled:cursor-not-allowed disabled:opacity-50"
+                                className="mb-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#f7871f] py-3 text-sm font-semibold text-white shadow-sm shadow-[#f7871f]/30 transition-colors hover:bg-[#ce5a00] disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                {submitting ? tc("loading") : t("loginButton")}
+                                {submitting && (
+                                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                )}
+                                {submitting
+                                    ? loginPhase
+                                        ? tl(loginPhase)
+                                        : tc("loading")
+                                    : t("loginButton")}
                             </button>
                         </form>
 

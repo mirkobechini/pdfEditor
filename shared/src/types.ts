@@ -33,6 +33,12 @@ export interface PdfListResponse {
   total: number;
 }
 
+export interface OcrResult {
+  pdf: PdfDocument;
+  character_count: number;
+  already_searchable: boolean;
+}
+
 export interface Metadata {
   title?: string | null;
   author?: string | null;
@@ -85,4 +91,14 @@ export interface AuthResponse {
   token_type: string;
   csrf_token?: string;
   user?: UserResponse;
+}
+
+export interface ShareLink {
+  id: string;
+  pdf_id: string;
+  token: string;
+  url: string;
+  has_password: boolean;
+  expires_at: string | null;
+  created_at: string;
 }

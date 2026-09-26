@@ -11,7 +11,7 @@ vi.mock("next-intl", () => {
 
 // Mock api
 const mockOcrPdf = vi.fn();
-vi.mock("../../lib/api", () => ({
+vi.mock("../../shared/api", () => ({
     api: {
         ocrPdf: (...args: any[]) => mockOcrPdf(...args),
     },
@@ -91,6 +91,7 @@ describe("OcrModal", () => {
     });
 
     it("shows processing state while OCR runs", async () => {
+        // Never resolve so the running state persists
         mockOcrPdf.mockImplementation(() => new Promise(() => { }));
         render(<OcrModal open={true} onClose={() => { }} pdfId="p1" />);
 

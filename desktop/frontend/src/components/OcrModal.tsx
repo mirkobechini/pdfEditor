@@ -2,9 +2,9 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { api } from "../lib/api";
-import { mapError } from "../lib/error-map";
-import type { OcrResult } from "../lib/api-types";
+import { api } from "../shared/api";
+import { mapError } from "../shared/error-map";
+import type { OcrResult } from "../shared/types";
 
 interface OcrModalProps {
     open: boolean;

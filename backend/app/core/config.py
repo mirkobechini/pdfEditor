@@ -177,8 +177,10 @@ class Settings(BaseSettings):
 
     # License enforcement
     # When True, all features are available to all users regardless of tier.
-    # Set to False in production when license system is activated.
-    DISABLE_LICENSE_ENFORCEMENT: bool = False
+    # The tier/licensing system is still being designed (see LESSONS_LEARNED.md,
+    # 2026-09-26) — default OFF everywhere (code, CI, prod) until it's ready.
+    # Set to False only in tests that explicitly exercise gating behavior.
+    DISABLE_LICENSE_ENFORCEMENT: bool = True
 
     # CSRF protection
     # Set to True to disable CSRF (e.g., in tests)
