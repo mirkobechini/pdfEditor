@@ -76,12 +76,37 @@ class TestImport:
         assert data["original_filename"] == "hello.txt"
         assert data["page_count"] >= 1
 
-    def test_import_jpg(self, client, pro_headers):
+    def test_import_jpg(self, client, enterprise_headers):
         """Should import a real JPG image and convert it to PDF.
 
         Regression test: image documents must be converted with
         convert_to_pdf(), not tobytes()/save() which raises AssertionError.
+
+        Image import is enterprise-only (see license_seed.py) — pro_headers
+        would 403 before ever reaching the conversion code being tested here.
         """
+        import io
+
+        try:
+            from PIL import Image
+        except ImportError:
+            pytest.skip("Pillow not installed")
+
+        buf = io.BytesIO()
+        Image.new("RGB", (200, 100), color="blue").save(buf, format="JPEG")
+        response = client.post(
+            "/pdfs/import",
+            headers=enterprise_headers,
+            files={"file": ("photo.jpg", buf.getvalue(), "image/jpeg")},
+        )
+        assert response.status_code == status.HTTP_201_CREATED, response.text
+        data = response.json()
+        assert data["original_filename"] == "photo.jpg"
+        assert data["page_count"] == 1
+        assert data["file_size"] > 0
+
+    def test_import_jpg_requires_enterprise_tier(self, client, pro_headers):
+        """Pro tier does not include import_images (enterprise-only feature)."""
         import io
 
         try:
@@ -96,11 +121,7 @@ class TestImport:
             headers=pro_headers,
             files={"file": ("photo.jpg", buf.getvalue(), "image/jpeg")},
         )
-        assert response.status_code == status.HTTP_201_CREATED, response.text
-        data = response.json()
-        assert data["original_filename"] == "photo.jpg"
-        assert data["page_count"] == 1
-        assert data["file_size"] > 0
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     def test_import_invalid_format(self, client, pro_headers):
         """Should reject unsupported file format."""
@@ -116,11 +137,14 @@ class TestImport:
         ("GIF", "gif", "image/gif"),
         ("BMP", "bmp", "image/bmp"),
     ])
-    def test_import_image_formats(self, client, pro_headers, fmt, ext, mime):
+    def test_import_image_formats(self, client, enterprise_headers, fmt, ext, mime):
         """Should import PNG/GIF/BMP images and convert them to PDF.
 
         Regression test: PyMuPDF does not reliably open GIF/BMP streams
         directly. Images are normalized to PNG via Pillow first.
+
+        Image import is enterprise-only (see license_seed.py) — pro_headers
+        would 403 before ever reaching the conversion code being tested here.
         """
         import io
 
@@ -133,7 +157,7 @@ class TestImport:
         Image.new("RGB", (120, 80), color="red").save(buf, format=fmt)
         response = client.post(
             "/pdfs/import",
-            headers=pro_headers,
+            headers=enterprise_headers,
             files={"file": (f"photo.{ext}", buf.getvalue(), mime)},
         )
         assert response.status_code == status.HTTP_201_CREATED, response.text
