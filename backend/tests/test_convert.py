@@ -105,8 +105,15 @@ class TestImport:
         assert data["page_count"] == 1
         assert data["file_size"] > 0
 
-    def test_import_jpg_requires_enterprise_tier(self, client, pro_headers):
-        """Pro tier does not include import_images (enterprise-only feature)."""
+    def test_import_jpg_requires_enterprise_tier(self, client, pro_headers, monkeypatch):
+        """Pro tier does not include import_images (enterprise-only feature).
+
+        License enforcement is off by default (tier system still being
+        designed — see LESSONS_LEARNED.md), so this must force it on to
+        actually exercise the gating behavior being tested.
+        """
+        from app.core.config import settings
+        monkeypatch.setattr(settings, "DISABLE_LICENSE_ENFORCEMENT", False)
         import io
 
         try:
