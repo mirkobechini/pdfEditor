@@ -2305,7 +2305,7 @@ describe("EditorPage", () => {
 
     // ── 1k: print ─────────────────────────────────────────
 
-    it("1k: handlePrint converts canvas to img and calls window.print", async () => {
+    it("1k: toolbar print button opens print options modal", async () => {
         mockListPdfs.mockResolvedValue({
             items: [
                 { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
@@ -2318,18 +2318,201 @@ describe("EditorPage", () => {
             expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
         });
 
-        // Mock canvas methods at prototype level (doesn't break React)
-        const fakeCtx = { drawImage: vi.fn() };
-        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(fakeCtx as any);
+        // handlePrint captures the canvas preview synchronously on click.
         vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,test");
         vi.spyOn(document, "querySelector").mockReturnValue(document.createElement("canvas"));
+
+        fireEvent.click(screen.getByTestId("toolbar-print"));
+
+        expect(screen.getByTestId("print-options-modal")).toBeInTheDocument();
+        vi.restoreAllMocks();
+    });
+
+    it("1k: confirming print options converts canvas to img and calls window.print", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
+        });
+
+        // Mock canvas/image methods at prototype level (doesn't break React)
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,test");
+        vi.spyOn(document, "querySelector").mockReturnValue(document.createElement("canvas"));
+        // jsdom doesn't implement HTMLImageElement.decode() at all.
+        (HTMLImageElement.prototype as any).decode = vi.fn().mockResolvedValue(undefined);
+
+        fireEvent.click(screen.getByTestId("toolbar-print"));
+        await waitFor(() => {
+            expect(screen.getByTestId("print-confirm")).toBeInTheDocument();
+        });
 
         const mockPrint = vi.fn();
         vi.spyOn(window, "print").mockImplementation(mockPrint);
 
+        fireEvent.click(screen.getByTestId("print-confirm"));
+
+        await waitFor(() => {
+            expect(mockPrint).toHaveBeenCalled();
+        });
+        expect(screen.queryByTestId("print-options-modal")).not.toBeInTheDocument();
+
+        delete (HTMLImageElement.prototype as any).decode;
+        vi.restoreAllMocks();
+    });
+
+    it("1k: in Tauri, confirming print options silently prints via print_pages (no OS dialog)", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        mockIsTauri = true;
+        mockTauriInvoke.mockImplementation((cmd: string) => {
+            if (cmd === "list_printers") {
+                return Promise.resolve({ printers: ["HP LaserJet"], defaultPrinter: "HP LaserJet" });
+            }
+            return Promise.resolve(null);
+        });
+        (window as any).pdfjsLib = {
+            GlobalWorkerOptions: {},
+            getDocument: () => ({
+                promise: Promise.resolve({
+                    getPage: () => Promise.resolve({
+                        getViewport: () => ({ width: 100, height: 140 }),
+                        render: () => ({ promise: Promise.resolve() }),
+                    }),
+                }),
+            }),
+        };
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
+        });
+
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,test");
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage: vi.fn() } as any);
+        vi.spyOn(document, "querySelector").mockReturnValue(document.createElement("canvas"));
+        (HTMLImageElement.prototype as any).decode = vi.fn().mockResolvedValue(undefined);
+
+        fireEvent.click(screen.getByTestId("toolbar-print"));
+        await waitFor(() => {
+            expect(screen.getByTestId("print-printer-select")).toBeInTheDocument();
+        });
+
+        const mockPrint = vi.fn();
+        vi.spyOn(window, "print").mockImplementation(mockPrint);
+
+        fireEvent.click(screen.getByTestId("print-confirm"));
+
+        await waitFor(() => {
+            expect(mockTauriInvoke).toHaveBeenCalledWith(
+                "print_pages",
+                expect.objectContaining({
+                    request: expect.objectContaining({ printerName: "HP LaserJet", images: expect.any(Array) }),
+                }),
+            );
+        });
+        expect(mockPrint).not.toHaveBeenCalled();
+
+        delete (HTMLImageElement.prototype as any).decode;
+        delete (window as any).pdfjsLib;
+        vi.restoreAllMocks();
+        mockIsTauri = false;
+    });
+
+    it("1k: a custom page range only renders and prints the selected pages", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        mockIsTauri = true;
+        mockTauriInvoke.mockImplementation((cmd: string) => {
+            if (cmd === "list_printers") {
+                return Promise.resolve({ printers: ["HP LaserJet"], defaultPrinter: "HP LaserJet" });
+            }
+            return Promise.resolve(null);
+        });
+        const getPage = vi.fn().mockResolvedValue({
+            getViewport: () => ({ width: 100, height: 140 }),
+            render: () => ({ promise: Promise.resolve() }),
+        });
+        (window as any).pdfjsLib = {
+            GlobalWorkerOptions: {},
+            getDocument: () => ({ promise: Promise.resolve({ getPage }) }),
+        };
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
+        });
+
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,test");
+        vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ drawImage: vi.fn() } as any);
+        vi.spyOn(document, "querySelector").mockReturnValue(document.createElement("canvas"));
+        (HTMLImageElement.prototype as any).decode = vi.fn().mockResolvedValue(undefined);
+
+        fireEvent.click(screen.getByTestId("toolbar-print"));
+        await waitFor(() => {
+            expect(screen.getByTestId("print-pages-range")).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByTestId("print-pages-range"));
+        fireEvent.change(screen.getByTestId("print-pages-range-input"), { target: { value: "1,3" } });
+        fireEvent.click(screen.getByTestId("print-confirm"));
+
+        await waitFor(() => {
+            expect(mockTauriInvoke).toHaveBeenCalledWith(
+                "print_pages",
+                expect.objectContaining({
+                    request: expect.objectContaining({ images: [expect.any(String), expect.any(String)] }),
+                }),
+            );
+        });
+        expect(getPage).toHaveBeenCalledWith(1);
+        expect(getPage).toHaveBeenCalledWith(3);
+        expect(getPage).not.toHaveBeenCalledWith(2);
+
+        delete (HTMLImageElement.prototype as any).decode;
+        delete (window as any).pdfjsLib;
+        vi.restoreAllMocks();
+        mockIsTauri = false;
+    });
+
+    it("1k: print options modal lets user choose orientation and margin before printing", async () => {
+        mockListPdfs.mockResolvedValue({
+            items: [
+                { id: "p1", original_filename: "doc.pdf", file_size: 1024, page_count: 3, created_at: "2025-01-01T00:00:00Z", upload_source: "web" },
+            ],
+        });
+        render(<EditorPage />);
+        await screen.findByText("doc.pdf");
+        fireEvent.click(screen.getByText("doc.pdf"));
+        await waitFor(() => {
+            expect(screen.getByTestId("toolbar-print")).toBeInTheDocument();
+        });
+
+        vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,test");
+        vi.spyOn(document, "querySelector").mockReturnValue(document.createElement("canvas"));
+
         fireEvent.click(screen.getByTestId("toolbar-print"));
 
-        expect(mockPrint).toHaveBeenCalled();
+        fireEvent.click(screen.getByTestId("print-orientation-landscape"));
+        fireEvent.click(screen.getByTestId("print-margin-none"));
+        expect(screen.getByTestId("print-orientation-landscape")).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getByTestId("print-margin-none")).toHaveAttribute("aria-pressed", "true");
+
+        fireEvent.click(screen.getByTestId("print-options-modal")); // click inside (backdrop stopPropagation) should not close
+        expect(screen.getByTestId("print-options-modal")).toBeInTheDocument();
 
         vi.restoreAllMocks();
     });

@@ -39,6 +39,9 @@ strip = true
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 nix = { version = "0.29", features = ["signal"] }
 
+[target.'cfg(target_os = "windows")'.dependencies]
+base64 = "0.22"
+
 [dev-dependencies]
 tauri-build = "2"
 

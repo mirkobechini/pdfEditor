@@ -18,6 +18,7 @@ import ReplaceTextModal from "../../components/ReplaceTextModal";
 import ImportExportModal from "../../components/ImportExportModal";
 import SignModal from "../../components/SignModal";
 import OcrModal from "../../components/OcrModal";
+import PrintOptionsModal, { type PrintOptions, parsePageRangeList } from "../../components/PrintOptionsModal";
 import AnnotationDialog from "../../components/AnnotationDialog";
 import ShareDialog from "../../components/ShareDialog";
 import GuestConvertBanner from "../components/GuestConvertBanner";
@@ -65,6 +66,8 @@ export default function EditorPage() {
     const [importExportOpen, setImportExportOpen] = React.useState(false);
     const [signOpen, setSignOpen] = React.useState(false);
     const [ocrOpen, setOcrOpen] = React.useState(false);
+    const [printOptionsOpen, setPrintOptionsOpen] = React.useState(false);
+    const [printPreview, setPrintPreview] = React.useState<{ dataUrl: string; isLandscape: boolean } | null>(null);
     const [annotateOpen, setAnnotateOpen] = React.useState(false);
     const [shareOpen, setShareOpen] = React.useState(false);
     const [organizeOpen, setOrganizeOpen] = React.useState(false);
@@ -101,29 +104,67 @@ export default function EditorPage() {
         }
     }
 
-    async function handlePrint() {
+    function handlePrint() {
         if (!selectedDoc) return;
-
-        // In WebView2, the GPU-accelerated canvas toDataURL() returns blank.
-        // Clone the visible canvas content onto a fresh 2d canvas, then
-        // convert to <img> and print via the standard Windows print dialog.
         const srcCanvas = document.querySelector("canvas");
         if (!srcCanvas) return;
+        setPrintPreview({
+            dataUrl: srcCanvas.toDataURL("image/png"),
+            isLandscape: srcCanvas.width > srcCanvas.height,
+        });
+        setPrintOptionsOpen(true);
+    }
 
-        const clone = document.createElement("canvas");
-        clone.width = srcCanvas.width;
-        clone.height = srcCanvas.height;
-        const ctx = clone.getContext("2d");
-        if (!ctx) return;
-        ctx.drawImage(srcCanvas, 0, 0);
-        const dataUrl = clone.toDataURL("image/png");
+    /** Render the given PDF pages to PNG (base64, no data: prefix) via pdf.js. */
+    async function renderPagesToPngBase64(fileUrl: string, pageNumbers: number[]): Promise<{ images: string[]; firstIsLandscape: boolean }> {
+        const pdfjsLib = (window as any).pdfjsLib;
+        const pdf = await pdfjsLib.getDocument(fileUrl).promise;
+        const images: string[] = [];
+        let firstIsLandscape = false;
+        const PRINT_SCALE = 2; // ~144 DPI at the PDF's native 72pt/inch base
+        for (let i = 0; i < pageNumbers.length; i++) {
+            const page = await pdf.getPage(pageNumbers[i]);
+            const viewport = page.getViewport({ scale: PRINT_SCALE });
+            const canvas = document.createElement("canvas");
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) continue;
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            if (i === 0) firstIsLandscape = viewport.width > viewport.height;
+            images.push(canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, ""));
+        }
+        return { images, firstIsLandscape };
+    }
+
+    /** Browser/dev fallback: prints only the currently visible page via window.print(). */
+    async function printCurrentPageViaBrowser(dataUrl: string, isLandscapeImage: boolean, options: PrintOptions) {
+        // WebView2's print pipeline snapshots the DOM synchronously. If the
+        // <img> hasn't finished decoding the data URL yet, the snapshot is
+        // blank. Build a real Image, await decode(), THEN insert it and wait
+        // a couple of frames for layout/paint before calling print().
+        const img = new Image();
+        img.src = dataUrl;
+        try {
+            await img.decode();
+        } catch {
+            // Fall back to the load event if decode() is unsupported/fails.
+            await new Promise<void>((resolve) => {
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+            });
+        }
+
+        const pageOrientation =
+            options.orientation === "auto" ? (isLandscapeImage ? "landscape" : "portrait") : options.orientation;
+        const pageMargin = options.margin === "none" ? "0" : "1.2cm";
 
         const style = document.createElement("style");
         style.id = "print-style";
         style.textContent = `
             @media print {
                 body > *:not(#print-overlay) { display: none !important; }
-                @page { margin: 0; }
+                @page { size: ${pageOrientation}; margin: ${pageMargin}; }
                 #print-overlay {
                     display: flex !important;
                     position: fixed !important;
@@ -145,17 +186,65 @@ export default function EditorPage() {
         const div = document.createElement("div");
         div.id = "print-overlay";
         div.style.cssText = "display:none;";
-        div.innerHTML = `<img src="${dataUrl}" alt="" />`;
+        div.appendChild(img);
         document.body.appendChild(div);
 
-        window.print();
-
-        setTimeout(() => {
+        const cleanup = () => {
             const s = document.getElementById("print-style");
             if (s) document.head.removeChild(s);
             const d = document.getElementById("print-overlay");
             if (d) document.body.removeChild(d);
-        }, 1000);
+            window.removeEventListener("afterprint", cleanup);
+        };
+        window.addEventListener("afterprint", cleanup);
+        // Safety net in case `afterprint` doesn't fire (some WebView2 builds).
+        setTimeout(cleanup, 15000);
+
+        // Two animation frames give WebView2 time to lay out and paint the
+        // decoded image before the print snapshot is taken.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                window.print();
+            });
+        });
+    }
+
+    async function executePrint(options: PrintOptions) {
+        setPrintOptionsOpen(false);
+        if (!printPreview || !selectedDoc) return;
+
+        // No printer chosen (browser/dev fallback, or the platform doesn't
+        // support silent printing): fall back to the standard print flow,
+        // limited to the currently visible page.
+        if (!options.printerName) {
+            await printCurrentPageViaBrowser(printPreview.dataUrl, printPreview.isLandscape, options);
+            return;
+        }
+
+        try {
+            const totalPages = selectedDoc.page_count || 1;
+            const pageNumbers = parsePageRangeList(options.pageRange, totalPages);
+            if (!pdfUrl) return;
+            const { images, firstIsLandscape } = await renderPagesToPngBase64(pdfUrl, pageNumbers);
+            if (images.length === 0) return;
+
+            const pageOrientation =
+                options.orientation === "auto" ? (firstIsLandscape ? "landscape" : "portrait") : options.orientation;
+            const marginMm = options.margin === "none" ? 0 : 12;
+
+            await tauriInvoke("print_pages", {
+                request: {
+                    printerName: options.printerName,
+                    copies: options.copies,
+                    color: options.color === "color",
+                    orientation: pageOrientation,
+                    marginMm,
+                    images,
+                },
+            });
+        } catch (err) {
+            console.error("Print failed:", err);
+        }
     }
 
     async function handleUploadFile(file: File) {
@@ -1002,6 +1091,15 @@ export default function EditorPage() {
                 pdfId={selectedDoc?.id ?? null}
                 onClose={() => setOcrOpen(false)}
                 onSuccess={() => setPdfRefreshKey((k) => k + 1)}
+            />
+
+            <PrintOptionsModal
+                open={printOptionsOpen}
+                onClose={() => setPrintOptionsOpen(false)}
+                onConfirm={executePrint}
+                pdfUrl={pdfUrl}
+                initialPage={currentPage}
+                totalPages={selectedDoc?.page_count ?? 1}
             />
 
             <AnnotationDialog

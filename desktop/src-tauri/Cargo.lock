@@ -2501,6 +2501,7 @@ dependencies = [
 name = "pdf-editor-desktop"
 version = "0.1.38"
 dependencies = [
+ "base64 0.22.1",
  "log",
  "nix",
  "serde",
