@@ -15,3 +15,4 @@ export { mapError, extractErrorDetail, ErrorCode } from "./error-map";
 export type { ErrorCodeType } from "./error-map";
 export { isTauri, getApiBaseUrl, tauriInvoke } from "./tauri";
 export { parsePageRangeList } from "./print";
+export { default as PositionSelector } from "./PositionSelector";
