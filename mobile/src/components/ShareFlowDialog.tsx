@@ -43,6 +43,7 @@ export default function ShareFlowDialog({ visible, pdfId, pdfName, isOnline, onD
             const res = await listShareLinks(pdfId);
             setLinks(res);
         } catch (e) {
+            console.error("Share load error:", e);
             setError(t("tools.shareLoadFailed"));
         } finally {
             setLoading(false);
@@ -59,6 +60,7 @@ export default function ShareFlowDialog({ visible, pdfId, pdfName, isOnline, onD
             setPassword("");
             setExpiresInDays("");
         } catch (e) {
+            console.error("Share create error:", e);
             setError(t("tools.shareCreateFailed"));
         } finally {
             setCreating(false);
@@ -70,6 +72,7 @@ export default function ShareFlowDialog({ visible, pdfId, pdfName, isOnline, onD
             await revokeShareLink(pdfId, token);
             setLinks((prev) => prev.filter((l) => l.token !== token));
         } catch (e) {
+            console.error("Share revoke error:", e);
             setError(t("tools.shareRevokeFailed"));
         }
     }

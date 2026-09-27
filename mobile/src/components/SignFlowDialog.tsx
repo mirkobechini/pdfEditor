@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View } from "react-native";
+import { View, ScrollView, useWindowDimensions, TouchableOpacity } from "react-native";
 import { Dialog, Portal, Button, Text, TextInput, SegmentedButtons } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import * as DocumentPicker from "expo-document-picker";
@@ -20,10 +20,13 @@ interface SignFlowDialogProps {
     onFailed: () => void;
 }
 
-const PAD_WIDTH = 320;
-const PAD_HEIGHT = 160;
 const DEFAULT_SIGN_WIDTH = 200;
 const DEFAULT_SIGN_HEIGHT = 80;
+// Detecting the actual page background color under the signature and
+// auto-contrasting against it would need pixel access to the rendered PDF
+// that react-native-pdf doesn't expose — letting the user pick a contrasting
+// ink color themselves is the reliable alternative.
+const INK_COLORS = ["#000000", "#FFFFFF", "#D32F2F", "#1565C0"];
 
 /**
  * 2-step sign flow for mobile, matching desktop/web: choose a signature
@@ -32,9 +35,17 @@ const DEFAULT_SIGN_HEIGHT = 80;
  */
 export default function SignFlowDialog({ visible, pdfId, pdfName, pdfUri, totalPages, onDismiss, onSigned, onFailed }: SignFlowDialogProps) {
     const { t } = useTranslation();
+    // react-native-paper's Dialog reserves ~24dp of horizontal margin plus
+    // Dialog.Content's own 24dp padding on each side — sizing the pad/preview
+    // to the raw screen width (as a fixed 320px constant previously did)
+    // overflowed the dialog on narrower screens. Subtracting that inset keeps
+    // both inside the dialog's actual content area.
+    const { width: windowWidth } = useWindowDimensions();
+    const contentWidth = Math.min(windowWidth - 110, 400);
     const padRef = useRef<SignaturePadRef>(null);
     const [step, setStep] = useState<"choose" | "position">("choose");
     const [source, setSource] = useState<"draw" | "gallery">("draw");
+    const [inkColor, setInkColor] = useState(INK_COLORS[0]);
     const [signatureB64, setSignatureB64] = useState<string | null>(null);
     const [pageNumber, setPageNumber] = useState(1);
     const [signX, setSignX] = useState(50);
@@ -48,6 +59,7 @@ export default function SignFlowDialog({ visible, pdfId, pdfName, pdfUri, totalP
         if (visible) {
             setStep("choose");
             setSource("draw");
+            setInkColor(INK_COLORS[0]);
             setSignatureB64(null);
             setPageNumber(1);
             setSignWidth(DEFAULT_SIGN_WIDTH);
@@ -103,89 +115,111 @@ export default function SignFlowDialog({ visible, pdfId, pdfName, pdfUri, totalP
         <Portal>
             <Dialog visible={visible} onDismiss={onDismiss} style={{ maxHeight: "85%" }}>
                 <Dialog.Title>{t("tools.signTitle")}</Dialog.Title>
-                <Dialog.Content>
-                    <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                        {t("tools.signHint", { name: pdfName })}
-                    </Text>
-
-                    {step === "choose" ? (
-                        <View>
-                            <SegmentedButtons
-                                value={source}
-                                onValueChange={(v) => setSource(v as "draw" | "gallery")}
-                                buttons={[
-                                    { value: "draw", label: t("tools.signDraw") },
-                                    { value: "gallery", label: t("tools.signGallery") },
-                                ]}
-                                style={{ marginBottom: 12 }}
-                            />
-                            {source === "draw" ? (
-                                <View>
-                                    <SignaturePad
-                                        ref={padRef}
-                                        width={PAD_WIDTH}
-                                        height={PAD_HEIGHT}
-                                    />
-                                    <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-                                        <Button onPress={() => padRef.current?.clear()}>
-                                            {t("tools.signClear")}
-                                        </Button>
-                                        <Button onPress={() => padRef.current?.undo()}>{t("tools.signUndo")}</Button>
-                                    </View>
-                                </View>
-                            ) : (
-                                <Button mode="outlined" onPress={handlePickFromGallery}>
-                                    {signatureB64 ? t("tools.signGallery") + " ✓" : t("tools.signGallery")}
-                                </Button>
-                            )}
-                        </View>
-                    ) : (
-                        <View>
-                            <TextInput
-                                label={t("tools.signPageLabel")}
-                                value={String(pageNumber)}
-                                onChangeText={(val) => setPageNumber(Math.max(1, Math.min(totalPages, parseInt(val) || 1)))}
-                                mode="outlined"
-                                keyboardType="numeric"
-                                style={{ marginBottom: 12 }}
-                            />
-                            <PositionSelectorNative
-                                pdfUri={pdfUri}
-                                pageNumber={pageNumber}
-                                boxSize={{ width: signWidth, height: signHeight }}
-                                signatureImage={signatureB64}
-                                onPositionChange={(x, y) => { setSignX(x); setSignY(y); }}
-                                onSizeChange={(w, h) => { setSignWidth(w); setSignHeight(h); }}
-                            />
-                            <Text variant="bodySmall" style={{ marginTop: 6, opacity: 0.7 }}>
-                                {t("tools.signPositionHint")}
-                            </Text>
-                        </View>
-                    )}
-
-                    {error ? (
-                        <Text variant="bodySmall" style={{ color: "red", marginTop: 8 }}>
-                            {error}
+                <Dialog.ScrollArea>
+                    <ScrollView contentContainerStyle={{ paddingVertical: 8 }}>
+                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                            {t("tools.signHint", { name: pdfName })}
                         </Text>
-                    ) : null}
-                </Dialog.Content>
-                <Dialog.Actions>
-                    {step === "choose" ? (
-                        <>
-                            <Button onPress={onDismiss}>{t("common.cancel")}</Button>
-                            <Button onPress={handleNext} disabled={source === "gallery" && !signatureB64}>
-                                {t("tools.signNext")}
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button onPress={() => setStep("choose")}>{t("tools.signBack")}</Button>
-                            <Button onPress={handleConfirm} loading={signing} disabled={signing}>
-                                {t("tools.signAction")}
-                            </Button>
-                        </>
-                    )}
-                </Dialog.Actions>
+
+                        {step === "choose" ? (
+                            <View>
+                                <SegmentedButtons
+                                    value={source}
+                                    onValueChange={(v) => setSource(v as "draw" | "gallery")}
+                                    buttons={[
+                                        { value: "draw", label: t("tools.signDraw") },
+                                        { value: "gallery", label: t("tools.signGallery") },
+                                    ]}
+                                    style={{ marginBottom: 12 }}
+                                />
+                                {source === "draw" ? (
+                                    <View>
+                                        <SignaturePad
+                                            ref={padRef}
+                                            width={contentWidth}
+                                            height={contentWidth * 0.5}
+                                            strokeColor={inkColor}
+                                        />
+                                        <View style={{ flexDirection: "row", gap: 8, marginTop: 8, alignItems: "center" }}>
+                                            <Button onPress={() => padRef.current?.clear()}>
+                                                {t("tools.signClear")}
+                                            </Button>
+                                            <Button onPress={() => padRef.current?.undo()}>{t("tools.signUndo")}</Button>
+                                        </View>
+                                        <Text variant="bodySmall" style={{ marginTop: 8, marginBottom: 6 }}>
+                                            {t("tools.signInkColor")}
+                                        </Text>
+                                        <View style={{ flexDirection: "row", gap: 8 }}>
+                                            {INK_COLORS.map((c) => (
+                                                <TouchableOpacity
+                                                    key={c}
+                                                    testID={`sign-color-${c}`}
+                                                    onPress={() => setInkColor(c)}
+                                                    style={{
+                                                        width: 28,
+                                                        height: 28,
+                                                        borderRadius: 14,
+                                                        backgroundColor: c,
+                                                        borderWidth: inkColor === c ? 3 : 1,
+                                                        borderColor: inkColor === c ? "#f7871f" : "#999",
+                                                    }}
+                                                />
+                                            ))}
+                                        </View>
+                                    </View>
+                                ) : (
+                                    <Button mode="outlined" onPress={handlePickFromGallery}>
+                                        {signatureB64 ? t("tools.signGallery") + " ✓" : t("tools.signGallery")}
+                                    </Button>
+                                )}
+                            </View>
+                        ) : (
+                            <View>
+                                <TextInput
+                                    label={t("tools.signPageLabel")}
+                                    value={String(pageNumber)}
+                                    onChangeText={(val) => setPageNumber(Math.max(1, Math.min(totalPages, parseInt(val) || 1)))}
+                                    mode="outlined"
+                                    keyboardType="numeric"
+                                    style={{ marginBottom: 12 }}
+                                />
+                                <PositionSelectorNative
+                                    pdfUri={pdfUri}
+                                    pageNumber={pageNumber}
+                                    boxSize={{ width: signWidth, height: signHeight }}
+                                    signatureImage={signatureB64}
+                                    onPositionChange={(x, y) => { setSignX(x); setSignY(y); }}
+                                    onSizeChange={(w, h) => { setSignWidth(w); setSignHeight(h); }}
+                                    previewWidth={contentWidth}
+                                />
+                                <Text variant="bodySmall" style={{ marginTop: 6, opacity: 0.7 }}>
+                                    {t("tools.signPositionHint")}
+                                </Text>
+                            </View>
+                        )}
+
+                        {error ? (
+                            <Text variant="bodySmall" style={{ color: "red", marginTop: 8 }}>
+                                {error}
+                            </Text>
+                        ) : null}
+                    </ScrollView>
+                </Dialog.ScrollArea>
+                {step === "choose" ? (
+                    <Dialog.Actions>
+                        <Button onPress={onDismiss}>{t("common.cancel")}</Button>
+                        <Button onPress={handleNext} disabled={source === "gallery" && !signatureB64}>
+                            {t("tools.signNext")}
+                        </Button>
+                    </Dialog.Actions>
+                ) : (
+                    <Dialog.Actions>
+                        <Button onPress={() => setStep("choose")}>{t("tools.signBack")}</Button>
+                        <Button onPress={handleConfirm} loading={signing} disabled={signing}>
+                            {t("tools.signAction")}
+                        </Button>
+                    </Dialog.Actions>
+                )}
             </Dialog>
         </Portal>
     );

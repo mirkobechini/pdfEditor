@@ -11,7 +11,8 @@
     "printOptionsOrientationPortrait": "Verticale",
     "printOptionsOrientationLandscape": "Orizzontale",
     "printOptionsCancel": "Annulla",
-    "printOptionsConfirm": "Stampa"
+    "printOptionsConfirm": "Stampa",
+    "printOptionsPreviewPage": "Pagina"
   },
   "settings": {
     "title": "Impostazioni",
@@ -142,6 +143,7 @@
     "signGallery": "Dalla galleria",
     "signClear": "Cancella",
     "signUndo": "Annulla",
+    "signInkColor": "Colore inchiostro",
     "signNoSignature": "Disegna o scegli prima una firma",
     "signPageLabel": "Pagina",
     "signPositionHint": "Trascina per spostare, trascina l'angolo per ridimensionare",
@@ -178,6 +180,7 @@
     "annotationType_strikeout": "Barrato",
     "annotationType_text": "Commento",
     "annotationType_free_text": "Testo libero",
+    "annotationType": "Tipo",
     "annotationColor": "Colore",
     "annotationContent": "Contenuto",
     "annotationSave": "Salva",
