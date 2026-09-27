@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-09-27
+
+### 🐛 Bug sweep pre-merge su main (PR #848)
+
+- **Critico:** `ShareLink`/`PasswordCache` non hanno `ondelete=CASCADE` sulla FK verso `pdf_documents` (il progetto non ha Alembic, la migrazione automatica non può alterare un vincolo su una tabella esistente). SQLite (test, sidecar desktop) non applica i vincoli FK, ma Postgres (produzione) sì — cancellare un PDF con un link di condivisione attivo o una password in cache avrebbe fatto fallire la `DELETE` con `IntegrityError`. Fix: cascade a livello applicativo in `PdfService.delete()`.
+- **Fix:** leak di file temporanei in `print_pages` (Rust) su errore di decodifica/scrittura pagina — la pulizia girava solo dopo un'invocazione PowerShell riuscita.
+- **Refactor:** 6 duplicazioni di codice individuate da una code review parziale (l'esecuzione completa a 8 agenti aveva esaurito il rate limit dell'account) — `_mutate_pdf_document` (backend), `handleDocUpdated` + enum `openMenu` (desktop), `restoreFrom` (SignModal), `loadDocIntoViewer` (web), `ptPerPx` (PositionSelector).
+
+### ✨ Parità stampa su web e mobile (PR #849, #850)
+
+- **Web:** nuovo `PrintOptionsModal` (pagine/colore/orientamento/margine, anteprima live pdf.js) — prima delegava tutto al dialogo nativo del browser. Niente stampante/copie: le gestisce già il dialogo nativo.
+- **Mobile:** nuovo `PrintOptionsDialog` (pagine tutte/intervallo, orientamento) prima di `printAsync`. Quando l'intervallo è più stretto del documento, `printService` costruisce una copia PDF filtrata via pdf-lib prima di stamparla.
+- `parsePageRangeList` estratto in `shared/src/print.ts` (prima duplicato solo in desktop).
+
+### ✨ Parità firma su web e mobile (PR #851, #852)
+
+- **Web:** `SignDialog` ristrutturato nel flusso a 2 step di desktop (disegna/carica → posiziona con drag&resize, anteprima live, undo/redo). `PositionSelector` spostato in `shared/src/` (nessuna dipendenza Tauri-specifica) e riusato 1:1 da web e desktop.
+- **Mobile:** stesso flusso a 2 step. Aggiunto il disegno libero della firma (prima solo scelta da galleria) via `react-native-svg` (nessuna nuova dipendenza — usa il `toDataURL()` nativo della libreria). Posizionamento con `PositionSelectorNative`, che renderizza la pagina target via `react-native-pdf` in modalità pagina-singola.
+
+### ✨ Mobile: annotazioni, OCR, condivisione via link (PR #853)
+
+- Portate le 3 feature mancanti rispetto a desktop/web. OCR e annotazioni seguono lo stesso pattern di `compressPdf` (carica → muta sul backend → scarica → salva come nuova versione locale). La condivisione invece **riusa** il PDF già caricato sul cloud (`cloud_id` persistito in `localDb`) invece di ricaricarlo ad ogni apertura del dialog, altrimenti si duplicherebbe il PDF sul cloud e si orfanizzerebbero i link già emessi.
+- Condivisione del link tramite `Share` di React Native core (nessuna dipendenza clipboard aggiuntiva).
+
+### 🐛 Bug trovati e risolti testando dal vivo su device reale (PR #854)
+
+- **Drag del riquadro firma/annotazione che ripartiva sempre dall'alto a sinistra:** i gestori `PanResponder` vengono creati una sola volta e non vedono mai nuovi render — leggevano `boxPos`/`boxSizePx` "congelati" al primo render invece del valore reale corrente. Risolto con dei ref sempre aggiornati in parallelo allo stato.
+- **Stesso bug sulla larghezza dopo lo zoom:** il limite destro del trascinamento restava congelato alla larghezza pre-zoom.
+- **Anteprima di stampa/posizionamento bloccata su una pagina:** `react-native-pdf` in modalità pagina-singola onora `page` (e le dimensioni) solo al montaggio — cambiarli dopo non aggiorna la vista. Risolto forzando un remount (`key`) quando cambia pagina o zoom.
+- **Indicatore pagina di stampa:** mostrava sempre "pagina / totale PDF" anche con un intervallo selezionato, invece di "Pagina N (i/count)" come desktop/web.
+- **Contrasto firma:** lo sfondo trasparente (per farla combaciare con la pagina, come desktop/web) faceva sembrare il tratto sottile "sbiadito" per via dell'antialiasing. Tratto più spesso di default + scelta manuale del colore inchiostro (rilevare automaticamente lo sfondo della pagina non è fattibile con le API esposte da `react-native-pdf`).
+- **Nuovo: zoom sull'anteprima** di posizionamento (firma/annotazione), con scroll automatico (immediato + continuo via timer) quando trascini il riquadro vicino al bordo.
+- **Layout:** dialoghi firma/annotazione andavano in overflow o l'anteprima copriva i pulsanti — aggiunto scroll interno (`Dialog.ScrollArea`) e larghezze responsive invece di valori fissi.
+- OCR e condivisione via link restano non testabili end-to-end: verificato **direttamente contro il backend di produzione** che `main` è indietro di 165 commit rispetto a `dev` e non ha ancora le route `/ocr`, `/annotations`, `/share*`. Nessun fix mobile necessario — serve solo il merge `dev→main` e il redeploy.
+
 ## 2026-09-26
 
 ### 🔧 Sistema di licenze/tier disattivato di default (in attesa di redesign)

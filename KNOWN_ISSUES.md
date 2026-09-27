@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-26
+> **Aggiornato:** 2026-09-27
 
 ---
 
@@ -32,6 +32,28 @@
 ---
 
 ## 🔴 Bug aperti
+
+### `main` indietro di 165 commit rispetto a `dev` — OCR/Annotazioni/Condivisione 404 in produzione
+
+**Descrizione:** verificato **direttamente contro il backend di produzione** (`https://pdfeditor-api.mirkobechini.com`, chiamate curl dirette) che le route `/pdfs/{id}/ocr`, `/pdfs/{id}/annotations`, `/pdfs/{id}/share*` restituiscono `{"detail":"Not Found"}` — non esistono affatto sul branch deployato. `main` non ha mai ricevuto il merge da `dev` che le ha introdotte (issue #825/#829/#823 e tutto il lavoro di parità mobile di questa sessione).
+**Impatto:** OCR, annotazioni e condivisione via link falliscono su **tutte le piattaforme** in produzione, non solo mobile — è la causa esatta degli errori "Not Found" osservati testando le nuove feature mobile su device reale.
+**Fix:** merge `dev` → `main` + redeploy (Render, se non automatico). Nessuna modifica di codice necessaria — le feature sono già implementate e testate su `dev`.
+**Stato:** ⏳ Aperto, in attesa del merge a `main` pianificato dal developer.
+
+### `mobile/android/` (progetto nativo generato) disallineato da `app.json`
+
+**Descrizione:** `mobile/android/app/build.gradle` ha `versionCode 3` / `versionName "0.2.1"`, mentre `mobile/app.json` dichiara `versionCode: 5` / `version: "0.2.3"`. La cartella `android/` (generata da `expo prebuild`, committata) non è stata rigenerata dopo l'ultimo bump di versione in `app.json`.
+**Impatto:** una build locale (`expo run:android` o `gradlew assembleDebug`) sen usa i valori del progetto nativo, non quelli di `app.json` — imballa un versionCode/versionName vecchio a meno di rilanciare `expo prebuild` prima.
+**Trovato:** durante la build locale di test di questa sessione (installazione fallita per `INSTALL_FAILED_VERSION_DOWNGRADE` contro una build EAS precedente con versionCode 6, più recente di entrambi i valori committati).
+**Fix consigliato:** rilanciare `npx expo prebuild --platform android` (o aggiornare `build.gradle` a mano) prima della prossima build/release nativa.
+**Stato:** ⏳ Aperto, non bloccante per lo sviluppo (Metro/Fast Refresh funzionano comunque).
+
+### Branch `feature/parity-desktop` orfano su GitHub
+
+**Descrizione:** branch remoto con 18 commit propri, **88 commit indietro** rispetto a `dev`, ultimo commit 2026-09-20. Conteneva un tentativo precedente (probabilmente superato) di OCR/annotazioni/condivisione desktop+mobile e della pagina "Browse documents" desktop.
+**Trovato:** durante un audit di branch/issue attivi (2026-09-27).
+**Azione consigliata:** verificare se contiene lavoro ancora utile prima di cancellarlo — altrimenti è solo rumore nella lista branch.
+**Stato:** ⏳ Da decidere (nessuna azione presa, non cancellato).
 
 ### K6 — Disinstallazione non cancella dati utente in %APPDATA%
 

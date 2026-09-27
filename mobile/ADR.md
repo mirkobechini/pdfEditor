@@ -115,6 +115,8 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 ## Limiti e vincoli noti
 
 - **`react-native-pdf` cache**: il viewer non rimonta automaticamente per un secondo PDF — serve `key={refreshKey}` incrementata in `useEffect([pdfId])` dopo aver settato `pdfUri`.
+- **`react-native-pdf` in modalità `singlePage`**: onora `page` (e le dimensioni di rendering) solo al montaggio — cambiarli dopo non aggiorna la vista. Stesso workaround del punto sopra: `key` che cambia insieme al valore che deve forzare il reload (usato in `PositionSelectorNative` e `PrintOptionsDialog`, issue parità stampa/firma 2026-09-27).
+- **Firma/annotazioni via `PositionSelectorNative`** (2026-09-27): riquadro trascinabile/ridimensionabile con zoom+pan sopra l'anteprima della pagina target. Nessuna nuova dipendenza nativa: disegno libero con `react-native-svg` (usa il `toDataURL()` nativo già incluso nella libreria, non serve `react-native-view-shot`), posizionamento con `react-native-pdf` (`singlePage`) + `PanResponder` di RN core.
 - **pdf-lib non supporta**: estrazione testo, form icing, annotazioni, compressione vera. Solo manipolazione strutturale (pagine, metadati, merge/split) + re-save per compressione parziale.
 - **Sync cloud attivo**: i PDF si sincronizzano col cloud (upload/download bidirezionale). Il sync richiede login reale (guest esclusi). Token JWT scade dopo 1h → refresh automatico implementato (issue #623, endpoint `/auth/refresh` + retry automatico).
 - **Tema scuro non completo**: error container in LoginScreen/ForgotPasswordScreen ha `#FFE0E0` hardcoded (non si adatta a dark mode).
