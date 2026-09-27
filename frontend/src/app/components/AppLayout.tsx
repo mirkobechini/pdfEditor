@@ -19,6 +19,7 @@ interface LayoutProps {
 export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
   const bugT = useTranslations("bugReport");
   const authT = useTranslations("auth");
+  const browseT = useTranslations("browse");
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [bugReportOpen, setBugReportOpen] = React.useState(false);
@@ -46,6 +47,13 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
         </div>
         <div className="flex items-center gap-3">
           <HeaderControls />
+          <Link
+            href="/browse"
+            className="px-2 py-1 text-xs rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+            title={browseT("navLabel")}
+          >
+            {browseT("navLabel")}
+          </Link>
           {user?.is_admin && (
             <Link
               href="/admin"

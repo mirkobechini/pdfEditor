@@ -2,18 +2,19 @@
   "desktop": [
     {
       "version": "v0.1.39",
-      "date": "2026-09-20",
+      "date": "2026-09-27",
       "changes": [
         "OCR: riconosci il testo nei PDF scansionati e rendilo ricercabile",
         "Annotazioni: evidenzia, sottolinea, commenta e disegna sui tuoi PDF",
         "Condivisione via link: condividi un PDF con un link pubblico, con password e scadenza opzionali",
         "Multi-selezione: seleziona più PDF e applica operazioni in blocco (elimina, esporta)",
-        "Browse documents: esplora un catalogo di documenti PDF da Internet Archive",
-        "Firma digitale migliorata: anteprima in tempo reale, ridimensionamento, undo/redo",
+        "Firma digitale migliorata: flusso guidato, anteprima in tempo reale, ridimensionamento, undo/redo",
+        "Nuovo dialogo di stampa: anteprima live, scelta pagine/orientamento/copie/margini",
         "Drag & drop: trascina un PDF nell'editor per aprirlo, o un'immagine per importarla",
-        "Compressione offline: comprimi i PDF anche senza connessione",
         "Login con feedback di stato: vedi cosa sta facendo l'app durante l'accesso",
-        "Import immagini migliorato: supporto per GIF e BMP"
+        "Import immagini migliorato: supporto per GIF e BMP",
+        "Avvio più rapido grazie alla sessione salvata",
+        "Fix di sicurezza: risolto un bug che rendeva i link di condivisione non funzionanti"
       ]
     },
     {
@@ -28,9 +29,14 @@
   "mobile": [
     {
       "version": "v0.2.4-mobile",
-      "date": "2026-09-20",
+      "date": "2026-09-27",
       "changes": [
-        "Compressione offline: comprimi i PDF anche senza connessione"
+        "Compressione offline: comprimi i PDF anche senza connessione",
+        "Stampa: scegli pagine e orientamento, con anteprima prima di stampare",
+        "Firma: disegna la firma a mano libera, posizionala trascinandola e ridimensionala con lo zoom",
+        "Annotazioni PDF: evidenzia, sottolinea, commenta e disegna sui tuoi PDF",
+        "OCR: riconosci il testo nei PDF scansionati e rendilo ricercabile",
+        "Condivisione via link: condividi un PDF con un link pubblico, con password e scadenza opzionali"
       ]
     },
     {

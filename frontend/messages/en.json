@@ -493,7 +493,7 @@
       "free": {
         "title": "Free",
         "description": "For occasional use",
-        "price": "Ã¢â€šÂ¬0",
+        "price": "€0",
         "feature1": "Up to 50 pages",
         "feature2": "Merge, Split, Reorder",
         "feature3": "5 PDFs per day",
@@ -504,7 +504,7 @@
       "premium": {
         "title": "Premium",
         "description": "For professional use",
-        "price": "Ã¢â€šÂ¬9",
+        "price": "€9",
         "feature1": "Unlimited pages",
         "feature2": "All features",
         "feature3": "Unlimited PDFs",
@@ -515,7 +515,7 @@
       "enterprise": {
         "title": "Enterprise",
         "description": "For teams and companies",
-        "price": "Ã¢â€šÂ¬29",
+        "price": "€29",
         "feature1": "Everything in Premium",
         "feature2": "Unlimited users",
         "feature3": "Dedicated API",
@@ -563,7 +563,7 @@
       "title": "Information We Collect",
       "description": "The personal information that you are asked to provide, and the reasons why you are asked to provide it, will be made clear to you at the point we ask you to provide your personal information.",
       "item1": "Account information: email address and full name (when you register)",
-      "item2": "PDF files you upload for editing â€” stored temporarily and automatically deleted after your session",
+      "item2": "PDF files you upload for editing — stored temporarily and automatically deleted after your session",
       "item3": "Usage data: pages visited, features used (anonymized for analytics)",
       "item4": "Technical data: browser type and version, device type, operating system"
     },
@@ -594,11 +594,11 @@
     "yourRights": {
       "title": "Your Data Protection Rights (GDPR/CCPA)",
       "description": "Depending on your jurisdiction, you may have the following data protection rights:",
-      "item1": "The right to access â€” request copies of your personal data",
-      "item2": "The right to rectification â€” request correction of inaccurate data",
-      "item3": "The right to erasure â€” request deletion of your personal data",
-      "item4": "The right to restrict processing â€” request limitation of how we use your data",
-      "item5": "The right to data portability â€” request transfer of your data to another organization"
+      "item1": "The right to access — request copies of your personal data",
+      "item2": "The right to rectification — request correction of inaccurate data",
+      "item3": "The right to erasure — request deletion of your personal data",
+      "item4": "The right to restrict processing — request limitation of how we use your data",
+      "item5": "The right to data portability — request transfer of your data to another organization"
     },
     "cookiesSection": {
       "title": "Cookies",
@@ -809,6 +809,7 @@
     }
   },
   "browse": {
+    "navLabel": "Browse documents",
     "title": "Browse documents",
     "subtitle": "Real PDF documents from Internet Archive",
     "searchPlaceholder": "Search by title or author...",
