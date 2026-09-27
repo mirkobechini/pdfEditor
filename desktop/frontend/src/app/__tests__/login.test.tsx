@@ -88,7 +88,7 @@ describe("LoginPage", () => {
         fireEvent.click(submitBtn);
 
         await waitFor(() => {
-            expect(mockLogin).toHaveBeenCalledWith("test@test.com", "pass123", true);
+            expect(mockLogin).toHaveBeenCalledWith("test@test.com", "pass123", true, expect.any(Function));
         });
     });
 

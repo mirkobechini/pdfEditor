@@ -12,6 +12,8 @@ import type {
   UserResponse,
   LocalPdf,
   BugReport,
+  OcrResult,
+  ShareLink,
 } from "./types";
 
 export type {
@@ -22,6 +24,8 @@ export type {
   UserResponse,
   LocalPdf,
   BugReport,
+  OcrResult,
+  ShareLink,
 };
 
 // Cloud backend URL
@@ -505,6 +509,76 @@ export class ApiClient {
     });
     if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();
+  }
+
+  // ─── Annotations ────────────────────────────────────────────────
+
+  async addAnnotation(
+    id: string,
+    req: {
+      page: number;
+      type: string;
+      rect: number[];
+      color?: string;
+      content?: string | null;
+      points?: number[][];
+      opacity?: number;
+    },
+  ): Promise<PdfDocument> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/annotations`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
+  // ─── OCR ────────────────────────────────────────────────────────
+
+  async ocrPdf(id: string, language = "eng"): Promise<OcrResult> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/ocr`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ language }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
+  // ─── Share links ────────────────────────────────────────────────
+
+  async createShareLink(
+    id: string,
+    password?: string,
+    expiresInDays?: number,
+  ): Promise<ShareLink> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/share`, {
+      method: "POST",
+      headers: { ...this.getHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        password: password || null,
+        expires_in_days: expiresInDays || null,
+      }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
+  async listShareLinks(id: string): Promise<ShareLink[]> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/shares`, {
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
+  async revokeShareLink(id: string, token: string): Promise<void> {
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/share/${token}`, {
+      method: "DELETE",
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
   }
 
   async refreshToken(): Promise<{

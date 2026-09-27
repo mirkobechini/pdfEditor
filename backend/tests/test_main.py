@@ -34,6 +34,19 @@ class TestHealthCheck:
         response = client.get("/health", headers={"Origin": "http://localhost:3000"})
         assert "access-control-allow-origin" in response.headers
 
+    def test_cors_headers_with_tauri_origin(self):
+        """CORS headers should allow Tauri webview origins (desktop cloud sync)."""
+        for origin in [
+            "http://tauri.localhost",
+            "https://tauri.localhost",
+            "tauri://localhost",
+        ]:
+            response = client.get("/health", headers={"Origin": origin})
+            assert "access-control-allow-origin" in response.headers, (
+                f"Missing CORS header for origin {origin}"
+            )
+            assert response.headers["access-control-allow-origin"] == origin
+
     def test_validation_error_handler(self):
         """Validation errors should return flattened message."""
         response = client.post("/auth/register", json={"email": "invalid"})

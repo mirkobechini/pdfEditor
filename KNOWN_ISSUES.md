@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-15
+> **Aggiornato:** 2026-09-27
 
 ---
 
@@ -33,6 +33,28 @@
 
 ## 🔴 Bug aperti
 
+### `main` indietro di 165 commit rispetto a `dev` — OCR/Annotazioni/Condivisione 404 in produzione
+
+**Descrizione:** verificato **direttamente contro il backend di produzione** (`https://pdfeditor-api.mirkobechini.com`, chiamate curl dirette) che le route `/pdfs/{id}/ocr`, `/pdfs/{id}/annotations`, `/pdfs/{id}/share*` restituiscono `{"detail":"Not Found"}` — non esistono affatto sul branch deployato. `main` non ha mai ricevuto il merge da `dev` che le ha introdotte (issue #825/#829/#823 e tutto il lavoro di parità mobile di questa sessione).
+**Impatto:** OCR, annotazioni e condivisione via link falliscono su **tutte le piattaforme** in produzione, non solo mobile — è la causa esatta degli errori "Not Found" osservati testando le nuove feature mobile su device reale.
+**Fix:** merge `dev` → `main` + redeploy (Render, se non automatico). Nessuna modifica di codice necessaria — le feature sono già implementate e testate su `dev`.
+**Stato:** ⏳ Aperto, in attesa del merge a `main` pianificato dal developer.
+
+### `mobile/android/` (progetto nativo generato) disallineato da `app.json`
+
+**Descrizione:** `mobile/android/app/build.gradle` ha `versionCode 3` / `versionName "0.2.1"`, mentre `mobile/app.json` dichiara `versionCode: 5` / `version: "0.2.3"`. La cartella `android/` (generata da `expo prebuild`, committata) non è stata rigenerata dopo l'ultimo bump di versione in `app.json`.
+**Impatto:** una build locale (`expo run:android` o `gradlew assembleDebug`) sen usa i valori del progetto nativo, non quelli di `app.json` — imballa un versionCode/versionName vecchio a meno di rilanciare `expo prebuild` prima.
+**Trovato:** durante la build locale di test di questa sessione (installazione fallita per `INSTALL_FAILED_VERSION_DOWNGRADE` contro una build EAS precedente con versionCode 6, più recente di entrambi i valori committati).
+**Fix consigliato:** rilanciare `npx expo prebuild --platform android` (o aggiornare `build.gradle` a mano) prima della prossima build/release nativa.
+**Stato:** ⏳ Aperto, non bloccante per lo sviluppo (Metro/Fast Refresh funzionano comunque).
+
+### Branch `feature/parity-desktop` orfano su GitHub
+
+**Descrizione:** branch remoto con 18 commit propri, **88 commit indietro** rispetto a `dev`, ultimo commit 2026-09-20. Conteneva un tentativo precedente (probabilmente superato) di OCR/annotazioni/condivisione desktop+mobile e della pagina "Browse documents" desktop.
+**Trovato:** durante un audit di branch/issue attivi (2026-09-27).
+**Azione consigliata:** verificare se contiene lavoro ancora utile prima di cancellarlo — altrimenti è solo rumore nella lista branch.
+**Stato:** ⏳ Da decidere (nessuna azione presa, non cancellato).
+
 ### K6 — Disinstallazione non cancella dati utente in %APPDATA%
 
 **File:** `desktop/src-tauri/installer.nsh`  
@@ -60,9 +82,19 @@
 **Fix:** creato `CloudSyncContext` provider che condivide una singola istanza di `useCloudSync`. Le schermate ora usano `useCloudSyncContext()`. Aggiunto `useCallback` per l'inline function in MainTabs e `freezeOnBlur: true`.
 **Stato:** ✅ Risolto (issue #801, PR #802).
 
-## 🟡 Bug minori rimanenti
+### OCR — Binary `tesseract` incluso nel sidecar desktop (issue #829, fix #831) ✅
 
-Tutti i bug minori precedenti sono stati risolti.
+**File:** `backend/app/core/tesseract.py`, `backend/app/services/pdf_service.py`, `desktop/build-sidecar.ps1`, `desktop/build-sidecar.sh`, `desktop/run_backend.py`
+**Descrizione:** La funzione OCR richiede il binary `tesseract` (motore OCR) oltre alla libreria Python `pytesseract`. Il binary **non** è incluso nel sidecar PyInstaller del desktop, quindi l'OCR desktop falliva con `503 OCR_UNAVAILABLE` se l'utente non aveva tesseract installato a parte.
+**Fix:** Il binary `tesseract` + i language pack (eng/ita/fra/deu/spa) sono ora **inclusi nel sidecar PyInstaller** (`tesseract/` + `tessdata/`). `app/core/tesseract.py` centralizza la discovery del binary (PATH, bundle, env var `TESSERACT_CMD`). `run_backend.py` imposta `TESSERACT_CMD` e `TESSDATA_PREFIX` dal bundle. L'utente finale **non deve installare nulla**.
+**Stato:** ✅ Risolto (issue #831, PR #832).
+
+### Stampa desktop — riscritta come dialogo custom con stampa silenziosa (issue #8, plan 0138-0139) ✅
+
+**File:** `desktop/frontend/src/components/PrintOptionsModal.tsx`, `desktop/frontend/src/app/app/page.tsx`, `desktop/src-tauri/src/lib.rs`, `desktop/src-tauri/scripts/*.ps1`
+**Descrizione:** La stampa in Tauri (WebView2) non funzionava correttamente. Vari tentativi falliti: iframe con blob URL, data URL base64, comando Rust `print_pdf` (apre viewer esterno — rifiutato), modal anteprima in-app (rifiutato), `webview.print()` (stampa tutto il DOM), canvas clone + `<img>` overlay senza attesa (anteprima bianca per timing — window.print() invocato prima che il browser finisse di decodificare l'immagine).
+**Fix finale:** dopo aver risolto il timing, il dialogo nativo (sia "Browser" di Edge che "System" di Windows) è stato giudicato inadeguato dall'utente (dispersivo / senza anteprima / nessun controllo su pagine e colore). Sostituito con un dialogo di stampa **completamente custom**: anteprima live via pdf.js, scelta stampante/copie/colore/pagine/orientamento/margini, e **stampa silenziosa** — i comandi Rust `list_printers`/`print_pages` invocano script PowerShell (`System.Drawing.Printing.PrintDocument`) senza mai aprire un dialogo di sistema.
+**Stato:** ✅ Risolto e verificato in build reale (2026-09-26).
 
 ### DOCX → PDF — qualità media (issue #807)
 
@@ -74,9 +106,26 @@ La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, de
 
 ### Stampa PDF — limiti per piattaforma (issue #809)
 
-- **Web/Desktop**: `window.print()` su iframe — il layout dipende dal browser/webview
+- **Web**: `window.print()` su iframe — il layout dipende dal browser
+- **Desktop**: dialogo di stampa custom con stampa silenziosa via PowerShell (vedi sopra) — non passa più da `window.print()`/iframe
 - **Mobile**: `expo-print` stampa il PDF locale (AirPrint). Se il PDF è solo nel cloud (non scaricato localmente), serve prima il download
 - iOS non supporta asset URL locali in HTML (ma `printAsync({ uri })` con URI file funziona)
+
+### Auto-login lento all'avvio desktop (plan 0138-0139) ✅
+
+**File:** `shared/src/auth.tsx`, `desktop/frontend/src/app/startup/page.tsx`
+**Descrizione:** con una sessione già salvata, l'app mostrava per alcuni secondi la pagina di login prima di reindirizzare automaticamente a `/app`.
+**Causa:** `restoreSession()` parte al boot in parallelo con l'avvio del sidecar Python e spesso perde questa "gara" su installazioni fresche — il tentativo falliva silenziosamente.
+**Fix:** nuovo `refreshSession()` nel context di autenticazione, richiamato esplicitamente dalla startup page dopo la conferma che backend/DB/API sono pronti; redirect diretto a `/app` se la sessione è valida.
+**Stato:** ✅ Risolto e verificato in build reale (2026-09-26).
+
+### Link di condivisione PDF sempre rotto — 403 CSRF (plan 0138-0139, #C) ✅
+
+**File:** `backend/app/core/csrf.py`, `backend/app/api/v1/share.py`
+**Descrizione:** `POST /share/{token}/download` (download pubblico, non autenticato) restituiva sempre `403 CSRF validation failed`. Nessun link di condivisione avrebbe mai funzionato per un visitatore esterno.
+**Causa:** `CSRF_EXEMPT_PATHS` è un set di stringhe esatte, incompatibile con un path a segmento dinamico (`{token}`). I test non l'hanno mai intercettato perché `conftest.py` disabilita il CSRF globalmente e `test_share.py` non lo riattivava per testare il percorso reale. Trovato in code review pre-deploy, non da un test manuale.
+**Fix:** nuovo meccanismo a prefisso (`CSRF_EXEMPT_PATH_PREFIXES`) per esentare `/share/` (pubblico, nessuna sessione da proteggere). Aggiunto anche rate limiting (10/min per IP) mancante sul download, per evitare brute-force della password di un link protetto.
+**Stato:** ✅ Risolto e testato (test di regressione verificato: fallisce senza il fix). **Non ancora testato con un deploy reale.**
 
 ---
 

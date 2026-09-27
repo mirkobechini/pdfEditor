@@ -30,11 +30,17 @@ vi.mock("../../../shared/tauri", () => ({
     getApiBaseUrl: () => "http://127.0.0.1:7723",
 }));
 
+const mockRefreshSession = vi.fn();
+vi.mock("../../../shared/auth", () => ({
+    useAuth: () => ({ refreshSession: mockRefreshSession }),
+}));
+
 describe("StartupPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers();
         localStorage.clear();
+        mockRefreshSession.mockResolvedValue(null);
     });
 
     afterEach(() => {
@@ -173,6 +179,34 @@ describe("StartupPage", () => {
         }
 
         expect(mockPush).toHaveBeenCalledWith("/login");
+
+        globalThis.fetch = origFetch;
+    });
+
+    it("redirects straight to /app when a session is restored, skipping login/wizard", async () => {
+        // Regression: the first restore attempt fires the instant the app
+        // boots and can lose the race against the sidecar starting up,
+        // landing on /login before a later, unrelated retry redirects to
+        // /app — a visible flash/delay. The startup screen must retry once
+        // the backend is confirmed healthy and go straight to /app.
+        mockRefreshSession.mockResolvedValue({ id: "u1", email: "a@b.com" });
+        localStorage.setItem("pdfeditor_wizard_done", "true");
+        const origFetch = globalThis.fetch;
+        globalThis.fetch = vi.fn()
+            .mockResolvedValueOnce({ ok: true })
+            .mockResolvedValueOnce({ ok: true });
+
+        render(<StartupPage />);
+
+        for (let i = 0; i < 5; i++) {
+            await act(async () => {
+                vi.advanceTimersByTime(1000);
+            });
+        }
+
+        expect(mockRefreshSession).toHaveBeenCalled();
+        expect(mockPush).toHaveBeenCalledWith("/app");
+        expect(mockPush).not.toHaveBeenCalledWith("/login");
 
         globalThis.fetch = origFetch;
     });

@@ -150,6 +150,12 @@ export async function markPdfCloudSynced(id: string): Promise<void> {
   );
 }
 
+/** Record which cloud PDF a local one maps to (e.g. after uploading it for sharing). */
+export async function setPdfCloudId(id: string, cloudId: string): Promise<void> {
+  const database = await getDb();
+  await database.runAsync("UPDATE pdfs SET cloud_id = ? WHERE id = ?", [cloudId, id]);
+}
+
 export async function markPdfCloudUnsynced(id: string): Promise<void> {
   const database = await getDb();
   await database.runAsync(

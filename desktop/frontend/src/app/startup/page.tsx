@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getApiBaseUrl } from "../../shared/tauri";
+import { useAuth } from "../../shared/auth";
 
 const API_BASE = getApiBaseUrl();
 
@@ -20,6 +21,7 @@ export default function StartupPage() {
     const router = useRouter();
     const tc = useTranslations("common");
     const ts = useTranslations("startup");
+    const { refreshSession } = useAuth();
     const [steps, setSteps] = React.useState<Step[]>([
         { id: "backend", label: ts("startingBackend"), status: "running" },
         { id: "database", label: ts("connectingDb"), status: "pending" },
@@ -133,15 +135,30 @@ export default function StartupPage() {
         return () => { cancelled = true; };
     }, [steps.find((s) => s.id === "database")?.status]);
 
-    // Redirect to wizard (first launch) or login when all done
+    // Redirect once everything is confirmed ready. Also retries session
+    // restoration here (not just the automatic one on app boot): that first
+    // attempt races the sidecar starting up and can lose, silently landing
+    // on the login page even with a valid saved session — only redirecting
+    // to /app a few seconds later once something else re-triggers it. Now
+    // that the backend is confirmed healthy, this retry can't lose that race.
     React.useEffect(() => {
         if (!allDone) return;
-        const redirectTimer = setTimeout(() => {
+        let cancelled = false;
+        const redirectTimer = setTimeout(async () => {
+            const restoredUser = await refreshSession();
+            if (cancelled) return;
+            if (restoredUser) {
+                router.push("/app");
+                return;
+            }
             const wizardDone = localStorage.getItem("pdfeditor_wizard_done");
             router.push(wizardDone === "true" ? "/login" : "/wizard");
         }, 1200);
-        return () => clearTimeout(redirectTimer);
-    }, [allDone, router]);
+        return () => {
+            cancelled = true;
+            clearTimeout(redirectTimer);
+        };
+    }, [allDone, router, refreshSession]);
 
     function getStepIcon(status: StepStatus) {
         switch (status) {

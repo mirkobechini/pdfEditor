@@ -96,6 +96,38 @@ export default function LandingFeatures() {
             bgColor: "bg-rose-100 dark:bg-rose-900/40",
             iconColor: "text-rose-600 dark:text-rose-400",
         },
+        {
+            id: "multiselect",
+            icon: "☑️",
+            titleKey: "multiselect.title",
+            descriptionKey: "multiselect.description",
+            bgColor: "bg-cyan-100 dark:bg-cyan-900/40",
+            iconColor: "text-cyan-600 dark:text-cyan-400",
+        },
+        {
+            id: "sharelink",
+            icon: "🔗",
+            titleKey: "sharelink.title",
+            descriptionKey: "sharelink.description",
+            bgColor: "bg-indigo-100 dark:bg-indigo-900/40",
+            iconColor: "text-indigo-600 dark:text-indigo-400",
+        },
+        {
+            id: "annotations",
+            icon: "🖍️",
+            titleKey: "annotations.title",
+            descriptionKey: "annotations.description",
+            bgColor: "bg-yellow-100 dark:bg-yellow-900/40",
+            iconColor: "text-yellow-600 dark:text-yellow-400",
+        },
+        {
+            id: "ocr",
+            icon: "🔍",
+            titleKey: "ocr.title",
+            descriptionKey: "ocr.description",
+            bgColor: "bg-purple-100 dark:bg-purple-900/40",
+            iconColor: "text-purple-600 dark:text-purple-400",
+        },
     ];
 
     return (

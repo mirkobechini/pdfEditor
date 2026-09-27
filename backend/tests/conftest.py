@@ -82,6 +82,7 @@ def per_test_db(tmp_path):
     from app.models.license import LicenseFeature
     from app.models.bug_report import BugReport
     from app.models.password_cache import PasswordCache
+    from app.models.share_link import ShareLink
     
     db_path = os.path.join(tmp_path, f"test_{uuid.uuid4().hex}.db")
     engine = create_engine(
@@ -237,6 +238,39 @@ def pro_token(client, db_engine):
 def pro_headers(pro_token):
     """HTTP headers with pro-tier JWT."""
     return {"Authorization": f"Bearer {pro_token}"}
+
+
+@pytest.fixture()
+def enterprise_token(client, db_engine):
+    """Register + login an enterprise-tier user, promote to enterprise, return the JWT."""
+    client.post(
+        "/auth/register",
+        json={"email": "enterprise@test.com", "password": "EntPass123", "full_name": "Enterprise"},
+    )
+    resp = client.post(
+        "/auth/login",
+        json={"email": "enterprise@test.com", "password": "EntPass123"},
+    )
+    token = resp.json()["access_token"]
+
+    me = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    user_id = me.json()["id"]
+
+    from sqlalchemy import text
+    with db_engine.connect() as conn:
+        conn.execute(
+            text("UPDATE users SET license_tier = 'enterprise' WHERE id = :uid"),
+            {"uid": user_id},
+        )
+        conn.commit()
+
+    return token
+
+
+@pytest.fixture()
+def enterprise_headers(enterprise_token):
+    """HTTP headers with enterprise-tier JWT."""
+    return {"Authorization": f"Bearer {enterprise_token}"}
 
 
 def upload_pdf(client, headers, content, filename="test.pdf"):

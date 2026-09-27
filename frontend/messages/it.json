@@ -22,7 +22,10 @@
     "importExport": "Importa/Esporta",
     "print": "Stampa",
     "sign": "Firma",
-    "dropHere": "Rilascia qui il tuo file"
+    "dropHere": "Rilascia qui il tuo file",
+    "share": "Condividi",
+    "annotate": "Annota",
+    "ocr": "OCR"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -34,7 +37,14 @@
     "loadFailed": "Caricamento PDF fallito",
     "rename": "Rinomina",
     "delete": "Elimina",
-    "confirmDelete": "Conferma eliminazione"
+    "confirmDelete": "Conferma eliminazione",
+    "select": "Seleziona",
+    "done": "Fine",
+    "selectAll": "Seleziona tutti",
+    "deselectAll": "Deseleziona tutti",
+    "selected": "selezionati",
+    "deleteSelected": "Elimina selezionati",
+    "exportSelected": "Esporta selezionati"
   },
   "mergeDialog": {
     "title": "Unisci PDF",
@@ -182,12 +192,20 @@
   },
   "signDialog": {
     "title": "Firma PDF",
+    "stepChoose": "1. Scegli la firma",
+    "stepPosition": "2. Posiziona la firma",
     "drawLabel": "Disegna la tua firma",
     "drawPlaceholder": "Disegna qui",
-    "uploadLabel": "Oppure carica un'immagine",
+    "uploadLabel": "Carica un'immagine",
     "uploadButton": "Carica immagine",
     "clear": "Cancella",
+    "undo": "Annulla",
+    "redo": "Ripeti",
+    "next": "Continua",
+    "back": "Indietro",
     "pageLabel": "Pagina",
+    "positionLabel": "Posizione (trascina il riquadro)",
+    "resizeHint": "Trascina gli angoli per ridimensionare",
     "sign": "Firma",
     "signing": "Firma in corso...",
     "cancel": "Annulla",
@@ -337,7 +355,8 @@
     "conversionFailed": "Conversione del file fallita.",
     "searchTextEmpty": "Inserisci un testo da cercare.",
     "mergeTooFew": "Seleziona almeno 2 PDF per unirli.",
-    "splitInvalidRange": "Intervallo di pagine non valido."
+    "splitInvalidRange": "Intervallo di pagine non valido.",
+    "ocrUnavailable": "L'OCR non è disponibile su questo server. Contatta l'amministratore."
   },
   "pdf": {
     "notFound": "PDF non trovato.",
@@ -435,6 +454,22 @@
       "sign": {
         "title": "Firma PDF",
         "description": "Disegna o carica la tua firma e posizionala su qualsiasi pagina del PDF."
+      },
+      "multiselect": {
+        "title": "Multi-selezione",
+        "description": "Seleziona più PDF e applica operazioni batch (elimina, esporta)"
+      },
+      "sharelink": {
+        "title": "Condividi via link",
+        "description": "Condividi un PDF con un link pubblico, con password e scadenza opzionali"
+      },
+      "annotations": {
+        "title": "Annotazioni",
+        "description": "Evidenzia, sottolinea, commenta e disegna sui tuoi PDF"
+      },
+      "ocr": {
+        "title": "OCR",
+        "description": "Riconosci il testo nei PDF scansionati e rendilo ricercabile"
       }
     },
     "howItWorks": {
@@ -788,5 +823,85 @@
     "prev": "Prec",
     "next": "Succ",
     "page": "Pagina"
+  },
+  "shareDialog": {
+    "title": "Condividi PDF",
+    "createTitle": "Crea un nuovo link di condivisione",
+    "passwordPlaceholder": "Password (opzionale)",
+    "expiryPlaceholder": "Scade tra giorni (opzionale)",
+    "create": "Crea link",
+    "creating": "Creazione...",
+    "noLinks": "Nessun link di condivisione",
+    "copy": "Copia",
+    "copied": "Copiato!",
+    "revoke": "Revoca",
+    "expires": "Scade",
+    "close": "Chiudi",
+    "loadFailed": "Impossibile caricare i link",
+    "createFailed": "Impossibile creare il link",
+    "revokeFailed": "Impossibile revocare il link"
+  },
+  "share": {
+    "loading": "Caricamento...",
+    "notFound": "Questo link di condivisione non è valido o è scaduto",
+    "wrongPassword": "Password errata",
+    "backHome": "Torna alla home",
+    "protectedTitle": "PDF protetto",
+    "protectedDesc": "Questo PDF è protetto da password. Inserisci la password per visualizzarlo",
+    "passwordPlaceholder": "Password",
+    "unlock": "Sblocca",
+    "download": "Scarica"
+  },
+  "annotationDialog": {
+    "title": "Aggiungi annotazione",
+    "type": "Tipo",
+    "highlight": "Evidenzia",
+    "underline": "Sottolinea",
+    "strikeout": "Barrato",
+    "text": "Commento",
+    "free_text": "Testo libero",
+    "color": "Colore",
+    "page": "Pagina",
+    "content": "Contenuto",
+    "save": "Salva",
+    "saving": "Salvataggio...",
+    "cancel": "Annulla",
+    "failed": "Impossibile aggiungere l'annotazione"
+  },
+  "ocrModal": {
+    "title": "OCR PDF",
+    "description": "Riconosci il testo nei PDF scansionati e rendilo ricercabile",
+    "language": "Lingua",
+    "run": "Esegui OCR",
+    "running": "Esecuzione...",
+    "cancel": "Annulla",
+    "failed": "OCR fallito",
+    "success": "OCR completato: riconosciuti {count} caratteri. Il testo è ora selezionabile e ricercabile: prova a selezionarlo con il mouse o usa Ctrl+F per cercare.",
+    "successAlreadySearchable": "Questo PDF contiene già del testo selezionabile — non serve OCR.",
+    "successNoText": "OCR completato, ma non è stato riconosciuto nessun testo in questo documento.",
+    "processing": "Riconoscimento testo in corso... potrebbe richiedere qualche istante"
+  },
+  "printOptionsModal": {
+    "title": "Opzioni di stampa",
+    "color": "Colore",
+    "colorColor": "A colori",
+    "colorGrayscale": "Bianco e nero",
+    "pages": "Pagine",
+    "pagesAll": "Tutte",
+    "pagesRange": "Intervallo",
+    "pagesRangePlaceholder": "es. 1-3, 5",
+    "orientation": "Orientamento",
+    "orientationAuto": "Automatico",
+    "orientationPortrait": "Verticale",
+    "orientationLandscape": "Orizzontale",
+    "margin": "Margini",
+    "marginNormal": "Normali",
+    "marginNone": "Nessuno",
+    "cancel": "Annulla",
+    "print": "Stampa",
+    "previewUnavailable": "Anteprima non disponibile",
+    "previewPrev": "Pagina precedente",
+    "previewNext": "Pagina successiva",
+    "previewPage": "Pagina"
   }
 }

@@ -20,6 +20,9 @@ interface ToolbarProps {
   onImportExport: () => void;
   onPrint: () => void;
   onSign: () => void;
+  onShare: () => void;
+  onAnnotate: () => void;
+  onOcr: () => void;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
@@ -43,6 +46,9 @@ export default function Toolbar({
   onImportExport,
   onPrint,
   onSign,
+  onShare,
+  onAnnotate,
+  onOcr,
   canUndo,
   canRedo,
   onUndo,
@@ -186,6 +192,15 @@ export default function Toolbar({
       </button>
       <button className="px-3 py-1 text-xs rounded bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50" onClick={onSign}>
         {t("sign")}
+      </button>
+      <button className="px-3 py-1 text-xs rounded bg-cyan-600 text-white hover:bg-cyan-700 disabled:opacity-50" onClick={onShare}>
+        {t("share")}
+      </button>
+      <button className="px-3 py-1 text-xs rounded bg-yellow-600 text-white hover:bg-yellow-700 disabled:opacity-50" onClick={onAnnotate}>
+        {t("annotate")}
+      </button>
+      <button className="px-3 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50" onClick={onOcr}>
+        {t("ocr")}
       </button>
     </>
   );

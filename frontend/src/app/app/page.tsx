@@ -14,12 +14,19 @@ import MetadataDialog from "../components/MetadataDialog";
 import ReplaceTextDialog from "../components/ReplaceTextDialog";
 import ProtectDialog from "../components/ProtectDialog";
 import SignDialog from "../components/SignDialog";
+import ShareDialog from "../components/ShareDialog";
+import AnnotationDialog from "../components/AnnotationDialog";
+import OcrModal from "../components/OcrModal";
 import DeleteModal from "../components/DeleteModal";
 import ImportExportDialog from "../components/ImportExportDialog";
 import DropOverlay from "../components/DropOverlay";
+import PrintOptionsModal, { type PrintOptions } from "../components/PrintOptionsModal";
 import { api, PdfDocument } from "../lib/api";
 import { mapError } from "../lib/error-map";
+import { downloadBlob } from "../lib/download";
 import { useAuth } from "../lib/auth";
+import { parsePageRangeList } from "../lib/print";
+import { renderPagesToDataUrls, printPagesInBrowser } from "../lib/printPages";
 
 export default function EditorPage() {
     const { user, loading } = useAuth();
@@ -38,8 +45,12 @@ export default function EditorPage() {
     const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [protectOpen, setProtectOpen] = React.useState(false);
     const [signOpen, setSignOpen] = React.useState(false);
+    const [shareOpen, setShareOpen] = React.useState(false);
+    const [annotateOpen, setAnnotateOpen] = React.useState(false);
+    const [ocrOpen, setOcrOpen] = React.useState(false);
     const [dragOver, setDragOver] = React.useState(false);
     const [importExportOpen, setImportExportOpen] = React.useState(false);
+    const [printOptionsOpen, setPrintOptionsOpen] = React.useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
     const [fileToDelete, setFileToDelete] = React.useState<PdfDocument | null>(null);
     const [sidebarRefreshKey, setSidebarRefreshKey] = React.useState(0);
@@ -140,32 +151,61 @@ export default function EditorPage() {
         setFileToDelete(null);
     }
 
+    async function handleBatchDelete(ids: string[]) {
+        for (const id of ids) {
+            try {
+                await api.deletePdf(id);
+            } catch (err) {
+                console.error("Batch delete failed for", id, err);
+            }
+        }
+        if (selectedId && ids.includes(selectedId)) {
+            setSelectedId(null);
+            setFileUrl(null);
+        }
+        setSidebarRefreshKey((prev) => prev + 1);
+    }
+
+    async function handleBatchExport(ids: string[]) {
+        for (const id of ids) {
+            try {
+                const blob = await api.downloadPdf(id);
+                const name = `pdf_${id}.pdf`;
+                downloadBlob(blob, name);
+            } catch (err) {
+                console.error("Batch export failed for", id, err);
+            }
+        }
+    }
+
     function handlePrint() {
         if (!fileUrl) return;
-        // Open the PDF in a hidden iframe and trigger the browser print dialog.
-        // This prints the actual PDF (not the page) via the browser's native print.
-        const iframe = document.createElement("iframe");
-        iframe.src = fileUrl;
-        iframe.style.position = "fixed";
-        iframe.style.right = "0";
-        iframe.style.bottom = "0";
-        iframe.style.width = "0";
-        iframe.style.height = "0";
-        iframe.style.border = "none";
-        iframe.style.visibility = "hidden";
-        iframe.onload = () => {
-            try {
-                iframe.contentWindow?.focus();
-                iframe.contentWindow?.print();
-            } catch (err) {
-                console.error("Print failed:", err);
-            }
-        };
-        document.body.appendChild(iframe);
-        // Clean up after a delay to allow the print dialog to open
-        setTimeout(() => {
-            document.body.removeChild(iframe);
-        }, 60000);
+        setPrintOptionsOpen(true);
+    }
+
+    async function executePrint(options: PrintOptions) {
+        setPrintOptionsOpen(false);
+        if (!fileUrl) return;
+        try {
+            const pageNumbers = parsePageRangeList(options.pageRange, totalPages || 1);
+            const { dataUrls, firstIsLandscape } = await renderPagesToDataUrls(fileUrl, pageNumbers);
+            await printPagesInBrowser(dataUrls, firstIsLandscape, options);
+        } catch (err) {
+            console.error("Print failed:", err);
+        }
+    }
+
+    // Shared by handleDrop and SignDialog.onSuccess: point the viewer at a
+    // freshly created/updated doc and refresh its content from the server.
+    function loadDocIntoViewer(doc: { id: string; original_filename: string }) {
+        setSidebarRefreshKey((prev) => prev + 1);
+        setSelectedId(doc.id);
+        setSelectedName(doc.original_filename);
+        void api.downloadPdf(doc.id).then((blob) => {
+            const url = URL.createObjectURL(blob);
+            if (fileUrl) URL.revokeObjectURL(fileUrl);
+            setFileUrl(url);
+        });
     }
 
     async function handleDrop(e: React.DragEvent) {
@@ -187,15 +227,8 @@ export default function EditorPage() {
                 alert("Unsupported file type. Drop a PDF, image, text or DOCX file.");
                 return;
             }
-            setSidebarRefreshKey((prev) => prev + 1);
-            setSelectedId(doc.id);
-            setSelectedName(doc.original_filename);
+            loadDocIntoViewer(doc);
             setRequiresPassword(false);
-            void api.downloadPdf(doc.id).then((blob) => {
-                const url = URL.createObjectURL(blob);
-                if (fileUrl) URL.revokeObjectURL(fileUrl);
-                setFileUrl(url);
-            });
         } catch (err) {
             alert("Upload failed: " + mapError(err));
         }
@@ -222,6 +255,8 @@ export default function EditorPage() {
                             setFileToDelete(doc);
                             setDeleteModalOpen(true);
                         }}
+                        onBatchDelete={handleBatchDelete}
+                        onBatchExport={handleBatchExport}
                         refreshKey={sidebarRefreshKey}
                     />
                 }
@@ -243,6 +278,9 @@ export default function EditorPage() {
                         onImportExport={() => setImportExportOpen(true)}
                         onPrint={handlePrint}
                         onSign={() => setSignOpen(true)}
+                        onShare={() => setShareOpen(true)}
+                        onAnnotate={() => setAnnotateOpen(true)}
+                        onOcr={() => setOcrOpen(true)}
                         canUndo={!!selectedId}
                         canRedo={false}
                         onUndo={handleUndo}
@@ -343,37 +381,46 @@ export default function EditorPage() {
                 open={replaceTextOpen}
                 onClose={() => setReplaceTextOpen(false)}
                 pdfId={selectedId}
-                onSuccess={(doc) => {
-                    setSidebarRefreshKey((prev) => prev + 1);
-                    setSelectedId(doc.id);
-                    setSelectedName(doc.original_filename);
-                    void api.downloadPdf(doc.id).then((blob) => {
-                        const url = URL.createObjectURL(blob);
-                        if (fileUrl) URL.revokeObjectURL(fileUrl);
-                        setFileUrl(url);
-                    });
-                }}
+                onSuccess={loadDocIntoViewer}
             />
             <ProtectDialog
                 open={protectOpen}
                 onClose={() => setProtectOpen(false)}
                 pdfId={selectedId}
             />
+            <PrintOptionsModal
+                open={printOptionsOpen}
+                onClose={() => setPrintOptionsOpen(false)}
+                onConfirm={executePrint}
+                pdfUrl={fileUrl}
+                initialPage={currentPage}
+                totalPages={totalPages || 1}
+            />
             <SignDialog
                 open={signOpen}
                 onClose={() => setSignOpen(false)}
                 pdfId={selectedId}
                 totalPages={totalPages}
-                onSuccess={(doc) => {
-                    setSidebarRefreshKey((prev) => prev + 1);
-                    setSelectedId(doc.id);
-                    setSelectedName(doc.original_filename);
-                    void api.downloadPdf(doc.id).then((blob) => {
-                        const url = URL.createObjectURL(blob);
-                        if (fileUrl) URL.revokeObjectURL(fileUrl);
-                        setFileUrl(url);
-                    });
-                }}
+                pdfUrl={fileUrl}
+                onSuccess={loadDocIntoViewer}
+            />
+            <ShareDialog
+                open={shareOpen}
+                onClose={() => setShareOpen(false)}
+                pdfId={selectedId}
+            />
+            <AnnotationDialog
+                open={annotateOpen}
+                onClose={() => setAnnotateOpen(false)}
+                pdfId={selectedId}
+                currentPage={currentPage}
+                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
+            />
+            <OcrModal
+                open={ocrOpen}
+                onClose={() => setOcrOpen(false)}
+                pdfId={selectedId}
+                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
             />
             <ImportExportDialog
                 open={importExportOpen}

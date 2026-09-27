@@ -7,11 +7,14 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, exportPdf, importFile, signPdf } from "../services/pdfService";
+import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, compressPdfOffline, exportPdf, importFile } from "../services/pdfService";
 import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import * as DocumentPicker from "expo-document-picker";
-import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
 import { useTranslation } from "react-i18next";
+import SignFlowDialog from "../components/SignFlowDialog";
+import AnnotationFlowDialog from "../components/AnnotationFlowDialog";
+import OcrFlowDialog from "../components/OcrFlowDialog";
+import ShareFlowDialog from "../components/ShareFlowDialog";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 
@@ -55,8 +58,13 @@ export default function ToolsScreen() {
     // Password dialog state
     const [passwordDialog, setPasswordDialog] = useState<{ pdfId: string; pdfName: string; mode: "protect" | "unlock" } | null>(null);
     // Sign dialog state
-    const [signDialog, setSignDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number } | null>(null);
-    const [signPage, setSignPage] = useState(1);
+    const [signDialog, setSignDialog] = useState<{ pdfId: string; pdfName: string; pdfUri: string; totalPages: number } | null>(null);
+    // Annotation dialog state
+    const [annotationDialog, setAnnotationDialog] = useState<{ pdfId: string; pdfName: string; pdfUri: string; totalPages: number } | null>(null);
+    // OCR dialog state
+    const [ocrDialog, setOcrDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
+    // Share dialog state
+    const [shareDialog, setShareDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
     const [passwordInput, setPasswordInput] = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
 
@@ -275,7 +283,10 @@ export default function ToolsScreen() {
     async function executeCompress(fileName?: string) {
         if (!compressDialog) return;
         setLoading(true);
-        const result_pdf = await compressPdf(compressDialog.pdfId, compressQuality, fileName);
+        // Online → cloud API (PyMuPDF, better quality). Offline → local re-save (pdf-lib).
+        const result_pdf = isOnline
+            ? await compressPdf(compressDialog.pdfId, compressQuality, fileName)
+            : await compressPdfOffline(compressDialog.pdfId, compressQuality, fileName);
         if (result_pdf) showResult(t("tools.compressResult", { name: result_pdf.original_filename }));
         else showResult(t("tools.compressFailed"));
         setLoading(false);
@@ -295,38 +306,67 @@ export default function ToolsScreen() {
 
     function openSignDialog(pdfId: string) {
         const pdf = pdfs.find((p) => p.id === pdfId);
-        setSignDialog({ pdfId, pdfName: pdf?.original_filename || "PDF", totalPages: pdf?.page_count || 1 });
-        setSignPage(1);
+        if (!pdf) return;
+        setSignDialog({ pdfId, pdfName: pdf.original_filename, pdfUri: pdf.uri, totalPages: pdf.page_count || 1 });
     }
 
-    async function executeSign() {
-        if (!signDialog) return;
-        setSignDialog(null);
-        setLoading(true);
-        try {
-            // Let the user pick a signature image (PNG) from the gallery
-            const result = await DocumentPicker.getDocumentAsync({
-                type: "image/*",
-                copyToCacheDirectory: true,
-                multiple: false,
-            });
-            if (result.canceled || !result.assets?.[0]) {
-                setLoading(false);
-                return;
-            }
-            const asset = result.assets[0];
-            // Read the image as base64
-            const base64 = await readAsStringAsync(asset.uri, { encoding: EncodingType.Base64 });
-            const result_pdf = await signPdf(signDialog.pdfId, base64, signPage, 50, 50, 200, 80);
-            if (result_pdf) showResult(t("tools.signResult", { name: result_pdf.original_filename }));
-            else showResult(t("tools.signFailed"));
-        } catch (e) {
-            console.error("Sign error:", e);
-            showResult(t("tools.signFailed"));
-        } finally {
-            setLoading(false);
-            await reloadPdfs();
-        }
+    async function handleSigned(result: LocalPdf) {
+        showResult(t("tools.signResult", { name: result.original_filename }));
+        await reloadPdfs();
+    }
+
+    async function handleSignFailed() {
+        showResult(t("tools.signFailed"));
+        await reloadPdfs();
+    }
+
+    // ─── Annotate ───────────────────────────────────────────────
+
+    function openAnnotationDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        if (!pdf) return;
+        setAnnotationDialog({ pdfId, pdfName: pdf.original_filename, pdfUri: pdf.uri, totalPages: pdf.page_count || 1 });
+    }
+
+    async function handleAnnotationSaved(result: LocalPdf) {
+        showResult(t("tools.annotationResult", { name: result.original_filename }));
+        await reloadPdfs();
+    }
+
+    async function handleAnnotationFailed() {
+        showResult(t("tools.annotationFailed"));
+        await reloadPdfs();
+    }
+
+    // ─── OCR ────────────────────────────────────────────────────
+
+    function openOcrDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        if (!pdf) return;
+        setOcrDialog({ pdfId, pdfName: pdf.original_filename });
+    }
+
+    async function handleOcrDone(result: LocalPdf, characterCount: number, alreadySearchable: boolean) {
+        const message = alreadySearchable
+            ? t("tools.ocrResultAlreadySearchable")
+            : characterCount > 0
+                ? t("tools.ocrResultSuccess", { count: characterCount })
+                : t("tools.ocrResultNoText");
+        showResult(message);
+        await reloadPdfs();
+    }
+
+    async function handleOcrFailed() {
+        showResult(t("tools.ocrFailed"));
+        await reloadPdfs();
+    }
+
+    // ─── Share ──────────────────────────────────────────────────
+
+    function openShareDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        if (!pdf) return;
+        setShareDialog({ pdfId, pdfName: pdf.original_filename });
     }
 
     async function executeImport() {
@@ -495,6 +535,33 @@ export default function ToolsScreen() {
                         {t("tools.sign")}
                     </Button>
                     <Button
+                        mode={operation === "annotate" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "annotate" ? theme.colors.primary : undefined}
+                        textColor={operation === "annotate" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("annotate"); setSelectedIds([]); }}
+                    >
+                        {t("tools.annotate")}
+                    </Button>
+                    <Button
+                        mode={operation === "ocr" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "ocr" ? theme.colors.primary : undefined}
+                        textColor={operation === "ocr" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("ocr"); setSelectedIds([]); }}
+                    >
+                        {t("tools.ocr")}
+                    </Button>
+                    <Button
+                        mode={operation === "share" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "share" ? theme.colors.primary : undefined}
+                        textColor={operation === "share" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("share"); setSelectedIds([]); }}
+                    >
+                        {t("tools.share")}
+                    </Button>
+                    <Button
                         mode={operation === "import" ? "contained" : "outlined"}
                         compact
                         buttonColor={operation === "import" ? theme.colors.primary : undefined}
@@ -569,6 +636,9 @@ export default function ToolsScreen() {
                                     else if (operation === "protect") openPasswordDialog(item.id, "protect");
                                     else if (operation === "unlock") openPasswordDialog(item.id, "unlock");
                                     else if (operation === "sign") openSignDialog(item.id);
+                                    else if (operation === "annotate") openAnnotationDialog(item.id);
+                                    else if (operation === "ocr") openOcrDialog(item.id);
+                                    else if (operation === "share") openShareDialog(item.id);
                                     else if (operation === "export") openImportExportDialog(item.id, "export");
                                 }}
                             >
@@ -714,6 +784,11 @@ export default function ToolsScreen() {
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.compressHint", { name: compressDialog?.pdfName || "" })}
                         </Text>
+                        {!isOnline && (
+                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
+                                {t("tools.compressOfflineHint")}
+                            </Text>
+                        )}
                         <RadioButton.Group
                             onValueChange={(val) => setCompressQuality(val as "low" | "medium" | "high")}
                             value={compressQuality}
@@ -819,31 +894,57 @@ export default function ToolsScreen() {
                 </Dialog>
             </Portal>
 
-            {/* Sign Dialog — choose page then pick signature image */}
-            <Portal>
-                <Dialog visible={signDialog !== null} onDismiss={() => setSignDialog(null)}>
-                    <Dialog.Title>{t("tools.signTitle")}</Dialog.Title>
-                    <Dialog.Content>
-                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                            {t("tools.signHint", { name: signDialog?.pdfName || "" })}
-                        </Text>
-                        <TextInput
-                            label={t("tools.signPageLabel")}
-                            value={String(signPage)}
-                            onChangeText={(val) => setSignPage(Math.max(1, parseInt(val) || 1))}
-                            mode="outlined"
-                            keyboardType="numeric"
-                            style={{ marginBottom: 12 }}
-                        />
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button onPress={() => setSignDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={executeSign} loading={loading} disabled={loading}>
-                            {t("tools.signAction")}
-                        </Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
+            {/* Sign flow — choose signature (draw/gallery) then position it */}
+            {signDialog && (
+                <SignFlowDialog
+                    visible={signDialog !== null}
+                    pdfId={signDialog.pdfId}
+                    pdfName={signDialog.pdfName}
+                    pdfUri={signDialog.pdfUri}
+                    totalPages={signDialog.totalPages}
+                    onDismiss={() => setSignDialog(null)}
+                    onSigned={handleSigned}
+                    onFailed={handleSignFailed}
+                />
+            )}
+
+            {/* Annotation flow — choose type/color/page then position it */}
+            {annotationDialog && (
+                <AnnotationFlowDialog
+                    visible={annotationDialog !== null}
+                    pdfId={annotationDialog.pdfId}
+                    pdfName={annotationDialog.pdfName}
+                    pdfUri={annotationDialog.pdfUri}
+                    totalPages={annotationDialog.totalPages}
+                    onDismiss={() => setAnnotationDialog(null)}
+                    onSaved={handleAnnotationSaved}
+                    onFailed={handleAnnotationFailed}
+                />
+            )}
+
+            {/* OCR — cloud-only, disabled offline */}
+            {ocrDialog && (
+                <OcrFlowDialog
+                    visible={ocrDialog !== null}
+                    pdfId={ocrDialog.pdfId}
+                    pdfName={ocrDialog.pdfName}
+                    isOnline={isOnline}
+                    onDismiss={() => setOcrDialog(null)}
+                    onDone={handleOcrDone}
+                    onFailed={handleOcrFailed}
+                />
+            )}
+
+            {/* Share via link — cloud-only, disabled offline */}
+            {shareDialog && (
+                <ShareFlowDialog
+                    visible={shareDialog !== null}
+                    pdfId={shareDialog.pdfId}
+                    pdfName={shareDialog.pdfName}
+                    isOnline={isOnline}
+                    onDismiss={() => setShareDialog(null)}
+                />
+            )}
 
             {/* Name Dialog — ask for file name before executing */}
             <Portal>

@@ -13,13 +13,13 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
 }
 
-async function readPdfBytes(uri: string): Promise<Uint8Array> {
+export async function readPdfBytes(uri: string): Promise<Uint8Array> {
   const file = new File(uri);
   const buffer = await file.arrayBuffer();
   return new Uint8Array(buffer);
 }
 
-async function writePdfBytes(uri: string, bytes: Uint8Array): Promise<void> {
+export async function writePdfBytes(uri: string, bytes: Uint8Array): Promise<void> {
   let binary = "";
   for (let i = 0; i < bytes.length; i++) {
     binary += String.fromCharCode(bytes[i]);
@@ -508,6 +508,168 @@ export async function compressPdf(
     return result;
   } catch (e) {
     console.error("Compress error:", e);
+    return null;
+  }
+}
+
+export interface OcrOutcome {
+  pdf: LocalPdf;
+  characterCount: number;
+  alreadySearchable: boolean;
+}
+
+/**
+ * Run OCR on a PDF via the cloud backend (Tesseract isn't bundleable in
+ * Expo, so this is necessarily online-only, same as compressPdf).
+ * Flow: upload local PDF → OCR on backend → download the result → save
+ * locally as a new version. When the PDF is already searchable, the
+ * backend returns it unchanged, so the "download" step just re-fetches the
+ * same bytes — still saved as a new local copy for consistency with every
+ * other cloud-backed operation here.
+ */
+export async function ocrPdf(pdfId: string, language = "eng"): Promise<OcrOutcome | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const uploaded = await api.uploadPdf(pdf.uri, pdf.original_filename, "application/pdf");
+    const { pdf: ocrPdfDoc, character_count, already_searchable } = await api.ocrPdf(uploaded.id, language);
+
+    const blob = await api.downloadPdf(ocrPdfDoc.id);
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    const id = generateId();
+    const pdfDir = getPdfDir();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, bytes);
+
+    const now = new Date().toISOString();
+    const result: LocalPdf = {
+      id,
+      original_filename: pdf.original_filename,
+      file_size: bytes.length,
+      page_count: ocrPdfDoc.page_count,
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return { pdf: result, characterCount: character_count, alreadySearchable: already_searchable };
+  } catch (e) {
+    console.error("OCR error:", e);
+    return null;
+  }
+}
+
+/**
+ * Add an annotation to a PDF via the cloud backend (the annotation is burned
+ * into the PDF, not a local-only overlay, so this has to go through the
+ * same endpoint desktop/web use). Flow mirrors compressPdf/ocrPdf: upload →
+ * annotate on backend → download → save locally as a new version.
+ */
+export async function addAnnotation(
+  pdfId: string,
+  req: {
+    page: number;
+    type: string;
+    rect: number[];
+    color?: string;
+    content?: string | null;
+    points?: number[][];
+    opacity?: number;
+  },
+): Promise<LocalPdf | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const uploaded = await api.uploadPdf(pdf.uri, pdf.original_filename, "application/pdf");
+    const annotated = await api.addAnnotation(uploaded.id, req);
+
+    const blob = await api.downloadPdf(annotated.id);
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    const id = generateId();
+    const pdfDir = getPdfDir();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, bytes);
+
+    const now = new Date().toISOString();
+    const result: LocalPdf = {
+      id,
+      original_filename: pdf.original_filename,
+      file_size: bytes.length,
+      page_count: annotated.page_count,
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("Annotation error:", e);
+    return null;
+  }
+}
+
+/**
+ * Compress a PDF offline using pdf-lib re-save.
+ *
+ * pdf-lib does not support true compression, but re-saving the document
+ * removes unused objects and metadata, producing a smaller file. This is a
+ * partial compression that works fully offline (no cloud dependency).
+ *
+ * Returns the new LocalPdf, or null on failure.
+ */
+export async function compressPdfOffline(
+  pdfId: string,
+  quality: "low" | "medium" | "high" = "medium",
+  fileName?: string,
+): Promise<LocalPdf | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const bytes = await readPdfBytes(pdf.uri);
+    const doc = await PDFDocument.load(bytes);
+
+    // Remove metadata to reduce size (partial compression)
+    doc.setTitle("");
+    doc.setAuthor("");
+    doc.setSubject("");
+    doc.setKeywords([]);
+    doc.setProducer("");
+    doc.setCreator("");
+    doc.setCreationDate(new Date(0));
+    doc.setModificationDate(new Date(0));
+
+    // Re-save with object compression (useObjectStreams) for smaller output
+    const pdfBytes = await doc.save({
+      useObjectStreams: quality === "low" || quality === "medium",
+    });
+
+    const pdfDir = getPdfDir();
+    const id = generateId();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, pdfBytes);
+
+    const now = new Date().toISOString();
+    const safeName = fileName
+      ? fileName.replace(/[^a-zA-Z0-9 _-]/g, "_") + ".pdf"
+      : `compressed_${pdf.original_filename}`;
+    const result: LocalPdf = {
+      id,
+      original_filename: safeName,
+      file_size: pdfBytes.length,
+      page_count: doc.getPageCount(),
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("Compress offline error:", e);
     return null;
   }
 }

@@ -8,6 +8,10 @@
       "script": "npm run dev",
       "cwd": "../frontend"
     },
+    "beforeBuildCommand": {
+      "script": "npm run build",
+      "cwd": "../frontend"
+    },
     "devUrl": "http://localhost:3000",
     "frontendDist": "../frontend/out"
   },

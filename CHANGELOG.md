@@ -1,6 +1,159 @@
 # Changelog
 
+## 2026-09-27
+
+### 🐛 Bug sweep pre-merge su main (PR #848)
+
+- **Critico:** `ShareLink`/`PasswordCache` non hanno `ondelete=CASCADE` sulla FK verso `pdf_documents` (il progetto non ha Alembic, la migrazione automatica non può alterare un vincolo su una tabella esistente). SQLite (test, sidecar desktop) non applica i vincoli FK, ma Postgres (produzione) sì — cancellare un PDF con un link di condivisione attivo o una password in cache avrebbe fatto fallire la `DELETE` con `IntegrityError`. Fix: cascade a livello applicativo in `PdfService.delete()`.
+- **Fix:** leak di file temporanei in `print_pages` (Rust) su errore di decodifica/scrittura pagina — la pulizia girava solo dopo un'invocazione PowerShell riuscita.
+- **Refactor:** 6 duplicazioni di codice individuate da una code review parziale (l'esecuzione completa a 8 agenti aveva esaurito il rate limit dell'account) — `_mutate_pdf_document` (backend), `handleDocUpdated` + enum `openMenu` (desktop), `restoreFrom` (SignModal), `loadDocIntoViewer` (web), `ptPerPx` (PositionSelector).
+
+### ✨ Parità stampa su web e mobile (PR #849, #850)
+
+- **Web:** nuovo `PrintOptionsModal` (pagine/colore/orientamento/margine, anteprima live pdf.js) — prima delegava tutto al dialogo nativo del browser. Niente stampante/copie: le gestisce già il dialogo nativo.
+- **Mobile:** nuovo `PrintOptionsDialog` (pagine tutte/intervallo, orientamento) prima di `printAsync`. Quando l'intervallo è più stretto del documento, `printService` costruisce una copia PDF filtrata via pdf-lib prima di stamparla.
+- `parsePageRangeList` estratto in `shared/src/print.ts` (prima duplicato solo in desktop).
+
+### ✨ Parità firma su web e mobile (PR #851, #852)
+
+- **Web:** `SignDialog` ristrutturato nel flusso a 2 step di desktop (disegna/carica → posiziona con drag&resize, anteprima live, undo/redo). `PositionSelector` spostato in `shared/src/` (nessuna dipendenza Tauri-specifica) e riusato 1:1 da web e desktop.
+- **Mobile:** stesso flusso a 2 step. Aggiunto il disegno libero della firma (prima solo scelta da galleria) via `react-native-svg` (nessuna nuova dipendenza — usa il `toDataURL()` nativo della libreria). Posizionamento con `PositionSelectorNative`, che renderizza la pagina target via `react-native-pdf` in modalità pagina-singola.
+
+### ✨ Mobile: annotazioni, OCR, condivisione via link (PR #853)
+
+- Portate le 3 feature mancanti rispetto a desktop/web. OCR e annotazioni seguono lo stesso pattern di `compressPdf` (carica → muta sul backend → scarica → salva come nuova versione locale). La condivisione invece **riusa** il PDF già caricato sul cloud (`cloud_id` persistito in `localDb`) invece di ricaricarlo ad ogni apertura del dialog, altrimenti si duplicherebbe il PDF sul cloud e si orfanizzerebbero i link già emessi.
+- Condivisione del link tramite `Share` di React Native core (nessuna dipendenza clipboard aggiuntiva).
+
+### 🐛 Bug trovati e risolti testando dal vivo su device reale (PR #854)
+
+- **Drag del riquadro firma/annotazione che ripartiva sempre dall'alto a sinistra:** i gestori `PanResponder` vengono creati una sola volta e non vedono mai nuovi render — leggevano `boxPos`/`boxSizePx` "congelati" al primo render invece del valore reale corrente. Risolto con dei ref sempre aggiornati in parallelo allo stato.
+- **Stesso bug sulla larghezza dopo lo zoom:** il limite destro del trascinamento restava congelato alla larghezza pre-zoom.
+- **Anteprima di stampa/posizionamento bloccata su una pagina:** `react-native-pdf` in modalità pagina-singola onora `page` (e le dimensioni) solo al montaggio — cambiarli dopo non aggiorna la vista. Risolto forzando un remount (`key`) quando cambia pagina o zoom.
+- **Indicatore pagina di stampa:** mostrava sempre "pagina / totale PDF" anche con un intervallo selezionato, invece di "Pagina N (i/count)" come desktop/web.
+- **Contrasto firma:** lo sfondo trasparente (per farla combaciare con la pagina, come desktop/web) faceva sembrare il tratto sottile "sbiadito" per via dell'antialiasing. Tratto più spesso di default + scelta manuale del colore inchiostro (rilevare automaticamente lo sfondo della pagina non è fattibile con le API esposte da `react-native-pdf`).
+- **Nuovo: zoom sull'anteprima** di posizionamento (firma/annotazione), con scroll automatico (immediato + continuo via timer) quando trascini il riquadro vicino al bordo.
+- **Layout:** dialoghi firma/annotazione andavano in overflow o l'anteprima copriva i pulsanti — aggiunto scroll interno (`Dialog.ScrollArea`) e larghezze responsive invece di valori fissi.
+- OCR e condivisione via link restano non testabili end-to-end: verificato **direttamente contro il backend di produzione** che `main` è indietro di 165 commit rispetto a `dev` e non ha ancora le route `/ocr`, `/annotations`, `/share*`. Nessun fix mobile necessario — serve solo il merge `dev→main` e il redeploy.
+
+## 2026-09-26
+
+### 🔧 Sistema di licenze/tier disattivato di default (in attesa di redesign)
+
+- **Motivo:** il sistema di tier (free/pro/enterprise) è ancora in fase di progettazione (naming incoerente tra backend e marketing, tier `lifetime` senza feature seedate, feature definite ma non tutte applicate uniformemente). Il default nel codice era `DISABLE_LICENSE_ENFORCEMENT=False` (enforcement attivo), in contraddizione con `.env.example` e il `.env` locale (entrambi `True`) — CI e produzione (senza override) giravano quindi con l'enforcement realmente attivo, mai deciso esplicitamente.
+- **Fix:** default cambiato a `True` in `backend/app/core/config.py` — enforcement spento ovunque per default. I test che verificano il comportamento di blocco continuano a forzarlo esplicitamente a `False`.
+- **Da fare:** verificare su Render se la variabile è impostata esplicitamente sul servizio backend (vedi `LESSONS_LEARNED.md`).
+
+### 🐛 Fix CI: test import immagini usavano il tier sbagliato
+
+- **PR #845, prima vera esecuzione CI del branch dopo 62 commit locali**: `test_import_jpg`/`test_import_image_formats` usavano `pro_headers` aspettandosi successo, ma `import_images` è enterprise-only per `license_seed.py`. In locale non falliva mai perché `backend/.env` (gitignored) disabilita l'enforcement delle licenze per comodità di sviluppo.
+- **Fix:** nuova fixture `enterprise_headers` in `conftest.py`, test aggiornati, aggiunto un test negativo che verifica il 403 per il tier `pro`. Verificata l'intera suite con `DISABLE_LICENSE_ENFORCEMENT=False` forzato, per matchare esattamente l'ambiente CI.
+
+### 🐛 Fix bloccante: link di condivisione PDF sempre rotto (plan 0138-0139, #C)
+
+- **Trovato in code review pre-deploy**, prima di qualunque test manuale: `POST /share/{token}/download` restituiva sempre `403 CSRF validation failed`, perché `CSRF_EXEMPT_PATHS` è un set di stringhe esatte e non può contenere un path con un segmento dinamico (`{token}`). Nessun link di condivisione avrebbe mai funzionato per un visitatore esterno. I test non l'hanno mai intercettato perché disabilitano il CSRF globalmente.
+- **Fix:** nuovo meccanismo a prefisso (`CSRF_EXEMPT_PATH_PREFIXES`) in `csrf.py` per esentare `/share/` (endpoint pubblico, nessuna sessione da proteggere). Aggiunto test di regressione (verificato che fallisce senza il fix).
+- **Fix di sicurezza correlato:** aggiunto rate limiting (10/minuto per IP) su `/share/{token}/download`, che prima permetteva brute-force illimitato della password di un link protetto.
+- **Fix UI minore:** `ShareDialog` (desktop e web) mostrava "Copiato" su **tutti** i link quando se ne copiava uno solo (booleano condiviso invece di tracciare il token copiato).
+
+### ✨ OCR: messaggio di risultato reale invece di un generico "completato" (plan 0138-0139, #D)
+
+- **Motivo:** l'OCR aggiunge un layer di testo invisibile al PDF, quindi il documento appare identico prima e dopo — l'utente non aveva modo di sapere se aveva funzionato.
+- **Backend:** `POST /pdfs/{id}/ocr` ora restituisce `{pdf, character_count, already_searchable}` invece del solo PDF.
+- **Desktop e web (parity):** il dialog OCR mostra ora "riconosciuti N caratteri", oppure "il PDF ha già del testo selezionabile" o "nessun testo riconosciuto", invece del generico messaggio di successo. Il dialog web resta aperto a mostrare il risultato invece di chiudersi subito.
+- **Test:** 7 backend + 9 desktop + 9 web aggiornati/aggiunti.
+
+### ✨ Dialogo di stampa completamente custom + stampa silenziosa (issue #8, plan 0138-0139)
+
+- **Motivo:** dopo il fix del timing (anteprima bianca), il dialogo nativo restava inadeguato: quello "Browser" di Edge è dispersivo, quello "System" di Windows (`ShowPrintUI`) non mostra anteprima e non permette di scegliere pagine/colore dalla nostra UI.
+- **Nuovo modal `PrintOptionsModal`:** anteprima live via pdf.js (navigabile pagina per pagina, si aggiorna in tempo reale con orientamento/margini/colore), selezione stampante (elenco reale delle stampanti installate), copie, colore/bianco e nero, pagine (tutte o intervallo — con anteprima vincolata alle sole pagine dell'intervallo scelto), orientamento (il contenuto non viene mai ruotato: solo la forma del foglio cambia, come farebbe una stampante reale), margini.
+- **Stampa silenziosa:** nessun dialogo di sistema si apre più. Nuovi comandi Rust `list_printers` e `print_pages` (in `desktop/src-tauri/src/lib.rs`) invocano script PowerShell (`desktop/src-tauri/scripts/*.ps1`) che usano `System.Drawing.Printing.PrintDocument` per stampare le pagine renderizzate (PNG) con le impostazioni scelte, senza passare da WebView2.
+- **Bug di race condition risolto:** caricamento del PDF nella preview e rendering della pagina selezionata erano in due `useEffect` separati — un caricamento lento poteva sovrascrivere la pagina appena scelta dall'utente con una pagina stale. Unificati in un solo effect.
+- **Lezione:** `desktop/frontend/src/shared/` è una copia generata da `shared/src/` (script di prebuild `copy-shared.js`) — va sempre modificato il sorgente canonico in `shared/src/`, mai la copia locale, altrimenti la build la sovrascrive silenziosamente.
+- **Verificato in build reale.**
+
+### 🐛 Fix auto-login lento all'avvio (desktop)
+
+- **Sintomo:** con una sessione già salvata, l'app mostrava per alcuni secondi la pagina di login prima di reindirizzare automaticamente a `/app`.
+- **Causa:** `restoreSession()` (in `shared/src/auth.tsx`) parte al boot dell'app in parallelo con l'avvio del sidecar Python e spesso perde questa "gara" su installazioni fresche (sidecar non ancora pronto) — il tentativo fallisce silenziosamente e l'utente atterra sul login, salvo poi essere rediretto più tardi da un secondo trigger.
+- **Fix:** aggiunto `refreshSession()` al context di autenticazione. La startup page (`desktop/frontend/src/app/startup/page.tsx`) lo richiama esplicitamente dopo aver confermato che backend/DB/API sono pronti, e reindirizza direttamente a `/app` se la sessione risulta valida.
+- **Verificato in build reale.**
+
+## 2026-09-25
+
+### 🐛 Fix stampa desktop: anteprima bianca (issue #8, plan 0138-0139)
+
+- **Causa reale trovata:** non era un problema di canvas GPU/`toDataURL()` (il canvas di PDF.js è un context 2D normale, non taintato) ma un **problema di timing**: `window.print()` veniva chiamato nello stesso tick in cui l'`<img>` con il data URL base64 veniva inserito nel DOM. Il motore di stampa di WebView2 cattura lo snapshot del DOM prima che l'immagine finisca di decodificare → pagina bianca.
+- **Fix:** `handlePrint` ora crea l'`<img>`, attende `img.decode()` (con fallback su `onload`/`onerror` se `decode()` non è supportato), poi aspetta due `requestAnimationFrame` prima di chiamare `window.print()`. Rimosso il clone-canvas inutile (no-op su un context 2D non taintato). Cleanup dell'overlay ora su evento `afterprint` invece di un `setTimeout(…, 1000)` a tempo fisso (con fallback di sicurezza a 15s).
+- **Test:** aggiornato test `1k: handlePrint` per il nuovo flusso async (mock `HTMLImageElement.prototype.decode`).
+- **Da verificare:** in build reale — vedi `.specs/active/fix-desktop-build-0138-0139-unified.md`.
+
+## 2026-09-24
+
+### 🐛 Fix stampa desktop (issue #8, plan 0138-0139)
+
+- **beforeBuildCommand**: aggiunto a `tauri.conf.json` — la build Tauri ora ricompila il frontend prima di impacchettare (prima usava sempre il `out/` vecchio).
+- **Stampa**: vari tentativi per far funzionare la stampa in Tauri (WebView2). L'iframe con blob URL non renderizza, i data URL base64 nemmeno, il comando Rust `print_pdf` apre un viewer esterno (rifiutato), il modal anteprima in-app è stato rifiutato, `webview.print()` stampa tutto il DOM. Stato attuale: canvas clone + `<img>` overlay + `window.print()` — anteprima ancora bianca, da fixare.
+- **Rimosso**: `PrintModal.tsx`, comando Rust `print_pdf`, helper `printWebview()`, permesso `core:webview:allow-print`, toast `print-toast`.
+- **Test**: 989 test desktop passano.
+
+### ✨ Firma PDF: flusso a step + anteprima + resize + undo/redo (issue #836)
+
+- **Desktop**: `SignModal` riorganizzato in **2 step** — (1) scegli la firma (disegna o carica immagine), (2) posizionala sulla pagina.
+- **Anteprima in tempo reale**: il `PositionSelector` ora mostra la firma dentro il riquadro mentre lo trascini, non più un box vuoto.
+- **Resize**: il riquadro firma è ridimensionabile trascinando l'angolo in basso a destra (le dimensioni in punti PDF vengono riportate al backend).
+- **Undo/redo**: nel disegno della firma ora ci sono i bottoni Annulla/Ripeti (stack di snapshot del canvas), così un errore non cancella tutto.
+- **Upload immagine**: il bottone "Carica un'immagine" è ora un vero bottone stilizzato (prima era un `<input type="file">` nudo non cliccabile).
+- **Test**: 17 test desktop (SignModal + PositionSelector) passano.
+
+### ✨ Login desktop: feedback di stato progressivo
+
+- **Desktop**: il bottone "Accedi" ora mostra uno spinner + messaggio di stato progressivo durante il login ("Verifica account locale...", "Connessione al cloud...", "Sincronizzazione account...", "Completamento accesso...") invece del generico "Caricamento...". Così si capisce se l'app sta lavorando o è bloccata.
+- **Backend**: `login()` in `auth.tsx` accetta un callback `onPhase` per segnalare lo stato.
+
+### 🐛 Fix dal test manuale (2° ciclo)
+
+- **Bottone accesso in italiano**: `loginButton` era "Sign in" nel namespace `auth` di `it.json` → corretto a "Accedi".
+- **Scritta di stato duplicata**: il messaggio di stato del login appariva sia nel bottone che sotto → rimosso il `<p>` ridondante (gli errori restano nel box rosso separato).
+- **Firma: undo non rimuoveva lo scarabocchio**: `undo()`/`redo()` ridisegnavano il canvas ma non aggiornavano `signatureDataUrl` (usato per la firma finale) → alla conferma veniva usato lo stato vecchio con lo scarabocchio. Fix: `signatureDataUrl` viene aggiornato dopo undo/redo.
+
+### 🐛 Fix backend
+
+- **Import immagini (GIF/BMP)**: `import_file_to_pdf` ora normalizza le immagini a PNG via Pillow prima di passarle a PyMuPDF (fitz non apriva direttamente GIF/BMP). Fix drag & drop immagini nel desktop.
+- **database.py**: fix crash su URL Postgres — la creazione della directory ora avviene solo per URL SQLite.
+
+## 2026-09-20
+
+### ✨ OCR per PDF scansionati (issue #829)
+
+- **Backend**: nuovo endpoint `POST /pdfs/{id}/ocr` — riconosce il testo nei PDF scansionati con Tesseract (pytesseract) e lo aggiunge come layer invisibile (searchable PDF). Se il PDF ha già testo, lo lascia invariato. Feature gated pro/enterprise.
+- **Web**: dialog "OCR" in toolbar — scegli la lingua e avvia il riconoscimento.
+- **Test**: 5 test backend + 5 test web.
+
 ## 2026-09-19
+
+### ✨ Compressione PDF offline su mobile (issue #827)
+
+- **Mobile**: aggiunta `compressPdfOffline` — compressione locale con re-save pdf-lib (rimozione metadati + object streams), senza dipendere dal cloud. Fallback automatico: online → cloud API (PyMuPDF, qualità migliore); offline → re-save locale.
+- **Test**: 4 test mobile.
+
+### ✨ Annotazioni PDF (issue #825)
+
+- **Backend**: nuovo endpoint `POST /pdfs/{id}/annotations` — aggiunge annotazioni PDF standard (highlight, underline, strikeout, text, free_text, draw) con PyMuPDF, embedded nel file. Feature gated per tier pro/enterprise.
+- **Web**: dialog "Annota" in toolbar — scegli tipo (evidenzia/sottolinea/barrato/commento/testo), colore e pagina, salva l'annotazione nel PDF.
+- **Test**: 12 test backend + 6 test web.
+
+### ✨ Condivisione PDF via link (issue #823)
+
+- **Backend**: nuovo modello `ShareLink` + endpoint `POST /pdfs/{id}/share` (genera link), `GET /share/{token}` (info pubblica), `POST /share/{token}/download` (download con password opzionale), `DELETE /pdfs/{id}/share/{token}` (revoca). Token UUID casuale, scadenza e password opzionali.
+- **Web**: dialog "Condividi" in toolbar (genera/copia/revoca link) + pagina pubblica `/share/[token]` per visualizzare e scaricare il PDF senza account (con sblocco password se protetto).
+- **Test**: 12 test backend + 13 test web.
+
+### ✨ Multi-selezione PDF per operazioni batch (issue #821)
+
+- **Web**: aggiunta modalità multi-selezione nella Sidebar — checkbox per selezionare più PDF, barra azioni batch con **delete** ed **export** (download singoli).
+- **Desktop**: aggiunta modalità multi-selezione nella lista documenti — checkbox, select all, delete batch ed export batch (dialog salvataggio nativo).
+- **Mobile**: già presente (multi-select + merge/delete batch).
+- **Test**: 7 test web + 5 test desktop.
 
 ### ✨ Browse documents — integrazione microservizio (issue #818)
 

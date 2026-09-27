@@ -1,7 +1,127 @@
 # Lessons Learned
 
-> **Scopo:** Documentare le lezioni apprese durante lo svilupzo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-15
+> **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
+> **Aggiornato:** 2026-09-27
+
+---
+
+## React Native: PanResponder e componenti che "dimenticano" lo stato tra un gesto e l'altro
+
+> **Lezione appresa (2026-09-27), durante il testing dal vivo di firma/annotazioni mobile su device reale:**
+
+Costruendo `PositionSelectorNative` (riquadro trascinabile/ridimensionabile sopra l'anteprima di una pagina PDF), tre bug distinti sono nati dalla stessa causa: **un valore letto da una closure creata una volta sola, invece che da un ref sempre aggiornato.**
+
+- `PanResponder.create({...})` va chiuso in un `useRef(...).current` per avere un riferimento stabile tra i render (altrimenti si ricrea l'handler di gesto ad ogni render, rompendo il gesto in corso). Ma questo significa che **tutte le callback al suo interno (`onPanResponderGrant`, `onPanResponderMove`, ecc.) restano congelate ai valori del render in cui sono state create** — leggere `boxPos`/`boxSizePx` (stato React) direttamente in quelle callback dava sempre il valore del PRIMO render, non quello attuale.
+- Il bug è stato risolto per posizione/dimensione con dei ref (`boxPosRef`, `boxSizePxRef`) aggiornati in parallelo allo stato tramite funzioni wrapper (`setBoxPos`, che aggiorna sia il ref che lo state). Il fix però è stato applicato solo parzialmente la prima volta — la larghezza "zoomata" (`renderWidth`, derivata da `previewWidth * zoom`) è rimasta una variabile chiusa nella stessa closure congelata, e il limite di trascinamento a destra restava quindi bloccato al valore pre-zoom.
+- **Regola:** in qualunque `PanResponder`/gestore di gesti creato una volta con `useRef`, **ogni singolo valore che le sue callback leggono deve venire da un ref**, non da una variabile di stato o da un valore derivato nel corpo del componente — anche se "sembra" già coperto da un fix precedente sullo stesso componente. Il modo più sicuro è fare una checklist esplicita di tutte le variabili lette dentro il `PanResponder.create({...})` e verificare che ognuna sia un `.current`.
+
+## `react-native-pdf`: `singlePage` onora `page`/dimensioni solo al mount
+
+> **Lezione appresa (2026-09-27):**
+
+Cambiare la prop `page` di `<Pdf singlePage>` dopo il primo caricamento **non fa cambiare pagina** — la libreria carica la pagina indicata solo al montaggio del componente e ignora aggiornamenti successivi della prop. Lo stesso vale per le dimensioni quando si implementa uno zoom cambiando `style`/`width`/`height`: il rendering interno resta a quello iniziale.
+
+**Fix standard:** dare al componente `<Pdf>` una prop `key` che cambia insieme al valore che deve far ricaricare la pagina (es. `key={`${pageNumber}-${zoom}`}`), forzando React a smontare e rimontare un'istanza fresca invece di aggiornare quella esistente. Costa un breve flash di ricaricamento, accettabile per un'anteprima.
+
+## React Native: scroll 2D annidato richiede dimensioni esplicite, non `flex: 1`
+
+> **Lezione appresa (2026-09-27):**
+
+Per ottenere pan orizzontale+verticale con `ScrollView` (che scorre un solo asse per istanza) serve annidare una `ScrollView horizontal` dentro una verticale. `flex: 1` sui due componenti annidati **non si risolve in modo affidabile**, perché il contenitore di contenuto di una `ScrollView` non ha un'altezza fissa contro cui calcolare il flex — il risultato è un layout che non clippa né scrolla come previsto. La soluzione documentata e affidabile è dare a entrambe le `ScrollView` **dimensioni esplicite** (`width`/`height` numeriche) che rispecchiano rispettivamente il viewport visibile e il contenuto zoomato.
+
+## Uno scroll automatico "durante il trascinamento" ha bisogno sia di un evento sia di un timer
+
+> **Lezione appresa (2026-09-27):**
+
+Implementando l'auto-scroll quando si trascina un elemento vicino al bordo di un'area scrollabile, chiamare la logica di scroll **solo** dentro un `setInterval` indipendente sembrava la soluzione più "pulita" (scroll continuo mentre il dito resta fermo vicino al bordo) — ma durante un gesto attivo e veloce il thread JS è impegnato a processare gli eventi di tocco, e i timer schedulati con `setInterval` possono arrivare in ritardo o non arrivare affatto finché il gesto non si ferma. Il risultato percepito era "lo scroll non funziona più". La soluzione robusta è **usare entrambi**: una chiamata diretta ad ogni evento `onPanResponderMove` (reattiva al movimento reale) più un timer di backup per quando il dito resta fermo vicino al bordo.
+
+## Una feature può essere completa e testata (a livello di codice) e comunque fallire in produzione: verificare sempre la parità degli endpoint deployati
+
+> **Lezione appresa (2026-09-27), testando OCR/annotazioni/condivisione mobile su device reale:**
+
+Le tre feature (già implementate e con test verdi su `dev`) fallivano con `{"detail":"Not Found"}` su un device reale collegato al backend di produzione. Prima di sospettare un bug nel codice mobile, una chiamata `curl` diretta contro l'API di produzione (upload di un PDF di test + chiamata all'endpoint sospetto) ha confermato in pochi minuti che le route **non esistevano affatto** sul branch deployato — `main` era indietro di 165 commit rispetto a `dev`. Nessun bug nel codice: la feature semplicemente non era ancora stata rilasciata.
+
+**Regola:** quando una feature di rete fallisce con un errore che sembra "generico" (404/Not Found senza un messaggio applicativo specifico come "PDF not found"), verificare per prima cosa se l'endpoint esiste davvero sull'ambiente contro cui si sta testando (es. `curl` diretto, o `GET /openapi.json` per elencare tutte le route registrate) — prima di passare ore a debuggare un client che in realtà è corretto.
+
+---
+
+## Sistema di licenze/tier: disattivato di default finché non è progettato bene
+
+> **Decisione (2026-09-26), dopo una mappatura completa del sistema di tier nella codebase:**
+
+Il fallimento CI del punto precedente (test import immagini con tier sbagliato) ha fatto emergere un problema più ampio: il default nel codice (`DISABLE_LICENSE_ENFORCEMENT: bool = False`, cioè enforcement **attivo**) contraddiceva sia il template tracciato `.env.example` (che dice `True`) sia il `.env` locale di sviluppo (anch'esso `True`) — e **né la CI né (probabilmente) la produzione su Render avevano un override**, quindi entrambe giravano con l'enforcement realmente attivo, mentre l'intenzione era che fosse spento ovunque finché il sistema di tier non è progettato in modo compiuto.
+
+**Mappatura trovata (non esaustiva, vedi commit per dettagli):**
+- Solo 3 feature (`annotations`, `ocr`, `sign_pdf`) + export/import sono davvero applicate via `check_feature_access`/`verify_feature_access`; altre definite in `license_seed.py` (`merge_pdf`, `split_pdf`, `reorder_pages`, ecc.) SONO applicate ma solo tramite `Depends(verify_feature_access(...))`, un pattern diverso dalla chiamata diretta — facile da perdere in un grep superficiale.
+- Il tier `lifetime` è assegnabile da admin ma non ha nessuna feature seedata in `license_seed.py` → un utente lifetime non-admin fallirebbe ogni check.
+- Naming incoerente: backend/admin usa `pro`, la landing page marketing usa `premium` per lo stesso piano.
+- `BRIEF.md` (documento di design originale) dichiarava esplicitamente che il sistema di abbonamento NON era previsto per la prima versione, solo "architettura preparata" — mai formalizzato come "spento di default" nel codice.
+
+**Decisione presa:** flip del default a `DISABLE_LICENSE_ENFORCEMENT = True` in `backend/app/core/config.py` — enforcement spento ovunque (locale, CI, produzione) finché il sistema di tier non viene ridisegnato con calma. I test che verificano esplicitamente il comportamento di blocco (`test_license_enforcement.py`, `test_annotations.py`, `test_ocr.py`, `test_sign.py`, e ora anche `test_import_jpg_requires_enterprise_tier`) forzano l'enforcement a `False` con `monkeypatch`/`patch.object`, quindi restano validi e continuano a testare il comportamento reale quando serve.
+
+**Da verificare manualmente:** su Render, controllare se la variabile d'ambiente `DISABLE_LICENSE_ENFORCEMENT` è impostata esplicitamente sul servizio backend. Se è assente, il nuovo default (`True`) si applica automaticamente al prossimo deploy. Se è impostata a `False` a mano, va rimossa o cambiata in `True`.
+
+---
+
+## `backend/.env` locale (gitignored) può mascherare fallimenti che solo la CI vede
+
+> **Lezione appresa (2026-09-26, prima vera esecuzione CI del branch `feature/desktop-0139-fixes`):**
+
+Aperta la PR #845 dopo settimane di lavoro su questo branch (62 commit), la suite locale era sempre stata verde. La CI invece ha fallito subito: `test_import_jpg` e `test_import_image_formats` (aggiunti in un commit precedente per GIF/BMP) si aspettavano `201` con un utente tier **pro**, ma `import_images` è una feature **enterprise-only** — `license_seed.py` lo dichiara esplicitamente, e non era mai stato vero il contrario.
+
+**Perché in locale non falliva mai:** `backend/.env` (gitignored, non versionato) contiene `DISABLE_LICENSE_ENFORCEMENT=True` — impostato per comodità di sviluppo. Ogni esecuzione locale di questi test bypassava completamente il controllo tier, mascherando l'assunzione sbagliata nel test. La CI non ha (giustamente) questo file, quindi girava con l'enforcement reale.
+
+**Fix:** aggiunta fixture `enterprise_headers` in `conftest.py`, aggiornati i test per usarla, aggiunto un test negativo che verifica che `pro` riceva davvero 403.
+
+**Regola per il futuro:**
+- Prima di aprire una PR/fare un merge dopo un lungo periodo di sviluppo locale, eseguire la suite con le stesse variabili d'ambiente della CI (es. `DISABLE_LICENSE_ENFORCEMENT=False python -m pytest`), non fidarsi solo del verde locale se esiste un `.env` locale con override di sicurezza/feature flag.
+- Quando un test usa `pro_headers`/`free_headers`/ecc. per una feature gated, verificare il tier richiesto in `license_seed.py` — non assumerlo dal nome del fixture usato altrove nello stesso file.
+- Un branch che accumula molti commit senza mai passare per una vera esecuzione CI (PR aperta solo a lavoro concluso) rischia di scoprire più bug "vecchi" tutti insieme, proprio come qui.
+
+---
+
+## Endpoint pubblici con path dinamico + middleware di sicurezza disabilitato nei test = bug invisibile
+
+> **Lezione appresa (2026-09-26, link di condivisione PDF sempre rotto in produzione):**
+
+`POST /share/{token}/download` restituiva sempre `403 CSRF validation failed` — nessun link di condivisione avrebbe mai funzionato per un visitatore esterno. Eppure 12 test su `test_share.py` passavano tutti, incluso uno che chiamava esattamente quell'endpoint.
+
+**Causa doppia:**
+1. `CSRF_EXEMPT_PATHS` è un `set` di stringhe esatte (`request.url.path in CSRF_EXEMPT_PATHS`). Un path con un segmento dinamico come `/share/{token}/download` non può MAI comparire lì dentro come stringa letterale — l'endpoint quindi non è mai stato davvero esente, nonostante fosse pubblico e non richiedesse autenticazione.
+2. `conftest.py` disabilita il CSRF globalmente per **tutta** la suite (`DISABLE_CSRF=True`), e solo `test_csrf.py`/`test_csrf_validation.py` lo riattivano esplicitamente per i propri test. `test_share.py` non lo faceva mai, quindi i suoi test verificavano solo la logica di business, non il comportamento reale con la sicurezza attiva.
+
+**Il bug è stato trovato leggendo il codice** (ragionando sul flusso reale: browser anonimo → nessun cookie cross-origin → nessun header CSRF → endpoint non esente → 403), non da un test che falliva o da una build manuale.
+
+**Regola per il futuro:**
+- Quando un endpoint pubblico/non autenticato ha un segmento di path dinamico, verificare ESPLICITAMENTE come funziona il meccanismo di esenzione dai middleware di sicurezza (CSRF, rate limit, auth) — un controllo per stringa esatta non copre path parametrici, serve un prefisso o una regex.
+- Ogni endpoint pubblico dovrebbe avere almeno un test che gira con il middleware di sicurezza **realmente attivo** (non nel setup di default disabilitato), altrimenti il test verifica solo che la funzione esista, non che sia raggiungibile.
+- Prima di deployare/testare manualmente una feature "implementata ma mai verificata in build reale", vale la pena una code review mirata al flusso end-to-end reale (richiesta anonima → middleware → handler), non solo ai singoli file toccati.
+
+---
+
+## `desktop/frontend/src/shared/` è una copia generata — modificarla non serve a nulla
+
+> **Lezione appresa (2026-09-26, dialogo di stampa custom + fix auto-login):**
+
+Ho modificato `desktop/frontend/src/shared/auth.tsx` per aggiungere `refreshSession()`. `npx tsc --noEmit` passava, tutti i test passavano. Poi `npm run build` (dentro `tauri build`) falliva con `Property 'refreshSession' does not exist` — come se le mie modifiche non esistessero.
+
+**Causa:** `desktop/frontend/src/shared/` **non è codice sorgente** — è generata dallo script di prebuild `copy-shared.js`, che copia `shared/src/*.ts(x)` (il vero sorgente condiviso tra desktop/web/mobile) dentro `desktop/frontend/src/shared/` **ad ogni build**, sovrascrivendo qualsiasi modifica locale. `tsc --noEmit` da riga di comando non esegue il prebuild, quindi vedeva la mia copia modificata — ma `npm run build` sì, e la sovrascriveva prima di compilare.
+
+**Regola per il futuro:** prima di modificare un file sotto `desktop/frontend/src/shared/` (o l'equivalente in `frontend/src/shared/`), controllare se esiste un file con lo stesso nome in `shared/src/` — se sì, è quello il sorgente da modificare. Un `grep -rn "copy-shared\|prebuild"` nei `package.json` del progetto conferma rapidamente se un pacchetto ha questo pattern.
+
+---
+
+## Undo/redo con `useRef` non triggera il re-render dei bottoni
+
+> **Lezione appresa (2026-09-24, firma PDF):**
+
+Nel `SignModal` ho implementato undo/redo con due stack (`undoStackRef`/`redoStackRef`) come `useRef`. I bottoni Annulla/Ripeti avevano `disabled={undoStackRef.current.length === 0}`. Dopo `undo()`, lo stack redo veniva popolato ma il bottone **restava disabilitato**.
+
+**Causa:** mutare un `useRef.current` NON triggera un re-render di React. Il bottone leggeva `redoStackRef.current.length` al render iniziale (0) e non veniva mai ri-renderizzato, anche se lo stack ora aveva 1 elemento.
+
+**Soluzione:** aggiunto uno state `historyVersion` (incrementato ogni volta che uno stack cambia) e referenziato nel render (es. `data-history={historyVersion}` sul container). Così React ri-renderizza e i bottoni si aggiornano.
+
+**Regola per il futuro:** quando si usa un `useRef` per dati che influenzano l'UI (es. stack, cache), serve uno state separato (contatore/versione) per forzare il re-render. Un `useRef` mutato non basta — React non lo osserva.
 
 ---
 

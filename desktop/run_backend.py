@@ -37,6 +37,31 @@ def _ensure_env():
 # Ensure .env exists before any app imports
 _ensure_env()
 
+
+def _configure_bundled_tesseract():
+    """Point pytesseract at the tesseract binary bundled inside the sidecar.
+
+    The binary and language packs are added to the PyInstaller bundle under
+    `tesseract/` and `tessdata/`. We set TESSERACT_CMD and TESSDATA_PREFIX so
+    `app.core.tesseract.configure_tesseract()` finds them without the user
+    installing anything.
+    """
+    base_path = _get_base_path()
+    if sys.platform == "win32":
+        binary = os.path.join(base_path, "tesseract", "tesseract.exe")
+    else:
+        binary = os.path.join(base_path, "tesseract", "tesseract")
+    if os.path.isfile(binary):
+        os.environ["TESSERACT_CMD"] = binary
+        print(f"[sidecar] Bundled tesseract: {binary}")
+    tessdata = os.path.join(base_path, "tessdata")
+    if os.path.isdir(tessdata):
+        os.environ["TESSDATA_PREFIX"] = tessdata
+        print(f"[sidecar] Bundled tessdata: {tessdata}")
+
+
+_configure_bundled_tesseract()
+
 import uvicorn  # noqa: E402
 
 # Force PyInstaller to trace all dependencies of the app package.

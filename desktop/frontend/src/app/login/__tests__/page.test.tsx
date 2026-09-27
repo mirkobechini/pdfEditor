@@ -223,7 +223,7 @@ describe("LoginPage", () => {
         fireEvent.change(screen.getByTestId("password-input"), { target: { value: "password123" } });
         fireEvent.click(screen.getByText("Accedi"));
         await waitFor(() => {
-            expect(mockLogin).toHaveBeenCalledWith("test@test.com", "password123", true);
+            expect(mockLogin).toHaveBeenCalledWith("test@test.com", "password123", true, expect.any(Function));
         });
     });
 

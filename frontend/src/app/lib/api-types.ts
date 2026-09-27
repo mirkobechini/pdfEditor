@@ -11,4 +11,16 @@ export type {
   AdminUser,
   UserResponse,
   AuthResponse,
+  OcrResult,
 } from "../../shared/types";
+
+/** A shareable link for a PDF document. */
+export interface ShareLink {
+  id: string;
+  pdf_id: string;
+  token: string;
+  url: string;
+  has_password: boolean;
+  expires_at: string | null;
+  created_at: string;
+}

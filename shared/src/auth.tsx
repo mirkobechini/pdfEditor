@@ -26,17 +26,39 @@ function getCachedUser(): User | null {
   }
 }
 
+export type LoginPhase =
+  | "checkingLocal"
+  | "connectingCloud"
+  | "syncingAccount"
+  | "finalizing";
+
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   isOffline: boolean;
-  login: (email: string, password: string, remember?: boolean) => Promise<void>;
+  login: (
+    email: string,
+    password: string,
+    remember?: boolean,
+    onPhase?: (phase: LoginPhase) => void,
+  ) => Promise<void>;
   register: (email: string, password: string, fullName: string) => Promise<void>;
   googleLogin: (idToken: string) => Promise<void>;
   guestLogin: () => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User | null) => void;
   isDesktop: boolean;
+  /**
+   * Re-runs session restoration and resolves with the restored user (or
+   * null). Used by the desktop startup screen: the very first restore
+   * attempt fires as soon as the app boots (in parallel with the sidecar
+   * starting up) and can lose that race, silently failing before the
+   * sidecar is ready to answer. Once the startup screen has confirmed the
+   * sidecar is actually healthy, it calls this to retry with a backend
+   * that's now guaranteed to respond — avoiding the flash of the login
+   * page before an automatic redirect.
+   */
+  refreshSession: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -46,11 +68,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
   const _pendingAuthRef = React.useRef(false);
+  const mountedRef = React.useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
-  // On mount: restore session from httpOnly cookie (browser sends it automatically)
-  // Also check for remembered token in localStorage/Tauri store
-  useEffect(() => {
-    let cancelled = false;
+  // Restore session from httpOnly cookie (browser sends it automatically) or
+  // a remembered token in localStorage/Tauri store. Runs once automatically
+  // on mount, and can be re-run manually (see `refreshSession` on the
+  // context) once the caller knows the backend is actually ready.
+  const restoreSession = useCallback(async (): Promise<User | null> => {
+    setLoading(true);
+    const cancelled = () => !mountedRef.current;
 
     // Set up token refresh callback to persist new tokens
     api.onTokenRefreshed = (token: string, csrfToken: string) => {
@@ -69,96 +96,101 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Keep the current token — it may still work for local operations
       // The user can still access local PDFs in offline mode
     };
-    async function restoreSession() {
-      // Check localStorage first (web remember-me)
-      const remembered = localStorage.getItem(REMEMBER_TOKEN_KEY);
-      if (remembered) {
-        api.setToken(remembered);
-      }
 
-      // Check Tauri store (desktop remember-me via store_jwt command)
-      if (!remembered && isTauri()) {
-        const { tauriInvoke } = await import("./tauri");
-        const storedToken = await tauriInvoke<string>("load_jwt");
-        if (storedToken) {
-          api.setToken(storedToken);
-        }
-      }
+    // Check localStorage first (web remember-me)
+    const remembered = localStorage.getItem(REMEMBER_TOKEN_KEY);
+    if (remembered) {
+      api.setToken(remembered);
+    }
 
-      const token = api.getToken();
-      if (!token) {
-        // Web: the httpOnly cookie may still authenticate the session even
-        // without a localStorage token (remember-me not checked). Try getMe().
-        // Desktop: no token means not authenticated — skip.
-        if (!isTauri()) {
-          try {
-            const u = await api.getMe();
-            if (!cancelled) {
-              setUser(u);
-              setIsOffline(false);
-              api.refreshCsrf();
-              return;
-            }
-          } catch {
-            // No valid cookie — not authenticated
-          }
-        }
-        if (!cancelled) setLoading(false);
-        return;
-      }
-
-      // Restore cloud token from localStorage (desktop: saved separately from local JWT)
-      const cloudToken = localStorage.getItem(CLOUD_TOKEN_KEY);
-      if (cloudToken) {
-        cloudApi.setToken(cloudToken);
-      }
-
-      try {
-        const u = await api.getMe();
-        if (!cancelled) {
-          setUser(u);
-          setIsOffline(false);
-          api.refreshCsrf();
-          return;
-        }
-      } catch {
-        // Sidecar non pronto o utente non in SQLite locale — prova cloud
-        if (token) {
-          cloudApi.setToken(token);
-          try {
-            const u = await cloudApi.getMe();
-            if (!cancelled) {
-              setUser(u);
-              setIsOffline(false);
-              // Sync user to sidecar so local getMe/CSRF work
-              await api.syncUser(u);
-              // Refresh CSRF for both sidecar and cloud
-              api.refreshCsrf();
-              cloudApi.refreshCsrf();
-              return;
-            }
-          } catch {
-            // Neanche il cloud risponde — offline mode
-            setIsOffline(true);
-            // Restore user from cache so local PDFs remain usable offline
-            const cached = getCachedUser();
-            if (cached && !cancelled) {
-              setUser(cached);
-            }
-          }
-        }
-      } finally {
-        if (!cancelled && !_pendingAuthRef.current) {
-          setLoading(false);
-        }
+    // Check Tauri store (desktop remember-me via store_jwt command)
+    if (!remembered && isTauri()) {
+      const { tauriInvoke } = await import("./tauri");
+      const storedToken = await tauriInvoke<string>("load_jwt");
+      if (storedToken) {
+        api.setToken(storedToken);
       }
     }
 
-    restoreSession();
-    return () => { cancelled = true; };
+    const token = api.getToken();
+    if (!token) {
+      // Web: the httpOnly cookie may still authenticate the session even
+      // without a localStorage token (remember-me not checked). Try getMe().
+      // Desktop: no token means not authenticated — skip.
+      if (!isTauri()) {
+        try {
+          const u = await api.getMe();
+          if (!cancelled()) {
+            setUser(u);
+            setIsOffline(false);
+            api.refreshCsrf();
+            return u;
+          }
+        } catch {
+          // No valid cookie — not authenticated
+        }
+      }
+      if (!cancelled()) setLoading(false);
+      return null;
+    }
+
+    // Restore cloud token from localStorage (desktop: saved separately from local JWT)
+    const cloudToken = localStorage.getItem(CLOUD_TOKEN_KEY);
+    if (cloudToken) {
+      cloudApi.setToken(cloudToken);
+    }
+
+    try {
+      const u = await api.getMe();
+      if (!cancelled()) {
+        setUser(u);
+        setIsOffline(false);
+        api.refreshCsrf();
+        return u;
+      }
+    } catch {
+      // Sidecar non pronto o utente non in SQLite locale — prova cloud
+      if (token) {
+        cloudApi.setToken(token);
+        try {
+          const u = await cloudApi.getMe();
+          if (!cancelled()) {
+            setUser(u);
+            setIsOffline(false);
+            // Sync user to sidecar so local getMe/CSRF work
+            await api.syncUser(u);
+            // Refresh CSRF for both sidecar and cloud
+            api.refreshCsrf();
+            cloudApi.refreshCsrf();
+            return u;
+          }
+        } catch {
+          // Neanche il cloud risponde — offline mode
+          setIsOffline(true);
+          // Restore user from cache so local PDFs remain usable offline
+          const cached = getCachedUser();
+          if (cached && !cancelled()) {
+            setUser(cached);
+            return cached;
+          }
+        }
+      }
+    } finally {
+      if (!cancelled() && !_pendingAuthRef.current) {
+        setLoading(false);
+      }
+    }
+    return null;
   }, []);
 
-  const login = useCallback(async (email: string, password: string, remember?: boolean) => {
+  // On mount: attempt session restoration. On desktop, this races the sidecar
+  // starting up and may finish before it can answer — the startup screen
+  // retries via `refreshSession` once it has confirmed the backend is ready.
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
+  const login = useCallback(async (email: string, password: string, remember?: boolean, onPhase?: (phase: LoginPhase) => void) => {
     _pendingAuthRef.current = true;
     setLoading(true);
     try {
@@ -166,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (isTauri()) {
         // Desktop: prova login locale (SQLite) prima
+        onPhase?.("checkingLocal");
         try {
           res = await api.login(email, password);
         } catch {
@@ -174,11 +207,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         if (!res) {
           // Login via cloud — tieni il JWT cloud separato per cloudApi
+          onPhase?.("connectingCloud");
           const cloudRes = await cloudApi.login(email, password);
           if (!cloudRes) throw new Error("Login failed");
           const cloudToken = cloudRes.access_token;
 
           // Sync utente cloud in SQLite locale con password
+          onPhase?.("syncingAccount");
           cloudApi.setToken(cloudToken);
           const u = await cloudApi.getMe();
           api.setToken(cloudToken);
@@ -228,6 +263,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem(REMEMBER_TOKEN_KEY);
       }
 
+      onPhase?.("finalizing");
       const u = await api.getMe();
       setUser(u);
       cacheUser(u);
@@ -411,7 +447,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, isOffline, login, register, googleLogin, guestLogin, logout, setUser, isDesktop: isTauri() }}>
+    <AuthContext.Provider value={{ user, loading, isOffline, login, register, googleLogin, guestLogin, logout, setUser, isDesktop: isTauri(), refreshSession: restoreSession }}>
       {children}
     </AuthContext.Provider>
   );
