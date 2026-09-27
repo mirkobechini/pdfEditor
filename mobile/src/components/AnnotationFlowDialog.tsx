@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, TouchableOpacity } from "react-native";
-import { Dialog, Portal, Button, Text, TextInput, SegmentedButtons } from "react-native-paper";
+import { View, TouchableOpacity, ScrollView, useWindowDimensions } from "react-native";
+import { Dialog, Portal, Button, Text, TextInput, RadioButton } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import PositionSelectorNative from "./PositionSelectorNative";
 import { addAnnotation } from "../services/pdfService";
@@ -29,6 +29,9 @@ const BOX_HEIGHT = 100;
  */
 export default function AnnotationFlowDialog({ visible, pdfId, pdfName, pdfUri, totalPages, onDismiss, onSaved, onFailed }: AnnotationFlowDialogProps) {
     const { t } = useTranslation();
+    // See SignFlowDialog for why this accounts for the Dialog's own insets.
+    const { width: windowWidth } = useWindowDimensions();
+    const contentWidth = Math.min(windowWidth - 110, 400);
     const [type, setType] = useState<(typeof ANNOTATION_TYPES)[number]>("highlight");
     const [color, setColor] = useState(COLORS[0]);
     const [content, setContent] = useState("");
@@ -79,71 +82,74 @@ export default function AnnotationFlowDialog({ visible, pdfId, pdfName, pdfUri, 
         <Portal>
             <Dialog visible={visible} onDismiss={onDismiss} style={{ maxHeight: "85%" }}>
                 <Dialog.Title>{t("tools.annotationTitle")}</Dialog.Title>
-                <Dialog.Content>
-                    <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                        {t("tools.annotationHint", { name: pdfName })}
-                    </Text>
-
-                    <SegmentedButtons
-                        value={type}
-                        onValueChange={(v) => setType(v as (typeof ANNOTATION_TYPES)[number])}
-                        buttons={ANNOTATION_TYPES.map((tp) => ({ value: tp, label: t(`tools.annotationType_${tp}`) }))}
-                        style={{ marginBottom: 12 }}
-                    />
-
-                    <Text variant="bodySmall" style={{ marginBottom: 6 }}>{t("tools.annotationColor")}</Text>
-                    <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
-                        {COLORS.map((c) => (
-                            <TouchableOpacity
-                                key={c}
-                                testID={`annotation-color-${c}`}
-                                onPress={() => setColor(c)}
-                                style={{
-                                    width: 28,
-                                    height: 28,
-                                    borderRadius: 14,
-                                    backgroundColor: c,
-                                    borderWidth: color === c ? 3 : 1,
-                                    borderColor: color === c ? "#f7871f" : "#ccc",
-                                }}
-                            />
-                        ))}
-                    </View>
-
-                    <TextInput
-                        label={t("tools.signPageLabel")}
-                        value={String(page)}
-                        onChangeText={(val) => setPage(Math.max(1, Math.min(totalPages, parseInt(val) || 1)))}
-                        mode="outlined"
-                        keyboardType="numeric"
-                        style={{ marginBottom: 12 }}
-                    />
-
-                    <PositionSelectorNative
-                        pdfUri={pdfUri}
-                        pageNumber={page}
-                        boxSize={{ width: BOX_WIDTH, height: BOX_HEIGHT }}
-                        onPositionChange={(x, y) => { setRectX(x); setRectY(y); }}
-                    />
-
-                    {(type === "text" || type === "free_text") && (
-                        <TextInput
-                            label={t("tools.annotationContent")}
-                            value={content}
-                            onChangeText={setContent}
-                            mode="outlined"
-                            multiline
-                            numberOfLines={3}
-                            style={{ marginTop: 12 }}
-                        />
-                    )}
-
-                    {error ? (
-                        <Text variant="bodySmall" style={{ color: "red", marginTop: 8 }}>
-                            {error}
+                <Dialog.ScrollArea>
+                    <ScrollView contentContainerStyle={{ paddingVertical: 8 }}>
+                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                            {t("tools.annotationHint", { name: pdfName })}
                         </Text>
-                    ) : null}
-                </Dialog.Content>
+
+                        <Text variant="bodySmall" style={{ marginBottom: 6 }}>{t("tools.annotationType")}</Text>
+                        <RadioButton.Group onValueChange={(v) => setType(v as (typeof ANNOTATION_TYPES)[number])} value={type}>
+                            {ANNOTATION_TYPES.map((tp) => (
+                                <RadioButton.Item key={tp} label={t(`tools.annotationType_${tp}`)} value={tp} testID={`annotation-type-${tp}`} />
+                            ))}
+                        </RadioButton.Group>
+
+                        <Text variant="bodySmall" style={{ marginBottom: 6 }}>{t("tools.annotationColor")}</Text>
+                        <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+                            {COLORS.map((c) => (
+                                <TouchableOpacity
+                                    key={c}
+                                    testID={`annotation-color-${c}`}
+                                    onPress={() => setColor(c)}
+                                    style={{
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: 14,
+                                        backgroundColor: c,
+                                        borderWidth: color === c ? 3 : 1,
+                                        borderColor: color === c ? "#f7871f" : "#ccc",
+                                    }}
+                                />
+                            ))}
+                        </View>
+
+                        <TextInput
+                            label={t("tools.signPageLabel")}
+                            value={String(page)}
+                            onChangeText={(val) => setPage(Math.max(1, Math.min(totalPages, parseInt(val) || 1)))}
+                            mode="outlined"
+                            keyboardType="numeric"
+                            style={{ marginBottom: 12 }}
+                        />
+
+                        <PositionSelectorNative
+                            pdfUri={pdfUri}
+                            pageNumber={page}
+                            boxSize={{ width: BOX_WIDTH, height: BOX_HEIGHT }}
+                            onPositionChange={(x, y) => { setRectX(x); setRectY(y); }}
+                            previewWidth={contentWidth}
+                        />
+
+                        {(type === "text" || type === "free_text") && (
+                            <TextInput
+                                label={t("tools.annotationContent")}
+                                value={content}
+                                onChangeText={setContent}
+                                mode="outlined"
+                                multiline
+                                numberOfLines={3}
+                                style={{ marginTop: 12 }}
+                            />
+                        )}
+
+                        {error ? (
+                            <Text variant="bodySmall" style={{ color: "red", marginTop: 8 }}>
+                                {error}
+                            </Text>
+                        ) : null}
+                    </ScrollView>
+                </Dialog.ScrollArea>
                 <Dialog.Actions>
                     <Button onPress={onDismiss}>{t("common.cancel")}</Button>
                     <Button onPress={handleSave} loading={saving} disabled={saving}>

@@ -11,7 +11,8 @@
     "printOptionsOrientationPortrait": "Portrait",
     "printOptionsOrientationLandscape": "Landscape",
     "printOptionsCancel": "Cancel",
-    "printOptionsConfirm": "Print"
+    "printOptionsConfirm": "Print",
+    "printOptionsPreviewPage": "Page"
   },
   "settings": {
     "title": "Settings",
@@ -142,6 +143,7 @@
     "signGallery": "From gallery",
     "signClear": "Clear",
     "signUndo": "Undo",
+    "signInkColor": "Ink color",
     "signNoSignature": "Draw or pick a signature first",
     "signPageLabel": "Page",
     "signPositionHint": "Drag to move, drag the corner to resize",
@@ -178,6 +180,7 @@
     "annotationType_strikeout": "Strikeout",
     "annotationType_text": "Comment",
     "annotationType_free_text": "Free text",
+    "annotationType": "Type",
     "annotationColor": "Color",
     "annotationContent": "Content",
     "annotationSave": "Save",

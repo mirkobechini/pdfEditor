@@ -195,6 +195,7 @@ export default function PdfViewerScreen() {
 
             <PrintOptionsDialog
                 visible={printOptionsVisible}
+                pdfUri={pdfUri}
                 totalPages={numPages}
                 onDismiss={() => setPrintOptionsVisible(false)}
                 onConfirm={handlePrintConfirm}
