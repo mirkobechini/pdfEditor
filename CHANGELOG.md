@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-27 — 🚀 Release Desktop v0.1.39
+
+- Bump versione desktop/web/backend: `0.1.38` → `0.1.39` (vedi `changelog.json` per il changelog utente completo).
+- Security audit pre-release: fix `rustls` 0.23.42 → 0.23.45 (RUSTSEC-2026-0285); altri warning `cargo audit`/`pip-audit` valutati e accettati/non applicabili (dettagli in `KNOWN_ISSUES.md`).
+- Build locale Tauri verificata: sidecar PyInstaller (con Tesseract per l'OCR) + installer MSI/NSIS generati correttamente, avvio e backend testati.
+- Le novità funzionali di questa release sono il lavoro di parità stampa/firma web-mobile e le feature mobile annotazioni/OCR/condivisione, dettagliate nelle sezioni sottostanti.
+
 ## 2026-09-27
 
 ### 🐛 Bug sweep pre-merge su main (PR #848)
