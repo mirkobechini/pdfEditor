@@ -11,7 +11,7 @@ jest.mock("expo-font", () => ({
 }));
 
 jest.mock("@expo/vector-icons", () => ({
-    MaterialCommunityIcons: { font: "MaterialCommunityIcons.ttf" },
+    MaterialCommunityIcons: { font: { "material-community": "MaterialCommunityIcons.ttf" } },
 }));
 
 jest.mock("../src/shared/auth", () => ({
@@ -59,7 +59,7 @@ describe("App font loading", () => {
             renderer.create(<App />);
         });
         expect(useFonts).toHaveBeenCalledWith({
-            MaterialCommunityIcons: "MaterialCommunityIcons.ttf",
+            "material-community": "MaterialCommunityIcons.ttf",
         });
     });
 
