@@ -18,7 +18,7 @@ permissions:
 jobs:
   wait-for-ci:
     if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Wait for CI on main to pass
         shell: bash
@@ -60,7 +60,7 @@ jobs:
 
   build-frontend:
     needs: [wait-for-ci]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -88,7 +88,7 @@ jobs:
     needs: [wait-for-ci, build-frontend]
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [windows-latest, macos-latest, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -167,7 +167,7 @@ jobs:
           workspaces: "desktop/src-tauri -> target"
 
       - name: Install Linux deps
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-24.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
@@ -231,7 +231,7 @@ jobs:
 
   create-release:
     needs: [build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
 

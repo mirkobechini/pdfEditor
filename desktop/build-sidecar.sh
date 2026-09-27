@@ -36,7 +36,7 @@ $PYTHON -m pip install pyinstaller --quiet
 # The OCR feature needs the tesseract binary. We bundle it inside the sidecar
 # so the end user does NOT need to install anything.
 TESSERACT_BIN=""
-for cand in "$TESSERACT_CMD" "/usr/bin/tesseract" "/usr/local/bin/tesseract" "/opt/homebrew/bin/tesseract"; do
+for cand in "${TESSERACT_CMD:-}" "/usr/bin/tesseract" "/usr/local/bin/tesseract" "/opt/homebrew/bin/tesseract"; do
     if [ -n "$cand" ] && [ -f "$cand" ]; then
         TESSERACT_BIN="$cand"
         break
