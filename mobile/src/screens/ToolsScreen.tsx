@@ -12,6 +12,9 @@ import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import * as DocumentPicker from "expo-document-picker";
 import { useTranslation } from "react-i18next";
 import SignFlowDialog from "../components/SignFlowDialog";
+import AnnotationFlowDialog from "../components/AnnotationFlowDialog";
+import OcrFlowDialog from "../components/OcrFlowDialog";
+import ShareFlowDialog from "../components/ShareFlowDialog";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 
@@ -56,6 +59,12 @@ export default function ToolsScreen() {
     const [passwordDialog, setPasswordDialog] = useState<{ pdfId: string; pdfName: string; mode: "protect" | "unlock" } | null>(null);
     // Sign dialog state
     const [signDialog, setSignDialog] = useState<{ pdfId: string; pdfName: string; pdfUri: string; totalPages: number } | null>(null);
+    // Annotation dialog state
+    const [annotationDialog, setAnnotationDialog] = useState<{ pdfId: string; pdfName: string; pdfUri: string; totalPages: number } | null>(null);
+    // OCR dialog state
+    const [ocrDialog, setOcrDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
+    // Share dialog state
+    const [shareDialog, setShareDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
     const [passwordInput, setPasswordInput] = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
 
@@ -311,6 +320,55 @@ export default function ToolsScreen() {
         await reloadPdfs();
     }
 
+    // ─── Annotate ───────────────────────────────────────────────
+
+    function openAnnotationDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        if (!pdf) return;
+        setAnnotationDialog({ pdfId, pdfName: pdf.original_filename, pdfUri: pdf.uri, totalPages: pdf.page_count || 1 });
+    }
+
+    async function handleAnnotationSaved(result: LocalPdf) {
+        showResult(t("tools.annotationResult", { name: result.original_filename }));
+        await reloadPdfs();
+    }
+
+    async function handleAnnotationFailed() {
+        showResult(t("tools.annotationFailed"));
+        await reloadPdfs();
+    }
+
+    // ─── OCR ────────────────────────────────────────────────────
+
+    function openOcrDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        if (!pdf) return;
+        setOcrDialog({ pdfId, pdfName: pdf.original_filename });
+    }
+
+    async function handleOcrDone(result: LocalPdf, characterCount: number, alreadySearchable: boolean) {
+        const message = alreadySearchable
+            ? t("tools.ocrResultAlreadySearchable")
+            : characterCount > 0
+                ? t("tools.ocrResultSuccess", { count: characterCount })
+                : t("tools.ocrResultNoText");
+        showResult(message);
+        await reloadPdfs();
+    }
+
+    async function handleOcrFailed() {
+        showResult(t("tools.ocrFailed"));
+        await reloadPdfs();
+    }
+
+    // ─── Share ──────────────────────────────────────────────────
+
+    function openShareDialog(pdfId: string) {
+        const pdf = pdfs.find((p) => p.id === pdfId);
+        if (!pdf) return;
+        setShareDialog({ pdfId, pdfName: pdf.original_filename });
+    }
+
     async function executeImport() {
         if (!importExportDialog) return;
         setImportExportBusy(true);
@@ -477,6 +535,33 @@ export default function ToolsScreen() {
                         {t("tools.sign")}
                     </Button>
                     <Button
+                        mode={operation === "annotate" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "annotate" ? theme.colors.primary : undefined}
+                        textColor={operation === "annotate" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("annotate"); setSelectedIds([]); }}
+                    >
+                        {t("tools.annotate")}
+                    </Button>
+                    <Button
+                        mode={operation === "ocr" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "ocr" ? theme.colors.primary : undefined}
+                        textColor={operation === "ocr" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("ocr"); setSelectedIds([]); }}
+                    >
+                        {t("tools.ocr")}
+                    </Button>
+                    <Button
+                        mode={operation === "share" ? "contained" : "outlined"}
+                        compact
+                        buttonColor={operation === "share" ? theme.colors.primary : undefined}
+                        textColor={operation === "share" ? "#fff" : theme.colors.primary}
+                        onPress={() => { setOperation("share"); setSelectedIds([]); }}
+                    >
+                        {t("tools.share")}
+                    </Button>
+                    <Button
                         mode={operation === "import" ? "contained" : "outlined"}
                         compact
                         buttonColor={operation === "import" ? theme.colors.primary : undefined}
@@ -551,6 +636,9 @@ export default function ToolsScreen() {
                                     else if (operation === "protect") openPasswordDialog(item.id, "protect");
                                     else if (operation === "unlock") openPasswordDialog(item.id, "unlock");
                                     else if (operation === "sign") openSignDialog(item.id);
+                                    else if (operation === "annotate") openAnnotationDialog(item.id);
+                                    else if (operation === "ocr") openOcrDialog(item.id);
+                                    else if (operation === "share") openShareDialog(item.id);
                                     else if (operation === "export") openImportExportDialog(item.id, "export");
                                 }}
                             >
@@ -817,6 +905,44 @@ export default function ToolsScreen() {
                     onDismiss={() => setSignDialog(null)}
                     onSigned={handleSigned}
                     onFailed={handleSignFailed}
+                />
+            )}
+
+            {/* Annotation flow — choose type/color/page then position it */}
+            {annotationDialog && (
+                <AnnotationFlowDialog
+                    visible={annotationDialog !== null}
+                    pdfId={annotationDialog.pdfId}
+                    pdfName={annotationDialog.pdfName}
+                    pdfUri={annotationDialog.pdfUri}
+                    totalPages={annotationDialog.totalPages}
+                    onDismiss={() => setAnnotationDialog(null)}
+                    onSaved={handleAnnotationSaved}
+                    onFailed={handleAnnotationFailed}
+                />
+            )}
+
+            {/* OCR — cloud-only, disabled offline */}
+            {ocrDialog && (
+                <OcrFlowDialog
+                    visible={ocrDialog !== null}
+                    pdfId={ocrDialog.pdfId}
+                    pdfName={ocrDialog.pdfName}
+                    isOnline={isOnline}
+                    onDismiss={() => setOcrDialog(null)}
+                    onDone={handleOcrDone}
+                    onFailed={handleOcrFailed}
+                />
+            )}
+
+            {/* Share via link — cloud-only, disabled offline */}
+            {shareDialog && (
+                <ShareFlowDialog
+                    visible={shareDialog !== null}
+                    pdfId={shareDialog.pdfId}
+                    pdfName={shareDialog.pdfName}
+                    isOnline={isOnline}
+                    onDismiss={() => setShareDialog(null)}
                 />
             )}
 
