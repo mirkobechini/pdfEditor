@@ -1,7 +1,47 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-26
+> **Aggiornato:** 2026-09-27
+
+---
+
+## React Native: PanResponder e componenti che "dimenticano" lo stato tra un gesto e l'altro
+
+> **Lezione appresa (2026-09-27), durante il testing dal vivo di firma/annotazioni mobile su device reale:**
+
+Costruendo `PositionSelectorNative` (riquadro trascinabile/ridimensionabile sopra l'anteprima di una pagina PDF), tre bug distinti sono nati dalla stessa causa: **un valore letto da una closure creata una volta sola, invece che da un ref sempre aggiornato.**
+
+- `PanResponder.create({...})` va chiuso in un `useRef(...).current` per avere un riferimento stabile tra i render (altrimenti si ricrea l'handler di gesto ad ogni render, rompendo il gesto in corso). Ma questo significa che **tutte le callback al suo interno (`onPanResponderGrant`, `onPanResponderMove`, ecc.) restano congelate ai valori del render in cui sono state create** — leggere `boxPos`/`boxSizePx` (stato React) direttamente in quelle callback dava sempre il valore del PRIMO render, non quello attuale.
+- Il bug è stato risolto per posizione/dimensione con dei ref (`boxPosRef`, `boxSizePxRef`) aggiornati in parallelo allo stato tramite funzioni wrapper (`setBoxPos`, che aggiorna sia il ref che lo state). Il fix però è stato applicato solo parzialmente la prima volta — la larghezza "zoomata" (`renderWidth`, derivata da `previewWidth * zoom`) è rimasta una variabile chiusa nella stessa closure congelata, e il limite di trascinamento a destra restava quindi bloccato al valore pre-zoom.
+- **Regola:** in qualunque `PanResponder`/gestore di gesti creato una volta con `useRef`, **ogni singolo valore che le sue callback leggono deve venire da un ref**, non da una variabile di stato o da un valore derivato nel corpo del componente — anche se "sembra" già coperto da un fix precedente sullo stesso componente. Il modo più sicuro è fare una checklist esplicita di tutte le variabili lette dentro il `PanResponder.create({...})` e verificare che ognuna sia un `.current`.
+
+## `react-native-pdf`: `singlePage` onora `page`/dimensioni solo al mount
+
+> **Lezione appresa (2026-09-27):**
+
+Cambiare la prop `page` di `<Pdf singlePage>` dopo il primo caricamento **non fa cambiare pagina** — la libreria carica la pagina indicata solo al montaggio del componente e ignora aggiornamenti successivi della prop. Lo stesso vale per le dimensioni quando si implementa uno zoom cambiando `style`/`width`/`height`: il rendering interno resta a quello iniziale.
+
+**Fix standard:** dare al componente `<Pdf>` una prop `key` che cambia insieme al valore che deve far ricaricare la pagina (es. `key={`${pageNumber}-${zoom}`}`), forzando React a smontare e rimontare un'istanza fresca invece di aggiornare quella esistente. Costa un breve flash di ricaricamento, accettabile per un'anteprima.
+
+## React Native: scroll 2D annidato richiede dimensioni esplicite, non `flex: 1`
+
+> **Lezione appresa (2026-09-27):**
+
+Per ottenere pan orizzontale+verticale con `ScrollView` (che scorre un solo asse per istanza) serve annidare una `ScrollView horizontal` dentro una verticale. `flex: 1` sui due componenti annidati **non si risolve in modo affidabile**, perché il contenitore di contenuto di una `ScrollView` non ha un'altezza fissa contro cui calcolare il flex — il risultato è un layout che non clippa né scrolla come previsto. La soluzione documentata e affidabile è dare a entrambe le `ScrollView` **dimensioni esplicite** (`width`/`height` numeriche) che rispecchiano rispettivamente il viewport visibile e il contenuto zoomato.
+
+## Uno scroll automatico "durante il trascinamento" ha bisogno sia di un evento sia di un timer
+
+> **Lezione appresa (2026-09-27):**
+
+Implementando l'auto-scroll quando si trascina un elemento vicino al bordo di un'area scrollabile, chiamare la logica di scroll **solo** dentro un `setInterval` indipendente sembrava la soluzione più "pulita" (scroll continuo mentre il dito resta fermo vicino al bordo) — ma durante un gesto attivo e veloce il thread JS è impegnato a processare gli eventi di tocco, e i timer schedulati con `setInterval` possono arrivare in ritardo o non arrivare affatto finché il gesto non si ferma. Il risultato percepito era "lo scroll non funziona più". La soluzione robusta è **usare entrambi**: una chiamata diretta ad ogni evento `onPanResponderMove` (reattiva al movimento reale) più un timer di backup per quando il dito resta fermo vicino al bordo.
+
+## Una feature può essere completa e testata (a livello di codice) e comunque fallire in produzione: verificare sempre la parità degli endpoint deployati
+
+> **Lezione appresa (2026-09-27), testando OCR/annotazioni/condivisione mobile su device reale:**
+
+Le tre feature (già implementate e con test verdi su `dev`) fallivano con `{"detail":"Not Found"}` su un device reale collegato al backend di produzione. Prima di sospettare un bug nel codice mobile, una chiamata `curl` diretta contro l'API di produzione (upload di un PDF di test + chiamata all'endpoint sospetto) ha confermato in pochi minuti che le route **non esistevano affatto** sul branch deployato — `main` era indietro di 165 commit rispetto a `dev`. Nessun bug nel codice: la feature semplicemente non era ancora stata rilasciata.
+
+**Regola:** quando una feature di rete fallisce con un errore che sembra "generico" (404/Not Found senza un messaggio applicativo specifico come "PDF not found"), verificare per prima cosa se l'endpoint esiste davvero sull'ambiente contro cui si sta testando (es. `curl` diretto, o `GET /openapi.json` per elencare tutte le route registrate) — prima di passare ore a debuggare un client che in realtà è corretto.
 
 ---
 

@@ -1,6 +1,6 @@
 # Feature Comparison: Web vs Desktop vs Mobile
 
-> **Ultimo aggiornamento:** 2026-09-26
+> **Ultimo aggiornamento:** 2026-09-27
 > Questo file traccia le differenze funzionali tra le tre piattaforme di PdfEditor.
 
 ---
@@ -44,12 +44,12 @@
 | Import file                         | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                                                                                                    |
 | Import DOCX                         | ✅  | ✅      | ✅     | Web/Mobile online (python-docx+reportlab), Desktop offline (sidecar)                                                                                                                   |
 | Export PDF                          | ✅  | ✅      | ✅     | Web/Desktop online, Desktop offline (sidecar), Mobile online (richiede connessione)                                                                                                    |
-| Stampa PDF                          | ✅  | ✅      | ✅     | Web: window.print() su iframe. Desktop: dialogo custom con anteprima live, scelta stampante/copie/colore/pagine/orientamento/margini e stampa silenziosa (nessun dialogo di sistema). Mobile: expo-print (AirPrint)                                            |
+| Stampa PDF                          | ✅  | ✅      | ✅     | Web e Mobile ora a parità con desktop su pagine/orientamento: dialogo con anteprima live prima di passare al print nativo (browser/AirPrint). Solo Desktop ha stampante/copie/colore e stampa silenziosa (via PowerShell, nessun dialogo di sistema)                                            |
 | Drag & drop file                    | ✅  | ✅      | ❌     | Web: trascina PDF per aprirlo, altri file per importarli (overlay feedback). Desktop: stesso comportamento via eventi Tauri (immagini normalizzate a PNG per GIF/BMP)                                                                                                       |
 | Browse documents (Internet Archive) | ✅  | ❌      | ❌     | Solo Web: catalogo PDF reali da Internet Archive via microservizio pdf-documents-api (porta 8001)                                                                                      |
-| Firma PDF                           | ✅  | ✅      | ✅     | Web/Desktop: canvas + upload immagine. Desktop: flusso a 2 step (scegli/posiziona), anteprima, resize, undo/redo. Mobile: scegli immagine (pdf-lib). Backend: PyMuPDF (pro/enterprise) |
-| Annotazioni PDF                     | ✅  | ✅      | ❌     | Web e Desktop: evidenzia/sottolinea/barrato/commento/testo. Backend: PyMuPDF embedded (pro/enterprise)                                                                                      |
-| OCR PDF scansionati                 | ✅  | ✅      | ❌     | Web e Desktop: riconosce testo con Tesseract (pytesseract), mostra caratteri riconosciuti. Backend: searchable PDF (pro/enterprise)                                                                                        |
+| Firma PDF                           | ✅  | ✅      | ✅     | Tutte e tre a parità: flusso a 2 step (scegli/posiziona), anteprima live, resize, undo/redo. Mobile: disegno libero (react-native-svg) o scelta da galleria, zoom+pan sull'anteprima di posizionamento (nuovo). Backend: PyMuPDF (pro/enterprise) |
+| Annotazioni PDF                     | ✅  | ✅      | 🟡     | Web e Desktop: evidenzia/sottolinea/barrato/commento/testo. Mobile: implementata e testata via UI, ma **non ancora utilizzabile in produzione** — la route backend non è ancora deployata su `main` (vedi KNOWN_ISSUES). Backend: PyMuPDF embedded (pro/enterprise)                                                                                      |
+| OCR PDF scansionati                 | ✅  | ✅      | 🟡     | Web e Desktop: riconosce testo con Tesseract (pytesseract), mostra caratteri riconosciuti. Mobile: stesso stato di Annotazioni — implementata, bloccata dal deploy di `main`. Backend: searchable PDF (pro/enterprise)                                                                                        |
 | **Testo**                           |     |         |        |                                                                                                                                                                                        |
 | Extract text                        | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                                                                                                 |
 | **Auth**                            |     |         |        |                                                                                                                                                                                        |
@@ -61,7 +61,7 @@
 | **UX Mobile-specifiche**            |     |         |        |                                                                                                                                                                                        |
 | Scanner camera                      | ❌  | ❌      | ✅     | expo-camera                                                                                                                                                                            |
 | Share PDF                           | ❌  | ❌      | ✅     | expo-sharing                                                                                                                                                                           |
-| Share via link                      | ✅  | ✅      | ❌     | Web e Desktop: dialog Condividi + pagina pubblica /share/[token] (password/scadenza opzionali). Desktop carica il PDF sul cloud per generare il link. ⚠️ Non ancora verificato end-to-end con un deploy reale                                                                                              |
+| Share via link                      | ✅  | ✅      | 🟡     | Web e Desktop: dialog Condividi + pagina pubblica /share/[token] (password/scadenza opzionali). Desktop/Mobile caricano il PDF sul cloud per generare il link (riusando lo stesso `cloud_id` invece di duplicare il PDF ad ogni apertura). Mobile: implementato, bloccato dal deploy di `main` (stesso motivo di Annotazioni/OCR)                                                                                              |
 | Badge count icona                   | ❌  | ❌      | ✅     | expo-notifications                                                                                                                                                                     |
 | Multi-select                        | ✅  | ✅      | ✅     | Web/Desktop: checkbox + batch delete/export. Mobile: checkbox + batch delete                                                                                                           |
 | Splash screen                       | ❌  | ❌      | ✅     | Sfondo arancione                                                                                                                                                                       |
@@ -109,6 +109,7 @@
 - **Download PDF:** ✅ tramite SAF (Storage Access Framework)
 - **Solo mobile:** Scanner, Share, Badge, Multi-select, Splash, Pull-to-refresh, Search, Swipe, Snackbar, Bottom tabs, Onboarding wizard, Sync badges
 - **Manca rispetto a web/desktop:** Extract text, Undo/Redo
+- **Implementate ma bloccate dal deploy di `main`:** Annotazioni, OCR, Share via link (codice completo e testato via UI, ma la route backend non è ancora in produzione — vedi KNOWN_ISSUES)
 
 ---
 

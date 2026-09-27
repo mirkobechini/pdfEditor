@@ -1,7 +1,7 @@
 # Architecture Decision Record
 
 **Progetto:** PdfEditor
-**Data:** 2026-06-25 (ultimo aggiornamento 2026-09-19)
+**Data:** 2026-06-25 (ultimo aggiornamento 2026-09-27)
 **Versioni ADR incluse:** v0.1.24 → v0.1.40
 **Autore:** Mirko Bechini
 
@@ -145,6 +145,30 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | Stack mobile completo            | [`mobile/ADR.md`](./mobile/ADR.md)                 |
 | Task 2 — Password protect/unlock | `mobile/ADR.md` (implementato con @cantoo/pdf-lib) |
 | Feature pianificate post-MVP     | `mobile/ADR.md` + `.specs/active/`                 |
+
+---
+
+## 5. Componenti condivisi web/desktop in `shared/src/` (parità stampa/firma, 2026-09-27)
+
+> Portando stampa e firma a parità tra le piattaforme, web e desktop condividono lo stesso stack (Next.js + pdf.js via CDN) — alcuni componenti/utility si sono rivelati portabili **senza modifiche**, altri no. Il criterio usato: se un pezzo di UI non ha dipendenze Tauri-specifiche, va condiviso via `shared/src/` (sincronizzato nelle due app tramite lo script di prebuild `copy-shared.js`); se le piattaforme hanno bisogni realmente diversi, restano implementazioni separate.
+
+| Elemento                        | Condiviso? | Motivo                                                                                                                                                                                                   |
+| -------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parsePageRangeList`             | ✅ Sì (`shared/src/print.ts`) | Puro parsing di stringhe, nessuna dipendenza piattaforma-specifica. Prima duplicato solo in desktop.                                                                                                     |
+| `PositionSelector` (drag&resize firma) | ✅ Sì (`shared/src/PositionSelector.tsx`) | Nessuna API Tauri usata — solo pdf.js via CDN + DOM/mouse events, identico su web e desktop. Spostato invariato.                                                                                          |
+| `PrintOptionsModal`              | ❌ No (implementazioni separate) | Differenze reali: desktop ha selezione stampante/copie e stampa silenziosa via comandi Rust; web delega quella parte al dialogo nativo del browser. Condividerlo avrebbe richiesto rami condizionali sparsi nel componente. |
+| Mobile (`PositionSelectorNative`, `printService.ts`, ecc.) | ❌ No (React Native, non React DOM) | Stack completamente diverso (react-native-pdf, PanResponder invece di mouse events) — nessuna sovrapposizione di codice possibile con web/desktop, solo di *pattern* (stessa UX a 2 step, stessa forma dei dati).                                    |
+
+**Lezione generale:** non tutte le duplicazioni tra piattaforme vanno eliminate allo stesso modo — va verificato caso per caso se la duplicazione è "accidentale" (stesso codice, nessuna vera differenza) o "essenziale" (le piattaforme hanno davvero esigenze diverse). Forzare la condivisione nel secondo caso produce componenti pieni di `if (isTauri())`/`if (isMobile())` più difficili da mantenere della duplicazione stessa.
+
+## Mobile: pattern "ricarica sempre" vs "riusa cloud_id" per le feature cloud-only
+
+> Annotazioni, OCR e condivisione via link su mobile richiedono tutte il backend cloud (Tesseract/PyMuPDF non sono bundlabili in Expo). Non usano però lo stesso pattern di caricamento:
+
+| Feature | Pattern | Motivo |
+| ------- | ------- | ------ |
+| OCR, Annotazioni | Carica → muta sul backend → scarica → salva come **nuova versione locale** (stesso pattern di `compressPdf`, già esistente) | Ogni chiamata produce comunque un contenuto diverso — non c'è continuità da preservare, ricaricare ogni volta è corretto e più semplice. |
+| Condivisione via link | Riusa il `cloud_id` già persistito in `localDb` (carica **una sola volta**, poi tutte le chiamate successive usano lo stesso id cloud) | Lo stesso link deve continuare a funzionare tra una apertura e l'altra del dialog — ricaricare ad ogni volta duplicherebbe il PDF sul cloud e orfanizzerebbe i link già emessi. |
 
 ---
 
