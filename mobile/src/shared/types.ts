@@ -40,6 +40,22 @@ export interface Metadata {
   keywords?: string | null;
 }
 
+export interface OcrResult {
+  pdf: PdfDocument;
+  character_count: number;
+  already_searchable: boolean;
+}
+
+export interface ShareLink {
+  id: string;
+  pdf_id: string;
+  token: string;
+  url: string;
+  has_password: boolean;
+  expires_at: string | null;
+  created_at: string;
+}
+
 export interface BugReport {
   id: string;
   user_id: string;

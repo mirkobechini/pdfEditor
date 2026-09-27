@@ -512,6 +512,106 @@ export async function compressPdf(
   }
 }
 
+export interface OcrOutcome {
+  pdf: LocalPdf;
+  characterCount: number;
+  alreadySearchable: boolean;
+}
+
+/**
+ * Run OCR on a PDF via the cloud backend (Tesseract isn't bundleable in
+ * Expo, so this is necessarily online-only, same as compressPdf).
+ * Flow: upload local PDF → OCR on backend → download the result → save
+ * locally as a new version. When the PDF is already searchable, the
+ * backend returns it unchanged, so the "download" step just re-fetches the
+ * same bytes — still saved as a new local copy for consistency with every
+ * other cloud-backed operation here.
+ */
+export async function ocrPdf(pdfId: string, language = "eng"): Promise<OcrOutcome | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const uploaded = await api.uploadPdf(pdf.uri, pdf.original_filename, "application/pdf");
+    const { pdf: ocrPdfDoc, character_count, already_searchable } = await api.ocrPdf(uploaded.id, language);
+
+    const blob = await api.downloadPdf(ocrPdfDoc.id);
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    const id = generateId();
+    const pdfDir = getPdfDir();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, bytes);
+
+    const now = new Date().toISOString();
+    const result: LocalPdf = {
+      id,
+      original_filename: pdf.original_filename,
+      file_size: bytes.length,
+      page_count: ocrPdfDoc.page_count,
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return { pdf: result, characterCount: character_count, alreadySearchable: already_searchable };
+  } catch (e) {
+    console.error("OCR error:", e);
+    return null;
+  }
+}
+
+/**
+ * Add an annotation to a PDF via the cloud backend (the annotation is burned
+ * into the PDF, not a local-only overlay, so this has to go through the
+ * same endpoint desktop/web use). Flow mirrors compressPdf/ocrPdf: upload →
+ * annotate on backend → download → save locally as a new version.
+ */
+export async function addAnnotation(
+  pdfId: string,
+  req: {
+    page: number;
+    type: string;
+    rect: number[];
+    color?: string;
+    content?: string | null;
+    points?: number[][];
+    opacity?: number;
+  },
+): Promise<LocalPdf | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const uploaded = await api.uploadPdf(pdf.uri, pdf.original_filename, "application/pdf");
+    const annotated = await api.addAnnotation(uploaded.id, req);
+
+    const blob = await api.downloadPdf(annotated.id);
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+
+    const id = generateId();
+    const pdfDir = getPdfDir();
+    const uri = `${pdfDir.uri}${id}.pdf`;
+    await writePdfBytes(uri, bytes);
+
+    const now = new Date().toISOString();
+    const result: LocalPdf = {
+      id,
+      original_filename: pdf.original_filename,
+      file_size: bytes.length,
+      page_count: annotated.page_count,
+      uri,
+      created_at: now,
+      updated_at: now,
+    };
+    await savePdfLocally(result);
+    return result;
+  } catch (e) {
+    console.error("Annotation error:", e);
+    return null;
+  }
+}
+
 /**
  * Compress a PDF offline using pdf-lib re-save.
  *
