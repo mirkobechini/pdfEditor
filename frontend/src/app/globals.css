@@ -27,3 +27,24 @@ body {
 }
 
 /* iubenda CMP banner — positioned by iubenda itself, no forced z-index */
+
+/* Iubenda's US State Laws (CCPA) privacy widget renders as a plain static
+   block wherever it's inserted in the DOM (top of <body>), unlike the main
+   GDPR banner which iubenda itself pins to a corner. Anchor it to the
+   bottom of the viewport instead, so it doesn't sit across the top of
+   every page. z-index stays below the GDPR banner's (99999998) so the two
+   don't visually fight if both are open at once. */
+.iub__us-widget {
+  position: fixed !important;
+  top: auto !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 999999 !important;
+}
+
+/* Iubenda's automated CCPA format only ships a white theme — match our dark mode */
+.dark .iub__us-widget {
+  background: #1f2937 !important;
+  color: #f3f4f6 !important;
+}

@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import MonkeyLogo from "../MonkeyLogo";
 
 export default function LandingFooter() {
     const t = useTranslations("landing.footer");
@@ -13,9 +14,7 @@ export default function LandingFooter() {
                 {/* Brand column */}
                 <div className="col-span-2 md:col-span-1">
                     <div className="flex items-center gap-2 mb-4">
-                        <div className="w-7 h-7 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 flex items-center justify-center text-white text-xs font-bold">
-                            P
-                        </div>
+                        <MonkeyLogo className="w-7 h-7" />
                         <span className="font-bold text-gray-900 dark:text-gray-100">PdfEditor</span>
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
