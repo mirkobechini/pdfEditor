@@ -322,21 +322,27 @@ export class ApiClient {
     if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
   }
 
-  async downloadPdf(id: string): Promise<Blob> {
+  // These two return raw bytes, not a Blob: callers only ever want the bytes
+  // (to write a local file), and React Native's Blob doesn't implement
+  // `.arrayBuffer()` — calling `res.blob()` here would force every caller
+  // through a slower FileReader/base64 round-trip (and print RN's "using
+  // React Native's Blob..." perf warning) for no benefit. `res.arrayBuffer()`
+  // is natively supported and gives callers exactly what they need.
+  async downloadPdf(id: string): Promise<ArrayBuffer> {
     const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/download`, {
       headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
-    return res.blob();
+    return res.arrayBuffer();
   }
 
-  async exportPdf(id: string, format: string): Promise<Blob> {
+  async exportPdf(id: string, format: string): Promise<ArrayBuffer> {
     const res = await this._fetch(
       `${this.baseUrl}/pdfs/${id}/export?fmt=${format}`,
       { method: "POST", headers: this.getHeaders() },
     );
     if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
-    return res.blob();
+    return res.arrayBuffer();
   }
 
   async importFile(

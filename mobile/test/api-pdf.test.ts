@@ -26,6 +26,7 @@ function mockResponse(data: unknown, status = 200) {
     statusText: status === 404 ? "Not Found" : "OK",
     json: () => Promise.resolve(data),
     blob: () => Promise.resolve(new Blob(["pdf"])),
+    arrayBuffer: () => Promise.resolve(new TextEncoder().encode("pdf").buffer),
     clone: () => ({
       json: () => Promise.resolve(data),
     }),
@@ -169,10 +170,10 @@ describe("ApiClient - comprehensive PDF and error branches", () => {
 
   // ─── downloadPdf (288-293) ──────────────────────────────────────
 
-  it("downloadPdf returns blob", async () => {
+  it("downloadPdf returns an ArrayBuffer", async () => {
     mockFetch.mockResolvedValueOnce(mockResponse(null));
-    const blob = await client.downloadPdf("p1");
-    expect(blob).toBeDefined();
+    const buffer = await client.downloadPdf("p1");
+    expect(buffer).toBeDefined();
   });
 
   it("downloadPdf throws on error", async () => {

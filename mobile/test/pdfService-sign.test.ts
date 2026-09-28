@@ -65,7 +65,7 @@ describe("signPdf", () => {
     jest.clearAllMocks();
     mockFileInstance.arrayBuffer.mockResolvedValue(new ArrayBuffer(0));
     mockGetPageCount.mockReturnValue(1);
-    mockGetPage.mockReturnValue({ drawImage: mockDrawImage });
+    mockGetPage.mockReturnValue({ drawImage: mockDrawImage, getHeight: () => 842, getWidth: () => 595 });
     mockEmbedPng.mockResolvedValue({ width: 200, height: 80 });
     mockSave.mockResolvedValue(new Uint8Array([1, 2, 3, 4]));
     // Provide a real PDF for getLocalPdfById
@@ -89,6 +89,30 @@ describe("signPdf", () => {
     expect(mockEmbedPng).toHaveBeenCalled();
     expect(mockDrawImage).toHaveBeenCalled();
     expect(mockSavePdfLocally).toHaveBeenCalled();
+  });
+
+  it("flips the y coordinate from top-left (screen space) to bottom-left (PDF space)", async () => {
+    // page height 842, box top-left y=50, height=80 -> pdf-lib y = 842 - 50 - 80 = 712
+    await signPdf("pdf-1", "c2ln", 1, 100, 50, 200, 80);
+
+    expect(mockDrawImage).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ x: 100, y: 712, width: 200, height: 80 }),
+    );
+  });
+
+  it("fits a wider-than-box image inside the box preserving aspect ratio, centered vertically", async () => {
+    // image 400x100 (aspect 4) into a 200x80 box (aspect 2.5) -> constrained
+    // by width: drawWidth=200, drawHeight=200/4=50, centered: dy=(80-50)/2=15
+    mockEmbedPng.mockResolvedValue({ width: 400, height: 100 });
+
+    await signPdf("pdf-1", "c2ln", 1, 100, 50, 200, 80);
+
+    // top-left y=50, drawHeight=50 -> pdf-lib y = 842 - 50 - 50 - 15(centering) = 727
+    expect(mockDrawImage).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ x: 100, y: 727, width: 200, height: 50 }),
+    );
   });
 
   it("returns null when PDF not found", async () => {

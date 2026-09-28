@@ -591,14 +591,16 @@ export default function ToolsScreen() {
             )}
 
             {result ? (
-                <Snackbar
-                    visible={snackbarVisible}
-                    onDismiss={() => setSnackbarVisible(false)}
-                    duration={3000}
-                    action={{ label: t("common.ok"), onPress: () => setSnackbarVisible(false) }}
-                >
-                    {result}
-                </Snackbar>
+                <Portal>
+                    <Snackbar
+                        visible={snackbarVisible}
+                        onDismiss={() => setSnackbarVisible(false)}
+                        duration={3000}
+                        action={{ label: t("common.ok"), onPress: () => setSnackbarVisible(false) }}
+                    >
+                        {result}
+                    </Snackbar>
+                </Portal>
             ) : null}
 
             {!operation ? (

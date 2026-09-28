@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { View, Image, PanResponder, ScrollView } from "react-native";
 import { IconButton } from "react-native-paper";
 import Pdf from "react-native-pdf";
+import { File } from "expo-file-system";
+import { PDFDocument } from "@cantoo/pdf-lib";
 import { clampBoxPosition, clampBoxSize, pxToPt } from "./positionMath";
 
 interface PositionSelectorNativeProps {
@@ -62,7 +64,16 @@ export default function PositionSelectorNative({
     renderWidthRef.current = previewWidth * zoom;
     const renderWidth = renderWidthRef.current;
 
+    // react-native-pdf's onLoadComplete `size` is NOT in true PDF points — on
+    // some documents it reports a DPI-scaled render size instead, which threw
+    // off every pt conversion by a fixed but PDF-dependent factor (positions
+    // stayed on-page thanks to the clamp in signPdf, but boxes/signatures came
+    // out far bigger than the preview showed). `pageSize` below is only ever
+    // used to size the preview's aspect ratio; `truePageSize`, read straight
+    // from pdf-lib (the same library that later draws the signature), is the
+    // one used for every px<->pt conversion.
     const [pageSize, setPageSize] = useState<{ width: number; height: number } | null>(null);
+    const [truePageSize, setTruePageSize] = useState<{ width: number; height: number } | null>(null);
     const [renderHeight, setRenderHeightState] = useState(renderWidth * 1.414);
     const renderHeightRef = useRef(renderHeight);
     function setRenderHeight(next: number) {
@@ -165,44 +176,105 @@ export default function PositionSelectorNative({
     // Safety net: if the dialog closes mid-drag, don't leave the interval running.
     useEffect(() => stopAutoScrollLoop, []);
 
+    // Read the page's real point dimensions from pdf-lib — see the comment on
+    // `truePageSize` above for why react-native-pdf's own size can't be
+    // trusted for this.
+    useEffect(() => {
+        let cancelled = false;
+        async function loadTruePageSize() {
+            if (!pdfUri) return;
+            try {
+                const file = new File(pdfUri);
+                const bytes = new Uint8Array(await file.arrayBuffer());
+                const doc = await PDFDocument.load(bytes);
+                if (pageNumber < 1 || pageNumber > doc.getPageCount()) return;
+                const page = doc.getPage(pageNumber - 1);
+                if (!cancelled) {
+                    setTruePageSize({ width: page.getWidth(), height: page.getHeight() });
+                }
+            } catch (e) {
+                console.error("[PositionSelectorNative] failed to read true page size:", e);
+            }
+        }
+        loadTruePageSize();
+        return () => {
+            cancelled = true;
+        };
+    }, [pdfUri, pageNumber]);
+
     const handleLoadComplete = useCallback(
         (_numberOfPages: number, _path: string, size: { width: number; height: number }) => {
             setPageSize(size);
             const h = renderWidthRef.current * (size.height / size.width);
             setRenderHeight(h);
             setBoxPos({ x: 0, y: 0 });
-            const pxScale = renderWidthRef.current / size.width;
-            setBoxSizePx({ width: boxSize.width * pxScale, height: boxSize.height * pxScale });
         },
-        // boxSize is intentionally excluded — it's a new object every render
-        // (derived from the parent's signWidth/signHeight state, which this
-        // component itself updates via onSizeChange), so including it would
-        // defeat the memoization this callback exists for. It only needs the
-        // *initial* box size anyway, which is set once when the page loads.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [],
     );
 
+    // (Re)compute the box's initial pixel size from the *true* page
+    // dimensions whenever those become available or the render width changes
+    // (zoom). Split out from handleLoadComplete because truePageSize loads
+    // asynchronously via pdf-lib and may not be ready yet when RN-pdf's own
+    // onLoadComplete fires.
+    const sizedForRenderWidthRef = useRef<number | null>(null);
+    useEffect(() => {
+        if (!truePageSize) return;
+        if (sizedForRenderWidthRef.current === null) {
+            // First time we have real page dimensions: set the box to its
+            // default size (in points, converted to the current pixel scale).
+            const pxScale = renderWidth / truePageSize.width;
+            setBoxSizePx({ width: boxSize.width * pxScale, height: boxSize.height * pxScale });
+        } else if (sizedForRenderWidthRef.current !== renderWidth && boxSizePxRef.current) {
+            // renderWidth changed (zoom) — rescale whatever size the box is
+            // currently at (including any manual resize) instead of
+            // resetting back to the default, which was wiping out resizes.
+            const ratio = renderWidth / sizedForRenderWidthRef.current;
+            const prev = boxSizePxRef.current;
+            setBoxSizePx({ width: prev.width * ratio, height: prev.height * ratio });
+        }
+        sizedForRenderWidthRef.current = renderWidth;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [truePageSize, renderWidth]);
+
     // Report position whenever the box moves
     useEffect(() => {
-        if (!pageSize) return;
-        const pt = pxToPt(boxPos, pageSize, renderWidth, renderHeight);
+        if (!truePageSize) return;
+        const pt = pxToPt(boxPos, truePageSize, renderWidth, renderHeight);
         onPositionChange(pt.x, pt.y);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [boxPos, pageSize, renderHeight, renderWidth]);
+    }, [boxPos, truePageSize, renderHeight, renderWidth]);
 
     // Report box size whenever it changes
     useEffect(() => {
-        if (!pageSize || !boxSizePx) return;
-        const pt = pxToPt({ x: boxSizePx.width, y: boxSizePx.height }, pageSize, renderWidth, renderHeight);
+        if (!truePageSize || !boxSizePx) return;
+        const pt = pxToPt({ x: boxSizePx.width, y: boxSizePx.height }, truePageSize, renderWidth, renderHeight);
         onSizeChange?.(pt.x, pt.y);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [boxSizePx, pageSize, renderHeight, renderWidth]);
+    }, [boxSizePx, truePageSize, renderHeight, renderWidth]);
+
+    // Nested PanResponders don't always negotiate "innermost wins" reliably
+    // under the new architecture (Fabric/Bridgeless) the way they did on the
+    // legacy bridge — touches meant for the resize handle were being claimed
+    // by the drag box underneath it instead. Have the drag responder
+    // explicitly refuse touches that land in the handle's corner, so there's
+    // no ambiguity for it to resolve.
+    const RESIZE_HANDLE_HIT_SIZE = 40;
+    function isInResizeHandle(locationX: number, locationY: number): boolean {
+        const size = boxSizePxRef.current;
+        if (!size) return false;
+        return (
+            locationX > size.width - RESIZE_HANDLE_HIT_SIZE &&
+            locationY > size.height - RESIZE_HANDLE_HIT_SIZE
+        );
+    }
 
     const dragResponder = useRef(
         PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: () => true,
+            onStartShouldSetPanResponder: (evt) =>
+                !isInResizeHandle(evt.nativeEvent.locationX, evt.nativeEvent.locationY),
+            onMoveShouldSetPanResponder: (evt) =>
+                !isInResizeHandle(evt.nativeEvent.locationX, evt.nativeEvent.locationY),
             onPanResponderGrant: () => {
                 setPanEnabled(false);
                 dragStart.current = { boxX: boxPosRef.current.x, boxY: boxPosRef.current.y };
@@ -346,8 +418,27 @@ export default function PositionSelectorNative({
                                     <View
                                         {...resizeResponder.panHandlers}
                                         testID="resize-handle"
-                                        style={{ position: "absolute", right: 0, bottom: 0, width: 24, height: 24 }}
-                                    />
+                                        style={{
+                                            position: "absolute",
+                                            right: -18,
+                                            bottom: -18,
+                                            width: 40,
+                                            height: 40,
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                        }}
+                                    >
+                                        <View
+                                            style={{
+                                                width: 22,
+                                                height: 22,
+                                                borderRadius: 11,
+                                                backgroundColor: "#f7871f",
+                                                borderWidth: 2,
+                                                borderColor: "#fff",
+                                            }}
+                                        />
+                                    </View>
                                 </View>
                             )}
                         </View>

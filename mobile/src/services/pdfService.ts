@@ -417,11 +417,41 @@ export async function signPdf(
 
     const pngImage = await doc.embedPng(imgBytes);
     const page = doc.getPage(pageNumber - 1);
+    const pageWidth = page.getWidth();
+    const pageHeight = page.getHeight();
+    // PositionSelectorNative reports the box's top-left corner (y grows
+    // downward, screen convention), but pdf-lib's drawImage takes the
+    // lower-left corner in PDF space (y grows upward from the page bottom).
+    // Without this flip the signature was drawn mirrored vertically — often
+    // entirely outside the visible page.
+    // Also defensively clamp to the page bounds: a zoom/scroll edge case in
+    // PositionSelectorNative can still report a box position past the page
+    // edge, which would otherwise draw the signature completely off-page.
+    const clampedX = Math.max(0, Math.min(x, pageWidth - width));
+    const clampedY = Math.max(0, Math.min(pageHeight - y - height, pageHeight - height));
+
+    // The position-selector preview shows the signature with resizeMode
+    // "contain" (aspect ratio preserved, letterboxed inside the box), but
+    // drawImage stretches to exactly fill width/height — fit the image
+    // inside the box the same way, instead of distorting it, and center it
+    // in whatever axis has leftover space.
+    const boxAspect = width / height;
+    const imgAspect = pngImage.width / pngImage.height;
+    let drawWidth = width;
+    let drawHeight = height;
+    if (imgAspect > boxAspect) {
+      drawHeight = width / imgAspect;
+    } else {
+      drawWidth = height * imgAspect;
+    }
+    const drawX = clampedX + (width - drawWidth) / 2;
+    const drawY = clampedY + (height - drawHeight) / 2;
+
     page.drawImage(pngImage, {
-      x,
-      y,
-      width,
-      height,
+      x: drawX,
+      y: drawY,
+      width: drawWidth,
+      height: drawHeight,
     });
 
     const pdfBytes = await doc.save();
@@ -482,8 +512,8 @@ export async function compressPdf(
     );
 
     // Download the compressed PDF
-    const blob = await api.downloadPdf(compressed.id);
-    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const buffer = await api.downloadPdf(compressed.id);
+    const bytes = new Uint8Array(buffer);
 
     // Save locally
     const id = generateId();
@@ -535,8 +565,8 @@ export async function ocrPdf(pdfId: string, language = "eng"): Promise<OcrOutcom
     const uploaded = await api.uploadPdf(pdf.uri, pdf.original_filename, "application/pdf");
     const { pdf: ocrPdfDoc, character_count, already_searchable } = await api.ocrPdf(uploaded.id, language);
 
-    const blob = await api.downloadPdf(ocrPdfDoc.id);
-    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const buffer = await api.downloadPdf(ocrPdfDoc.id);
+    const bytes = new Uint8Array(buffer);
 
     const id = generateId();
     const pdfDir = getPdfDir();
@@ -586,8 +616,8 @@ export async function addAnnotation(
     const uploaded = await api.uploadPdf(pdf.uri, pdf.original_filename, "application/pdf");
     const annotated = await api.addAnnotation(uploaded.id, req);
 
-    const blob = await api.downloadPdf(annotated.id);
-    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const buffer = await api.downloadPdf(annotated.id);
+    const bytes = new Uint8Array(buffer);
 
     const id = generateId();
     const pdfDir = getPdfDir();
@@ -685,8 +715,8 @@ export async function exportPdf(
   baseName: string,
 ): Promise<{ uri: string; name: string } | null> {
   try {
-    const blob = await api.exportPdf(pdfId, format);
-    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const buffer = await api.exportPdf(pdfId, format);
+    const bytes = new Uint8Array(buffer);
 
     const id = generateId();
     const pdfDir = getPdfDir();
@@ -717,8 +747,8 @@ export async function importFile(
     const uploaded = await api.importFile(fileUri, fileName, mimeType);
 
     // Download the created PDF and save locally
-    const blob = await api.downloadPdf(uploaded.id);
-    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const buffer = await api.downloadPdf(uploaded.id);
+    const bytes = new Uint8Array(buffer);
 
     const id = generateId();
     const pdfDir = getPdfDir();

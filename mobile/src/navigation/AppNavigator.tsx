@@ -42,11 +42,13 @@ export default function AppNavigator() {
         return (
             <NavigationContainer>
                 <Stack.Navigator screenOptions={{ headerShown: false }}>
-                    <Stack.Screen name="Loading" component={() => (
-                        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F97316" }}>
-                            <ActivityIndicator size="large" color="#FFFFFF" />
-                        </View>
-                    )} />
+                    <Stack.Screen name="Loading">
+                        {() => (
+                            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F97316" }}>
+                                <ActivityIndicator size="large" color="#FFFFFF" />
+                            </View>
+                        )}
+                    </Stack.Screen>
                 </Stack.Navigator>
             </NavigationContainer>
         );

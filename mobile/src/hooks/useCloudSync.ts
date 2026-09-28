@@ -236,21 +236,16 @@ export function useCloudSync(): UseCloudSyncReturn {
       if (isGuest || !syncEnabled) return false;
       try {
         setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
-        const blob = await api.downloadPdf(pdfId);
+        const buffer = await api.downloadPdf(pdfId);
         const localId = generateId();
         const pdfDir = new Directory(Paths.document, "pdfs");
         const destUri = pdfDir.uri + localId + ".pdf";
 
-        // Convert blob to base64 and write
-        const reader = new FileReader();
-        const base64 = await new Promise<string>((resolve, reject) => {
-          reader.onload = () => {
-            const result = reader.result as string;
-            resolve(result.split(",")[1]);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
+        // Convert bytes to base64 for writeAsStringAsync
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        const base64 = btoa(binary);
 
         if (!(await pdfDir.exists)) {
           try {
@@ -270,7 +265,7 @@ export function useCloudSync(): UseCloudSyncReturn {
           user_id: user?.id ?? "",
           cloud_id: pdfId,
           original_filename: cloudPdf.original_filename,
-          file_size: blob.size,
+          file_size: bytes.length,
           page_count: cloudPdf.page_count || 0,
           title: cloudPdf.title,
           author: cloudPdf.author,
