@@ -156,6 +156,14 @@ export async function setPdfCloudId(id: string, cloudId: string): Promise<void> 
   await database.runAsync("UPDATE pdfs SET cloud_id = ? WHERE id = ?", [cloudId, id]);
 }
 
+export async function renamePdfLocally(id: string, filename: string): Promise<void> {
+  const database = await getDb();
+  await database.runAsync(
+    "UPDATE pdfs SET original_filename = ?, updated_at = datetime('now') WHERE id = ?",
+    [filename, id],
+  );
+}
+
 export async function markPdfCloudUnsynced(id: string): Promise<void> {
   const database = await getDb();
   await database.runAsync(
