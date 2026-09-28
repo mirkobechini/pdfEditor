@@ -25,6 +25,7 @@ import {
   togglePdfSyncExclude,
   getSyncedPdfs,
   getLocalPdfsByUser,
+  renamePdfLocally,
 } from "../src/services/localDb";
 import type { LocalPdf } from "../src/shared/types";
 
@@ -163,6 +164,19 @@ describe("localDb", () => {
     );
     expect(mockDb.runAsync).toHaveBeenCalledWith(
       expect.stringContaining("cloud_synced = 1"),
+      expect.anything(),
+    );
+  });
+
+  it("renamePdfLocally updates original_filename", async () => {
+    mockDb.runAsync.mockResolvedValue(undefined);
+    await renamePdfLocally("test-1", "renamed.pdf");
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE"),
+      ["renamed.pdf", "test-1"],
+    );
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("original_filename = ?"),
       expect.anything(),
     );
   });
