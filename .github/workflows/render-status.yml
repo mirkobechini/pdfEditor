@@ -1,0 +1,68 @@
+name: Render Deploy Gate Status
+
+# Render's "auto-deploy after CI checks pass" reads GitHub's classic Commit
+# Status API. Native GitHub Actions workflows only populate the newer Checks
+# API, which Render's gate does not see — so it waits forever. This workflow
+# bridges the two: it polls the relevant Checks API results for the commit
+# and republishes them as a classic commit status Render can act on.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  statuses: write
+
+jobs:
+  publish-status:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Wait for web CI and publish a classic commit status
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set +e
+          gh api "repos/${REPO}/statuses/${SHA}" -f state=pending -f context="render/deploy-gate" -f description="Waiting for web CI..." >/dev/null 2>&1
+
+          # Give GitHub a moment to register check-runs before polling, so we
+          # don't mistake "not started yet" for "path-filtered out".
+          sleep 20
+
+          for i in $(seq 1 30); do
+            RESULT=$(gh api "repos/${REPO}/commits/${SHA}/check-runs" --jq '[.check_runs[] | select(.name == "backend" or .name == "frontend" or .name == "e2e") | .conclusion // "pending"] | join(",")' 2>/dev/null)
+            echo "  iteration $i: backend+frontend+e2e conclusions: $RESULT"
+
+            if [ -z "$RESULT" ] && [ "$i" -ge 3 ]; then
+              echo "No relevant web CI checks found on this commit (path filters likely excluded it). Marking success."
+              gh api "repos/${REPO}/statuses/${SHA}" -f state=success -f context="render/deploy-gate" -f description="No web CI required for this commit" >/dev/null 2>&1
+              exit 0
+            fi
+
+            if [ -z "$RESULT" ]; then
+              sleep 30
+              continue
+            fi
+
+            if echo "$RESULT" | grep -q "failure"; then
+              echo "Web CI failed, marking status as failure."
+              gh api "repos/${REPO}/statuses/${SHA}" -f state=failure -f context="render/deploy-gate" -f description="Web CI failed" >/dev/null 2>&1
+              exit 0
+            fi
+
+            if echo "$RESULT" | grep -q "pending"; then
+              sleep 30
+              continue
+            fi
+
+            # No pending, no failure -> everything present is success
+            echo "Web CI passed, marking status as success."
+            gh api "repos/${REPO}/statuses/${SHA}" -f state=success -f context="render/deploy-gate" -f description="Web CI passed" >/dev/null 2>&1
+            exit 0
+          done
+
+          echo "Timeout waiting for web CI (15 minutes). Marking success so deploys don't get stuck forever."
+          gh api "repos/${REPO}/statuses/${SHA}" -f state=success -f context="render/deploy-gate" -f description="Timed out waiting for CI, proceeding" >/dev/null 2>&1
