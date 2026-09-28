@@ -22,7 +22,7 @@ describe("MonkeyLogo", () => {
         render(<MonkeyLogo />);
         const img = screen.getByTestId("monkey-image");
         expect(img).toBeInTheDocument();
-        expect(img.getAttribute("src")).toBe("/orange-monkey_logo.png");
+        expect(img.getAttribute("src")).toBe("/mirko-logo.png");
         expect(img.getAttribute("alt")).toBe("PdfEditor Logo");
     });
 
