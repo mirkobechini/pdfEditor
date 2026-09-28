@@ -1,7 +1,7 @@
 # Architecture Decision Record — Mobile (React Native / Expo)
 
 **Progetto:** PdfEditor — App mobile
-**Data:** 2026-08-07 (ultimo aggiornamento 2026-09-09)
+**Data:** 2026-08-07 (ultimo aggiornamento 2026-09-28)
 **Versioni ADR incluse:** v1.0 (Fase 4 — MVP completato + bug fix + offline auth)
 **Autore:** Mirko Bechini
 
@@ -117,8 +117,11 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 - **`react-native-pdf` cache**: il viewer non rimonta automaticamente per un secondo PDF — serve `key={refreshKey}` incrementata in `useEffect([pdfId])` dopo aver settato `pdfUri`.
 - **`react-native-pdf` in modalità `singlePage`**: onora `page` (e le dimensioni di rendering) solo al montaggio — cambiarli dopo non aggiorna la vista. Stesso workaround del punto sopra: `key` che cambia insieme al valore che deve forzare il reload (usato in `PositionSelectorNative` e `PrintOptionsDialog`, issue parità stampa/firma 2026-09-27).
 - **Firma/annotazioni via `PositionSelectorNative`** (2026-09-27): riquadro trascinabile/ridimensionabile con zoom+pan sopra l'anteprima della pagina target. Nessuna nuova dipendenza nativa: disegno libero con `react-native-svg` (usa il `toDataURL()` nativo già incluso nella libreria, non serve `react-native-view-shot`), posizionamento con `react-native-pdf` (`singlePage`) + `PanResponder` di RN core.
+- **`react-native-pdf`'s `onLoadComplete` size NON è in punti PDF veri** (2026-09-28, trovato testando la firma su device reale): su alcuni documenti riporta una dimensione scalata per il rendering (probabilmente legata al DPI), diversa dalle dimensioni reali della pagina. Usarla per convertire pixel↔punti PDF produceva posizioni/dimensioni sbagliate (mascherato su pagine piccole dal clamp di sicurezza, ma visibile come "firma troppo grande rispetto all'anteprima" su altre). **Fix**: `PositionSelectorNative` ora legge le dimensioni reali della pagina direttamente da `pdf-lib` (la stessa libreria che poi disegna la firma in `signPdf`), usando il valore di `react-native-pdf` solo per l'aspect ratio dell'anteprima visiva.
+- **React Native `Blob` non implementa `.arrayBuffer()`** (2026-09-28): `res.blob()` seguito da `blob.arrayBuffer()` fallisce silenziosamente con `TypeError: undefined is not a function` su device reale (i test non lo intercettano: il `Blob` di jsdom/Node supporta `.arrayBuffer()` normalmente). Interessava OCR, annotazioni, compressione online ed export — tutte le operazioni che scaricano un PDF dal backend. **Fix**: `api.downloadPdf`/`api.exportPdf` restituiscono `ArrayBuffer` direttamente via `res.arrayBuffer()` (supportato nativamente), mai più `res.blob()` per leggere byte (resta legittimo solo per popolare `FormData` in upload/import, dove non serve `.arrayBuffer()`).
 - **pdf-lib non supporta**: estrazione testo, form icing, annotazioni, compressione vera. Solo manipolazione strutturale (pagine, metadati, merge/split) + re-save per compressione parziale.
 - **Sync cloud attivo**: i PDF si sincronizzano col cloud (upload/download bidirezionale). Il sync richiede login reale (guest esclusi). Token JWT scade dopo 1h → refresh automatico implementato (issue #623, endpoint `/auth/refresh` + retry automatico).
+- **`LocalPdf.id` (locale) e `LocalPdf.cloud_id` (remoto) sono valori sempre distinti** — il dedup del sync (`getLocalPdfByCloudId`) e la cancellazione cloud dipendono TOTALMENTE da `cloud_id` essere popolato dopo ogni upload. Bug trovato 2026-09-28 (issue #866): il flusso di upload chiamava solo `markPdfCloudSynced` (flag booleano) e mai `setPdfCloudId`, quindi ogni PDF caricato da mobile veniva ri-scaricato come duplicato ad ogni sync successivo — il sync non poteva mai riconoscerlo come "già presente". Qualunque nuovo punto di upload deve chiamare `setPdfCloudId(localId, uploaded.id)` subito dopo `api.uploadPdf(...)`.
 - **Tema scuro non completo**: error container in LoginScreen/ForgotPasswordScreen ha `#FFE0E0` hardcoded (non si adatta a dark mode).
 - **Replace text**: Rotto su TUTTE le piattaforme (non solo mobile). Vedi FEATURE_COMPARISON.md.
 
