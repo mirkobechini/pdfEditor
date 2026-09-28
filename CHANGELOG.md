@@ -7,9 +7,9 @@
 - Dopo il bump versione del giorno precedente, la build di release ha rivelato due regressioni critiche in `desktop/build-sidecar.sh` che bloccavano il rilascio su tutte e 3 le piattaforme: `TESSERACT_CMD` referenziata sotto `set -u` senza fallback, e `"${BUNDLE_ARGS[@]}"` che crasha su bash 3.2 (default macOS) quando l'array è vuoto. Entrambe fixate; release v0.1.39 pubblicata con successo su Windows (MSI/EXE), macOS (DMG) e Linux (AppImage/deb).
 - Pin `ubuntu-latest` → `ubuntu-24.04` su tutti i workflow, in vista della migrazione GitHub a Ubuntu 26 (19 ottobre 2026).
 
-### 🐛 Trovato e risolto: il frontend web era fermo a una build di 9 giorni prima
+### 🐛 Trovato e risolto: frontend e backend erano fermi a build vecchie su Render
 
-- Investigando perché la landing page non riflettesse i fix del giorno precedente (mojibake, navbar), scoperto che il servizio Render del frontend non si ridistribuiva automaticamente dal 19 settembre nonostante decine di merge su `main` — causa: l'opzione "Auto-Deploy: After CI Checks Pass" di Render legge la Commit Status API classica di GitHub, che i workflow nativi di GitHub Actions non popolano. Stesso problema sospettato (e confermato via controllo diretto delle route OpenAPI) sul backend di produzione, dove OCR/annotazioni/condivisione via link risultano ancora assenti. Aggiunto un workflow-ponte (`render-status.yml`) come mitigazione parziale; fix definitivo raccomandato: disattivare il gate su Render. Vedi `KNOWN_ISSUES.md` e `LESSONS_LEARNED.md`.
+- Investigando perché la landing page non riflettesse i fix del giorno precedente (mojibake, navbar), scoperto che il servizio Render del frontend non si ridistribuiva automaticamente dal 19 settembre nonostante decine di merge su `main` — causa: l'opzione "Auto-Deploy: After CI Checks Pass" di Render legge la Commit Status API classica di GitHub, che i workflow nativi di GitHub Actions non popolano. Aggiunto un workflow-ponte (`render-status.yml`) che ha sbloccato l'auto-deploy del frontend. Lo stesso problema colpiva il backend, dove OCR/annotazioni/condivisione via link risultavano ancora assenti (confermato via `GET /openapi.json`) — risolto con un **redeploy manuale** (developer, 2026-09-28): tutte le route ora presenti e verificate in produzione. Vedi `KNOWN_ISSUES.md` e `LESSONS_LEARNED.md`.
 
 ### 🐛 Bug fix web (accessibilità/i18n)
 

@@ -33,20 +33,13 @@
 
 ## 🔴 Bug aperti
 
-### Backend produzione non ridistribuito da settimane — OCR/Annotazioni/Condivisione ancora 404 nonostante `main` sia aggiornato
+### Render "Auto-Deploy: After CI Checks Pass" non funziona con GitHub Actions — frontend e backend erano fermi a build vecchie ✅
 
-**Descrizione:** `main` ha ricevuto tutti i merge da `dev` (PR #856-860, v0.1.39 rilasciata) ed è pienamente aggiornato. Ma verificato **direttamente contro il backend di produzione** (`GET https://pdfeditor-api.mirkobechini.com/openapi.json`, 2026-09-28) che le route `/pdfs/{id}/ocr`, `/pdfs/{id}/annotations`, `/pdfs/{id}/share*` **non esistono ancora** nello schema pubblicato — il servizio Render sta ancora eseguendo una build vecchia.
-**Causa:** stesso problema del deploy gate del frontend (vedi voce sotto) — il servizio backend su Render (`pdeditor-backend`/`pdfeditor-api`) ha probabilmente lo stesso "Auto-Deploy: After CI Checks Pass" che non funziona con GitHub Actions.
-**Impatto:** OCR, annotazioni e condivisione via link falliscono su **tutte le piattaforme** in produzione, non solo mobile.
-**Fix:** verificare le impostazioni Auto-Deploy del servizio backend su Render (stesso controllo fatto per il frontend) e disattivare "After CI Checks Pass" in favore del deploy diretto su push, oppure triggerare un deploy manuale.
-**Stato:** ⏳ Aperto — richiede intervento developer sulla dashboard Render (nessun accesso diretto disponibile per verificarlo/risolverlo da qui).
-
-### Render "Auto-Deploy: After CI Checks Pass" non funziona con GitHub Actions — frontend fermo a una build di 9 giorni prima
-
-**Descrizione:** il frontend web (`pdeditor-frontend`) non si è ridistribuito automaticamente dal 19 settembre nonostante decine di merge su `main` con CI verde — zero eventi di deploy registrati per nessuno di quei commit. Causa: Render legge la Commit Status API classica di GitHub, che i workflow nativi di GitHub Actions non popolano (solo la Checks API più recente). Vedi `LESSONS_LEARNED.md` per il dettaglio tecnico completo.
-**Fix tentato:** aggiunto `.github/workflows/render-status.yml`, che dopo ogni push su `main` ripubblica il risultato della Checks API come status classico. **Non ha risolto da solo** nei test — Render sembra valutare il gate solo al momento del push, non quando lo status arriva più tardi.
-**Fix raccomandato:** disattivare "After CI Checks Pass" su Render (sia frontend che backend) e usare l'auto-deploy diretto su push — la branch protection di GitHub già garantisce che solo codice con CI verde arrivi su `main`, rendendo il gate ridondante.
-**Stato:** ⏳ Aperto — richiede una decisione/azione del developer sulla dashboard Render. Il workflow-ponte resta comunque utile se in futuro si torna a "After CI Checks Pass" con un meccanismo diverso.
+**Descrizione:** né il frontend web (`pdeditor-frontend`, fermo dal 19 settembre) né il backend (`pdeditor-api`, mancavano le route OCR/Annotazioni/Condivisione) si ridistribuivano automaticamente, nonostante decine di merge su `main` con CI verde. Causa: Render legge la Commit Status API classica di GitHub, che i workflow nativi di GitHub Actions non popolano (solo la Checks API più recente). Vedi `LESSONS_LEARNED.md` per il dettaglio tecnico completo.
+**Fix parziale (codice):** aggiunto `.github/workflows/render-status.yml`, che dopo ogni push su `main` ripubblica il risultato della Checks API come status classico — ha sbloccato l'auto-deploy del frontend nei tentativi successivi (non ha funzionato al primo tentativo, sembra che Render vada rivalutato con un secondo push/status dopo il primo).
+**Fix applicato (backend):** redeploy manuale triggerato dal developer (2026-09-28) — **verificato via `GET /openapi.json`**: tutte le route `/pdfs/{id}/ocr`, `/pdfs/{id}/annotations`, `/pdfs/{id}/share*` ora presenti (60 route totali, da 41). OCR, annotazioni e condivisione via link ora funzionanti in produzione su tutte le piattaforme.
+**Da valutare per il futuro:** disattivare "After CI Checks Pass" su Render (sia frontend che backend) e usare l'auto-deploy diretto su push, dato che la branch protection di GitHub già garantisce che solo codice con CI verde arrivi su `main` — eviterebbe di dover ripetere un deploy manuale o affidarsi al workflow-ponte ogni volta.
+**Stato:** ✅ Risolto per questa release (frontend e backend entrambi aggiornati e verificati, 2026-09-28). Il meccanismo di fondo resta fragile — vedi nota sopra.
 
 ### `mobile/android/` (progetto nativo generato) disallineato da `app.json`
 
