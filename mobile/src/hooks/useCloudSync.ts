@@ -19,6 +19,7 @@ import {
   getUnsyncedPdfs,
   markPdfCloudSynced,
   markPdfCloudUnsynced,
+  setPdfCloudId,
   deleteLocalPdf,
 } from "../services/localDb";
 import { useAuth } from "../shared/auth";
@@ -175,7 +176,8 @@ export function useCloudSync(): UseCloudSyncReturn {
         const file = new File(pdf.uri);
         if (!(await file.exists)) throw new Error("PDF file not found on disk");
 
-        await api.uploadPdf(pdf.uri, pdf.original_filename, "application/pdf");
+        const uploaded = await api.uploadPdf(pdf.uri, pdf.original_filename, "application/pdf");
+        await setPdfCloudId(pdfId, uploaded.id);
         await markPdfCloudSynced(pdfId);
         setStatus((prev) => ({ ...prev, [pdfId]: "synced" }));
         return true;
@@ -212,11 +214,12 @@ export function useCloudSync(): UseCloudSyncReturn {
           // Upload to cloud
           const file = new File(pdf.uri);
           if (!(await file.exists)) throw new Error("File not found on disk");
-          await api.uploadPdf(
+          const uploaded = await api.uploadPdf(
             pdf.uri,
             pdf.original_filename,
             "application/pdf",
           );
+          await setPdfCloudId(pdfId, uploaded.id);
           await markPdfCloudSynced(pdfId);
           setStatus((prev) => ({ ...prev, [pdfId]: "synced" }));
           imported++;
@@ -333,11 +336,18 @@ export function useCloudSync(): UseCloudSyncReturn {
         }
 
         if ((option === "cloud" || option === "both") && !isGuest) {
-          // Delete from cloud
-          try {
-            await api.deletePdf(pdfId);
-          } catch (err) {
-            console.log("[useCloudSync] cloud delete failed", pdfId, err);
+          // Delete from cloud — the cloud PDF id is NOT the same as the
+          // local `pdfId` (see LocalPdf.cloud_id), so this has to use
+          // pdf.cloud_id. Using pdfId here silently 404'd against the
+          // backend (caught below, logged, swallowed), leaving the cloud
+          // copy alive — the next sync would then re-download it as a
+          // duplicate every time.
+          if (pdf?.cloud_id) {
+            try {
+              await api.deletePdf(pdf.cloud_id);
+            } catch (err) {
+              console.log("[useCloudSync] cloud delete failed", pdfId, err);
+            }
           }
         }
 
@@ -446,11 +456,12 @@ export function useCloudSync(): UseCloudSyncReturn {
             errors.push(`cloud.syncErrorFileNotFound:${pdf.original_filename}`);
             continue;
           }
-          await api.uploadPdf(
+          const uploadedPdf = await api.uploadPdf(
             pdf.uri,
             pdf.original_filename,
             "application/pdf",
           );
+          await setPdfCloudId(pdf.id, uploadedPdf.id);
           await markPdfCloudSynced(pdf.id);
           setStatus((prev) => ({ ...prev, [pdf.id]: "synced" }));
           uploaded++;
