@@ -48,7 +48,7 @@ export default function App() {
   // Load MaterialCommunityIcons font before rendering so icons are visible
   // (in APK standalone the font is not available at first render otherwise)
   const [fontsLoaded] = useFonts({
-    MaterialCommunityIcons: Icons.MaterialCommunityIcons.font,
+    ...Icons.MaterialCommunityIcons.font,
   });
   // Safety timeout: if fonts fail to load (e.g. dev mode), render anyway
   // after 3s instead of staying stuck on a blank/grey screen.

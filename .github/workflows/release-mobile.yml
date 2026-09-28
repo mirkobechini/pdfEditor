@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   wait-for-ci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Wait for Mobile CI on main to pass
         shell: bash
@@ -47,7 +47,7 @@ jobs:
 
   build-mobile:
     needs: [wait-for-ci]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
 
