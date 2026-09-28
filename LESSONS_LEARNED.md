@@ -1,7 +1,32 @@
 # Lessons Learned
 
 > **Scopo:** Documentare le lezioni apprese durante lo sviluppo, problemi architetturali emersi, e regole per evitare che si ripetano.
-> **Aggiornato:** 2026-09-27
+> **Aggiornato:** 2026-09-28
+
+---
+
+## bash `set -u` + array vuoto: due crash distinti nello stesso script di release, uno per piattaforma
+
+> **Lezione appresa (2026-09-28), durante il rilascio di v0.1.39:**
+
+`desktop/build-sidecar.sh` (`set -euo pipefail`) è passato pulito in locale per mesi, poi ha rotto **la release CI su tutte e 3 le piattaforme** in due tentativi successivi, con due bug distinti della stessa famiglia:
+
+1. `for cand in "$TESSERACT_CMD" ...` — referenziare una variabile d'ambiente non settata sotto `set -u` termina lo script immediatamente (`unbound variable`). In locale funzionava perché lo sviluppatore aveva `TESSERACT_CMD` nell'ambiente; su GitHub Actions no.
+2. Risolto il primo, è emerso il secondo: `"${BUNDLE_ARGS[@]}"` con l'array vuoto (quando tesseract non è trovato) crasha **solo su bash 3.2** (il default di macOS, mai aggiornato da Apple per motivi di licenza — bash 4.4+ lo gestisce senza problemi). Lo stesso identico codice passava su Linux/Windows (bash più recente) e in locale su qualunque bash moderno.
+
+**Regola:** con `set -u`, ogni riferimento a una variabile che POTREBBE essere vuota/non settata (env var opzionali, array costruiti condizionalmente) va protetto esplicitamente: `"${VAR:-}"` per le stringhe, `"${ARR[@]+"${ARR[@]}"}"` per gli array (idioma portabile, funziona anche su bash 3.2). Testare uno script di release con `set -u` **solo** sulla shell locale non basta — serve testarlo (o quantomeno leggerlo con questo pattern in mente) per ogni piattaforma target, specialmente macOS che resta bloccato su una bash di 15+ anni fa.
+
+## Render "Auto-Deploy After CI Checks Pass" legge la Statuses API classica, non la Checks API di GitHub Actions
+
+> **Lezione appresa (2026-09-28):**
+
+Il frontend web (`pdeditor-frontend` su Render) non si è ridistribuito automaticamente per **9 giorni**, nonostante decine di merge su `main` tutti con CI verde. Nessun errore visibile, nessun evento di deploy loggato — semplicemente silenzio totale, il che ha reso il problema difficile da notare finché non è stato chiesto esplicitamente di verificare la landing page.
+
+**Causa:** l'opzione "Auto-Deploy: After CI Checks Pass" di Render legge la **Commit Status API classica** di GitHub (`GET /commits/{sha}/status`), non la **Checks API** più recente che GitHub Actions popola nativamente. Verificato direttamente: `gh api repos/.../commits/<sha>/status` restituiva `{"state":"pending","statuses":[],"total_count":0}` su un commit con 13/13 check verdi secondo la Checks API. Render aspettava un segnale che i workflow nativi non avrebbero mai prodotto.
+
+**Fix tentato:** un workflow (`render-status.yml`) che dopo ogni push su `main` interroga la Checks API e ripubblica il risultato come status classico. **Non ha risolto da solo** — sembra che Render valuti il gate solo al momento del webhook di push iniziale, senza ri-controllare quando lo status arriva pochi minuti dopo da un workflow separato. La correzione definitiva raccomandata è disattivare "After CI Checks Pass" e usare l'auto-deploy diretto su push, dato che la branch protection di GitHub già garantisce che solo codice con CI verde arrivi su `main` — rendendo il gate di Render ridondante e, in pratica, rotto silenziosamente.
+
+**Regola:** un'integrazione tra due sistemi (CI + piattaforma di deploy) che si basa su un nome di feature generico ("aspetta la CI") va verificata leggendo la documentazione tecnica di **entrambi i lati** (quale API esatta legge/scrive ciascuno), non assumendo che "CI checks" significhi la stessa cosa ovunque. Un gate che fallisce silenziosamente (nessun errore, nessun evento) è il caso peggiore — vale la pena controllare periodicamente che un meccanismo di deploy automatico stia *davvero* deployando, non solo che sia configurato.
 
 ---
 
