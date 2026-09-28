@@ -8,6 +8,7 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
 import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, compressPdfOffline, exportPdf, importFile } from "../services/pdfService";
+import { renamePdfLocally } from "../services/localDb";
 import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import * as DocumentPicker from "expo-document-picker";
 import { useTranslation } from "react-i18next";
@@ -36,6 +37,17 @@ export default function ToolsScreen() {
         setSnackbarVisible(true);
     }
 
+    async function submitRename() {
+        if (!renamePdf) return;
+        const trimmed = renameInput.trim();
+        if (trimmed && trimmed !== renamePdf.original_filename) {
+            await renamePdfLocally(renamePdf.id, trimmed);
+            await reloadPdfs();
+        }
+        setRenamePdf(null);
+        setRenameInput("");
+    }
+
     // Split dialog state
     const [splitDialog, setSplitDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number; selectedPages: number[] } | null>(null);
     // Remove dialog state
@@ -45,6 +57,9 @@ export default function ToolsScreen() {
     // Name dialog state
     const [nameDialog, setNameDialog] = useState<{ type: "merge" | "split" | "reorder" | "remove"; data: any } | null>(null);
     const [nameInput, setNameInput] = useState("");
+    // Rename-after-action dialog state (sign/annotate/OCR results)
+    const [renamePdf, setRenamePdf] = useState<LocalPdf | null>(null);
+    const [renameInput, setRenameInput] = useState("");
     // Compress dialog state
     const [compressDialog, setCompressDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
     const [compressQuality, setCompressQuality] = useState<"low" | "medium" | "high">("medium");
@@ -313,6 +328,8 @@ export default function ToolsScreen() {
     async function handleSigned(result: LocalPdf) {
         showResult(t("tools.signResult", { name: result.original_filename }));
         await reloadPdfs();
+        setRenameInput(result.original_filename);
+        setRenamePdf(result);
     }
 
     async function handleSignFailed() {
@@ -331,6 +348,8 @@ export default function ToolsScreen() {
     async function handleAnnotationSaved(result: LocalPdf) {
         showResult(t("tools.annotationResult", { name: result.original_filename }));
         await reloadPdfs();
+        setRenameInput(result.original_filename);
+        setRenamePdf(result);
     }
 
     async function handleAnnotationFailed() {
@@ -354,6 +373,8 @@ export default function ToolsScreen() {
                 : t("tools.ocrResultNoText");
         showResult(message);
         await reloadPdfs();
+        setRenameInput(result.original_filename);
+        setRenamePdf(result);
     }
 
     async function handleOcrFailed() {
@@ -974,6 +995,26 @@ export default function ToolsScreen() {
                             else if (type === "reorder") executeReorder(fileName);
                             else if (type === "remove") executeRemove(fileName);
                         }}>{t("common.save")}</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Rename Dialog — offered right after sign/annotate/OCR results */}
+            <Portal>
+                <Dialog visible={renamePdf !== null} onDismiss={() => { setRenamePdf(null); setRenameInput(""); }}>
+                    <Dialog.Title>{t("tools.renamePdfTitle")}</Dialog.Title>
+                    <Dialog.Content>
+                        <TextInput
+                            label={t("tools.renamePdfLabel")}
+                            mode="outlined"
+                            autoFocus
+                            value={renameInput}
+                            onChangeText={setRenameInput}
+                        />
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => { setRenamePdf(null); setRenameInput(""); }}>{t("tools.renameSkip")}</Button>
+                        <Button onPress={submitRename}>{t("common.save")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
