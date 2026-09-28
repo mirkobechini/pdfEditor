@@ -253,13 +253,17 @@ export default function PositionSelectorNative({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [boxSizePx, truePageSize, renderHeight, renderWidth]);
 
-    // Nested PanResponders don't always negotiate "innermost wins" reliably
-    // under the new architecture (Fabric/Bridgeless) the way they did on the
-    // legacy bridge — touches meant for the resize handle were being claimed
-    // by the drag box underneath it instead. Have the drag responder
-    // explicitly refuse touches that land in the handle's corner, so there's
-    // no ambiguity for it to resolve.
+    // Nested PanResponders (a drag responder on the box, a resize responder
+    // on a handle inside it) don't reliably negotiate "innermost wins" under
+    // the new architecture (Fabric/Bridgeless) the way they did on the
+    // legacy bridge — touches meant for the resize handle kept getting
+    // claimed by the drag box underneath it instead, no matter how the
+    // negotiation callbacks were tuned. A single PanResponder that decides
+    // its mode once, at grant time, based on where the touch started,
+    // sidesteps the negotiation entirely — there's only ever one responder,
+    // so there's nothing for the two to disagree about.
     const RESIZE_HANDLE_HIT_SIZE = 40;
+    const isResizingRef = useRef(false);
     function isInResizeHandle(locationX: number, locationY: number): boolean {
         const size = boxSizePxRef.current;
         if (!size) return false;
@@ -271,55 +275,42 @@ export default function PositionSelectorNative({
 
     const dragResponder = useRef(
         PanResponder.create({
-            onStartShouldSetPanResponder: (evt) =>
-                !isInResizeHandle(evt.nativeEvent.locationX, evt.nativeEvent.locationY),
-            onMoveShouldSetPanResponder: (evt) =>
-                !isInResizeHandle(evt.nativeEvent.locationX, evt.nativeEvent.locationY),
-            onPanResponderGrant: () => {
-                setPanEnabled(false);
-                dragStart.current = { boxX: boxPosRef.current.x, boxY: boxPosRef.current.y };
-                startAutoScrollLoop();
-            },
-            onPanResponderMove: (_evt, gesture) => {
-                const next = clampBoxPosition(
-                    { x: dragStart.current.boxX, y: dragStart.current.boxY },
-                    gesture.dx,
-                    gesture.dy,
-                    boxSizePxRef.current || { width: 0, height: 0 },
-                    renderWidthRef.current,
-                    renderHeightRef.current,
-                );
-                setBoxPos(next);
-                // Also nudge immediately on every touch-move — the interval
-                // alone can lag behind while the JS thread is busy handling
-                // a fast-moving gesture, which looked like "nothing scrolls".
-                autoScrollTowards(next, boxSizePxRef.current || { width: 0, height: 0 });
-            },
-            onPanResponderEnd: () => { setPanEnabled(true); stopAutoScrollLoop(); },
-            onPanResponderTerminate: () => { setPanEnabled(true); stopAutoScrollLoop(); },
-        }),
-    ).current;
-
-    const resizeResponder = useRef(
-        PanResponder.create({
             onStartShouldSetPanResponder: () => true,
             onMoveShouldSetPanResponder: () => true,
-            onPanResponderGrant: () => {
+            onPanResponderGrant: (evt) => {
+                isResizingRef.current = isInResizeHandle(evt.nativeEvent.locationX, evt.nativeEvent.locationY);
                 setPanEnabled(false);
+                dragStart.current = { boxX: boxPosRef.current.x, boxY: boxPosRef.current.y };
                 resizeStart.current = { w: boxSizePxRef.current?.width || 0, h: boxSizePxRef.current?.height || 0 };
                 startAutoScrollLoop();
             },
             onPanResponderMove: (_evt, gesture) => {
-                const next = clampBoxSize(
-                    { width: resizeStart.current.w, height: resizeStart.current.h },
-                    gesture.dx,
-                    gesture.dy,
-                    boxPosRef.current,
-                    renderWidthRef.current,
-                    renderHeightRef.current,
-                );
-                setBoxSizePx(next);
-                autoScrollTowards(boxPosRef.current, next);
+                if (isResizingRef.current) {
+                    const next = clampBoxSize(
+                        { width: resizeStart.current.w, height: resizeStart.current.h },
+                        gesture.dx,
+                        gesture.dy,
+                        boxPosRef.current,
+                        renderWidthRef.current,
+                        renderHeightRef.current,
+                    );
+                    setBoxSizePx(next);
+                    autoScrollTowards(boxPosRef.current, next);
+                } else {
+                    const next = clampBoxPosition(
+                        { x: dragStart.current.boxX, y: dragStart.current.boxY },
+                        gesture.dx,
+                        gesture.dy,
+                        boxSizePxRef.current || { width: 0, height: 0 },
+                        renderWidthRef.current,
+                        renderHeightRef.current,
+                    );
+                    setBoxPos(next);
+                    // Also nudge immediately on every touch-move — the interval
+                    // alone can lag behind while the JS thread is busy handling
+                    // a fast-moving gesture, which looked like "nothing scrolls".
+                    autoScrollTowards(next, boxSizePxRef.current || { width: 0, height: 0 });
+                }
             },
             onPanResponderEnd: () => { setPanEnabled(true); stopAutoScrollLoop(); },
             onPanResponderTerminate: () => { setPanEnabled(true); stopAutoScrollLoop(); },
@@ -415,17 +406,22 @@ export default function PositionSelectorNative({
                                             resizeMode="contain"
                                         />
                                     )}
+                                    {/* Purely visual now — no PanHandlers of its own. The parent
+                                        box's single PanResponder (above) decides drag vs. resize
+                                        by checking whether the initial touch fell in this corner,
+                                        which needs this handle's hit-zone to stay fully inside the
+                                        box's own touchable bounds (not overlapping outside it). */}
                                     <View
-                                        {...resizeResponder.panHandlers}
                                         testID="resize-handle"
+                                        pointerEvents="none"
                                         style={{
                                             position: "absolute",
-                                            right: -18,
-                                            bottom: -18,
+                                            right: 0,
+                                            bottom: 0,
                                             width: 40,
                                             height: 40,
-                                            alignItems: "center",
-                                            justifyContent: "center",
+                                            alignItems: "flex-end",
+                                            justifyContent: "flex-end",
                                         }}
                                     >
                                         <View
