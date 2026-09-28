@@ -102,7 +102,7 @@ $PYTHON -m PyInstaller \
     --hidden-import "pytesseract" \
     --hidden-import "PIL" \
     --add-data "$PROJECT_ROOT/desktop/.env.desktop:." \
-    "${BUNDLE_ARGS[@]}" \
+    "${BUNDLE_ARGS[@]+"${BUNDLE_ARGS[@]}"}" \
     "$ENTRY_POINT"
 
 # Clean up temp build files
