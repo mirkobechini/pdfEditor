@@ -43,8 +43,11 @@ body {
   z-index: 999999 !important;
 }
 
-/* Iubenda's automated CCPA format only ships a white theme — match our dark mode */
-.dark .iub__us-widget {
+/* Iubenda's automated CCPA format only ships a white theme — match our dark
+   mode. The actual painted background is on __wrapper (a child with its own
+   opaque white background), not on .iub__us-widget itself. */
+.dark .iub__us-widget,
+.dark .iub__us-widget__wrapper {
   background: #1f2937 !important;
   color: #f3f4f6 !important;
 }
