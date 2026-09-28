@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-27
+> **Aggiornato:** 2026-09-28
 
 ---
 
@@ -33,12 +33,20 @@
 
 ## 🔴 Bug aperti
 
-### `main` indietro di 165 commit rispetto a `dev` — OCR/Annotazioni/Condivisione 404 in produzione
+### Backend produzione non ridistribuito da settimane — OCR/Annotazioni/Condivisione ancora 404 nonostante `main` sia aggiornato
 
-**Descrizione:** verificato **direttamente contro il backend di produzione** (`https://pdfeditor-api.mirkobechini.com`, chiamate curl dirette) che le route `/pdfs/{id}/ocr`, `/pdfs/{id}/annotations`, `/pdfs/{id}/share*` restituiscono `{"detail":"Not Found"}` — non esistono affatto sul branch deployato. `main` non ha mai ricevuto il merge da `dev` che le ha introdotte (issue #825/#829/#823 e tutto il lavoro di parità mobile di questa sessione).
-**Impatto:** OCR, annotazioni e condivisione via link falliscono su **tutte le piattaforme** in produzione, non solo mobile — è la causa esatta degli errori "Not Found" osservati testando le nuove feature mobile su device reale.
-**Fix:** merge `dev` → `main` + redeploy (Render, se non automatico). Nessuna modifica di codice necessaria — le feature sono già implementate e testate su `dev`.
-**Stato:** ⏳ Aperto, in attesa del merge a `main` pianificato dal developer.
+**Descrizione:** `main` ha ricevuto tutti i merge da `dev` (PR #856-860, v0.1.39 rilasciata) ed è pienamente aggiornato. Ma verificato **direttamente contro il backend di produzione** (`GET https://pdfeditor-api.mirkobechini.com/openapi.json`, 2026-09-28) che le route `/pdfs/{id}/ocr`, `/pdfs/{id}/annotations`, `/pdfs/{id}/share*` **non esistono ancora** nello schema pubblicato — il servizio Render sta ancora eseguendo una build vecchia.
+**Causa:** stesso problema del deploy gate del frontend (vedi voce sotto) — il servizio backend su Render (`pdeditor-backend`/`pdfeditor-api`) ha probabilmente lo stesso "Auto-Deploy: After CI Checks Pass" che non funziona con GitHub Actions.
+**Impatto:** OCR, annotazioni e condivisione via link falliscono su **tutte le piattaforme** in produzione, non solo mobile.
+**Fix:** verificare le impostazioni Auto-Deploy del servizio backend su Render (stesso controllo fatto per il frontend) e disattivare "After CI Checks Pass" in favore del deploy diretto su push, oppure triggerare un deploy manuale.
+**Stato:** ⏳ Aperto — richiede intervento developer sulla dashboard Render (nessun accesso diretto disponibile per verificarlo/risolverlo da qui).
+
+### Render "Auto-Deploy: After CI Checks Pass" non funziona con GitHub Actions — frontend fermo a una build di 9 giorni prima
+
+**Descrizione:** il frontend web (`pdeditor-frontend`) non si è ridistribuito automaticamente dal 19 settembre nonostante decine di merge su `main` con CI verde — zero eventi di deploy registrati per nessuno di quei commit. Causa: Render legge la Commit Status API classica di GitHub, che i workflow nativi di GitHub Actions non popolano (solo la Checks API più recente). Vedi `LESSONS_LEARNED.md` per il dettaglio tecnico completo.
+**Fix tentato:** aggiunto `.github/workflows/render-status.yml`, che dopo ogni push su `main` ripubblica il risultato della Checks API come status classico. **Non ha risolto da solo** nei test — Render sembra valutare il gate solo al momento del push, non quando lo status arriva più tardi.
+**Fix raccomandato:** disattivare "After CI Checks Pass" su Render (sia frontend che backend) e usare l'auto-deploy diretto su push — la branch protection di GitHub già garantisce che solo codice con CI verde arrivi su `main`, rendendo il gate ridondante.
+**Stato:** ⏳ Aperto — richiede una decisione/azione del developer sulla dashboard Render. Il workflow-ponte resta comunque utile se in futuro si torna a "After CI Checks Pass" con un meccanismo diverso.
 
 ### `mobile/android/` (progetto nativo generato) disallineato da `app.json`
 
@@ -118,6 +126,13 @@ La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, de
 **Causa:** `restoreSession()` parte al boot in parallelo con l'avvio del sidecar Python e spesso perde questa "gara" su installazioni fresche — il tentativo falliva silenziosamente.
 **Fix:** nuovo `refreshSession()` nel context di autenticazione, richiamato esplicitamente dalla startup page dopo la conferma che backend/DB/API sono pronti; redirect diretto a `/app` se la sessione è valida.
 **Stato:** ✅ Risolto e verificato in build reale (2026-09-26).
+
+### `build-sidecar.sh` — due crash `set -u` distinti hanno bloccato la release v0.1.39 su tutte le piattaforme ✅
+
+**File:** `desktop/build-sidecar.sh`
+**Descrizione:** (1) `"$TESSERACT_CMD"` referenziato senza fallback sotto `set -u` crashava quando la env var non è settata (sempre vero su CI); (2) risolto quello, `"${BUNDLE_ARGS[@]}"` con array vuoto crashava **solo su bash 3.2** (default macOS, mai aggiornata da Apple) con "unbound variable" — bash 4.4+ (Linux/Windows CI, qualunque bash locale moderno) non ha il problema, il che ha nascosto il bug fino alla prima vera release build su macOS.
+**Fix:** `"${TESSERACT_CMD:-}"` per la stringa, `"${BUNDLE_ARGS[@]+"${BUNDLE_ARGS[@]}"}"` per l'array (idioma portabile bash 3.2+). Vedi `LESSONS_LEARNED.md` per la lezione generale su `set -u` + valori opzionali.
+**Stato:** ✅ Risolto, release v0.1.39 pubblicata con successo su tutte e 3 le piattaforme (2026-09-28).
 
 ### Link di condivisione PDF sempre rotto — 403 CSRF (plan 0138-0139, #C) ✅
 
@@ -204,6 +219,8 @@ La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, de
 ## 🧪 Dipendenze con warning (Dependabot)
 
 > **Audit pre-release desktop (2026-09-27)** — `pip-audit` (backend), `npm audit` (desktop frontend), `cargo audit` (Rust): trovata **1 vulnerabilità reale e fixabile**, `rustls` 0.23.42 (RUSTSEC-2026-0285, medium 5.3 — accettazione errata di messaggi handshake TLS 1.3 tra livelli di crittografia diversi), sub-dipendenza transitiva via `reqwest → tauri-plugin-updater`. **Fixata** con `cargo update -p rustls --precise 0.23.45` (nessuna modifica a `Cargo.toml`, solo `Cargo.lock`). `cargo audit` ora riporta solo warning `unmaintained`/`unsound` senza vulnerabilità (vedi tabella sotto). `npm audit` desktop frontend: 0 vulnerabilità. `pip-audit` backend: 35 vulnerabilità in `nltk` 3.10.0, ma è una dipendenza transitiva di `safety` (il tool di audit stesso, non tracciato in `requirements.txt`, mai deployato) — non applicabile al codice di produzione.
+>
+> **Audit mobile (2026-09-28)** — `npm audit` su `mobile/`: 2 vulnerabilità **high** reali e fixabili trovate e risolte — `image-size` (DoS, via override a 2.0.4, vedi tabella) e `js-yaml` (DoS CPU su merge keys vuote, sub-dipendenza di `@istanbuljs/load-nyc-config` usata solo per la coverage dei test, risolta con `npm audit fix`). Rimangono 12 vulnerabilità moderate, tutte nella catena `xcode → @expo/config-plugins` (tooling di build iOS, mai eseguito su Windows/Android, nessun fix non-major disponibile).
 
 | #      | Pacchetto                        | Severità    | Versione             | Stato                    | Note                                                                                                                                                                                                                                                                                      |
 | ------ | -------------------------------- | ----------- | -------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -211,8 +228,8 @@ La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, de
 | —      | `proc-macro-error` / `unic-*` (5 crate, Rust) | ⚪ nessuna (unmaintained) | — | ⛔ **Accettato**         | Dipendenze indirette di Tauri/icu, segnalate come "unmaintained" da `cargo audit` senza un CVE associato. Nessun fix disponibile senza cambiare libreria upstream.                                                                                                                       |
 | —      | `event-listener` (Rust)          | ⚪ nessuna (unsound) | 5.4.1        | ⛔ **Accettato**         | Warning "unsound" (RUSTSEC-2026-0221) su un caso d'uso di threading non presente in questo progetto. Dipendenza indiretta di Tauri.                                                                                                                                                      |
 | **51** | `nanoid` (mobile)                | 🔴 high     | < 3.3.18             | ✅ **Fixato (override)** | Sub-dipendenza di react-navigation + expo. Override in mobile/package.json a 3.3.18.                                                                                                                                                                                                      |
-| **50** | `image-size` (mobile)            | 🔴 high     | <= 2.0.2             | ⛔ **Non fixabile**      | Sub-dipendenza di expo (metro). Nessun fix disponibile.                                                                                                                                                                                                                                   |
-| **49** | `image-size` (mobile)            | 🔴 high     | <= 2.0.2             | ⛔ **Non fixabile**      | Stesso di #50.                                                                                                                                                                                                                                                                            |
+| **50** | `image-size` (mobile)            | 🔴 high     | <= 2.0.2             | ✅ **Fixato (override)** | Sub-dipendenza di expo (metro), 2 CVE DoS (GHSA-5p2g-fcmc-qvqq, GHSA-w3rx-r6r6-pgpr). Forzato a 2.0.4 via `overrides` in `mobile/package.json` (2026-09-28) — è solo usato a build-time da metro, l'override non tocca il bundle finale.                                                    |
+| **49** | `image-size` (mobile)            | 🔴 high     | <= 2.0.2             | ✅ **Fixato (override)** | Stesso di #50.                                                                                                                                                                                                                                                                            |
 | **48** | `uuid` (mobile)                  | 🟡 medium   | < 7.0.3              | ⛔ **Non fixabile**      | Sub-dipendenza di xcode → expo-config-plugins. Saltare a 11.1.1 rompe breaking changes.                                                                                                                                                                                                   |
 | **32** | `glib::VariantStrIter` (Rust)    | 🟡 medium   | < 0.20.0             | ⏳ **Sconsigliato**      | Dipendenza indiretta di Tauri. Forzare glib 0.20.0 rischia di rompere cargo tauri build. CVE non esposto a input utente.                                                                                                                                                                  |
 | —      | `postcss` (path traversal)       | 🔴 high     | 8.4.31 (via Next.js) | ⛔ **Non fixabile**      | Sub-dipendenza interna di `next@16.3.5`. In attesa che Next.js aggiorni il suo sub-dep.                                                                                                                                                                                                   |
