@@ -214,6 +214,7 @@ La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, de
 | Desktop: GoogleLoginButton | 76.31%                | ❌ No      | Redirect flow difficile da testare                                                                    |
 | ReorderPagesModal DnD      | 81.17%                | ❌ No      | DnD handlers (@dnd-kit) non copribili in jsdom — richiedono test E2E con Playwright                   |
 | Mobile: PositionSelectorNative PanResponder | non coperto | ❌ No | Logica gesture drag/resize (`PanResponder` di RN core) non testabile in jsdom — richiede device/emulatore reale. Verificato manualmente su device fisico (issue #866). |
+| Mobile: *FlowDialog (Sign/Annotation/Ocr/Share) | non coperto | ❌ No | Componenti RN Paper con `Dialog`/`Portal` non renderizzabili nel setup RTL di questo progetto (vedi commento in `mobile/src/components/positionMath.ts`). Verificati manualmente su device fisico. |
 | Web: ImportExportDialog    | 98.14%                | ❌ No      | Guard `if (!importFile) return` non raggiungibile via UI (bottone import disabled senza file)         |
 
 ---
