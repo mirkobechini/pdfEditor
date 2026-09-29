@@ -162,13 +162,17 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         }
     }
 
-    // Reload PDFs when screen is focused (lightweight, no spinner to avoid lag)
+    // Reload PDFs when screen is focused (lightweight, no spinner to avoid lag).
+    // Also clears the initial `loading` spinner once local PDFs are in — this
+    // used to depend solely on the isSyncing effect below, which never fires
+    // (leaving the screen stuck on the spinner forever) when sync never starts
+    // — offline, disabled, or the sync loop just hasn't kicked in yet.
     useFocusEffect(
         useCallback(() => {
             loadLocalPdfs(userId).then((local) => {
                 setPdfs(local);
                 onPdfCountChange?.(local.length);
-            }).catch(() => { });
+            }).catch(() => { }).finally(() => setLoading(false));
         }, [userId])
     );
 
