@@ -46,7 +46,7 @@ jest.mock("../src/shared/auth", () => ({
 
 import { renderHook, act } from "@testing-library/react-native";
 import { api } from "../src/shared/api";
-import { getLocalPdfById, getUnsyncedPdfs } from "../src/services/localDb";
+import { getLocalPdfById, getLocalPdfByCloudId, getUnsyncedPdfs } from "../src/services/localDb";
 import { useCloudSync } from "../src/hooks/useCloudSync";
 
 const mockFetch = jest.fn();
@@ -166,5 +166,76 @@ describe("useCloudSync deletePdf", () => {
     });
 
     expect(deleteSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("useCloudSync getPendingChanges", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+    (NetInfo.fetch as jest.Mock).mockResolvedValue({ isConnected: true });
+    (getUnsyncedPdfs as jest.Mock).mockResolvedValue([]);
+  });
+
+  it("does not list an already-downloaded cloud PDF as a pending download", async () => {
+    // Regression guard: this used to look the cloud PDF up via
+    // getLocalPdfById(cloudPdf.id) — but cloudPdf.id is the CLOUD id, never
+    // equal to a local row's id — so it always concluded "not present
+    // locally" even for PDFs already downloaded.
+    jest.spyOn(api, "listPdfs").mockResolvedValue({
+      items: [
+        {
+          id: "cloud-1",
+          original_filename: "a.pdf",
+          file_size: 10,
+          page_count: 1,
+          created_at: "2026-01-01T00:00:00Z",
+          updated_at: "2026-01-01T00:00:00Z",
+        },
+      ],
+      total: 1,
+    } as any);
+    (getLocalPdfByCloudId as jest.Mock).mockResolvedValue({
+      id: "local-1",
+      cloud_id: "cloud-1",
+      original_filename: "a.pdf",
+      uri: "file:///a.pdf",
+    });
+
+    const { result } = await renderHook(() => useCloudSync());
+    let pending!: Awaited<ReturnType<typeof result.current.getPendingChanges>>;
+    await act(async () => {
+      pending = await result.current.getPendingChanges();
+    });
+
+    expect(getLocalPdfByCloudId).toHaveBeenCalledWith("cloud-1");
+    expect(getLocalPdfById).not.toHaveBeenCalledWith("cloud-1");
+    expect(pending.downloads).toHaveLength(0);
+  });
+
+  it("lists a cloud PDF as a pending download when it truly isn't local yet", async () => {
+    jest.spyOn(api, "listPdfs").mockResolvedValue({
+      items: [
+        {
+          id: "cloud-2",
+          original_filename: "b.pdf",
+          file_size: 20,
+          page_count: 2,
+          created_at: "2026-01-01T00:00:00Z",
+          updated_at: "2026-01-01T00:00:00Z",
+        },
+      ],
+      total: 1,
+    } as any);
+    (getLocalPdfByCloudId as jest.Mock).mockResolvedValue(null);
+
+    const { result } = await renderHook(() => useCloudSync());
+    let pending!: Awaited<ReturnType<typeof result.current.getPendingChanges>>;
+    await act(async () => {
+      pending = await result.current.getPendingChanges();
+    });
+
+    expect(pending.downloads).toHaveLength(1);
+    expect(pending.downloads[0].pdf.id).toBe("cloud-2");
   });
 });
