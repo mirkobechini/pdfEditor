@@ -74,12 +74,22 @@ export default function PositionSelectorNative({
     // one used for every px<->pt conversion.
     const [pageSize, setPageSize] = useState<{ width: number; height: number } | null>(null);
     const [truePageSize, setTruePageSize] = useState<{ width: number; height: number } | null>(null);
-    const [renderHeight, setRenderHeightState] = useState(renderWidth * 1.414);
+    // Derived synchronously from renderWidth + the page's own aspect ratio —
+    // NOT from react-native-pdf's onLoadComplete, which only fires after the
+    // native view remounts (see the `key` on <Pdf> below). That remount is
+    // asynchronous, so on zoom a render could momentarily pair the *new*
+    // renderWidth with the *old* renderHeight — pxToPt then divides the
+    // (correctly rescaled) box size by a stale denominator, inflating the
+    // reported height. Deriving it here keeps it always in lockstep with
+    // renderWidth, same-render, no race.
+    const aspectRatio = truePageSize
+        ? truePageSize.height / truePageSize.width
+        : pageSize
+            ? pageSize.height / pageSize.width
+            : 1.414;
+    const renderHeight = renderWidth * aspectRatio;
     const renderHeightRef = useRef(renderHeight);
-    function setRenderHeight(next: number) {
-        renderHeightRef.current = next;
-        setRenderHeightState(next);
-    }
+    renderHeightRef.current = renderHeight;
     const [boxPos, setBoxPosState] = useState({ x: 0, y: 0 });
     const [boxSizePx, setBoxSizePxState] = useState<{ width: number; height: number } | null>(null);
     const dragStart = useRef({ boxX: 0, boxY: 0 });
@@ -202,12 +212,20 @@ export default function PositionSelectorNative({
         };
     }, [pdfUri, pageNumber]);
 
+    // <Pdf> is keyed on `${pageNumber}-${zoom}`, so it remounts (firing this
+    // callback again) both on a real page change AND on a zoom change. Only
+    // a real page change should reset the box back to (0, 0) — resetting on
+    // every zoom step silently relocated the box the user had just placed.
+    const pageNumberRef = useRef(pageNumber);
+    pageNumberRef.current = pageNumber;
+    const loadedForPageRef = useRef<number | null>(null);
     const handleLoadComplete = useCallback(
         (_numberOfPages: number, _path: string, size: { width: number; height: number }) => {
             setPageSize(size);
-            const h = renderWidthRef.current * (size.height / size.width);
-            setRenderHeight(h);
-            setBoxPos({ x: 0, y: 0 });
+            if (loadedForPageRef.current !== pageNumberRef.current) {
+                setBoxPos({ x: 0, y: 0 });
+            }
+            loadedForPageRef.current = pageNumberRef.current;
         },
         [],
     );
