@@ -193,6 +193,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - Max 10 snapshot undo/redo per sessione (configurabile via MAX_SNAPSHOTS in .env)
 - Dark mode con persistenza (localStorage + system preference fallback)
 - `ALLOWED_EXTENSIONS` in `.env` come stringa (non lista) — parsato via `allowed_extensions_list` property
+- **PyMuPDF `Annot.set_colors()`/`set_opacity()` richiedono `Annot.update()`** (2026-09-29, trovato via mobile issue #866, ma `add_annotation` è condiviso con web/desktop): senza `update()` la modifica resta "staged" — `annot.colors` la riflette subito, ma l'appearance stream (ciò che viene effettivamente disegnato) NON viene rigenerato, quindi ogni annotazione restava con l'aspetto di default della libreria (es. evidenziatore sempre giallo) indipendentemente dal colore richiesto. Confermato renderizzando la pagina in pixmap prima/dopo: `(255,255,0)` senza `update()`, il colore richiesto con. Qualunque nuovo codice che chiama `set_colors`/`set_opacity`/altri setter su un `Annot` DEVE chiamare `annot.update()` subito dopo.
 
 ## Cosa NON è in scope (per ora)
 
