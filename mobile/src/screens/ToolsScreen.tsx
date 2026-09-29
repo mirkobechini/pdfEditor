@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
-import { Text, Card, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton, TextInput, Snackbar, RadioButton } from "react-native-paper";
+import { Text, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton, TextInput, Snackbar, RadioButton } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -16,6 +16,7 @@ import SignFlowDialog from "../components/SignFlowDialog";
 import AnnotationFlowDialog from "../components/AnnotationFlowDialog";
 import OcrFlowDialog from "../components/OcrFlowDialog";
 import ShareFlowDialog from "../components/ShareFlowDialog";
+import ToolsPdfListItem from "../components/ToolsPdfListItem";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 
@@ -475,11 +476,48 @@ export default function ToolsScreen() {
         await reloadPdfs();
     }
 
-    function toggleSelect(id: string) {
+    const toggleSelect = useCallback((id: string) => {
         setSelectedIds((prev) =>
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
         );
-    }
+    }, []);
+
+    // The open*Dialog functions above are plain (unmemoized) closures
+    // recreated every render, so referencing them directly in handleItemPress's
+    // deps would make it just as unstable. Reading them through a ref that's
+    // kept current instead lets handleItemPress stay referentially stable
+    // across every render that isn't a real `operation` change — including
+    // the ones triggered by typing into an unrelated TextInput elsewhere on
+    // this screen (e.g. the rename dialog), which otherwise forced a full
+    // re-render of every visible FlatList row (see ToolsPdfListItem).
+    const actionHandlersRef = useRef({
+        openSplitDialog, openRemoveDialog, openMetadataDialog, openReorderDialog,
+        openPasswordDialog, openCompressDialog, openSignDialog, openAnnotationDialog,
+        openOcrDialog, openShareDialog, openImportExportDialog,
+    });
+    actionHandlersRef.current = {
+        openSplitDialog, openRemoveDialog, openMetadataDialog, openReorderDialog,
+        openPasswordDialog, openCompressDialog, openSignDialog, openAnnotationDialog,
+        openOcrDialog, openShareDialog, openImportExportDialog,
+    };
+
+    const handleItemPress = useCallback((item: LocalPdf) => {
+        const h = actionHandlersRef.current;
+        if (operation === "merge") toggleSelect(item.id);
+        else if (operation === "split") h.openSplitDialog(item.id);
+        else if (operation === "compress") h.openCompressDialog(item.id);
+        else if (operation === "reorder") h.openReorderDialog(item.id);
+        else if (operation === "remove") h.openRemoveDialog(item.id);
+        else if (operation === "metadata") h.openMetadataDialog(item.id);
+        else if (operation === "protect") h.openPasswordDialog(item.id, "protect");
+        else if (operation === "unlock") h.openPasswordDialog(item.id, "unlock");
+        else if (operation === "sign") h.openSignDialog(item.id);
+        else if (operation === "annotate") h.openAnnotationDialog(item.id);
+        else if (operation === "ocr") h.openOcrDialog(item.id);
+        else if (operation === "share") h.openShareDialog(item.id);
+        else if (operation === "export") h.openImportExportDialog(item.id, "export");
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [operation, toggleSelect]);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["bottom"]}>
@@ -652,41 +690,11 @@ export default function ToolsScreen() {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={{ padding: 16 }}
                     renderItem={({ item }) => (
-                        <Card
-                            style={{
-                                marginBottom: 12,
-                                backgroundColor: selectedIds.includes(item.id)
-                                    ? theme.colors.primaryContainer
-                                    : theme.colors.surface,
-                            }}
-                        >
-                            <TouchableOpacity
-                                onPress={() => {
-                                    if (operation === "merge") toggleSelect(item.id);
-                                    else if (operation === "split") openSplitDialog(item.id);
-                                    else if (operation === "compress") openCompressDialog(item.id);
-                                    else if (operation === "reorder") openReorderDialog(item.id);
-                                    else if (operation === "remove") openRemoveDialog(item.id);
-                                    else if (operation === "metadata") openMetadataDialog(item.id);
-                                    else if (operation === "protect") openPasswordDialog(item.id, "protect");
-                                    else if (operation === "unlock") openPasswordDialog(item.id, "unlock");
-                                    else if (operation === "sign") openSignDialog(item.id);
-                                    else if (operation === "annotate") openAnnotationDialog(item.id);
-                                    else if (operation === "ocr") openOcrDialog(item.id);
-                                    else if (operation === "share") openShareDialog(item.id);
-                                    else if (operation === "export") openImportExportDialog(item.id, "export");
-                                }}
-                            >
-                                <Card.Content>
-                                    <Text variant="titleSmall" style={{ fontWeight: "600" }}>
-                                        {item.original_filename}
-                                    </Text>
-                                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                                        {t("tools.pagesInfo", { count: item.page_count, size: (item.file_size / 1024).toFixed(0) })}
-                                    </Text>
-                                </Card.Content>
-                            </TouchableOpacity>
-                        </Card>
+                        <ToolsPdfListItem
+                            item={item}
+                            isSelected={selectedIds.includes(item.id)}
+                            onPress={handleItemPress}
+                        />
                     )}
                 />
             )}
