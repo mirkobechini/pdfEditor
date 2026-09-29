@@ -393,7 +393,11 @@ export function useCloudSync(): UseCloudSyncReturn {
       const cloudList = await api.listPdfs(0, 1000);
       if (cloudList?.items) {
         for (const cloudPdf of cloudList.items) {
-          const local = await getLocalPdfById(cloudPdf.id);
+          // cloudPdf.id is the CLOUD id — must look it up via cloud_id, not
+          // the local row id (same class of bug as the delete/upload mixups
+          // documented in mobile/ADR.md), or an already-downloaded PDF would
+          // always be reported as "missing locally".
+          const local = await getLocalPdfByCloudId(cloudPdf.id);
           if (!local) {
             downloads.push({
               pdf: {
