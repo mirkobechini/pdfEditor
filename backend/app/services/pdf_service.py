@@ -1031,6 +1031,13 @@ class PdfService:
                 except Exception:
                     pass
 
+            # set_colors()/set_opacity() only stage the change — PyMuPDF
+            # doesn't regenerate the annotation's appearance stream until
+            # update() is called. Without this, every annotation kept its
+            # default appearance (e.g. a fresh highlight is always yellow)
+            # no matter what color/opacity was requested.
+            annot.update()
+
         pdf, _ = self._mutate_pdf_document(pdf_id, user_id, mutate, "Annotation")
         return pdf
 
