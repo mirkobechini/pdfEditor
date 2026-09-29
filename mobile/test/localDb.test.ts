@@ -247,6 +247,32 @@ describe("localDb", () => {
     );
   });
 
+  it("only opens the database once for concurrent calls (regression: raced openDatabaseAsync)", async () => {
+    // getDb() used to cache only the *resolved* db, not the in-flight
+    // promise — two calls landing before the first openDatabaseAsync()
+    // resolved would each start their own, racing through the same
+    // CREATE TABLE/migrations and crashing with a native
+    // NullPointerException on device (issue #866). Verified in isolation
+    // (resetModules) since the module-level cache persists across the
+    // other tests in this file.
+    jest.resetModules();
+    const openSpy = jest.fn(async () => ({
+      execAsync: jest.fn(),
+      runAsync: jest.fn(),
+      getAllAsync: jest.fn(async () => []),
+      getFirstAsync: jest.fn(async () => null),
+    }));
+    jest.doMock("expo-sqlite", () => ({ openDatabaseAsync: openSpy }));
+    const fresh = require("../src/services/localDb");
+    await Promise.all([
+      fresh.getLocalPdfs(),
+      fresh.getLocalPdfs(),
+      fresh.getLocalPdfs(),
+    ]);
+    expect(openSpy).toHaveBeenCalledTimes(1);
+    jest.dontMock("expo-sqlite");
+  });
+
   it("getLocalPdfsByUser filters by user_id", async () => {
     mockDb.getAllAsync.mockResolvedValue([samplePdf]);
     const result = await getLocalPdfsByUser("user-1");
