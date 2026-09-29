@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
 import { Text, Card, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton, TextInput, Snackbar, RadioButton } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -60,6 +60,18 @@ export default function ToolsScreen() {
     // Rename-after-action dialog state (sign/annotate/OCR results)
     const [renamePdf, setRenamePdf] = useState<LocalPdf | null>(null);
     const [renameInput, setRenameInput] = useState("");
+    const renameInputRef = useRef<any>(null);
+
+    // `autoFocus` grabbed the keyboard while react-native-paper's Dialog was
+    // still mid entrance-animation (a Portal/Modal fade+scale) — on Android
+    // that race dropped or misplaced early keystrokes. Focusing manually
+    // once the dialog has had time to settle avoids it.
+    useEffect(() => {
+        if (renamePdf) {
+            const timer = setTimeout(() => renameInputRef.current?.focus(), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [renamePdf]);
     // Compress dialog state
     const [compressDialog, setCompressDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
     const [compressQuality, setCompressQuality] = useState<"low" | "medium" | "high">("medium");
@@ -1005,9 +1017,9 @@ export default function ToolsScreen() {
                     <Dialog.Title>{t("tools.renamePdfTitle")}</Dialog.Title>
                     <Dialog.Content>
                         <TextInput
+                            ref={renameInputRef}
                             label={t("tools.renamePdfLabel")}
                             mode="outlined"
-                            autoFocus
                             value={renameInput}
                             onChangeText={setRenameInput}
                         />
