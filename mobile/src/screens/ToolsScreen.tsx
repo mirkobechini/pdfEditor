@@ -1030,6 +1030,18 @@ export default function ToolsScreen() {
                             mode="outlined"
                             value={renameInput}
                             onChangeText={setRenameInput}
+                            autoCorrect={false}
+                            spellCheck={false}
+                            // Samsung Keyboard has a long-documented RN
+                            // compatibility bug where its predictive-text
+                            // engine desyncs from a controlled TextInput's
+                            // value, dropping/misplacing characters —
+                            // unrelated to any re-render timing on our side
+                            // (confirmed: several render/focus-timing fixes
+                            // here had zero effect). Forcing this keyboard
+                            // type skips Samsung's suggestion engine
+                            // entirely; the field stays plain visible text.
+                            keyboardType="visible-password"
                         />
                     </Dialog.Content>
                     <Dialog.Actions>
