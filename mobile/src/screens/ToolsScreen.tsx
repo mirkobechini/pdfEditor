@@ -327,9 +327,9 @@ export default function ToolsScreen() {
 
     async function handleSigned(result: LocalPdf) {
         showResult(t("tools.signResult", { name: result.original_filename }));
-        await reloadPdfs();
         setRenameInput(result.original_filename);
         setRenamePdf(result);
+        await reloadPdfs();
     }
 
     async function handleSignFailed() {
@@ -347,9 +347,9 @@ export default function ToolsScreen() {
 
     async function handleAnnotationSaved(result: LocalPdf) {
         showResult(t("tools.annotationResult", { name: result.original_filename }));
-        await reloadPdfs();
         setRenameInput(result.original_filename);
         setRenamePdf(result);
+        await reloadPdfs();
     }
 
     async function handleAnnotationFailed() {
@@ -372,9 +372,9 @@ export default function ToolsScreen() {
                 ? t("tools.ocrResultSuccess", { count: characterCount })
                 : t("tools.ocrResultNoText");
         showResult(message);
-        await reloadPdfs();
         setRenameInput(result.original_filename);
         setRenamePdf(result);
+        await reloadPdfs();
     }
 
     async function handleOcrFailed() {
