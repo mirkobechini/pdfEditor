@@ -21,6 +21,7 @@ import PrintOptionsModal, { type PrintOptions, parsePageRangeList } from "../../
 import AnnotationDialog from "../../components/AnnotationDialog";
 import ShareDialog from "../../components/ShareDialog";
 import { EditorSidebar } from "../components/EditorSidebar";
+import { EditorToolbar } from "../components/EditorToolbar";
 import { usePreferences } from "../../lib/preferences";
 import { useCloudSync } from "../../hooks/useCloudSync";
 import { useApiError } from "../../hooks/useApiError";
@@ -472,133 +473,34 @@ export default function EditorPage() {
                 />
 
                 <main className="flex flex-col border-r border-white/10 bg-[#13100d] min-h-0">
-                    <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-[#201a15] px-4">
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-1">
-                                <button className="rounded-lg px-3 py-1.5 text-xs font-semibold border border-white/10 bg-[#201a15] text-white">
-                                    {te("edit")}
-                                </button>
-                                <button onClick={handleDownload} disabled={!selectedDoc} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#9a8d80] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                                    {te("download")}
-                                </button>
-                            </div>
-                            {totalPages > 0 && (
-                                <div className="flex items-center gap-1 ml-2 text-[11px] text-[#9a8d80] font-mono">
-                                    <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} className="h-7 w-7 rounded hover:bg-white/6" disabled={currentPage <= 1}>
-                                        ◀
-                                    </button>
-                                    <span className="px-1">{currentPage} / {totalPages}</span>
-                                    <button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} className="h-7 w-7 rounded hover:bg-white/6" disabled={currentPage >= totalPages}>
-                                        ▶
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 mr-2 text-[11px] font-mono text-[#9a8d80]">
-                                <button onClick={() => setZoom(Math.max(0.25, zoom - 0.25))} className="h-7 w-7 rounded hover:bg-white/6">−</button>
-                                <span className="w-10 text-center">{Math.round(zoom * 100)}%</span>
-                                <button onClick={() => setZoom(Math.min(3, zoom + 0.25))} className="h-7 w-7 rounded hover:bg-white/6">+</button>
-                            </div>
-
-                            {/* Organizza dropdown */}
-                            <div className="relative" ref={organizeRef}>
-                                <button
-                                    onClick={() => setOpenMenu((m) => (m === "organize" ? null : "organize"))}
-                                    disabled={!selectedDoc}
-                                    data-testid="toolbar-organize"
-                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                    {te("organize")} ▾
-                                </button>
-                                {openMenu === "organize" && (
-                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
-                                        <button onClick={() => { setMergeOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("merge")}
-                                        </button>
-                                        <button onClick={() => { setSplitOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("split")}
-                                        </button>
-                                        <button onClick={() => { setReorderOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("reorder")}
-                                        </button>
-                                        <button onClick={() => { setRemovePagesOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("remove")}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Converti dropdown */}
-                            <div className="relative" ref={convertRef}>
-                                <button
-                                    onClick={() => setOpenMenu((m) => (m === "convert" ? null : "convert"))}
-                                    data-testid="toolbar-convert"
-                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white"
-                                >
-                                    {te("convert")} ▾
-                                </button>
-                                {openMenu === "convert" && (
-                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
-                                        <button onClick={() => { setCompressOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("compress")}
-                                        </button>
-                                        <button onClick={() => { setImportExportOpen(true); setOpenMenu(null); }} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white">
-                                            {te("importExport")}
-                                        </button>
-                                        <button onClick={() => { setReplaceTextOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("replaceText")}
-                                        </button>
-                                        <button onClick={() => { setMetadataOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("metadata")}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Annota dropdown */}
-                            <div className="relative" ref={annotateMenuRef}>
-                                <button
-                                    onClick={() => setOpenMenu((m) => (m === "annotate" ? null : "annotate"))}
-                                    disabled={!selectedDoc}
-                                    data-testid="toolbar-annotate-menu"
-                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                    {te("annotate")} ▾
-                                </button>
-                                {openMenu === "annotate" && (
-                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
-                                        <button onClick={() => { setSignOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("sign")}
-                                        </button>
-                                        <button onClick={() => { setOcrOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} data-testid="toolbar-ocr" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("ocr")}
-                                        </button>
-                                        <button onClick={() => { setAnnotateOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} data-testid="toolbar-annotate" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("annotate")}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <button
-                                onClick={handlePrint}
-                                disabled={!selectedDoc}
-                                data-testid="toolbar-print"
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("print")}
-                            </button>
-                            <button
-                                onClick={() => setShareOpen(true)}
-                                disabled={!selectedDoc}
-                                data-testid="toolbar-share"
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("share")}
-                            </button>
-                        </div>
-                    </header>
+                    <EditorToolbar
+                        te={te}
+                        selected={!!selectedDoc}
+                        totalPages={totalPages}
+                        currentPage={currentPage}
+                        zoom={zoom}
+                        openMenu={openMenu}
+                        organizeRef={organizeRef}
+                        convertRef={convertRef}
+                        annotateMenuRef={annotateMenuRef}
+                        onDownload={handleDownload}
+                        onPrint={handlePrint}
+                        onPageChange={setCurrentPage}
+                        onZoomChange={setZoom}
+                        onToggleMenu={(m) => setOpenMenu((prev) => (prev === m ? null : m))}
+                        onMerge={() => { setMergeOpen(true); setOpenMenu(null); }}
+                        onSplit={() => { setSplitOpen(true); setOpenMenu(null); }}
+                        onReorder={() => { setReorderOpen(true); setOpenMenu(null); }}
+                        onRemovePages={() => { setRemovePagesOpen(true); setOpenMenu(null); }}
+                        onCompress={() => { setCompressOpen(true); setOpenMenu(null); }}
+                        onImportExport={() => { setImportExportOpen(true); setOpenMenu(null); }}
+                        onReplaceText={() => { setReplaceTextOpen(true); setOpenMenu(null); }}
+                        onMetadata={() => { setMetadataOpen(true); setOpenMenu(null); }}
+                        onSign={() => { setSignOpen(true); setOpenMenu(null); }}
+                        onOcr={() => { setOcrOpen(true); setOpenMenu(null); }}
+                        onAnnotate={() => { setAnnotateOpen(true); setOpenMenu(null); }}
+                        onShare={() => setShareOpen(true)}
+                    />
 
                     <div className="flex-1 bg-black p-6 overflow-hidden relative">
                         {dragOver && (
