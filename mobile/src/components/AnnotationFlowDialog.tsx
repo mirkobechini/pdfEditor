@@ -19,8 +19,8 @@ interface AnnotationFlowDialogProps {
 
 const ANNOTATION_TYPES = ["highlight", "underline", "strikeout", "text", "free_text"] as const;
 const COLORS = ["#FFFF00", "#FF0000", "#00A651", "#0066FF", "#FF8800", "#000000"];
-const BOX_WIDTH = 200;
-const BOX_HEIGHT = 100;
+const DEFAULT_BOX_WIDTH = 200;
+const DEFAULT_BOX_HEIGHT = 100;
 
 /**
  * Annotation flow for mobile: choose type/color/page, drag the box to
@@ -38,6 +38,8 @@ export default function AnnotationFlowDialog({ visible, pdfId, pdfName, pdfUri, 
     const [page, setPage] = useState(1);
     const [rectX, setRectX] = useState(50);
     const [rectY, setRectY] = useState(50);
+    const [rectWidth, setRectWidth] = useState(DEFAULT_BOX_WIDTH);
+    const [rectHeight, setRectHeight] = useState(DEFAULT_BOX_HEIGHT);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
@@ -55,7 +57,7 @@ export default function AnnotationFlowDialog({ visible, pdfId, pdfName, pdfUri, 
         setSaving(true);
         setError("");
         try {
-            const rect = [rectX, rectY, rectX + BOX_WIDTH, rectY + BOX_HEIGHT];
+            const rect = [rectX, rectY, rectX + rectWidth, rectY + rectHeight];
             const result = await addAnnotation(pdfId, {
                 page,
                 type,
@@ -126,8 +128,9 @@ export default function AnnotationFlowDialog({ visible, pdfId, pdfName, pdfUri, 
                         <PositionSelectorNative
                             pdfUri={pdfUri}
                             pageNumber={page}
-                            boxSize={{ width: BOX_WIDTH, height: BOX_HEIGHT }}
+                            boxSize={{ width: DEFAULT_BOX_WIDTH, height: DEFAULT_BOX_HEIGHT }}
                             onPositionChange={(x, y) => { setRectX(x); setRectY(y); }}
+                            onSizeChange={(w, h) => { setRectWidth(w); setRectHeight(h); }}
                             previewWidth={contentWidth}
                         />
 

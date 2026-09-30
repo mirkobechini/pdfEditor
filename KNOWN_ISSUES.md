@@ -83,6 +83,14 @@
 **Fix:** creato `CloudSyncContext` provider che condivide una singola istanza di `useCloudSync`. Le schermate ora usano `useCloudSyncContext()`. Aggiunto `useCallback` per l'inline function in MainTabs e `freezeOnBlur: true`.
 **Stato:** ✅ Risolto (issue #801, PR #802).
 
+### M7 — Home screen: spinner infinito se il sync non parte (issue #866) ✅
+
+**File:** `mobile/src/screens/HomeScreen.tsx`
+**Descrizione:** Al riavvio dell'app (login automatico da sessione ripristinata), la Home restava bloccata sullo spinner a schermo intero all'infinito, anche se i PDF locali erano già stati caricati correttamente.
+**Causa:** `loading` partiva `true` e veniva messo a `false` **solo** dentro `loadPdfs()`, chiamata unicamente al completamento della sincronizzazione cloud (transizione `isSyncing: true → false`). Se il sync non partiva mai (offline, disabilitato, o semplicemente non ancora avviato), quella transizione non si verificava mai e lo spinner restava visibile per sempre — nonostante `useFocusEffect` avesse già caricato e mostrato i PDF locali in `pdfs` (ma non toccava `loading`, per design, per evitare il flicker dello spinner ad ogni focus, vedi M6).
+**Fix:** `useFocusEffect` ora chiama `setLoading(false)` nel `.finally()` del primo caricamento locale, così lo spinner iniziale si chiude non appena i PDF locali sono pronti, indipendentemente dal sync cloud.
+**Stato:** ✅ Risolto (issue #866).
+
 ### OCR — Binary `tesseract` incluso nel sidecar desktop (issue #829, fix #831) ✅
 
 **File:** `backend/app/core/tesseract.py`, `backend/app/services/pdf_service.py`, `desktop/build-sidecar.ps1`, `desktop/build-sidecar.sh`, `desktop/run_backend.py`
@@ -205,6 +213,8 @@ La conversione DOCX→PDF usa **python-docx + reportlab** (web/mobile online, de
 | Desktop: PdfViewer         | 81.7%                 | ❌ No      | Rendering PDF.js in jsdom                                                                             |
 | Desktop: GoogleLoginButton | 76.31%                | ❌ No      | Redirect flow difficile da testare                                                                    |
 | ReorderPagesModal DnD      | 81.17%                | ❌ No      | DnD handlers (@dnd-kit) non copribili in jsdom — richiedono test E2E con Playwright                   |
+| Mobile: PositionSelectorNative PanResponder | non coperto | ❌ No | Logica gesture drag/resize (`PanResponder` di RN core) non testabile in jsdom — richiede device/emulatore reale. Verificato manualmente su device fisico (issue #866). |
+| Mobile: *FlowDialog (Sign/Annotation/Ocr/Share) | non coperto | ❌ No | Componenti RN Paper con `Dialog`/`Portal` non renderizzabili nel setup RTL di questo progetto (vedi commento in `mobile/src/components/positionMath.ts`). Verificati manualmente su device fisico. |
 | Web: ImportExportDialog    | 98.14%                | ❌ No      | Guard `if (!importFile) return` non raggiungibile via UI (bottone import disabled senza file)         |
 
 ---

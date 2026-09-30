@@ -203,7 +203,10 @@
     "namePdfTitle": "Nome del PDF",
     "fileNameOptional": "Nome file (opzionale)",
     "pagesInfo": "{{count}} pagine • {{size}} KB",
-    "compressOfflineHint": "Offline: la compressione sarà parziale (re-save locale)"
+    "compressOfflineHint": "Offline: la compressione sarà parziale (re-save locale)",
+    "renamePdfTitle": "Rinomina file",
+    "renamePdfLabel": "Nome file",
+    "renameSkip": "Mantieni nome"
   },
   "auth": {
     "signIn": "Accedi",

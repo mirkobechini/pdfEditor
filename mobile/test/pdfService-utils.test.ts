@@ -48,6 +48,7 @@ import {
   isPdfEncrypted,
   protectPdf,
   unlockPdf,
+  normalizeFilename,
 } from "../src/services/pdfService";
 import type { LocalPdf } from "../src/shared/types";
 
@@ -80,6 +81,28 @@ beforeEach(() => {
 // ─── Tests ────────────────────────────────────────────────────────
 
 describe("pdfService utilities", () => {
+  describe("normalizeFilename", () => {
+    it("leaves a plain filename untouched", () => {
+      expect(normalizeFilename("React Hooks.pdf")).toBe("React Hooks.pdf");
+    });
+
+    it("decodes a single layer of percent-encoding", () => {
+      expect(normalizeFilename("React%20Hooks.pdf")).toBe("React Hooks.pdf");
+    });
+
+    it("decodes multiple compounded layers of percent-encoding", () => {
+      // "%20" encoded again becomes "%2520" ("%" -> "%25"); this is the
+      // pattern actually seen on device after a file round-tripped through
+      // several upload-based operations (annotate, OCR, ...).
+      expect(normalizeFilename("React%2520Hooks.pdf")).toBe("React Hooks.pdf");
+      expect(normalizeFilename("React%252520Hooks.pdf")).toBe("React Hooks.pdf");
+    });
+
+    it("returns the input unchanged on a malformed percent-sequence instead of throwing", () => {
+      expect(normalizeFilename("100% done.pdf")).toBe("100% done.pdf");
+    });
+  });
+
   describe("readPdfBytes (lines 33-34)", () => {
     it("reads bytes from a PDF file via mergePdfs", async () => {
       const pdfBytes = await createTestPdf("Hello");

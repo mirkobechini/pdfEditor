@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { View, FlatList, TouchableOpacity, RefreshControl } from "react-native";
-import { Text, Card, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List, Dialog, TextInput, Searchbar, Snackbar, IconButton, Checkbox } from "react-native-paper";
+import { Text, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List, Dialog, TextInput, Searchbar, Snackbar, IconButton } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -11,13 +11,13 @@ import { useAuth } from "../shared/auth";
 import { getLocalPdfById, savePdfLocally, deleteLocalPdf, togglePdfSyncExclude } from "../services/localDb";
 import { File } from "expo-file-system";
 import { StorageAccessFramework } from "expo-file-system/legacy";
-import { Swipeable } from "react-native-gesture-handler";
 import { setBadgeCountAsync } from "expo-notifications";
 import * as Sharing from "expo-sharing";
 import { useTranslation } from "react-i18next";
 import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import DeleteSyncDialog, { type DeleteSyncOption } from "./DeleteSyncDialog";
 import ReplaceTextDialog from "../components/ReplaceTextDialog";
+import PdfListItem from "../components/PdfListItem";
 
 type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Main">;
 
@@ -58,14 +58,14 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         setSnackbarVisible(true);
     }
 
-    function toggleSelect(id: string) {
+    const toggleSelect = useCallback((id: string) => {
         setSelectedIds((prev) => {
             const next = new Set(prev);
             if (next.has(id)) next.delete(id);
             else next.add(id);
             return next;
         });
-    }
+    }, []);
 
     function enterMultiSelect() {
         setMultiSelect(true);
@@ -162,13 +162,17 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         }
     }
 
-    // Reload PDFs when screen is focused (lightweight, no spinner to avoid lag)
+    // Reload PDFs when screen is focused (lightweight, no spinner to avoid lag).
+    // Also clears the initial `loading` spinner once local PDFs are in — this
+    // used to depend solely on the isSyncing effect below, which never fires
+    // (leaving the screen stuck on the spinner forever) when sync never starts
+    // — offline, disabled, or the sync loop just hasn't kicked in yet.
     useFocusEffect(
         useCallback(() => {
             loadLocalPdfs(userId).then((local) => {
                 setPdfs(local);
                 onPdfCountChange?.(local.length);
-            }).catch(() => { });
+            }).catch(() => { }).finally(() => setLoading(false));
         }, [userId])
     );
 
@@ -232,7 +236,7 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     }
 
-    async function handleDelete(pdf: LocalPdf) {
+    const handleDelete = useCallback(async (pdf: LocalPdf) => {
         setContextPdf(null);
         // If PDF is cloud-synced and sync is enabled, ask what to delete
         if (syncEnabled && pdf.cloud_synced === 1) {
@@ -247,7 +251,24 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
         await deleteLocalPdf(pdf.id);
         await loadPdfs();
         showSnack(t("home.deleted", { name: pdf.original_filename }));
-    }
+        // loadPdfs/showSnack/t are recreated every render (not memoized
+        // themselves) but don't go stale in a way that matters here — they
+        // just read fresh DB state / call stable setState setters. Omitted
+        // so this callback (passed down to PdfListItem) stays referentially
+        // stable across renders instead of only when syncEnabled changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [syncEnabled]);
+
+    const handleItemPress = useCallback(
+        (item: LocalPdf) => {
+            navigation.navigate("PdfViewer", { pdfId: item.id, title: item.original_filename });
+        },
+        [navigation],
+    );
+
+    const handleItemLongPress = useCallback((item: LocalPdf) => {
+        setContextPdf(item);
+    }, []);
 
     function openRename(pdf: LocalPdf) {
         setContextPdf(null);
@@ -307,106 +328,19 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={{ padding: 16 }}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-                    renderItem={({ item }) => {
-                        const isSelected = selectedIds.has(item.id);
-                        const renderRightActions = () => {
-                            if (multiSelect) return <View />;
-                            return (
-                                <View style={{ justifyContent: "center", alignItems: "center", backgroundColor: theme.colors.error, marginBottom: 12, borderRadius: 12, width: 80 }}>
-                                    <TouchableOpacity
-                                        onPress={() => handleDelete(item)}
-                                        style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 16 }}
-                                    >
-                                        <IconButton icon="delete" iconColor={theme.colors.onError} size={24} />
-                                        <Text style={{ color: theme.colors.onError, fontSize: 12 }}>{t("home.delete")}</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            );
-                        };
-                        return (
-                            <Swipeable renderRightActions={renderRightActions}>
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        if (multiSelect) {
-                                            toggleSelect(item.id);
-                                        } else {
-                                            navigation.navigate("PdfViewer", {
-                                                pdfId: item.id,
-                                                title: item.original_filename,
-                                            });
-                                        }
-                                    }}
-                                    onLongPress={() => {
-                                        if (!multiSelect) setContextPdf(item);
-                                    }}
-                                >
-                                    <Card style={{ marginBottom: 12, backgroundColor: theme.colors.surface }}>
-                                        <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                            {multiSelect && (
-                                                <Checkbox
-                                                    status={isSelected ? "checked" : "unchecked"}
-                                                    onPress={() => toggleSelect(item.id)}
-                                                    color={theme.colors.primary}
-                                                />
-                                            )}
-                                            <View
-                                                style={{
-                                                    width: 48,
-                                                    height: 60,
-                                                    borderRadius: 6,
-                                                    backgroundColor: isSelected ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
-                                                    justifyContent: "center",
-                                                    alignItems: "center",
-                                                    margin: 12,
-                                                }}
-                                            >
-                                                {item.upload_source ? (
-                                                    <Text style={{ fontSize: 24, color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant }}>
-                                                        {item.upload_source === "web" ? "🌐" : item.upload_source === "desktop" ? "💻" : "📱"}
-                                                    </Text>
-                                                ) : (
-                                                    <IconButton icon="file-pdf-box" iconColor={isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant} size={28} />
-                                                )}
-                                                <Text
-                                                    style={{
-                                                        fontSize: 10,
-                                                        color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant,
-                                                        fontWeight: "700",
-                                                        marginTop: -6,
-                                                    }}
-                                                >
-                                                    {item.page_count ?? "?"} p.
-                                                </Text>
-                                            </View>
-                                            <View style={{ flex: 1, paddingRight: 12 }}>
-                                                <Text variant="titleMedium" style={{ fontWeight: "600" }} numberOfLines={1}>
-                                                    {item.original_filename}
-                                                </Text>
-                                                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                                                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                                                        {formatSize(item.file_size)}
-                                                    </Text>
-                                                    {syncEnabled === false ? (
-                                                        <IconButton icon="cloud-off-outline" size={16} iconColor="#9E9E9E" style={{ margin: 0 }} />
-                                                    ) : syncStatus[item.id] === "pending" ? (
-                                                        <IconButton icon="cloud-sync" size={16} iconColor="#FFC107" style={{ margin: 0 }} />
-                                                    ) : syncStatus[item.id] === "error" ? (
-                                                        <IconButton icon="cloud-alert" size={16} iconColor="#F44336" style={{ margin: 0 }} />
-                                                    ) : item.cloud_synced_exclude === 1 ? (
-                                                        <IconButton icon="cloud-off-outline" size={16} iconColor="#9E9E9E" style={{ margin: 0 }} />
-                                                    ) : syncStatus[item.id] === "synced" || item.cloud_synced === 1 ? (
-                                                        <IconButton icon="cloud-check" size={16} iconColor="#4CAF50" style={{ margin: 0 }} />
-                                                    ) : (
-                                                        <IconButton icon="cloud-outline" size={16} iconColor="#9E9E9E" style={{ margin: 0 }} />
-                                                    )}
-                                                </View>
-                                            </View>
-                                        </View>
-                                    </Card>
-                                </TouchableOpacity>
-                            </Swipeable>
-                        );
-                    }}
+                    renderItem={({ item }) => (
+                        <PdfListItem
+                            item={item}
+                            isSelected={selectedIds.has(item.id)}
+                            multiSelect={multiSelect}
+                            syncEnabled={syncEnabled}
+                            syncStatus={syncStatus[item.id]}
+                            onPress={handleItemPress}
+                            onLongPress={handleItemLongPress}
+                            onToggleSelect={toggleSelect}
+                            onDelete={handleDelete}
+                        />
+                    )}
                 />
             )}
 
