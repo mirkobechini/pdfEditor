@@ -13,6 +13,31 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
 }
 
+/**
+ * Undoes accidental percent-encoding in a filename (e.g. "React%2520Hooks.pdf"
+ * instead of "React Hooks.pdf"). Filenames round-tripping through upload
+ * endpoints (import, annotate, OCR, compress, export) can pick up a layer of
+ * URL-encoding somewhere in that chain; since each of those re-uploads
+ * whatever name it was given, an already-encoded name gets encoded AGAIN on
+ * the next operation, compounding ("%20" -> "%2520" -> "%252520" ...).
+ * Decoding repeatedly until stable neutralizes however many layers built up,
+ * and is a safe no-op on a name that was never encoded in the first place.
+ */
+export function normalizeFilename(name: string): string {
+  let decoded = name;
+  for (let i = 0; i < 5; i++) {
+    let next: string;
+    try {
+      next = decodeURIComponent(decoded);
+    } catch {
+      break;
+    }
+    if (next === decoded) break;
+    decoded = next;
+  }
+  return decoded;
+}
+
 export async function readPdfBytes(uri: string): Promise<Uint8Array> {
   const file = new File(uri);
   const buffer = await file.arrayBuffer();
@@ -758,7 +783,7 @@ export async function importFile(
     const now = new Date().toISOString();
     const result: LocalPdf = {
       id,
-      original_filename: uploaded.original_filename,
+      original_filename: normalizeFilename(uploaded.original_filename),
       file_size: bytes.length,
       page_count: uploaded.page_count,
       uri,
