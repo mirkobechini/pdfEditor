@@ -1,7 +1,7 @@
 # Architecture Decision Record — Mobile (React Native / Expo)
 
 **Progetto:** PdfEditor — App mobile
-**Data:** 2026-08-07 (ultimo aggiornamento 2026-09-29)
+**Data:** 2026-08-07 (ultimo aggiornamento 2026-09-30)
 **Versioni ADR incluse:** v1.0 (Fase 4 — MVP completato + bug fix + offline auth)
 **Autore:** Mirko Bechini
 
