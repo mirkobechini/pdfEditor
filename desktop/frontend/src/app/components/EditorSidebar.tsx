@@ -5,10 +5,11 @@
 import Link from "next/link";
 import type { ChangeEvent, RefObject } from "react";
 import type { PdfDocument, User } from "../../shared/types";
+import type { PdfSyncStatus } from "../../hooks/useCloudSync";
 import { getPlatformIcon, formatFileSize, formatDate } from "../../lib/editor-utils";
 import GuestConvertBanner from "../components/GuestConvertBanner";
 
-export type SyncStatusMap = Record<string, "synced" | "pending" | "error" | undefined>;
+export type SyncStatusMap = Record<string, PdfSyncStatus>;
 
 export type EditorSidebarProps = {
     te: (k: string, values?: Record<string, string | number | Date>) => string;
