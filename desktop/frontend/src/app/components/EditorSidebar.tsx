@@ -11,7 +11,7 @@ import GuestConvertBanner from "../components/GuestConvertBanner";
 export type SyncStatusMap = Record<string, "synced" | "pending" | "error" | undefined>;
 
 export type EditorSidebarProps = {
-    te: (k: string, o?: Record<string, unknown>) => string;
+    te: (k: string, values?: Record<string, string | number | Date>) => string;
     user: User | null;
     docs: PdfDocument[];
     loading: boolean;
