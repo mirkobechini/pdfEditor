@@ -47,6 +47,7 @@ export default function ToolsScreen() {
         }
         setRenamePdf(null);
         setRenameInput("");
+        setRenameSelection(undefined);
     }
 
     // The *FlowDialog that just saved (Sign/Annotation/OCR) calls onSaved(...)
@@ -61,6 +62,7 @@ export default function ToolsScreen() {
     function openRenameDialog(result: LocalPdf) {
         setTimeout(() => {
             setRenameInput(result.original_filename);
+            setRenameSelection({ start: result.original_filename.length, end: result.original_filename.length });
             setRenamePdf(result);
         }, 0);
     }
@@ -77,6 +79,13 @@ export default function ToolsScreen() {
     // Rename-after-action dialog state (sign/annotate/OCR results)
     const [renamePdf, setRenamePdf] = useState<LocalPdf | null>(null);
     const [renameInput, setRenameInput] = useState("");
+    // Explicit cursor tracking: without a controlled `selection`, Android
+    // re-guesses where to put the cursor after every value update, and that
+    // guess can land a character off — typing "ciao" without watching could
+    // come out "cioa", or holding backspace near a given spot deletes past
+    // the intended character. Controlling `selection` ourselves (updated via
+    // onSelectionChange) removes the guesswork entirely.
+    const [renameSelection, setRenameSelection] = useState<{ start: number; end: number } | undefined>(undefined);
     const renameInputRef = useRef<any>(null);
 
     // `autoFocus` grabbed the keyboard while react-native-paper's Dialog was
@@ -1034,7 +1043,7 @@ export default function ToolsScreen() {
 
             {/* Rename Dialog — offered right after sign/annotate/OCR results */}
             <Portal>
-                <Dialog visible={renamePdf !== null} onDismiss={() => { setRenamePdf(null); setRenameInput(""); }}>
+                <Dialog visible={renamePdf !== null} onDismiss={() => { setRenamePdf(null); setRenameInput(""); setRenameSelection(undefined); }}>
                     <Dialog.Title>{t("tools.renamePdfTitle")}</Dialog.Title>
                     <Dialog.Content>
                         <TextInput
@@ -1043,12 +1052,14 @@ export default function ToolsScreen() {
                             mode="outlined"
                             value={renameInput}
                             onChangeText={setRenameInput}
+                            selection={renameSelection}
+                            onSelectionChange={(e) => setRenameSelection(e.nativeEvent.selection)}
                             autoCorrect={false}
                             spellCheck={false}
                         />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => { setRenamePdf(null); setRenameInput(""); }}>{t("tools.renameSkip")}</Button>
+                        <Button onPress={() => { setRenamePdf(null); setRenameInput(""); setRenameSelection(undefined); }}>{t("tools.renameSkip")}</Button>
                         <Button onPress={submitRename}>{t("common.save")}</Button>
                     </Dialog.Actions>
                 </Dialog>
