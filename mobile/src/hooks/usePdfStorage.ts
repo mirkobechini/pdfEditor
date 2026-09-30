@@ -13,6 +13,7 @@ import {
   deleteLocalPdf,
   getLocalPdfById,
 } from "../services/localDb";
+import { normalizeFilename } from "../services/pdfService";
 import type { LocalPdf } from "../shared/types";
 
 function generateId(): string {
@@ -63,7 +64,7 @@ export function usePdfStorage() {
         const localPdf: LocalPdf = {
           id,
           user_id: userId || "",
-          original_filename: asset.name || "untitled.pdf",
+          original_filename: normalizeFilename(asset.name || "untitled.pdf"),
           file_size: destFile.exists
             ? (destFile.size ?? asset.size ?? 0)
             : (asset.size ?? 0),
