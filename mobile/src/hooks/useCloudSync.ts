@@ -11,6 +11,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { File, Directory, Paths } from "expo-file-system";
 import { writeAsStringAsync } from "expo-file-system/legacy";
 import { api } from "../shared/api";
+import { normalizeFilename } from "../services/pdfService";
 import type { LocalPdf } from "../shared/types";
 import {
   getLocalPdfById,
@@ -267,7 +268,7 @@ export function useCloudSync(): UseCloudSyncReturn {
           id: localId,
           user_id: user?.id ?? "",
           cloud_id: pdfId,
-          original_filename: cloudPdf.original_filename,
+          original_filename: normalizeFilename(cloudPdf.original_filename),
           file_size: bytes.length,
           page_count: cloudPdf.page_count || 0,
           title: cloudPdf.title,
@@ -402,7 +403,7 @@ export function useCloudSync(): UseCloudSyncReturn {
             downloads.push({
               pdf: {
                 id: cloudPdf.id,
-                original_filename: cloudPdf.original_filename,
+                original_filename: normalizeFilename(cloudPdf.original_filename),
                 file_size: cloudPdf.file_size,
                 page_count: cloudPdf.page_count || 0,
                 title: cloudPdf.title,
