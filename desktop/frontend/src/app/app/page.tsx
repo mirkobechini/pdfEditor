@@ -23,10 +23,12 @@ import ShareDialog from "../../components/ShareDialog";
 import { EditorSidebar } from "../components/EditorSidebar";
 import { EditorToolbar } from "../components/EditorToolbar";
 import { EditorRightPanel } from "../components/EditorRightPanel";
+import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+import { EditorFooter } from "../components/EditorFooter";
 import { usePreferences } from "../../lib/preferences";
 import { useCloudSync } from "../../hooks/useCloudSync";
 import { useApiError } from "../../hooks/useApiError";
-import { formatFileSize, mimeFromName } from "../../lib/editor-utils";
+import { mimeFromName } from "../../lib/editor-utils";
 import { renderPagesToPngBase64, printCurrentPageViaBrowser } from "../../lib/printing";
 import type { PdfDocument } from "../../shared/types";
 
@@ -84,6 +86,21 @@ export default function EditorPage() {
             await api.updateMetadata(doc.id, { new_filename: newName });
             setDocs((prev) => prev.map((d) => d.id === doc.id ? { ...d, original_filename: newName } : d));
         } catch { /* ignore */ }
+    }
+
+    // elimina il documento (delete confirm) — lato parent (#881, T6)
+    async function handleDelete(id: string) {
+        setDeleteConfirm(null);
+        try {
+            await api.deletePdf(id);
+            setDocs((prev) => prev.filter((d) => d.id !== id));
+            if (selectedDoc?.id === id) {
+                setSelectedDoc(null);
+                setPdfUrl(null);
+            }
+        } catch (err) {
+            console.error("Delete failed:", err);
+        }
     }
 
     const handleDocUpdated = React.useCallback((updatedDoc: PdfDocument) => {
@@ -707,57 +724,14 @@ export default function EditorPage() {
             />
 
             {/* Delete confirmation dialog */}
-            {deleteConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-                    <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl">
-                        <h2 className="text-base font-bold text-white mb-2">{te("deleteConfirmTitle")}</h2>
-                        <p className="text-sm text-[#9a8d80] mb-6">
-                            {te("deleteConfirmDesc")}
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setDeleteConfirm(null)}
-                                className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5"
-                            >
-                                {te("cancel")}
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    const id = deleteConfirm;
-                                    setDeleteConfirm(null);
-                                    try {
-                                        await api.deletePdf(id);
-                                        setDocs((prev) => prev.filter((d) => d.id !== id));
-                                        if (selectedDoc?.id === id) {
-                                            setSelectedDoc(null);
-                                            setPdfUrl(null);
-                                        }
-                                    } catch (err) {
-                                        console.error("Delete failed:", err);
-                                    }
-                                }}
-                                className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
-                            >
-                                {te("delete")}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <DeleteConfirmModal
+                te={te}
+                deleteConfirmId={deleteConfirm}
+                onCancel={() => setDeleteConfirm(null)}
+                onConfirm={handleDelete}
+            />
 
-            <footer className="h-10 shrink-0 border-t border-white/10 bg-[#0b0a09] px-5 text-[10px] text-[#7f7468]">
-                <div className="mx-auto flex h-full max-w-[1880px] items-center justify-between">
-                    <div className="flex items-center gap-5">
-                        <span className="text-[#48c769]">●</span>
-                        <span>{te("sidecarOnline")} ({API_BASE.replace("http://", "")})</span>
-                        <span>{te("encoding")}</span>
-                        <span>{te("database")}</span>
-                    </div>
-                    <div className="flex items-center gap-6">
-                        <span>{te("pdfEngine")}</span>
-                    </div>
-                </div>
-            </footer>
+            <EditorFooter te={te} apiBase={API_BASE} />
         </div>
     );
 }
