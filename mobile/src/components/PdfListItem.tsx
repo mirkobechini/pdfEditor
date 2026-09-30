@@ -87,7 +87,7 @@ function PdfListItem({
                                 margin: 12,
                             }}
                         >
-                            {item.upload_source && item.upload_source !== "mobile" ? (
+                            {item.upload_source ? (
                                 <Text style={{ fontSize: 24, color: isSelected ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant }}>
                                     {item.upload_source === "web" ? "🌐" : item.upload_source === "desktop" ? "💻" : "📱"}
                                 </Text>
