@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-09-29 / 2026-09-30
+
+### 📱 Bug mobile trovati testando su device reale (issue #866)
+
+Maratona di test su device fisico (Samsung, tastiera Samsung inclusa) che ha portato a una lunga serie di fix, in ordine di scoperta:
+
+- **Crash OCR/annotazioni**: `Blob` di React Native non implementa `.arrayBuffer()` — `api.downloadPdf`/`exportPdf` ora usano `res.arrayBuffer()` direttamente.
+- **Firma invisibile**: mancava il flip dell'asse Y (pdf-lib usa origine in basso a sinistra, il selettore di posizione in alto a sinistra).
+- **Firma di dimensione/posizione sbagliata**: la dimensione pagina riportata da `react-native-pdf` non è in punti PDF veri su alcuni documenti — ora letta direttamente da `pdf-lib`.
+- **Firma stirata**: aggiunto fit che preserva l'aspect ratio.
+- **Zoom che resettava il resize manuale**: ora riscala proporzionalmente invece di tornare alla dimensione di default.
+- **Duplicazione PDF sul cloud**: `cloud_id` non veniva mai salvato dopo l'upload, quindi ogni sync ri-scaricava gli stessi file come duplicati. Stesso bug trovato una seconda volta in `getPendingChanges`.
+- **Spinner infinito in Home**: se il sync cloud non partiva mai, lo spinner iniziale non si chiudeva anche a caricamento locale completato.
+- **Pallino di resize che trascinava invece di ridimensionare**: due `PanResponder` annidati non si negoziano in modo affidabile sotto la nuova architettura RN — unificati in uno solo.
+- **Lag su Home/Strumenti con molti file**: `FlatList` non memoizzata forzava il re-render di ogni riga ad ogni cambio di stato, incluso digitare in un campo di testo qualsiasi sulla stessa schermata.
+- **Box di annotazione sbagliato con lo zoom**: `renderHeight` derivava da un evento asincrono di `react-native-pdf`, potendo restare disallineato rispetto al `renderWidth` sincrono — ora calcolato in modo sincrono dall'aspect ratio reale della pagina.
+- **Annotazione salvata sempre alla dimensione di default**: `AnnotationFlowDialog` non passava `onSizeChange` al selettore di posizione, quindi il ridimensionamento a video non veniva mai salvato.
+- **Rinomina dopo firma/annotazione/OCR** (nuova funzionalità): aggiunta, poi stress-testata fino a trovare 3 bug reali — una race condition nell'inizializzazione del DB SQLite che causava un crash nativo, una collisione di commit React tra lo smontaggio del dialog che si chiude e il montaggio di quello di rinomina, e infine la causa vera del cursore che sembrava "mangiare" caratteri: il campo di testo non aveva un `selection` tracciato esplicitamente.
+- **Nomi file con codifica URL composta**: un nome file può accumulare livelli di percent-encoding attraversando più operazioni (import, annotazione, OCR, compressione, export) che si ri-caricano il nome a vicenda — aggiunta `normalizeFilename()` che decodifica finché stabile.
+
+### 🎨 Colore delle annotazioni sempre giallo (issue #869, backend condiviso con web/desktop)
+
+`Annot.set_colors()`/`set_opacity()` di PyMuPDF non rigenerano l'appearance stream senza una chiamata esplicita a `update()` — ogni annotazione manteneva il colore di default della libreria (giallo per l'evidenziatore) a prescindere dal colore richiesto.
+
+### 🖼️ Icona piattaforma nascosta per i file caricati dalla piattaforma corrente (issue #871)
+
+Sia web che mobile nascondevano deliberatamente l'icona (🌐/💻/📱) quando corrispondeva alla piattaforma da cui si stava guardando la lista file — ora sempre visibile, allineato al comportamento già corretto del desktop.
+
+### 🎨 Nuovo logo definitivo (issue #868)
+
+Sostituito il logo placeholder con il logo SVG definitivo fornito dal developer, sul sito web.
+
+### 🔒 Sicurezza
+
+Bump di sicurezza `next` 16.3.5 → 16.3.8 (Dependabot) — corregge diverse vulnerabilità incluse SSRF e RCE ad alta gravità nell'ottimizzazione immagini e nel rendering SSG/ISR.
+
 ## 2026-09-28
 
 ### 🚀 Release v0.1.39 pubblicata
