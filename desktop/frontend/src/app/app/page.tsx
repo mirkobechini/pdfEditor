@@ -25,20 +25,10 @@ import GuestConvertBanner from "../components/GuestConvertBanner";
 import { usePreferences } from "../../lib/preferences";
 import { useCloudSync } from "../../hooks/useCloudSync";
 import { useApiError } from "../../hooks/useApiError";
+import { getPlatformIcon, formatFileSize, formatDate, mimeFromName } from "../../lib/editor-utils";
 import type { PdfDocument } from "../../shared/types";
 
 const API_BASE = getApiBaseUrl();
-
-const PLATFORM_ICONS: Record<string, string> = {
-    web: "🌐",
-    desktop: "💻",
-    mobile: "📱",
-};
-
-function getPlatformIcon(source?: string): string {
-    if (!source) return "☁️";
-    return PLATFORM_ICONS[source] || "☁️";
-}
 
 export default function EditorPage() {
     const te = useTranslations("editor");
@@ -405,21 +395,6 @@ export default function EditorPage() {
     }, []);
 
     // Read a dropped file path (Tauri) and upload it
-    const MIME_BY_EXT: Record<string, string> = {
-        png: "image/png",
-        jpg: "image/jpeg",
-        jpeg: "image/jpeg",
-        gif: "image/gif",
-        bmp: "image/bmp",
-        txt: "text/plain",
-        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    };
-
-    function mimeFromName(filename: string): string {
-        const ext = filename.toLowerCase().split(".").pop() || "";
-        return MIME_BY_EXT[ext] || "application/octet-stream";
-    }
-
     async function handleDroppedPath(filePath: string) {
         try {
             const raw = await tauriInvoke<number[]>("read_file_binary", { path: filePath });
@@ -552,26 +527,6 @@ export default function EditorPage() {
         };
     }, [selectedDoc?.id, pdfRefreshKey]);
 
-    function formatFileSize(bytes: number): string {
-        if (bytes < 1024) return bytes + " " + te("bytes");
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " " + te("kilobytes");
-        return (bytes / (1024 * 1024)).toFixed(1) + " " + te("megabytes");
-    }
-
-    function formatDate(dateStr: string): string {
-        if (!dateStr) return "";
-        const d = new Date(dateStr);
-        const now = new Date();
-        const diff = now.getTime() - d.getTime();
-        const mins = Math.floor(diff / 60000);
-        if (mins < 1) return "ora";
-        if (mins < 60) return mins + te("minutesAgo");
-        const hours = Math.floor(mins / 60);
-        if (hours < 24) return hours + te("hoursAgo");
-        const days = Math.floor(hours / 24);
-        if (days < 7) return days + te("daysAgo");
-        return d.toLocaleDateString();
-    }
     return (
         <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col overflow-hidden">
             <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0">
@@ -694,7 +649,7 @@ export default function EditorPage() {
                                                         </p>
                                                     )}
                                                     <p className="mt-1 font-mono text-[10px] text-[#7e7267]">
-                                                        {formatFileSize(doc.file_size)} · {formatDate(doc.created_at)}
+                                                        {formatFileSize(doc.file_size, te)} · {formatDate(doc.created_at, te)}
                                                         {syncStatus[doc.id] === "synced" && <span className="ml-2 text-green-400">☁️</span>}
                                                         {syncStatus[doc.id] === "pending" && <span className="ml-2 text-yellow-400">⏳</span>}
                                                         {syncStatus[doc.id] === "error" && <span className="ml-2 text-red-400">⚠️</span>}
@@ -941,7 +896,7 @@ export default function EditorPage() {
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs text-[#948779]">{te("size")}</span>
-                                    <span className="text-xs font-semibold text-white">{formatFileSize(selectedDoc.file_size)}</span>
+                                    <span className="text-xs font-semibold text-white">{formatFileSize(selectedDoc.file_size, te)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs text-[#948779]">{te("pages")}</span>
