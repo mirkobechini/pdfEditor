@@ -4,7 +4,6 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
 import { mapError } from "../lib/error-map";
-import { isTauri } from "../lib/tauri";
 
 const PLATFORM_ICONS: Record<string, string> = {
   web: "🌐",
@@ -14,8 +13,6 @@ const PLATFORM_ICONS: Record<string, string> = {
 
 function getPlatformIcon(source?: string): string | null {
   if (!source) return null;
-  const current = isTauri() ? "desktop" : "web";
-  if (source === current) return null; // stessa piattaforma, nessuna icona
   return PLATFORM_ICONS[source] || null;
 }
 

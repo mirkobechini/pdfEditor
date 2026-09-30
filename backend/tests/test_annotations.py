@@ -116,6 +116,31 @@ class TestAnnotations:
             resp = self._annotate(client, free_headers, pdf_id)
             assert resp.status_code == status.HTTP_403_FORBIDDEN
 
+    def test_annotation_color_is_applied(self, client, pro_headers):
+        # Checking annot.colors (metadata) isn't enough: PyMuPDF updates that
+        # immediately regardless of whether the appearance stream was
+        # regenerated, so it can't tell apart "color staged" from "color
+        # actually rendered". Rendering the page and sampling the highlighted
+        # pixel is what actually catches the regression (annot.update() never
+        # called, so the highlight silently stayed the library's default
+        # yellow no matter what color was requested).
+        pdf_id = self._upload(client, pro_headers, _make_pdf())
+        resp = self._annotate(client, pro_headers, pdf_id, type="highlight", color="#FF0000")
+        assert resp.status_code == status.HTTP_200_OK
+
+        dl = client.get(f"/pdfs/{pdf_id}/download", headers=pro_headers)
+        doc = fitz.open(stream=dl.content, filetype="pdf")
+        page = doc[0]
+        pix = page.get_pixmap()
+        # Center of the annotated rect [50, 50, 200, 100]
+        r, g, b = pix.pixel(125, 75)[:3]
+        assert r > 200 and g < 200 and b < 200, (
+            f"expected a reddish highlight pixel, got rgb=({r}, {g}, {b}) "
+            "(255, 255, 0-ish means the highlight rendered with PyMuPDF's "
+            "default yellow instead of the requested color)"
+        )
+        doc.close()
+
     def test_annotation_persists_in_pdf(self, client, pro_headers):
         pdf_id = self._upload(client, pro_headers, _make_pdf())
         resp = self._annotate(client, pro_headers, pdf_id, type="text", content="persisted")

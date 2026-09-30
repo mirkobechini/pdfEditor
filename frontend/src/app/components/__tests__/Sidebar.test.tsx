@@ -218,7 +218,7 @@ describe("Sidebar", () => {
         });
     });
 
-    it("does not show platform icon for same-platform uploads", async () => {
+    it("shows platform icon even for same-platform uploads", async () => {
         const webFiles = {
             items: [
                 { id: "1", original_filename: "doc1.pdf", file_size: 1000, page_count: 5, upload_source: "web", created_at: "2026-01-01", updated_at: "2026-01-01" },
@@ -228,9 +228,8 @@ describe("Sidebar", () => {
         (api.listPdfs as any).mockResolvedValue(webFiles);
         render(<Sidebar {...defaultProps} />);
         await waitFor(() => {
-            expect(screen.getByText("doc1.pdf")).toBeInTheDocument();
+            expect(screen.getByText("🌐")).toBeInTheDocument();
         });
-        expect(screen.queryByText("🌐")).not.toBeInTheDocument();
     });
 
     it("does not show platform icon when upload_source is undefined", async () => {
