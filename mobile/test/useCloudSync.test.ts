@@ -19,8 +19,8 @@ jest.mock("@react-native-community/netinfo", () => ({
 
 jest.mock("expo-file-system", () => ({
   File: jest.fn(() => ({ exists: Promise.resolve(true) })),
-  Directory: jest.fn(),
-  Paths: { cache: "/cache" },
+  Directory: jest.fn(() => ({ exists: true, create: jest.fn(), uri: "/documents/pdfs/" })),
+  Paths: { cache: "/cache", document: "/documents" },
 }));
 
 jest.mock("expo-file-system/legacy", () => ({
@@ -237,5 +237,39 @@ describe("useCloudSync getPendingChanges", () => {
 
     expect(pending.downloads).toHaveLength(1);
     expect(pending.downloads[0].pdf.id).toBe("cloud-2");
+  });
+});
+
+describe("useCloudSync downloadPdf", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+    (NetInfo.fetch as jest.Mock).mockResolvedValue({ isConnected: true });
+    (getUnsyncedPdfs as jest.Mock).mockResolvedValue([]);
+  });
+
+  it("normalizes a percent-encoded filename from the cloud metadata", async () => {
+    // Regression guard: a filename round-tripping through upload-based
+    // operations can pick up a layer of percent-encoding (issue #866,
+    // e.g. "React%2520Hooks.pdf" instead of "React Hooks.pdf") — downloadPdf
+    // must decode it before persisting, or it compounds on every subsequent
+    // re-upload of that same file.
+    jest.spyOn(api, "downloadPdf").mockResolvedValue(new ArrayBuffer(4));
+    jest.spyOn(api, "getPdf").mockResolvedValue({
+      id: "cloud-1",
+      original_filename: "React%2520Hooks.pdf",
+      page_count: 3,
+    } as any);
+    const mockSavePdfLocally = require("../src/services/localDb").savePdfLocally as jest.Mock;
+    mockSavePdfLocally.mockResolvedValue(undefined);
+
+    const { result } = await renderHook(() => useCloudSync());
+    await act(async () => {
+      await result.current.downloadPdf("cloud-1");
+    });
+
+    expect(mockSavePdfLocally).toHaveBeenCalledWith(
+      expect.objectContaining({ original_filename: "React Hooks.pdf" }),
+    );
   });
 });
