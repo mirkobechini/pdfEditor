@@ -363,17 +363,17 @@ describe("ApiClient", () => {
   // ─── Download PDF ───────────────────────────────────────────────
 
   describe("downloadPdf", () => {
-    it("sends GET to /pdfs/{id}/download and returns blob", async () => {
+    it("sends GET to /pdfs/{id}/download and returns an ArrayBuffer", async () => {
       client.setToken("t");
-      const blob = new Blob(["pdf-content"], { type: "application/pdf" });
+      const buffer = new TextEncoder().encode("pdf-content").buffer;
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        blob: () => Promise.resolve(blob),
+        arrayBuffer: () => Promise.resolve(buffer),
       });
 
       const result = await client.downloadPdf("p1");
-      expect(result).toBeInstanceOf(Blob);
+      expect(result).toBe(buffer);
       expect(mockFetch).toHaveBeenCalledWith(
         `${BASE}/pdfs/p1/download`,
         expect.objectContaining({
@@ -386,17 +386,17 @@ describe("ApiClient", () => {
   });
 
   describe("exportPdf", () => {
-    it("sends POST to /pdfs/{id}/export and returns blob", async () => {
+    it("sends POST to /pdfs/{id}/export and returns an ArrayBuffer", async () => {
       client.setToken("t");
-      const blob = new Blob(["txt-content"], { type: "text/plain" });
+      const buffer = new TextEncoder().encode("txt-content").buffer;
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        blob: () => Promise.resolve(blob),
+        arrayBuffer: () => Promise.resolve(buffer),
       });
 
       const result = await client.exportPdf("p1", "txt");
-      expect(result).toBeInstanceOf(Blob);
+      expect(result).toBe(buffer);
       expect(mockFetch).toHaveBeenCalledWith(
         `${BASE}/pdfs/p1/export?fmt=txt`,
         expect.objectContaining({

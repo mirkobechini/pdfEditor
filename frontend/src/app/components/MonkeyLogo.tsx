@@ -22,7 +22,7 @@ export default function MonkeyLogo({ className = "" }: MonkeyLogoProps) {
 
     return (
         <Image
-            src="/mirko-logo.png"
+            src="/Logo_Mirko.svg"
             alt="PdfEditor Logo"
             width={32}
             height={32}

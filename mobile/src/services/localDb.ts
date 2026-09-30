@@ -5,66 +5,79 @@
 import * as SQLite from "expo-sqlite";
 import type { LocalPdf } from "../shared/types";
 
-let db: SQLite.SQLiteDatabase | null = null;
+// Cache the init *promise*, not the resolved database — several callers can
+// hit getDb() concurrently (a save, a list reload, a rename all firing close
+// together right after a cold app launch is the common case). Caching only
+// the resolved value left a window where `db` was still null while the first
+// caller's openDatabaseAsync()/migrations were in flight, so a second caller
+// would start its own openDatabaseAsync() on the same file — two connections
+// racing through CREATE TABLE/migrations produced a native NullPointerException
+// out of NativeDatabase.prepareAsync (issue #866, hit testing annotations).
+let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 async function getDb(): Promise<SQLite.SQLiteDatabase> {
-  if (!db) {
-    db = await SQLite.openDatabaseAsync("pdfeditor.db");
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS pdfs (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL DEFAULT '',
-        original_filename TEXT NOT NULL,
-        file_size INTEGER NOT NULL DEFAULT 0,
-        page_count INTEGER NOT NULL DEFAULT 0,
-        title TEXT,
-        author TEXT,
-        uri TEXT NOT NULL,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-      );
-    `);
-    // Migration: add user_id column if missing (for existing DBs)
-    try {
-      await db.execAsync(
-        "ALTER TABLE pdfs ADD COLUMN user_id TEXT NOT NULL DEFAULT ''",
-      );
-    } catch {
-      // Column already exists — ignore
-    }
-    // Migration: add cloud_synced column
-    try {
-      await db.execAsync(
-        "ALTER TABLE pdfs ADD COLUMN cloud_synced INTEGER NOT NULL DEFAULT 0",
-      );
-    } catch {
-      // Column already exists — ignore
-    } // Migration: add cloud_synced_exclude column
-    try {
-      await db.execAsync(
-        "ALTER TABLE pdfs ADD COLUMN cloud_synced_exclude INTEGER NOT NULL DEFAULT 0",
-      );
-    } catch {
-      // Column already exists — ignore
-    } // Migration: add cloud_synced_at column
-    try {
-      await db.execAsync("ALTER TABLE pdfs ADD COLUMN cloud_synced_at TEXT");
-    } catch {
-      // Column already exists — ignore
-    } // Migration: add cloud_id column (for sync dedup)
-    try {
-      await db.execAsync("ALTER TABLE pdfs ADD COLUMN cloud_id TEXT");
-    } catch {
-      // Column already exists — ignore
-    }
-    // Migration: add upload_source column (web, desktop, mobile)
-    try {
-      await db.execAsync(
-        "ALTER TABLE pdfs ADD COLUMN upload_source TEXT DEFAULT 'mobile'",
-      );
-    } catch {
-      // Column already exists — ignore
-    }
+  if (!dbPromise) {
+    dbPromise = initDb();
+  }
+  return dbPromise;
+}
+
+async function initDb(): Promise<SQLite.SQLiteDatabase> {
+  const db = await SQLite.openDatabaseAsync("pdfeditor.db");
+  await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS pdfs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL DEFAULT '',
+      original_filename TEXT NOT NULL,
+      file_size INTEGER NOT NULL DEFAULT 0,
+      page_count INTEGER NOT NULL DEFAULT 0,
+      title TEXT,
+      author TEXT,
+      uri TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+  // Migration: add user_id column if missing (for existing DBs)
+  try {
+    await db.execAsync(
+      "ALTER TABLE pdfs ADD COLUMN user_id TEXT NOT NULL DEFAULT ''",
+    );
+  } catch {
+    // Column already exists — ignore
+  }
+  // Migration: add cloud_synced column
+  try {
+    await db.execAsync(
+      "ALTER TABLE pdfs ADD COLUMN cloud_synced INTEGER NOT NULL DEFAULT 0",
+    );
+  } catch {
+    // Column already exists — ignore
+  } // Migration: add cloud_synced_exclude column
+  try {
+    await db.execAsync(
+      "ALTER TABLE pdfs ADD COLUMN cloud_synced_exclude INTEGER NOT NULL DEFAULT 0",
+    );
+  } catch {
+    // Column already exists — ignore
+  } // Migration: add cloud_synced_at column
+  try {
+    await db.execAsync("ALTER TABLE pdfs ADD COLUMN cloud_synced_at TEXT");
+  } catch {
+    // Column already exists — ignore
+  } // Migration: add cloud_id column (for sync dedup)
+  try {
+    await db.execAsync("ALTER TABLE pdfs ADD COLUMN cloud_id TEXT");
+  } catch {
+    // Column already exists — ignore
+  }
+  // Migration: add upload_source column (web, desktop, mobile)
+  try {
+    await db.execAsync(
+      "ALTER TABLE pdfs ADD COLUMN upload_source TEXT DEFAULT 'mobile'",
+    );
+  } catch {
+    // Column already exists — ignore
   }
   return db;
 }
@@ -154,6 +167,14 @@ export async function markPdfCloudSynced(id: string): Promise<void> {
 export async function setPdfCloudId(id: string, cloudId: string): Promise<void> {
   const database = await getDb();
   await database.runAsync("UPDATE pdfs SET cloud_id = ? WHERE id = ?", [cloudId, id]);
+}
+
+export async function renamePdfLocally(id: string, filename: string): Promise<void> {
+  const database = await getDb();
+  await database.runAsync(
+    "UPDATE pdfs SET original_filename = ?, updated_at = datetime('now') WHERE id = ?",
+    [filename, id],
+  );
 }
 
 export async function markPdfCloudUnsynced(id: string): Promise<void> {

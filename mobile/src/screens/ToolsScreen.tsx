@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
-import { Text, Card, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton, TextInput, Snackbar, RadioButton } from "react-native-paper";
+import { Text, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton, TextInput, Snackbar, RadioButton } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -8,6 +8,7 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "../hooks/usePdfStorage";
 import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, compressPdfOffline, exportPdf, importFile } from "../services/pdfService";
+import { renamePdfLocally } from "../services/localDb";
 import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 import * as DocumentPicker from "expo-document-picker";
 import { useTranslation } from "react-i18next";
@@ -15,6 +16,7 @@ import SignFlowDialog from "../components/SignFlowDialog";
 import AnnotationFlowDialog from "../components/AnnotationFlowDialog";
 import OcrFlowDialog from "../components/OcrFlowDialog";
 import ShareFlowDialog from "../components/ShareFlowDialog";
+import ToolsPdfListItem from "../components/ToolsPdfListItem";
 
 type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 
@@ -36,6 +38,35 @@ export default function ToolsScreen() {
         setSnackbarVisible(true);
     }
 
+    async function submitRename() {
+        if (!renamePdf) return;
+        const trimmed = renameInput.trim();
+        if (trimmed && trimmed !== renamePdf.original_filename) {
+            await renamePdfLocally(renamePdf.id, trimmed);
+            await reloadPdfs();
+        }
+        setRenamePdf(null);
+        setRenameInput("");
+        setRenameSelection(undefined);
+    }
+
+    // The *FlowDialog that just saved (Sign/Annotation/OCR) calls onSaved(...)
+    // and then onDismiss() in the same synchronous tick — onDismiss unmounts
+    // that dialog's whole component tree. Opening the rename dialog directly
+    // from onSaved put its TextInput's mount in the SAME React commit as that
+    // unmount. AnnotationFlowDialog's tree (radio buttons, color swatches, a
+    // page field, the PDF preview with its gesture responders) is by far the
+    // heaviest of the three — which is exactly why keystrokes only broke
+    // there and not after sign/OCR. Deferring by a tick lets the closing
+    // dialog's unmount finish its own commit first.
+    function openRenameDialog(result: LocalPdf) {
+        setTimeout(() => {
+            setRenameInput(result.original_filename);
+            setRenameSelection({ start: result.original_filename.length, end: result.original_filename.length });
+            setRenamePdf(result);
+        }, 0);
+    }
+
     // Split dialog state
     const [splitDialog, setSplitDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number; selectedPages: number[] } | null>(null);
     // Remove dialog state
@@ -45,6 +76,28 @@ export default function ToolsScreen() {
     // Name dialog state
     const [nameDialog, setNameDialog] = useState<{ type: "merge" | "split" | "reorder" | "remove"; data: any } | null>(null);
     const [nameInput, setNameInput] = useState("");
+    // Rename-after-action dialog state (sign/annotate/OCR results)
+    const [renamePdf, setRenamePdf] = useState<LocalPdf | null>(null);
+    const [renameInput, setRenameInput] = useState("");
+    // Explicit cursor tracking: without a controlled `selection`, Android
+    // re-guesses where to put the cursor after every value update, and that
+    // guess can land a character off — typing "ciao" without watching could
+    // come out "cioa", or holding backspace near a given spot deletes past
+    // the intended character. Controlling `selection` ourselves (updated via
+    // onSelectionChange) removes the guesswork entirely.
+    const [renameSelection, setRenameSelection] = useState<{ start: number; end: number } | undefined>(undefined);
+    const renameInputRef = useRef<any>(null);
+
+    // `autoFocus` grabbed the keyboard while react-native-paper's Dialog was
+    // still mid entrance-animation (a Portal/Modal fade+scale) — on Android
+    // that race dropped or misplaced early keystrokes. Focusing manually
+    // once the dialog has had time to settle avoids it.
+    useEffect(() => {
+        if (renamePdf) {
+            const timer = setTimeout(() => renameInputRef.current?.focus(), 300);
+            return () => clearTimeout(timer);
+        }
+    }, [renamePdf]);
     // Compress dialog state
     const [compressDialog, setCompressDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
     const [compressQuality, setCompressQuality] = useState<"low" | "medium" | "high">("medium");
@@ -312,6 +365,7 @@ export default function ToolsScreen() {
 
     async function handleSigned(result: LocalPdf) {
         showResult(t("tools.signResult", { name: result.original_filename }));
+        openRenameDialog(result);
         await reloadPdfs();
     }
 
@@ -330,6 +384,7 @@ export default function ToolsScreen() {
 
     async function handleAnnotationSaved(result: LocalPdf) {
         showResult(t("tools.annotationResult", { name: result.original_filename }));
+        openRenameDialog(result);
         await reloadPdfs();
     }
 
@@ -353,6 +408,7 @@ export default function ToolsScreen() {
                 ? t("tools.ocrResultSuccess", { count: characterCount })
                 : t("tools.ocrResultNoText");
         showResult(message);
+        openRenameDialog(result);
         await reloadPdfs();
     }
 
@@ -442,11 +498,48 @@ export default function ToolsScreen() {
         await reloadPdfs();
     }
 
-    function toggleSelect(id: string) {
+    const toggleSelect = useCallback((id: string) => {
         setSelectedIds((prev) =>
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
         );
-    }
+    }, []);
+
+    // The open*Dialog functions above are plain (unmemoized) closures
+    // recreated every render, so referencing them directly in handleItemPress's
+    // deps would make it just as unstable. Reading them through a ref that's
+    // kept current instead lets handleItemPress stay referentially stable
+    // across every render that isn't a real `operation` change — including
+    // the ones triggered by typing into an unrelated TextInput elsewhere on
+    // this screen (e.g. the rename dialog), which otherwise forced a full
+    // re-render of every visible FlatList row (see ToolsPdfListItem).
+    const actionHandlersRef = useRef({
+        openSplitDialog, openRemoveDialog, openMetadataDialog, openReorderDialog,
+        openPasswordDialog, openCompressDialog, openSignDialog, openAnnotationDialog,
+        openOcrDialog, openShareDialog, openImportExportDialog,
+    });
+    actionHandlersRef.current = {
+        openSplitDialog, openRemoveDialog, openMetadataDialog, openReorderDialog,
+        openPasswordDialog, openCompressDialog, openSignDialog, openAnnotationDialog,
+        openOcrDialog, openShareDialog, openImportExportDialog,
+    };
+
+    const handleItemPress = useCallback((item: LocalPdf) => {
+        const h = actionHandlersRef.current;
+        if (operation === "merge") toggleSelect(item.id);
+        else if (operation === "split") h.openSplitDialog(item.id);
+        else if (operation === "compress") h.openCompressDialog(item.id);
+        else if (operation === "reorder") h.openReorderDialog(item.id);
+        else if (operation === "remove") h.openRemoveDialog(item.id);
+        else if (operation === "metadata") h.openMetadataDialog(item.id);
+        else if (operation === "protect") h.openPasswordDialog(item.id, "protect");
+        else if (operation === "unlock") h.openPasswordDialog(item.id, "unlock");
+        else if (operation === "sign") h.openSignDialog(item.id);
+        else if (operation === "annotate") h.openAnnotationDialog(item.id);
+        else if (operation === "ocr") h.openOcrDialog(item.id);
+        else if (operation === "share") h.openShareDialog(item.id);
+        else if (operation === "export") h.openImportExportDialog(item.id, "export");
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [operation, toggleSelect]);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["bottom"]}>
@@ -591,14 +684,16 @@ export default function ToolsScreen() {
             )}
 
             {result ? (
-                <Snackbar
-                    visible={snackbarVisible}
-                    onDismiss={() => setSnackbarVisible(false)}
-                    duration={3000}
-                    action={{ label: t("common.ok"), onPress: () => setSnackbarVisible(false) }}
-                >
-                    {result}
-                </Snackbar>
+                <Portal>
+                    <Snackbar
+                        visible={snackbarVisible}
+                        onDismiss={() => setSnackbarVisible(false)}
+                        duration={3000}
+                        action={{ label: t("common.ok"), onPress: () => setSnackbarVisible(false) }}
+                    >
+                        {result}
+                    </Snackbar>
+                </Portal>
             ) : null}
 
             {!operation ? (
@@ -617,41 +712,11 @@ export default function ToolsScreen() {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={{ padding: 16 }}
                     renderItem={({ item }) => (
-                        <Card
-                            style={{
-                                marginBottom: 12,
-                                backgroundColor: selectedIds.includes(item.id)
-                                    ? theme.colors.primaryContainer
-                                    : theme.colors.surface,
-                            }}
-                        >
-                            <TouchableOpacity
-                                onPress={() => {
-                                    if (operation === "merge") toggleSelect(item.id);
-                                    else if (operation === "split") openSplitDialog(item.id);
-                                    else if (operation === "compress") openCompressDialog(item.id);
-                                    else if (operation === "reorder") openReorderDialog(item.id);
-                                    else if (operation === "remove") openRemoveDialog(item.id);
-                                    else if (operation === "metadata") openMetadataDialog(item.id);
-                                    else if (operation === "protect") openPasswordDialog(item.id, "protect");
-                                    else if (operation === "unlock") openPasswordDialog(item.id, "unlock");
-                                    else if (operation === "sign") openSignDialog(item.id);
-                                    else if (operation === "annotate") openAnnotationDialog(item.id);
-                                    else if (operation === "ocr") openOcrDialog(item.id);
-                                    else if (operation === "share") openShareDialog(item.id);
-                                    else if (operation === "export") openImportExportDialog(item.id, "export");
-                                }}
-                            >
-                                <Card.Content>
-                                    <Text variant="titleSmall" style={{ fontWeight: "600" }}>
-                                        {item.original_filename}
-                                    </Text>
-                                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                                        {t("tools.pagesInfo", { count: item.page_count, size: (item.file_size / 1024).toFixed(0) })}
-                                    </Text>
-                                </Card.Content>
-                            </TouchableOpacity>
-                        </Card>
+                        <ToolsPdfListItem
+                            item={item}
+                            isSelected={selectedIds.includes(item.id)}
+                            onPress={handleItemPress}
+                        />
                     )}
                 />
             )}
@@ -972,6 +1037,30 @@ export default function ToolsScreen() {
                             else if (type === "reorder") executeReorder(fileName);
                             else if (type === "remove") executeRemove(fileName);
                         }}>{t("common.save")}</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+
+            {/* Rename Dialog — offered right after sign/annotate/OCR results */}
+            <Portal>
+                <Dialog visible={renamePdf !== null} onDismiss={() => { setRenamePdf(null); setRenameInput(""); setRenameSelection(undefined); }}>
+                    <Dialog.Title>{t("tools.renamePdfTitle")}</Dialog.Title>
+                    <Dialog.Content>
+                        <TextInput
+                            ref={renameInputRef}
+                            label={t("tools.renamePdfLabel")}
+                            mode="outlined"
+                            value={renameInput}
+                            onChangeText={setRenameInput}
+                            selection={renameSelection}
+                            onSelectionChange={(e) => setRenameSelection(e.nativeEvent.selection)}
+                            autoCorrect={false}
+                            spellCheck={false}
+                        />
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => { setRenamePdf(null); setRenameInput(""); setRenameSelection(undefined); }}>{t("tools.renameSkip")}</Button>
+                        <Button onPress={submitRename}>{t("common.save")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>

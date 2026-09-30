@@ -65,7 +65,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockGetLocalPdfById.mockResolvedValue(samplePdf);
   mockUploadPdf.mockResolvedValue({ id: "cloud-1", original_filename: "test.pdf" });
-  mockDownloadPdf.mockResolvedValue(new Blob([new Uint8Array([1, 2, 3])], { type: "application/pdf" }));
+  mockDownloadPdf.mockResolvedValue(new Uint8Array([1, 2, 3]).buffer);
   mockSavePdfLocally.mockResolvedValue(undefined);
 });
 

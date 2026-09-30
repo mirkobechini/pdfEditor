@@ -80,7 +80,7 @@ describe("compressPdf", () => {
       page_count: 1,
     });
     mockDownloadPdf.mockResolvedValue(
-      new Blob([new Uint8Array([1, 2, 3])], { type: "application/pdf" }),
+      new Uint8Array([1, 2, 3]).buffer,
     );
     mockSavePdfLocally.mockResolvedValue(undefined);
   });

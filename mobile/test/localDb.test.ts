@@ -25,6 +25,7 @@ import {
   togglePdfSyncExclude,
   getSyncedPdfs,
   getLocalPdfsByUser,
+  renamePdfLocally,
 } from "../src/services/localDb";
 import type { LocalPdf } from "../src/shared/types";
 
@@ -167,6 +168,19 @@ describe("localDb", () => {
     );
   });
 
+  it("renamePdfLocally updates original_filename", async () => {
+    mockDb.runAsync.mockResolvedValue(undefined);
+    await renamePdfLocally("test-1", "renamed.pdf");
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE"),
+      ["renamed.pdf", "test-1"],
+    );
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      expect.stringContaining("original_filename = ?"),
+      expect.anything(),
+    );
+  });
+
   it("markPdfCloudUnsynced sets cloud_synced=0", async () => {
     mockDb.runAsync.mockResolvedValue(undefined);
     await markPdfCloudUnsynced("test-1");
@@ -231,6 +245,32 @@ describe("localDb", () => {
     expect(mockDb.getAllAsync).toHaveBeenCalledWith(
       expect.stringContaining("cloud_synced = 1"),
     );
+  });
+
+  it("only opens the database once for concurrent calls (regression: raced openDatabaseAsync)", async () => {
+    // getDb() used to cache only the *resolved* db, not the in-flight
+    // promise — two calls landing before the first openDatabaseAsync()
+    // resolved would each start their own, racing through the same
+    // CREATE TABLE/migrations and crashing with a native
+    // NullPointerException on device (issue #866). Verified in isolation
+    // (resetModules) since the module-level cache persists across the
+    // other tests in this file.
+    jest.resetModules();
+    const openSpy = jest.fn(async () => ({
+      execAsync: jest.fn(),
+      runAsync: jest.fn(),
+      getAllAsync: jest.fn(async () => []),
+      getFirstAsync: jest.fn(async () => null),
+    }));
+    jest.doMock("expo-sqlite", () => ({ openDatabaseAsync: openSpy }));
+    const fresh = require("../src/services/localDb");
+    await Promise.all([
+      fresh.getLocalPdfs(),
+      fresh.getLocalPdfs(),
+      fresh.getLocalPdfs(),
+    ]);
+    expect(openSpy).toHaveBeenCalledTimes(1);
+    jest.dontMock("expo-sqlite");
   });
 
   it("getLocalPdfsByUser filters by user_id", async () => {
