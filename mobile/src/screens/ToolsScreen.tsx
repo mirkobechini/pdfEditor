@@ -49,6 +49,22 @@ export default function ToolsScreen() {
         setRenameInput("");
     }
 
+    // The *FlowDialog that just saved (Sign/Annotation/OCR) calls onSaved(...)
+    // and then onDismiss() in the same synchronous tick — onDismiss unmounts
+    // that dialog's whole component tree. Opening the rename dialog directly
+    // from onSaved put its TextInput's mount in the SAME React commit as that
+    // unmount. AnnotationFlowDialog's tree (radio buttons, color swatches, a
+    // page field, the PDF preview with its gesture responders) is by far the
+    // heaviest of the three — which is exactly why keystrokes only broke
+    // there and not after sign/OCR. Deferring by a tick lets the closing
+    // dialog's unmount finish its own commit first.
+    function openRenameDialog(result: LocalPdf) {
+        setTimeout(() => {
+            setRenameInput(result.original_filename);
+            setRenamePdf(result);
+        }, 0);
+    }
+
     // Split dialog state
     const [splitDialog, setSplitDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number; selectedPages: number[] } | null>(null);
     // Remove dialog state
@@ -340,8 +356,7 @@ export default function ToolsScreen() {
 
     async function handleSigned(result: LocalPdf) {
         showResult(t("tools.signResult", { name: result.original_filename }));
-        setRenameInput(result.original_filename);
-        setRenamePdf(result);
+        openRenameDialog(result);
         await reloadPdfs();
     }
 
@@ -360,8 +375,7 @@ export default function ToolsScreen() {
 
     async function handleAnnotationSaved(result: LocalPdf) {
         showResult(t("tools.annotationResult", { name: result.original_filename }));
-        setRenameInput(result.original_filename);
-        setRenamePdf(result);
+        openRenameDialog(result);
         await reloadPdfs();
     }
 
@@ -385,8 +399,7 @@ export default function ToolsScreen() {
                 ? t("tools.ocrResultSuccess", { count: characterCount })
                 : t("tools.ocrResultNoText");
         showResult(message);
-        setRenameInput(result.original_filename);
-        setRenamePdf(result);
+        openRenameDialog(result);
         await reloadPdfs();
     }
 
