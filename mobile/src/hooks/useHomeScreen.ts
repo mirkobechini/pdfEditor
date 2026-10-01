@@ -19,7 +19,7 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { LocalPdf } from "../shared/types";
 import { usePdfStorage } from "./usePdfStorage";
 import { useAuth } from "../shared/auth";
-import { getLocalPdfById, savePdfLocally, deleteLocalPdf, togglePdfSyncExclude } from "../services/localDb";
+import { savePdfLocally, deleteLocalPdf, togglePdfSyncExclude } from "../services/localDb";
 import { useCloudSyncContext } from "./CloudSyncContext";
 import type { DeleteSyncOption } from "../screens/DeleteSyncDialog";
 
@@ -387,11 +387,6 @@ export function useHomeScreen({ onPdfCountChange }: UseHomeScreenOptions) {
         setShowMenu(false);
         navigation.navigate("Scanner");
     }
-
-    // getLocalPdfById is imported but unused by the renderer; keep the
-    // service import surface minimal — it is needed if a future viewer
-    // detail needs it. (Retained import for parity with prior behavior.)
-    void getLocalPdfById;
 
     return {
         // theme & layout
