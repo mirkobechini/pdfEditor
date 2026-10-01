@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { DocumentsApiClient } from "../documentsApi";
+import { DocumentsApiClient, getDocumentsApiBaseUrl } from "../documentsApi";
 
 describe("DocumentsApiClient", () => {
   const client = new DocumentsApiClient("http://test:8001");
@@ -93,5 +93,30 @@ describe("DocumentsApiClient", () => {
     await expect(client.listDocuments()).rejects.toThrow(
       "Documents API error 500",
     );
+  });
+});
+
+describe("getDocumentsApiBaseUrl (issue #884 A2)", () => {
+  afterEach(() => {
+    delete process.env.NODE_ENV;
+    delete process.env.NEXT_PUBLIC_DOCUMENTS_API_URL;
+  });
+
+  it("throws a clear error in production when env is not set", () => {
+    process.env.NODE_ENV = "production";
+    delete process.env.NEXT_PUBLIC_DOCUMENTS_API_URL;
+    expect(() => getDocumentsApiBaseUrl()).toThrow(/NEXT_PUBLIC_DOCUMENTS_API_URL/);
+  });
+
+  it("returns the configured URL in production when env IS set", () => {
+    process.env.NODE_ENV = "production";
+    process.env.NEXT_PUBLIC_DOCUMENTS_API_URL = "https://documents.example.com";
+    expect(getDocumentsApiBaseUrl()).toBe("https://documents.example.com");
+  });
+
+  it("falls back to localhost:8001 in development when env is not set", () => {
+    process.env.NODE_ENV = "development";
+    delete process.env.NEXT_PUBLIC_DOCUMENTS_API_URL;
+    expect(getDocumentsApiBaseUrl()).toBe("http://localhost:8001");
   });
 });
