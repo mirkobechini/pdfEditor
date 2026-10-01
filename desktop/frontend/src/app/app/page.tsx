@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
@@ -21,24 +20,19 @@ import OcrModal from "../../components/OcrModal";
 import PrintOptionsModal, { type PrintOptions, parsePageRangeList } from "../../components/PrintOptionsModal";
 import AnnotationDialog from "../../components/AnnotationDialog";
 import ShareDialog from "../../components/ShareDialog";
-import GuestConvertBanner from "../components/GuestConvertBanner";
+import { EditorSidebar } from "../components/EditorSidebar";
+import { EditorToolbar } from "../components/EditorToolbar";
+import { EditorRightPanel } from "../components/EditorRightPanel";
+import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+import { EditorFooter } from "../components/EditorFooter";
 import { usePreferences } from "../../lib/preferences";
 import { useCloudSync } from "../../hooks/useCloudSync";
 import { useApiError } from "../../hooks/useApiError";
+import { mimeFromName } from "../../lib/editor-utils";
+import { renderPagesToPngBase64, printCurrentPageViaBrowser } from "../../lib/printing";
 import type { PdfDocument } from "../../shared/types";
 
 const API_BASE = getApiBaseUrl();
-
-const PLATFORM_ICONS: Record<string, string> = {
-    web: "🌐",
-    desktop: "💻",
-    mobile: "📱",
-};
-
-function getPlatformIcon(source?: string): string {
-    if (!source) return "☁️";
-    return PLATFORM_ICONS[source] || "☁️";
-}
 
 export default function EditorPage() {
     const te = useTranslations("editor");
@@ -86,6 +80,29 @@ export default function EditorPage() {
     // Shared by every modal that replaces the selected doc with an updated
     // version (remove pages, reorder, merge, lock/unlock, metadata, replace
     // text): swap it into `docs` in place, select it, and refresh the preview.
+    // rename inline (lato sidebar): aggiorna metadata + lista locale (#881, T3)
+    async function handleRenameCommit(doc: PdfDocument, newName: string) {
+        try {
+            await api.updateMetadata(doc.id, { new_filename: newName });
+            setDocs((prev) => prev.map((d) => d.id === doc.id ? { ...d, original_filename: newName } : d));
+        } catch { /* ignore */ }
+    }
+
+    // elimina il documento (delete confirm) — lato parent (#881, T6)
+    async function handleDelete(id: string) {
+        setDeleteConfirm(null);
+        try {
+            await api.deletePdf(id);
+            setDocs((prev) => prev.filter((d) => d.id !== id));
+            if (selectedDoc?.id === id) {
+                setSelectedDoc(null);
+                setPdfUrl(null);
+            }
+        } catch (err) {
+            console.error("Delete failed:", err);
+        }
+    }
+
     const handleDocUpdated = React.useCallback((updatedDoc: PdfDocument) => {
         setDocs((prev) => {
             const oldId = selectedDoc?.id;
@@ -124,100 +141,6 @@ export default function EditorPage() {
             isLandscape: srcCanvas.width > srcCanvas.height,
         });
         setPrintOptionsOpen(true);
-    }
-
-    /** Render the given PDF pages to PNG (base64, no data: prefix) via pdf.js. */
-    async function renderPagesToPngBase64(fileUrl: string, pageNumbers: number[]): Promise<{ images: string[]; firstIsLandscape: boolean }> {
-        const pdfjsLib = (window as any).pdfjsLib;
-        const pdf = await pdfjsLib.getDocument(fileUrl).promise;
-        const images: string[] = [];
-        let firstIsLandscape = false;
-        const PRINT_SCALE = 2; // ~144 DPI at the PDF's native 72pt/inch base
-        for (let i = 0; i < pageNumbers.length; i++) {
-            const page = await pdf.getPage(pageNumbers[i]);
-            const viewport = page.getViewport({ scale: PRINT_SCALE });
-            const canvas = document.createElement("canvas");
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            const ctx = canvas.getContext("2d");
-            if (!ctx) continue;
-            await page.render({ canvasContext: ctx, viewport }).promise;
-            if (i === 0) firstIsLandscape = viewport.width > viewport.height;
-            images.push(canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, ""));
-        }
-        return { images, firstIsLandscape };
-    }
-
-    /** Browser/dev fallback: prints only the currently visible page via window.print(). */
-    async function printCurrentPageViaBrowser(dataUrl: string, isLandscapeImage: boolean, options: PrintOptions) {
-        // WebView2's print pipeline snapshots the DOM synchronously. If the
-        // <img> hasn't finished decoding the data URL yet, the snapshot is
-        // blank. Build a real Image, await decode(), THEN insert it and wait
-        // a couple of frames for layout/paint before calling print().
-        const img = new Image();
-        img.src = dataUrl;
-        try {
-            await img.decode();
-        } catch {
-            // Fall back to the load event if decode() is unsupported/fails.
-            await new Promise<void>((resolve) => {
-                img.onload = () => resolve();
-                img.onerror = () => resolve();
-            });
-        }
-
-        const pageOrientation =
-            options.orientation === "auto" ? (isLandscapeImage ? "landscape" : "portrait") : options.orientation;
-        const pageMargin = options.margin === "none" ? "0" : "1.2cm";
-
-        const style = document.createElement("style");
-        style.id = "print-style";
-        style.textContent = `
-            @media print {
-                body > *:not(#print-overlay) { display: none !important; }
-                @page { size: ${pageOrientation}; margin: ${pageMargin}; }
-                #print-overlay {
-                    display: flex !important;
-                    position: fixed !important;
-                    inset: 0 !important;
-                    z-index: 99999 !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    background: white !important;
-                }
-                #print-overlay img {
-                    max-width: 100%;
-                    max-height: 100vh;
-                    object-fit: contain;
-                }
-            }
-        `;
-        document.head.appendChild(style);
-
-        const div = document.createElement("div");
-        div.id = "print-overlay";
-        div.style.cssText = "display:none;";
-        div.appendChild(img);
-        document.body.appendChild(div);
-
-        const cleanup = () => {
-            const s = document.getElementById("print-style");
-            if (s) document.head.removeChild(s);
-            const d = document.getElementById("print-overlay");
-            if (d) document.body.removeChild(d);
-            window.removeEventListener("afterprint", cleanup);
-        };
-        window.addEventListener("afterprint", cleanup);
-        // Safety net in case `afterprint` doesn't fire (some WebView2 builds).
-        setTimeout(cleanup, 15000);
-
-        // Two animation frames give WebView2 time to lay out and paint the
-        // decoded image before the print snapshot is taken.
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                window.print();
-            });
-        });
     }
 
     async function executePrint(options: PrintOptions) {
@@ -405,21 +328,6 @@ export default function EditorPage() {
     }, []);
 
     // Read a dropped file path (Tauri) and upload it
-    const MIME_BY_EXT: Record<string, string> = {
-        png: "image/png",
-        jpg: "image/jpeg",
-        jpeg: "image/jpeg",
-        gif: "image/gif",
-        bmp: "image/bmp",
-        txt: "text/plain",
-        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    };
-
-    function mimeFromName(filename: string): string {
-        const ext = filename.toLowerCase().split(".").pop() || "";
-        return MIME_BY_EXT[ext] || "application/octet-stream";
-    }
-
     async function handleDroppedPath(filePath: string) {
         try {
             const raw = await tauriInvoke<number[]>("read_file_binary", { path: filePath });
@@ -552,326 +460,65 @@ export default function EditorPage() {
         };
     }, [selectedDoc?.id, pdfRefreshKey]);
 
-    function formatFileSize(bytes: number): string {
-        if (bytes < 1024) return bytes + " " + te("bytes");
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " " + te("kilobytes");
-        return (bytes / (1024 * 1024)).toFixed(1) + " " + te("megabytes");
-    }
-
-    function formatDate(dateStr: string): string {
-        if (!dateStr) return "";
-        const d = new Date(dateStr);
-        const now = new Date();
-        const diff = now.getTime() - d.getTime();
-        const mins = Math.floor(diff / 60000);
-        if (mins < 1) return "ora";
-        if (mins < 60) return mins + te("minutesAgo");
-        const hours = Math.floor(mins / 60);
-        if (hours < 24) return hours + te("hoursAgo");
-        const days = Math.floor(hours / 24);
-        if (days < 7) return days + te("daysAgo");
-        return d.toLocaleDateString();
-    }
     return (
         <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col overflow-hidden">
             <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0">
-                <aside className="flex flex-col border-r border-white/10 bg-[#1f1914] min-h-0">
-                    <div className="p-4 shrink-0">
-                        <button onClick={handleOpenLocal} className="w-full cursor-pointer rounded-[14px] bg-[#f7871f] py-2.5 text-sm font-medium text-white shadow-sm shadow-[#f7871f]/30 transition hover:bg-[#ce5a00]">
-                            {te("openLocalPdf")}
-                        </button>
-                        <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={handleFileInputChange} />
-                        {uploadError && (
-                            <p className="mt-2 text-[11px] text-red-400 break-words">{uploadError}</p>
-                        )}
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto border-y border-white/8 px-5 py-5 min-h-0">
-                        <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-[#918476]">{te("recentDocuments")}</p>
-                        {/* Multi-select toolbar */}
-                        <div className="mb-2 flex items-center gap-2">
-                            <button
-                                onClick={toggleMultiSelect}
-                                className={`rounded-lg px-2 py-1 text-[12px] font-medium transition ${multiSelect ? "bg-[#f7871f] text-white" : "border border-white/10 text-[#9a8d80] hover:bg-white/5"}`}
-                                data-testid="multi-select-toggle"
-                            >
-                                {multiSelect ? te("done") : te("select")}
-                            </button>
-                            {multiSelect && (
-                                <>
-                                    <button
-                                        onClick={toggleSelectAll}
-                                        className="rounded-lg border border-white/10 px-2 py-1 text-[12px] font-medium text-[#9a8d80] transition hover:bg-white/5"
-                                        data-testid="multi-select-all"
-                                    >
-                                        {selectedIds.size === docs.length ? te("deselectAll") : te("selectAll")}
-                                    </button>
-                                    <span className="text-[12px] text-[#9a8d80]" data-testid="multi-select-count">
-                                        {selectedIds.size} {te("selected")}
-                                    </span>
-                                </>
-                            )}
-                        </div>
-                        {multiSelect && selectedIds.size > 0 && (
-                            <div className="mb-2 flex items-center gap-2 rounded-xl bg-[#f7871f]/10 p-2" data-testid="batch-actions">
-                                <button
-                                    onClick={handleBatchDelete}
-                                    className="rounded-lg bg-red-500 px-2 py-1 text-[12px] font-medium text-white transition hover:bg-red-600"
-                                    data-testid="batch-delete"
-                                >
-                                    🗑️ {te("deleteSelected")}
-                                </button>
-                                <button
-                                    onClick={handleBatchExport}
-                                    className="rounded-lg bg-[#f7871f] px-2 py-1 text-[12px] font-medium text-white transition hover:bg-[#e07a10]"
-                                    data-testid="batch-export"
-                                >
-                                    ⬇ {te("exportSelected")}
-                                </button>
-                            </div>
-                        )}
-                        {loading ? (
-                            <div className="space-y-3">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="h-16 rounded-2xl bg-white/[0.03] animate-pulse" />
-                                ))}
-                            </div>
-                        ) : docs.length === 0 ? (
-                            <p className="text-[12px] text-[#7e7267] text-center py-8">{te("noDocuments")}</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {docs.map((doc) => (
-                                    <div
-                                        key={doc.id}
-                                        className={`doc-item rounded-2xl border p-3 cursor-pointer transition ${selectedDoc?.id === doc.id ? "border-white/10 bg-white/[0.03]" : "border-transparent hover:bg-white/[0.02]"} ${multiSelect && selectedIds.has(doc.id) ? "border-[#f7871f]/40 bg-[#f7871f]/5" : ""}`}
-                                        data-testid={`file-item-${doc.id}`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            {multiSelect && (
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedIds.has(doc.id)}
-                                                    onChange={() => toggleSelect(doc.id)}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="h-4 w-4 accent-[#f7871f]"
-                                                    data-testid={`file-checkbox-${doc.id}`}
-                                                />
-                                            )}
-                                            <div
-                                                onClick={() => multiSelect ? toggleSelect(doc.id) : setSelectedDoc(doc)}
-                                                className="flex items-center gap-3 flex-1 min-w-0"
-                                            >
-                                                <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-xl shrink-0 ${selectedDoc?.id === doc.id ? "bg-[#3e2717]" : "bg-white/8"
-                                                    }`}>
-                                                    {getPlatformIcon(doc.upload_source)}
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    {renameId === doc.id ? (
-                                                        <input
-                                                            value={renameValue}
-                                                            onChange={(e) => setRenameValue(e.target.value)}
-                                                            onBlur={() => setRenameId(null)}
-                                                            onKeyDown={async (e) => {
-                                                                if (e.key === "Enter") {
-                                                                    setRenameId(null);
-                                                                    if (renameValue.trim() && renameValue !== doc.original_filename) {
-                                                                        try {
-                                                                            await api.updateMetadata(doc.id, { new_filename: renameValue.trim() });
-                                                                            setDocs((prev) => prev.map((d) => d.id === doc.id ? { ...d, original_filename: renameValue.trim() } : d));
-                                                                        } catch { /* ignore */ }
-                                                                    }
-                                                                }
-                                                            }}
-                                                            className="w-full rounded-lg border border-[#f7871f]/50 bg-[#1f1914] px-2 py-1 text-[14px] font-semibold text-white outline-none"
-                                                            autoFocus
-                                                        />
-                                                    ) : (
-                                                        <p
-                                                            className="text-[14px] font-semibold leading-tight text-[#f3ede7] truncate cursor-text"
-                                                            onDoubleClick={() => { setRenameId(doc.id); setRenameValue(doc.original_filename); }}
-                                                        >
-                                                            {doc.original_filename}
-                                                        </p>
-                                                    )}
-                                                    <p className="mt-1 font-mono text-[10px] text-[#7e7267]">
-                                                        {formatFileSize(doc.file_size)} · {formatDate(doc.created_at)}
-                                                        {syncStatus[doc.id] === "synced" && <span className="ml-2 text-green-400">☁️</span>}
-                                                        {syncStatus[doc.id] === "pending" && <span className="ml-2 text-yellow-400">⏳</span>}
-                                                        {syncStatus[doc.id] === "error" && <span className="ml-2 text-red-400">⚠️</span>}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); setDeleteConfirm(doc.id); }}
-                                                className="mt-1 h-7 w-7 rounded-lg text-[#7e7267] hover:bg-red-500/10 hover:text-red-400 transition-colors shrink-0"
-                                                title={te("deletePdf")}
-                                            >
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto">
-                                                    <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <GuestConvertBanner />
-
-                    <div className="border-t border-white/8 p-5">
-                        <div className="mb-3 flex items-center justify-between">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#918476]">{te("cloudSync")}</p>
-                            <span className="h-2.5 w-2.5 rounded-full bg-[#3ec35f]" />
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Link href="/settings" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm hover:bg-white/15 transition-colors" title={te("settings")}>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#9a8d80]">
-                                    <circle cx="12" cy="12" r="3" />
-                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                                </svg>
-                            </Link>
-                            <Link href="/profile" className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity">
-                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#3e2717] text-sm font-bold text-[#f7871f] shrink-0">
-                                    {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-semibold leading-tight truncate">{user?.full_name || te("user")}</p>
-                                    <p className="text-[12px] text-[#8d8175]">{user?.license_tier || "Free"} {te("license")}</p>
-                                </div>
-                            </Link>
-                        </div>
-                    </div>
-                </aside>
+                <EditorSidebar
+                    te={te}
+                    user={user}
+                    docs={docs}
+                    loading={loading}
+                    selectedDoc={selectedDoc}
+                    syncStatus={syncStatus}
+                    multiSelect={multiSelect}
+                    selectedIds={selectedIds}
+                    renameId={renameId}
+                    renameValue={renameValue}
+                    uploadError={uploadError}
+                    fileInputRef={fileInputRef}
+                    onOpenLocal={handleOpenLocal}
+                    onFileInputChange={handleFileInputChange}
+                    onToggleMultiSelect={toggleMultiSelect}
+                    onToggleSelectAll={toggleSelectAll}
+                    onToggleSelect={toggleSelect}
+                    onBatchDelete={handleBatchDelete}
+                    onBatchExport={handleBatchExport}
+                    onSelectDoc={setSelectedDoc}
+                    onRenameIdChange={setRenameId}
+                    onRenameValueChange={setRenameValue}
+                    onRenameCommit={handleRenameCommit}
+                    onDeleteRequest={setDeleteConfirm}
+                />
 
                 <main className="flex flex-col border-r border-white/10 bg-[#13100d] min-h-0">
-                    <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-[#201a15] px-4">
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-1">
-                                <button className="rounded-lg px-3 py-1.5 text-xs font-semibold border border-white/10 bg-[#201a15] text-white">
-                                    {te("edit")}
-                                </button>
-                                <button onClick={handleDownload} disabled={!selectedDoc} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-[#9a8d80] hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                                    {te("download")}
-                                </button>
-                            </div>
-                            {totalPages > 0 && (
-                                <div className="flex items-center gap-1 ml-2 text-[11px] text-[#9a8d80] font-mono">
-                                    <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} className="h-7 w-7 rounded hover:bg-white/6" disabled={currentPage <= 1}>
-                                        ◀
-                                    </button>
-                                    <span className="px-1">{currentPage} / {totalPages}</span>
-                                    <button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} className="h-7 w-7 rounded hover:bg-white/6" disabled={currentPage >= totalPages}>
-                                        ▶
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 mr-2 text-[11px] font-mono text-[#9a8d80]">
-                                <button onClick={() => setZoom(Math.max(0.25, zoom - 0.25))} className="h-7 w-7 rounded hover:bg-white/6">−</button>
-                                <span className="w-10 text-center">{Math.round(zoom * 100)}%</span>
-                                <button onClick={() => setZoom(Math.min(3, zoom + 0.25))} className="h-7 w-7 rounded hover:bg-white/6">+</button>
-                            </div>
-
-                            {/* Organizza dropdown */}
-                            <div className="relative" ref={organizeRef}>
-                                <button
-                                    onClick={() => setOpenMenu((m) => (m === "organize" ? null : "organize"))}
-                                    disabled={!selectedDoc}
-                                    data-testid="toolbar-organize"
-                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                    {te("organize")} ▾
-                                </button>
-                                {openMenu === "organize" && (
-                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
-                                        <button onClick={() => { setMergeOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("merge")}
-                                        </button>
-                                        <button onClick={() => { setSplitOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("split")}
-                                        </button>
-                                        <button onClick={() => { setReorderOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("reorder")}
-                                        </button>
-                                        <button onClick={() => { setRemovePagesOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("remove")}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Converti dropdown */}
-                            <div className="relative" ref={convertRef}>
-                                <button
-                                    onClick={() => setOpenMenu((m) => (m === "convert" ? null : "convert"))}
-                                    data-testid="toolbar-convert"
-                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white"
-                                >
-                                    {te("convert")} ▾
-                                </button>
-                                {openMenu === "convert" && (
-                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
-                                        <button onClick={() => { setCompressOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("compress")}
-                                        </button>
-                                        <button onClick={() => { setImportExportOpen(true); setOpenMenu(null); }} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white">
-                                            {te("importExport")}
-                                        </button>
-                                        <button onClick={() => { setReplaceTextOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("replaceText")}
-                                        </button>
-                                        <button onClick={() => { setMetadataOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("metadata")}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Annota dropdown */}
-                            <div className="relative" ref={annotateMenuRef}>
-                                <button
-                                    onClick={() => setOpenMenu((m) => (m === "annotate" ? null : "annotate"))}
-                                    disabled={!selectedDoc}
-                                    data-testid="toolbar-annotate-menu"
-                                    className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                    {te("annotate")} ▾
-                                </button>
-                                {openMenu === "annotate" && (
-                                    <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-white/10 bg-[#201a15] py-1 shadow-xl">
-                                        <button onClick={() => { setSignOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("sign")}
-                                        </button>
-                                        <button onClick={() => { setOcrOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} data-testid="toolbar-ocr" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("ocr")}
-                                        </button>
-                                        <button onClick={() => { setAnnotateOpen(true); setOpenMenu(null); }} disabled={!selectedDoc} data-testid="toolbar-annotate" className="flex w-full items-center px-3 py-2 text-left text-xs font-medium text-[#d8d8d8] transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30">
-                                            {te("annotate")}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <button
-                                onClick={handlePrint}
-                                disabled={!selectedDoc}
-                                data-testid="toolbar-print"
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("print")}
-                            </button>
-                            <button
-                                onClick={() => setShareOpen(true)}
-                                disabled={!selectedDoc}
-                                data-testid="toolbar-share"
-                                className="h-8 rounded-lg px-2.5 text-xs font-medium transition-colors hover:bg-white/6 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                                {te("share")}
-                            </button>
-                        </div>
-                    </header>
+                    <EditorToolbar
+                        te={te}
+                        selected={!!selectedDoc}
+                        totalPages={totalPages}
+                        currentPage={currentPage}
+                        zoom={zoom}
+                        openMenu={openMenu}
+                        organizeRef={organizeRef}
+                        convertRef={convertRef}
+                        annotateMenuRef={annotateMenuRef}
+                        onDownload={handleDownload}
+                        onPrint={handlePrint}
+                        onPageChange={setCurrentPage}
+                        onZoomChange={setZoom}
+                        onToggleMenu={(m) => setOpenMenu((prev) => (prev === m ? null : m))}
+                        onMerge={() => { setMergeOpen(true); setOpenMenu(null); }}
+                        onSplit={() => { setSplitOpen(true); setOpenMenu(null); }}
+                        onReorder={() => { setReorderOpen(true); setOpenMenu(null); }}
+                        onRemovePages={() => { setRemovePagesOpen(true); setOpenMenu(null); }}
+                        onCompress={() => { setCompressOpen(true); setOpenMenu(null); }}
+                        onImportExport={() => { setImportExportOpen(true); setOpenMenu(null); }}
+                        onReplaceText={() => { setReplaceTextOpen(true); setOpenMenu(null); }}
+                        onMetadata={() => { setMetadataOpen(true); setOpenMenu(null); }}
+                        onSign={() => { setSignOpen(true); setOpenMenu(null); }}
+                        onOcr={() => { setOcrOpen(true); setOpenMenu(null); }}
+                        onAnnotate={() => { setAnnotateOpen(true); setOpenMenu(null); }}
+                        onShare={() => setShareOpen(true)}
+                    />
 
                     <div className="flex-1 bg-black p-6 overflow-hidden relative">
                         {dragOver && (
@@ -930,68 +577,15 @@ export default function EditorPage() {
                     </div>
                 </main>
 
-                <aside className="flex flex-col bg-[#201a15] p-5">
-                    <h3 className="mb-4 text-xs font-bold uppercase tracking-widest">{te("pageMetadata")}</h3>
-                    <div className="mt-4 space-y-3 border-b border-white/10 pb-5">
-                        {selectedDoc ? (
-                            <>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs text-[#948779]">{te("filename")}</span>
-                                    <span className="text-xs font-semibold text-white text-right truncate max-w-[140px]">{selectedDoc.original_filename}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs text-[#948779]">{te("size")}</span>
-                                    <span className="text-xs font-semibold text-white">{formatFileSize(selectedDoc.file_size)}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs text-[#948779]">{te("pages")}</span>
-                                    <span className="text-xs font-semibold text-white">{selectedDoc.page_count}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs text-[#948779]">{te("created")}</span>
-                                    <span className="text-xs font-semibold text-white">{selectedDoc.pdf_creation_date ? new Date(selectedDoc.pdf_creation_date).toLocaleDateString() : new Date(selectedDoc.created_at).toLocaleDateString()}</span>
-                                </div>
-                            </>
-                        ) : (
-                            <p className="text-xs text-[#7e7267]">{te("noPdfSelected")}</p>
-                        )}
-                    </div>
-
-                    <h4 className="mt-6 mb-4 text-xs font-bold uppercase tracking-widest">Fast Actions</h4>
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                        <button
-                            onClick={() => setMergeOpen(true)}
-                            disabled={!selectedDoc}
-                            className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">MERGE</p>
-                        </button>
-                        <button
-                            onClick={() => setSplitOpen(true)}
-                            disabled={!selectedDoc}
-                            className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">SPLIT</p>
-                        </button>
-                        <button
-                            onClick={() => setLockOpen(true)}
-                            disabled={!selectedDoc}
-                            className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">
-                                {selectedDoc?.is_password_protected ? "UNLOCK" : "LOCK"}
-                            </p>
-                        </button>
-                        <button
-                            onClick={() => setOcrOpen(true)}
-                            disabled={!selectedDoc}
-                            data-testid="fast-action-ocr"
-                            className="rounded-[14px] border border-white/10 bg-white/[0.03] p-3 text-center transition-all hover:border-[#f7871f]/40 hover:bg-[#2a231d] disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#8f8377]">OCR</p>
-                        </button>
-                    </div>
-                </aside>
+                <EditorRightPanel
+                    te={te}
+                    selectedDoc={selectedDoc}
+                    locked={!!selectedDoc?.is_password_protected}
+                    onMerge={() => setMergeOpen(true)}
+                    onSplit={() => setSplitOpen(true)}
+                    onLock={() => setLockOpen(true)}
+                    onOcr={() => setOcrOpen(true)}
+                />
             </div>
 
             <RemovePagesModal
@@ -1130,57 +724,14 @@ export default function EditorPage() {
             />
 
             {/* Delete confirmation dialog */}
-            {deleteConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-                    <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl">
-                        <h2 className="text-base font-bold text-white mb-2">{te("deleteConfirmTitle")}</h2>
-                        <p className="text-sm text-[#9a8d80] mb-6">
-                            {te("deleteConfirmDesc")}
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={() => setDeleteConfirm(null)}
-                                className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-[#9a8d80] transition hover:bg-white/5"
-                            >
-                                {te("cancel")}
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    const id = deleteConfirm;
-                                    setDeleteConfirm(null);
-                                    try {
-                                        await api.deletePdf(id);
-                                        setDocs((prev) => prev.filter((d) => d.id !== id));
-                                        if (selectedDoc?.id === id) {
-                                            setSelectedDoc(null);
-                                            setPdfUrl(null);
-                                        }
-                                    } catch (err) {
-                                        console.error("Delete failed:", err);
-                                    }
-                                }}
-                                className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
-                            >
-                                {te("delete")}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <DeleteConfirmModal
+                te={te}
+                deleteConfirmId={deleteConfirm}
+                onCancel={() => setDeleteConfirm(null)}
+                onConfirm={handleDelete}
+            />
 
-            <footer className="h-10 shrink-0 border-t border-white/10 bg-[#0b0a09] px-5 text-[10px] text-[#7f7468]">
-                <div className="mx-auto flex h-full max-w-[1880px] items-center justify-between">
-                    <div className="flex items-center gap-5">
-                        <span className="text-[#48c769]">●</span>
-                        <span>{te("sidecarOnline")} ({API_BASE.replace("http://", "")})</span>
-                        <span>{te("encoding")}</span>
-                        <span>{te("database")}</span>
-                    </div>
-                    <div className="flex items-center gap-6">
-                        <span>{te("pdfEngine")}</span>
-                    </div>
-                </div>
-            </footer>
+            <EditorFooter te={te} apiBase={API_BASE} />
         </div>
     );
 }
