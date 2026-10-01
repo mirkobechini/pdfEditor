@@ -71,7 +71,7 @@ export class ApiClient {
     }
   }
 
-  private getHeaders(): Record<string, string> {
+  protected getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {};
     // Include Bearer token if available (used in local dev where cookie is cross-origin)
     if (this.token) {
@@ -93,7 +93,7 @@ export class ApiClient {
     this._csrfToken = token;
   }
 
-  private _getCsrfToken(): string | null {
+  protected _getCsrfToken(): string | null {
     // Try in-memory first (works cross-origin where document.cookie is unreadable)
     if (this._csrfToken) return this._csrfToken;
     // Fallback to cookie (same-origin)
@@ -102,7 +102,7 @@ export class ApiClient {
     return match ? match[1] : null;
   }
 
-  private async _fetch(
+  protected async _fetch(
     url: string,
     options: RequestInit = {},
   ): Promise<Response> {
