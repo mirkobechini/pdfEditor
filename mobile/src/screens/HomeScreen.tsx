@@ -1,25 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { View, FlatList, TouchableOpacity, RefreshControl } from "react-native";
-import { Text, FAB, useTheme, ActivityIndicator, Portal, Modal, Button, List, Dialog, TextInput, Searchbar, Snackbar, IconButton } from "react-native-paper";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { RootStackParamList } from "../navigation/AppNavigator";
-import type { LocalPdf } from "../shared/types";
-import { usePdfStorage } from "../hooks/usePdfStorage";
-import { useAuth } from "../shared/auth";
-import { getLocalPdfById, savePdfLocally, deleteLocalPdf, togglePdfSyncExclude } from "../services/localDb";
-import { File } from "expo-file-system";
-import { StorageAccessFramework } from "expo-file-system/legacy";
-import { setBadgeCountAsync } from "expo-notifications";
-import * as Sharing from "expo-sharing";
+import React from "react";
+import { View, FlatList, RefreshControl } from "react-native";
+import { Text, useTheme, ActivityIndicator, Portal, Modal, Button, List, Dialog, TextInput, Searchbar, Snackbar, IconButton, FAB } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { useCloudSyncContext } from "../hooks/CloudSyncContext";
-import DeleteSyncDialog, { type DeleteSyncOption } from "./DeleteSyncDialog";
+import { useHomeScreen } from "../hooks/useHomeScreen";
+import DeleteSyncDialog from "./DeleteSyncDialog";
 import ReplaceTextDialog from "../components/ReplaceTextDialog";
 import PdfListItem from "../components/PdfListItem";
-
-type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Main">;
 
 interface HomeScreenProps {
     onPdfCountChange?: (count: number) => void;
@@ -27,296 +14,44 @@ interface HomeScreenProps {
 
 export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
     const theme = useTheme();
-    const navigation = useNavigation<HomeNavProp>();
-    const insets = useSafeAreaInsets();
     const { t } = useTranslation();
-    const { pickAndSavePdf, loadLocalPdfs, loading: storageLoading } = usePdfStorage();
-    const { user } = useAuth();
-    const { status: syncStatus, syncEnabled, syncMode, progress, isSyncing, deletePdf, uploadPdf } = useCloudSyncContext();
-    const userId = user?.id || "";
-    const [deleteTarget, setDeleteTarget] = React.useState<LocalPdf | null>(null);
-    const [syncingPdf, setSyncingPdf] = React.useState(false);
-    const [syncAfterUpload, setSyncAfterUpload] = React.useState<{ pdfId: string; pdfName: string } | null>(null);
-    const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [showMenu, setShowMenu] = useState(false);
-    const [contextPdf, setContextPdf] = useState<LocalPdf | null>(null);
-    const [renameDialog, setRenameDialog] = useState(false);
-    const [renameText, setRenameText] = useState("");
-    const [renameTarget, setRenameTarget] = useState<LocalPdf | null>(null);
-    const [detailsPdf, setDetailsPdf] = useState<LocalPdf | null>(null);
-    const [replaceTextPdf, setReplaceTextPdf] = useState<LocalPdf | null>(null);
-    const [refreshing, setRefreshing] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [snackbarMsg, setSnackbarMsg] = useState("");
-    const [snackbarVisible, setSnackbarVisible] = useState(false);
-    const [multiSelect, setMultiSelect] = useState(false);
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-    function showSnack(msg: string) {
-        setSnackbarMsg(msg);
-        setSnackbarVisible(true);
-    }
-
-    const toggleSelect = useCallback((id: string) => {
-        setSelectedIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            return next;
-        });
-    }, []);
-
-    function enterMultiSelect() {
-        setMultiSelect(true);
-        setSelectedIds(new Set());
-    }
-
-    function exitMultiSelect() {
-        setMultiSelect(false);
-        setSelectedIds(new Set());
-    }
-
-    async function handleBatchDelete() {
-        for (const id of selectedIds) {
-            const pdf = pdfs.find((p) => p.id === id);
-            if (!pdf) continue;
-            try {
-                const file = new File(pdf.uri);
-                if (file.exists) file.delete();
-            } catch { /* ignore */ }
-            await deleteLocalPdf(id);
-        }
-        showSnack(t("home.deletedBatch", { count: selectedIds.size }));
-        exitMultiSelect();
-        await loadPdfs();
-    }
-
-    async function handleShare(pdf: LocalPdf) {
-        setContextPdf(null);
-        try {
-            const isAvailable = await Sharing.isAvailableAsync();
-            if (!isAvailable) {
-                showSnack(t("home.sharingNotAvailable"));
-                return;
-            }
-            await Sharing.shareAsync(pdf.uri, {
-                mimeType: "application/pdf",
-                dialogTitle: `Share ${pdf.original_filename}`,
-            });
-        } catch {
-            showSnack(t("home.shareFailed"));
-        }
-    }
-
-    async function handleDownload(pdf: LocalPdf) {
-        setContextPdf(null);
-        try {
-            const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
-            if (!permissions.granted) {
-                showSnack(t("home.permissionDenied"));
-                return;
-            }
-            const name = pdf.original_filename.endsWith(".pdf")
-                ? pdf.original_filename.replace(/\.pdf$/i, "")
-                : pdf.original_filename;
-            const safUri = await StorageAccessFramework.createFileAsync(
-                permissions.directoryUri,
-                name,
-                "application/pdf"
-            );
-            const file = new File(pdf.uri);
-            const bytes = await file.arrayBuffer();
-            let binary = "";
-            const arr = new Uint8Array(bytes);
-            for (let i = 0; i < arr.length; i++) {
-                binary += String.fromCharCode(arr[i]);
-            }
-            const base64 = btoa(binary);
-            await StorageAccessFramework.writeAsStringAsync(safUri, base64, {
-                encoding: "base64",
-            });
-            showSnack(t("home.downloaded", { name: pdf.original_filename }));
-        } catch {
-            showSnack(t("home.downloadFailed"));
-        }
-    }
-
-    const filteredPdfs = useMemo(() => {
-        if (!searchQuery.trim()) return pdfs;
-        const q = searchQuery.toLowerCase();
-        return pdfs.filter((p) => p.original_filename.toLowerCase().includes(q));
-    }, [pdfs, searchQuery]);
-
-    async function onRefresh() {
-        setRefreshing(true);
-        try {
-            const local = await loadLocalPdfs(userId);
-            setPdfs(local);
-            onPdfCountChange?.(local.length);
-            setBadgeCountAsync(local.length).catch(() => { });
-        } catch {
-            setPdfs([]);
-        } finally {
-            setRefreshing(false);
-        }
-    }
-
-    // Reload PDFs when screen is focused (lightweight, no spinner to avoid lag).
-    // Also clears the initial `loading` spinner once local PDFs are in — this
-    // used to depend solely on the isSyncing effect below, which never fires
-    // (leaving the screen stuck on the spinner forever) when sync never starts
-    // — offline, disabled, or the sync loop just hasn't kicked in yet.
-    useFocusEffect(
-        useCallback(() => {
-            loadLocalPdfs(userId).then((local) => {
-                setPdfs(local);
-                onPdfCountChange?.(local.length);
-            }).catch(() => { }).finally(() => setLoading(false));
-        }, [userId])
-    );
-
-    // Reload PDFs when sync completes (isSyncing goes from true to false)
-    // so downloaded PDFs appear immediately instead of only on next focus
-    const prevSyncingRef = useRef(isSyncing);
-    useEffect(() => {
-        if (prevSyncingRef.current && !isSyncing) {
-            loadPdfs();
-        }
-        prevSyncingRef.current = isSyncing;
-    }, [isSyncing]);
-
-    // Reload PDFs as sync progresses so downloaded PDFs appear one by one
-    // (progress.current advances on each upload/download step)
-    const prevProgressRef = useRef(progress?.current ?? 0);
-    useEffect(() => {
-        const current = progress?.current ?? 0;
-        if (isSyncing && current !== prevProgressRef.current) {
-            // Lightweight reload without loading spinner (avoid flicker during sync)
-            loadLocalPdfs(userId).then((local) => {
-                setPdfs(local);
-                onPdfCountChange?.(local.length);
-            }).catch(() => { });
-        }
-        prevProgressRef.current = current;
-    }, [progress, isSyncing]);
-
-    async function loadPdfs() {
-        setLoading(true);
-        try {
-            const local = await loadLocalPdfs(userId);
-            setPdfs(local);
-            onPdfCountChange?.(local.length);
-            setBadgeCountAsync(local.length).catch(() => { });
-        } catch {
-            setPdfs([]);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function handleUpload() {
-        setShowMenu(false);
-        const pdf = await pickAndSavePdf(userId);
-        if (pdf) {
-            if (syncEnabled) {
-                setSyncAfterUpload({ pdfId: pdf.id, pdfName: pdf.original_filename });
-            } else {
-                navigation.navigate("PdfViewer", {
-                    pdfId: pdf.id,
-                    title: pdf.original_filename,
-                });
-            }
-        }
-    }
-
-    function formatSize(bytes: number): string {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    }
-
-    const handleDelete = useCallback(async (pdf: LocalPdf) => {
-        setContextPdf(null);
-        // If PDF is cloud-synced and sync is enabled, ask what to delete
-        if (syncEnabled && pdf.cloud_synced === 1) {
-            setDeleteTarget(pdf);
-            return;
-        }
-        // Otherwise simple local delete
-        try {
-            const file = new File(pdf.uri);
-            if (file.exists) file.delete();
-        } catch { /* ignore */ }
-        await deleteLocalPdf(pdf.id);
-        await loadPdfs();
-        showSnack(t("home.deleted", { name: pdf.original_filename }));
-        // loadPdfs/showSnack/t are recreated every render (not memoized
-        // themselves) but don't go stale in a way that matters here — they
-        // just read fresh DB state / call stable setState setters. Omitted
-        // so this callback (passed down to PdfListItem) stays referentially
-        // stable across renders instead of only when syncEnabled changes.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [syncEnabled]);
-
-    const handleItemPress = useCallback(
-        (item: LocalPdf) => {
-            navigation.navigate("PdfViewer", { pdfId: item.id, title: item.original_filename });
-        },
-        [navigation],
-    );
-
-    const handleItemLongPress = useCallback((item: LocalPdf) => {
-        setContextPdf(item);
-    }, []);
-
-    function openRename(pdf: LocalPdf) {
-        setContextPdf(null);
-        setRenameTarget(pdf);
-        setRenameText(pdf.original_filename);
-        setRenameDialog(true);
-    }
-
-    async function confirmRename() {
-        if (!renameTarget || !renameText.trim()) return;
-        const updated = { ...renameTarget, original_filename: renameText.trim(), updated_at: new Date().toISOString() };
-        await savePdfLocally(updated);
-        setRenameDialog(false);
-        setRenameTarget(null);
-        await loadPdfs();
-    }
+    const s = useHomeScreen({ onPdfCountChange });
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["bottom"]}>
+            {/* Search bar + multi-select / tools actions */}
             <View style={{ flexDirection: "row", alignItems: "center", marginRight: 16 }}>
                 <Searchbar
                     placeholder={t("home.search")}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
+                    value={s.searchQuery}
+                    onChangeText={s.setSearchQuery}
                     style={{ flex: 1, margin: 16, marginBottom: 0 }}
                 />
-                {pdfs.length > 0 && !multiSelect ? (
-                    <IconButton icon="checkbox-multiple-marked-outline" onPress={enterMultiSelect} />
-                ) : pdfs.length > 0 && multiSelect ? (
-                    <IconButton icon="close" onPress={exitMultiSelect} />
+                {s.pdfs.length > 0 && !s.multiSelect ? (
+                    <IconButton icon="checkbox-multiple-marked-outline" onPress={s.enterMultiSelect} />
+                ) : s.pdfs.length > 0 && s.multiSelect ? (
+                    <IconButton icon="close" onPress={s.exitMultiSelect} />
                 ) : null}
-                {!multiSelect && (
-                    <IconButton icon="wrench" onPress={() => navigation.navigate("Tools")} />
+                {!s.multiSelect && (
+                    <IconButton icon="wrench" onPress={s.goToTools} />
                 )}
             </View>
-            {isSyncing && progress && (
+
+            {/* Sync progress banner */}
+            {s.isSyncing && s.progress && (
                 <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 4, gap: 8 }}>
                     <ActivityIndicator size="small" color={theme.colors.primary} />
                     <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
-                        Sync in corso... ({progress.current}/{progress.total})
+                        Sync in corso... ({s.progress.current}/{s.progress.total})
                     </Text>
                 </View>
             )}
-            {loading ? (
+
+            {s.loading ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <ActivityIndicator size="large" />
                 </View>
-            ) : pdfs.length === 0 ? (
+            ) : s.pdfs.length === 0 ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
                     <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}>
                         {t("home.noPdfs")}
@@ -324,39 +59,40 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                 </View>
             ) : (
                 <FlatList
-                    data={filteredPdfs}
+                    data={s.filteredPdfs}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={{ padding: 16 }}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                    refreshControl={<RefreshControl refreshing={s.refreshing} onRefresh={s.onRefresh} />}
                     renderItem={({ item }) => (
                         <PdfListItem
                             item={item}
-                            isSelected={selectedIds.has(item.id)}
-                            multiSelect={multiSelect}
-                            syncEnabled={syncEnabled}
-                            syncStatus={syncStatus[item.id]}
-                            onPress={handleItemPress}
-                            onLongPress={handleItemLongPress}
-                            onToggleSelect={toggleSelect}
-                            onDelete={handleDelete}
+                            isSelected={s.selectedIds.has(item.id)}
+                            multiSelect={s.multiSelect}
+                            syncEnabled={s.syncEnabled}
+                            syncStatus={s.syncStatus[item.id]}
+                            onPress={s.handleItemPress}
+                            onLongPress={s.handleItemLongPress}
+                            onToggleSelect={s.toggleSelect}
+                            onDelete={s.handleDelete}
                         />
                     )}
                 />
             )}
 
-            {multiSelect ? (
-                <View style={{ position: "absolute", right: 0, left: 0, bottom: 0, backgroundColor: theme.colors.primaryContainer, flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 8, paddingBottom: 8 + insets.bottom }}>
+            {/* Multi-select action bar OR FAB */}
+            {s.multiSelect ? (
+                <View style={{ position: "absolute", right: 0, left: 0, bottom: 0, backgroundColor: theme.colors.primaryContainer, flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 8, paddingBottom: 8 + s.insets.bottom }}>
                     <Text style={{ color: theme.colors.onPrimaryContainer, fontWeight: "600" }}>
-                        {t("home.selected", { count: selectedIds.size })}
+                        {t("home.selected", { count: s.selectedIds.size })}
                     </Text>
                     <View style={{ flexDirection: "row", gap: 8 }}>
-                        <Button textColor={theme.colors.onPrimaryContainer} onPress={() => setSelectedIds(new Set(filteredPdfs.map((p) => p.id)))}>
+                        <Button textColor={theme.colors.onPrimaryContainer} onPress={s.selectAllFiltered}>
                             {t("home.selectAll")}
                         </Button>
-                        <Button textColor={theme.colors.error} onPress={handleBatchDelete} disabled={selectedIds.size === 0}>
+                        <Button textColor={theme.colors.error} onPress={s.handleBatchDelete} disabled={s.selectedIds.size === 0}>
                             {t("home.delete")}
                         </Button>
-                        <Button textColor={theme.colors.onPrimaryContainer} onPress={exitMultiSelect}>
+                        <Button textColor={theme.colors.onPrimaryContainer} onPress={s.exitMultiSelect}>
                             {t("common.cancel")}
                         </Button>
                     </View>
@@ -367,16 +103,17 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                     style={{
                         position: "absolute",
                         right: 16,
-                        bottom: 16 + insets.bottom,
+                        bottom: 16 + s.insets.bottom,
                         backgroundColor: theme.colors.primary,
                     }}
                     color={theme.colors.onPrimary}
-                    onPress={() => setShowMenu(true)}
+                    onPress={() => s.setShowMenu(true)}
                 />
             )}
 
+            {/* Add PDF menu */}
             <Portal>
-                <Modal visible={showMenu} onDismiss={() => setShowMenu(false)} contentContainerStyle={{ backgroundColor: theme.colors.surface, margin: 24, borderRadius: 12 }}>
+                <Modal visible={s.showMenu} onDismiss={() => s.setShowMenu(false)} contentContainerStyle={{ backgroundColor: theme.colors.surface, margin: 24, borderRadius: 12 }}>
                     <List.Section>
                         <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>
                             {t("home.addPdf")}
@@ -385,16 +122,13 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
                             title={t("home.upload")}
                             description={t("home.uploadDesc")}
                             left={(props) => <List.Icon {...props} icon="file-upload" />}
-                            onPress={handleUpload}
+                            onPress={s.handleUpload}
                         />
                         <List.Item
                             title={t("home.scan")}
                             description={t("home.scanDesc")}
                             left={(props) => <List.Icon {...props} icon="camera" />}
-                            onPress={() => {
-                                setShowMenu(false);
-                                navigation.navigate("Scanner");
-                            }}
+                            onPress={s.goToScanner}
                         />
                     </List.Section>
                 </Modal>
@@ -402,136 +136,109 @@ export default function HomeScreen({ onPdfCountChange }: HomeScreenProps) {
 
             {/* Context menu — long press on PDF */}
             <Portal>
-                <Dialog visible={contextPdf !== null && !renameDialog} onDismiss={() => setContextPdf(null)}>
-                    <Dialog.Title>{contextPdf?.original_filename}</Dialog.Title>
+                <Dialog visible={s.contextPdf !== null && !s.renameDialog} onDismiss={() => s.setContextPdf(null)}>
+                    <Dialog.Title>{s.contextPdf?.original_filename}</Dialog.Title>
                     <Dialog.Content>
-                        <List.Item title={t("home.rename")} left={(p) => <List.Icon {...p} icon="pencil" />} onPress={() => { if (contextPdf) openRename(contextPdf); }} />
-                        <List.Item title={t("home.share")} left={(p) => <List.Icon {...p} icon="share-variant" />} onPress={() => { if (contextPdf) handleShare(contextPdf); }} />
-                        <List.Item title={t("home.download")} left={(p) => <List.Icon {...p} icon="download" />} onPress={() => { if (contextPdf) handleDownload(contextPdf); }} />
-                        {syncEnabled && contextPdf && contextPdf.cloud_synced === 1 ? (
-                            <List.Item title={t("home.removeFromCloud")} left={(p) => <List.Icon {...p} icon="cloud-remove" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { await deletePdf(contextPdf.id, "cloud"); await loadPdfs(); showSnack(t("home.removedFromCloud", { name: contextPdf.original_filename })); } finally { setSyncingPdf(false); } } }} />
-                        ) : syncEnabled && contextPdf && contextPdf.cloud_synced !== 1 && contextPdf.cloud_synced_exclude !== 1 ? (
-                            <List.Item title={t("home.syncToCloud")} left={(p) => <List.Icon {...p} icon="cloud-upload" />} onPress={async () => { if (contextPdf) { setContextPdf(null); setSyncingPdf(true); try { const ok = await uploadPdf(contextPdf.id); if (ok) { await loadPdfs(); showSnack(t("home.syncedToCloud", { name: contextPdf.original_filename })); } else { showSnack(t("home.syncErrorUploadFailed", { name: contextPdf.original_filename })); } } finally { setSyncingPdf(false); } } }} />
+                        <List.Item title={t("home.rename")} left={(p) => <List.Icon {...p} icon="pencil" />} onPress={() => { if (s.contextPdf) s.openRename(s.contextPdf); }} />
+                        <List.Item title={t("home.share")} left={(p) => <List.Icon {...p} icon="share-variant" />} onPress={() => { if (s.contextPdf) s.handleShare(s.contextPdf); }} />
+                        <List.Item title={t("home.download")} left={(p) => <List.Icon {...p} icon="download" />} onPress={() => { if (s.contextPdf) s.handleDownload(s.contextPdf); }} />
+                        {s.syncEnabled && s.contextPdf && s.contextPdf.cloud_synced === 1 ? (
+                            <List.Item title={t("home.removeFromCloud")} left={(p) => <List.Icon {...p} icon="cloud-remove" />} onPress={() => { if (s.contextPdf) s.handleRemoveFromCloud(s.contextPdf); }} />
+                        ) : s.syncEnabled && s.contextPdf && s.contextPdf.cloud_synced !== 1 && s.contextPdf.cloud_synced_exclude !== 1 ? (
+                            <List.Item title={t("home.syncToCloud")} left={(p) => <List.Icon {...p} icon="cloud-upload" />} onPress={() => { if (s.contextPdf) s.handleSyncToCloud(s.contextPdf); }} />
                         ) : null}
-                        {syncEnabled && contextPdf && (
-                            <List.Item title={contextPdf.cloud_synced_exclude === 1 ? t("home.includeInSync") : t("home.excludeFromSync")} left={(p) => <List.Icon {...p} icon={contextPdf.cloud_synced_exclude === 1 ? "cloud-sync" : "cloud-off-outline"} />} onPress={async () => { if (contextPdf) { const newVal = contextPdf.cloud_synced_exclude === 1 ? false : true; await togglePdfSyncExclude(contextPdf.id, newVal); setContextPdf(null); await loadPdfs(); showSnack(newVal ? t("home.excludedFromSync", { name: contextPdf.original_filename }) : t("home.includedInSync", { name: contextPdf.original_filename })); } }} />
+                        {s.syncEnabled && s.contextPdf && (
+                            <List.Item title={(s.contextPdf!.cloud_synced_exclude === 1 ? t("home.includeInSync") : t("home.excludeFromSync"))} left={(p) => <List.Icon {...p} icon={s.contextPdf!.cloud_synced_exclude === 1 ? "cloud-sync" : "cloud-off-outline"} />} onPress={() => { if (s.contextPdf) s.handleToggleSyncExclude(s.contextPdf); }} />
                         )}
-                        <List.Item title={t("home.delete")} left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => contextPdf && handleDelete(contextPdf)} />
-                        <List.Item title={t("home.details")} left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setDetailsPdf(pdf); } }} />
-                        <List.Item title={t("home.replaceText")} left={(p) => <List.Icon {...p} icon="text-search" />} onPress={() => { const pdf = contextPdf; setContextPdf(null); if (pdf) { setReplaceTextPdf(pdf); } }} />
+                        <List.Item title={t("home.delete")} left={(p) => <List.Icon {...p} icon="delete" />} onPress={() => s.contextPdf && s.handleDelete(s.contextPdf)} />
+                        <List.Item title={t("home.details")} left={(p) => <List.Icon {...p} icon="information" />} onPress={() => { if (s.contextPdf) s.openDetails(s.contextPdf); }} />
+                        <List.Item title={t("home.replaceText")} left={(p) => <List.Icon {...p} icon="text-search" />} onPress={() => { if (s.contextPdf) s.openReplaceText(s.contextPdf); }} />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setContextPdf(null)}>{t("common.close")}</Button>
+                        <Button onPress={() => s.setContextPdf(null)}>{t("common.close")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
 
             {/* Rename dialog */}
             <Portal>
-                <Dialog visible={renameDialog} onDismiss={() => setRenameDialog(false)}>
+                <Dialog visible={s.renameDialog} onDismiss={() => s.setRenameDialog(false)}>
                     <Dialog.Title>{t("home.renameTitle")}</Dialog.Title>
                     <Dialog.Content>
                         <TextInput
-                            key={renameTarget?.id || "rename"}
+                            key={s.renameTarget?.id || "rename"}
                             label={t("home.fileName")}
-                            defaultValue={renameText}
-                            onChangeText={setRenameText}
+                            defaultValue={s.renameText}
+                            onChangeText={s.setRenameText}
                             mode="outlined"
                             autoFocus
-                            onSubmitEditing={confirmRename}
+                            onSubmitEditing={s.confirmRename}
                         />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setRenameDialog(false)}>{t("common.cancel")}</Button>
-                        <Button onPress={confirmRename}>{t("home.rename")}</Button>
+                        <Button onPress={() => s.setRenameDialog(false)}>{t("common.cancel")}</Button>
+                        <Button onPress={s.confirmRename}>{t("home.rename")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
 
             {/* Details dialog */}
             <Portal>
-                <Dialog visible={detailsPdf !== null} onDismiss={() => setDetailsPdf(null)}>
+                <Dialog visible={s.detailsPdf !== null} onDismiss={() => s.setDetailsPdf(null)}>
                     <Dialog.Title>{t("home.detailsTitle")}</Dialog.Title>
                     <Dialog.Content>
-                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsName")}: </Text>{detailsPdf?.original_filename}</Text>
-                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsSize")}: </Text>{detailsPdf ? formatSize(detailsPdf.file_size) : ""}</Text>
-                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsPages")}: </Text>{detailsPdf?.page_count}</Text>
-                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsCreated")}: </Text>{detailsPdf ? new Date(detailsPdf.created_at).toLocaleDateString() : ""}</Text>
-                        <Text variant="bodyMedium"><Text style={{ fontWeight: "700" }}>{t("home.detailsUpdated")}: </Text>{detailsPdf ? new Date(detailsPdf.updated_at).toLocaleDateString() : ""}</Text>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsName")}: </Text>{s.detailsPdf?.original_filename}</Text>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsSize")}: </Text>{s.detailsPdf ? s.formatSize(s.detailsPdf.file_size) : ""}</Text>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsPages")}: </Text>{s.detailsPdf?.page_count}</Text>
+                        <Text variant="bodyMedium" style={{ marginBottom: 8 }}><Text style={{ fontWeight: "700" }}>{t("home.detailsCreated")}: </Text>{s.detailsPdf ? new Date(s.detailsPdf.created_at).toLocaleDateString() : ""}</Text>
+                        <Text variant="bodyMedium"><Text style={{ fontWeight: "700" }}>{t("home.detailsUpdated")}: </Text>{s.detailsPdf ? new Date(s.detailsPdf.updated_at).toLocaleDateString() : ""}</Text>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setDetailsPdf(null)}>{t("common.close")}</Button>
+                        <Button onPress={() => s.setDetailsPdf(null)}>{t("common.close")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
 
             <ReplaceTextDialog
-                visible={replaceTextPdf !== null}
-                onClose={() => setReplaceTextPdf(null)}
-                pdfId={replaceTextPdf?.id ?? null}
+                visible={s.replaceTextPdf !== null}
+                onClose={() => s.setReplaceTextPdf(null)}
+                pdfId={s.replaceTextPdf?.id ?? null}
                 onSuccess={() => {
-                    setReplaceTextPdf(null);
-                    loadPdfs();
+                    s.setReplaceTextPdf(null);
+                    s.loadPdfs();
                 }}
             />
 
             <Snackbar
-                visible={snackbarVisible}
-                onDismiss={() => setSnackbarVisible(false)}
+                visible={s.snackbarVisible}
+                onDismiss={() => s.setSnackbarVisible(false)}
                 duration={3000}
-                action={{ label: t("common.ok"), onPress: () => setSnackbarVisible(false) }}
+                action={{ label: t("common.ok"), onPress: () => s.setSnackbarVisible(false) }}
             >
-                {snackbarMsg}
+                {s.snackbarMsg}
             </Snackbar>
 
             <DeleteSyncDialog
-                visible={deleteTarget !== null}
-                pdfName={deleteTarget?.original_filename || ""}
-                onDismiss={() => setDeleteTarget(null)}
-                onDelete={async (option: DeleteSyncOption) => {
-                    if (!deleteTarget) return;
-                    const ok = await deletePdf(deleteTarget.id, option);
-                    setDeleteTarget(null);
-                    await loadPdfs();
-                    if (ok) {
-                        showSnack(t("home.deleted", { name: deleteTarget.original_filename }));
-                    }
-                }}
+                visible={s.deleteTarget !== null}
+                pdfName={s.deleteTarget?.original_filename || ""}
+                onDismiss={() => s.setDeleteTarget(null)}
+                onDelete={s.handleDeleteSync}
             />
 
             {/* Sync after upload dialog */}
             <Portal>
-                <Dialog visible={syncAfterUpload !== null} onDismiss={() => { setSyncAfterUpload(null); }}>
+                <Dialog visible={s.syncAfterUpload !== null} onDismiss={() => { s.setSyncAfterUpload(null); }}>
                     <Dialog.Title>{t("home.syncAfterUploadTitle")}</Dialog.Title>
                     <Dialog.Content>
                         <Text variant="bodyMedium" style={{ marginBottom: 16 }}>
-                            {t("home.syncAfterUploadDesc", { name: syncAfterUpload?.pdfName || "" })}
+                            {t("home.syncAfterUploadDesc", { name: s.syncAfterUpload?.pdfName || "" })}
                         </Text>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => {
-                            const pdfId = syncAfterUpload?.pdfId;
-                            const pdfName = syncAfterUpload?.pdfName;
-                            setSyncAfterUpload(null);
-                            if (pdfId) navigation.navigate("PdfViewer", { pdfId, title: pdfName || "" });
-                        }}>
+                        <Button onPress={s.handleSyncAfterUploadNo}>
                             {t("common.no")}
                         </Button>
-                        <Button onPress={() => {
-                            const pdfId = syncAfterUpload?.pdfId;
-                            const pdfName = syncAfterUpload?.pdfName;
-                            setSyncAfterUpload(null);
-                            if (pdfId) {
-                                uploadPdf(pdfId).then((ok) => {
-                                    loadPdfs();
-                                    if (ok) {
-                                        navigation.navigate("PdfViewer", { pdfId, title: pdfName || "" });
-                                    } else {
-                                        showSnack(t("home.syncErrorUploadFailed", { name: pdfName || "" }));
-                                    }
-                                });
-                            }
-                        }}>
+                        <Button onPress={s.handleSyncAfterUploadYes}>
                             {t("common.yes")}
                         </Button>
                     </Dialog.Actions>
