@@ -1,8 +1,9 @@
 import React from "react";
-import { View, TouchableOpacity } from "react-native";
+import { View } from "react-native";
 import { Text, Button, Dialog, Portal, IconButton, TextInput, RadioButton } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import type { ToolsScreenState } from "../hooks/useToolsScreen";
+import PageGrid from "./PageGrid";
 
 /** Renders every ToolsScreen modal dialog (issue #885, A3a - step 2). */
 export default function ToolsDialogs({ s }: { s: ToolsScreenState }) {
@@ -18,29 +19,15 @@ export default function ToolsDialogs({ s }: { s: ToolsScreenState }) {
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.splitSelectPages")}
                         </Text>
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-                            {s.splitDialog && Array.from({ length: s.splitDialog.totalPages }, (_, i) => i + 1).map((page) => (
-                                <TouchableOpacity
-                                    key={page}
-                                    onPress={() => s.toggleSplitPage(page)}
-                                    style={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: 8,
-                                        backgroundColor: s.splitDialog!.selectedPages.includes(page)
-                                            ? s.theme.colors.primary
-                                            : s.theme.colors.surfaceVariant,
-                                        justifyContent: "center",
-                                        alignItems: "center",
-                                        margin: 2,
-                                    }}
-                                >
-                                    <Text style={{ color: s.splitDialog!.selectedPages.includes(page) ? "#fff" : s.theme.colors.onSurface }}>
-                                        {page}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                        <PageGrid
+                            totalPages={s.splitDialog!.totalPages}
+                            selectedPages={s.splitDialog!.selectedPages}
+                            onTogglePage={s.toggleSplitPage}
+                            selectedColor={s.theme.colors.primary}
+                            unselectedColor={s.theme.colors.surfaceVariant}
+                            textColor="#fff"
+                            unselectedTextColor={s.theme.colors.onSurface}
+                        />
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => s.setSplitDialog(null)}>{t("common.cancel")}</Button>
@@ -82,29 +69,15 @@ export default function ToolsDialogs({ s }: { s: ToolsScreenState }) {
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.removeSelectPages")}
                         </Text>
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-                            {s.removeDialog && Array.from({ length: s.removeDialog.totalPages }, (_, i) => i + 1).map((page) => (
-                                <TouchableOpacity
-                                    key={page}
-                                    onPress={() => s.toggleRemovePage(page)}
-                                    style={{
-                                        width: 40,
-                                        height: 40,
-                                        borderRadius: 8,
-                                        backgroundColor: s.removeDialog!.selectedPages.includes(page)
-                                            ? s.theme.colors.error
-                                            : s.theme.colors.surfaceVariant,
-                                        justifyContent: "center",
-                                        alignItems: "center",
-                                        margin: 2,
-                                    }}
-                                >
-                                    <Text style={{ color: s.removeDialog!.selectedPages.includes(page) ? "#fff" : s.theme.colors.onSurface }}>
-                                        {page}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                        <PageGrid
+                            totalPages={s.removeDialog!.totalPages}
+                            selectedPages={s.removeDialog!.selectedPages}
+                            onTogglePage={s.toggleRemovePage}
+                            selectedColor={s.theme.colors.error}
+                            unselectedColor={s.theme.colors.surfaceVariant}
+                            textColor="#fff"
+                            unselectedTextColor={s.theme.colors.onSurface}
+                        />
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => s.setRemoveDialog(null)}>{t("common.cancel")}</Button>
