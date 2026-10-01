@@ -5,25 +5,11 @@ import { useTranslations } from "next-intl";
 import { api } from "../../shared/api";
 import { useAuth } from "../../shared/auth";
 import { getApiBaseUrl, isTauri, tauriInvoke } from "../../shared/tauri";
-import PdfViewer from "../../components/PdfViewer";
-import MetadataModal from "../../components/MetadataModal";
-import RemovePagesModal from "../../components/RemovePagesModal";
-import ReorderPagesModal from "../../components/ReorderPagesModal";
-import SplitPagesModal from "../../components/SplitPagesModal";
-import MergeModal from "../../components/MergeModal";
-import CompressModal from "../../components/CompressModal";
-import LockUnlockModal from "../../components/LockUnlockModal";
-import ReplaceTextModal from "../../components/ReplaceTextModal";
-import ImportExportModal from "../../components/ImportExportModal";
-import SignModal from "../../components/SignModal";
-import OcrModal from "../../components/OcrModal";
-import PrintOptionsModal, { type PrintOptions, parsePageRangeList } from "../../components/PrintOptionsModal";
-import AnnotationDialog from "../../components/AnnotationDialog";
-import ShareDialog from "../../components/ShareDialog";
+import type { PrintOptions } from "../../components/PrintOptionsModal";
 import { EditorSidebar } from "../components/EditorSidebar";
-import { EditorToolbar } from "../components/EditorToolbar";
 import { EditorRightPanel } from "../components/EditorRightPanel";
-import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+import { EditorViewer } from "../components/EditorViewer";
+import { EditorModals } from "../components/EditorModals";
 import { EditorFooter } from "../components/EditorFooter";
 import { usePreferences } from "../../lib/preferences";
 import { useCloudSync } from "../../hooks/useCloudSync";
@@ -157,6 +143,7 @@ export default function EditorPage() {
 
         try {
             const totalPages = selectedDoc.page_count || 1;
+            const { parsePageRangeList } = await import("../../components/PrintOptionsModal");
             const pageNumbers = parsePageRangeList(options.pageRange, totalPages);
             if (!pdfUrl) return;
             const { images, firstIsLandscape } = await renderPagesToPngBase64(pdfUrl, pageNumbers);
@@ -490,92 +477,38 @@ export default function EditorPage() {
                     onDeleteRequest={setDeleteConfirm}
                 />
 
-                <main className="flex flex-col border-r border-white/10 bg-[#13100d] min-h-0">
-                    <EditorToolbar
-                        te={te}
-                        selected={!!selectedDoc}
-                        totalPages={totalPages}
-                        currentPage={currentPage}
-                        zoom={zoom}
-                        openMenu={openMenu}
-                        organizeRef={organizeRef}
-                        convertRef={convertRef}
-                        annotateMenuRef={annotateMenuRef}
-                        onDownload={handleDownload}
-                        onPrint={handlePrint}
-                        onPageChange={setCurrentPage}
-                        onZoomChange={setZoom}
-                        onToggleMenu={(m) => setOpenMenu((prev) => (prev === m ? null : m))}
-                        onMerge={() => { setMergeOpen(true); setOpenMenu(null); }}
-                        onSplit={() => { setSplitOpen(true); setOpenMenu(null); }}
-                        onReorder={() => { setReorderOpen(true); setOpenMenu(null); }}
-                        onRemovePages={() => { setRemovePagesOpen(true); setOpenMenu(null); }}
-                        onCompress={() => { setCompressOpen(true); setOpenMenu(null); }}
-                        onImportExport={() => { setImportExportOpen(true); setOpenMenu(null); }}
-                        onReplaceText={() => { setReplaceTextOpen(true); setOpenMenu(null); }}
-                        onMetadata={() => { setMetadataOpen(true); setOpenMenu(null); }}
-                        onSign={() => { setSignOpen(true); setOpenMenu(null); }}
-                        onOcr={() => { setOcrOpen(true); setOpenMenu(null); }}
-                        onAnnotate={() => { setAnnotateOpen(true); setOpenMenu(null); }}
-                        onShare={() => setShareOpen(true)}
-                    />
-
-                    <div className="flex-1 bg-black p-6 overflow-hidden relative">
-                        {dragOver && (
-                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#f7871f]/10 border-2 border-dashed border-[#f7871f]/50 rounded-2xl m-6 pointer-events-none">
-                                <p className="text-lg font-semibold text-[#f7871f]">{te("dropToUpload")}</p>
-                            </div>
-                        )}
-                        <div className="relative h-full border border-white/6 bg-[#0f0d0b]">
-                            <div className="absolute left-4 top-3 z-10 font-mono text-[10px] text-[#d8d8d8]">
-                                {selectedDoc?.original_filename || ""}
-                            </div>
-                            {pdfUrl ? (
-                                <div className="absolute inset-0 overflow-auto p-6 [&>div:first-child]:min-h-full">
-                                    <div className="mx-auto min-h-full w-full max-w-[760px] bg-[#f6f6f6]">
-                                        <PdfViewer
-                                            fileUrl={pdfUrl}
-                                            currentPage={currentPage}
-                                            totalPages={totalPages}
-                                            onPageChange={setCurrentPage}
-                                            onTotalPagesChange={setTotalPages}
-                                            zoom={zoom}
-                                            onZoomChange={setZoom}
-                                        />
-                                    </div>
-                                </div>
-                            ) : selectedDoc?.is_password_protected ? (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
-                                    {/* Lock icon */}
-                                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#f7871f]/10 ring-1 ring-[#f7871f]/20">
-                                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f7871f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                                        </svg>
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-base font-semibold text-white">{te("pdfLocked")}</p>
-                                        <p className="mt-1 text-sm text-[#8d8175]">{te("pdfLockedDesc")}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => setLockOpen(true)}
-                                        className="inline-flex items-center gap-2 rounded-xl bg-[#f7871f] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#ce5a00]"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                                        </svg>
-                                        {te("unlockPdf")}
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="flex h-full items-center justify-center text-[#7e7267] text-sm">
-                                    {te("selectPdf")}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </main>
+                <EditorViewer
+                    te={te}
+                    selectedDoc={selectedDoc}
+                    dragOver={dragOver}
+                    pdfUrl={pdfUrl}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    zoom={zoom}
+                    openMenu={openMenu}
+                    organizeRef={organizeRef}
+                    convertRef={convertRef}
+                    annotateMenuRef={annotateMenuRef}
+                    onDownload={handleDownload}
+                    onPrint={handlePrint}
+                    onPageChange={setCurrentPage}
+                    onTotalPagesChange={setTotalPages}
+                    onZoomChange={setZoom}
+                    onToggleMenu={(m) => setOpenMenu((prev) => (prev === m ? null : m))}
+                    onMerge={() => { setMergeOpen(true); setOpenMenu(null); }}
+                    onSplit={() => { setSplitOpen(true); setOpenMenu(null); }}
+                    onReorder={() => { setReorderOpen(true); setOpenMenu(null); }}
+                    onRemovePages={() => { setRemovePagesOpen(true); setOpenMenu(null); }}
+                    onCompress={() => { setCompressOpen(true); setOpenMenu(null); }}
+                    onImportExport={() => { setImportExportOpen(true); setOpenMenu(null); }}
+                    onReplaceText={() => { setReplaceTextOpen(true); setOpenMenu(null); }}
+                    onMetadata={() => { setMetadataOpen(true); setOpenMenu(null); }}
+                    onSign={() => { setSignOpen(true); setOpenMenu(null); }}
+                    onOcr={() => { setOcrOpen(true); setOpenMenu(null); }}
+                    onAnnotate={() => { setAnnotateOpen(true); setOpenMenu(null); }}
+                    onShare={() => setShareOpen(true)}
+                    onUnlock={() => setLockOpen(true)}
+                />
 
                 <EditorRightPanel
                     te={te}
@@ -588,147 +521,60 @@ export default function EditorPage() {
                 />
             </div>
 
-            <RemovePagesModal
-                open={removePagesOpen}
-                pdfId={selectedDoc?.id ?? ""}
-                pdfName={selectedDoc?.original_filename ?? ""}
-                totalPages={selectedDoc?.page_count ?? 0}
+            <EditorModals
+                te={te}
+                selectedDoc={selectedDoc}
                 pdfUrl={pdfUrl}
-                onClose={() => setRemovePagesOpen(false)}
-                onSaved={handleDocUpdated}
-            />
-
-            <ReorderPagesModal
-                open={reorderOpen}
-                pdfId={selectedDoc?.id ?? ""}
-                pdfName={selectedDoc?.original_filename ?? ""}
-                totalPages={selectedDoc?.page_count ?? 0}
-                pdfUrl={pdfUrl}
-                onClose={() => setReorderOpen(false)}
-                onSaved={handleDocUpdated}
-            />
-
-            <MergeModal
-                open={mergeOpen}
-                pdfId={selectedDoc?.id ?? ""}
-                pdfName={selectedDoc?.original_filename ?? ""}
-                onClose={() => setMergeOpen(false)}
-                onSaved={handleDocUpdated}
-            />
-
-            <SplitPagesModal
-                open={splitOpen}
-                pdfId={selectedDoc?.id ?? ""}
-                pdfName={selectedDoc?.original_filename ?? ""}
-                totalPages={selectedDoc?.page_count ?? 0}
-                pdfUrl={pdfUrl}
-                onClose={() => setSplitOpen(false)}
-                onSaved={(newDocs) => {
+                currentPage={currentPage}
+                removePagesOpen={removePagesOpen}
+                reorderOpen={reorderOpen}
+                splitOpen={splitOpen}
+                mergeOpen={mergeOpen}
+                compressOpen={compressOpen}
+                importExportOpen={importExportOpen}
+                signOpen={signOpen}
+                ocrOpen={ocrOpen}
+                printOptionsOpen={printOptionsOpen}
+                annotateOpen={annotateOpen}
+                shareOpen={shareOpen}
+                lockOpen={lockOpen}
+                replaceTextOpen={replaceTextOpen}
+                metadataOpen={metadataOpen}
+                deleteConfirm={deleteConfirm}
+                onCloseRemovePages={() => setRemovePagesOpen(false)}
+                onCloseReorder={() => setReorderOpen(false)}
+                onCloseSplit={() => setSplitOpen(false)}
+                onCloseMerge={() => setMergeOpen(false)}
+                onCloseCompress={() => setCompressOpen(false)}
+                onCloseImportExport={() => setImportExportOpen(false)}
+                onCloseSign={() => setSignOpen(false)}
+                onCloseOcr={() => setOcrOpen(false)}
+                onClosePrintOptions={() => setPrintOptionsOpen(false)}
+                onCloseAnnotate={() => setAnnotateOpen(false)}
+                onCloseShare={() => setShareOpen(false)}
+                onCloseLock={() => setLockOpen(false)}
+                onCloseReplaceText={() => setReplaceTextOpen(false)}
+                onCloseMetadata={() => setMetadataOpen(false)}
+                onCancelDelete={() => setDeleteConfirm(null)}
+                onConfirmDelete={() => handleDelete(deleteConfirm!)}
+                onDocUpdated={handleDocUpdated}
+                onSplitSaved={(newDocs) => {
                     setDocs((prev) => [...newDocs, ...prev]);
                     setSelectedDoc(newDocs[0]);
                     setPdfRefreshKey((k) => k + 1);
                 }}
-            />
-
-            <CompressModal
-                open={compressOpen}
-                pdfId={selectedDoc?.id ?? ""}
-                pdfName={selectedDoc?.original_filename ?? ""}
-                onClose={() => setCompressOpen(false)}
-                onSaved={(newDoc) => {
+                onNewDocSaved={(newDoc) => {
                     setDocs((prev) => [newDoc, ...prev]);
                     setSelectedDoc(newDoc);
                     setPdfRefreshKey((k) => k + 1);
                 }}
-            />
-
-            <ImportExportModal
-                open={importExportOpen}
-                pdfId={selectedDoc?.id ?? ""}
-                pdfName={selectedDoc?.original_filename ?? ""}
-                onClose={() => setImportExportOpen(false)}
-                onImported={(newDoc) => {
-                    setDocs((prev) => [newDoc, ...prev]);
-                    setSelectedDoc(newDoc);
-                    setPdfRefreshKey((k) => k + 1);
-                }}
-            />
-
-            <SignModal
-                open={signOpen}
-                pdfId={selectedDoc?.id ?? ""}
-                pdfName={selectedDoc?.original_filename ?? ""}
-                totalPages={selectedDoc?.page_count ?? 1}
-                pdfUrl={pdfUrl}
-                onClose={() => setSignOpen(false)}
-                onSaved={(updatedDoc) => {
+                onSignSaved={(updatedDoc) => {
                     setDocs((prev) => prev.map((d) => (d.id === updatedDoc.id ? updatedDoc : d)));
                     setSelectedDoc(updatedDoc);
                     setPdfRefreshKey((k) => k + 1);
                 }}
-            />
-
-            <OcrModal
-                open={ocrOpen}
-                pdfId={selectedDoc?.id ?? null}
-                onClose={() => setOcrOpen(false)}
-                onSuccess={() => setPdfRefreshKey((k) => k + 1)}
-            />
-
-            <PrintOptionsModal
-                open={printOptionsOpen}
-                onClose={() => setPrintOptionsOpen(false)}
-                onConfirm={executePrint}
-                pdfUrl={pdfUrl}
-                initialPage={currentPage}
-                totalPages={selectedDoc?.page_count ?? 1}
-            />
-
-            <AnnotationDialog
-                open={annotateOpen}
-                pdfId={selectedDoc?.id ?? null}
-                currentPage={currentPage}
-                pdfUrl={pdfUrl}
-                onClose={() => setAnnotateOpen(false)}
-                onSuccess={() => setPdfRefreshKey((k) => k + 1)}
-            />
-
-            <ShareDialog
-                open={shareOpen}
-                pdfId={selectedDoc?.id ?? null}
-                onClose={() => setShareOpen(false)}
-            />
-
-            <LockUnlockModal
-                open={lockOpen}
-                pdfId={selectedDoc?.id ?? ""}
-                pdfName={selectedDoc?.original_filename ?? ""}
-                isProtected={selectedDoc?.is_password_protected ?? false}
-                onClose={() => setLockOpen(false)}
-                onSaved={handleDocUpdated}
-            />
-
-            <MetadataModal
-                open={metadataOpen}
-                pdfId={selectedDoc?.id ?? ""}
-                pdfName={selectedDoc?.original_filename ?? ""}
-                onClose={() => setMetadataOpen(false)}
-                onSaved={handleDocUpdated}
-            />
-
-            <ReplaceTextModal
-                open={replaceTextOpen}
-                onClose={() => setReplaceTextOpen(false)}
-                pdfId={selectedDoc?.id ?? null}
-                onSuccess={handleDocUpdated}
-            />
-
-            {/* Delete confirmation dialog */}
-            <DeleteConfirmModal
-                te={te}
-                deleteConfirmId={deleteConfirm}
-                onCancel={() => setDeleteConfirm(null)}
-                onConfirm={handleDelete}
+                onRefresh={() => setPdfRefreshKey((k) => k + 1)}
+                onPrintConfirm={executePrint}
             />
 
             <EditorFooter te={te} apiBase={API_BASE} />
