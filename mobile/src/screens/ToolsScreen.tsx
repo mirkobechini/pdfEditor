@@ -1,17 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
 import { Text, Button, useTheme, ActivityIndicator, Dialog, Portal, IconButton, TextInput, Snackbar, RadioButton } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
-import type { LocalPdf } from "../shared/types";
-import { usePdfStorage } from "../hooks/usePdfStorage";
-import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, compressPdfOffline, exportPdf, importFile } from "../services/pdfService";
-import { renamePdfLocally } from "../services/localDb";
-import { useCloudSyncContext } from "../hooks/CloudSyncContext";
-import * as DocumentPicker from "expo-document-picker";
 import { useTranslation } from "react-i18next";
+import { useToolsScreen } from "../hooks/useToolsScreen";
 import SignFlowDialog from "../components/SignFlowDialog";
 import AnnotationFlowDialog from "../components/AnnotationFlowDialog";
 import OcrFlowDialog from "../components/OcrFlowDialog";
@@ -23,523 +18,9 @@ type ToolsNavProp = NativeStackNavigationProp<RootStackParamList, "Tools">;
 export default function ToolsScreen() {
     const theme = useTheme();
     const navigation = useNavigation<ToolsNavProp>();
-    const { loadLocalPdfs } = usePdfStorage();
-    const { isOnline } = useCloudSyncContext();
+    void navigation;
+    const s = useToolsScreen();
     const { t } = useTranslation();
-    const [pdfs, setPdfs] = useState<LocalPdf[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [operation, setOperation] = useState<string | null>(null);
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [result, setResult] = useState("");
-    const [snackbarVisible, setSnackbarVisible] = useState(false);
-
-    function showResult(msg: string) {
-        setResult(msg);
-        setSnackbarVisible(true);
-    }
-
-    async function submitRename() {
-        if (!renamePdf) return;
-        const trimmed = renameInput.trim();
-        if (trimmed && trimmed !== renamePdf.original_filename) {
-            await renamePdfLocally(renamePdf.id, trimmed);
-            await reloadPdfs();
-        }
-        setRenamePdf(null);
-        setRenameInput("");
-        setRenameSelection(undefined);
-    }
-
-    // The *FlowDialog that just saved (Sign/Annotation/OCR) calls onSaved(...)
-    // and then onDismiss() in the same synchronous tick — onDismiss unmounts
-    // that dialog's whole component tree. Opening the rename dialog directly
-    // from onSaved put its TextInput's mount in the SAME React commit as that
-    // unmount. AnnotationFlowDialog's tree (radio buttons, color swatches, a
-    // page field, the PDF preview with its gesture responders) is by far the
-    // heaviest of the three — which is exactly why keystrokes only broke
-    // there and not after sign/OCR. Deferring by a tick lets the closing
-    // dialog's unmount finish its own commit first.
-    function openRenameDialog(result: LocalPdf) {
-        setTimeout(() => {
-            setRenameInput(result.original_filename);
-            setRenameSelection({ start: result.original_filename.length, end: result.original_filename.length });
-            setRenamePdf(result);
-        }, 0);
-    }
-
-    // Split dialog state
-    const [splitDialog, setSplitDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number; selectedPages: number[] } | null>(null);
-    // Remove dialog state
-    const [removeDialog, setRemoveDialog] = useState<{ pdfId: string; pdfName: string; totalPages: number; selectedPages: number[] } | null>(null);
-    // Reorder dialog state
-    const [reorderDialog, setReorderDialog] = useState<{ pdfId: string; pdfName: string; pageOrder: number[] } | null>(null);
-    // Name dialog state
-    const [nameDialog, setNameDialog] = useState<{ type: "merge" | "split" | "reorder" | "remove"; data: any } | null>(null);
-    const [nameInput, setNameInput] = useState("");
-    // Rename-after-action dialog state (sign/annotate/OCR results)
-    const [renamePdf, setRenamePdf] = useState<LocalPdf | null>(null);
-    const [renameInput, setRenameInput] = useState("");
-    // Explicit cursor tracking: without a controlled `selection`, Android
-    // re-guesses where to put the cursor after every value update, and that
-    // guess can land a character off — typing "ciao" without watching could
-    // come out "cioa", or holding backspace near a given spot deletes past
-    // the intended character. Controlling `selection` ourselves (updated via
-    // onSelectionChange) removes the guesswork entirely.
-    const [renameSelection, setRenameSelection] = useState<{ start: number; end: number } | undefined>(undefined);
-    const renameInputRef = useRef<any>(null);
-
-    // `autoFocus` grabbed the keyboard while react-native-paper's Dialog was
-    // still mid entrance-animation (a Portal/Modal fade+scale) — on Android
-    // that race dropped or misplaced early keystrokes. Focusing manually
-    // once the dialog has had time to settle avoids it.
-    useEffect(() => {
-        if (renamePdf) {
-            const timer = setTimeout(() => renameInputRef.current?.focus(), 300);
-            return () => clearTimeout(timer);
-        }
-    }, [renamePdf]);
-    // Compress dialog state
-    const [compressDialog, setCompressDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
-    const [compressQuality, setCompressQuality] = useState<"low" | "medium" | "high">("medium");
-    const [compressNameInput, setCompressNameInput] = useState("");
-    // Import/Export dialog state
-    const [importExportDialog, setImportExportDialog] = useState<{ mode: "import" | "export"; pdfId: string; pdfName: string } | null>(null);
-    const [exportFormat, setExportFormat] = useState("txt");
-    const [importExportBusy, setImportExportBusy] = useState(false);
-    // Metadata dialog state
-    const [metadataDialog, setMetadataDialog] = useState<{ pdfId: string; pdfName: string; title: string; author: string } | null>(null);
-    // Password dialog state
-    const [passwordDialog, setPasswordDialog] = useState<{ pdfId: string; pdfName: string; mode: "protect" | "unlock" } | null>(null);
-    // Sign dialog state
-    const [signDialog, setSignDialog] = useState<{ pdfId: string; pdfName: string; pdfUri: string; totalPages: number } | null>(null);
-    // Annotation dialog state
-    const [annotationDialog, setAnnotationDialog] = useState<{ pdfId: string; pdfName: string; pdfUri: string; totalPages: number } | null>(null);
-    // OCR dialog state
-    const [ocrDialog, setOcrDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
-    // Share dialog state
-    const [shareDialog, setShareDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
-    const [passwordInput, setPasswordInput] = useState("");
-    const [passwordConfirm, setPasswordConfirm] = useState("");
-
-    useEffect(() => {
-        loadLocalPdfs().then(setPdfs).finally(() => setLoading(false));
-    }, []);
-
-    const reloadPdfs = useCallback(async () => {
-        const updated = await loadLocalPdfs();
-        setPdfs(updated);
-    }, [loadLocalPdfs]);
-
-    async function handleMerge() {
-        if (selectedIds.length < 2) { showResult(t("tools.selectMin2")); return; }
-        // Ask for file name before merging
-        setNameDialog({ type: "merge", data: { ids: [...selectedIds] } });
-    }
-
-    async function executeMerge(fileName?: string) {
-        if (!nameDialog) return;
-        const { ids } = nameDialog.data;
-        setNameDialog(null);
-        setLoading(true);
-        const merged = await mergePdfs(ids, fileName);
-        if (merged) {
-            showResult(t("tools.mergeResult", { name: merged.original_filename }));
-            setSelectedIds([]);
-            await reloadPdfs();
-        } else showResult(t("tools.mergeFailed"));
-        setLoading(false);
-    }
-
-    // ─── Split ────────────────────────────────────────────────────
-
-    function openSplitDialog(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf) return;
-        setSplitDialog({
-            pdfId,
-            pdfName: pdf.original_filename,
-            totalPages: pdf.page_count || 1,
-            selectedPages: [],
-        });
-    }
-
-    function toggleSplitPage(page: number) {
-        if (!splitDialog) return;
-        const selected = splitDialog.selectedPages.includes(page)
-            ? splitDialog.selectedPages.filter((p) => p !== page)
-            : [...splitDialog.selectedPages, page];
-        setSplitDialog({ ...splitDialog, selectedPages: selected });
-    }
-
-    function openRemoveDialog(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf) return;
-        setRemoveDialog({
-            pdfId,
-            pdfName: pdf.original_filename,
-            totalPages: pdf.page_count || 1,
-            selectedPages: [],
-        });
-    }
-
-    function toggleRemovePage(page: number) {
-        if (!removeDialog) return;
-        const selected = removeDialog.selectedPages.includes(page)
-            ? removeDialog.selectedPages.filter((p) => p !== page)
-            : [...removeDialog.selectedPages, page];
-        setRemoveDialog({ ...removeDialog, selectedPages: selected });
-    }
-
-    // ─── Metadata ────────────────────────────────────────────────
-
-    function openMetadataDialog(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf) return;
-        setMetadataDialog({
-            pdfId,
-            pdfName: pdf.original_filename,
-            title: pdf.title || "",
-            author: pdf.author || "",
-        });
-    }
-
-    async function saveMetadata() {
-        if (!metadataDialog) return;
-        const { pdfId, title, author } = metadataDialog;
-        setMetadataDialog(null);
-        setLoading(true);
-        const result_pdf = await updateMetadata(pdfId, title || undefined, author || undefined);
-        if (result_pdf) showResult(t("tools.metadataResult", { name: result_pdf.original_filename }));
-        else showResult(t("tools.metadataFailed"));
-        setLoading(false);
-        await reloadPdfs();
-    }
-
-    async function executeSplit(fileName?: string) {
-        if (!nameDialog) return;
-        const { pdfId, totalPages, selectedPages } = nameDialog.data;
-        setSplitDialog(null);
-        setLoading(true);
-
-        // Build contiguous ranges from selected pages (e.g., [1,2,4,5] → [[1,2],[4,5]])
-        const selectedRanges: [number, number][] = [];
-        let start = selectedPages[0];
-        let end = selectedPages[0];
-        for (let i = 1; i < selectedPages.length; i++) {
-            if (selectedPages[i] === end + 1) {
-                end = selectedPages[i];
-            } else {
-                selectedRanges.push([start, end]);
-                start = selectedPages[i];
-                end = selectedPages[i];
-            }
-        }
-        selectedRanges.push([start, end]);
-
-        // Remaining pages as contiguous ranges
-        const remainingPages: number[] = [];
-        for (let i = 1; i <= totalPages; i++) {
-            if (!selectedPages.includes(i)) remainingPages.push(i);
-        }
-        const remainingRanges: [number, number][] = [];
-        if (remainingPages.length > 0) {
-            let rStart = remainingPages[0];
-            let rEnd = remainingPages[0];
-            for (let i = 1; i < remainingPages.length; i++) {
-                if (remainingPages[i] === rEnd + 1) {
-                    rEnd = remainingPages[i];
-                } else {
-                    remainingRanges.push([rStart, rEnd]);
-                    rStart = remainingPages[i];
-                    rEnd = remainingPages[i];
-                }
-            }
-            remainingRanges.push([rStart, rEnd]);
-        }
-
-        const allRanges = [...selectedRanges, ...remainingRanges];
-        const results = await splitPdf(pdfId, allRanges, fileName);
-        showResult(t("tools.splitResult", { count: results.length }));
-        setLoading(false);
-        await reloadPdfs();
-    }
-
-    // ─── Reorder ──────────────────────────────────────────────────
-
-    function openReorderDialog(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf || !pdf.page_count) return;
-        const pages: number[] = [];
-        for (let i = 1; i <= pdf.page_count; i++) pages.push(i);
-        setReorderDialog({
-            pdfId,
-            pdfName: pdf.original_filename,
-            pageOrder: pages,
-        });
-    }
-
-    function movePageUp(index: number) {
-        if (!reorderDialog || index === 0) return;
-        const order = [...reorderDialog.pageOrder];
-        [order[index - 1], order[index]] = [order[index], order[index - 1]];
-        setReorderDialog({ ...reorderDialog, pageOrder: order });
-    }
-
-    function movePageDown(index: number) {
-        if (!reorderDialog || index >= reorderDialog.pageOrder.length - 1) return;
-        const order = [...reorderDialog.pageOrder];
-        [order[index], order[index + 1]] = [order[index + 1], order[index]];
-        setReorderDialog({ ...reorderDialog, pageOrder: order });
-    }
-
-    async function executeReorder(fileName?: string) {
-        if (!reorderDialog) return;
-        const { pdfId, pageOrder } = reorderDialog;
-        setReorderDialog(null);
-        setLoading(true);
-
-        const reordered = await reorderPages(pdfId, pageOrder, fileName);
-        if (reordered) showResult(t("tools.reorderResult", { name: reordered.original_filename }));
-        else showResult(t("tools.reorderFailed"));
-        setLoading(false);
-        await reloadPdfs();
-    }
-
-    // ─── Remove Pages ────────────────────────────────────────────
-
-    async function executeRemove(fileName?: string) {
-        if (!nameDialog || nameDialog.type !== "remove") return;
-        const { pdfId, selectedPages } = nameDialog.data;
-        if (selectedPages.length === 0) return;
-        setLoading(true);
-        const result_pdf = await removePages(pdfId, selectedPages, fileName);
-        if (result_pdf) showResult(t("tools.removeResult", { name: result_pdf.original_filename }));
-        else showResult(t("tools.removeFailed"));
-        setLoading(false);
-        await reloadPdfs();
-    }
-
-    function openPasswordDialog(pdfId: string, mode: "protect" | "unlock") {
-        setPasswordDialog({ pdfId, pdfName: pdfs.find((p) => p.id === pdfId)?.original_filename || "PDF", mode });
-        setPasswordInput("");
-        setPasswordConfirm("");
-    }
-
-    // ─── Compress ────────────────────────────────────────────────
-
-    function openCompressDialog(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf) return;
-        setCompressDialog({ pdfId, pdfName: pdf.original_filename });
-    }
-
-    async function executeCompress(fileName?: string) {
-        if (!compressDialog) return;
-        setLoading(true);
-        // Online → cloud API (PyMuPDF, better quality). Offline → local re-save (pdf-lib).
-        const result_pdf = isOnline
-            ? await compressPdf(compressDialog.pdfId, compressQuality, fileName)
-            : await compressPdfOffline(compressDialog.pdfId, compressQuality, fileName);
-        if (result_pdf) showResult(t("tools.compressResult", { name: result_pdf.original_filename }));
-        else showResult(t("tools.compressFailed"));
-        setLoading(false);
-        setCompressDialog(null);
-        await reloadPdfs();
-    }
-
-    // ─── Import / Export ─────────────────────────────────────────
-
-    function openImportExportDialog(pdfId: string, mode: "import" | "export") {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        setImportExportDialog({ mode, pdfId, pdfName: pdf?.original_filename || "PDF" });
-        setExportFormat("txt");
-    }
-
-    // ─── Sign ───────────────────────────────────────────────────
-
-    function openSignDialog(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf) return;
-        setSignDialog({ pdfId, pdfName: pdf.original_filename, pdfUri: pdf.uri, totalPages: pdf.page_count || 1 });
-    }
-
-    async function handleSigned(result: LocalPdf) {
-        showResult(t("tools.signResult", { name: result.original_filename }));
-        openRenameDialog(result);
-        await reloadPdfs();
-    }
-
-    async function handleSignFailed() {
-        showResult(t("tools.signFailed"));
-        await reloadPdfs();
-    }
-
-    // ─── Annotate ───────────────────────────────────────────────
-
-    function openAnnotationDialog(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf) return;
-        setAnnotationDialog({ pdfId, pdfName: pdf.original_filename, pdfUri: pdf.uri, totalPages: pdf.page_count || 1 });
-    }
-
-    async function handleAnnotationSaved(result: LocalPdf) {
-        showResult(t("tools.annotationResult", { name: result.original_filename }));
-        openRenameDialog(result);
-        await reloadPdfs();
-    }
-
-    async function handleAnnotationFailed() {
-        showResult(t("tools.annotationFailed"));
-        await reloadPdfs();
-    }
-
-    // ─── OCR ────────────────────────────────────────────────────
-
-    function openOcrDialog(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf) return;
-        setOcrDialog({ pdfId, pdfName: pdf.original_filename });
-    }
-
-    async function handleOcrDone(result: LocalPdf, characterCount: number, alreadySearchable: boolean) {
-        const message = alreadySearchable
-            ? t("tools.ocrResultAlreadySearchable")
-            : characterCount > 0
-                ? t("tools.ocrResultSuccess", { count: characterCount })
-                : t("tools.ocrResultNoText");
-        showResult(message);
-        openRenameDialog(result);
-        await reloadPdfs();
-    }
-
-    async function handleOcrFailed() {
-        showResult(t("tools.ocrFailed"));
-        await reloadPdfs();
-    }
-
-    // ─── Share ──────────────────────────────────────────────────
-
-    function openShareDialog(pdfId: string) {
-        const pdf = pdfs.find((p) => p.id === pdfId);
-        if (!pdf) return;
-        setShareDialog({ pdfId, pdfName: pdf.original_filename });
-    }
-
-    async function executeImport() {
-        if (!importExportDialog) return;
-        setImportExportBusy(true);
-        try {
-            const result = await DocumentPicker.getDocumentAsync({
-                type: "*/*",
-                copyToCacheDirectory: true,
-                multiple: false,
-            });
-            if (result.canceled || !result.assets?.[0]) return;
-            const asset = result.assets[0];
-            const imported = await importFile(asset.uri, asset.name || "document.txt", asset.mimeType || "application/octet-stream");
-            if (imported) {
-                showResult(t("tools.importResult", { name: imported.original_filename }));
-                await reloadPdfs();
-            } else {
-                showResult(t("tools.importFailed"));
-            }
-        } catch (e) {
-            console.error("Import error:", e);
-            showResult(t("tools.importFailed"));
-        } finally {
-            setImportExportBusy(false);
-            setImportExportDialog(null);
-        }
-    }
-
-    async function executeExport() {
-        if (!importExportDialog) return;
-        setImportExportBusy(true);
-        try {
-            const result = await exportPdf(importExportDialog.pdfId, exportFormat, importExportDialog.pdfName);
-            if (result) {
-                showResult(t("tools.exportResult", { name: result.name }));
-            } else {
-                showResult(t("tools.exportFailed"));
-            }
-        } catch (e) {
-            console.error("Export error:", e);
-            showResult(t("tools.exportFailed"));
-        } finally {
-            setImportExportBusy(false);
-            setImportExportDialog(null);
-        }
-    }
-
-    async function executeProtect() {
-        if (!passwordDialog || passwordDialog.mode !== "protect") return;
-        if (passwordInput.length < 4) { showResult(t("tools.passwordShort")); return; }
-        if (passwordInput !== passwordConfirm) { showResult(t("tools.passwordMismatch")); return; }
-        const { pdfId } = passwordDialog;
-        setPasswordDialog(null);
-        setLoading(true);
-        const result_pdf = await protectPdf(pdfId, passwordInput);
-        if (result_pdf) showResult(t("tools.protectResult", { name: result_pdf.original_filename }));
-        else showResult(t("tools.protectFailed"));
-        setLoading(false);
-        await reloadPdfs();
-    }
-
-    async function executeUnlock() {
-        if (!passwordDialog || passwordDialog.mode !== "unlock") return;
-        if (!passwordInput) { showResult(t("tools.enterPassword")); return; }
-        const { pdfId } = passwordDialog;
-        setPasswordDialog(null);
-        setLoading(true);
-        const result_pdf = await unlockPdf(pdfId, passwordInput);
-        if (result_pdf) showResult(t("tools.unlockResult", { name: result_pdf.original_filename }));
-        else showResult(t("tools.unlockFailed"));
-        setLoading(false);
-        await reloadPdfs();
-    }
-
-    const toggleSelect = useCallback((id: string) => {
-        setSelectedIds((prev) =>
-            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-        );
-    }, []);
-
-    // The open*Dialog functions above are plain (unmemoized) closures
-    // recreated every render, so referencing them directly in handleItemPress's
-    // deps would make it just as unstable. Reading them through a ref that's
-    // kept current instead lets handleItemPress stay referentially stable
-    // across every render that isn't a real `operation` change — including
-    // the ones triggered by typing into an unrelated TextInput elsewhere on
-    // this screen (e.g. the rename dialog), which otherwise forced a full
-    // re-render of every visible FlatList row (see ToolsPdfListItem).
-    const actionHandlersRef = useRef({
-        openSplitDialog, openRemoveDialog, openMetadataDialog, openReorderDialog,
-        openPasswordDialog, openCompressDialog, openSignDialog, openAnnotationDialog,
-        openOcrDialog, openShareDialog, openImportExportDialog,
-    });
-    actionHandlersRef.current = {
-        openSplitDialog, openRemoveDialog, openMetadataDialog, openReorderDialog,
-        openPasswordDialog, openCompressDialog, openSignDialog, openAnnotationDialog,
-        openOcrDialog, openShareDialog, openImportExportDialog,
-    };
-
-    const handleItemPress = useCallback((item: LocalPdf) => {
-        const h = actionHandlersRef.current;
-        if (operation === "merge") toggleSelect(item.id);
-        else if (operation === "split") h.openSplitDialog(item.id);
-        else if (operation === "compress") h.openCompressDialog(item.id);
-        else if (operation === "reorder") h.openReorderDialog(item.id);
-        else if (operation === "remove") h.openRemoveDialog(item.id);
-        else if (operation === "metadata") h.openMetadataDialog(item.id);
-        else if (operation === "protect") h.openPasswordDialog(item.id, "protect");
-        else if (operation === "unlock") h.openPasswordDialog(item.id, "unlock");
-        else if (operation === "sign") h.openSignDialog(item.id);
-        else if (operation === "annotate") h.openAnnotationDialog(item.id);
-        else if (operation === "ocr") h.openOcrDialog(item.id);
-        else if (operation === "share") h.openShareDialog(item.id);
-        else if (operation === "export") h.openImportExportDialog(item.id, "export");
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [operation, toggleSelect]);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["bottom"]}>
@@ -547,175 +28,175 @@ export default function ToolsScreen() {
                 <Text variant="titleMedium" style={{ marginBottom: 12 }}>{t("tools.title")}</Text>
                 <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
                     <Button
-                        mode={operation === "merge" ? "contained" : "outlined"}
+                        mode={s.operation === "merge" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "merge" ? theme.colors.primary : undefined}
-                        textColor={operation === "merge" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("merge"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "merge" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "merge" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("merge"); s.setSelectedIds([]); }}
                     >
                         {t("tools.merge")}
                     </Button>
                     <Button
-                        mode={operation === "split" ? "contained" : "outlined"}
+                        mode={s.operation === "split" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "split" ? theme.colors.primary : undefined}
-                        textColor={operation === "split" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("split"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "split" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "split" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("split"); s.setSelectedIds([]); }}
                     >
                         {t("tools.split")}
                     </Button>
                     <Button
-                        mode={operation === "compress" ? "contained" : "outlined"}
+                        mode={s.operation === "compress" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "compress" ? theme.colors.primary : undefined}
-                        textColor={operation === "compress" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("compress"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "compress" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "compress" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("compress"); s.setSelectedIds([]); }}
                     >
                         {t("tools.compress")}
                     </Button>
                     <Button
-                        mode={operation === "reorder" ? "contained" : "outlined"}
+                        mode={s.operation === "reorder" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "reorder" ? theme.colors.primary : undefined}
-                        textColor={operation === "reorder" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("reorder"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "reorder" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "reorder" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("reorder"); s.setSelectedIds([]); }}
                     >
                         {t("tools.reorder")}
                     </Button>
                     <Button
-                        mode={operation === "remove" ? "contained" : "outlined"}
+                        mode={s.operation === "remove" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "remove" ? theme.colors.primary : undefined}
-                        textColor={operation === "remove" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("remove"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "remove" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "remove" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("remove"); s.setSelectedIds([]); }}
                     >
                         {t("tools.remove")}
                     </Button>
                     <Button
-                        mode={operation === "metadata" ? "contained" : "outlined"}
+                        mode={s.operation === "metadata" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "metadata" ? theme.colors.primary : undefined}
-                        textColor={operation === "metadata" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("metadata"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "metadata" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "metadata" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("metadata"); s.setSelectedIds([]); }}
                     >
                         {t("tools.metadata")}
                     </Button>
                     <Button
-                        mode={operation === "protect" ? "contained" : "outlined"}
+                        mode={s.operation === "protect" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "protect" ? theme.colors.primary : undefined}
-                        textColor={operation === "protect" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("protect"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "protect" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "protect" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("protect"); s.setSelectedIds([]); }}
                     >
                         {t("tools.password")}
                     </Button>
                     <Button
-                        mode={operation === "unlock" ? "contained" : "outlined"}
+                        mode={s.operation === "unlock" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "unlock" ? theme.colors.primary : undefined}
-                        textColor={operation === "unlock" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("unlock"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "unlock" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "unlock" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("unlock"); s.setSelectedIds([]); }}
                     >
                         {t("tools.unlock")}
                     </Button>
                     <Button
-                        mode={operation === "sign" ? "contained" : "outlined"}
+                        mode={s.operation === "sign" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "sign" ? theme.colors.primary : undefined}
-                        textColor={operation === "sign" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("sign"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "sign" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "sign" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("sign"); s.setSelectedIds([]); }}
                     >
                         {t("tools.sign")}
                     </Button>
                     <Button
-                        mode={operation === "annotate" ? "contained" : "outlined"}
+                        mode={s.operation === "annotate" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "annotate" ? theme.colors.primary : undefined}
-                        textColor={operation === "annotate" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("annotate"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "annotate" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "annotate" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("annotate"); s.setSelectedIds([]); }}
                     >
                         {t("tools.annotate")}
                     </Button>
                     <Button
-                        mode={operation === "ocr" ? "contained" : "outlined"}
+                        mode={s.operation === "ocr" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "ocr" ? theme.colors.primary : undefined}
-                        textColor={operation === "ocr" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("ocr"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "ocr" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "ocr" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("ocr"); s.setSelectedIds([]); }}
                     >
                         {t("tools.ocr")}
                     </Button>
                     <Button
-                        mode={operation === "share" ? "contained" : "outlined"}
+                        mode={s.operation === "share" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "share" ? theme.colors.primary : undefined}
-                        textColor={operation === "share" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("share"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "share" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "share" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("share"); s.setSelectedIds([]); }}
                     >
                         {t("tools.share")}
                     </Button>
                     <Button
-                        mode={operation === "import" ? "contained" : "outlined"}
+                        mode={s.operation === "import" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "import" ? theme.colors.primary : undefined}
-                        textColor={operation === "import" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("import"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "import" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "import" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("import"); s.setSelectedIds([]); }}
                     >
                         {t("tools.import")}
                     </Button>
                     <Button
-                        mode={operation === "export" ? "contained" : "outlined"}
+                        mode={s.operation === "export" ? "contained" : "outlined"}
                         compact
-                        buttonColor={operation === "export" ? theme.colors.primary : undefined}
-                        textColor={operation === "export" ? "#fff" : theme.colors.primary}
-                        onPress={() => { setOperation("export"); setSelectedIds([]); }}
+                        buttonColor={s.operation === "export" ? theme.colors.primary : undefined}
+                        textColor={s.operation === "export" ? "#fff" : theme.colors.primary}
+                        onPress={() => { s.setOperation("export"); s.setSelectedIds([]); }}
                     >
                         {t("tools.export")}
                     </Button>
                 </View>
             </View>
 
-            {operation === "merge" && selectedIds.length >= 2 && (
+            {s.operation === "merge" && s.selectedIds.length >= 2 && (
                 <View style={{ padding: 16 }}>
-                    <Button mode="contained" onPress={handleMerge} loading={loading} disabled={loading}>
-                        {t("tools.mergeAction", { count: selectedIds.length })}
+                    <Button mode="contained" onPress={s.handleMerge} loading={s.loading} disabled={s.loading}>
+                        {t("tools.mergeAction", { count: s.selectedIds.length })}
                     </Button>
                 </View>
             )}
 
-            {result ? (
+            {s.result ? (
                 <Portal>
                     <Snackbar
-                        visible={snackbarVisible}
-                        onDismiss={() => setSnackbarVisible(false)}
+                        visible={s.snackbarVisible}
+                        onDismiss={() => s.setSnackbarVisible(false)}
                         duration={3000}
-                        action={{ label: t("common.ok"), onPress: () => setSnackbarVisible(false) }}
+                        action={{ label: t("common.ok"), onPress: () => s.setSnackbarVisible(false) }}
                     >
-                        {result}
+                        {s.result}
                     </Snackbar>
                 </Portal>
             ) : null}
 
-            {!operation ? (
+            {!s.operation ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 24 }}>
                     <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant, textAlign: "center" }}>
                         {t("tools.selectTool")}
                     </Text>
                 </View>
-            ) : loading ? (
+            ) : s.loading ? (
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
                     <ActivityIndicator size="large" />
                 </View>
             ) : (
                 <FlatList
-                    data={pdfs}
+                    data={s.pdfs}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={{ padding: 16 }}
                     renderItem={({ item }) => (
                         <ToolsPdfListItem
                             item={item}
-                            isSelected={selectedIds.includes(item.id)}
-                            onPress={handleItemPress}
+                            isSelected={s.selectedIds.includes(item.id)}
+                            onPress={s.handleItemPress}
                         />
                     )}
                 />
@@ -723,22 +204,22 @@ export default function ToolsScreen() {
 
             {/* Split Dialog — choose pages to extract */}
             <Portal>
-                <Dialog visible={splitDialog !== null} onDismiss={() => setSplitDialog(null)}>
-                    <Dialog.Title>{t("tools.splitTitle", { name: splitDialog?.pdfName || "" })}</Dialog.Title>
+                <Dialog visible={s.splitDialog !== null} onDismiss={() => s.setSplitDialog(null)}>
+                    <Dialog.Title>{t("tools.splitTitle", { name: s.splitDialog?.pdfName || "" })}</Dialog.Title>
                     <Dialog.Content>
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.splitSelectPages")}
                         </Text>
                         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-                            {splitDialog && Array.from({ length: splitDialog.totalPages }, (_, i) => i + 1).map((page) => (
+                            {s.splitDialog && Array.from({ length: s.splitDialog.totalPages }, (_, i) => i + 1).map((page) => (
                                 <TouchableOpacity
                                     key={page}
-                                    onPress={() => toggleSplitPage(page)}
+                                    onPress={() => s.toggleSplitPage(page)}
                                     style={{
                                         width: 40,
                                         height: 40,
                                         borderRadius: 8,
-                                        backgroundColor: splitDialog.selectedPages.includes(page)
+                                        backgroundColor: s.splitDialog!.selectedPages.includes(page)
                                             ? theme.colors.primary
                                             : theme.colors.surfaceVariant,
                                         justifyContent: "center",
@@ -746,7 +227,7 @@ export default function ToolsScreen() {
                                         margin: 2,
                                     }}
                                 >
-                                    <Text style={{ color: splitDialog.selectedPages.includes(page) ? "#fff" : theme.colors.onSurface }}>
+                                    <Text style={{ color: s.splitDialog!.selectedPages.includes(page) ? "#fff" : theme.colors.onSurface }}>
                                         {page}
                                     </Text>
                                 </TouchableOpacity>
@@ -754,9 +235,9 @@ export default function ToolsScreen() {
                         </View>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setSplitDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={() => { if (splitDialog) { const data = { ...splitDialog }; setSplitDialog(null); setNameDialog({ type: "split", data }); } }} disabled={!splitDialog || splitDialog.selectedPages.length === 0}>
-                            {t("tools.splitExtract", { count: splitDialog?.selectedPages.length || 0 })}
+                        <Button onPress={() => s.setSplitDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={() => { if (s.splitDialog) { const data = { ...s.splitDialog }; s.setSplitDialog(null); s.setNameDialog({ type: "split", data }); } }} disabled={!s.splitDialog || s.splitDialog.selectedPages.length === 0}>
+                            {t("tools.splitExtract", { count: s.splitDialog?.selectedPages.length || 0 })}
                         </Button>
                     </Dialog.Actions>
                 </Dialog>
@@ -764,45 +245,45 @@ export default function ToolsScreen() {
 
             {/* Reorder Dialog — move pages up/down */}
             <Portal>
-                <Dialog visible={reorderDialog !== null} onDismiss={() => setReorderDialog(null)}>
-                    <Dialog.Title>{t("tools.reorderTitle", { name: reorderDialog?.pdfName || "" })}</Dialog.Title>
+                <Dialog visible={s.reorderDialog !== null} onDismiss={() => s.setReorderDialog(null)}>
+                    <Dialog.Title>{t("tools.reorderTitle", { name: s.reorderDialog?.pdfName || "" })}</Dialog.Title>
                     <Dialog.Content>
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.reorderInstructions")}
                         </Text>
-                        {reorderDialog && reorderDialog.pageOrder.map((page, index) => (
+                        {s.reorderDialog && s.reorderDialog.pageOrder.map((page, index) => (
                             <View key={page} style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
                                 <Text style={{ width: 30, fontWeight: "600" }}>{page}</Text>
-                                <IconButton icon="arrow-up" size={16} onPress={() => movePageUp(index)} disabled={index === 0} />
-                                <IconButton icon="arrow-down" size={16} onPress={() => movePageDown(index)} disabled={index >= reorderDialog.pageOrder.length - 1} />
+                                <IconButton icon="arrow-up" size={16} onPress={() => s.movePageUp(index)} disabled={index === 0} />
+                                <IconButton icon="arrow-down" size={16} onPress={() => s.movePageDown(index)} disabled={index >= s.reorderDialog!.pageOrder.length - 1} />
                             </View>
                         ))}
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setReorderDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={() => { if (reorderDialog) { const data = { ...reorderDialog }; setReorderDialog(null); setNameDialog({ type: "reorder", data }); } }}>{t("tools.reorder")}</Button>
+                        <Button onPress={() => s.setReorderDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={() => { if (s.reorderDialog) { const data = { ...s.reorderDialog }; s.setReorderDialog(null); s.setNameDialog({ type: "reorder", data }); } }}>{t("tools.reorder")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
 
             {/* Remove Pages Dialog — choose pages to remove */}
             <Portal>
-                <Dialog visible={removeDialog !== null} onDismiss={() => setRemoveDialog(null)}>
-                    <Dialog.Title>{t("tools.removeTitle", { name: removeDialog?.pdfName || "" })}</Dialog.Title>
+                <Dialog visible={s.removeDialog !== null} onDismiss={() => s.setRemoveDialog(null)}>
+                    <Dialog.Title>{t("tools.removeTitle", { name: s.removeDialog?.pdfName || "" })}</Dialog.Title>
                     <Dialog.Content>
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.removeSelectPages")}
                         </Text>
                         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-                            {removeDialog && Array.from({ length: removeDialog.totalPages }, (_, i) => i + 1).map((page) => (
+                            {s.removeDialog && Array.from({ length: s.removeDialog.totalPages }, (_, i) => i + 1).map((page) => (
                                 <TouchableOpacity
                                     key={page}
-                                    onPress={() => toggleRemovePage(page)}
+                                    onPress={() => s.toggleRemovePage(page)}
                                     style={{
                                         width: 40,
                                         height: 40,
                                         borderRadius: 8,
-                                        backgroundColor: removeDialog.selectedPages.includes(page)
+                                        backgroundColor: s.removeDialog!.selectedPages.includes(page)
                                             ? theme.colors.error
                                             : theme.colors.surfaceVariant,
                                         justifyContent: "center",
@@ -810,7 +291,7 @@ export default function ToolsScreen() {
                                         margin: 2,
                                     }}
                                 >
-                                    <Text style={{ color: removeDialog.selectedPages.includes(page) ? "#fff" : theme.colors.onSurface }}>
+                                    <Text style={{ color: s.removeDialog!.selectedPages.includes(page) ? "#fff" : theme.colors.onSurface }}>
                                         {page}
                                     </Text>
                                 </TouchableOpacity>
@@ -818,9 +299,9 @@ export default function ToolsScreen() {
                         </View>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setRemoveDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={() => { if (removeDialog) { const data = { ...removeDialog }; setRemoveDialog(null); setNameDialog({ type: "remove", data }); } }} disabled={!removeDialog || removeDialog.selectedPages.length === 0}>
-                            {t("tools.removeAction", { count: removeDialog?.selectedPages.length || 0 })}
+                        <Button onPress={() => s.setRemoveDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={() => { if (s.removeDialog) { const data = { ...s.removeDialog }; s.setRemoveDialog(null); s.setNameDialog({ type: "remove", data }); } }} disabled={!s.removeDialog || s.removeDialog.selectedPages.length === 0}>
+                            {t("tools.removeAction", { count: s.removeDialog?.selectedPages.length || 0 })}
                         </Button>
                     </Dialog.Actions>
                 </Dialog>
@@ -828,35 +309,35 @@ export default function ToolsScreen() {
 
             {/* Metadata Dialog — edit title and author */}
             <Portal>
-                <Dialog visible={metadataDialog !== null} onDismiss={() => setMetadataDialog(null)}>
+                <Dialog visible={s.metadataDialog !== null} onDismiss={() => s.setMetadataDialog(null)}>
                     <Dialog.Title>{t("tools.metadataTitle")}</Dialog.Title>
                     <Dialog.Content>
-                        <TextInput label={t("tools.metadataLabelTitle")} value={metadataDialog?.title || ""} onChangeText={(v) => setMetadataDialog((prev) => prev ? { ...prev, title: v } : null)} mode="outlined" style={{ marginBottom: 12 }} />
-                        <TextInput label={t("tools.metadataLabelAuthor")} value={metadataDialog?.author || ""} onChangeText={(v) => setMetadataDialog((prev) => prev ? { ...prev, author: v } : null)} mode="outlined" />
+                        <TextInput label={t("tools.metadataLabelTitle")} value={s.metadataDialog?.title || ""} onChangeText={(v) => s.setMetadataDialog((prev) => prev ? { ...prev, title: v } : null)} mode="outlined" style={{ marginBottom: 12 }} />
+                        <TextInput label={t("tools.metadataLabelAuthor")} value={s.metadataDialog?.author || ""} onChangeText={(v) => s.setMetadataDialog((prev) => prev ? { ...prev, author: v } : null)} mode="outlined" />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setMetadataDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={saveMetadata}>{t("common.save")}</Button>
+                        <Button onPress={() => s.setMetadataDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={s.saveMetadata}>{t("common.save")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
 
             {/* Compress Dialog — choose quality and output name */}
             <Portal>
-                <Dialog visible={compressDialog !== null} onDismiss={() => setCompressDialog(null)}>
+                <Dialog visible={s.compressDialog !== null} onDismiss={() => s.setCompressDialog(null)}>
                     <Dialog.Title>{t("tools.compressTitle")}</Dialog.Title>
                     <Dialog.Content>
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                            {t("tools.compressHint", { name: compressDialog?.pdfName || "" })}
+                            {t("tools.compressHint", { name: s.compressDialog?.pdfName || "" })}
                         </Text>
-                        {!isOnline && (
+                        {!s.isOnline && (
                             <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
                                 {t("tools.compressOfflineHint")}
                             </Text>
                         )}
                         <RadioButton.Group
-                            onValueChange={(val) => setCompressQuality(val as "low" | "medium" | "high")}
-                            value={compressQuality}
+                            onValueChange={(val) => s.setCompressQuality(val as "low" | "medium" | "high")}
+                            value={s.compressQuality}
                         >
                             <RadioButton.Item label={t("tools.compressLow")} value="low" />
                             <RadioButton.Item label={t("tools.compressMedium")} value="medium" />
@@ -865,18 +346,18 @@ export default function ToolsScreen() {
                         <TextInput
                             label={t("tools.fileNameOptional")}
                             mode="outlined"
-                            value={compressNameInput}
-                            onChangeText={setCompressNameInput}
+                            value={s.compressNameInput}
+                            onChangeText={s.setCompressNameInput}
                             style={{ marginTop: 12 }}
                         />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setCompressDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={() => s.setCompressDialog(null)}>{t("common.cancel")}</Button>
                         <Button onPress={() => {
-                            const fileName = compressNameInput.trim() || undefined;
-                            setCompressDialog(null);
-                            setCompressNameInput("");
-                            executeCompress(fileName);
+                            const fileName = s.compressNameInput.trim() || undefined;
+                            s.setCompressDialog(null);
+                            s.setCompressNameInput("");
+                            s.executeCompress(fileName);
                         }}>{t("common.save")}</Button>
                     </Dialog.Actions>
                 </Dialog>
@@ -884,26 +365,26 @@ export default function ToolsScreen() {
 
             {/* Import/Export Dialog — requires connection */}
             <Portal>
-                <Dialog visible={importExportDialog !== null} onDismiss={() => setImportExportDialog(null)}>
-                    <Dialog.Title>{importExportDialog?.mode === "import" ? t("tools.importTitle") : t("tools.exportTitle")}</Dialog.Title>
+                <Dialog visible={s.importExportDialog !== null} onDismiss={() => s.setImportExportDialog(null)}>
+                    <Dialog.Title>{s.importExportDialog?.mode === "import" ? t("tools.importTitle") : t("tools.exportTitle")}</Dialog.Title>
                     <Dialog.Content>
-                        {!isOnline && (
+                        {!s.isOnline && (
                             <Text variant="bodyMedium" style={{ color: theme.colors.error, marginBottom: 12 }}>
                                 {t("tools.requiresConnection")}
                             </Text>
                         )}
-                        {importExportDialog?.mode === "import" ? (
+                        {s.importExportDialog?.mode === "import" ? (
                             <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                                 {t("tools.importHint")}
                             </Text>
                         ) : (
                             <>
                                 <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                                    {t("tools.exportHint", { name: importExportDialog?.pdfName || "" })}
+                                    {t("tools.exportHint", { name: s.importExportDialog?.pdfName || "" })}
                                 </Text>
                                 <RadioButton.Group
-                                    onValueChange={(val) => setExportFormat(val as string)}
-                                    value={exportFormat}
+                                    onValueChange={(val) => s.setExportFormat(val as string)}
+                                    value={s.exportFormat}
                                 >
                                     <RadioButton.Item label="txt" value="txt" />
                                     <RadioButton.Item label="png" value="png" />
@@ -914,9 +395,9 @@ export default function ToolsScreen() {
                         )}
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setImportExportDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={importExportDialog?.mode === "import" ? executeImport : executeExport} loading={importExportBusy} disabled={importExportBusy || !isOnline}>
-                            {importExportDialog?.mode === "import" ? t("tools.importAction") : t("tools.exportAction")}
+                        <Button onPress={() => s.setImportExportDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={s.importExportDialog?.mode === "import" ? s.executeImport : s.executeExport} loading={s.importExportBusy} disabled={s.importExportBusy || !s.isOnline}>
+                            {s.importExportDialog?.mode === "import" ? t("tools.importAction") : t("tools.exportAction")}
                         </Button>
                     </Dialog.Actions>
                 </Dialog>
@@ -924,118 +405,118 @@ export default function ToolsScreen() {
 
             {/* Password Dialog — protect or unlock */}
             <Portal>
-                <Dialog visible={passwordDialog !== null} onDismiss={() => setPasswordDialog(null)}>
-                    <Dialog.Title>{passwordDialog?.mode === "protect" ? t("tools.protectTitle") : t("tools.unlockTitle")}</Dialog.Title>
+                <Dialog visible={s.passwordDialog !== null} onDismiss={() => s.setPasswordDialog(null)}>
+                    <Dialog.Title>{s.passwordDialog?.mode === "protect" ? t("tools.protectTitle") : t("tools.unlockTitle")}</Dialog.Title>
                     <Dialog.Content>
                         <Text variant="bodyMedium" style={{ marginBottom: 16 }}>
-                            {passwordDialog?.mode === "protect"
-                                ? t("tools.passwordProtectHint", { name: passwordDialog?.pdfName || "" })
-                                : t("tools.passwordUnlockHint", { name: passwordDialog?.pdfName || "" })}
+                            {s.passwordDialog?.mode === "protect"
+                                ? t("tools.passwordProtectHint", { name: s.passwordDialog?.pdfName || "" })
+                                : t("tools.passwordUnlockHint", { name: s.passwordDialog?.pdfName || "" })}
                         </Text>
                         <TextInput
                             label={t("tools.passwordHint")}
-                            value={passwordInput}
-                            onChangeText={setPasswordInput}
+                            value={s.passwordInput}
+                            onChangeText={s.setPasswordInput}
                             mode="outlined"
                             secureTextEntry
                             style={{ marginBottom: 12 }}
                         />
-                        {passwordDialog?.mode === "protect" && (
+                        {s.passwordDialog?.mode === "protect" && (
                             <TextInput
                                 label={t("tools.confirmPassword")}
-                                value={passwordConfirm}
-                                onChangeText={setPasswordConfirm}
+                                value={s.passwordConfirm}
+                                onChangeText={s.setPasswordConfirm}
                                 mode="outlined"
                                 secureTextEntry
                             />
                         )}
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setPasswordDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={passwordDialog?.mode === "protect" ? executeProtect : executeUnlock}>
-                            {passwordDialog?.mode === "protect" ? t("tools.protect") : t("tools.unlockAction")}
+                        <Button onPress={() => s.setPasswordDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={s.passwordDialog?.mode === "protect" ? s.executeProtect : s.executeUnlock}>
+                            {s.passwordDialog?.mode === "protect" ? t("tools.protect") : t("tools.unlockAction")}
                         </Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
 
             {/* Sign flow — choose signature (draw/gallery) then position it */}
-            {signDialog && (
+            {s.signDialog && (
                 <SignFlowDialog
-                    visible={signDialog !== null}
-                    pdfId={signDialog.pdfId}
-                    pdfName={signDialog.pdfName}
-                    pdfUri={signDialog.pdfUri}
-                    totalPages={signDialog.totalPages}
-                    onDismiss={() => setSignDialog(null)}
-                    onSigned={handleSigned}
-                    onFailed={handleSignFailed}
+                    visible={s.signDialog !== null}
+                    pdfId={s.signDialog.pdfId}
+                    pdfName={s.signDialog.pdfName}
+                    pdfUri={s.signDialog.pdfUri}
+                    totalPages={s.signDialog.totalPages}
+                    onDismiss={() => s.setSignDialog(null)}
+                    onSigned={s.handleSigned}
+                    onFailed={s.handleSignFailed}
                 />
             )}
 
             {/* Annotation flow — choose type/color/page then position it */}
-            {annotationDialog && (
+            {s.annotationDialog && (
                 <AnnotationFlowDialog
-                    visible={annotationDialog !== null}
-                    pdfId={annotationDialog.pdfId}
-                    pdfName={annotationDialog.pdfName}
-                    pdfUri={annotationDialog.pdfUri}
-                    totalPages={annotationDialog.totalPages}
-                    onDismiss={() => setAnnotationDialog(null)}
-                    onSaved={handleAnnotationSaved}
-                    onFailed={handleAnnotationFailed}
+                    visible={s.annotationDialog !== null}
+                    pdfId={s.annotationDialog.pdfId}
+                    pdfName={s.annotationDialog.pdfName}
+                    pdfUri={s.annotationDialog.pdfUri}
+                    totalPages={s.annotationDialog.totalPages}
+                    onDismiss={() => s.setAnnotationDialog(null)}
+                    onSaved={s.handleAnnotationSaved}
+                    onFailed={s.handleAnnotationFailed}
                 />
             )}
 
             {/* OCR — cloud-only, disabled offline */}
-            {ocrDialog && (
+            {s.ocrDialog && (
                 <OcrFlowDialog
-                    visible={ocrDialog !== null}
-                    pdfId={ocrDialog.pdfId}
-                    pdfName={ocrDialog.pdfName}
-                    isOnline={isOnline}
-                    onDismiss={() => setOcrDialog(null)}
-                    onDone={handleOcrDone}
-                    onFailed={handleOcrFailed}
+                    visible={s.ocrDialog !== null}
+                    pdfId={s.ocrDialog.pdfId}
+                    pdfName={s.ocrDialog.pdfName}
+                    isOnline={s.isOnline}
+                    onDismiss={() => s.setOcrDialog(null)}
+                    onDone={s.handleOcrDone}
+                    onFailed={s.handleOcrFailed}
                 />
             )}
 
             {/* Share via link — cloud-only, disabled offline */}
-            {shareDialog && (
+            {s.shareDialog && (
                 <ShareFlowDialog
-                    visible={shareDialog !== null}
-                    pdfId={shareDialog.pdfId}
-                    pdfName={shareDialog.pdfName}
-                    isOnline={isOnline}
-                    onDismiss={() => setShareDialog(null)}
+                    visible={s.shareDialog !== null}
+                    pdfId={s.shareDialog.pdfId}
+                    pdfName={s.shareDialog.pdfName}
+                    isOnline={s.isOnline}
+                    onDismiss={() => s.setShareDialog(null)}
                 />
             )}
 
             {/* Name Dialog — ask for file name before executing */}
             <Portal>
-                <Dialog visible={nameDialog !== null} onDismiss={() => setNameDialog(null)}>
+                <Dialog visible={s.nameDialog !== null} onDismiss={() => s.setNameDialog(null)}>
                     <Dialog.Title>{t("tools.namePdfTitle")}</Dialog.Title>
                     <Dialog.Content>
                         <TextInput
                             label={t("tools.fileNameOptional")}
                             mode="outlined"
                             autoFocus
-                            value={nameInput}
-                            onChangeText={setNameInput}
+                            value={s.nameInput}
+                            onChangeText={s.setNameInput}
                         />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setNameDialog(null)}>{t("common.cancel")}</Button>
+                        <Button onPress={() => s.setNameDialog(null)}>{t("common.cancel")}</Button>
                         <Button onPress={() => {
-                            const type = nameDialog?.type;
-                            const data = nameDialog?.data;
-                            const fileName = nameInput.trim() || undefined;
-                            setNameDialog(null);
-                            setNameInput("");
-                            if (type === "merge") executeMerge(fileName);
-                            else if (type === "split") executeSplit(fileName);
-                            else if (type === "reorder") executeReorder(fileName);
-                            else if (type === "remove") executeRemove(fileName);
+                            const type = s.nameDialog?.type;
+                            const data = s.nameDialog?.data;
+                            const fileName = s.nameInput.trim() || undefined;
+                            s.setNameDialog(null);
+                            s.setNameInput("");
+                            if (type === "merge") s.executeMerge(fileName);
+                            else if (type === "split") s.executeSplit(fileName);
+                            else if (type === "reorder") s.executeReorder(fileName);
+                            else if (type === "remove") s.executeRemove(fileName);
                         }}>{t("common.save")}</Button>
                     </Dialog.Actions>
                 </Dialog>
@@ -1043,24 +524,24 @@ export default function ToolsScreen() {
 
             {/* Rename Dialog — offered right after sign/annotate/OCR results */}
             <Portal>
-                <Dialog visible={renamePdf !== null} onDismiss={() => { setRenamePdf(null); setRenameInput(""); setRenameSelection(undefined); }}>
+                <Dialog visible={s.renamePdf !== null} onDismiss={() => { s.setRenamePdf(null); s.setRenameInput(""); s.setRenameSelection(undefined); }}>
                     <Dialog.Title>{t("tools.renamePdfTitle")}</Dialog.Title>
                     <Dialog.Content>
                         <TextInput
-                            ref={renameInputRef}
+                            ref={s.renameInputRef}
                             label={t("tools.renamePdfLabel")}
                             mode="outlined"
-                            value={renameInput}
-                            onChangeText={setRenameInput}
-                            selection={renameSelection}
-                            onSelectionChange={(e) => setRenameSelection(e.nativeEvent.selection)}
+                            value={s.renameInput}
+                            onChangeText={s.setRenameInput}
+                            selection={s.renameSelection}
+                            onSelectionChange={(e) => s.setRenameSelection(e.nativeEvent.selection)}
                             autoCorrect={false}
                             spellCheck={false}
                         />
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => { setRenamePdf(null); setRenameInput(""); setRenameSelection(undefined); }}>{t("tools.renameSkip")}</Button>
-                        <Button onPress={submitRename}>{t("common.save")}</Button>
+                        <Button onPress={() => { s.setRenamePdf(null); s.setRenameInput(""); s.setRenameSelection(undefined); }}>{t("tools.renameSkip")}</Button>
+                        <Button onPress={s.submitRename}>{t("common.save")}</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
