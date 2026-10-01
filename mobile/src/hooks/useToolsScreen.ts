@@ -4,6 +4,7 @@
  * screen component stays a thin renderer. Zero behavior changes.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTheme } from "react-native-paper";
 import * as DocumentPicker from "expo-document-picker";
 import { usePdfStorage } from "./usePdfStorage";
 import { mergePdfs, splitPdf, reorderPages, removePages, updateMetadata, protectPdf, unlockPdf, compressPdf, compressPdfOffline, exportPdf, importFile } from "../services/pdfService";
@@ -13,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import type { LocalPdf } from "../shared/types";
 
 export function useToolsScreen() {
+    const theme = useTheme();
     const { loadLocalPdfs } = usePdfStorage();
     const { isOnline } = useCloudSyncContext();
     const { t } = useTranslation();
@@ -532,6 +534,8 @@ export function useToolsScreen() {
     }, [operation, toggleSelect]);
 
     return {
+        // theme for child renderers
+        theme,
         // data & progress
         pdfs,
         loading,
@@ -619,3 +623,6 @@ export function useToolsScreen() {
         handleOcrFailed,
     };
 }
+
+/** Shape returned by useToolsScreen, used by extracted child renderers. */
+export type ToolsScreenState = ReturnType<typeof useToolsScreen>;
