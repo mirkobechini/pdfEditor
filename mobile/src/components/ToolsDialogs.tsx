@@ -4,6 +4,7 @@ import { Text, Button, Dialog, Portal, IconButton, TextInput, RadioButton } from
 import { useTranslation } from "react-i18next";
 import type { ToolsScreenState } from "../hooks/useToolsScreen";
 import PageGrid from "./PageGrid";
+import ImportExportDialog from "./ImportExportDialog";
 
 /** Renders every ToolsScreen modal dialog (issue #885, A3a - step 2). */
 export default function ToolsDialogs({ s }: { s: ToolsScreenState }) {
@@ -145,44 +146,7 @@ export default function ToolsDialogs({ s }: { s: ToolsScreenState }) {
             </Portal>
 
             {/* Import/Export Dialog — requires connection */}
-            <Portal>
-                <Dialog visible={s.importExportDialog !== null} onDismiss={() => s.setImportExportDialog(null)}>
-                    <Dialog.Title>{s.importExportDialog?.mode === "import" ? t("tools.importTitle") : t("tools.exportTitle")}</Dialog.Title>
-                    <Dialog.Content>
-                        {!s.isOnline && (
-                            <Text variant="bodyMedium" style={{ color: s.theme.colors.error, marginBottom: 12 }}>
-                                {t("tools.requiresConnection")}
-                            </Text>
-                        )}
-                        {s.importExportDialog?.mode === "import" ? (
-                            <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                                {t("tools.importHint")}
-                            </Text>
-                        ) : (
-                            <>
-                                <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                                    {t("tools.exportHint", { name: s.importExportDialog?.pdfName || "" })}
-                                </Text>
-                                <RadioButton.Group
-                                    onValueChange={(val) => s.setExportFormat(val as string)}
-                                    value={s.exportFormat}
-                                >
-                                    <RadioButton.Item label="txt" value="txt" />
-                                    <RadioButton.Item label="png" value="png" />
-                                    <RadioButton.Item label="jpg" value="jpg" />
-                                    <RadioButton.Item label="svg" value="svg" />
-                                </RadioButton.Group>
-                            </>
-                        )}
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button onPress={() => s.setImportExportDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={s.importExportDialog?.mode === "import" ? s.executeImport : s.executeExport} loading={s.importExportBusy} disabled={s.importExportBusy || !s.isOnline}>
-                            {s.importExportDialog?.mode === "import" ? t("tools.importAction") : t("tools.exportAction")}
-                        </Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
+            <ImportExportDialog s={s} />
 
             {/* Password Dialog — protect or unlock */}
             <Portal>
