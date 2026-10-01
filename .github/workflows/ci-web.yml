@@ -65,6 +65,12 @@ jobs:
         run: npx vitest run --reporter=verbose
       - name: Build check (catch compilation errors)
         run: npm run build
+        # resolveBaseUrl (issue #884 A2) fail-fast: a production build without the
+        # base-URL env vars intentionally aborts. Give the compile check dummy
+        # values so CI stays green; real values are set on Render (sync:false).
+        env:
+          NEXT_PUBLIC_API_URL: "https://pdfeditor-api.mirkobechini.com"
+          NEXT_PUBLIC_DOCUMENTS_API_URL: "https://pdfeditor-api.mirkobechini.com"
       - name: Run coverage
         run: npx vitest run --coverage --reporter=verbose 2>&1 | tail -10
       - name: Upload coverage

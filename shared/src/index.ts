@@ -13,6 +13,6 @@ export { AuthProvider, useAuth } from "./auth";
 export type { User } from "./types";
 export { mapError, extractErrorDetail, ErrorCode } from "./error-map";
 export type { ErrorCodeType } from "./error-map";
-export { isTauri, getApiBaseUrl, tauriInvoke } from "./tauri";
+export { isTauri, getApiBaseUrl, tauriInvoke, resolveBaseUrl } from "./tauri";
 export { parsePageRangeList } from "./print";
 export { default as PositionSelector } from "./PositionSelector";

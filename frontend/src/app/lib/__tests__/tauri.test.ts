@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 
 // We can't test __TAURI_INTERNALS__ detection in jsdom (no Tauri runtime),
 // but we can test the pure logic of the utility functions.
@@ -136,5 +136,60 @@ describe("tauri utilities (unit)", () => {
     const port = await getSidecarPort();
     expect(port).toBe(7723);
     delete (window as any).__TAURI_INTERNALS__;
+  });
+});
+
+describe("resolveBaseUrl (base URL guard, issue #884 A2)", () => {
+  const envBackup = {
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_DOCUMENTS_API_URL: process.env.NEXT_PUBLIC_DOCUMENTS_API_URL,
+  };
+
+  afterEach(() => {
+    process.env.NODE_ENV = envBackup.NODE_ENV;
+    process.env.NEXT_PUBLIC_API_URL = envBackup.NEXT_PUBLIC_API_URL;
+    process.env.NEXT_PUBLIC_DOCUMENTS_API_URL =
+      envBackup.NEXT_PUBLIC_DOCUMENTS_API_URL;
+  });
+
+  it("throws a clear error in production when env is not set", async () => {
+    const { resolveBaseUrl } = await import("../tauri");
+    process.env.NODE_ENV = "production";
+    delete process.env.NEXT_PUBLIC_API_URL;
+
+    expect(() =>
+      resolveBaseUrl("NEXT_PUBLIC_API_URL", "http://localhost:8000"),
+    ).toThrow(/NEXT_PUBLIC_API_URL/);
+  });
+
+  it("returns the configured URL in production when env IS set", async () => {
+    const { resolveBaseUrl } = await import("../tauri");
+    process.env.NODE_ENV = "production";
+    process.env.NEXT_PUBLIC_API_URL = "https://api.example.com";
+
+    expect(resolveBaseUrl("NEXT_PUBLIC_API_URL", "http://localhost:8000")).toBe(
+      "https://api.example.com",
+    );
+  });
+
+  it("falls back to localhost in development when env is not set", async () => {
+    const { resolveBaseUrl } = await import("../tauri");
+    process.env.NODE_ENV = "development";
+    delete process.env.NEXT_PUBLIC_API_URL;
+
+    expect(resolveBaseUrl("NEXT_PUBLIC_API_URL", "http://localhost:8000")).toBe(
+      "http://localhost:8000",
+    );
+  });
+
+  it("treats an empty-string env as unset", async () => {
+    const { resolveBaseUrl } = await import("../tauri");
+    process.env.NODE_ENV = "development";
+    process.env.NEXT_PUBLIC_API_URL = "";
+
+    expect(resolveBaseUrl("NEXT_PUBLIC_API_URL", "http://localhost:8000")).toBe(
+      "http://localhost:8000",
+    );
   });
 });

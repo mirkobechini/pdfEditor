@@ -40,12 +40,48 @@ export function isTauri(): boolean {
   );
 }
 
+/**
+ * Resolve a base URL from an env var, with an explicit localhost fallback that
+ * is ONLY allowed in non-production environments.
+ *
+ * - env set and non-empty      -> returned as-is
+ * - NODE_ENV === "production"  -> throws (fail-fast)
+ * - otherwise (dev/test/E2E)   -> falls back to `localhostDefault` (as today)
+ *
+ * `inlinedValue` (optional) lets call sites pass the *static*
+ * `process.env.NEXT_PUBLIC_*` read: Next.js only inlines NEXT_PUBLIC vars when
+ * they are referenced as a static property access, so call sites keep that
+ * form and forward the already-inlined value here. That way the value survives
+ * into the client bundle AND the production guard still fires when it is empty.
+ */
+export function resolveBaseUrl(
+  envKey: string,
+  localhostDefault: string,
+  inlinedValue?: string,
+): string {
+  const raw = inlinedValue ?? process.env[envKey] ?? "";
+  const value = raw.trim();
+  if (value !== "") return value;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      `[resolveBaseUrl] Production is missing the required env "${envKey}". ` +
+        `Set it in the build environment (e.g. on Render) before deploying. ` +
+        `Refusing to fall back to "${localhostDefault}" in production.`,
+    );
+  }
+  return localhostDefault;
+}
+
 /** Get the API base URL depending on environment. */
 export function getApiBaseUrl(): string {
   // Desktop (Tauri): the sidecar runs on the local port.
   if (isTauri()) return "http://127.0.0.1:7723";
   // Web: use the configured API URL (same-origin in production, or env override).
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  return resolveBaseUrl(
+    "NEXT_PUBLIC_API_URL",
+    "http://localhost:8000",
+    process.env.NEXT_PUBLIC_API_URL,
+  );
 }
 
 /** Base URL for the cloud backend on Render (auth/register/login). */
@@ -54,7 +90,11 @@ export function getCloudApiBaseUrl(): string {
   if (isTauri()) return "https://pdfeditor-api.mirkobechini.com";
   // Web: the backend is the same as the API base URL (same-origin in
   // production, or env override in dev/E2E).
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  return resolveBaseUrl(
+    "NEXT_PUBLIC_API_URL",
+    "http://localhost:8000",
+    process.env.NEXT_PUBLIC_API_URL,
+  );
 }
 
 /**
