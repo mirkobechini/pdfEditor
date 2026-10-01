@@ -5,6 +5,9 @@ import { useTranslation } from "react-i18next";
 import type { ToolsScreenState } from "../hooks/useToolsScreen";
 import PageGrid from "./PageGrid";
 import ImportExportDialog from "./ImportExportDialog";
+import ReorderDialog from "./ReorderDialog";
+import PasswordDialog from "./PasswordDialog";
+import CompressDialog from "./CompressDialog";
 
 /** Renders every ToolsScreen modal dialog (issue #885, A3a - step 2). */
 export default function ToolsDialogs({ s }: { s: ToolsScreenState }) {
@@ -40,27 +43,7 @@ export default function ToolsDialogs({ s }: { s: ToolsScreenState }) {
             </Portal>
 
             {/* Reorder Dialog — move pages up/down */}
-            <Portal>
-                <Dialog visible={s.reorderDialog !== null} onDismiss={() => s.setReorderDialog(null)}>
-                    <Dialog.Title>{t("tools.reorderTitle", { name: s.reorderDialog?.pdfName || "" })}</Dialog.Title>
-                    <Dialog.Content>
-                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                            {t("tools.reorderInstructions")}
-                        </Text>
-                        {s.reorderDialog && s.reorderDialog.pageOrder.map((page, index) => (
-                            <View key={page} style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-                                <Text style={{ width: 30, fontWeight: "600" }}>{page}</Text>
-                                <IconButton icon="arrow-up" size={16} onPress={() => s.movePageUp(index)} disabled={index === 0} />
-                                <IconButton icon="arrow-down" size={16} onPress={() => s.movePageDown(index)} disabled={index >= s.reorderDialog!.pageOrder.length - 1} />
-                            </View>
-                        ))}
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button onPress={() => s.setReorderDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={() => { if (s.reorderDialog) { const data = { ...s.reorderDialog }; s.setReorderDialog(null); s.setNameDialog({ type: "reorder", data }); } }}>{t("tools.reorder")}</Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
+            <ReorderDialog s={s} />
 
             {/* Remove Pages Dialog — choose pages to remove */}
             <Portal>
@@ -105,85 +88,13 @@ export default function ToolsDialogs({ s }: { s: ToolsScreenState }) {
             </Portal>
 
             {/* Compress Dialog — choose quality and output name */}
-            <Portal>
-                <Dialog visible={s.compressDialog !== null} onDismiss={() => s.setCompressDialog(null)}>
-                    <Dialog.Title>{t("tools.compressTitle")}</Dialog.Title>
-                    <Dialog.Content>
-                        <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                            {t("tools.compressHint", { name: s.compressDialog?.pdfName || "" })}
-                        </Text>
-                        {!s.isOnline && (
-                            <Text variant="bodyMedium" style={{ color: s.theme.colors.onSurfaceVariant, marginBottom: 12 }}>
-                                {t("tools.compressOfflineHint")}
-                            </Text>
-                        )}
-                        <RadioButton.Group
-                            onValueChange={(val) => s.setCompressQuality(val as "low" | "medium" | "high")}
-                            value={s.compressQuality}
-                        >
-                            <RadioButton.Item label={t("tools.compressLow")} value="low" />
-                            <RadioButton.Item label={t("tools.compressMedium")} value="medium" />
-                            <RadioButton.Item label={t("tools.compressHigh")} value="high" />
-                        </RadioButton.Group>
-                        <TextInput
-                            label={t("tools.fileNameOptional")}
-                            mode="outlined"
-                            value={s.compressNameInput}
-                            onChangeText={s.setCompressNameInput}
-                            style={{ marginTop: 12 }}
-                        />
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button onPress={() => s.setCompressDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={() => {
-                            const fileName = s.compressNameInput.trim() || undefined;
-                            s.setCompressDialog(null);
-                            s.setCompressNameInput("");
-                            s.executeCompress(fileName);
-                        }}>{t("common.save")}</Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
+            <CompressDialog s={s} />
 
             {/* Import/Export Dialog — requires connection */}
             <ImportExportDialog s={s} />
 
             {/* Password Dialog — protect or unlock */}
-            <Portal>
-                <Dialog visible={s.passwordDialog !== null} onDismiss={() => s.setPasswordDialog(null)}>
-                    <Dialog.Title>{s.passwordDialog?.mode === "protect" ? t("tools.protectTitle") : t("tools.unlockTitle")}</Dialog.Title>
-                    <Dialog.Content>
-                        <Text variant="bodyMedium" style={{ marginBottom: 16 }}>
-                            {s.passwordDialog?.mode === "protect"
-                                ? t("tools.passwordProtectHint", { name: s.passwordDialog?.pdfName || "" })
-                                : t("tools.passwordUnlockHint", { name: s.passwordDialog?.pdfName || "" })}
-                        </Text>
-                        <TextInput
-                            label={t("tools.passwordHint")}
-                            value={s.passwordInput}
-                            onChangeText={s.setPasswordInput}
-                            mode="outlined"
-                            secureTextEntry
-                            style={{ marginBottom: 12 }}
-                        />
-                        {s.passwordDialog?.mode === "protect" && (
-                            <TextInput
-                                label={t("tools.confirmPassword")}
-                                value={s.passwordConfirm}
-                                onChangeText={s.setPasswordConfirm}
-                                mode="outlined"
-                                secureTextEntry
-                            />
-                        )}
-                    </Dialog.Content>
-                    <Dialog.Actions>
-                        <Button onPress={() => s.setPasswordDialog(null)}>{t("common.cancel")}</Button>
-                        <Button onPress={s.passwordDialog?.mode === "protect" ? s.executeProtect : s.executeUnlock}>
-                            {s.passwordDialog?.mode === "protect" ? t("tools.protect") : t("tools.unlockAction")}
-                        </Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
+            <PasswordDialog s={s} />
 
             {/* Name Dialog — ask for file name before executing */}
             <Portal>
