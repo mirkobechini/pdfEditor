@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-10-01 / 2026-10-02
+
+### 🧹 Refactor serie A «audit codebase» completata e mergiata in dev
+
+Prosecuzione del piano audit (issue #881–#888), tutte le PR con CI verde e test invariati:
+
+- **A2 — Base URL guard** (issue #884, PR #901): fallback localhost solo in sviluppo con guard esplicito.
+- **A3 — Hooks/componenti** (issue #885, PR #899/#900): estrazione `useToolsScreen`, `useHomeScreen`, `useSettingsPage` + componenti (SettingsSidebar/SettingsTabs/SettingsModals, HomeToolbar/HomeListContent/HomeDialogs) — file spezzati in unità < 400 righe.
+- **A4 — Eccezioni tipizzate backend** (issue #886, PR #902): eccezioni tipizzate + log strutturato in storage.
+- **A5 — Sync mobile visibile** (issue #887, PR #903): banner e retry con stato sync all'utente (niente più console.log silenziosi).
+- **A6 — Test suite split** (issue #888, PR #904): test mastodontici spezzati per feature su backend (pytest), mobile (jest), desktop e web (vitest); fix conftest backend (rebind `SessionLocal` al test engine). Nessun test perso né duplicato.
+- **#881 — page.tsx desktop 1186 → 199 righe** (T1–T8): estrazione EditorToolbar/EditorRightPanel/EditorFooter/EditorViewer/EditorModals/useEditorState + delete/modal.
+
+### 🧪 Gate e2e per il refactor client API (issue #905, PR #906)
+
+Nuovi test e2e web (Playwright) a copertura delle mutazioni CSRF nel browser, come gate per il futuro refactor A1 (client API unico, issue #883):
+
+- **rename PDF via UI** (PUT con CSRF)
+- **catena cloudApi → api** (login web usa `cloudApi`, azioni usano `api`: se una delle due istanze perde il CSRF pre-fetch → 403)
+
+Totale e2e: **17 test** (15 esistenti + 2 nuovi), eseguiti automaticamente dal job CI `e2e` (path `e2e/**`).
+
+### 🧭 Note di bookkeeping
+
+- A1 (client API unico, DRY) è stata tentata e **revertita** (regressione e2e login→lista PDF, commit `6177665f`): il refactor resta aperto (issue #883) e verrà ripreso a piccole tranche con il nuovo gate e2e.
+- Pulizia branch: rimossi i branch remoti/locali già mergiati (serie A, chore/docs, test split).
+
 ## 2026-09-29 / 2026-09-30
 
 ### 📱 Bug mobile trovati testando su device reale (issue #866)
