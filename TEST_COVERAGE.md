@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-09-20 (full suite coverage misurato)
+> **Aggiornato:** 2026-10-02 (conteggi test aggiornati alla serie A / split test-suite; coverage % misurato a 2026-09-20)
 
 ---
 
@@ -10,21 +10,23 @@
 
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
-| **Backend** (FastAPI/Python)   | pytest      | **438** | **88%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **641** | **90.21%** | ✅    |
-| **Desktop** (Tauri)            | vitest      | **950** | **86.88%** | ✅    |
-| **Mobile** (React Native/Expo) | jest        | **321** | **92.26%** | ✅    |
-| **E2E** (Playwright)           | playwright  | **15**  | —          | ✅    |
+| **Backend** (FastAPI/Python)   | pytest      | **450** | **88%**    | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **674** | **90.21%** | ✅    |
+| **Desktop** (Tauri)            | vitest      | **1008** | **86.88%** | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **371** | **92.26%** | ✅    |
+| **E2E** (Playwright)           | playwright  | **17**  | —          | ✅    |
 
-> ℹ️ **Backend**: 438 test (pytest), 88% statements. +2 test OCR (issue #831): binary mancante → 503, PIL Image passato a pytesseract.
+> ℹ️ **Aggiornamento 2026-10-02**: conteggi allineati allo split test-suite per feature (issue #888, serie A) e ai nuovi e2e CSRF (issue #905): backend 450, web 674, desktop 1008 (49 file), mobile 371, e2e 17. Coverage % resta il misurato a 2026-09-20 (la prossima misura completa rinfrescherà i valori).
+
+> ℹ️ **Backend**: 450 test (pytest), 88% statements. +2 test OCR (issue #831): binary mancante → 503, PIL Image passato a pytesseract.
 >
-> ℹ️ **Webapp**: 641 test (Vitest), 90.21% statements / 93.53% lines. `src/shared/**` escluso dal coverage (copiato dal prebuild, gitignored). +1 test mapping OCR_UNAVAILABLE (issue #831).
+> ℹ️ **Webapp**: 674 test (Vitest), 90.21% statements / 93.53% lines. `src/shared/**` escluso dal coverage (copiato dal prebuild, gitignored). +1 test mapping OCR_UNAVAILABLE (issue #831).
 >
-> ℹ️ **Desktop**: 950 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. 86.88% statements / 90.82% lines.
+> ℹ️ **Desktop**: 1008 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`. 86.88% statements / 90.82% lines.
 >
 > ⚠️ **Nota:** `ReorderPagesModal` ha i callback DnD (`@dnd-kit/core`) non copribili in jsdom — richiedono test E2E con Playwright. Coverage ferma a 81.17% per quel file.
 >
-> ℹ️ **Mobile**: 321 test (jest), 92.26% statements / 93.59% lines.
+> ℹ️ **Mobile**: 371 test (jest), 92.26% statements / 93.59% lines.
 
 ---
 
