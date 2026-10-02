@@ -16,6 +16,7 @@ from app.core.s3_storage import (
     s3_snapshot_save,
     s3_upload,
 )
+from app.core.errors import StorageError
 
 
 @pytest.fixture
@@ -92,9 +93,10 @@ class TestS3Delete:
         mock_s3.delete_object.assert_called_once()
 
     def test_delete_failure(self, mock_s3):
-        """s3_delete should return False on exception."""
+        """s3_delete should raise StorageError on unexpected failure."""
         mock_s3.delete_object.side_effect = Exception("S3 error")
-        assert s3_delete("some-uuid") is False
+        with pytest.raises(StorageError):
+            s3_delete("some-uuid")
 
 
 class TestS3Snapshots:
