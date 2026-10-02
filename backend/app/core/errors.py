@@ -62,3 +62,34 @@ def error_response(
             "detail": detail,
         },
     )
+
+
+class StorageError(Exception):
+    """Storage backend error (local filesystem or S3).
+
+    Wraps the original exception as ``__cause__`` so the root cause is preserved.
+    """
+
+
+class EmailError(Exception):
+    """Email service error (e.g. SendGrid).
+
+    Wraps the original exception as ``__cause__``. ``EMAIL_QUOTA_EXCEEDED``
+    remains a ``ValueError`` (it is a *quota* condition, not an infrastructure
+    failure) and is re-raised unchanged by the service.
+    """
+
+
+class PdfProcessingError(Exception):
+    """PDF processing error, with optional context (e.g. pdf_id) for logging.
+
+    Carries ``context`` (a dict) that callers log at the origin.
+    """
+
+    def __init__(self, message: str, context: dict | None = None):
+        super().__init__(message)
+        self.context = context or {}
+
+
+class OcrUnavailableError(Exception):
+    """OCR engine is unavailable (existing code kept as canonical name)."""

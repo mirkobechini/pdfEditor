@@ -1,5 +1,6 @@
 """S3-compatible storage backend."""
 
+import logging
 import uuid
 from pathlib import Path
 
@@ -8,6 +9,9 @@ from botocore.config import Config as BotoConfig
 from botocore.exceptions import ClientError
 
 from app.core.config import settings
+from app.core.errors import StorageError
+
+logger = logging.getLogger(__name__)
 
 
 def _get_s3_client():
@@ -70,8 +74,15 @@ def s3_delete(file_uuid: str) -> bool:
             Key=_s3_key(file_uuid),
         )
         return True
-    except Exception:
-        return False
+    except ClientError as e:
+        # NoSuchKey is not an error: the object is already gone.
+        if e.response["Error"]["Code"] == "NoSuchKey":
+            return True
+        logger.exception("S3 delete failed for %s", file_uuid)
+        raise StorageError(f"S3 delete failed for {file_uuid}") from e
+    except Exception as e:
+        logger.exception("S3 delete failed for %s", file_uuid)
+        raise StorageError(f"S3 delete failed for {file_uuid}") from e
 
 
 def s3_snapshot_save(pdf_id: str, content: bytes) -> None:
