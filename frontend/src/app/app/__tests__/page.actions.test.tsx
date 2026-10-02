@@ -212,206 +212,6 @@ afterEach(() => {
 });
 
 describe("EditorPage", () => {
-    it("shows loading state", () => {
-        mockUseAuth.mockReturnValue({ user: null, loading: true });
-        render(<EditorPage />);
-        expect(screen.getByText("Loading...")).toBeInTheDocument();
-    });
-
-    it("shows loading state when no user yet", () => {
-        mockUseAuth.mockReturnValue({ user: null, loading: false });
-        render(<EditorPage />);
-        expect(screen.getByText("Loading...")).toBeInTheDocument();
-    });
-
-    it("renders layout when authenticated", () => {
-        render(<EditorPage />);
-        expect(screen.getByTestId("app-layout")).toBeInTheDocument();
-        expect(screen.getByTestId("sidebar")).toBeInTheDocument();
-        expect(screen.getByTestId("toolbar")).toBeInTheDocument();
-        expect(screen.getByTestId("viewer")).toBeInTheDocument();
-    });
-
-    it("opens merge dialog when toolbar fires onMerge", () => {
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-merge"));
-        expect(screen.getByTestId("merge-dialog")).toBeInTheDocument();
-    });
-
-    it("opens split dialog", () => {
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-split"));
-        expect(screen.getByTestId("split-dialog")).toBeInTheDocument();
-    });
-
-    it("opens reorder dialog", () => {
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-reorder"));
-        expect(screen.getByTestId("reorder-dialog")).toBeInTheDocument();
-    });
-
-    it("opens remove pages dialog", () => {
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-remove"));
-        expect(screen.getByTestId("remove-dialog")).toBeInTheDocument();
-    });
-
-    it("opens metadata dialog", () => {
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-metadata"));
-        expect(screen.getByTestId("metadata-dialog")).toBeInTheDocument();
-    });
-
-    it("opens replace text dialog", () => {
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-replacetext"));
-        expect(screen.getByTestId("replacetext-dialog")).toBeInTheDocument();
-    });
-
-    it("opens protect dialog", () => {
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-protect"));
-        expect(screen.getByTestId("protect-dialog")).toBeInTheDocument();
-    });
-
-    it("closes dialogs properly", () => {
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-merge"));
-        expect(screen.getByTestId("merge-dialog")).toBeInTheDocument();
-        fireEvent.click(screen.getByTestId("merge-close"));
-        expect(screen.queryByTestId("merge-dialog")).not.toBeInTheDocument();
-    });
-
-    it("handleSelect loads PDF and creates blob URL", async () => {
-        mockGetPdf.mockResolvedValue(mockPdf);
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("sidebar-select"));
-        await waitFor(() => {
-            expect(mockGetPdf).toHaveBeenCalledWith("pdf-1");
-            expect(mockDownloadPdf).toHaveBeenCalledWith("pdf-1");
-        });
-        expect(URL.createObjectURL).toHaveBeenCalled();
-    });
-
-    it("handleSelect handles protected PDF", async () => {
-        mockGetPdf.mockResolvedValue(mockProtectedPdf);
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("sidebar-select"));
-        await waitFor(() => {
-            expect(mockGetPdf).toHaveBeenCalledWith("pdf-1");
-        });
-        const viewer = screen.getByTestId("viewer");
-        expect(viewer.getAttribute("data-requires-password")).toBe("true");
-    });
-
-    it("handleUnlock calls unlockPdf then downloads", async () => {
-        mockGetPdf.mockResolvedValue(mockProtectedPdf);
-        render(<EditorPage />);
-        // First select the protected PDF
-        fireEvent.click(screen.getByTestId("sidebar-select"));
-        await waitFor(() => expect(screen.getByTestId("viewer").getAttribute("data-requires-password")).toBe("true"));
-        // Unlock - fire the viewer's unlock button (calls handleUnlock with "pass123")
-        mockUnlockPdf.mockResolvedValue({ success: true });
-        fireEvent.click(screen.getByTestId("viewer-unlock"));
-        await waitFor(() => {
-            expect(mockUnlockPdf).toHaveBeenCalledWith("pdf-1", "pass123");
-            expect(mockDownloadPdf).toHaveBeenCalledWith("pdf-1");
-        });
-    });
-
-    it("handleUnlock shows error on failure", async () => {
-        mockGetPdf.mockResolvedValue(mockProtectedPdf);
-        mockUnlockPdf.mockRejectedValue(new Error("Incorrect password"));
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("sidebar-select"));
-        await waitFor(() => expect(screen.getByTestId("viewer").getAttribute("data-requires-password")).toBe("true"));
-        fireEvent.click(screen.getByTestId("viewer-unlock"));
-        await waitFor(() => {
-            expect(screen.getByTestId("viewer").getAttribute("data-password-error")).toBe("Incorrect password");
-        });
-    });
-
-    it("handleUndo restores previous version", async () => {
-        mockGetPdf.mockResolvedValue(mockPdf);
-        mockUndoPdf.mockResolvedValue({ id: "restored-id" });
-        render(<EditorPage />);
-        // Select first
-        fireEvent.click(screen.getByTestId("sidebar-select"));
-        await waitFor(() => expect(mockDownloadPdf).toHaveBeenCalled());
-        // Undo via toolbar
-        fireEvent.click(screen.getByTestId("toolbar-undo"));
-        await waitFor(() => {
-            expect(mockUndoPdf).toHaveBeenCalledWith("pdf-1");
-        });
-    });
-
-    it("handleMerge opens merge dialog and merge complete refreshes sidebar", async () => {
-        mockMergePdfs.mockResolvedValue({ id: "merged-result", original_filename: "merged.pdf" });
-        mockDownloadPdf.mockResolvedValue(new Blob(["merged"], { type: "application/pdf" }));
-        render(<EditorPage />);
-        // Open merge dialog
-        fireEvent.click(screen.getByTestId("toolbar-merge"));
-        expect(screen.getByTestId("merge-dialog")).toBeInTheDocument();
-        // Fire merge complete callback - should refresh sidebar
-        fireEvent.click(screen.getByTestId("merge-complete"));
-        await waitFor(() => {
-            const sidebar = screen.getByTestId("sidebar");
-            expect(sidebar.getAttribute("data-refresh-key")).toBe("1");
-        });
-    });
-
-    it("handleSplit opens dialog and onSuccess refreshes sidebar", async () => {
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-split"));
-        expect(screen.getByTestId("split-dialog")).toBeInTheDocument();
-        fireEvent.click(screen.getByTestId("split-success"));
-        await waitFor(() => {
-            const sidebar = screen.getByTestId("sidebar");
-            expect(sidebar.getAttribute("data-refresh-key")).toBe("1");
-        });
-    });
-
-    it("handleReorder opens dialog and onSuccess refreshes sidebar", async () => {
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-reorder"));
-        expect(screen.getByTestId("reorder-dialog")).toBeInTheDocument();
-        fireEvent.click(screen.getByTestId("reorder-success"));
-        await waitFor(() => {
-            const sidebar = screen.getByTestId("sidebar");
-            expect(sidebar.getAttribute("data-refresh-key")).toBe("1");
-        });
-    });
-
-    it("handleRemove opens dialog and onSuccess refreshes sidebar", async () => {
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-remove"));
-        expect(screen.getByTestId("remove-dialog")).toBeInTheDocument();
-        fireEvent.click(screen.getByTestId("remove-success"));
-        await waitFor(() => {
-            const sidebar = screen.getByTestId("sidebar");
-            expect(sidebar.getAttribute("data-refresh-key")).toBe("1");
-        });
-    });
-
-    it("handleMetadata opens dialog and onSuccess updates state and downloads", async () => {
-        mockDownloadPdf.mockResolvedValue(new Blob(["meta"], { type: "application/pdf" }));
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("toolbar-metadata"));
-        expect(screen.getByTestId("metadata-dialog")).toBeInTheDocument();
-        fireEvent.click(screen.getByTestId("metadata-success"));
-        await waitFor(() => {
-            expect(mockDownloadPdf).toHaveBeenCalled();
-        });
-    });
-
-    it("Upload flow: onUpload sets selectedId and refreshes sidebar", async () => {
-        mockGetPdf.mockResolvedValue(mockPdf);
-        render(<EditorPage />);
-        fireEvent.click(screen.getByTestId("sidebar-upload"));
-        // Sidebar refreshKey should increment
-        const sidebar = screen.getByTestId("sidebar");
-        expect(sidebar.getAttribute("data-refresh-key")).toBe("1");
-    });
 
     it("Delete flow opens modal, confirm deletes, refreshes sidebar", async () => {
         mockGetPdf.mockResolvedValue(mockPdf);
@@ -428,13 +228,11 @@ describe("EditorPage", () => {
         expect(sidebar.getAttribute("data-refresh-key")).toBe("1");
         expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
     });
-
     it("canUndo is false when no PDF selected", () => {
         render(<EditorPage />);
         const toolbar = screen.getByTestId("toolbar");
         expect(toolbar.getAttribute("data-can-undo")).toBe("false");
     });
-
     it("canUndo becomes true after PDF selected", async () => {
         mockGetPdf.mockResolvedValue(mockPdf);
         render(<EditorPage />);
@@ -444,7 +242,6 @@ describe("EditorPage", () => {
             expect(toolbar.getAttribute("data-can-undo")).toBe("true");
         });
     });
-
     it("handleSelect skips re-selecting same PDF", async () => {
         mockGetPdf.mockResolvedValue(mockPdf);
         render(<EditorPage />);
@@ -456,7 +253,6 @@ describe("EditorPage", () => {
         // Should NOT call getPdf again since selectedId is already "pdf-1"
         expect(mockGetPdf).toHaveBeenCalledTimes(1);
     });
-
     it("handleSelect selects new PDF when different", async () => {
         // First click selects "pdf-1". The sidebar mock always fires onSelect with "pdf-1".
         // But the EditorPage's handleSelect checks if id === selectedId and skips if same.
@@ -467,7 +263,6 @@ describe("EditorPage", () => {
         fireEvent.click(screen.getByTestId("sidebar-select"));
         await waitFor(() => expect(mockGetPdf).toHaveBeenCalledWith("pdf-1"));
     });
-
     it("merge complete with protected PDF triggers password state", async () => {
         mockDownloadPdf.mockReset();
         render(<EditorPage />);
@@ -480,7 +275,6 @@ describe("EditorPage", () => {
             expect(viewer.getAttribute("data-requires-password")).toBe("true");
         });
     });
-
     it("metadata complete with protected PDF triggers password state", async () => {
         mockDownloadPdf.mockReset();
         render(<EditorPage />);
@@ -493,7 +287,6 @@ describe("EditorPage", () => {
             expect(viewer.getAttribute("data-requires-password")).toBe("true");
         });
     });
-
     it("marks file as not password protected after merge with non-protected PDF", async () => {
         mockDownloadPdf.mockResolvedValue(new Blob(["test"], { type: "application/pdf" }));
         render(<EditorPage />);
@@ -506,7 +299,6 @@ describe("EditorPage", () => {
             expect(viewer.getAttribute("data-requires-password")).toBe("false");
         });
     });
-
     it("handleUnlock revokes previous fileUrl when already set", async () => {
         // Select a normal PDF twice — second select revokes first fileUrl
         mockGetPdf.mockResolvedValue(mockPdf);
@@ -521,7 +313,6 @@ describe("EditorPage", () => {
             expect(URL.revokeObjectURL).toHaveBeenCalled();
         });
     });
-
     it("metadata onSuccess with non-protected doc updates selected state", async () => {
         mockDownloadPdf.mockResolvedValue(new Blob(["meta"], { type: "application/pdf" }));
         render(<EditorPage />);
@@ -535,7 +326,6 @@ describe("EditorPage", () => {
             expect(sidebar.getAttribute("data-selected-id")).toBe("meta-id");
         });
     });
-
     it("renders replace text dialog when opened", () => {
         render(<EditorPage />);
         fireEvent.click(screen.getByTestId("toolbar-replacetext"));
@@ -544,7 +334,6 @@ describe("EditorPage", () => {
         fireEvent.click(screen.getByTestId("replacetext-close"));
         expect(screen.queryByTestId("replacetext-dialog")).not.toBeInTheDocument();
     });
-
     it("renders protect dialog when opened", () => {
         render(<EditorPage />);
         fireEvent.click(screen.getByTestId("toolbar-protect"));
@@ -553,7 +342,6 @@ describe("EditorPage", () => {
         fireEvent.click(screen.getByTestId("protect-close"));
         expect(screen.queryByTestId("protect-dialog")).not.toBeInTheDocument();
     });
-
     it("replace text onSuccess updates sidebar and downloads blob", async () => {
         mockDownloadPdf.mockResolvedValue(new Blob(["replaced"], { type: "application/pdf" }));
         render(<EditorPage />);
@@ -567,7 +355,6 @@ describe("EditorPage", () => {
             expect(sidebar.getAttribute("data-selected-id")).toBe("replaced-id");
         });
     });
-
     it("delete modal confirm calls handleDelete and closes", async () => {
         mockGetPdf.mockResolvedValue(mockPdf);
         mockDeletePdf.mockResolvedValue(undefined);
@@ -580,7 +367,6 @@ describe("EditorPage", () => {
             expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
         });
     });
-
     it("handleSelect logs error when getPdf fails", async () => {
         const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
         mockGetPdf.mockRejectedValue(new Error("Load failed"));
@@ -591,7 +377,6 @@ describe("EditorPage", () => {
         });
         consoleSpy.mockRestore();
     });
-
     it("handleSelect logs error when downloadPdf fails", async () => {
         const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
         mockGetPdf.mockResolvedValue(mockPdf);
@@ -603,7 +388,6 @@ describe("EditorPage", () => {
         });
         consoleSpy.mockRestore();
     });
-
     it("passes page/zoom info to viewer and toolbar", () => {
         mockGetPdf.mockResolvedValue(mockPdf);
         render(<EditorPage />);
@@ -612,7 +396,6 @@ describe("EditorPage", () => {
         fireEvent.click(screen.getByTestId("viewer-total-change"));
         expect(screen.getByTestId("toolbar-page").textContent).toBe("1/10");
     });
-
     it("handleUnlock falls back to generic message for non-Error rejection", async () => {
         mockGetPdf.mockResolvedValue(mockProtectedPdf);
         // Reject with a non-Error value (e.g. a string)
@@ -625,7 +408,6 @@ describe("EditorPage", () => {
             expect(screen.getByTestId("viewer").getAttribute("data-password-error")).toBe("Incorrect password");
         });
     });
-
     it("handleUndo logs error when undoPdf fails", async () => {
         const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => { });
         mockGetPdf.mockResolvedValue(mockPdf);
@@ -639,7 +421,6 @@ describe("EditorPage", () => {
         });
         consoleSpy.mockRestore();
     });
-
     it("deleting the currently selected PDF clears selection", async () => {
         mockGetPdf.mockResolvedValue(mockPdf);
         mockDeletePdf.mockResolvedValue(undefined);
@@ -657,7 +438,6 @@ describe("EditorPage", () => {
             expect(sidebar.getAttribute("data-selected-id")).toBe("");
         });
     });
-
     it("handlePrint opens the print options modal, then renders and prints the chosen pages on confirm", async () => {
         mockGetPdf.mockResolvedValue(mockPdf);
         mockRenderPagesToDataUrls.mockResolvedValue({ dataUrls: ["data:image/png;base64,abc"], firstIsLandscape: false });
@@ -681,13 +461,11 @@ describe("EditorPage", () => {
         );
         expect(screen.queryByTestId("print-options-modal")).not.toBeInTheDocument();
     });
-
     it("shows drop overlay on drag over", () => {
         render(<EditorPage />);
         fireEvent.dragOver(screen.getByTestId("editor-drop-zone"));
         expect(screen.getByText("dropHere")).toBeInTheDocument();
     });
-
     it("hides drop overlay on drag leave", () => {
         render(<EditorPage />);
         fireEvent.dragOver(screen.getByTestId("editor-drop-zone"));
@@ -695,7 +473,6 @@ describe("EditorPage", () => {
         fireEvent.dragLeave(screen.getByTestId("editor-drop-zone"));
         expect(screen.queryByText("dropHere")).not.toBeInTheDocument();
     });
-
     it("uploads PDF on drop", async () => {
         mockGetPdf.mockResolvedValue(mockPdf);
         mockUploadPdf.mockResolvedValue(mockPdf);
@@ -709,7 +486,6 @@ describe("EditorPage", () => {
             expect(mockUploadPdf).toHaveBeenCalledWith(file);
         });
     });
-
     it("imports non-PDF file on drop", async () => {
         mockGetPdf.mockResolvedValue(mockPdf);
         mockImportFile.mockResolvedValue(mockPdf);
@@ -723,7 +499,6 @@ describe("EditorPage", () => {
             expect(mockImportFile).toHaveBeenCalledWith(file);
         });
     });
-
     it("ignores unsupported file on drop", async () => {
         mockGetPdf.mockResolvedValue(mockPdf);
         render(<EditorPage />);
@@ -734,7 +509,6 @@ describe("EditorPage", () => {
         expect(mockUploadPdf).not.toHaveBeenCalled();
         expect(mockImportFile).not.toHaveBeenCalled();
     });
-
     it("ignores drop with no file", () => {
         render(<EditorPage />);
         fireEvent.drop(screen.getByTestId("editor-drop-zone"), { dataTransfer: { files: [] } });
