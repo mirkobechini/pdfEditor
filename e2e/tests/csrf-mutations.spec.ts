@@ -46,4 +46,32 @@ test.describe("CSRF mutations (browser)", () => {
       page.getByText("da-rinominare.pdf").first(),
     ).not.toBeVisible({ timeout: 5000 });
   });
+
+  test("cloudApi login + api upload/rename chain (both instances)", async ({
+    page,
+    request,
+  }) => {
+    const email = uniqueEmail("chain");
+    await registerUser(request, email);
+
+    // Login via UI: nel web questo percorso usa cloudApi.login/getMe
+    await loginViaUI(page, email);
+
+    // Upload via api (POST) e rename via api (PUT): se cloudApi o api
+    // perdono il pre-fetch CSRF, uno dei passi prende 403.
+    await uploadPdf(page, "catena.pdf");
+
+    const renameBtn = page.getByTitle("Rinomina").first();
+    await expect(renameBtn).toBeVisible();
+    await renameBtn.click();
+
+    const renameInput = page.locator('input[class*="border-blue"]');
+    await expect(renameInput).toBeVisible();
+    await renameInput.fill("catena-rinominata.pdf");
+    await renameInput.press("Enter");
+
+    await expect(
+      page.getByText("catena-rinominata.pdf").first(),
+    ).toBeVisible({ timeout: 15000 });
+  });
 });
