@@ -78,6 +78,11 @@
     "includedInSync": "{{name}} incluso nel sync",
     "replaceText": "Sostituisci testo"
   },
+  "sync": {
+    "syncing": "Sincronizzazione in corso...",
+    "error": "Sincronizzazione cloud fallita",
+    "retry": "Riprova"
+  },
   "tools": {
     "title": "Strumenti PDF",
     "merge": "Unisci",
