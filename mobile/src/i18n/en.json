@@ -78,6 +78,11 @@
     "includedInSync": "{{name}} included in sync",
     "replaceText": "Replace Text"
   },
+  "sync": {
+    "syncing": "Synchronizing...",
+    "error": "Cloud sync failed",
+    "retry": "Retry"
+  },
   "tools": {
     "title": "PDF Tools",
     "merge": "Merge",
