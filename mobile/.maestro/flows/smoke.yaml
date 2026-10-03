@@ -1,0 +1,21 @@
+appId: com.mirkobechini.pdfeditor
+name: PdfEditor Mobile
+---
+# Tranche 2 — smoke: l'app parte e arriva alla schermata di accesso.
+# Alla prima installazione può apparire l'onboarding (Salta/Continua):
+# lo si salta se presente, poi si verifica la Login.
+- launchApp
+- extendedWaitUntil:
+    visible: "Continua come Ospite|Email|Salta"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Salta"
+    commands:
+      - tapOn: "Salta"
+      - extendedWaitUntil:
+          visible: "Continua come Ospite|Email"
+          timeout: 10000
+- assertVisible: "Email"
+- assertVisible: "Password"
+- assertVisible: "Continua come Ospite"
