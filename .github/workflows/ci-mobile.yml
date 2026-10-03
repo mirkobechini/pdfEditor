@@ -57,6 +57,11 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build APK with EAS
+        # E2E mobile (issue #919): se E2E_MOBILE_API_URL è configurato il build
+        # punta al backend di test (EXPO_PUBLIC_API_URL); altrimenti fallback
+        # produzione e la suite esegue solo lo smoke (mai creare account reali).
+        env:
+          EXPO_PUBLIC_API_URL: ${{ secrets.E2E_MOBILE_API_URL }}
         run: cd mobile && eas build --platform android --profile production --non-interactive --no-wait
 
       - name: Download APK from EAS
@@ -85,6 +90,8 @@ jobs:
 
       - name: Run Maestro E2E on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          E2E_MOBILE_API_URL: ${{ secrets.E2E_MOBILE_API_URL }}
         with:
           api-level: 31
           arch: x64
@@ -97,8 +104,16 @@ jobs:
             maestro --version
             # Installa l'APK di test sull'emulatore
             maestro install pdfeditor-e2e.apk
-            # Esegue i flow (smoke per ora; estesi nel perimetro 1)
-            maestro test .maestro --format junit --output e2e-results.xml
+            # Solo smoke quando non c'è un backend di test configurato
+            # (i flussi auth/upload/firma girerebbero contro il DB di produzione:
+            # issue #919 opzione 1 — override env + backend di test).
+            if [ -n "$E2E_MOBILE_API_URL" ]; then
+              echo "Backend di test configurato: eseguo la suite completa"
+              maestro test .maestro --format junit --output e2e-results.xml
+            else
+              echo "Nessun backend di test: eseguo solo smoke"
+              maestro test .maestro/flows/smoke.yaml --format junit --output e2e-results.xml
+            fi
 
       - name: Upload E2E results
         if: always()
