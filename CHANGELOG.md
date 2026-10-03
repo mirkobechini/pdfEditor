@@ -1,6 +1,16 @@
 # Changelog
 
-## 2026-10-01 / 2026-10-02
+## 2026-10-03
+
+### ✅ A1 — Client API unico in shared/ (DRY) — COMPLETATA (issue #883)
+
+Serie di 3 tranche che chiude il piano audit A1:
+
+- **Tranche 1** (#908, PR #909): guardia anti-drift `scripts/check-shared-sync.js` attiva in CI web+desktop — verifica che le copie generate di `shared/src` restino byte-identiche alla fonte (tauri.ts e compagni). Single-source garantito, non solo dichiarato.
+- **Tranche 2** (#910, PR #911): `WebApiClient extends ApiClient(shared)` con **adapter CSRF su tutte le istanze web** (`api` **e** `cloudApi`), più fix `login()` con `credentials: "include"` (parità col client originale). Superata la regressione e2e che aveva bloccato il primo tentativo (riprodotta e verificata: 4 e2e rossi → 17/17 verdi).
+- **Tranche 3** (#912, PR #913): `shared/src/client.ts` — factory formale `createApiClient(adapter)` con `defaultAdapter` e `webCsrfAdapter`; `ApiClient` accetta l'adapter nel costruttore; il web migra alla factory. Zero cambi di comportamento, trasporto ora iniettabile (testabilità senza `globalThis.fetch`).
+
+**Risultato**: un solo client API in `shared/`, usato da web+desktop; mobile resta dedicato RN (design). Nessuna issue aperta residua sul repo.
 
 ### 🧹 Refactor serie A «audit codebase» completata e mergiata in dev
 
