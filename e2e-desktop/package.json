@@ -1,0 +1,14 @@
+{
+  "name": "pdfeditor-e2e-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "E2E desktop (Sidecar/API-first) — testa il backend FastAPI in modalita' SQLite locale",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}
