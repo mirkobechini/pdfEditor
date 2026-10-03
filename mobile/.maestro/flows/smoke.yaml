@@ -5,9 +5,12 @@ name: PdfEditor Mobile
 # Alla prima installazione può apparire l'onboarding (Salta/Continua):
 # lo si salta se presente, poi si verifica la Login.
 - launchApp
+# Cold start su emulatore software x86_64 è lentissimo (boot ~4min,
+# install APK ~3min): il primo render può richiedere >1min. Timeout
+# generoso; al secondo giro l'app parte da cache e si muove più rapida.
 - extendedWaitUntil:
     visible: "Continua come Ospite|Email|Salta"
-    timeout: 20000
+    timeout: 180000
 - runFlow:
     when:
       visible: "Salta"
@@ -15,7 +18,7 @@ name: PdfEditor Mobile
       - tapOn: "Salta"
       - extendedWaitUntil:
           visible: "Continua come Ospite|Email"
-          timeout: 10000
+          timeout: 30000
 - assertVisible: "Email"
 - assertVisible: "Password"
 - assertVisible: "Continua come Ospite"
