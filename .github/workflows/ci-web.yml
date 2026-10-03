@@ -128,6 +128,7 @@ jobs:
         with:
           node-version: "22.x"
           cache: "npm"
+          cache-dependency-path: e2e-desktop/package-lock.json
       - name: Install backend deps
         run: pip install -r backend/requirements.txt
       - name: Install e2e-desktop deps
