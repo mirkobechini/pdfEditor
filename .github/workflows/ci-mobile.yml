@@ -94,7 +94,7 @@ jobs:
           E2E_MOBILE_API_URL: ${{ secrets.E2E_MOBILE_API_URL }}
         with:
           api-level: 31
-          arch: x64
+          arch: x86_64
           profile: default
           working-directory: mobile
           script: |
