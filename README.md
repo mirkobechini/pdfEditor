@@ -22,17 +22,24 @@
 - 📋 Reorder pages
 - 🗑️ Remove pages from PDF
 - 📝 Edit metadata (title, author)
+- 🔐 Protect / unlock password-protected PDFs
+- ✍️ Sign PDFs (signature placement + resize)
+- 🖍️ Annotations with custom color and opacity
+- 🔎 OCR on scanned PDFs (Tesseract, 5 languages)
+- 🖨️ Print (native web/mobile, custom dialog with live preview on desktop)
+- 🔗 Share PDFs via link (with optional password/expiry)
 - 📸 Camera scanner → PDF conversion
 - 🌙 Dark mode
-- 🔐 Email/password & guest authentication
+- 🔐 Email/password & guest authentication + Google SSO
+- ☁️ Cloud sync (desktop ↔ cloud)
 - 🌐 Internationalization (IT/EN)
 
 ## ⬇️ Quick download
 
 | Platform   | Latest version                                                                      |
 | ---------- | ----------------------------------------------------------------------------------- |
-| 🖥️ Desktop | [Download v0.1.38](https://github.com/mirkobechini/pdfEditor/releases/latest)       |
-| 📱 Mobile  | [Download v0.1.0](https://github.com/mirkobechini/pdfEditor/releases) (APK Android) |
+| 🖥️ Desktop | [Download v0.1.39](https://github.com/mirkobechini/pdfEditor/releases/latest)       |
+| 📱 Mobile  | [Download v0.2.3-mobile](https://github.com/mirkobechini/pdfEditor/releases) (APK Android) |
 
 ## 🛠️ Tech stack
 
@@ -70,14 +77,16 @@
 
 ## 📚 Documentation
 
-| File                                       | Content                                        |
-| ------------------------------------------ | ---------------------------------------------- |
-| [📋 BRIEF](./BRIEF.md)                     | Vision, roadmap and general decisions          |
-| [🏗️ ADR](./ADR.md)                         | Architecture decisions (web, desktop, backend) |
-| [📱 ADR Mobile](./mobile/ADR.md)           | Mobile architecture decisions                  |
-| [📜 CHANGELOG](./CHANGELOG.md)             | Complete release history                       |
-| [🐞 KNOWN_ISSUES](./KNOWN_ISSUES.md)       | Open bugs and technical debt                   |
-| [📖 LESSONS_LEARNED](./LESSONS_LEARNED.md) | Lessons learned during development             |
+| File                                                   | Content                                        |
+| ------------------------------------------------------ | ---------------------------------------------- |
+| [📋 BRIEF](./BRIEF.md)                                 | Vision, roadmap and general decisions          |
+| [🏗️ ADR](./ADR.md)                                     | Architecture decisions (web, desktop, backend) |
+| [📱 ADR Mobile](./mobile/ADR.md)                       | Mobile architecture decisions                  |
+| [📜 CHANGELOG](./CHANGELOG.md)                         | Complete release history                       |
+| [🐞 KNOWN_ISSUES](./KNOWN_ISSUES.md)                   | Open bugs and technical debt                   |
+| [🧪 TEST_COVERAGE](./TEST_COVERAGE.md)                 | Test suite and coverage per platform           |
+| [📊 FEATURE_COMPARISON](./FEATURE_COMPARISON.md)       | Feature parity across web/desktop/mobile        |
+| [📖 LESSONS_LEARNED](./LESSONS_LEARNED.md)             | Lessons learned during development             |
 
 ## 📄 License
 

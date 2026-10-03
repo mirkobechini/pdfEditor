@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-09-30
+> **Aggiornato:** 2026-10-03
 
 ---
 
@@ -53,8 +53,7 @@
 
 **Descrizione:** branch remoto con 18 commit propri, **88 commit indietro** rispetto a `dev`, ultimo commit 2026-09-20. Conteneva un tentativo precedente (probabilmente superato) di OCR/annotazioni/condivisione desktop+mobile e della pagina "Browse documents" desktop.
 **Trovato:** durante un audit di branch/issue attivi (2026-09-27).
-**Azione consigliata:** verificare se contiene lavoro ancora utile prima di cancellarlo — altrimenti è solo rumore nella lista branch.
-**Stato:** ⏳ Da decidere (nessuna azione presa, non cancellato).
+**Stato:** ✅ Risolto (2026-10-03) — branch eliminato insieme alla pulizia generale dei branch mergiati; su `origin` restano solo `dev` e `main`.
 
 ### K6 — Disinstallazione non cancella dati utente in %APPDATA%
 
