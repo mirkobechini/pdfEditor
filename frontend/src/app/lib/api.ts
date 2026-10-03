@@ -1,18 +1,18 @@
 /**
- * Web API client — thin subclass of the single shared client (issue #883, A1 — Tranche 2 #910).
+ * Web API client — created via the shared factory (issue #883, A1 — Tranche 3 #912).
  *
  * All method definitions and the public surface live in shared/src/api.ts
- * (copied to src/shared/ by the prebuild script). This module only overrides
- * `_fetch` to add the web-specific cross-origin CSRF pre-fetch behavior, then
- * re-exports the shared surface unchanged so existing call sites keep working.
+ * (copied to src/shared/ by the prebuild script). This module only wires the
+ * web-specific CSRF adapter (pre-fetch /auth/csrf su richieste di scrittura in
+ * cross-origin) e re-esporta la superficie pubblica invariata.
  *
- * Tranche 2 (issue #910): BOTH singletons (`api` and `cloudApi`) are wrapped in
- * the CSRF adapter. The first A1 attempt re-exported `cloudApi` naked and the
- * web login flow (which routes through cloudApi on the cloud path) lost the
- * CSRF pre-fetch → 403 cross-origin. Here every web instance has the adapter.
+ * Tranche 3: le istanze web nascono da `createApiClient(webCsrfAdapter)` —
+ * unico punto di creazione in shared/; il trasporto diventa una strategy
+ * iniettata (testabile senza `globalThis.fetch = vi.fn()`).
  */
 import { getApiBaseUrl, getCloudApiBaseUrl } from "./tauri";
-import { ApiClient as BaseApiClient } from "../../shared/api";
+import { ApiClient } from "../../shared/api";
+import { createApiClient, webCsrfAdapter } from "../../shared/client";
 
 const API_BASE = getApiBaseUrl();
 
@@ -36,51 +36,21 @@ export type {
   OcrResult,
 };
 
-export class WebApiClient extends BaseApiClient {
-  private _refreshingCsrf = false;
-
-  protected override async _fetch(
-    url: string,
-    options: RequestInit = {},
-  ): Promise<Response> {
-    // For state-changing requests (POST/PUT/DELETE/PATCH) in a cross-origin
-    // context, the in-memory csrf_token may be null after a page reload while the
-    // backend still has the csrf_token cookie. Ensure we have a token by fetching
-    // /auth/csrf once before proceeding (a GET, so no recursion into _fetch here).
-    const method = (options.method || "GET").toUpperCase();
-    if (
-      ["POST", "PUT", "DELETE", "PATCH"].includes(method) &&
-      !this._getCsrfToken() &&
-      !this._refreshingCsrf
-    ) {
-      this._refreshingCsrf = true;
-      try {
-        await this.refreshCsrf();
-      } finally {
-        this._refreshingCsrf = false;
-      }
-    }
-    const headers = {
-      ...this.getHeaders(),
-      ...((options.headers as Record<string, string>) || {}),
-    };
-    return fetch(url, {
-      ...options,
-      credentials: "include",
-      headers,
-    });
+/** Compat alias: il client web è ora creato via factory (#912). */
+export class WebApiClient extends ApiClient {
+  constructor(baseUrl?: string) {
+    super(baseUrl, webCsrfAdapter);
   }
 }
 
-// Re-export the shared public surface. `ApiClient` stays exported for the
-// static `extractError` helper and instanceof checks.
+// Re-export della classe per extractError statico e instanceof checks.
 export { ApiClient } from "../../shared/api";
 
 /** Singleton web client instance with CSRF pre-fetch adapter. */
-export const api = new WebApiClient();
+export const api = createApiClient(webCsrfAdapter);
 
 /** Cloud API client (auth via Render/Neon) — SAME CSRF adapter. */
-export const cloudApi = new WebApiClient(getCloudApiBaseUrl());
+export const cloudApi = createApiClient(webCsrfAdapter, getCloudApiBaseUrl());
 
 // ─── Keep-warm: evita cold start del backend su Render ──────────────
 

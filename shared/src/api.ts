@@ -23,18 +23,39 @@ export type {
   OcrResult,
 };
 
+/**
+ * Strategy di trasporto iniettata in ApiClient (issue #883, Tranche 3 #912).
+ * - `beforeFetch`: hook opzionale eseguito PRIMA della richiesta (es. pre-fetch CSRF).
+ * - `fetch`: esegue il trasporto HTTP. Riceve url e opzioni già complete (headers + credentials).
+ */
+export interface ApiAdapter {
+  beforeFetch?(
+    client: ApiClient,
+    url: string,
+    options: RequestInit,
+  ): Promise<void>;
+  fetch(
+    client: ApiClient,
+    url: string,
+    options: RequestInit,
+  ): Promise<Response>;
+}
+
 export class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
   private _csrfToken: string | null = null;
   private _isRefreshing = false;
+  private _refreshingCsrf = false;
+  private readonly _adapter?: ApiAdapter;
   /** Callback invoked when a token refresh succeeds */
   onTokenRefreshed: ((token: string, csrfToken: string) => void) | null = null;
   /** Callback invoked when a token refresh fails */
   onTokenRefreshFailed: (() => void) | null = null;
 
-  constructor(baseUrl?: string) {
+  constructor(baseUrl?: string, adapter?: ApiAdapter) {
     this.baseUrl = baseUrl ?? getApiBaseUrl();
+    this._adapter = adapter;
   }
 
   /** Get current token (needed to sync between local and cloud clients). */
@@ -106,6 +127,34 @@ export class ApiClient {
     url: string,
     options: RequestInit = {},
   ): Promise<Response> {
+    const adapter = this._adapter;
+    if (adapter) {
+      // Con adapter: prima il hook CSRF (solo per richieste di scrittura senza
+      // token in memoria, con guardia anti-ricorsione), poi trasporto adapter.
+      const method = (options.method || "GET").toUpperCase();
+      if (
+        ["POST", "PUT", "DELETE", "PATCH"].includes(method) &&
+        !this._getCsrfToken() &&
+        !this._refreshingCsrf
+      ) {
+        this._refreshingCsrf = true;
+        try {
+          await adapter.beforeFetch?.(this, url, options);
+        } finally {
+          this._refreshingCsrf = false;
+        }
+      }
+      const headers = {
+        ...this.getHeaders(),
+        ...((options.headers as Record<string, string>) || {}),
+      };
+      return adapter.fetch(this, url, {
+        ...options,
+        credentials: "include",
+        headers,
+      });
+    }
+
     const headers = {
       ...this.getHeaders(),
       ...((options.headers as Record<string, string>) || {}),
