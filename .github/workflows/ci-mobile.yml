@@ -106,7 +106,7 @@ jobs:
             # Solo smoke quando non c'è un backend di test configurato
             # (i flussi auth/upload/firma girerebbero contro il DB di produzione:
             # issue #919 opzione 1 — override env + backend di test).
-            if [ -n "$E2E_MOBILE_API_URL" ]; then echo "Backend di test configurato: eseguo la suite completa"; "$M" test .maestro --format junit --output e2e-results.xml; else echo "Nessun backend di test: eseguo solo smoke"; "$M" test .maestro/flows/smoke.yaml --format junit --output e2e-results.xml; fi
+            if [ -n "$E2E_MOBILE_API_URL" ]; then echo "Backend di test configurato: eseguo la suite completa"; "$HOME/.maestro/bin/maestro" test .maestro --format junit --output e2e-results.xml; else echo "Nessun backend di test: eseguo solo smoke"; "$HOME/.maestro/bin/maestro" test .maestro/flows/smoke.yaml --format junit --output e2e-results.xml; fi
 
       - name: Upload E2E results
         if: always()
