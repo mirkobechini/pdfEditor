@@ -88,12 +88,18 @@ def get_share_info(
             "Share link not found",
             status_code=status.HTTP_404_NOT_FOUND,
         )
-    if link.expires_at and link.expires_at < datetime.now(timezone.utc):
-        raise error_response(
-            ErrorCode.NOT_FOUND,
-            "Share link has expired",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+    if link.expires_at:
+        # SQLite stores naive UTC datetimes; normalize before comparing to
+        # the aware datetime.now(timezone.utc) (e2e #917 found a 500 here).
+        _expires = link.expires_at
+        if _expires.tzinfo is None:
+            _expires = _expires.replace(tzinfo=timezone.utc)
+        if _expires < datetime.now(timezone.utc):
+            raise error_response(
+                ErrorCode.NOT_FOUND,
+                "Share link has expired",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
     pdf = service.get_by_id(link.pdf_id)
     if not pdf:
@@ -132,12 +138,18 @@ def download_shared_pdf(
             "Share link not found",
             status_code=status.HTTP_404_NOT_FOUND,
         )
-    if link.expires_at and link.expires_at < datetime.now(timezone.utc):
-        raise error_response(
-            ErrorCode.NOT_FOUND,
-            "Share link has expired",
-            status_code=status.HTTP_404_NOT_FOUND,
-        )
+    if link.expires_at:
+        # SQLite stores naive UTC datetimes; normalize before comparing to
+        # the aware datetime.now(timezone.utc) (e2e #917 found a 500 here).
+        _expires = link.expires_at
+        if _expires.tzinfo is None:
+            _expires = _expires.replace(tzinfo=timezone.utc)
+        if _expires < datetime.now(timezone.utc):
+            raise error_response(
+                ErrorCode.NOT_FOUND,
+                "Share link has expired",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
     if link.password_hash:
         if not req.password or not verify_password(req.password, link.password_hash):
             raise error_response(
