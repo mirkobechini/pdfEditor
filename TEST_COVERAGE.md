@@ -2,7 +2,7 @@
 
 > **Scopo:** Documentare la copertura dei test su tutte le piattaforme del progetto: backend (FastAPI/Python), webapp (Next.js/React), desktop (Tauri) e mobile (React Native/Expo).
 >
-> **Aggiornato:** 2026-10-02 (conteggi test aggiornati alla serie A / split test-suite; coverage % misurato a 2026-09-20)
+> **Aggiornato:** 2026-10-03 (coverage rinfrescato con misura reale, audit)
 
 ---
 
@@ -10,13 +10,13 @@
 
 | Piattaforma                    | Test runner | Test    | Coverage   | Stato |
 | ------------------------------ | ----------- | ------- | ---------- | ----- |
-| **Backend** (FastAPI/Python)   | pytest      | **450** | **88%**    | ✅    |
-| **Webapp** (Next.js/React)     | vitest      | **674** | **90.21%** | ✅    |
-| **Desktop** (Tauri)            | vitest      | **1008** | **86.88%** | ✅    |
-| **Mobile** (React Native/Expo) | jest        | **371** | **92.26%** | ✅    |
+| **Backend** (FastAPI/Python)   | pytest      | **450** | **89%**    | ✅    |
+| **Webapp** (Next.js/React)     | vitest      | **674** | **90.49%** | ✅    |
+| **Desktop** (Tauri)            | vitest      | **1008** | **86.21%** | ✅    |
+| **Mobile** (React Native/Expo) | jest        | **371** | **81.23%** | ✅    |
 | **E2E** (Playwright)           | playwright  | **17**  | —          | ✅    |
 
-> ℹ️ **Aggiornamento 2026-10-02**: conteggi allineati allo split test-suite per feature (issue #888, serie A) e ai nuovi e2e CSRF (issue #905): backend 450, web 674, desktop 1008 (49 file), mobile 371, e2e 17. Coverage % resta il misurato a 2026-09-20 (la prossima misura completa rinfrescherà i valori).
+> ℹ️ **Rinfrescato 2026-10-03 (audit)**: coverage misurato davvero in locale da me — backend pytest 89% stmts, web vitest 90.49% stmts / 94.17% lines, desktop vitest 86.21% / 90.49%, mobile jest 81.23% / 83.03%. I valori precedenti erano del 2026-09-20, ormai stale. I %.cover della riga sotto sono superseded da questa misura.
 
 > ℹ️ **Backend**: 450 test (pytest), 88% statements. +2 test OCR (issue #831): binary mancante → 503, PIL Image passato a pytesseract.
 >
