@@ -32,3 +32,78 @@ jobs:
         run: npx tsc --noEmit
       - name: Run tests
         run: npm test
+
+  e2e-mobile:
+    # E2E mobile (issue #919, perimetro 1): suite Maestro su emulatore Android.
+    # L'APK viene buildato con EAS (pattern identico a release-mobile.yml),
+    # poi Maestro esegue i flow in mobile/.maestro sull'emulatore.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "mobile/package-lock.json"
+
+      - name: Install mobile dependencies
+        run: cd mobile && npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v9
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK with EAS
+        run: cd mobile && eas build --platform android --profile production --non-interactive --no-wait
+
+      - name: Download APK from EAS
+        run: |
+          cd mobile
+          echo "Waiting for EAS build to complete..."
+          for i in $(seq 1 120); do
+            eas build:list --platform android --limit 1 --json > build-info.json 2>/dev/null
+            STATUS=$(node -e "try { const b=require('./build-info.json'); console.log((b[0]?.status || '').toLowerCase()) } catch(e) { console.log('error') }")
+            echo "  iteration $i: status=$STATUS"
+            if [ "$STATUS" = "finished" ]; then break; fi
+            if [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
+              echo "EAS build failed: $STATUS"; exit 1
+            fi
+            sleep 30
+          done
+          BUILD_ID=$(node -e "try { const b=require('./build-info.json'); console.log(b[0]?.id || '') } catch(e) { console.log('') }")
+          OUTPUT=$(eas build:download --build-id "$BUILD_ID" --non-interactive 2>&1)
+          APK_PATH=$(echo "$OUTPUT" | grep -oP '/tmp/runner/.*?\.apk' | head -1)
+          if [ -n "$APK_PATH" ]; then
+            cp "$APK_PATH" pdfeditor-e2e.apk
+            ls -la pdfeditor-e2e.apk
+          else
+            echo "APK non trovato nell'output EAS"; echo "$OUTPUT"; exit 1
+          fi
+
+      - name: Run Maestro E2E on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 31
+          arch: x64
+          profile: default
+          working-directory: mobile
+          script: |
+            # Installa Maestro CLI
+            curl -Ls "https://get.maestro.mobile.dev" | bash
+            export PATH="$PATH:$HOME/.maestro/bin"
+            maestro --version
+            # Installa l'APK di test sull'emulatore
+            maestro install pdfeditor-e2e.apk
+            # Esegue i flow (smoke per ora; estesi nel perimetro 1)
+            maestro test .maestro --format junit --output e2e-results.xml
+
+      - name: Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-mobile-results
+          path: mobile/e2e-results.xml
+          retention-days: 7
