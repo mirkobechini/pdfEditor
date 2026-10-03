@@ -95,7 +95,7 @@ jobs:
         with:
           api-level: 31
           arch: x86_64
-          profile: default
+          profile: pixel_4
           working-directory: mobile
           script: |
             # Installa Maestro CLI
