@@ -1,0 +1,5 @@
+# Maestro E2E config (issue #919)
+# App: PdfEditor mobile (Expo SDK 57) — package Android com.mirkobechini.pdfeditor
+appId: com.mirkobechini.pdfeditor
+name: PdfEditor
+# Smoke/perimetro-1 flows vivono qui sotto; CI usa questo file.
