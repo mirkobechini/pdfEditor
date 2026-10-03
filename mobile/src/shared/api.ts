@@ -28,8 +28,11 @@ export type {
   ShareLink,
 };
 
-// Cloud backend URL
-const CLOUD_API_URL = "https://pdfeditor-api.mirkobechini.com";
+// Cloud backend URL — override di test per e2e (issue #919, scelta opzione 1, doc 03/10).
+// L'e2e mobile non deve mai creare account sul DB di produzione:
+// in CI si imposta EXPO_PUBLIC_API_URL verso un backend di test. Fallback: produzione.
+export const CLOUD_API_URL =
+    process.env.EXPO_PUBLIC_API_URL || "https://pdfeditor-api.mirkobechini.com";
 
 export class ApiClient {
   private baseUrl: string;

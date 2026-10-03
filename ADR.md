@@ -202,6 +202,21 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 - react-native-web (valutabile, non deciso)
 - **Inline text editor** — non implementato (plan in `.specs/active/`)
 
+## Decisione documentata (2026-10-03): e2e mobile con backend di test
+
+**Scelta: opzione 1 — override env + backend di test** (deciso con Mirko per l'e2e mobile, issue #919).
+
+- L'app mobile hardcoda l'URL del backend cloud (`CLOUD_API_URL` in `mobile/src/shared/api.ts`,
+  più un fetch diretto in `mobile/src/shared/auth.tsx`).
+- Senza override, una suite e2e (auth/upload/firma) **creerebbe account reali sul DB di produzione**
+  a ogni run — inaccettabile.
+- **Implementazione:** `EXPO_PUBLIC_API_URL` con fallback produzione (comportamento attuale invariato
+  se non impostata); `auth.tsx` riusa la stessa costante.
+- **CI:** il job `e2e-mobile` esegue per default solo lo **smoke** (nessun backend necessario);
+  i flussi auth/upload/firma girano solo quando nel repo è configurata l'URL di test
+  (es. secret `E2E_MOBILE_API_URL` passata a EAS build).
+- (Vedi `.specs/plans/issue-919-e2e-mobile.md` — piano locale, non versionato.)
+
 ## Roadmap
 
 | Fase                                        | Descrizione                                                                                                            |                                    Stato                                    |
