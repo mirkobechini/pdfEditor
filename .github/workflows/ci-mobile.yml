@@ -102,7 +102,7 @@ jobs:
             # come sh -c separato: niente export che persiste tra righe.
             # Si usa il percorso assoluto di Maestro e comandi self-contained.
             curl -Ls "https://get.maestro.mobile.dev" | bash
-            M="$HOME/.maestro/bin/maestro" && "$M" --version && "$M" install pdfeditor-e2e.apk
+            M="$HOME/.maestro/bin/maestro" && "$M" --version && adb install pdfeditor-e2e.apk
             # Solo smoke quando non c'è un backend di test configurato
             # (i flussi auth/upload/firma girerebbero contro il DB di produzione:
             # issue #919 opzione 1 — override env + backend di test).
