@@ -161,7 +161,7 @@ bash run-all-tests.sh
 
 950 test frontend (Vitest) + 3 test Rust (cargo test). CI dedicata `ci-desktop.yml`.
 
-> ⚠️ I conteggi per-componente sotto sono storici (non aggiornati a ogni release). Il totale autorevole è nel riepilogo in cima (950 test).
+> ⚠️ I conteggi per-componente sotto sono storici (non aggiornati a ogni release). Il totale autorevole è nel riepilogo in cima (**1008 test**, aggiornato 2026-10-02).
 
 | Componente                     | Test | Coverage | Note                                              |
 | ------------------------------ | ---- | -------- | ------------------------------------------------- |
