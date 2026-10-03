@@ -98,22 +98,15 @@ jobs:
           profile: pixel_4
           working-directory: mobile
           script: |
-            # Installa Maestro CLI
+            # L'action reactivecircus/android-emulator-runner esegue ogni riga
+            # come sh -c separato: niente export che persiste tra righe.
+            # Si usa il percorso assoluto di Maestro e comandi self-contained.
             curl -Ls "https://get.maestro.mobile.dev" | bash
-            export PATH="$PATH:$HOME/.maestro/bin"
-            maestro --version
-            # Installa l'APK di test sull'emulatore
-            maestro install pdfeditor-e2e.apk
+            M="$HOME/.maestro/bin/maestro" && "$M" --version && "$M" install pdfeditor-e2e.apk
             # Solo smoke quando non c'è un backend di test configurato
             # (i flussi auth/upload/firma girerebbero contro il DB di produzione:
             # issue #919 opzione 1 — override env + backend di test).
-            if [ -n "$E2E_MOBILE_API_URL" ]; then
-              echo "Backend di test configurato: eseguo la suite completa"
-              maestro test .maestro --format junit --output e2e-results.xml
-            else
-              echo "Nessun backend di test: eseguo solo smoke"
-              maestro test .maestro/flows/smoke.yaml --format junit --output e2e-results.xml
-            fi
+            if [ -n "$E2E_MOBILE_API_URL" ]; then echo "Backend di test configurato: eseguo la suite completa"; "$M" test .maestro --format junit --output e2e-results.xml; else echo "Nessun backend di test: eseguo solo smoke"; "$M" test .maestro/flows/smoke.yaml --format junit --output e2e-results.xml; fi
 
       - name: Upload E2E results
         if: always()
