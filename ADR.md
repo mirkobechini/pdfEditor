@@ -210,10 +210,10 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | **Fase 2 — Web app su cloud**               | Deploy FastAPI su Render. PostgreSQL cloud. Upload file su S3 (Cloudflare R2). Next.js static export.                  |                         ✅ Completata (2026-07-10)                          |
 | **Fase 3 — Cloud sync**                     | Sync bidirezionale SQLite ↔ PostgreSQL (UUID + timestamp). Risoluzione conflitti.                                      |                                ✅ Completata                                |
 | **Fase 4 — Mobile app (React Native/Expo)** | Setup Expo + auth + upload + viewer + scanner + editing pdf-lib + EAS Build APK.                                       | ✅ Completata (MVP mobile) — dettagli in [`mobile/ADR.md`](./mobile/ADR.md) |
-| **Fase 4b — EAS CI Integration**            | Collegare EAS Build a GitHub Actions per build automatica su tag release.                                              |                                 ⬜ In piano                                 |
+| **Fase 4b — EAS CI Integration**            | Collegare EAS Build a GitHub Actions per build automatica su tag release (workflow `release-mobile.yml`, trigger tag `v*-mobile`). | ✅ Attiva (verificato 2026-10-03: build EAS eseguite sui tag dal 08/2026) |
 
 > 📋 **Storico completo dei fix:** Vedi [`CHANGELOG.md`](./CHANGELOG.md).
 > 📦 **Novità strutturate per la download page:** Vedi [`changelog.json`](./changelog.json) — file JSON con versioni e cambiamenti per desktop e mobile, fetchato dinamicamente dalla download page.
 > 🐞 **Bug aperti e debito tecnico:** Vedi [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md).
 > 📖 **Lezioni apprese:** Vedi [`LESSONS_LEARNED.md`](./LESSONS_LEARNED.md).
-> 📝 **Feature pianificate:** Vedi `.specs/active/`.
+> 📝 **Feature pianificate:** vedi CHANGELOG/TEST_COVERAGE e i piani in `.specs/plans/` (repository locale, non versionati).
