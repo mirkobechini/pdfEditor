@@ -32,3 +32,110 @@ jobs:
         run: npx tsc --noEmit
       - name: Run tests
         run: npm test
+
+  e2e-mobile:
+    # E2E mobile (issue #919, perimetro 1): suite Maestro su emulatore Android.
+    # L'APK viene buildato con EAS (pattern identico a release-mobile.yml),
+    # poi Maestro esegue i flow in mobile/.maestro sull'emulatore.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "mobile/package-lock.json"
+
+      - name: Install mobile dependencies
+        run: cd mobile && npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v9
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK with EAS
+        # E2E mobile (issue #919): se E2E_MOBILE_API_URL è configurato il build
+        # punta al backend di test (EXPO_PUBLIC_API_URL); altrimenti fallback
+        # produzione e la suite esegue solo lo smoke (mai creare account reali).
+        env:
+          EXPO_PUBLIC_API_URL: ${{ secrets.E2E_MOBILE_API_URL }}
+        run: cd mobile && eas build --platform android --profile production --non-interactive --no-wait
+
+      - name: Download APK from EAS
+        run: |
+          cd mobile
+          echo "Waiting for EAS build to complete..."
+          for i in $(seq 1 120); do
+            eas build:list --platform android --limit 1 --json > build-info.json 2>/dev/null
+            STATUS=$(node -e "try { const b=require('./build-info.json'); console.log((b[0]?.status || '').toLowerCase()) } catch(e) { console.log('error') }")
+            echo "  iteration $i: status=$STATUS"
+            if [ "$STATUS" = "finished" ]; then break; fi
+            if [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
+              echo "EAS build failed: $STATUS"; exit 1
+            fi
+            sleep 30
+          done
+          BUILD_ID=$(node -e "try { const b=require('./build-info.json'); console.log(b[0]?.id || '') } catch(e) { console.log('') }")
+          OUTPUT=$(eas build:download --build-id "$BUILD_ID" --non-interactive 2>&1)
+          APK_PATH=$(echo "$OUTPUT" | grep -oP '/tmp/runner/.*?\.apk' | head -1)
+          if [ -n "$APK_PATH" ]; then
+            cp "$APK_PATH" pdfeditor-e2e.apk
+            ls -la pdfeditor-e2e.apk
+          else
+            echo "APK non trovato nell'output EAS"; echo "$OUTPUT"; exit 1
+          fi
+
+      - name: Enable KVM group perms
+        # fix(issue #919): senza KVM l'emulatore gira a -accel off (software):
+        # boot 347s + adb install 310s e il primo render dell'app non arriva
+        # entro il timeout di 300s. Il runner GitHub espone /dev/kvm ma senza
+        # permessi per l'utente; la regola udev li abilita.
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Maestro E2E on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          E2E_MOBILE_API_URL: ${{ secrets.E2E_MOBILE_API_URL }}
+        with:
+          api-level: 31
+          arch: x86_64
+          profile: pixel_4
+          cores: 4
+          working-directory: mobile
+          script: |
+            # L'action reactivecircus/android-emulator-runner esegue ogni riga
+            # come sh -c separato: niente export che persiste tra righe.
+            # NB: lo script gira con bash -e: una failure di maestro test
+            # interrompeva lo script PRIMA della cattura diagnostica.
+            # -> set +e attorno al test e cattura SEMPRE su failure.
+            curl -Ls "https://get.maestro.mobile.dev" | bash
+            M="$HOME/.maestro/bin/maestro" && "$M" --version && adb install pdfeditor-e2e.apk
+            # Emulatore software lento -> possibili dialog ANR/SystemUI a
+            # schermo che coprono l'app e fanno fallire gli assert. Nascondili.
+            adb shell settings put global hide_error_dialogs 1 || true
+            adb shell input keyevent KEYCODE_WAKEUP || true
+            adb shell wm dismiss-keyguard || true
+            # Solo smoke quando non c'è un backend di test configurato
+            # (i flussi auth/upload/firma girerebbero contro il DB di produzione:
+            # issue #919 opzione 1 — override env + backend di test).
+            set +e
+            if [ -n "$E2E_MOBILE_API_URL" ]; then echo "Backend di test configurato: eseguo la suite completa"; "$HOME/.maestro/bin/maestro" test .maestro --format junit --output e2e-results.xml; else echo "Nessun backend di test: eseguo solo smoke"; "$HOME/.maestro/bin/maestro" test .maestro/flows/smoke.yaml --format junit --output e2e-results.xml; fi
+            EC=$?
+            set -e
+            echo "Maestro exit code: $EC"
+            if [ $EC -ne 0 ]; then echo "Cattura diagnostica emulatore (screenshot+UI+logcat)…"; adb exec-out screencap -p > e2e-screen.png 2>/dev/null || true; adb shell uiautomator dump /sdcard/e2e-ui.xml >/dev/null 2>&1 && adb pull /sdcard/e2e-ui.xml >/dev/null 2>&1 || true; adb logcat -d -t 300 > e2e-logcat.txt 2>/dev/null || true; fi
+            exit $EC
+
+      - name: Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-mobile-results
+          path: mobile/e2e-*
+          retention-days: 7
