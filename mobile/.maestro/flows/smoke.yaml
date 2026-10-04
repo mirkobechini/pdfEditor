@@ -6,15 +6,15 @@ name: PdfEditor Mobile
 # lo si salta se presente, poi si verifica la Login.
 # NOTA i18n (fix 2026-10-04): l'app è tradotta (en/it via expo-localization) e
 # l'emulatore CI è in inglese -> i selettori devono coprire entrambe le lingue
-# ("Email" e "Password" sono identiche). In passato i testi hardcoded italiani
-# facevano fallire lo smoke: Assertion "Continua come Ospite" visible.
+# ("Email" e "Password" sono identiche).
+# NOTA cold start (run 37213936173, 2026-10-04): su emulatore software senza KVM
+# (ubuntu-24.04, swiftshader, 2 core) boot 277s + install APK 230s: il primo
+# render dell'app supera i 3 minuti. Timeout primo render a 300s. Se fallisce
+# ANCORA non è lentezza: il workflow cattura screenshot+uiautomator+logcat.
 - launchApp
-# Cold start su emulatore software x86_64 è lentissimo (boot ~4min,
-# install APK ~3min): il primo render può richiedere >1min. Timeout
-# generoso; al secondo giro l'app parte da cache e si muove più rapida.
 - extendedWaitUntil:
     visible: "Continue as Guest|Continua come Ospite|Email|Salta|Skip"
-    timeout: 180000
+    timeout: 300000
 - runFlow:
     when:
       visible: "Salta|Skip"
@@ -22,7 +22,7 @@ name: PdfEditor Mobile
       - tapOn: "Salta|Skip"
       - extendedWaitUntil:
           visible: "Continue as Guest|Continua come Ospite|Email"
-          timeout: 30000
+          timeout: 60000
 - assertVisible: "Email"
 - assertVisible: "Password"
 - assertVisible: "Continue as Guest|Continua come Ospite"
