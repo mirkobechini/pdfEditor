@@ -51,10 +51,53 @@ def _load_or_generate_jwt_secret() -> str:
     return secret
 
 
+# ============================================================
+# Guardia anti-produzione — pattern di account di test (issue #921)
+# Pattern osservati nel DB di produzione (Neon) il 2026-10-03:
+# utenti "E2E User", "Test", "Test2", guest "pdfeditor.local" creati da
+# run e2e con URL errato. Lista condivisa: usata da auth_service per
+# rifiutare la registrazione quando ENVIRONMENT == production.
+# ============================================================
+# Sottostringhe email tipiche dei test (@test.com, @example.com, dominio locale)
+TEST_EMAIL_SUBSTRINGS: tuple[str, ...] = (
+    "@test.com",
+    "@example.com",
+    "pdfeditor.local",
+)
+# Prefissi del local-part email tipici dei test (es. e2e_user@…, test_…@…)
+TEST_EMAIL_LOCAL_PREFIXES: tuple[str, ...] = (
+    "e2e_",
+    "test_",
+    "desk_",
+    "reg_",
+    "login_",
+    "merge_",
+    "pdf_",
+    "csrf_",
+    "wrong_",
+)
+# Full name esatti osservati nel DB di produzione (match case-insensitive)
+TEST_FULL_NAMES: tuple[str, ...] = (
+    "e2e user",
+    "test",
+    "test2",
+    "desk user",
+    "debug",
+)
+
+
 class Settings(BaseSettings):
     APP_NAME: str = "PdfEditor API"
     VERSION: str = "0.1.0"
     DEBUG: bool = False
+
+    # Runtime environment — "development" (default: e2e, desktop locale) o
+    # "production" (cloud Render). Attiva la guardia anti-test registrazione
+    # (issue #921).
+    ENVIRONMENT: str = "development"
+    # Allowlist: True permette la registrazione di account con pattern-test
+    # anche in produzione (solo e2e mirati; default False).
+    E2E_ALLOW_TEST_REGISTRATION: bool = False
 
     # Security — if both SECRET_KEY and JWT_SECRET_KEY are empty,
     # a random key is auto-generated. This is safe for desktop (localhost-only)
