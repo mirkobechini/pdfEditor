@@ -38,6 +38,7 @@ export default function HomeDialogs({ s }: { s: HomeScreenState }) {
             ) : (
                 <FAB
                     icon="plus"
+                    testID="fab-add-pdf"
                     style={{
                         position: "absolute",
                         right: 16,

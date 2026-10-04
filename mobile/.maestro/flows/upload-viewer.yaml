@@ -1,0 +1,62 @@
+appId: com.mirkobechini.pdfeditor
+name: PdfEditor Mobile
+---
+# T1 perimetro 2 (issue #923): upload PDF dal dispositivo → viewer con pagina renderizzata.
+# Gira solo con backend di test configurato (E2E_MOBILE_API_URL), come auth.yaml:
+# niente account/guest veri sul DB di produzione.
+# Asset: mobile/.maestro/assets/e2e-upload.pdf (adb push su /sdcard/Download/ in CI).
+
+- launchApp
+# Onboarding (solo alla prima installazione): skip se presente
+- extendedWaitUntil:
+    visible: "Salta|Skip|Continue as Guest|Continua come Ospite|Email"
+    timeout: 120000
+- runFlow:
+    when:
+      visible: "Salta|Skip"
+    commands:
+      - tapOn: "Salta|Skip"
+      - extendedWaitUntil:
+          visible: "Continue as Guest|Continua come Ospite|Email"
+          timeout: 30000
+# Sessione: login come ospite (libero, nessun account = meno attrito in CI)
+- tapOn: "Continue as Guest|Continua come Ospite"
+# Home: attende il FAB "+" (testID aggiunto per Maestro)
+- extendedWaitUntil:
+    visible: "fab-add-pdf|Add PDF|Upload from device"
+    timeout: 60000
+# Apre il menu Add PDF
+- tapOn:
+    id: "fab-add-pdf"
+- extendedWaitUntil:
+    visible: "Upload from device|Carica dal dispositivo"
+    timeout: 10000
+- tapOn: "Upload from device|Carica dal dispositivo"
+# Picker di sistema Android (DocumentsUI): naviga a Downloads e seleziona l'asset
+- extendedWaitUntil:
+    visible: "Show roots|Downloads|e2e-upload.pdf"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Show roots"
+    commands:
+      - tapOn: "Show roots"
+      - extendedWaitUntil:
+          visible: "Downloads"
+          timeout: 10000
+      - tapOn: "Downloads"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 20000
+- tapOn: "e2e-upload.pdf"
+# L'app copia il file; se il sync è attivo appare "Sync to cloud?" → No
+- runFlow:
+    when:
+      visible: "Sync to cloud?"
+    commands:
+      - tapOn: "No"
+# Viewer: attende l'indicatore pagina "1 / 1" (PDF di 1 pagina)
+- extendedWaitUntil:
+    visible: "1 / 1"
+    timeout: 90000
+- assertVisible: "1 / 1"
