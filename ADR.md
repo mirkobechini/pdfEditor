@@ -217,6 +217,30 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
   (es. secret `E2E_MOBILE_API_URL` passata a EAS build).
 - (Vedi `.specs/plans/issue-919-e2e-mobile.md` — piano locale, non versionato.)
 
+## Decisione documentata (2026-10-03): guardia anti-produzione registrazione
+
+**Scelta: rifiuto a monte in `auth_service`, pattern-test condivisi, allowlist esplicita**
+(deciso con Mirko dopo la pulizia manuale in transazione di utenti di test sul DB
+di produzione Neon il 03/10 — "E2E User", "Test", "Test2", guest `pdfeditor.local`,
+issue #921).
+
+- **Problema:** le run e2e con URL errato (app, curl, e2e mobile puntato al backend
+  cloud) **creavano account di test sul DB di produzione** a ogni run.
+- **Implementazione:** con `ENVIRONMENT == production`, `auth_service.register` e
+  `auth_service.convert_guest` rifiutano (400, messaggio esplicativo) email che
+  matchano `@test.com` / `@example.com` / `pdfeditor.local` o prefissi local-part
+  `e2e_/test_/desk_/reg_/login_/merge_/pdf_/csrf_/wrong_`, e full_name esatti
+  (`E2E User`, `Test`, `Test2`, `Desk User`, `Debug` — case-insensitive).
+- **Lista pattern condivisa:** costanti `TEST_EMAIL_SUBSTRINGS`,
+  `TEST_EMAIL_LOCAL_PREFIXES`, `TEST_FULL_NAMES` in `app/core/config.py`.
+- **Allowlist:** `E2E_ALLOW_TEST_REGISTRATION=True` disabilita il blocco
+esclusivamente per e2e mirati; default `False`.
+- **Invarianti:** in `development` (desktop locale, backend e2e locale) il
+  comportamento non cambia; la creazione guest legittima (`/auth/guest`,
+  `create_guest_user`, email `guest-…@pdfeditor.local`) **non passa dalla guardia**
+  e resta permessa; il login di utenti esistenti non è impattato.
+- (Vedi `.specs/plans/issue-921-guardia-anti-produzione.md` — piano locale, non versionato.)
+
 ## Roadmap
 
 | Fase                                        | Descrizione                                                                                                            |                                    Stato                                    |
