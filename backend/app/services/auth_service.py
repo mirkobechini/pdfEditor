@@ -4,7 +4,13 @@ logger = logging.getLogger("pdfeditor")
 
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
+from app.core.config import (
+    settings,
+    TEST_EMAIL_SUBSTRINGS,
+    TEST_EMAIL_LOCAL_PREFIXES,
+    TEST_FULL_NAMES,
+)
+
 from app.core.security import create_access_token, decode_access_token, get_password_hash, verify_password
 from app.models.user import User
 from app.repositories.user_repo import UserRepository
@@ -23,6 +29,39 @@ def _validate_password_strength(password: str) -> None:
         raise ValueError("Password must contain at least one number")
 
 
+def _validate_not_test_account(email: str, full_name: str) -> None:
+    """Guardia anti-produzione (issue #921).
+
+    Rifiuta la registrazione di account con pattern-test quando
+    ENVIRONMENT == production, da qualunque origine (app, curl, e2e con
+    URL errato). In development / desktop locale il comportamento è
+    invariato; E2E_ALLOW_TEST_REGISTRATION=True (allowlist per e2e
+    mirati) disabilita il blocco.
+
+    I guest legittimi (create_guest_user → /auth/guest) non passano da
+    qui e restano permessi in produzione.
+    """
+    if settings.ENVIRONMENT.lower() != "production":
+        return
+    if settings.E2E_ALLOW_TEST_REGISTRATION:
+        return
+
+    email_norm = (email or "").strip().lower()
+    local_part = email_norm.split("@")[0] if "@" in email_norm else email_norm
+    if any(sub in email_norm for sub in TEST_EMAIL_SUBSTRINGS) or any(
+        local_part.startswith(prefix) for prefix in TEST_EMAIL_LOCAL_PREFIXES
+    ):
+        raise ValueError(
+            "Registration with test-pattern account is disabled in production"
+        )
+
+    name_norm = (full_name or "").strip().lower()
+    if name_norm in TEST_FULL_NAMES:
+        raise ValueError(
+            "Registration with test-pattern account is disabled in production"
+        )
+
+
 class AuthService:
     """Business logic for authentication."""
 
@@ -31,6 +70,9 @@ class AuthService:
 
     def register(self, email: str, password: str, full_name: str) -> User:
         """Register a new user."""
+        # Guardia anti-produzione: nessun account pattern-test in produzione (issue #921)
+        _validate_not_test_account(email, full_name)
+
         # Validate password strength
         _validate_password_strength(password)
 
@@ -178,6 +220,9 @@ class AuthService:
         """Convert a guest account to a full registered account."""
         if not user.is_guest:
             raise ValueError("Account is already a full user")
+
+        # Guardia anti-produzione: nemmeno la conversione guest crea account-test (issue #921)
+        _validate_not_test_account(email, full_name)
 
         _validate_password_strength(password)
 
