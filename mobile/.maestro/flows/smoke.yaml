@@ -2,23 +2,27 @@ appId: com.mirkobechini.pdfeditor
 name: PdfEditor Mobile
 ---
 # Tranche 2 — smoke: l'app parte e arriva alla schermata di accesso.
-# Alla prima installazione può apparire l'onboarding (Salta/Continua):
+# Alla prima installazione può apparire l'onboarding (Salta/Skip/Continua):
 # lo si salta se presente, poi si verifica la Login.
+# NOTA i18n (fix 2026-10-04): l'app è tradotta (en/it via expo-localization) e
+# l'emulatore CI è in inglese -> i selettori devono coprire entrambe le lingue
+# ("Email" e "Password" sono identiche). In passato i testi hardcoded italiani
+# facevano fallire lo smoke: Assertion "Continua come Ospite" visible.
 - launchApp
 # Cold start su emulatore software x86_64 è lentissimo (boot ~4min,
 # install APK ~3min): il primo render può richiedere >1min. Timeout
 # generoso; al secondo giro l'app parte da cache e si muove più rapida.
 - extendedWaitUntil:
-    visible: "Continua come Ospite|Email|Salta"
+    visible: "Continue as Guest|Continua come Ospite|Email|Salta|Skip"
     timeout: 180000
 - runFlow:
     when:
-      visible: "Salta"
+      visible: "Salta|Skip"
     commands:
-      - tapOn: "Salta"
+      - tapOn: "Salta|Skip"
       - extendedWaitUntil:
-          visible: "Continua come Ospite|Email"
+          visible: "Continue as Guest|Continua come Ospite|Email"
           timeout: 30000
 - assertVisible: "Email"
 - assertVisible: "Password"
-- assertVisible: "Continua come Ospite"
+- assertVisible: "Continue as Guest|Continua come Ospite"
