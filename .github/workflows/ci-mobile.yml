@@ -34,9 +34,11 @@ jobs:
         run: npm test
 
   e2e-mobile:
-    # E2E mobile (issue #919, perimetro 1): suite Maestro su emulatore Android.
-    # L'APK viene buildato con EAS (pattern identico a release-mobile.yml),
-    # poi Maestro esegue i flow in mobile/.maestro sull'emulatore.
+    # E2E mobile (issue #919 perimetro 1 → #923 perimetro 2): suite Maestro su
+    # emulatore Android con BACKEND LOCALE (opzione 2, decisa da Mirko 04/10).
+    # Il job avvia un FastAPI+SQLite su localhost:8000 e l'APK (buildato con
+    # EXPO_PUBLIC_API_URL=http://10.0.2.2:8000) parla con l'host dell'emulatore:
+    # suite COMPLETA a ogni push, zero servizi esterni, mai produzione.
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -57,11 +59,11 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build APK with EAS
-        # E2E mobile (issue #919): se E2E_MOBILE_API_URL è configurato il build
-        # punta al backend di test (EXPO_PUBLIC_API_URL); altrimenti fallback
-        # produzione e la suite esegue solo lo smoke (mai creare account reali).
+        # T0-backend (#923): l'APK di TEST punta al backend locale dell'emulatore
+        # (10.0.2.2 = loopback host). app.config.js abilita usesCleartextTraffic
+        # SOLO per URL http locali; i build di produzione non la vedono mai.
         env:
-          EXPO_PUBLIC_API_URL: ${{ secrets.E2E_MOBILE_API_URL }}
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:8000
         run: cd mobile && eas build --platform android --profile production --non-interactive --no-wait
 
       - name: Download APK from EAS
@@ -88,6 +90,41 @@ jobs:
             echo "APK non trovato nell'output EAS"; echo "$OUTPUT"; exit 1
           fi
 
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend deps
+        run: pip install -r backend/requirements.txt
+
+      - name: Start local test backend
+        # T0-backend (#923, opzione 2): il job avvia il backend FastAPI locale
+        # con SQLite (pattern identico alla e2e web). L'emulatore Android lo
+        # raggiunge su 10.0.2.2:8000 (loopback host). Zero servizi esterni,
+        # mai il DB di produzione. DEBUG=true rilassa i cookie (secure=False),
+        # ENVIRONMENT=development tiene spenta la guardia anti-test (#921).
+        run: |
+          cd backend
+          DATABASE_URL=sqlite:///./e2e_mobile_test.db \
+          DEBUG=true DISABLE_LICENSE_ENFORCEMENT=true \
+          nohup python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 \
+            > /tmp/e2e-backend.log 2>&1 &
+          echo $! > /tmp/e2e-backend.pid
+          # Attesa health check (max 60s)
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health > /dev/null 2>&1; then
+              echo "Backend di test pronto (iterazione $i)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend di test NON raggiungibile dopo 60s:"
+          tail -40 /tmp/e2e-backend.log
+          exit 1
+
       - name: Enable KVM group perms
         # fix(issue #919): senza KVM l'emulatore gira a -accel off (software):
         # boot 347s + adb install 310s e il primo render dell'app non arriva
@@ -100,8 +137,6 @@ jobs:
 
       - name: Run Maestro E2E on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
-        env:
-          E2E_MOBILE_API_URL: ${{ secrets.E2E_MOBILE_API_URL }}
         with:
           api-level: 31
           arch: x86_64
@@ -124,11 +159,12 @@ jobs:
             adb shell settings put global hide_error_dialogs 1 || true
             adb shell input keyevent KEYCODE_WAKEUP || true
             adb shell wm dismiss-keyguard || true
-            # Solo smoke quando non c'è un backend di test configurato
-            # (i flussi auth/upload/firma girerebbero contro il DB di produzione:
-            # issue #919 opzione 1 — override env + backend di test).
+            # T0-backend (#923): il backend locale è già attivo sul runner
+            # (uvicorn su 10.0.2.2:8000 raggiungibile dall'emulatore), quindi
+            # la suite COMPLETA gira sempre a ogni push. Mai produzione.
             set +e
-            if [ -n "$E2E_MOBILE_API_URL" ]; then echo "Backend di test configurato: eseguo la suite completa"; "$HOME/.maestro/bin/maestro" test .maestro --format junit --output e2e-results.xml; else echo "Nessun backend di test: eseguo solo smoke"; "$HOME/.maestro/bin/maestro" test .maestro/flows/smoke.yaml --format junit --output e2e-results.xml; fi
+            echo "Eseguo la suite completa (backend locale)"
+            "$HOME/.maestro/bin/maestro" test .maestro --format junit --output e2e-results.xml
             EC=$?
             set -e
             echo "Maestro exit code: $EC"
