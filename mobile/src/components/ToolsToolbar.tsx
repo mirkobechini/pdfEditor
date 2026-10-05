@@ -16,6 +16,7 @@ export default function ToolsToolbar({ s }: { s: ToolsScreenState }) {
                 <Button
                     mode={s.operation === "merge" ? "contained" : "outlined"}
                     compact
+                    testID="tool-merge"
                     buttonColor={s.operation === "merge" ? theme.colors.primary : undefined}
                     textColor={s.operation === "merge" ? "#fff" : theme.colors.primary}
                     onPress={() => { s.setOperation("merge"); s.setSelectedIds([]); }}
@@ -25,6 +26,7 @@ export default function ToolsToolbar({ s }: { s: ToolsScreenState }) {
                 <Button
                     mode={s.operation === "split" ? "contained" : "outlined"}
                     compact
+                    testID="tool-split"
                     buttonColor={s.operation === "split" ? theme.colors.primary : undefined}
                     textColor={s.operation === "split" ? "#fff" : theme.colors.primary}
                     onPress={() => { s.setOperation("split"); s.setSelectedIds([]); }}

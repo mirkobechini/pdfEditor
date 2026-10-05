@@ -151,9 +151,10 @@ jobs:
             # -> set +e attorno al test e cattura SEMPRE su failure.
             curl -Ls "https://get.maestro.mobile.dev" | bash
             M="$HOME/.maestro/bin/maestro" && "$M" --version && adb install pdfeditor-e2e.apk
-            # T1 perimetro 2 (issue #923): l'asset PDF di test serve al flusso
-            # upload-viewer (selezione dal picker di sistema in /sdcard/Download).
+            # T1/T4 perimetro 2 (issue #923): gli asset PDF di test servono ai
+            # flussi upload-viewer, merge e split (selezione dal picker di sistema).
             adb push .maestro/assets/e2e-upload.pdf /sdcard/Download/e2e-upload.pdf || echo "push asset PDF: fallito (skip)"
+            adb push .maestro/assets/e2e-merge.pdf /sdcard/Download/e2e-merge.pdf || echo "push asset merge PDF: fallito (skip)"
             # Emulatore software lento -> possibili dialog ANR/SystemUI a
             # schermo che coprono l'app e fanno fallire gli assert. Nascondili.
             adb shell settings put global hide_error_dialogs 1 || true

@@ -1,0 +1,128 @@
+appId: com.mirkobechini.pdfeditor
+name: PdfEditor Mobile
+---
+# T4 perimetro 2 (issue #923): merge di 2 PDF dal flusso Tools.
+# Asset: e2e-upload.pdf + e2e-merge.pdf (pushati in /sdcard/Download/ in CI).
+# Successo = il file merged_YYYY-MM-DD.pdf compare nella lista Tools.
+
+- launchApp:
+    clearState: true
+# Onboarding (prima installazione): skip se presente
+- extendedWaitUntil:
+    visible: "Salta|Skip|Continue as Guest|Continua come Ospite|Email"
+    timeout: 120000
+- runFlow:
+    when:
+      visible: "Salta|Skip"
+    commands:
+      - tapOn: "Salta|Skip"
+      - extendedWaitUntil:
+          visible: "Continue as Guest|Continua come Ospite|Email"
+          timeout: 30000
+# Sessione: login come ospite
+- tapOn: "Continue as Guest|Continua come Ospite"
+- extendedWaitUntil:
+    visible: "fab-add-pdf|Add PDF|Upload from device"
+    timeout: 60000
+
+# ─── Upload PDF #1 (e2e-upload.pdf) ───
+- tapOn:
+    id: "fab-add-pdf"
+- extendedWaitUntil:
+    visible: "Upload from device|Carica dal dispositivo"
+    timeout: 10000
+- tapOn: "Upload from device|Carica dal dispositivo"
+- extendedWaitUntil:
+    visible: "Show roots|Downloads|e2e-upload.pdf"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Show roots"
+    commands:
+      - tapOn: "Show roots"
+      - extendedWaitUntil:
+          visible: "Downloads"
+          timeout: 10000
+      - tapOn: "Downloads"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 20000
+- tapOn: "e2e-upload.pdf"
+- runFlow:
+    when:
+      visible: "Sync to cloud?"
+    commands:
+      - tapOn: "No"
+- extendedWaitUntil:
+    visible: "1 / 1"
+    timeout: 90000
+- back
+- extendedWaitUntil:
+    visible: "fab-add-pdf|tools-button|Add PDF"
+    timeout: 30000
+
+# ─── Upload PDF #2 (e2e-merge.pdf) ───
+- tapOn:
+    id: "fab-add-pdf"
+- extendedWaitUntil:
+    visible: "Upload from device|Carica dal dispositivo"
+    timeout: 10000
+- tapOn: "Upload from device|Carica dal dispositivo"
+- extendedWaitUntil:
+    visible: "Show roots|Downloads|e2e-merge.pdf"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Show roots"
+    commands:
+      - tapOn: "Show roots"
+      - extendedWaitUntil:
+          visible: "Downloads"
+          timeout: 10000
+      - tapOn: "Downloads"
+- extendedWaitUntil:
+    visible: "e2e-merge.pdf"
+    timeout: 20000
+- tapOn: "e2e-merge.pdf"
+- runFlow:
+    when:
+      visible: "Sync to cloud?"
+    commands:
+      - tapOn: "No"
+- extendedWaitUntil:
+    visible: "1 / 1"
+    timeout: 90000
+- back
+- extendedWaitUntil:
+    visible: "tools-button|fab-add-pdf|Add PDF"
+    timeout: 30000
+
+# ─── Tools → Merge → seleziona i 2 PDF ───
+- tapOn:
+    id: "tools-button"
+- extendedWaitUntil:
+    visible: "PDF Tools|Merge"
+    timeout: 20000
+- tapOn:
+    id: "tool-merge"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf|e2e-merge.pdf"
+    timeout: 20000
+# Seleziona entrambi i PDF (toggle)
+- tapOn: "e2e-upload.pdf"
+- tapOn: "e2e-merge.pdf"
+# Bottone "Merge 2 PDFs" appare con 2 selezionati
+- extendedWaitUntil:
+    visible: "Merge 2 PDFs"
+    timeout: 15000
+- tapOn: "Merge 2 PDFs"
+# Name dialog (nome opzionale) → Save con default
+- extendedWaitUntil:
+    visible: "Name your PDF"
+    timeout: 20000
+- tapOn: "Save"
+# Successo: snackbar "Merged into: ..." + file merged_* in lista
+- extendedWaitUntil:
+    visible: "merged_.*"
+    timeout: 60000
+- assertVisible: "merged_.*"

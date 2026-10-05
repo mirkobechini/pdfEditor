@@ -1,0 +1,92 @@
+appId: com.mirkobechini.pdfeditor
+name: PdfEditor Mobile
+---
+# T4 perimetro 2 (issue #923): split di un PDF dal flusso Tools.
+# Asset: e2e-upload.pdf (1 pagina). Successo = il file split_1_YYYY-MM-DD.pdf
+# compare nella lista Tools dopo l'estrazione della pagina selezionata.
+
+- launchApp:
+    clearState: true
+# Onboarding (prima installazione): skip se presente
+- extendedWaitUntil:
+    visible: "Salta|Skip|Continue as Guest|Continua come Ospite|Email"
+    timeout: 120000
+- runFlow:
+    when:
+      visible: "Salta|Skip"
+    commands:
+      - tapOn: "Salta|Skip"
+      - extendedWaitUntil:
+          visible: "Continue as Guest|Continua come Ospite|Email"
+          timeout: 30000
+# Sessione: login come ospite
+- tapOn: "Continue as Guest|Continua come Ospite"
+- extendedWaitUntil:
+    visible: "fab-add-pdf|Add PDF|Upload from device"
+    timeout: 60000
+# Upload del PDF di test
+- tapOn:
+    id: "fab-add-pdf"
+- extendedWaitUntil:
+    visible: "Upload from device|Carica dal dispositivo"
+    timeout: 10000
+- tapOn: "Upload from device|Carica dal dispositivo"
+- extendedWaitUntil:
+    visible: "Show roots|Downloads|e2e-upload.pdf"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Show roots"
+    commands:
+      - tapOn: "Show roots"
+      - extendedWaitUntil:
+          visible: "Downloads"
+          timeout: 10000
+      - tapOn: "Downloads"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 20000
+- tapOn: "e2e-upload.pdf"
+- runFlow:
+    when:
+      visible: "Sync to cloud?"
+    commands:
+      - tapOn: "No"
+- extendedWaitUntil:
+    visible: "1 / 1"
+    timeout: 90000
+- back
+- extendedWaitUntil:
+    visible: "tools-button|fab-add-pdf|Add PDF"
+    timeout: 30000
+# Tools → Split → seleziona il PDF
+- tapOn:
+    id: "tools-button"
+- extendedWaitUntil:
+    visible: "PDF Tools|Split"
+    timeout: 20000
+- tapOn:
+    id: "tool-split"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 20000
+- tapOn: "e2e-upload.pdf"
+# Split dialog: seleziona la pagina 1 (PDF di test = 1 pagina)
+- extendedWaitUntil:
+    visible: "Split|Select pages to extract"
+    timeout: 20000
+- tapOn: "1"
+- extendedWaitUntil:
+    visible: "Extract 1 pages"
+    timeout: 15000
+- tapOn: "Extract 1 pages"
+# Name dialog → Save (nome opzionale di default)
+- extendedWaitUntil:
+    visible: "Name your PDF"
+    timeout: 20000
+- tapOn: "Save"
+# Successo: snackbar "Split into ..." + file split_1_* in lista
+- extendedWaitUntil:
+    visible: "split_1_.*"
+    timeout: 60000
+- assertVisible: "split_1_.*"
