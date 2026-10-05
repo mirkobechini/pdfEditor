@@ -21,7 +21,7 @@ name: PdfEditor Mobile
           visible: "Email|Continue as Guest|Continua come Ospite"
           timeout: 10000
 # Registrazione (stessa procedura di auth.yaml, selettori bilingue en/it)
-- evalScript: ${output = { email: "e2e_sync_" + Date.now() + "@test.com" }}
+- evalScript: "${output = { email: 'e2e_sync_' + Date.now() + '@test.com' }}"
 - tapOn: "Don't have an account? Register|Non hai un account? Registrati"
 - assertVisible: "Full Name|Nome Completo"
 - tapOn: "Full Name|Nome Completo"
