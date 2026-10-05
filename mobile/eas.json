@@ -17,7 +17,7 @@
         "buildType": "apk"
       },
       "cache": {
-        "caches": ["npm", "gradle", "maven"]
+        "disabled": false
       }
     }
   },
