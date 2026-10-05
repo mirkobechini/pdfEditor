@@ -208,14 +208,14 @@ export default function SignFlowDialog({ visible, pdfId, pdfName, pdfUri, totalP
                 {step === "choose" ? (
                     <Dialog.Actions>
                         <Button onPress={onDismiss}>{t("common.cancel")}</Button>
-                        <Button onPress={handleNext} disabled={source === "gallery" && !signatureB64}>
+                        <Button testID="sign-next" onPress={handleNext} disabled={source === "gallery" && !signatureB64}>
                             {t("tools.signNext")}
                         </Button>
                     </Dialog.Actions>
                 ) : (
                     <Dialog.Actions>
                         <Button onPress={() => setStep("choose")}>{t("tools.signBack")}</Button>
-                        <Button onPress={handleConfirm} loading={signing} disabled={signing}>
+                        <Button testID="sign-confirm" onPress={handleConfirm} loading={signing} disabled={signing}>
                             {t("tools.signAction")}
                         </Button>
                     </Dialog.Actions>

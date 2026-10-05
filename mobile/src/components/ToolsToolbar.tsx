@@ -88,6 +88,7 @@ export default function ToolsToolbar({ s }: { s: ToolsScreenState }) {
                 <Button
                     mode={s.operation === "sign" ? "contained" : "outlined"}
                     compact
+                    testID="tool-sign"
                     buttonColor={s.operation === "sign" ? theme.colors.primary : undefined}
                     textColor={s.operation === "sign" ? "#fff" : theme.colors.primary}
                     onPress={() => { s.setOperation("sign"); s.setSelectedIds([]); }}

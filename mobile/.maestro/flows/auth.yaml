@@ -4,7 +4,8 @@ name: PdfEditor Mobile
 # Tranche 3 — flusso auth: registrazione utente e2e → home con lista vuota.
 # (perimetro 1, issue #919). Email univoca per esecuzione.
 - evalScript: ${output = { email: "e2e_" + Date.now() + "@test.com" }}
-- launchApp
+- launchApp:
+    clearState: true
 - extendedWaitUntil:
     visible: "Salta|Email"
     timeout: 20000

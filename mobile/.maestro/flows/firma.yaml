@@ -1,0 +1,119 @@
+appId: com.mirkobechini.pdfeditor
+name: PdfEditor Mobile
+---
+# T2 perimetro 2 (issue #923): firma un PDF dal flusso Tools.
+# Gira sempre con il backend locale di CI (T0-backend, opzione 2).
+# Dichiarazione di successo: dialog "Rename PDF" si apre dopo la firma
+# (handleSigned → openRenameDialog) e il PDF firmato "signed_*.pdf"
+# compare nella lista Tools (signPdf → signed_YYYY-MM-DD.pdf).
+
+- launchApp:
+    clearState: true
+# Onboarding (solo alla prima installazione): skip se presente
+- extendedWaitUntil:
+    visible: "Salta|Skip|Continue as Guest|Continua come Ospite|Email"
+    timeout: 120000
+- runFlow:
+    when:
+      visible: "Salta|Skip"
+    commands:
+      - tapOn: "Salta|Skip"
+      - extendedWaitUntil:
+          visible: "Continue as Guest|Continua come Ospite|Email"
+          timeout: 30000
+# Sessione: login come ospite
+- tapOn: "Continue as Guest|Continua come Ospite"
+- extendedWaitUntil:
+    visible: "fab-add-pdf|Add PDF|Upload from device"
+    timeout: 60000
+# Upload del PDF di test (stessa procedura di upload-viewer.yaml)
+- tapOn:
+    id: "fab-add-pdf"
+- extendedWaitUntil:
+    visible: "Upload from device|Carica dal dispositivo"
+    timeout: 10000
+- tapOn: "Upload from device|Carica dal dispositivo"
+- extendedWaitUntil:
+    visible: "Show roots|Downloads|e2e-upload.pdf"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Show roots"
+    commands:
+      - tapOn: "Show roots"
+      - extendedWaitUntil:
+          visible: "Downloads"
+          timeout: 10000
+      - tapOn: "Downloads"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 20000
+- tapOn: "e2e-upload.pdf"
+# Possibile dialog "Sync to cloud?" → No, poi il viewer si apre
+- runFlow:
+    when:
+      visible: "Sync to cloud?"
+    commands:
+      - tapOn: "No"
+- extendedWaitUntil:
+    visible: "1 / 1"
+    timeout: 90000
+# Torna alla Home (back di Android)
+- back
+- extendedWaitUntil:
+    visible: "fab-add-pdf|tools-button|Add PDF"
+    timeout: 30000
+# Home → Tools (chiave inglese, testID aggiunto per Maestro)
+- tapOn:
+    id: "tools-button"
+- extendedWaitUntil:
+    visible: "PDF Tools|Sign"
+    timeout: 20000
+# Seleziona l'operazione Sign
+- tapOn:
+    id: "tool-sign"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 20000
+# Seleziona il PDF → si apre SignFlowDialog
+- tapOn: "e2e-upload.pdf"
+- extendedWaitUntil:
+    visible: "Sign PDF"
+    timeout: 20000
+# Disegna una firma sul pad (alcuni tratti nella zona del pad)
+- swipe:
+    start: "25%, 45%"
+    end: "45%, 55%"
+    duration: 400
+- swipe:
+    start: "45%, 55%"
+    end: "68%, 42%"
+    duration: 400
+- swipe:
+    start: "68%, 42%"
+    end: "80%, 50%"
+    duration: 300
+- swipe:
+    start: "30%, 52%"
+    end: "70%, 52%"
+    duration: 500
+# Avanti → schermata posizione
+- tapOn:
+    id: "sign-next"
+- extendedWaitUntil:
+    visible: "Drag to move|Trascina per spostare|sign-confirm|Sign"
+    timeout: 20000
+# Conferma la firma (posizione di default, salva)
+- tapOn:
+    id: "sign-confirm"
+# Prova di successo: si apre il rename dialog del PDF firmato
+- extendedWaitUntil:
+    visible: "Rename PDF"
+    timeout: 60000
+# Chiudi il rename dialog (annulla il rename)
+- tapOn: "Cancel|Annulla"
+# Il PDF firmato compare nella lista Tools (signed_*.pdf)
+- extendedWaitUntil:
+    visible: "signed_.*"
+    timeout: 30000
+- assertVisible: "signed_.*"

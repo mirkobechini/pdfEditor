@@ -11,7 +11,8 @@ name: PdfEditor Mobile
 # (ubuntu-24.04, swiftshader, 2 core) boot 277s + install APK 230s: il primo
 # render dell'app supera i 3 minuti. Timeout primo render a 300s. Se fallisce
 # ANCORA non è lentezza: il workflow cattura screenshot+uiautomator+logcat.
-- launchApp
+- launchApp:
+    clearState: true
 - extendedWaitUntil:
     visible: "Continue as Guest|Continua come Ospite|Email|Salta|Skip"
     timeout: 300000

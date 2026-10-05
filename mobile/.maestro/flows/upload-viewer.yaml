@@ -6,7 +6,8 @@ name: PdfEditor Mobile
 # niente account/guest veri sul DB di produzione.
 # Asset: mobile/.maestro/assets/e2e-upload.pdf (adb push su /sdcard/Download/ in CI).
 
-- launchApp
+- launchApp:
+    clearState: true
 # Onboarding (solo alla prima installazione): skip se presente
 - extendedWaitUntil:
     visible: "Salta|Skip|Continue as Guest|Continua come Ospite|Email"

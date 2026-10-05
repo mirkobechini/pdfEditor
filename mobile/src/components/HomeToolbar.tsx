@@ -26,7 +26,7 @@ export default function HomeToolbar({ s }: { s: HomeScreenState }) {
                     <IconButton icon="close" onPress={s.exitMultiSelect} />
                 ) : null}
                 {!s.multiSelect && (
-                    <IconButton icon="wrench" onPress={s.goToTools} />
+                    <IconButton icon="wrench" testID="tools-button" onPress={s.goToTools} />
                 )}
             </View>
 
