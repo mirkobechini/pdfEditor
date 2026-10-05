@@ -1,8 +1,8 @@
 # Architecture Decision Record — Mobile (React Native / Expo)
 
 **Progetto:** PdfEditor — App mobile
-**Data:** 2026-08-07 (ultimo aggiornamento 2026-09-30)
-**Versioni ADR incluse:** v1.0 (Fase 4 — MVP completato + bug fix + offline auth)
+**Data:** 2026-08-07 (ultimo aggiornamento 2026-10-05)
+**Versioni ADR incluse:** v1.0 (Fase 4 — MVP completato + bug fix + offline auth) · v0.2.3
 **Autore:** Mirko Bechini
 
 > Questo è l'ADR **dedicato al mobile**. Le scelte cross-platform (auth, API client, error-map, types, licenze) sono in [`ADR.md`](../ADR.md) alla radice. Questo documento copre SOLO le decisioni specifiche dell'app mobile.
@@ -81,7 +81,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 | Google OAuth via `expo-auth-session`                 | Solo email/password            | Login Google su mobile con client ID Android/iOS dedicati (in `app.json` → `extra.googleClientId`). Il backend accetta l'audience Android (`GOOGLE_ANDROID_CLIENT_ID`). PR #751, #755, #756.                                                                                                    |
 | `i18next` + `react-i18next` + `expo-localization`    | next-intl (web)                | i18n leggero per React Native, con rilevamento lingua sistema tramite expo-localization.                                                                                                                                                                                                        |
 | `react-native-paper` MD3 tema dinamico               | Temi separati custom           | Paper Provider con tema live-switching (light/dark/system) gestito da AppSettingsContextuseCallback/useMemo.                                                                                                                                                                                    |
-| Auth: `loading` separato da `actionLoading`          | `loading: actionLoading        |                                                                                                                                                                                                                                                                                                 | loading` | Separazione evita che l'overlay di login venga coperto dalla schermata di caricamento della navigazione. |
+| Auth: `loading` separato da `actionLoading` | Un unico stato `loading` condiviso | Separazione evita che l'overlay di login venga coperto dalla schermata di caricamento della navigazione |
 | AsyncStorage per tema + lingua + sync preferenze     | Expo SecureStore               | Dati non sensibili, persistenza semplice. Include CSRF token, sync mode, sync on startup.                                                                                                                                                                                                       |
 | CSRF token persistito in AsyncStorage                | Solo cookie                    | Su RN i cookie non funzionano come su web. Il CSRF token salvato in storage viene ripristinato al riavvio (fix 403 CSRF).                                                                                                                                                                       |
 | Sync per-PDF (menu contestuale + dialog post-upload) | Sync automatico globale        | Ogni PDF può essere caricato/rimosso dal cloud singolarmente dal menu long press. Dopo l'upload un dialog chiede se sincronizzare subito.                                                                                                                                                       |
@@ -104,7 +104,9 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 
 ## Auth (mobile)
 
-- **Cloud-only**: `api.ts` punta a `https://pdfeditor-api.mirkobechini.com` con `CLOUD_API_URL`.
+- **Cloud-only**: `api.ts` usa `CLOUD_API_URL` con override `process.env.EXPO_PUBLIC_API_URL`
+  (fallback `https://pdfeditor-api.mirkobechini.com` — l'override punta l'APK di test al backend
+  locale in CI, vedi ADR.md "e2e mobile con backend di test" opzione 2).
 - **Flussi**: email/password (login/register) + **guest** (login senza credenziali).
 - **Persistenza**: JWT salvato in AsyncStorage (`REMEMBER_TOKEN_KEY`), CSRF token in `CSRF_TOKEN_KEY`, utente in cache (`REMEMBER_USER_KEY`).
 - **Offline restore**: al riavvio, ripristina JWT + CSRF token + utente in cache. Se il token è scaduto ma l'utente è in cache, mostra l'utente reale (non solo guest).
@@ -144,7 +146,6 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 
 - JWT refresh automatico (✅ implementato — issue #623, endpoint `/auth/refresh` + retry automatico su tutte le piattaforme)
 - Modalità sync auto/ibrido/chiedi collegati alle operazioni (solo "differito" attivo)
-- EAS CI Integration (F2 — pianificato)
 - Rework UI completo con design Penpot (F8 — priorità alta futura)
 
 ---
@@ -154,7 +155,7 @@ Completare la Fase 4 della roadmap: portare l'editing PDF su mobile. Il mobile �
 | Fase                             | Descrizione                                                                   | Stato                      |
 | -------------------------------- | ----------------------------------------------------------------------------- | -------------------------- |
 | **Fase 4 — MVP**                 | Setup Expo + auth + upload + viewer + scanner + editing pdf-lib + EAS APK     | ✅ Completata (issue #611) |
-| **Fase 4b — EAS CI Integration** | Collegare EAS Build a GitHub Actions per build automatica su tag release      | ⬜ In piano (F2)           |
+| **Fase 4b — EAS CI Integration** | Collegare EAS Build a GitHub Actions per build automatica su tag release      | ✅ Attiva (workflow `release-mobile.yml`, trigger tag `v*-mobile`; build EAS verificate sui tag dal 08/2026) |
 | **Migliorie post-MVP**           | Metadata (✅), password (✅), sync hook, refresh, search, thumbnail, snackbar | Completati (issue #618)    |
 | **Issue #622**                   | B1-B3 + S1-S2 (i18n, tema, bug fix)                                           | ✅ Completata              |
 | **Issue #619**                   | Cloud sync + onboarding wizard + dialog conflitti/import/delete               | ✅ Completata              |

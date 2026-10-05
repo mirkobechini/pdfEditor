@@ -1,8 +1,8 @@
 # Architecture Decision Record
 
 **Progetto:** PdfEditor
-**Data:** 2026-06-25 (ultimo aggiornamento 2026-10-03)
-**Versioni ADR incluse:** v0.1.24 → v0.1.40
+**Data:** 2026-06-25 (ultimo aggiornamento 2026-10-05)
+**Versioni ADR incluse:** v0.1.24 → v0.1.39 (web/desktop) · mobile v0.2.3
 **Autore:** Mirko Bechini
 
 ## Decisione
@@ -14,6 +14,46 @@ Applicazione cross-platform per la modifica e gestione di file PDF, con funziona
 ## Contesto
 
 Creare un'applicazione PDF editor che funzioni offline come priorità (desktop), con estensione al web e successivamente al mobile. L'utente target è un utente tecnico che necessita di editing PDF avanzato senza dipendere da servizi cloud a pagamento. Il progetto è open source (licenza AGPL compatibile per PyMuPDF).
+
+---
+
+## 0. Architettura complessiva (monorepo)
+
+Il repository è un **monorepo** con un client per piattaforma e un backend condiviso (tutti i componenti importano i modelli backend senza duplicazioni):
+
+```
+┌─────────────┐  ┌──────────────────┐  ┌───────────────────┐
+│  Web (Next) │  │ Desktop (Tauri)  │  │ Mobile (Expo/RN)  │
+│ frontend/   │  │ desktop/frontend │  │ mobile/src/       │
+│ React 19    │  │ + sidecar FastAPI│  │ pdf-lib offline   │
+└──────┬──────┘  └────────┬─────────┘  └─────────┬─────────┘
+       │                  │                      │
+       └────────────┬─────┴──────────┬───────────┘
+                    ▼                ▼
+        ┌─────────────────┐  ┌────────────────────┐
+        │ shared/ (web+desktop) │  mobile/src/shared/  │
+        │ api/auth/types/error-map │  (client RN dedicato) │
+        └─────────────────┘  └────────────────────┘
+                    │
+                    ▼
+        ┌──────────────────────────┐
+        │   Backend FastAPI        │
+        │   backend/ (PyMuPDF)     │
+        │   auth · PDF · OCR ·     │
+        │   sync · storage · undo  │
+        └──────┬─────────┬─────────┘
+               ▼         ▼
+        PostgreSQL    Storage PDF
+        (Neon, cloud) (locale o S3/R2)
+```
+
+- **Web** (`frontend/`): Next.js 16 static export → il browser chiama il backend cloud.
+- **Desktop** (`desktop/`): frontend Next.js dedicato + **sidecar FastAPI locale** (PyInstaller, porta 7723) → funziona offline; auth mista locale→cloud.
+- **Mobile** (`mobile/`): Expo/RN offl-first — editing con pdf-lib, auth cloud-only, sync opzionale.
+- **Backend** (`backend/`): FastAPI con PyMuPDF — usa **lo stesso identico codice** per cloud, sidecar desktop ed e2e (pattern riuso totale).
+- **Test**: `e2e/` (web, 17 test) · `e2e-desktop/` (10 test) · CI separata per piattaforma (`ci-web.yml`, `ci-desktop.yml`, `ci-mobile.yml`).
+
+Vedi anche [`architecture.mmd`](./architecture.mmd) (diagramma Mermaid completo).
 
 ---
 
@@ -52,7 +92,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 | vitest + jsdom + @testing-library/react        | Jest, Cypress                             | Test frontend. Coverage ~75%.                                                                                                                                                                                                                                 |
 | vitest (desktop) + @testing-library/react      | —                                         | **897 test, 91.41% coverage** (issue #693). CI dedicata `ci-desktop.yml` con path filter. Tutti i file >= 90% (eccetto ReorderPagesModal, limite DnD in jsdom).                                                                                               |
 | CI strutturata per piattaforma                 | Singolo test.yml                          | `ci-web.yml` (backend+frontend), `ci-desktop.yml` (desktop), `ci-mobile.yml` (mobile). Ogni CI si attiva solo sui path della piattaforma.                                                                                                                     |
-| Playwright per test E2E cross-origin           | Solo test unitari                         | Suite E2E in `e2e/` (13 test) che copre i flussi cross-origin reali (cookie, CSRF, CORS) che i test unitari non possono verificare. Job `e2e` in `ci-web.yml` con `e2e/**` nei paths. Backend E2E con `DISABLE_LICENSE_ENFORCEMENT=true`. (issues #731, #736) |
+| Playwright per test E2E cross-origin           | Solo test unitari                         | Suite E2E in `e2e/` (**17 test, 6 spec**: auth, cloud-sync, csrf-cors, csrf-mutations, editor, pdf) che copre i flussi cross-origin reali (cookie, CSRF, CORS) non verificabili dai test unitari; + `e2e-desktop/` (**10 test, 5 spec**: auth, health, ocr, pdf, share) contro il sidecar locale. Job `e2e` in `ci-web.yml` e `e2e-desktop` in `ci-desktop.yml`. Backend E2E con `DISABLE_LICENSE_ENFORCEMENT=true`. (issues #731, #736) |
 | Dark mode con persistenza                      | localStorage + system preference fallback | —                                                                                                                                                                                                                                                             |
 
 ---
@@ -88,7 +128,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 | Scelta                                               | Alternativa                     | Motivo                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ---------------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth cloud su Neon per registrazione/login desktop   | Auth solo locale (SQLite)       | SQLite locale parte vuoto — nessun utente. Il frontend desktop chiama `https://pdeditor-backend.onrender.com/auth/*` per login/register. Le operazioni PDF restano sul sidecar locale.                                                                                                                                                                                                                     |
+| Auth cloud su Neon per registrazione/login desktop   | Auth solo locale (SQLite)       | SQLite locale parte vuoto — nessun utente. Il frontend desktop chiama `https://pdfeditor-api.mirkobechini.com/auth/*` per login/register (via `getCloudApiBaseUrl()` in `desktop/frontend/src/shared/tauri.ts`). Le operazioni PDF restano sul sidecar locale.                                                                                                                                                                                                                     |
 | Fallback auth: locale → cloud                        | Solo cloud                      | `GET /auth/me` prova prima il sidecar locale (127.0.0.1:7723), se fallisce prova il cloud. Così l'app funziona offline se il JWT è in cache.                                                                                                                                                                                                                                                               |
 | Auth offline via Tauri store plugin                  | Solo online                     | JWT cached in auth.json. App funzionante offline dopo primo login.                                                                                                                                                                                                                                                                                                                                         |
 | Modalità offline quando JWT scade                    | Force logout                    | Se il refresh token fallisce (nessuna connessione), l'app entra in modalità offline invece di fare logout. L'utente può comunque usare i PDF locali. Alla riconnessione, refresh automatico del JWT.                                                                                                                                                                                                       |
@@ -172,6 +212,30 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ---
 
+## 6. Salvataggio e gestione dei PDF (come funziona)
+
+> Sezione aggiunta 2026-10-05 (allineamento ADR al codice reale — `backend/app/core/storage.py`, `backend/app/models/pdf.py`, `backend/app/core/config.py`).
+
+### Backend (comune a cloud, sidecar desktop ed e2e)
+
+- **Storage dei file**: `storage.py` espone `save_pdf()` / `get_file_content()` / `delete_pdf()` con backend duale:
+  - **Locale** (default): `UPLOAD_DIR` → `<_app_data_dir>/storage/pdfs/<uuid>.pdf` (il nome file sul disco è un UUID, mai il nome originale).
+  - **S3/Cloudflare R2**: se `STORAGE_BACKEND=s3` e `S3_BUCKET` valorizzato (web in produzione), delega a `s3_storage.py` (`s3_upload`/`s3_download`/`s3_delete`).
+- **Metadati nel DB** (`pdf_documents`): id (UUID, PK da sync bidirezionale), `user_id` (ogni PDF appartiene a un utente), `original_filename`, `storage_filename` (nome UUID su disco/S3), `file_size`, `page_count`, `title`/`author`, `is_password_protected`, `pdf_creation_date`, `upload_source` (`web`/`desktop`/`mobile`).
+- **Snapshot per undo/redo**: prima di ogni modifica viene salvato uno snapshot in `storage/snapshots/<pdf_id>/<timestamp>.pdf` (o chiavi S3 equivalenti); vengono conservati al massimo `MAX_SNAPSHOTS` (default 10, configurabile via env) — vedi `MAX_SNAPSHOTS` in `config.py` e le funzioni `save_snapshot`/`get_latest_snapshot`/`pop_latest_snapshot`/`clear_snapshots`.
+
+### Client
+
+| Piattaforma | Dove salva i PDF | Metadati | Note |
+| ----------- | ---------------- | -------- | ---- |
+| **Web** | Backend cloud (`storage.py`, locale/S3 a seconda della config) | PostgreSQL (Neon) | Ogni operazione PDF passa dal backend (upload/download/elaborazione) |
+| **Desktop** | Sidecar FastAPI locale: `UPLOAD_DIR` dell'app data dir + SQLite locale | SQLite locale (`pdfeditor.db`) + sync user cloud via `/auth/sync` | Offline-first; le operazioni restano sul sidecar (porta 7723), auth mista locale→cloud |
+| **Mobile** | `Paths.document/pdfs/<id>.pdf` (expo-file-system) | SQLite `pdfeditor.db` (`expo-sqlite`, tabella `pdfs`) | Editing offline con pdf-lib; sync cloud opzionale per-PDF; auth cloud-only |
+
+- **Sync**: i PDF hanno id diversi in locale (`LocalPdf.id`) e sul cloud (`LocalPdf.cloud_id`) — il dedup usa sempre `getLocalPdfByCloudId()`. Il mobile sincronizza per-PDF (menu contestuale / dialog post-upload); il desktop sincronizza l'utente e i PDF verso il cloud.
+
+---
+
 ## Decisioni deprecate
 
 | Scelta deprecata                                                | Sostituita da                          | Data                    |
@@ -204,7 +268,7 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 
 ## Decisione documentata (2026-10-03): e2e mobile con backend di test
 
-**Scelta: opzione 1 — override env + backend di test** (deciso con Mirko per l'e2e mobile, issue #919).
+**Scelta iniziale: opzione 1 — override env + backend di test** (deciso con Mirko per l'e2e mobile, issue #919).
 
 - L'app mobile hardcoda l'URL del backend cloud (`CLOUD_API_URL` in `mobile/src/shared/api.ts`,
   più un fetch diretto in `mobile/src/shared/auth.tsx`).
@@ -216,6 +280,13 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
   i flussi auth/upload/firma girano solo quando nel repo è configurata l'URL di test
   (es. secret `E2E_MOBILE_API_URL` passata a EAS build).
 - (Vedi `.specs/plans/issue-919-e2e-mobile.md` — piano locale, non versionato.)
+
+> **Aggiornamento 2026-10-05 (opzione 2, scelta finale — issue #923):** l'opzione 1 è stata
+> **sostituita** dal **backend locale in CI**: il job `e2e-mobile` avvia FastAPI+SQLite
+> (`uvicorn` su localhost:8000, `EXPO_PUBLIC_API_URL=http://10.0.2.2:8000` nell'APK di test,
+> `usesCleartextTraffic` abilitato solo per URL http locali via `app.config.js` condizionale) e
+> la **suite Maestro completa (11 flow) gira a ogni push** — zero servizi esterni, mai produzione.
+> Vedi `.specs/plans/issue-923-e2e-mobile-perimetro2.md` (piano locale).
 
 ## Decisione documentata (2026-10-03): guardia anti-produzione registrazione
 
