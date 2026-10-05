@@ -168,7 +168,11 @@ jobs:
             # la suite COMPLETA gira sempre a ogni push. Mai produzione.
             set +e
             echo "Eseguo la suite completa (backend locale)"
-            "$HOME/.maestro/bin/maestro" test .maestro --format junit --output e2e-results.xml
+            # I flow vivono in .maestro/flows/: puntare .maestro (config+assets)
+            # fa fallire Maestro con "Top-level directories do not contain any Flows"
+            # (verificato 05/10, run 37356399818). Il config.yaml viene scoperto
+            # risalendo l'albero delle directory a partire da .maestro/flows.
+            "$HOME/.maestro/bin/maestro" test .maestro/flows --format junit --output e2e-results.xml
             EC=$?
             set -e
             echo "Maestro exit code: $EC"
