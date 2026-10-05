@@ -1,0 +1,85 @@
+appId: com.mirkobechini.pdfeditor
+name: PdfEditor Mobile
+---
+# T7 perimetro 2 (issue #923): cloud sync dopo l'upload con utente registrato.
+# I guest non sincronizzano (useCloudSync: isGuest -> no sync), quindi questo
+# flusso registra un utente e2e come auth.yaml. Dopo l'upload: dialog
+# "Sync to cloud?" -> Yes -> il PDF va sul backend locale (T0) e torna con
+# cloud_synced=1: nel menu contestuale compare "Remove from cloud".
+
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Salta|Skip|Email|Continue as Guest|Continua come Ospite"
+    timeout: 120000
+- runFlow:
+    when:
+      visible: "Salta|Skip"
+    commands:
+      - tapOn: "Salta|Skip"
+      - extendedWaitUntil:
+          visible: "Email|Continue as Guest|Continua come Ospite"
+          timeout: 10000
+# Registrazione (stessa procedura di auth.yaml, selettori bilingue en/it)
+- evalScript: ${output = { email: "e2e_sync_" + Date.now() + "@test.com" }}
+- tapOn: "Don't have an account? Register|Non hai un account? Registrati"
+- assertVisible: "Full Name|Nome Completo"
+- tapOn: "Full Name|Nome Completo"
+- inputText: "E2E Sync User"
+- hideKeyboard
+- tapOn: "Email"
+- eraseText
+- inputText: ${output.email}
+- hideKeyboard
+- tapOn: "Password"
+- eraseText
+- inputText: "Password123"
+- hideKeyboard
+- tapOn: "Register|Registrati"
+- extendedWaitUntil:
+    visible: "No PDFs yet|Nessun PDF|Editor"
+    timeout: 30000
+# Upload del PDF di test
+- tapOn:
+    id: "fab-add-pdf"
+- extendedWaitUntil:
+    visible: "Upload from device|Carica dal dispositivo"
+    timeout: 10000
+- tapOn: "Upload from device|Carica dal dispositivo"
+- extendedWaitUntil:
+    visible: "Show roots|Downloads|e2e-upload.pdf"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Show roots"
+    commands:
+      - tapOn: "Show roots"
+      - extendedWaitUntil:
+          visible: "Downloads"
+          timeout: 10000
+      - tapOn: "Downloads"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 20000
+- tapOn: "e2e-upload.pdf"
+# Dialog "Sync to cloud?" -> Yes (utente registrato: sync abilitata di default)
+- extendedWaitUntil:
+    visible: "Sync to cloud?"
+    timeout: 20000
+- tapOn: "Yes|Sì"
+# Attesa upload+sync -> apertura viewer
+- extendedWaitUntil:
+    visible: "1 / 1"
+    timeout: 90000
+- back
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 30000
+# Prova di sync riuscita: long-press -> menu contestuale con "Remove from cloud"
+- longPressOn: "e2e-upload.pdf"
+- extendedWaitUntil:
+    visible: "Remove from cloud"
+    timeout: 30000
+- assertVisible: "Remove from cloud"
+# Chiudi il menu (back)
+- back
