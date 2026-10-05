@@ -112,6 +112,7 @@ export default function ToolsToolbar({ s }: { s: ToolsScreenState }) {
                 <Button
                     mode={s.operation === "ocr" ? "contained" : "outlined"}
                     compact
+                    testID="tool-ocr"
                     buttonColor={s.operation === "ocr" ? theme.colors.primary : undefined}
                     textColor={s.operation === "ocr" ? "#fff" : theme.colors.primary}
                     onPress={() => { s.setOperation("ocr"); s.setSelectedIds([]); }}
