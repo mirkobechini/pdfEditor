@@ -59,7 +59,8 @@ jobs:
       - name: Setup Java (build APK locale)
         # Build locale dell'APK sul runner GitHub (JDK + Android SDK preinstallati):
         # niente EAS nel percorso di test -> niente coda free tier (fix 05/10, issue #923).
-        uses: actions/setup-java@v7
+        # NB: setup-java ha versioni proprie (v4), non v7 come checkout/setup-node.
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
