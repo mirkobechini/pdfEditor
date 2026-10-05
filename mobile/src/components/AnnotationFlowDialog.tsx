@@ -155,7 +155,7 @@ export default function AnnotationFlowDialog({ visible, pdfId, pdfName, pdfUri, 
                 </Dialog.ScrollArea>
                 <Dialog.Actions>
                     <Button onPress={onDismiss}>{t("common.cancel")}</Button>
-                    <Button onPress={handleSave} loading={saving} disabled={saving}>
+                    <Button testID="annotation-save" onPress={handleSave} loading={saving} disabled={saving}>
                         {t("tools.annotationSave")}
                     </Button>
                 </Dialog.Actions>

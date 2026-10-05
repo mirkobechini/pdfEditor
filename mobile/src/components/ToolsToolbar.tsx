@@ -98,6 +98,7 @@ export default function ToolsToolbar({ s }: { s: ToolsScreenState }) {
                 <Button
                     mode={s.operation === "annotate" ? "contained" : "outlined"}
                     compact
+                    testID="tool-annotate"
                     buttonColor={s.operation === "annotate" ? theme.colors.primary : undefined}
                     textColor={s.operation === "annotate" ? "#fff" : theme.colors.primary}
                     onPress={() => { s.setOperation("annotate"); s.setSelectedIds([]); }}

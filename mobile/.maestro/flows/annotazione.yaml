@@ -1,0 +1,88 @@
+appId: com.mirkobechini.pdfeditor
+name: PdfEditor Mobile
+---
+# T3 perimetro 2 (issue #923): aggiunge un'annotazione (highlight default) a un PDF.
+# Gira sempre con il backend locale di CI (T0-backend). Successo = compare il
+# rename dialog (handleAnnotationSaved → openRenameDialog) dopo il Save.
+
+- launchApp:
+    clearState: true
+# Onboarding (prima installazione): skip se presente
+- extendedWaitUntil:
+    visible: "Salta|Skip|Continue as Guest|Continua come Ospite|Email"
+    timeout: 120000
+- runFlow:
+    when:
+      visible: "Salta|Skip"
+    commands:
+      - tapOn: "Salta|Skip"
+      - extendedWaitUntil:
+          visible: "Continue as Guest|Continua come Ospite|Email"
+          timeout: 30000
+# Sessione: login come ospite
+- tapOn: "Continue as Guest|Continua come Ospite"
+- extendedWaitUntil:
+    visible: "fab-add-pdf|Add PDF|Upload from device"
+    timeout: 60000
+# Upload del PDF di test
+- tapOn:
+    id: "fab-add-pdf"
+- extendedWaitUntil:
+    visible: "Upload from device|Carica dal dispositivo"
+    timeout: 10000
+- tapOn: "Upload from device|Carica dal dispositivo"
+- extendedWaitUntil:
+    visible: "Show roots|Downloads|e2e-upload.pdf"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Show roots"
+    commands:
+      - tapOn: "Show roots"
+      - extendedWaitUntil:
+          visible: "Downloads"
+          timeout: 10000
+      - tapOn: "Downloads"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 20000
+- tapOn: "e2e-upload.pdf"
+# Possibile dialog "Sync to cloud?" → No, poi il viewer si apre
+- runFlow:
+    when:
+      visible: "Sync to cloud?"
+    commands:
+      - tapOn: "No"
+- extendedWaitUntil:
+    visible: "1 / 1"
+    timeout: 90000
+# Torna alla Home → Tools
+- back
+- extendedWaitUntil:
+    visible: "fab-add-pdf|tools-button|Add PDF"
+    timeout: 30000
+- tapOn:
+    id: "tools-button"
+- extendedWaitUntil:
+    visible: "PDF Tools|Annotate"
+    timeout: 20000
+# Seleziona l'operazione Annotate
+- tapOn:
+    id: "tool-annotate"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 20000
+# Seleziona il PDF → AnnotationFlowDialog (tipo default = Highlight)
+- tapOn: "e2e-upload.pdf"
+- extendedWaitUntil:
+    visible: "Add annotation"
+    timeout: 20000
+- assertVisible: "Highlight"
+# Salva l'annotazione (posizione/colore default)
+- tapOn:
+    id: "annotation-save"
+# Prova di successo: si apre il rename dialog del PDF annotato
+- extendedWaitUntil:
+    visible: "Rename PDF"
+    timeout: 60000
+- tapOn: "Cancel|Annulla"
