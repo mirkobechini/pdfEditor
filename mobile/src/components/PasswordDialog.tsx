@@ -24,6 +24,7 @@ export default function PasswordDialog({ s }: { s: ToolsScreenState }) {
                     </Text>
                     <TextInput
                         label={t("tools.passwordHint")}
+                        testID="password-input"
                         value={s.passwordInput}
                         onChangeText={s.setPasswordInput}
                         mode="outlined"
@@ -33,6 +34,7 @@ export default function PasswordDialog({ s }: { s: ToolsScreenState }) {
                     {isProtect && (
                         <TextInput
                             label={t("tools.confirmPassword")}
+                            testID="password-confirm-input"
                             value={s.passwordConfirm}
                             onChangeText={s.setPasswordConfirm}
                             mode="outlined"
@@ -42,7 +44,7 @@ export default function PasswordDialog({ s }: { s: ToolsScreenState }) {
                 </Dialog.Content>
                 <Dialog.Actions>
                     <Button onPress={() => s.setPasswordDialog(null)}>{t("common.cancel")}</Button>
-                    <Button onPress={isProtect ? s.executeProtect : s.executeUnlock}>
+                    <Button testID="password-submit" onPress={isProtect ? s.executeProtect : s.executeUnlock}>
                         {isProtect ? t("tools.protect") : t("tools.unlockAction")}
                     </Button>
                 </Dialog.Actions>

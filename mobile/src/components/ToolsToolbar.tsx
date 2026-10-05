@@ -72,6 +72,7 @@ export default function ToolsToolbar({ s }: { s: ToolsScreenState }) {
                 <Button
                     mode={s.operation === "protect" ? "contained" : "outlined"}
                     compact
+                    testID="tool-protect"
                     buttonColor={s.operation === "protect" ? theme.colors.primary : undefined}
                     textColor={s.operation === "protect" ? "#fff" : theme.colors.primary}
                     onPress={() => { s.setOperation("protect"); s.setSelectedIds([]); }}
@@ -81,6 +82,7 @@ export default function ToolsToolbar({ s }: { s: ToolsScreenState }) {
                 <Button
                     mode={s.operation === "unlock" ? "contained" : "outlined"}
                     compact
+                    testID="tool-unlock"
                     buttonColor={s.operation === "unlock" ? theme.colors.primary : undefined}
                     textColor={s.operation === "unlock" ? "#fff" : theme.colors.primary}
                     onPress={() => { s.setOperation("unlock"); s.setSelectedIds([]); }}
