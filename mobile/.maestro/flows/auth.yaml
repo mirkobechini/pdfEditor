@@ -3,25 +3,26 @@ name: PdfEditor Mobile
 ---
 # Tranche 3 — flusso auth: registrazione utente e2e → home con lista vuota.
 # (perimetro 1, issue #919). Email univoca per esecuzione.
+# NOTA i18n: selettori bilingue — l'emulatore CI è in inglese (fix 05/10).
 - evalScript: ${output = { email: "e2e_" + Date.now() + "@test.com" }}
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: "Salta|Email"
+    visible: "Salta|Skip|Email|Continue as Guest|Continua come Ospite"
     timeout: 20000
 - runFlow:
     when:
-      visible: "Salta"
+      visible: "Salta|Skip"
     commands:
-      - tapOn: "Salta"
+      - tapOn: "Salta|Skip"
       - extendedWaitUntil:
-          visible: "Email|Continua come Ospite"
+          visible: "Email|Continue as Guest|Continua come Ospite"
           timeout: 10000
 # Passo al modulo Registrazione
-- tapOn: "Non hai un account? Registrati"
-- assertVisible: "Nome Completo"
+- tapOn: "Don't have an account? Register|Non hai un account? Registrati"
+- assertVisible: "Full Name|Nome Completo"
 # Compila i campi
-- tapOn: "Nome Completo"
+- tapOn: "Full Name|Nome Completo"
 - inputText: "E2E Mobile User"
 - hideKeyboard
 - tapOn: "Email"
@@ -33,9 +34,9 @@ name: PdfEditor Mobile
 - inputText: "Password123"
 - hideKeyboard
 # Invia
-- tapOn: "Registrati"
-# Attesa home con lista vuota
+- tapOn: "Register|Registrati"
+# Attesa home con lista vuota (bilingue: "No PDFs yet" / "Nessun PDF")
 - extendedWaitUntil:
-    visible: "Nessun PDF|Editor"
+    visible: "No PDFs yet|Nessun PDF|Editor"
     timeout: 30000
 - assertVisible: "Nessun PDF"
