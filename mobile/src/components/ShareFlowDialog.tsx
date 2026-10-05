@@ -122,7 +122,7 @@ export default function ShareFlowDialog({ visible, pdfId, pdfName, isOnline, onD
                                 <View style={{ marginTop: 12 }}>
                                     {links.map((link) => (
                                         <View key={link.token} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 6 }}>
-                                            <Text variant="bodySmall" numberOfLines={1} style={{ flex: 1 }}>
+                                            <Text variant="bodySmall" testID="share-link-url" numberOfLines={1} style={{ flex: 1 }}>
                                                 {link.url}
                                             </Text>
                                             <IconButton icon="share-variant" size={18} onPress={() => handleShareLink(link.url)} />

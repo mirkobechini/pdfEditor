@@ -122,6 +122,7 @@ export default function ToolsToolbar({ s }: { s: ToolsScreenState }) {
                 <Button
                     mode={s.operation === "share" ? "contained" : "outlined"}
                     compact
+                    testID="tool-share"
                     buttonColor={s.operation === "share" ? theme.colors.primary : undefined}
                     textColor={s.operation === "share" ? "#fff" : theme.colors.primary}
                     onPress={() => { s.setOperation("share"); s.setSelectedIds([]); }}

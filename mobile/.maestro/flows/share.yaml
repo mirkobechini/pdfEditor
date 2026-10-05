@@ -1,0 +1,85 @@
+appId: com.mirkobechini.pdfeditor
+name: PdfEditor Mobile
+---
+# T8 perimetro 2 (issue #923): share via link da Tools (richiede il backend
+# locale di CI — T0). Dopo "Create link" il link pubblico compare nel dialog.
+
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Salta|Skip|Continue as Guest|Continua come Ospite|Email"
+    timeout: 120000
+- runFlow:
+    when:
+      visible: "Salta|Skip"
+    commands:
+      - tapOn: "Salta|Skip"
+      - extendedWaitUntil:
+          visible: "Continue as Guest|Continua come Ospite|Email"
+          timeout: 30000
+# Sessione: guest (lo share via link non richiede account completo)
+- tapOn: "Continue as Guest|Continua come Ospite"
+- extendedWaitUntil:
+    visible: "fab-add-pdf|Add PDF|Upload from device"
+    timeout: 60000
+# Upload del PDF di test
+- tapOn:
+    id: "fab-add-pdf"
+- extendedWaitUntil:
+    visible: "Upload from device|Carica dal dispositivo"
+    timeout: 10000
+- tapOn: "Upload from device|Carica dal dispositivo"
+- extendedWaitUntil:
+    visible: "Show roots|Downloads|e2e-upload.pdf"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Show roots"
+    commands:
+      - tapOn: "Show roots"
+      - extendedWaitUntil:
+          visible: "Downloads"
+          timeout: 10000
+      - tapOn: "Downloads"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 20000
+- tapOn: "e2e-upload.pdf"
+- runFlow:
+    when:
+      visible: "Sync to cloud?"
+    commands:
+      - tapOn: "No"
+- extendedWaitUntil:
+    visible: "1 / 1"
+    timeout: 90000
+- back
+- extendedWaitUntil:
+    visible: "tools-button|fab-add-pdf|Add PDF"
+    timeout: 30000
+# Tools -> Share
+- tapOn:
+    id: "tools-button"
+- extendedWaitUntil:
+    visible: "PDF Tools|Share link"
+    timeout: 20000
+- tapOn:
+    id: "tool-share"
+- extendedWaitUntil:
+    visible: "e2e-upload.pdf"
+    timeout: 20000
+- tapOn: "e2e-upload.pdf"
+# Dialog "Share via link"
+- extendedWaitUntil:
+    visible: "Share via link"
+    timeout: 20000
+- assertVisible: "Create link"
+# Crea il link
+- tapOn: "Create link"
+# Prova di successo: il link compare nel dialog (testID share-link-url)
+- extendedWaitUntil:
+    visible: "share-link-url"
+    timeout: 30000
+- assertVisible: "share-link-url"
+# Chiudi
+- tapOn: "Close|Chiudi"
