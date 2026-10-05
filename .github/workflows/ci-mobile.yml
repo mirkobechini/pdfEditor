@@ -39,6 +39,10 @@ jobs:
     # Il job avvia un FastAPI+SQLite su localhost:8000 e l'APK (buildato con
     # EXPO_PUBLIC_API_URL=http://10.0.2.2:8000) parla con l'host dell'emulatore:
     # suite COMPLETA a ogni push, zero servizi esterni, mai produzione.
+    # Ottimizzazione 05/10 (issue #923): l'APK viene CACHED per hash delle
+    # sorgenti app (src/, config, package-lock) — i flow .maestro NON cambiano
+    # l'APK, quindi la build EAS (il collo di bottiglia, coda free tier) viene
+    # saltata quando il codice app non è cambiato.
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -58,22 +62,56 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Compute APK cache key
+        # L'APK dipende SOLO dal codice app, non dai flow .maestro.
+        # Hash include: src/, assets/, config e lockfile — esclusi .maestro e node_modules.
+        id: apk-key
+        run: |
+          KEY="pm-apk-${{ hashFiles('mobile/src/**', 'mobile/assets/**', 'mobile/app.json', 'mobile/app.config.js', 'mobile/eas.json', 'mobile/package.json', 'mobile/package-lock.json', 'mobile/index.ts', 'mobile/App.tsx', 'mobile/tsconfig.json', 'mobile/babel.config.js', 'mobile/metro.config.js', 'mobile/.easignore') }}"
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
+          echo "APK cache key: $KEY"
+
+      - name: Restore APK from cache
+        id: apk-cache
+        uses: actions/cache@v4
+        with:
+          path: mobile/pdfeditor-e2e.apk
+          key: ${{ steps.apk-key.outputs.key }}
+          restore-keys: |
+            pm-apk-
+
       - name: Build APK with EAS
+        if: steps.apk-cache.outputs.cache-hit != 'true'
         # T0-backend (#923): l'APK di TEST punta al backend locale dell'emulatore
         # (10.0.2.2 = loopback host). app.config.js abilita usesCleartextTraffic
         # SOLO per URL http locali; i build di produzione non la vedono mai.
+        # Skippato quando l'APK risulta in cache (hash invariato).
         env:
           EXPO_PUBLIC_API_URL: http://10.0.2.2:8000
         run: cd mobile && eas build --platform android --profile production --non-interactive --no-wait
 
       - name: Download APK from EAS
+        if: steps.apk-cache.outputs.cache-hit != 'true'
         run: |
           cd mobile
           echo "Waiting for EAS build to complete..."
+          # Fail-fast 05/10 (issue #923): se la build EAS resta in coda oltre
+          # ~20 min (free tier: pochi build concorrenti) abortiamo subito invece
+          # di pollare a vuoto per 60 min.
+          QUEUE_N=0
           for i in $(seq 1 120); do
             eas build:list --platform android --limit 1 --json > build-info.json 2>/dev/null
             STATUS=$(node -e "try { const b=require('./build-info.json'); console.log((b[0]?.status || '').toLowerCase()) } catch(e) { console.log('error') }")
             echo "  iteration $i: status=$STATUS"
+            if [ "$STATUS" = "in_queue" ] || [ "$STATUS" = "queued" ]; then
+              QUEUE_N=$((QUEUE_N + 1))
+              if [ "$QUEUE_N" -ge 40 ]; then
+                echo "EAS build ancora in coda dopo ~20 min (backlog free tier) — abort."
+                exit 1
+              fi
+            else
+              QUEUE_N=0
+            fi
             if [ "$STATUS" = "finished" ]; then break; fi
             if [ "$STATUS" = "errored" ] || [ "$STATUS" = "canceled" ]; then
               echo "EAS build failed: $STATUS"; exit 1
