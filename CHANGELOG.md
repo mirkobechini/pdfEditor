@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-06
+
+### ✅ Annotazione e firma — fix #866 su web e desktop (issue #929, #933)
+- **Web** (issue #929, PR #944): `AnnotationDialog` ora usa il `PositionSelector` condiviso — box **posizionabile/ridimensionabile** sulla preview PDF; il salvataggio manda il **rect reale** dal box (prima era hardcoded `[50,50,250,100]`). Nuova prop `pdfUrl` su `AnnotationDialog` + chiavi i18n `position`/`positionHint`.
+- **Desktop** (issue #933, PR #945): `AnnotationDialog` desktop ora passa `onSizeChange` al `PositionSelector` e salva `rectW`/`rectH` reali (prima ignorava il resize e usava dimensione fissa 200x100). `SignModal` desktop era già a posto; il selettore è **uno solo condiviso** (`shared/src/PositionSelector.tsx`), quindi il fix #866 arriva su entrambe le piattaforme.
+
+### 🎨 Tema scuro — dialog corretti (issue #931, PR #943)
+- Testo scuro su sfondo scuro nei dialog: **firma** (canvas ora resta bianco/foglio, prima la firma a inchiostro `#000` era invisibile su `dark:bg-gray-700`), **annotazioni**, **OCR** (select + banner rosso/verde/blu), **stampa** e **sostituzione testo** (bottone cancel). Aggiunte varianti `dark:text-*` mancanti.
+
+### 🖇️ Download PDF dal viewer (issue #928, PR #942)
+- Nuovo pulsante **Download** nella toolbar del viewer: usa `api.downloadPdf` + `downloadBlob` e salva il PDF col **nome file originale** (fallback `pdf_<id>.pdf`), corretto in produzione (PDF cloud). Disabilitato senza documento selezionato.
+
+### 🧰 Toolbar web allineata al desktop (issue #927, PR #941)
+- Toolbar web ristrutturata nei 3 gruppi a dropdown del desktop: **Organizza** (merge/split/reorder/remove), **Converti** (compress/importExport/replaceText/metadata), **Annota** (sign/share/annotate/ocr), più azioni dirette (protect, print). Stati menu (toggle + chiudi-fuori), `data-testid` pattern desktop, light/dark coerenti, contratto invariato con `app/page.tsx`. Aggiunte chiavi i18n `edit/download/organize/convert`.
+
+### 🌐 i18n pagina /download (issue #926, PR #940)
+- Changelog "Recent Changes" localizzato EN/IT (creato `changelog.en.json`; pagina usa `useLocale()`), tutte le stringhe hardcoded passate a `t()` (22 chiavi `download.*`), zero stringhe fisse. Test aggiornati col mock i18n a stringhe EN reali.
+
 ## 2026-10-03
 
 ### ✅ A1 — Client API unico in shared/ (DRY) — COMPLETATA (issue #883)
