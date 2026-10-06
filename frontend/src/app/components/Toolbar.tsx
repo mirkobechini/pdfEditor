@@ -19,6 +19,7 @@ interface ToolbarProps {
   onCompress: () => void;
   onImportExport: () => void;
   onPrint: () => void;
+  onDownload: () => void;
   onSign: () => void;
   onShare: () => void;
   onAnnotate: () => void;
@@ -52,6 +53,7 @@ export default function Toolbar({
   onCompress,
   onImportExport,
   onPrint,
+  onDownload,
   onSign,
   onShare,
   onAnnotate,
@@ -275,7 +277,15 @@ export default function Toolbar({
 
       </div>
 
-      {/* Azioni dirette: protect e print restano sempre visibili */}
+      {/* Azioni dirette: download, protect e print restano sempre visibili */}
+      <button
+        className={`px-3 py-1 text-xs rounded ${MENU_BTN}`}
+        data-testid="toolbar-download"
+        onClick={onDownload}
+        disabled={!canUndo}
+      >
+        {t("download")}
+      </button>
       <button className={`px-3 py-1 text-xs rounded ${MENU_BTN}`} onClick={onProtect}>
         {t("protect")}
       </button>
