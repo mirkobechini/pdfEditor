@@ -25,7 +25,11 @@
     "dropHere": "Drop your file here",
     "share": "Share",
     "annotate": "Annotate",
-    "ocr": "OCR"
+    "ocr": "OCR",
+    "edit": "Edit",
+    "download": "Download",
+    "organize": "Organize",
+    "convert": "Convert"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
