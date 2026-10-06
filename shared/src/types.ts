@@ -102,3 +102,86 @@ export interface ShareLink {
   expires_at: string | null;
   created_at: string;
 }
+
+/** Result of extractText(): number of pages and the extracted text. */
+export interface TextExtraction {
+  text: string;
+  pages: number;
+}
+
+/** Payload for updateMetadata (supports renaming/overwriting too). */
+export interface UpdateMetadataRequest extends Partial<Metadata> {
+  new_filename?: string;
+  overwrite?: boolean;
+}
+
+/** Payload for addAnnotation. */
+export interface AddAnnotationRequest {
+  page: number;
+  type: string;
+  rect: number[];
+  color?: string;
+  content?: string | null;
+  points?: number[][];
+  opacity?: number;
+}
+
+/** Pair of tokens returned by refresh/sync endpoints. */
+export interface TokenPair {
+  access_token: string;
+  csrf_token: string;
+}
+
+/** Payload for syncUser (local desktop sidecar -> cloud). */
+export interface SyncUserRequest {
+  id: string;
+  email: string;
+  full_name: string;
+  password?: string;
+  is_active: boolean;
+  is_admin: boolean;
+  is_guest: boolean;
+  license_tier: string;
+  license_tier_source: string;
+  google_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** User preferences (getCurrent/update). */
+export interface Preferences {
+  theme: string;
+  language: string;
+  default_zoom: number;
+  antialiasing: boolean;
+  density: string;
+}
+
+/** Partial preferences accepted by updatePreferences. */
+export interface PreferencesUpdate extends Partial<Preferences> {}
+
+/** A license feature entitlement. */
+export interface LicenseFeature {
+  id: string;
+  tier: string;
+  feature_key: string;
+  enabled: boolean;
+}
+
+/** Partial admin fields editable via adminUpdateUser. */
+export interface AdminUserUpdate {
+  is_active?: boolean;
+  is_admin?: boolean;
+  license_tier?: string;
+}
+
+/** Generic list response: { items, total }. */
+export interface ListResult<T> {
+  items: T[];
+  total: number;
+}
+
+/** A simple { message: string } response. */
+export interface MessageResponse {
+  message: string;
+}
