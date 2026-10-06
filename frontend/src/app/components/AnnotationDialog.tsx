@@ -67,7 +67,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
 
                 {error && (
-                    <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 dark:bg-red-900/30 rounded" data-testid="annotation-error">
+                    <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded" data-testid="annotation-error">
                         {error}
                     </div>
                 )}
@@ -78,7 +78,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
                         <select
                             value={type}
                             onChange={(e) => setType(e.target.value)}
-                            className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                            className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
                             data-testid="annotation-type"
                         >
                             {ANNOTATION_TYPES.map((tp) => (
@@ -105,7 +105,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
                             min="1"
                             value={page}
                             onChange={(e) => setPage(parseInt(e.target.value, 10) || 1)}
-                            className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                            className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
                             data-testid="annotation-page"
                         />
                     </label>
@@ -117,7 +117,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                                 rows={3}
-                                className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                                className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
                                 data-testid="annotation-content"
                             />
                         </label>
