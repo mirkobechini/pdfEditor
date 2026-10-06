@@ -25,7 +25,11 @@
     "dropHere": "Rilascia qui il tuo file",
     "share": "Condividi",
     "annotate": "Annota",
-    "ocr": "OCR"
+    "ocr": "OCR",
+    "edit": "Modifica",
+    "download": "Scarica",
+    "organize": "Organizza",
+    "convert": "Converti"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
