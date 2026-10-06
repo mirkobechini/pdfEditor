@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import LandingNavbar from "../components/landing/LandingNavbar";
 
 interface ReleaseAsset {
@@ -28,10 +28,16 @@ interface ChangelogData {
 }
 
 const GITHUB_API = "https://api.github.com/repos/mirkobechini/pdfEditor/releases";
-const CHANGELOG_URL = "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev/changelog.json";
+const CHANGELOG_BASE = "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev";
 
 export default function DownloadPage() {
     const t = useTranslations("download");
+    const locale = useLocale();
+    // Il changelog è per-lingua: changelog.json è quello di default (IT, versionato
+    // nel repo) e changelog.en.json è la traduzione. Così i "Recent Changes"
+    // compaiono nella lingua attiva (issue #926).
+    const CHANGELOG_URL = `${CHANGELOG_BASE}/changelog.${locale === "en" ? "en" : "json"}`;
+
     const [latestDesktop, setLatestDesktop] = useState<ReleaseInfo | null>(null);
     const [latestMobile, setLatestMobile] = useState<ReleaseInfo | null>(null);
     const [changelog, setChangelog] = useState<ChangelogData | null>(null);
@@ -95,15 +101,14 @@ export default function DownloadPage() {
             <main className="pt-16 max-w-5xl mx-auto px-4 py-12">
                 {/* Header */}
                 <div className="text-center mb-16">
-                    <h1 className="text-4xl font-bold mb-4">Download PdfEditor</h1>
+                    <h1 className="text-4xl font-bold mb-4">{t("title")}</h1>
                     <p className="text-lg text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
-                        Available on desktop (Windows, macOS, Linux) and mobile (Android).
-                        All platforms are free and open source.
+                        {t("subtitle")}
                     </p>
                 </div>
 
                 {loading ? (
-                    <div className="text-center py-20 text-gray-400">Loading releases...</div>
+                    <div className="text-center py-20 text-gray-400">{t("loading")}</div>
                 ) : (
                     <>
                         {/* ─── Desktop Section ─── */}
@@ -111,7 +116,7 @@ export default function DownloadPage() {
                             <section className="mb-20">
                                 <div className="flex items-center gap-3 mb-8">
                                     <span className="text-3xl">🖥️</span>
-                                    <h2 className="text-2xl font-bold">Desktop App</h2>
+                                    <h2 className="text-2xl font-bold">{t("desktopTitle")}</h2>
                                     <span className="text-sm px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 font-medium">
                                         {latestDesktop.tag_name}
                                     </span>
@@ -120,24 +125,24 @@ export default function DownloadPage() {
                                     {/* Windows */}
                                     <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                                         <div className="text-4xl mb-3">🪟</div>
-                                        <h3 className="text-lg font-semibold mb-2">Windows</h3>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Windows 10 / 11, 64-bit</p>
+                                        <h3 className="text-lg font-semibold mb-2">{t("windows")}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t("windowsDesc")}</p>
                                         {getDesktopAsset("x64-setup.exe") ? (
                                             <a
                                                 href={getDesktopAsset("x64-setup.exe")!.browser_download_url}
                                                 className="block text-center py-2 px-4 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
                                             >
-                                                Download Installer
+                                                {t("downloadInstaller")}
                                             </a>
                                         ) : (
-                                            <p className="text-sm text-gray-400 text-center">Not available</p>
+                                            <p className="text-sm text-gray-400 text-center">{t("notAvailable")}</p>
                                         )}
                                         {getDesktopAsset("x64_en-US.msi") && (
                                             <a
                                                 href={getDesktopAsset("x64_en-US.msi")!.browser_download_url}
                                                 className="block text-center mt-2 py-2 px-4 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                             >
-                                                Download MSI
+                                                {t("downloadMsi")}
                                             </a>
                                         )}
                                     </div>
@@ -145,32 +150,32 @@ export default function DownloadPage() {
                                     {/* macOS */}
                                     <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                                         <div className="text-4xl mb-3">🍎</div>
-                                        <h3 className="text-lg font-semibold mb-2">macOS</h3>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">macOS 10.15+, Apple Silicon</p>
+                                        <h3 className="text-lg font-semibold mb-2">{t("macos")}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t("macosDesc")}</p>
                                         {getDesktopAsset("aarch64.dmg") ? (
                                             <a
                                                 href={getDesktopAsset("aarch64.dmg")!.browser_download_url}
                                                 className="block text-center py-2 px-4 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
                                             >
-                                                Download DMG
+                                                {t("downloadDmg")}
                                             </a>
                                         ) : (
-                                            <p className="text-sm text-gray-400 text-center">Not available</p>
+                                            <p className="text-sm text-gray-400 text-center">{t("notAvailable")}</p>
                                         )}
-                                        <p className="text-xs text-gray-400 mt-2 text-center">Intel Macs: use the DMG or build from source</p>
+                                        <p className="text-xs text-gray-400 mt-2 text-center">{t("macosIntelNote")}</p>
                                     </div>
 
                                     {/* Linux */}
                                     <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                                         <div className="text-4xl mb-3">🐧</div>
-                                        <h3 className="text-lg font-semibold mb-2">Linux</h3>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">AppImage & DEB, 64-bit</p>
+                                        <h3 className="text-lg font-semibold mb-2">{t("linux")}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t("linuxDesc")}</p>
                                         {getDesktopAsset("AppImage") ? (
                                             <a
                                                 href={getDesktopAsset("AppImage")!.browser_download_url}
                                                 className="block text-center py-2 px-4 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity mb-2"
                                             >
-                                                Download AppImage
+                                                {t("downloadAppImage")}
                                             </a>
                                         ) : null}
                                         {getDesktopAsset("amd64.deb") ? (
@@ -178,11 +183,11 @@ export default function DownloadPage() {
                                                 href={getDesktopAsset("amd64.deb")!.browser_download_url}
                                                 className="block text-center py-2 px-4 rounded-lg border border-gray-300 dark:border-gray-600 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                             >
-                                                Download DEB
+                                                {t("downloadDeb")}
                                             </a>
                                         ) : null}
                                         {!getDesktopAsset("AppImage") && !getDesktopAsset("amd64.deb") && (
-                                            <p className="text-sm text-gray-400 text-center">Not available</p>
+                                            <p className="text-sm text-gray-400 text-center">{t("notAvailable")}</p>
                                         )}
                                     </div>
                                 </div>
@@ -194,7 +199,7 @@ export default function DownloadPage() {
                             <section className="mb-20">
                                 <div className="flex items-center gap-3 mb-8">
                                     <span className="text-3xl">📱</span>
-                                    <h2 className="text-2xl font-bold">Mobile App</h2>
+                                    <h2 className="text-2xl font-bold">{t("mobileTitle")}</h2>
                                     <span className="text-sm px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 font-medium">
                                         {latestMobile.tag_name}
                                     </span>
@@ -202,19 +207,19 @@ export default function DownloadPage() {
                                 <div className="max-w-sm">
                                     <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                                         <div className="text-4xl mb-3">🤖</div>
-                                        <h3 className="text-lg font-semibold mb-2">Android</h3>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">APK — Android 8+</p>
+                                        <h3 className="text-lg font-semibold mb-2">{t("android")}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t("androidDesc")}</p>
                                         {latestMobile.assets.find((a) => a.name.endsWith(".apk")) ? (
                                             <a
                                                 href={latestMobile.assets.find((a) => a.name.endsWith(".apk"))!.browser_download_url}
                                                 className="block text-center py-2 px-4 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
                                             >
-                                                Download APK
+                                                {t("downloadApk")}
                                             </a>
                                         ) : (
-                                            <p className="text-sm text-gray-400 text-center">Not available</p>
+                                            <p className="text-sm text-gray-400 text-center">{t("notAvailable")}</p>
                                         )}
-                                        <p className="text-xs text-gray-400 mt-2 text-center">iOS: coming soon</p>
+                                        <p className="text-xs text-gray-400 mt-2 text-center">{t("iosComingSoon")}</p>
                                     </div>
                                 </div>
                             </section>
@@ -224,17 +229,17 @@ export default function DownloadPage() {
                         <section className="mb-20">
                             <div className="flex items-center gap-3 mb-8">
                                 <span className="text-3xl">🌐</span>
-                                <h2 className="text-2xl font-bold">Web App</h2>
+                                <h2 className="text-2xl font-bold">{t("webTitle")}</h2>
                             </div>
                             <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                                 <p className="text-gray-600 dark:text-gray-300 mb-4">
-                                    Use PdfEditor directly in your browser. No installation required.
+                                    {t("webDesc")}
                                 </p>
                                 <Link
                                     href="/login"
                                     className="inline-block text-center py-2 px-6 rounded-lg bg-gradient-to-r from-orange-600 to-orange-500 text-white text-sm font-medium hover:opacity-90 transition-opacity"
                                 >
-                                    Open Web App
+                                    {t("openWebApp")}
                                 </Link>
                             </div>
                         </section>
@@ -245,72 +250,76 @@ export default function DownloadPage() {
                                 <span className="text-3xl">📋</span>
                                 <h2 className="text-2xl font-bold">{t("recentChanges")}</h2>
                             </div>
-                            <div className="grid md:grid-cols-2 gap-8">
-                                {/* Desktop Changelog */}
-                                {changelog?.desktop && (
-                                    <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <span className="text-lg">🖥️</span>
-                                            <h3 className="text-lg font-semibold">{t("desktopTitle")}</h3>
-                                        </div>
-                                        {changelog.desktop.map((entry) => (
-                                            <div key={entry.version} className="mb-4 last:mb-0">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 font-medium">
-                                                        {entry.version}
-                                                    </span>
-                                                    <span className="text-xs text-gray-400">{entry.date}</span>
-                                                </div>
-                                                <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-300">
-                                                    {entry.changes.map((change, i) => (
-                                                        <li key={i}>{change}</li>
-                                                    ))}
-                                                </ul>
+                            {!changelog ? (
+                                <p className="text-sm text-gray-400 text-center">{t("noChangelog")}</p>
+                            ) : (
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    {/* Desktop Changelog */}
+                                    {changelog.desktop?.length ? (
+                                        <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <span className="text-lg">🖥️</span>
+                                                <h3 className="text-lg font-semibold">{t("desktopTitle")}</h3>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                                {/* Mobile Changelog */}
-                                {changelog?.mobile && (
-                                    <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <span className="text-lg">📱</span>
-                                            <h3 className="text-lg font-semibold">{t("mobileTitle")}</h3>
-                                        </div>
-                                        {changelog.mobile.map((entry) => (
-                                            <div key={entry.version} className="mb-4 last:mb-0">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 font-medium">
-                                                        {entry.version}
-                                                    </span>
-                                                    <span className="text-xs text-gray-400">{entry.date}</span>
+                                            {changelog.desktop.map((entry) => (
+                                                <div key={entry.version} className="mb-4 last:mb-0">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 font-medium">
+                                                            {entry.version}
+                                                        </span>
+                                                        <span className="text-xs text-gray-400">{entry.date}</span>
+                                                    </div>
+                                                    <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-300">
+                                                        {entry.changes.map((change, i) => (
+                                                            <li key={i}>{change}</li>
+                                                        ))}
+                                                    </ul>
                                                 </div>
-                                                <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-300">
-                                                    {entry.changes.map((change, i) => (
-                                                        <li key={i}>{change}</li>
-                                                    ))}
-                                                </ul>
+                                            ))}
+                                        </div>
+                                    ) : null}
+                                    {/* Mobile Changelog */}
+                                    {changelog.mobile?.length ? (
+                                        <div className="p-6 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <span className="text-lg">📱</span>
+                                                <h3 className="text-lg font-semibold">{t("mobileTitle")}</h3>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                            {changelog.mobile.map((entry) => (
+                                                <div key={entry.version} className="mb-4 last:mb-0">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 font-medium">
+                                                            {entry.version}
+                                                        </span>
+                                                        <span className="text-xs text-gray-400">{entry.date}</span>
+                                                    </div>
+                                                    <ul className="space-y-1.5 text-sm text-gray-600 dark:text-gray-300">
+                                                        {entry.changes.map((change, i) => (
+                                                            <li key={i}>{change}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : null}
+                                </div>
+                            )}
                         </section>
 
                         {/* ─── Feature Comparison Table ─── */}
                         <section>
                             <div className="flex items-center gap-3 mb-8">
                                 <span className="text-3xl">⚖️</span>
-                                <h2 className="text-2xl font-bold">Feature Comparison</h2>
+                                <h2 className="text-2xl font-bold">{t("featureComparison")}</h2>
                             </div>
                             <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
                                 <table className="w-full text-sm bg-white dark:bg-gray-800">
                                     <thead>
                                         <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-                                            <th className="px-4 py-3 text-left font-semibold">Feature</th>
-                                            <th className="px-4 py-3 text-center font-semibold">🌐 Web</th>
-                                            <th className="px-4 py-3 text-center font-semibold">🖥️ Desktop</th>
-                                            <th className="px-4 py-3 text-center font-semibold">📱 Mobile</th>
+                                            <th className="px-4 py-3 text-left font-semibold">{t("featureColumn")}</th>
+                                            <th className="px-4 py-3 text-center font-semibold">🌐 {t("platformWeb")}</th>
+                                            <th className="px-4 py-3 text-center font-semibold">🖥️ {t("platformDesktop")}</th>
+                                            <th className="px-4 py-3 text-center font-semibold">📱 {t("platformMobile")}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -351,7 +360,7 @@ export default function DownloadPage() {
                                 </table>
                             </div>
                             <p className="text-xs text-gray-400 mt-3 text-center">
-                                Features marked ❌ are planned for future releases.
+                                {t("plannedNote")}
                             </p>
                         </section>
                     </>
@@ -360,7 +369,7 @@ export default function DownloadPage() {
 
             {/* Footer */}
             <footer className="border-t border-gray-200 dark:border-gray-800 py-8 text-center text-sm text-gray-500">
-                <p>PdfEditor is open source — available on GitHub</p>
+                <p>{t("openSource")}</p>
             </footer>
         </div>
     );

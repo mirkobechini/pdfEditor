@@ -389,7 +389,18 @@
     "downloadApk": "Scarica APK",
     "notAvailable": "Non disponibile",
     "recentChanges": "Novità",
-    "noChangelog": "Nessun changelog disponibile per questa release."
+    "noChangelog": "Nessun changelog disponibile per questa release.",
+    "webTitle": "App Web",
+    "webDesc": "Usa PdfEditor direttamente nel browser. Nessuna installazione necessaria.",
+    "openWebApp": "Apri Web App",
+    "featureComparison": "Confronto funzionalità",
+    "featureColumn": "Funzionalità",
+    "platformWeb": "Web",
+    "platformDesktop": "Desktop",
+    "platformMobile": "Mobile",
+    "plannedNote": "Le funzionalità segnate con ❌ sono previste per versioni future.",
+    "iosComingSoon": "iOS: in arrivo",
+    "openSource": "PdfEditor è open source — disponibile su GitHub"
   },
   "landing": {
     "navbar": {
