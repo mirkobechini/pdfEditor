@@ -4,18 +4,21 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { mapError } from "../lib/error-map";
+import PositionSelector from "./PositionSelector";
 
 interface AnnotationDialogProps {
     open: boolean;
     onClose: () => void;
     pdfId: string | null;
     currentPage: number;
+    /** Preview URL del PDF per il position selector (issue #929, fix #866). */
+    pdfUrl?: string | null;
     onSuccess?: () => void;
 }
 
 const ANNOTATION_TYPES = ["highlight", "underline", "strikeout", "text", "free_text"];
 
-export default function AnnotationDialog({ open, onClose, pdfId, currentPage, onSuccess }: AnnotationDialogProps) {
+export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pdfUrl, onSuccess }: AnnotationDialogProps) {
     const t = useTranslations("annotationDialog");
     const [type, setType] = React.useState("highlight");
     const [color, setColor] = React.useState("#FFFF00");
@@ -23,6 +26,12 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
     const [page, setPage] = React.useState(1);
     const [saving, setSaving] = React.useState(false);
     const [error, setError] = React.useState("");
+    // Box posizionabile/ridimensionabile sul selettore (issue #929, fix #866):
+    // posizione top-left e dimensione in punti PDF, niente rect hardcoded.
+    const [boxX, setBoxX] = React.useState(50);
+    const [boxY, setBoxY] = React.useState(50);
+    const [boxW, setBoxW] = React.useState(250);
+    const [boxH, setBoxH] = React.useState(100);
 
     React.useEffect(() => {
         if (open) {
@@ -37,8 +46,8 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
         setSaving(true);
         setError("");
         try {
-            // Default rect covering a reasonable area of the page
-            const rect = [50, 50, 250, 100];
+            // Rect reale dal box posizionato sul selettore (issue #929, fix #866).
+            const rect = [boxX, boxY, boxW, boxH];
             await api.addAnnotation(pdfId, {
                 page,
                 type: type as any,
@@ -122,6 +131,18 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
                             />
                         </label>
                     )}
+
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t("position")}
+                        <PositionSelector
+                            pdfUrl={pdfUrl ?? null}
+                            pageNumber={page}
+                            boxSize={{ width: boxW, height: boxH }}
+                            onPositionChange={(x, y) => { setBoxX(x); setBoxY(y); }}
+                            onSizeChange={(w, h) => { setBoxW(w); setBoxH(h); }}
+                        />
+                        <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{t("positionHint")}</p>
+                    </label>
                 </div>
 
                 <div className="mt-4 flex gap-3">

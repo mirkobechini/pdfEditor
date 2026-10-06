@@ -882,7 +882,9 @@
     "save": "Salva",
     "saving": "Salvataggio...",
     "cancel": "Annulla",
-    "failed": "Impossibile aggiungere l'annotazione"
+    "failed": "Impossibile aggiungere l'annotazione",
+    "position": "Posizione",
+    "positionHint": "Trascina per posizionare, l'angolo per ridimensionare."
   },
   "ocrModal": {
     "title": "OCR PDF",

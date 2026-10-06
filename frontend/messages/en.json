@@ -880,7 +880,9 @@
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",
-    "failed": "Failed to add annotation"
+    "failed": "Failed to add annotation",
+    "position": "Position",
+    "positionHint": "Drag to position, drag the handle to resize."
   },
   "ocrModal": {
     "title": "OCR PDF",
