@@ -388,7 +388,7 @@ class PdfService:
                     # Insert replacement text
                     if span_info:
                         fontsize = span_info["size"]
-                        fontname = span_info["font"]
+                        fontname = self._safe_text_font(span_info["font"])
                         origin = span_info["origin"]
                     else:
                         # Fallback: estimate from rect
@@ -469,6 +469,30 @@ class PdfService:
             "size": best_span.get("size", 10),
             "origin": best_span.get("origin", (rect.x0, rect.y0 + 1)),
         }
+
+    def _safe_text_font(self, fontname: str) -> str:
+        """Return a font name safe for ``Page.insert_text``.
+
+        PyMuPDF's ``insert_text`` can only use fonts known to it (the built-in
+        Base-14 set plus any you registered). Fonts embedded in the source PDF
+        (nome file subset, e.g. ``ABCDEE+Calibri``, or arbitrary names) raise
+        when passed to ``insert_text`` → the replace-text endpoint returned a
+        500 (issue #930). Map anything non-safe back to ``helv``.
+        """
+        if not fontname:
+            return "helv"
+        # Subset-embedded fonts have a 6-char prefix + "+" (e.g. ABCDEF+Calibri)
+        if "+" in fontname:
+            return "helv"
+        base = fontname.lower()
+        # Base-14 / common safe names (PyMuPDF built-ins): helv, tiro, cour,
+        # symb, and "times"/"helvetica"/"courier"/"symbol" aliases.
+        if base in {"helv", "hebo", "hobl", "helvetica", "tiro", "tibo",
+                    "titi", "tiit", "times", "times-roman", "cour", "cobo",
+                    "cob", "coi", "courier", "symb", "symbol", "zadb",
+                    "zafb", "dong", "goth"}:
+            return fontname
+        return "helv"
 
     def extract_text(self, pdf_id: str, user_id: str, page: int | None = None) -> tuple[str, int]:
         """Extract text from a PDF. If page is None, extracts from all pages."""
