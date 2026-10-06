@@ -63,6 +63,8 @@ export default function Toolbar({
 }: ToolbarProps) {
   const t = useTranslations("app");
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
+  // Wrapper dei soli menu a tendina: il click fuori chiude, dentro no.
+  const menusRef = React.useRef<HTMLDivElement | null>(null);
 
   // Keyboard shortcuts: Ctrl+Z for undo, Ctrl+Shift+Z for redo
   // Use refs to avoid re-registering the listener on every render
@@ -86,11 +88,12 @@ export default function Toolbar({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Chiude il menu se si clicca fuori.
+  // Chiude il menu se si clicca fuori dai menu a tendina.
   useEffect(() => {
     if (!openMenu) return;
     function closeOnOutside(e: MouseEvent) {
-      if ((e.target as HTMLElement).closest?.("header") == null) setOpenMenu(null);
+      const target = e.target as HTMLElement;
+      if (menusRef.current && !menusRef.current.contains(target)) setOpenMenu(null);
     }
     document.addEventListener("mousedown", closeOnOutside);
     return () => document.removeEventListener("mousedown", closeOnOutside);
@@ -208,6 +211,8 @@ export default function Toolbar({
       {/* Separator */}
       <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
 
+      {/* Menu a tendina: avvolti per gestire la chiusura al click fuori */}
+      <div className="flex items-center gap-1" ref={menusRef}>
       {/* ─── Organizza dropdown ─── */}
       <div className="relative">
         <button
@@ -266,6 +271,8 @@ export default function Toolbar({
             ))}
           </div>
         )}
+      </div>
+
       </div>
 
       {/* Azioni dirette: protect e print restano sempre visibili */}
