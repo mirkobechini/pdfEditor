@@ -93,7 +93,19 @@ function getLocalId(cloudId: string): string | undefined {
 
 // ─── Hook ─────────────────────────────────────────────────────────
 
-export function useCloudSync(): UseCloudSyncReturn {
+export interface UseCloudSyncOptions {
+    /**
+     * Se true (default) l'effect "Sync on startup" gira al mount del hook
+     * (istanza a livello app = avvio dell'app). Passare false quando il hook
+     * è montato solo per mostrare la UI di Settings, così aprire la pagina
+     * NON ri-parte un auto-sync che, fallendo (token offline/Render giù),
+     * fa comparire la modal "Sync completato con ⚠️ Errori" da sola
+     * (issue #935).
+     */
+    autoSyncOnMount?: boolean;
+}
+
+export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {}): UseCloudSyncReturn {
   const [syncEnabled, setSyncEnabledState] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(SYNC_ENABLED_KEY) !== "false";
@@ -189,9 +201,11 @@ export function useCloudSync(): UseCloudSyncReturn {
     return () => window.removeEventListener(SYNC_STATUS_EVENT, handler);
   }, [loadStatus]);
 
-  // Sync on startup
+  // Sync on startup — gira SOLO a livello app (autoSyncOnMount=true).
+  // Montato da useSettingsPage con autoSyncOnMount=false: aprire Settings
+  // non deve rifare l'auto-sync (issue #935).
   useEffect(() => {
-    if (!syncEnabled || !syncOnStartup) return;
+    if (!autoSyncOnMount || !syncEnabled || !syncOnStartup) return;
     let cancelled = false;
     (async () => {
       // Wait for cloud token
