@@ -25,6 +25,10 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pd
     const [page, setPage] = React.useState(1);
     const [rectX, setRectX] = React.useState(50);
     const [rectY, setRectY] = React.useState(50);
+    // Larghezza/altezza del box dal PositionSelector (issue #933, fix #866):
+    // prima erano hardcoded 200x100 e il resize veniva ignorato.
+    const [rectW, setRectW] = React.useState(200);
+    const [rectH, setRectH] = React.useState(100);
     const [saving, setSaving] = React.useState(false);
     const [error, setError] = React.useState("");
 
@@ -41,8 +45,8 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pd
         setSaving(true);
         setError("");
         try {
-            // Rect positioned by the user via the drag selector
-            const rect = [rectX, rectY, rectX + 200, rectY + 100];
+            // Rect posizionato E ridimensionato dall'utente (issue #933, fix #866)
+            const rect = [rectX, rectY, rectX + rectW, rectY + rectH];
             await api.addAnnotation(pdfId, {
                 page,
                 type: type as any,
@@ -119,8 +123,9 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pd
                         <PositionSelector
                             pdfUrl={pdfUrl ?? null}
                             pageNumber={page}
-                            boxSize={{ width: 200, height: 100 }}
+                            boxSize={{ width: rectW, height: rectH }}
                             onPositionChange={(x, y) => { setRectX(x); setRectY(y); }}
+                            onSizeChange={(w, h) => { setRectW(w); setRectH(h); }}
                         />
                     </label>
 
