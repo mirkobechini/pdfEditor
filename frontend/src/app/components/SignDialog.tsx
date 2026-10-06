@@ -256,7 +256,7 @@ export default function SignDialog({ open, onClose, pdfId, totalPages, pdfUrl, o
                                 ref={canvasRef}
                                 width={400}
                                 height={160}
-                                className="w-full h-40 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 touch-none"
+                                className="w-full h-40 border border-gray-300 dark:border-gray-600 rounded-lg bg-white touch-none"
                                 onMouseDown={handleMouseDown}
                                 onMouseMove={handleMouseMove}
                                 onMouseUp={handleMouseUp}
