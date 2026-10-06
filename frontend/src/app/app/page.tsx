@@ -427,6 +427,7 @@ export default function EditorPage() {
                 onClose={() => setAnnotateOpen(false)}
                 pdfId={selectedId}
                 currentPage={currentPage}
+                pdfUrl={fileUrl}
                 onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
             />
             <OcrModal
