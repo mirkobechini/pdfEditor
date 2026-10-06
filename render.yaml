@@ -39,3 +39,9 @@ services:
         sync: false
       - key: NEXT_PUBLIC_IUBENDA_PRIVACY_ID
         sync: false
+      # Base URL della web API (obbligatorie in produzione; fallback localhost
+      # solo in sviluppo). sync:false = vanno impostate a mano nel pannello.
+      - key: NEXT_PUBLIC_API_URL
+        sync: false # Es. https://pdfeditor-api.mirkobechini.com (fallback dev: http://localhost:8000)
+      - key: NEXT_PUBLIC_DOCUMENTS_API_URL
+        sync: false # Es. URL del microservizio documents (fallback dev: http://localhost:8001)

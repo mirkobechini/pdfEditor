@@ -34,6 +34,16 @@ const SYNC_STARTUP_KEY = "cloud_sync_on_startup";
 export type SyncMode = "differito" | "auto" | "ibrido" | "chiedi";
 export type PdfSyncStatus = "pending" | "synced" | "error" | "none";
 
+/** Stato di sync globale visibile all'utente (idle | syncing | ok | error). */
+export type SyncStatus = "idle" | "syncing" | "ok" | "error";
+
+/** UI state esposta dal hook: stato + ultimo errore (per banner/retry). */
+export interface SyncUiState {
+  status: SyncStatus;
+  lastError?: string;
+  lastAttempt?: number;
+}
+
 export interface SyncProgress {
   current: number;
   total: number;
@@ -110,6 +120,10 @@ interface UseCloudSyncReturn {
   isSyncing: boolean;
   /** Whether device is online */
   isOnline: boolean;
+  /** Global sync UI state (idle/syncing/ok/error + lastError) */
+  syncUi: SyncUiState;
+  /** Clear a previous sync error (used by the retry action) */
+  clearSyncError: () => void;
 }
 
 function generateId(): string {
@@ -127,7 +141,25 @@ export function useCloudSync(): UseCloudSyncReturn {
   const [progress, setProgress] = useState<SyncProgress | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [syncUi, setSyncUi] = useState<SyncUiState>({ status: "idle" });
   const syncingRef = useRef(false);
+
+  /** Register a sync failure so the UI can surface it instead of failing silently. */
+  const reportSyncError = useCallback((message: string) => {
+    setSyncUi((prev) => ({
+      status: "error",
+      lastError: message,
+      lastAttempt: Date.now(),
+    }));
+  }, []);
+
+  const clearSyncError = useCallback(() => {
+    setSyncUi((prev) =>
+      prev.status === "error"
+        ? { status: prev.lastError ? "ok" : "idle", lastAttempt: Date.now() }
+        : prev,
+    );
+  }, []);
 
   // Load preferences on mount
   useEffect(() => {
@@ -184,10 +216,11 @@ export function useCloudSync(): UseCloudSyncReturn {
         return true;
       } catch (err) {
         setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
+        reportSyncError(`Upload fallito: ${err}`);
         return false;
       }
     },
-    [isGuest, syncEnabled],
+    [isGuest, syncEnabled, reportSyncError],
   );
 
   const importPdfs = useCallback(
@@ -226,13 +259,14 @@ export function useCloudSync(): UseCloudSyncReturn {
           imported++;
         } catch (err) {
           console.log("[useCloudSync] import failed", pdfId, err);
+          reportSyncError(`Import fallito: ${err}`);
           errors.push(`cloud.syncErrorUploadFailed:${pdfId}`);
           setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
         }
       }
       return { imported, errors };
     },
-    [isGuest, syncEnabled, user?.id],
+    [isGuest, syncEnabled, user?.id, reportSyncError],
   );
 
   const downloadPdf = useCallback(
@@ -285,10 +319,11 @@ export function useCloudSync(): UseCloudSyncReturn {
         return true;
       } catch (err) {
         setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
+        reportSyncError(`Download fallito: ${err}`);
         return false;
       }
     },
-    [isGuest, syncEnabled, user?.id],
+    [isGuest, syncEnabled, user?.id, reportSyncError],
   );
 
   const resolveConflict = useCallback(
@@ -348,6 +383,7 @@ export function useCloudSync(): UseCloudSyncReturn {
               await api.deletePdf(pdf.cloud_id);
             } catch (err) {
               console.log("[useCloudSync] cloud delete failed", pdfId, err);
+              reportSyncError(`Eliminazione cloud fallita: ${err}`);
             }
           }
         }
@@ -360,11 +396,12 @@ export function useCloudSync(): UseCloudSyncReturn {
         return true;
       } catch (err) {
         console.log("[useCloudSync] deletePdf failed", pdfId, err);
+        reportSyncError(`Eliminazione fallita: ${err}`);
         setStatus((prev) => ({ ...prev, [pdfId]: "error" }));
         return false;
       }
     },
-    [isGuest],
+    [isGuest, reportSyncError],
   );
 
   const getPendingChanges = useCallback(async (): Promise<{
@@ -441,6 +478,7 @@ export function useCloudSync(): UseCloudSyncReturn {
 
     syncingRef.current = true;
     setIsSyncing(true);
+    setSyncUi((prev) => ({ status: "syncing", lastAttempt: Date.now() }));
 
     let uploaded = 0;
     let downloaded = 0;
@@ -476,6 +514,7 @@ export function useCloudSync(): UseCloudSyncReturn {
             pdf.original_filename,
             err,
           );
+          reportSyncError(`Upload fallito: ${err}`);
           // Token expired or invalid credentials
           if (
             String(err).includes("INVALID_CREDENTIALS") ||
@@ -544,6 +583,7 @@ export function useCloudSync(): UseCloudSyncReturn {
         }
       } catch (err) {
         console.log("[useCloudSync] listPdfs failed", err);
+        reportSyncError(`Lettura cloud fallita: ${err}`);
         if (
           String(err).includes("INVALID_CREDENTIALS") ||
           String(err).includes("401")
@@ -557,10 +597,18 @@ export function useCloudSync(): UseCloudSyncReturn {
       setProgress(null);
       setIsSyncing(false);
       syncingRef.current = false;
+      setSyncUi((prev) => ({
+        status: errors.length > 0 ? "error" : "ok",
+        lastError:
+          errors.length > 0
+            ? errors.map((e) => e.split(":")[0]).join(", ")
+            : undefined,
+        lastAttempt: Date.now(),
+      }));
     }
 
     return { uploaded, downloaded, conflicts, errors };
-  }, [isGuest, syncEnabled, isOnline, downloadPdf]);
+  }, [isGuest, syncEnabled, isOnline, downloadPdf, reportSyncError]);
 
   // Auto sync on startup (after syncAll is defined)
   const syncAllRef = useRef<() => Promise<void>>(async () => {});
@@ -613,5 +661,7 @@ export function useCloudSync(): UseCloudSyncReturn {
     progress,
     isSyncing,
     isOnline,
+    syncUi,
+    clearSyncError,
   };
 }

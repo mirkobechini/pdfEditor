@@ -32,3 +32,97 @@ jobs:
         run: npx tsc --noEmit
       - name: Run tests
         run: npm test
+
+  e2e-mobile:
+    # E2E mobile (issue #919, perimetro 1): suite Maestro su emulatore Android.
+    # L'APK viene buildato LOCALMENTE sul runner (06/10): EAS free tier può
+    # restare in coda 60+ min prima di fallire, bloccando la CI senza motivo
+    # legato al codice (visto dal vivo su issue #923/perimetro 2, stesso
+    # meccanismo di build condiviso con questo job). Build release (non
+    # debug): la variante debug di Expo/RN non incorpora il bundle JS e
+    # mostra la RedBox "Unable to load script" invece dell'app.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "mobile/package-lock.json"
+
+      - name: Install mobile dependencies
+        run: cd mobile && npm ci
+
+      - name: Setup Java (build APK locale)
+        # setup-java ha versioni proprie (v4), non v7 come checkout/setup-node.
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Build APK locally (no EAS)
+        # E2E mobile (issue #919): se E2E_MOBILE_API_URL è configurato il build
+        # punta al backend di test (EXPO_PUBLIC_API_URL); altrimenti fallback
+        # produzione e la suite esegue solo lo smoke (mai creare account reali).
+        env:
+          EXPO_PUBLIC_API_URL: ${{ secrets.E2E_MOBILE_API_URL }}
+        run: |
+          cd mobile
+          npx expo prebuild --platform android --no-install
+          cd android
+          ./gradlew :app:assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk ../pdfeditor-e2e.apk
+          ls -la ../pdfeditor-e2e.apk
+
+      - name: Enable KVM group perms
+        # fix(issue #919): senza KVM l'emulatore gira a -accel off (software):
+        # boot 347s + adb install 310s e il primo render dell'app non arriva
+        # entro il timeout di 300s. Il runner GitHub espone /dev/kvm ma senza
+        # permessi per l'utente; la regola udev li abilita.
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Maestro E2E on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          E2E_MOBILE_API_URL: ${{ secrets.E2E_MOBILE_API_URL }}
+        with:
+          api-level: 31
+          arch: x86_64
+          profile: pixel_4
+          cores: 4
+          working-directory: mobile
+          script: |
+            # L'action reactivecircus/android-emulator-runner esegue ogni riga
+            # come sh -c separato: niente export che persiste tra righe.
+            # NB: lo script gira con bash -e: una failure di maestro test
+            # interrompeva lo script PRIMA della cattura diagnostica.
+            # -> set +e attorno al test e cattura SEMPRE su failure.
+            curl -Ls "https://get.maestro.mobile.dev" | bash
+            M="$HOME/.maestro/bin/maestro" && "$M" --version && adb install pdfeditor-e2e.apk
+            # Emulatore software lento -> possibili dialog ANR/SystemUI a
+            # schermo che coprono l'app e fanno fallire gli assert. Nascondili.
+            adb shell settings put global hide_error_dialogs 1 || true
+            adb shell input keyevent KEYCODE_WAKEUP || true
+            adb shell wm dismiss-keyguard || true
+            # Solo smoke quando non c'è un backend di test configurato
+            # (i flussi auth/upload/firma girerebbero contro il DB di produzione:
+            # issue #919 opzione 1 — override env + backend di test).
+            set +e
+            if [ -n "$E2E_MOBILE_API_URL" ]; then echo "Backend di test configurato: eseguo la suite completa"; "$HOME/.maestro/bin/maestro" test .maestro --format junit --output e2e-results.xml; else echo "Nessun backend di test: eseguo solo smoke"; "$HOME/.maestro/bin/maestro" test .maestro/flows/smoke.yaml --format junit --output e2e-results.xml; fi
+            EC=$?
+            set -e
+            echo "Maestro exit code: $EC"
+            if [ $EC -ne 0 ]; then echo "Cattura diagnostica emulatore (screenshot+UI+logcat)…"; adb exec-out screencap -p > e2e-screen.png 2>/dev/null || true; adb shell uiautomator dump /sdcard/e2e-ui.xml >/dev/null 2>&1 && adb pull /sdcard/e2e-ui.xml >/dev/null 2>&1 || true; adb logcat -d -t 300 > e2e-logcat.txt 2>/dev/null || true; fi
+            exit $EC
+
+      - name: Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-mobile-results
+          path: mobile/e2e-*
+          retention-days: 7

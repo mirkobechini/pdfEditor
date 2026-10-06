@@ -3,6 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { resolveBaseUrl } from "../../../shared/tauri";
 
 interface ShareInfo {
     token: string;
@@ -25,7 +26,11 @@ export default function ShareViewer({ token }: ShareViewerProps) {
     const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
     const [unlocked, setUnlocked] = React.useState(false);
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const API_BASE = resolveBaseUrl(
+      "NEXT_PUBLIC_API_URL",
+      "http://localhost:8000",
+      process.env.NEXT_PUBLIC_API_URL,
+    );
 
     React.useEffect(() => {
         if (!token) return;

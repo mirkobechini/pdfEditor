@@ -1,0 +1,28 @@
+appId: com.mirkobechini.pdfeditor
+name: PdfEditor Mobile
+---
+# Tranche 2 — smoke: l'app parte e arriva alla schermata di accesso.
+# Alla prima installazione può apparire l'onboarding (Salta/Skip/Continua):
+# lo si salta se presente, poi si verifica la Login.
+# NOTA i18n (fix 2026-10-04): l'app è tradotta (en/it via expo-localization) e
+# l'emulatore CI è in inglese -> i selettori devono coprire entrambe le lingue
+# ("Email" e "Password" sono identiche).
+# NOTA cold start (run 37213936173, 2026-10-04): su emulatore software senza KVM
+# (ubuntu-24.04, swiftshader, 2 core) boot 277s + install APK 230s: il primo
+# render dell'app supera i 3 minuti. Timeout primo render a 300s. Se fallisce
+# ANCORA non è lentezza: il workflow cattura screenshot+uiautomator+logcat.
+- launchApp
+- extendedWaitUntil:
+    visible: "Continue as Guest|Continua come Ospite|Email|Salta|Skip"
+    timeout: 300000
+- runFlow:
+    when:
+      visible: "Salta|Skip"
+    commands:
+      - tapOn: "Salta|Skip"
+      - extendedWaitUntil:
+          visible: "Continue as Guest|Continua come Ospite|Email"
+          timeout: 60000
+- assertVisible: "Email"
+- assertVisible: "Password"
+- assertVisible: "Continue as Guest|Continua come Ospite"

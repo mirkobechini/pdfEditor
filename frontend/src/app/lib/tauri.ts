@@ -6,6 +6,7 @@ export {
   isTauri,
   getApiBaseUrl,
   getCloudApiBaseUrl,
+  resolveBaseUrl,
   tauriInvoke,
   openDevTools,
   openPdfDialog,

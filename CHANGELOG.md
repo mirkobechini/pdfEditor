@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-10-03
+
+### ✅ A1 — Client API unico in shared/ (DRY) — COMPLETATA (issue #883)
+
+Serie di 3 tranche che chiude il piano audit A1:
+
+- **Tranche 1** (#908, PR #909): guardia anti-drift `scripts/check-shared-sync.js` attiva in CI web+desktop — verifica che le copie generate di `shared/src` restino byte-identiche alla fonte (tauri.ts e compagni). Single-source garantito, non solo dichiarato.
+- **Tranche 2** (#910, PR #911): `WebApiClient extends ApiClient(shared)` con **adapter CSRF su tutte le istanze web** (`api` **e** `cloudApi`), più fix `login()` con `credentials: "include"` (parità col client originale). Superata la regressione e2e che aveva bloccato il primo tentativo (riprodotta e verificata: 4 e2e rossi → 17/17 verdi).
+- **Tranche 3** (#912, PR #913): `shared/src/client.ts` — factory formale `createApiClient(adapter)` con `defaultAdapter` e `webCsrfAdapter`; `ApiClient` accetta l'adapter nel costruttore; il web migra alla factory. Zero cambi di comportamento, trasporto ora iniettabile (testabilità senza `globalThis.fetch`).
+
+**Risultato**: un solo client API in `shared/`, usato da web+desktop; mobile resta dedicato RN (design). Nessuna issue aperta residua sul repo.
+
+### 🧹 Refactor serie A «audit codebase» completata e mergiata in dev
+
+Prosecuzione del piano audit (issue #881–#888), tutte le PR con CI verde e test invariati:
+
+- **A2 — Base URL guard** (issue #884, PR #901): fallback localhost solo in sviluppo con guard esplicito.
+- **A3 — Hooks/componenti** (issue #885, PR #899/#900): estrazione `useToolsScreen`, `useHomeScreen`, `useSettingsPage` + componenti (SettingsSidebar/SettingsTabs/SettingsModals, HomeToolbar/HomeListContent/HomeDialogs) — file spezzati in unità < 400 righe.
+- **A4 — Eccezioni tipizzate backend** (issue #886, PR #902): eccezioni tipizzate + log strutturato in storage.
+- **A5 — Sync mobile visibile** (issue #887, PR #903): banner e retry con stato sync all'utente (niente più console.log silenziosi).
+- **A6 — Test suite split** (issue #888, PR #904): test mastodontici spezzati per feature su backend (pytest), mobile (jest), desktop e web (vitest); fix conftest backend (rebind `SessionLocal` al test engine). Nessun test perso né duplicato.
+- **#881 — page.tsx desktop 1186 → 199 righe** (T1–T8): estrazione EditorToolbar/EditorRightPanel/EditorFooter/EditorViewer/EditorModals/useEditorState + delete/modal.
+
+### 🧪 Gate e2e per il refactor client API (issue #905, PR #906)
+
+Nuovi test e2e web (Playwright) a copertura delle mutazioni CSRF nel browser, come gate per il futuro refactor A1 (client API unico, issue #883):
+
+- **rename PDF via UI** (PUT con CSRF)
+- **catena cloudApi → api** (login web usa `cloudApi`, azioni usano `api`: se una delle due istanze perde il CSRF pre-fetch → 403)
+
+Totale e2e: **17 test** (15 esistenti + 2 nuovi), eseguiti automaticamente dal job CI `e2e` (path `e2e/**`).
+
+### 🧭 Note di bookkeeping
+
+- A1 (client API unico, DRY) è stata tentata e **revertita** (regressione e2e login→lista PDF, commit `6177665f`): il refactor resta aperto (issue #883) e verrà ripreso a piccole tranche con il nuovo gate e2e.
+- Pulizia branch: rimossi i branch remoti/locali già mergiati (serie A, chore/docs, test split).
+
 ## 2026-09-29 / 2026-09-30
 
 ### 📱 Bug mobile trovati testando su device reale (issue #866)

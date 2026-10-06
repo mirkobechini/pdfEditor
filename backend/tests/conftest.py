@@ -95,7 +95,13 @@ def per_test_db(tmp_path):
     # CRITICAL: Override the main database engine so app.main lifespan uses our test engine
     import app.core.database as database_module
     original_engine = database_module.engine
+    original_session_local = database_module.SessionLocal
     database_module.engine = engine
+    # Rebind SessionLocal to the test engine too: _seed_license_features / _seed_super_admin
+    # and get_db() read the module-level SessionLocal, which was bound to the ORIGINAL
+    # engine at import time. Without this rebind they hit the real DB in CI
+    # (e.g. "no such table: license_features" in test_main_seed_license_features_already_seeded).
+    database_module.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
     # Seed license features for this test DB
     from app.core.license_seed import DEFAULT_LICENSE_FEATURES
@@ -124,6 +130,7 @@ def per_test_db(tmp_path):
     app.dependency_overrides.clear()
     # Restore original engine
     database_module.engine = original_engine
+    database_module.SessionLocal = original_session_local
     engine.dispose()
     _engine = None
 

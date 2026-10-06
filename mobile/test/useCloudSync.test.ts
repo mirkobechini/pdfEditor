@@ -273,3 +273,74 @@ describe("useCloudSync downloadPdf", () => {
     );
   });
 });
+
+describe("useCloudSync A5 — syncUi state visible to the user", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Disable auto-sync on startup for this suite so the 1500ms timer does
+    // not call the real (unmocked) listPdfs after the test finishes.
+    (AsyncStorage.getItem as jest.Mock).mockImplementation((key: string) => {
+      if (key === "cloud_sync_on_startup") return Promise.resolve("false");
+      return Promise.resolve(null);
+    });
+    (NetInfo.fetch as jest.Mock).mockResolvedValue({ isConnected: true });
+    (getUnsyncedPdfs as jest.Mock).mockResolvedValue([]);
+    (getLocalPdfById as jest.Mock).mockResolvedValue({
+      id: "pdf-1",
+      original_filename: "test.pdf",
+      uri: "file:///test.pdf",
+    });
+  });
+
+  it("starts in idle status", async () => {
+    const { result } = await renderHook(() => useCloudSync());
+    await act(async () => {});
+    expect(result.current.syncUi.status).toBe("idle");
+  });
+
+  it("sets syncUi to error when a single upload fails (no silent path)", async () => {
+    jest.spyOn(api, "uploadPdf").mockRejectedValue(new Error("boom"));
+
+    const { result } = await renderHook(() => useCloudSync());
+    await act(async () => {});
+
+    await act(async () => {
+      await result.current.uploadPdf("pdf-1");
+    });
+
+    expect(result.current.syncUi.status).toBe("error");
+    expect(result.current.syncUi.lastError).toBeTruthy();
+  });
+
+  it("clearSyncError clears the error state (retry action)", async () => {
+    jest.spyOn(api, "uploadPdf").mockRejectedValue(new Error("boom"));
+
+    const { result } = await renderHook(() => useCloudSync());
+    await act(async () => {});
+
+    await act(async () => {
+      await result.current.uploadPdf("pdf-1");
+    });
+    expect(result.current.syncUi.status).toBe("error");
+
+    await act(async () => {
+      await result.current.clearSyncError();
+    });
+    expect(result.current.syncUi.status).not.toBe("error");
+  });
+
+  it("syncAll reports error status with a readable lastError on failure", async () => {
+    // listPdfs fails → errors collected → syncUi becomes error, not silent
+    jest.spyOn(api, "listPdfs").mockRejectedValue(new Error("offline"));
+
+    const { result } = await renderHook(() => useCloudSync());
+    await act(async () => {});
+
+    await act(async () => {
+      await result.current.syncAll();
+    });
+
+    expect(result.current.syncUi.status).toBe("error");
+    expect(result.current.syncUi.lastError).toContain("cloud.syncErrorListFailed");
+  });
+});

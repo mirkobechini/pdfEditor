@@ -6,7 +6,10 @@
  * un URL pubblico (cloud).
  *
  * URL base configurabile via NEXT_PUBLIC_DOCUMENTS_API_URL.
+ * Il fallback localhost è consentito SOLO in sviluppo (guard esplicito).
  */
+
+import { resolveBaseUrl } from "../../shared/tauri";
 
 export interface BrowseDocument {
   id: number;
@@ -40,7 +43,11 @@ export interface BrowseStats {
 }
 
 export function getDocumentsApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_DOCUMENTS_API_URL || "http://localhost:8001";
+  return resolveBaseUrl(
+    "NEXT_PUBLIC_DOCUMENTS_API_URL",
+    "http://localhost:8001",
+    process.env.NEXT_PUBLIC_DOCUMENTS_API_URL,
+  );
 }
 
 export class DocumentsApiClient {

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { View } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { IconButton, useTheme } from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import HomeScreen from "../screens/HomeScreen";
 import SettingsScreen from "../screens/SettingsScreen";
+import SyncStatusBanner from "../components/SyncStatusBanner";
 
 const Tab = createBottomTabNavigator();
 
@@ -20,44 +22,47 @@ export default function MainTabs() {
     );
 
     return (
-        <Tab.Navigator
-            screenOptions={{
-                headerStyle: { backgroundColor: "#F97316" },
-                headerTintColor: "#FFFFFF",
-                headerTitleStyle: { fontWeight: "bold" },
-                tabBarActiveTintColor: "#F97316",
-                tabBarInactiveTintColor: "#999",
-                tabBarStyle: {
-                    backgroundColor: theme.colors.surface,
-                    borderTopColor: theme.colors.surfaceVariant,
-                },
-                // Congela le schermate inattive per evitare re-render quando si cambia tab
-                freezeOnBlur: true,
-            }}
-        >
-            <Tab.Screen
-                name="HomeTab"
-                children={renderHome}
-                options={{
-                    title: t("home.title"),
-                    tabBarLabel: t("home.title"),
-                    tabBarBadge: pdfCount > 0 ? pdfCount : undefined,
-                    tabBarIcon: ({ color, size }) => (
-                        <IconButton icon="file-document" size={size} iconColor={color} />
-                    ),
+        <View style={{ flex: 1 }}>
+            <SyncStatusBanner />
+            <Tab.Navigator
+                screenOptions={{
+                    headerStyle: { backgroundColor: "#F97316" },
+                    headerTintColor: "#FFFFFF",
+                    headerTitleStyle: { fontWeight: "bold" },
+                    tabBarActiveTintColor: "#F97316",
+                    tabBarInactiveTintColor: "#999",
+                    tabBarStyle: {
+                        backgroundColor: theme.colors.surface,
+                        borderTopColor: theme.colors.surfaceVariant,
+                    },
+                    // Congela le schermate inattive per evitare re-render quando si cambia tab
+                    freezeOnBlur: true,
                 }}
-            />
-            <Tab.Screen
-                name="SettingsTab"
-                component={SettingsScreen}
-                options={{
-                    title: t("settings.title"),
-                    tabBarLabel: t("settings.title"),
-                    tabBarIcon: ({ color, size }) => (
-                        <IconButton icon="cog" size={size} iconColor={color} />
-                    ),
-                }}
-            />
-        </Tab.Navigator>
+            >
+                <Tab.Screen
+                    name="HomeTab"
+                    children={renderHome}
+                    options={{
+                        title: t("home.title"),
+                        tabBarLabel: t("home.title"),
+                        tabBarBadge: pdfCount > 0 ? pdfCount : undefined,
+                        tabBarIcon: ({ color, size }) => (
+                            <IconButton icon="file-document" size={size} iconColor={color} />
+                        ),
+                    }}
+                />
+                <Tab.Screen
+                    name="SettingsTab"
+                    component={SettingsScreen}
+                    options={{
+                        title: t("settings.title"),
+                        tabBarLabel: t("settings.title"),
+                        tabBarIcon: ({ color, size }) => (
+                            <IconButton icon="cog" size={size} iconColor={color} />
+                        ),
+                    }}
+                />
+            </Tab.Navigator>
+        </View>
     );
 }

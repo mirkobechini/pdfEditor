@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useCallback, useEffect, useState } from "react";
-import { api } from "./api";
+import { api, CLOUD_API_URL } from "./api";
 import type { User } from "./types";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 5000);
                 try {
-                    const res = await fetch("https://pdfeditor-api.mirkobechini.com/auth/me", {
+                    const res = await fetch(`${CLOUD_API_URL}/auth/me`, {
                         method: "GET",
                         headers: {
                             Authorization: `Bearer ${api.getToken() || ""}`,
