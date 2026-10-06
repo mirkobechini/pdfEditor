@@ -166,23 +166,40 @@ jobs:
             # T0-backend (#923): il backend locale è già attivo sul runner
             # (uvicorn su 10.0.2.2:8000 raggiungibile dall'emulatore), quindi
             # la suite COMPLETA gira sempre a ogni push. Mai produzione.
-            set +e
-            echo "Eseguo la suite completa (backend locale)"
-            # I flow vivono in .maestro/flows/: puntare .maestro (config+assets)
-            # fa fallire Maestro con "Top-level directories do not contain any Flows"
-            # (verificato 05/10, run 37356399818). Il config.yaml viene scoperto
-            # risalendo l'albero delle directory a partire da .maestro/flows.
-            "$HOME/.maestro/bin/maestro" test .maestro/flows --format junit --output e2e-results.xml
-            EC=$?
-            set -e
-            echo "Maestro exit code: $EC"
-            if [ $EC -ne 0 ]; then echo "Cattura diagnostica emulatore (screenshot+UI+logcat)…"; adb exec-out screencap -p > e2e-screen.png 2>/dev/null || true; adb shell uiautomator dump /sdcard/e2e-ui.xml >/dev/null 2>&1 && adb pull /sdcard/e2e-ui.xml >/dev/null 2>&1 || true; adb logcat -d -t 300 > e2e-logcat.txt 2>/dev/null || true; fi
-            exit $EC
+            #
+            # Un flow per invocazione Maestro (non l'intera cartella in un
+            # colpo): se l'emulatore muore a metà suite (osservato 06/10,
+            # device offline dopo ~11 flow), la cattura diagnostica a fine
+            # batch arriva troppo tardi e non produce nulla di utile. Con un
+            # flow alla volta, ogni fallimento ha SEMPRE il suo screenshot/UI
+            # dump/logcat, anche se un flow successivo perde il device.
+            mkdir -p diag
+            OVERALL_EC=0
+            for f in .maestro/flows/*.yaml; do
+              name=$(basename "$f" .yaml)
+              echo "=== Flow: $name ==="
+              set +e
+              "$HOME/.maestro/bin/maestro" test "$f" --format junit --output "e2e-results-$name.xml"
+              EC=$?
+              set -e
+              echo "Flow $name exit code: $EC"
+              if [ $EC -ne 0 ]; then
+                OVERALL_EC=1
+                echo "Cattura diagnostica emulatore per $name (screenshot+UI+logcat)…"
+                adb exec-out screencap -p > "diag/e2e-screen-$name.png" 2>/dev/null || true
+                adb shell uiautomator dump "/sdcard/e2e-ui-$name.xml" >/dev/null 2>&1 && adb pull "/sdcard/e2e-ui-$name.xml" "diag/" >/dev/null 2>&1 || true
+                adb logcat -d -t 500 > "diag/e2e-logcat-$name.txt" 2>/dev/null || true
+              fi
+            done
+            echo "Overall exit code: $OVERALL_EC"
+            exit $OVERALL_EC
 
       - name: Upload E2E results
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: e2e-mobile-results
-          path: mobile/e2e-*
+          path: |
+            mobile/e2e-results-*.xml
+            mobile/diag/**
           retention-days: 7
