@@ -68,7 +68,10 @@ jobs:
       - name: Compute APK cache key
         id: apk-key
         run: |
-          KEY="pm-apk-${{ hashFiles('mobile/src/**', 'mobile/assets/**', 'mobile/app.json', 'mobile/app.config.js', 'mobile/eas.json', 'mobile/package.json', 'mobile/package-lock.json', 'mobile/index.ts', 'mobile/App.tsx', 'mobile/tsconfig.json', 'mobile/babel.config.js', 'mobile/metro.config.js', 'mobile/.easignore') }}"
+          # v2-release: bump esplicito per invalidare la cache del vecchio APK
+          # debug (senza bundle JS incorporato, issue #923 06/10) — la chiave
+          # non dipendeva dal build type, solo dai sorgenti app invariati.
+          KEY="pm-apk-v2-release-${{ hashFiles('mobile/src/**', 'mobile/assets/**', 'mobile/app.json', 'mobile/app.config.js', 'mobile/eas.json', 'mobile/package.json', 'mobile/package-lock.json', 'mobile/index.ts', 'mobile/App.tsx', 'mobile/tsconfig.json', 'mobile/babel.config.js', 'mobile/metro.config.js', 'mobile/.easignore') }}"
           echo "key=$KEY" >> "$GITHUB_OUTPUT"
           echo "APK cache key: $KEY"
 
@@ -79,9 +82,15 @@ jobs:
           path: mobile/pdfeditor-e2e.apk
           key: ${{ steps.apk-key.outputs.key }}
           restore-keys: |
-            pm-apk-
+            pm-apk-v2-release-
 
       - name: Build APK locally (no EAS)
+        # release, non debug: la variante debug di RN/Expo NON incorpora il
+        # bundle JS (si aspetta Metro) -> l'app si apriva sulla RedBox
+        # "Unable to load script" invece dell'onboarding, e QUALUNQUE flow
+        # falliva identicamente (root cause reale, issue #923, 06/10).
+        # signingConfigs.release = signingConfigs.debug nel gradle generato
+        # da expo prebuild -> nessun keystore extra necessario.
         if: steps.apk-cache.outputs.cache-hit != 'true'
         env:
           EXPO_PUBLIC_API_URL: http://10.0.2.2:8000
@@ -89,8 +98,8 @@ jobs:
           cd mobile
           npx expo prebuild --platform android --no-install
           cd android
-          ./gradlew :app:assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../pdfeditor-e2e.apk
+          ./gradlew :app:assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk ../pdfeditor-e2e.apk
           ls -la ../pdfeditor-e2e.apk
 
       - name: Setup Python
