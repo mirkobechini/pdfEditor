@@ -2,9 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 
-// Mock next-intl
+// Mock next-intl — usa le stringhe EN reali così i test verificano i testi localizzati.
 vi.mock("next-intl", () => ({
-    useTranslations: () => (key: string) => key,
+    useLocale: () => "en",
+    useTranslations: () => (key: string) => {
+        const en = require("../../../../messages/en.json");
+        return en.download[key] ?? key;
+    },
 }));
 
 // Mock next/link
@@ -76,7 +80,7 @@ describe("DownloadPage", () => {
         render(<DownloadPage />);
 
         await waitFor(() => {
-            expect(screen.getByText("Desktop App")).toBeInTheDocument();
+            expect(screen.getAllByText("Desktop App").length).toBeGreaterThan(0);
         });
 
         // Desktop section
@@ -87,7 +91,7 @@ describe("DownloadPage", () => {
         expect(screen.getByText("Download DEB")).toBeInTheDocument();
 
         // Mobile section
-        expect(screen.getByText("Mobile App")).toBeInTheDocument();
+        expect(screen.getAllByText("Mobile App").length).toBeGreaterThan(0);
         expect(screen.getAllByText("v0.2.1-mobile").length).toBeGreaterThan(0);
         // Web section
         expect(screen.getByText("Web App")).toBeInTheDocument();

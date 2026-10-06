@@ -1,0 +1,57 @@
+{
+  "desktop": [
+    {
+      "version": "v0.1.39",
+      "date": "2026-09-27",
+      "changes": [
+        "OCR: recognize text in scanned PDFs and make it searchable",
+        "Annotations: highlight, underline, comment and draw on your PDFs",
+        "Share via link: share a PDF with a public link, with optional password and expiration",
+        "Multi-select: select multiple PDFs and apply bulk operations (delete, export)",
+        "Improved digital signature: guided flow, real-time preview, resizing, undo/redo",
+        "New print dialog: live preview, choose pages/orientation/copies/margins",
+        "Drag & drop: drag a PDF into the editor to open it, or an image to import it",
+        "Login with status feedback: see what the app is doing while signing in",
+        "Improved image import: support for GIF and BMP",
+        "Faster startup thanks to the saved session",
+        "Security fix: resolved a bug that broke sharing links"
+      ]
+    },
+    {
+      "version": "v0.1.38",
+      "date": "2026-09-16",
+      "changes": [
+        "Import/Export: import files (text, images) and export your PDFs to other formats",
+        "DOCX → PDF conversion: open and convert Word documents"
+      ]
+    }
+  ],
+  "mobile": [
+    {
+      "version": "v0.2.4-mobile",
+      "date": "2026-09-27",
+      "changes": [
+        "Offline compression: compress PDFs even without a connection",
+        "Print: choose pages and orientation, with preview before printing",
+        "Signature: draw the signature freehand, position it by dragging and resize with pinch-to-zoom",
+        "PDF annotations: highlight, underline, comment and draw on your PDFs",
+        "OCR: recognize text in scanned PDFs and make it searchable",
+        "Share via link: share a PDF with a public link, with optional password and expiration"
+      ]
+    },
+    {
+      "version": "v0.2.3-mobile",
+      "date": "2026-09-16",
+      "changes": [
+        "Login with Google",
+        "Update notification: get notified when a new version is released",
+        "Bug report directly from the app",
+        "Import/Export: import files and export PDFs",
+        "DOCX → PDF conversion",
+        "Print PDF",
+        "Platform icons: see where each PDF comes from (web, desktop, mobile)",
+        "Various fixes: duplicate PDFs, faster sync, missing icons"
+      ]
+    }
+  ]
+}
