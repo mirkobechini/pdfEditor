@@ -21,6 +21,7 @@ import DeleteModal from "../components/DeleteModal";
 import ImportExportDialog from "../components/ImportExportDialog";
 import DropOverlay from "../components/DropOverlay";
 import PrintOptionsModal, { type PrintOptions } from "../components/PrintOptionsModal";
+import EditorDialogs from "../components/EditorDialogs";
 import { api, PdfDocument } from "../lib/api";
 import { mapError } from "../lib/error-map";
 import { downloadBlob } from "../lib/download";
@@ -316,151 +317,51 @@ export default function EditorPage() {
                 }
             />
 
-            {/* Dialogs */}
-            <MergeDialog
-                open={mergeOpen}
-                onClose={() => setMergeOpen(false)}
-                selectedId={selectedId}
-                onMergeComplete={(doc) => {
-                    setSidebarRefreshKey((prev) => prev + 1);
-                    setSelectedId(doc.id);
-                    setSelectedName(doc.original_filename);
-                    if (doc.is_password_protected) {
-                        setRequiresPassword(true);
-                        setFileUrl(null);
-                        return;
-                    }
-                    setRequiresPassword(false);
-                    void api.downloadPdf(doc.id).then((blob) => {
-                        const url = URL.createObjectURL(blob);
-                        if (fileUrl) URL.revokeObjectURL(fileUrl);
-                        setFileUrl(url);
-                    });
-                }}
-            />
-            <SplitDialog
-                open={splitOpen}
-                onClose={() => setSplitOpen(false)}
+            <EditorDialogs
                 selectedId={selectedId}
                 selectedName={selectedName}
-                totalPages={totalPages}
-                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
-            />
-            <CompressDialog
-                open={compressOpen}
-                onClose={() => setCompressOpen(false)}
-                selectedId={selectedId}
-                selectedName={selectedName}
-                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
-            />
-            <ReorderDialog
-                open={reorderOpen}
-                onClose={() => setReorderOpen(false)}
-                selectedId={selectedId}
-                selectedName={selectedName}
-                totalPages={totalPages}
-                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
-            />
-            <RemoveDialog
-                open={removeOpen}
-                onClose={() => setRemoveOpen(false)}
-                selectedId={selectedId}
-                selectedName={selectedName}
-                totalPages={totalPages}
-                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
-            />
-            <MetadataDialog
-                open={metadataOpen}
-                onClose={() => setMetadataOpen(false)}
-                pdfId={selectedId}
-                onSuccess={(doc) => {
-                    setSidebarRefreshKey((prev) => prev + 1);
-                    setSelectedId(doc.id);
-                    setSelectedName(doc.original_filename);
-                    if (doc.is_password_protected) {
-                        setRequiresPassword(true);
-                        setFileUrl(null);
-                        return;
-                    }
-                    setRequiresPassword(false);
-                    void api.downloadPdf(doc.id).then((blob) => {
-                        const url = URL.createObjectURL(blob);
-                        if (fileUrl) URL.revokeObjectURL(fileUrl);
-                        setFileUrl(url);
-                    });
-                }}
-            />
-            <ReplaceTextDialog
-                open={replaceTextOpen}
-                onClose={() => setReplaceTextOpen(false)}
-                pdfId={selectedId}
-                onSuccess={loadDocIntoViewer}
-            />
-            <ProtectDialog
-                open={protectOpen}
-                onClose={() => setProtectOpen(false)}
-                pdfId={selectedId}
-            />
-            <PrintOptionsModal
-                open={printOptionsOpen}
-                onClose={() => setPrintOptionsOpen(false)}
-                onConfirm={executePrint}
-                pdfUrl={fileUrl}
-                initialPage={currentPage}
-                totalPages={totalPages || 1}
-            />
-            <SignDialog
-                open={signOpen}
-                onClose={() => setSignOpen(false)}
-                pdfId={selectedId}
-                totalPages={totalPages}
-                pdfUrl={fileUrl}
-                onSuccess={loadDocIntoViewer}
-            />
-            <ShareDialog
-                open={shareOpen}
-                onClose={() => setShareOpen(false)}
-                pdfId={selectedId}
-            />
-            <AnnotationDialog
-                open={annotateOpen}
-                onClose={() => setAnnotateOpen(false)}
-                pdfId={selectedId}
+                fileUrl={fileUrl}
                 currentPage={currentPage}
-                pdfUrl={fileUrl}
-                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
-            />
-            <OcrModal
-                open={ocrOpen}
-                onClose={() => setOcrOpen(false)}
-                pdfId={selectedId}
-                onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
-            />
-            <ImportExportDialog
-                open={importExportOpen}
-                onClose={() => setImportExportOpen(false)}
-                selectedId={selectedId}
-                selectedName={selectedName}
-                onImportSuccess={(doc) => {
-                    setSidebarRefreshKey((prev) => prev + 1);
-                    setSelectedId(doc.id);
-                    setSelectedName(doc.original_filename);
-                    setRequiresPassword(false);
-                    void api.downloadPdf(doc.id).then((blob) => {
-                        const url = URL.createObjectURL(blob);
-                        if (fileUrl) URL.revokeObjectURL(fileUrl);
-                        setFileUrl(url);
-                    });
-                }}
-            />
-            <DeleteModal
-                open={deleteModalOpen}
-                onClose={() => setDeleteModalOpen(false)}
-                file={fileToDelete}
-                onConfirm={() => {
-                    if (!fileToDelete) return;
-                    void handleDelete(fileToDelete);
-                }}
+                totalPages={totalPages}
+                mergeOpen={mergeOpen}
+                splitOpen={splitOpen}
+                compressOpen={compressOpen}
+                reorderOpen={reorderOpen}
+                removeOpen={removeOpen}
+                metadataOpen={metadataOpen}
+                replaceTextOpen={replaceTextOpen}
+                protectOpen={protectOpen}
+                signOpen={signOpen}
+                shareOpen={shareOpen}
+                annotateOpen={annotateOpen}
+                ocrOpen={ocrOpen}
+                importExportOpen={importExportOpen}
+                printOptionsOpen={printOptionsOpen}
+                deleteModalOpen={deleteModalOpen}
+                fileToDelete={fileToDelete}
+                onCloseMerge={() => setMergeOpen(false)}
+                onCloseSplit={() => setSplitOpen(false)}
+                onCloseCompress={() => setCompressOpen(false)}
+                onCloseReorder={() => setReorderOpen(false)}
+                onCloseRemove={() => setRemoveOpen(false)}
+                onCloseMetadata={() => setMetadataOpen(false)}
+                onCloseReplaceText={() => setReplaceTextOpen(false)}
+                onCloseProtect={() => setProtectOpen(false)}
+                onCloseSign={() => setSignOpen(false)}
+                onCloseShare={() => setShareOpen(false)}
+                onCloseAnnotate={() => setAnnotateOpen(false)}
+                onCloseOcr={() => setOcrOpen(false)}
+                onCloseImportExport={() => setImportExportOpen(false)}
+                onClosePrintOptions={() => setPrintOptionsOpen(false)}
+                onCloseDeleteModal={() => setDeleteModalOpen(false)}
+                onConfirmDelete={() => { if (!fileToDelete) return; void handleDelete(fileToDelete); }}
+                setSelectedId={setSelectedId}
+                setSelectedName={setSelectedName}
+                setFileUrl={setFileUrl}
+                setRequiresPassword={setRequiresPassword}
+                setSidebarRefreshKey={setSidebarRefreshKey}
+                loadDocIntoViewer={loadDocIntoViewer}
+                executePrint={executePrint}
             />
         </div>
     );
