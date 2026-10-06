@@ -172,6 +172,34 @@ describe("RegisterPage", () => {
     });
   });
 
+  it("translates server error message (not raw mapError key)", async () => {
+    // Server-driven errors (e.g. password too short per backend rules, HTTP 400)
+    // must be translated via t()/tc(), never shown as raw "auth.passwordTooShort".
+    mockRegister.mockRejectedValue(new Error("Password must be at least 8 characters"));
+
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("Mario Rossi"), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getAllByPlaceholderText("email@example.com")[0], {
+      target: { value: "test@example.com" },
+    });
+    const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+    fireEvent.change(passwordInputs[0], { target: { value: "password12" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "password12" } });
+
+    fireEvent.click(screen.getByText("registerButton"));
+
+    await waitFor(() => {
+      expect(mockRegister).toHaveBeenCalled();
+    });
+    // The rendered message must NOT contain the raw "auth." key.
+    expect(screen.queryByText(/auth\.passwordTooShort/)).toBeNull();
+    // It should show the registerFailed prefix + a translated key (t() renders the key in tests).
+    expect(screen.getByText(/registerFailed/)).toBeTruthy();
+  });
+
   it("has a link to login page", () => {
     render(<RegisterPage />);
     const link = screen.getByText("loginLink");
