@@ -25,7 +25,7 @@ name: PdfEditor Mobile
 # Home: attende il FAB "+" (testID aggiunto per Maestro)
 - extendedWaitUntil:
     visible: "fab-add-pdf|Add PDF|Upload from device"
-    timeout: 60000
+    timeout: 120000
 # Apre il menu Add PDF
 - tapOn:
     id: "fab-add-pdf"

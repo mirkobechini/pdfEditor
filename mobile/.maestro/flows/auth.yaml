@@ -19,6 +19,9 @@ name: PdfEditor Mobile
           visible: "Email|Continue as Guest|Continua come Ospite"
           timeout: 10000
 # Passo al modulo Registrazione
+- extendedWaitUntil:
+    visible: "Don't have an account? Register|Non hai un account? Registrati"
+    timeout: 60000
 - tapOn: "Don't have an account? Register|Non hai un account? Registrati"
 - assertVisible: "Full Name|Nome Completo"
 # Compila i campi

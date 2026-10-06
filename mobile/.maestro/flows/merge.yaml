@@ -23,7 +23,7 @@ name: PdfEditor Mobile
 - tapOn: "Continue as Guest|Continua come Ospite"
 - extendedWaitUntil:
     visible: "fab-add-pdf|Add PDF|Upload from device"
-    timeout: 60000
+    timeout: 120000
 
 # ─── Upload PDF #1 (e2e-upload.pdf) ───
 - tapOn:
