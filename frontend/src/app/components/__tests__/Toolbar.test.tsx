@@ -27,6 +27,7 @@ const defaultProps = {
     onShare: vi.fn(),
     onAnnotate: vi.fn(),
     onOcr: vi.fn(),
+    onDownload: vi.fn(),
     canUndo: true,
     canRedo: false,
     onUndo: vi.fn(),
@@ -128,6 +129,19 @@ describe("Toolbar", () => {
         expect(onReorganize).toHaveBeenCalled();
         // il menu è chiuso: le voci non devono essere più presenti
         expect(screen.queryByText(/^reorder$/)).not.toBeInTheDocument();
+    });
+
+    it("calls onDownload when download button is clicked (diretta)", () => {
+        const onDownload = vi.fn();
+        render(<Toolbar {...defaultProps} onDownload={onDownload} />);
+        fireEvent.click(screen.getByText(/^download$/));
+        expect(onDownload).toHaveBeenCalled();
+    });
+
+    it("disables download when canUndo is false (nessun documento selezionato)", () => {
+        render(<Toolbar {...defaultProps} canUndo={false} />);
+        const btn = screen.getByTestId("toolbar-download");
+        expect(btn).toBeDisabled();
     });
 
     it("calls onPageChange when prev/next buttons are clicked", () => {

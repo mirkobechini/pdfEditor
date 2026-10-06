@@ -140,6 +140,18 @@ export default function EditorPage() {
         }
     }
 
+    // issue #928: scarica il PDF aperto sul dispositivo, col nome originale.
+    async function handleDownload() {
+        if (!selectedId) return;
+        try {
+            const blob = await api.downloadPdf(selectedId);
+            const filename = selectedName || `pdf_${selectedId}.pdf`;
+            downloadBlob(blob, filename);
+        } catch (err) {
+            console.error("Failed to download:", err);
+        }
+    }
+
     async function handleDelete(doc: PdfDocument) {
         await api.deletePdf(doc.id);
         if (selectedId === doc.id) {
@@ -277,6 +289,7 @@ export default function EditorPage() {
                         onProtect={() => setProtectOpen(true)}
                         onImportExport={() => setImportExportOpen(true)}
                         onPrint={handlePrint}
+                        onDownload={handleDownload}
                         onSign={() => setSignOpen(true)}
                         onShare={() => setShareOpen(true)}
                         onAnnotate={() => setAnnotateOpen(true)}
