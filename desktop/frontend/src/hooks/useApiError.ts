@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { mapError } from "../shared/error-map";
+import { mapError, extractErrorDetail } from "../shared/error-map";
 
 /**
  * Hook che traduce un errore API in un messaggio localizzato.
@@ -24,5 +24,20 @@ export function useApiError() {
     return t(key);
   }
 
-  return { apiError };
+  /**
+   * Come apiError, ma per gli errori NON riconosciuti (common.unknownError)
+   * aggiunge un dettaglio tecnico breve. Usato dove serve capire la causa
+   * reale (es. Condividi su desktop); apiError resta invariato altrove.
+   */
+  function apiErrorWithDetail(err: unknown): string {
+    const key = mapError(err);
+    const text = t(key);
+    if (key === "common.unknownError") {
+      const detail = extractErrorDetail(err).replace(/\s+/g, " ").trim();
+      if (detail) return `${text} (${detail.slice(0, 120)})`;
+    }
+    return text;
+  }
+
+  return { apiError, apiErrorWithDetail };
 }

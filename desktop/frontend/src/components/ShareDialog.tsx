@@ -14,7 +14,7 @@ interface ShareDialogProps {
 
 export default function ShareDialog({ open, onClose, pdfId }: ShareDialogProps) {
     const t = useTranslations("shareDialog");
-    const { apiError } = useApiError();
+    const { apiErrorWithDetail: apiError } = useApiError();
     const [links, setLinks] = React.useState<ShareLink[]>([]);
     const [password, setPassword] = React.useState("");
     const [expiresInDays, setExpiresInDays] = React.useState("");
