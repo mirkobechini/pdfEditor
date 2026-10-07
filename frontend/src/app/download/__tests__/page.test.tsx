@@ -29,7 +29,7 @@ globalThis.fetch = mockFetch as any;
 
 const GITHUB_API = "https://api.github.com/repos/mirkobechini/pdfEditor/releases";
 const CHANGELOG_URL =
-    "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev/changelog.json";
+    "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev/changelog.en.json";
 
 function mockRelease(tag: string, assets: { name: string; browser_download_url: string }[]) {
     return { tag_name: tag, name: tag, assets };
@@ -153,5 +153,35 @@ describe("DownloadPage", () => {
         expect(screen.getByText("Upload PDF")).toBeInTheDocument();
         expect(screen.getByText("Merge PDFs")).toBeInTheDocument();
         expect(screen.getByText("Replace Text")).toBeInTheDocument();
+    });
+    it("requests the English changelog when the locale is en", async () => {
+        mockFetch
+            .mockResolvedValueOnce(mockJsonResponse([]))
+            .mockResolvedValueOnce(mockJsonResponse(changelogData));
+
+        const DownloadPage = (await import("../page")).default;
+        render(<DownloadPage />);
+
+        await waitFor(() => {
+            expect(screen.getByText("Feature Comparison")).toBeInTheDocument();
+        });
+        expect(mockFetch).toHaveBeenCalledWith(CHANGELOG_URL);
+    });
+
+    it("falls back to the default changelog when the English one is unavailable", async () => {
+        mockFetch
+            .mockResolvedValueOnce(mockJsonResponse([]))
+            .mockResolvedValueOnce({ ok: false, json: () => Promise.resolve(null) })
+            .mockResolvedValueOnce(mockJsonResponse(changelogData));
+
+        const DownloadPage = (await import("../page")).default;
+        render(<DownloadPage />);
+
+        await waitFor(() => {
+            expect(screen.getByText("Test coverage")).toBeInTheDocument();
+        });
+        expect(mockFetch).toHaveBeenCalledWith(
+            "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev/changelog.json",
+        );
     });
 });
