@@ -15,6 +15,9 @@ interface SignDialogProps {
     onSuccess?: (doc: { id: string; original_filename: string }) => void;
 }
 
+// Stessi colori del mobile (SignFlowDialog).
+const INK_COLORS = ["#000000", "#FFFFFF", "#D32F2F", "#1565C0"];
+
 export default function SignDialog({ open, onClose, pdfId, totalPages, pdfUrl, onSuccess }: SignDialogProps) {
     const t = useTranslations("signDialog");
     const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -29,6 +32,7 @@ export default function SignDialog({ open, onClose, pdfId, totalPages, pdfUrl, o
     const [signWidth, setSignWidth] = React.useState(200);
     const [signHeight, setSignHeight] = React.useState(80);
     const [step, setStep] = React.useState<"choose" | "position">("choose");
+    const [inkColor, setInkColor] = React.useState(INK_COLORS[0]);
     const [signing, setSigning] = React.useState(false);
     const [error, setError] = React.useState("");
     // Undo/redo stacks (canvas snapshots as data URLs)
@@ -45,6 +49,7 @@ export default function SignDialog({ open, onClose, pdfId, totalPages, pdfUrl, o
             setHasSignature(false);
             setSignatureImage(null);
             setSignatureDataUrl(null);
+            setInkColor(INK_COLORS[0]);
             setStep("choose");
             setSignWidth(200);
             setSignHeight(80);
@@ -131,7 +136,7 @@ export default function SignDialog({ open, onClose, pdfId, totalPages, pdfUrl, o
         const { x, y } = getCanvasPoint(e);
         ctx.beginPath();
         ctx.moveTo(x, y);
-        ctx.strokeStyle = "#000";
+        ctx.strokeStyle = inkColor;
         ctx.lineWidth = 2;
         ctx.lineCap = "round";
         setDrawing(true);
@@ -250,13 +255,27 @@ export default function SignDialog({ open, onClose, pdfId, totalPages, pdfUrl, o
 
                 {step === "choose" ? (
                     <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-2" data-testid="ink-colors">
+                            <span className="text-sm font-medium dark:text-gray-300">{t("inkColor")}</span>
+                            {INK_COLORS.map((c) => (
+                                <button
+                                    key={c}
+                                    type="button"
+                                    onClick={() => setInkColor(c)}
+                                    data-testid={`sign-color-${c}`}
+                                    aria-label={c}
+                                    className={`h-6 w-6 rounded-full border ${inkColor === c ? "ring-2 ring-orange-500 border-orange-500" : "border-gray-400"}`}
+                                    style={{ backgroundColor: c }}
+                                />
+                            ))}
+                        </div>
                         <div>
                             <label className="block text-sm font-medium mb-1 dark:text-gray-300">{t("drawLabel")}</label>
                             <canvas
                                 ref={canvasRef}
                                 width={400}
                                 height={160}
-                                className="w-full h-40 border border-gray-300 dark:border-gray-600 rounded-lg bg-white touch-none"
+                                className={`w-full h-40 border border-gray-300 dark:border-gray-600 rounded-lg touch-none ${inkColor === "#FFFFFF" ? "bg-gray-600" : "bg-white"}`}
                                 onMouseDown={handleMouseDown}
                                 onMouseMove={handleMouseMove}
                                 onMouseUp={handleMouseUp}
@@ -356,7 +375,7 @@ export default function SignDialog({ open, onClose, pdfId, totalPages, pdfUrl, o
                                 pdfUrl={pdfUrl ?? null}
                                 pageNumber={pageNumber}
                                 boxSize={{ width: signWidth, height: signHeight }}
-                                signatureImage={signatureImage}
+                                signatureImage={signatureImage ?? signatureDataUrl}
                                 onPositionChange={(x, y) => { setSignX(x); setSignY(y); }}
                                 onSizeChange={(w, h) => { setSignWidth(w); setSignHeight(h); }}
                             />
