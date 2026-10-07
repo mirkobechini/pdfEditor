@@ -618,20 +618,30 @@ export function useCloudSync(): UseCloudSyncReturn {
     };
   }, [syncAll]);
 
+  // Sync all'avvio E dopo il login: parte appena l'utente e' autenticato
+  // (non guest), una sola volta per utente. Prima partiva solo al mount e il
+  // login non scaricava i PDF dal cloud.
+  const lastSyncedUserRef = useRef<string | null>(null);
+  const userId = user?.id ?? null;
   useEffect(() => {
+    if (isGuest || !userId) {
+      lastSyncedUserRef.current = null;
+      return;
+    }
+    if (lastSyncedUserRef.current === userId) return;
+    lastSyncedUserRef.current = userId;
     let cancelled = false;
     const timer = setTimeout(async () => {
       if (cancelled) return;
       const startupPref = await AsyncStorage.getItem(SYNC_STARTUP_KEY);
       if (startupPref === "false") return;
       await syncAllRef.current();
-    }, 1500);
+    }, 500);
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isGuest, userId]);
 
   // Sync in background when app goes to background
   useEffect(() => {
