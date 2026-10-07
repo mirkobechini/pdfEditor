@@ -34,6 +34,13 @@ beforeEach(() => {
 });
 
 describe("Sidebar", () => {
+    it("shows file size and upload date for each PDF", async () => {
+        render(<Sidebar {...defaultProps} />);
+        const meta = await screen.findByTestId("file-meta-1");
+        expect(meta.textContent).toContain("1000 B");
+        expect(meta.textContent).toContain("2026");
+    });
+
     it("renders upload area", () => {
         render(<Sidebar {...defaultProps} />);
         expect(screen.getByText("dropHere")).toBeInTheDocument();
