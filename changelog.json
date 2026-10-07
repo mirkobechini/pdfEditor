@@ -1,6 +1,18 @@
 {
   "desktop": [
     {
+      "version": "v0.1.40",
+      "date": "2026-10-07",
+      "changes": [
+        "Annotazioni: posiziona e ridimensiona il riquadro direttamente sull'anteprima del PDF, con la maniglia in basso a destra",
+        "Firma: scegli il colore dell'inchiostro (nero, bianco, rosso, blu) e vedi la firma nel riquadro mentre la sposti e la ridimensioni",
+        "Registrazione: messaggi chiari sui requisiti della password (8 caratteri, maiuscola, minuscola, numero)",
+        "Sostituzione testo: ora funziona anche sui PDF con font incorporati",
+        "Impostazioni cloud: aprendole non parte più una sincronizzazione con errori; la sincronizzazione parte solo con \"Sincronizza ora\"",
+        "Messaggi di errore tradotti nelle annotazioni, nell'OCR e nella condivisione"
+      ]
+    },
+    {
       "version": "v0.1.39",
       "date": "2026-09-27",
       "changes": [
@@ -36,7 +48,9 @@
         "Firma: disegna la firma a mano libera, posizionala trascinandola e ridimensionala con lo zoom",
         "Annotazioni PDF: evidenzia, sottolinea, commenta e disegna sui tuoi PDF",
         "OCR: riconosci il testo nei PDF scansionati e rendilo ricercabile",
-        "Condivisione via link: condividi un PDF con un link pubblico, con password e scadenza opzionali"
+        "Condivisione via link: condividi un PDF con un link pubblico, con password e scadenza opzionali",
+        "Registrazione: messaggi chiari sui requisiti della password (8 caratteri, maiuscola, minuscola, numero)",
+        "Dopo l'accesso i tuoi PDF del cloud si scaricano subito, senza premere \"Sincronizza ora\""
       ]
     },
     {
