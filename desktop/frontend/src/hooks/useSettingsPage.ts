@@ -36,7 +36,7 @@ export function useSettingsPage() {
     const { user } = useAuth();
     const setLocale = useLocaleSetter();
     const { prefs, updatePrefs } = usePreferences();
-    const { syncEnabled, setSyncEnabled, syncOnStartup, setSyncOnStartup, isOnline, isSyncing, progress, syncAll, lastSyncResult, clearSyncResult } = useCloudSync();
+    const { syncEnabled, setSyncEnabled, syncOnStartup, setSyncOnStartup, isOnline, isSyncing, progress, syncAll, lastSyncResult, clearSyncResult } = useCloudSync({ autoSyncOnMount: false });
     const [activeTab, setActiveTab] = React.useState<SectionId>("general");
     const [changelogOpen, setChangelogOpen] = React.useState(false);
     const [bugReportOpen, setBugReportOpen] = React.useState(false);

@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { api, PdfDocument } from "../lib/api";
 import { mapError } from "../lib/error-map";
+import { formatFileSize, formatUploadDate } from "../lib/file-meta";
 
 const PLATFORM_ICONS: Record<string, string> = {
   web: "🌐",
@@ -28,6 +29,7 @@ interface SidebarProps {
 
 export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick, onBatchDelete, onBatchExport, refreshKey }: SidebarProps) {
   const t = useTranslations("sidebar");
+  const locale = useLocale();
   const [files, setFiles] = React.useState<PdfDocument[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [dragOver, setDragOver] = React.useState(false);
@@ -277,12 +279,20 @@ export default function Sidebar({ selectedId, onSelect, onUpload, onDeleteClick,
                 className="flex-1 bg-transparent border border-blue-500 rounded px-1 text-sm"
               />
             ) : (
-              <span className="truncate flex-1">
-                {getPlatformIcon(file.upload_source) && (
-                  <span className="mr-1" title={file.upload_source}>{getPlatformIcon(file.upload_source)}</span>
-                )}
-                {file.original_filename}
-              </span>
+              <div className="flex-1 min-w-0">
+                <span className="block truncate">
+                  {getPlatformIcon(file.upload_source) && (
+                    <span className="mr-1" title={file.upload_source}>{getPlatformIcon(file.upload_source)}</span>
+                  )}
+                  {file.original_filename}
+                </span>
+                <span
+                  className="block text-xs text-gray-500 dark:text-gray-400"
+                  data-testid={`file-meta-${file.id}`}
+                >
+                  {formatFileSize(file.file_size)} · {formatUploadDate(file.created_at, locale)}
+                </span>
+              </div>
             )}
             <div className="flex gap-1 shrink-0 ml-1">
               <button

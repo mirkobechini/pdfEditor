@@ -9,14 +9,21 @@
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cloudApi, api } from "../shared/api";
-import type { PdfDocument } from "../shared/types";
+import {
+  SYNC_ENABLED_KEY,
+  SYNC_STARTUP_KEY,
+  SYNC_STATUS_EVENT,
+  getSyncMap,
+  saveSyncMap,
+  removeSyncMap,
+  getLocalId,
+  readSyncEnabled,
+  readSyncOnStartup,
+  deletePdfFromSources,
+} from "./useCloudSyncCore";
+import { useOnlineStatus } from "./useOnlineStatus";
 
-// ─── Constants ────────────────────────────────────────────────────
-
-const SYNC_ENABLED_KEY = "pdfeditor_cloud_sync_enabled";
-const SYNC_STARTUP_KEY = "pdfeditor_cloud_sync_on_startup";
-const SYNC_MAP_KEY = "pdfeditor_sync_id_map";
-const SYNC_STATUS_EVENT = "pdfeditor-sync-status-changed";
+// ─── Types ────────────────────────────────────────────────────────
 
 export type PdfSyncStatus = "pending" | "synced" | "error" | "none";
 
@@ -59,53 +66,26 @@ interface UseCloudSyncReturn {
   refreshStatus: () => Promise<void>;
 }
 
-// ─── Persistent mapping helpers ───────────────────────────────────
-
-function getSyncMap(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(localStorage.getItem(SYNC_MAP_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function saveSyncMap(localId: string, cloudId: string): void {
-  const map = getSyncMap();
-  map[localId] = cloudId;
-  localStorage.setItem(SYNC_MAP_KEY, JSON.stringify(map));
-}
-
-function removeSyncMap(localId: string): void {
-  const map = getSyncMap();
-  delete map[localId];
-  localStorage.setItem(SYNC_MAP_KEY, JSON.stringify(map));
-}
-
-function getCloudId(localId: string): string | undefined {
-  return getSyncMap()[localId];
-}
-
-function getLocalId(cloudId: string): string | undefined {
-  const map = getSyncMap();
-  return Object.entries(map).find(([, v]) => v === cloudId)?.[0];
-}
-
 // ─── Hook ─────────────────────────────────────────────────────────
 
-export function useCloudSync(): UseCloudSyncReturn {
-  const [syncEnabled, setSyncEnabledState] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem(SYNC_ENABLED_KEY) !== "false";
-  });
-  const [syncOnStartup, setSyncOnStartupState] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return localStorage.getItem(SYNC_STARTUP_KEY) !== "false";
-  });
+export interface UseCloudSyncOptions {
+    /**
+     * Se true (default) l'effect "Sync on startup" gira al mount del hook
+     * (istanza a livello app = avvio dell'app). Passare false quando il hook
+     * è montato solo per mostrare la UI di Settings, così aprire la pagina
+     * NON ri-parte un auto-sync che, fallendo (token offline/Render giù),
+     * fa comparire la modal "Sync completato con ⚠️ Errori" da sola
+     * (issue #935).
+     */
+    autoSyncOnMount?: boolean;
+}
+
+export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {}): UseCloudSyncReturn {
+  const [syncEnabled, setSyncEnabledState] = useState(readSyncEnabled);
+  const [syncOnStartup, setSyncOnStartupState] = useState(readSyncOnStartup);
   const [status, setStatus] = useState<Record<string, PdfSyncStatus>>({});
   const [progress, setProgress] = useState<SyncProgress | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
   const [lastSyncResult, setLastSyncResult] = useState<{
     uploaded: number;
     downloaded: number;
@@ -113,6 +93,7 @@ export function useCloudSync(): UseCloudSyncReturn {
     errors: string[];
   } | null>(null);
   const syncingRef = useRef(false);
+  const { isOnline } = useOnlineStatus();
 
   const clearSyncResult = useCallback(() => setLastSyncResult(null), []);
 
@@ -154,19 +135,6 @@ export function useCloudSync(): UseCloudSyncReturn {
     }
   }, [loadStatus]);
 
-  // Connectivity
-  useEffect(() => {
-    setIsOnline(navigator.onLine);
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
   // Load status on mount
   useEffect(() => {
     if (!syncEnabled) return;
@@ -189,9 +157,11 @@ export function useCloudSync(): UseCloudSyncReturn {
     return () => window.removeEventListener(SYNC_STATUS_EVENT, handler);
   }, [loadStatus]);
 
-  // Sync on startup
+  // Sync on startup — gira SOLO a livello app (autoSyncOnMount=true).
+  // Montato da useSettingsPage con autoSyncOnMount=false: aprire Settings
+  // non deve rifare l'auto-sync (issue #935).
   useEffect(() => {
-    if (!syncEnabled || !syncOnStartup) return;
+    if (!autoSyncOnMount || !syncEnabled || !syncOnStartup) return;
     let cancelled = false;
     (async () => {
       // Wait for cloud token
@@ -389,26 +359,7 @@ export function useCloudSync(): UseCloudSyncReturn {
       try {
         setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
 
-        if (option === "cloud" || option === "both") {
-          // Delete from cloud using the mapped cloud ID
-          const mappedCloudId = getCloudId(pdfId);
-          if (mappedCloudId) {
-            try {
-              await cloudApi.deletePdf(mappedCloudId);
-            } catch {
-              /* cloud delete failed — ignore */
-            }
-          }
-        }
-
-        if (option === "local" || option === "both") {
-          // Delete locally
-          try {
-            await api.deletePdf(pdfId);
-          } catch {
-            /* local delete failed — ignore */
-          }
-        }
+        await deletePdfFromSources(pdfId, option);
 
         removeSyncMap(pdfId);
         setStatus((prev) => {

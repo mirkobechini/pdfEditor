@@ -17,7 +17,14 @@ test.describe("Editor features", () => {
     await uploadPdf(page, "merge-a.pdf");
     await uploadPdf(page, "merge-b.pdf");
 
-    // Open the merge dialog from the toolbar ("Unisci")
+    // Open the merge dialog from the toolbar. Da #927 il pulsante "Unisci"
+    // vive dentro il menu a tendina "Organizza" (parità desktop): apriamo il
+    // dropdown e poi clicchiamo la voce.
+    await page
+      .getByRole("button", { name: "Organizza ▾", exact: true })
+      .first()
+      .click();
+    // Le voci del dropdown sono <button> (stessa struttura del desktop)
     await page
       .getByRole("button", { name: "Unisci", exact: true })
       .first()

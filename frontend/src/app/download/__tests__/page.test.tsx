@@ -2,9 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 
-// Mock next-intl
+// Mock next-intl — usa le stringhe EN reali così i test verificano i testi localizzati.
 vi.mock("next-intl", () => ({
-    useTranslations: () => (key: string) => key,
+    useLocale: () => "en",
+    useTranslations: () => (key: string) => {
+        const en = require("../../../../messages/en.json");
+        return en.download[key] ?? key;
+    },
 }));
 
 // Mock next/link
@@ -25,7 +29,7 @@ globalThis.fetch = mockFetch as any;
 
 const GITHUB_API = "https://api.github.com/repos/mirkobechini/pdfEditor/releases";
 const CHANGELOG_URL =
-    "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev/changelog.json";
+    "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev/changelog.en.json";
 
 function mockRelease(tag: string, assets: { name: string; browser_download_url: string }[]) {
     return { tag_name: tag, name: tag, assets };
@@ -76,7 +80,7 @@ describe("DownloadPage", () => {
         render(<DownloadPage />);
 
         await waitFor(() => {
-            expect(screen.getByText("Desktop App")).toBeInTheDocument();
+            expect(screen.getAllByText("Desktop App").length).toBeGreaterThan(0);
         });
 
         // Desktop section
@@ -87,7 +91,7 @@ describe("DownloadPage", () => {
         expect(screen.getByText("Download DEB")).toBeInTheDocument();
 
         // Mobile section
-        expect(screen.getByText("Mobile App")).toBeInTheDocument();
+        expect(screen.getAllByText("Mobile App").length).toBeGreaterThan(0);
         expect(screen.getAllByText("v0.2.1-mobile").length).toBeGreaterThan(0);
         // Web section
         expect(screen.getByText("Web App")).toBeInTheDocument();
@@ -149,5 +153,35 @@ describe("DownloadPage", () => {
         expect(screen.getByText("Upload PDF")).toBeInTheDocument();
         expect(screen.getByText("Merge PDFs")).toBeInTheDocument();
         expect(screen.getByText("Replace Text")).toBeInTheDocument();
+    });
+    it("requests the English changelog when the locale is en", async () => {
+        mockFetch
+            .mockResolvedValueOnce(mockJsonResponse([]))
+            .mockResolvedValueOnce(mockJsonResponse(changelogData));
+
+        const DownloadPage = (await import("../page")).default;
+        render(<DownloadPage />);
+
+        await waitFor(() => {
+            expect(screen.getByText("Feature Comparison")).toBeInTheDocument();
+        });
+        expect(mockFetch).toHaveBeenCalledWith(CHANGELOG_URL);
+    });
+
+    it("falls back to the default changelog when the English one is unavailable", async () => {
+        mockFetch
+            .mockResolvedValueOnce(mockJsonResponse([]))
+            .mockResolvedValueOnce({ ok: false, json: () => Promise.resolve(null) })
+            .mockResolvedValueOnce(mockJsonResponse(changelogData));
+
+        const DownloadPage = (await import("../page")).default;
+        render(<DownloadPage />);
+
+        await waitFor(() => {
+            expect(screen.getByText("Test coverage")).toBeInTheDocument();
+        });
+        expect(mockFetch).toHaveBeenCalledWith(
+            "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev/changelog.json",
+        );
     });
 });

@@ -5,20 +5,45 @@
 // resta presentazionale: chiama questo hook e passa i valori ai figli.
 // Centralizza in un unico posto: upload/download, multi-select batch,
 // print, drag-and-drop, caricamento documenti e refresh del preview PDF.
+//
+// Gli stati di apertura dei dialog/modal, le operazioni multi-select e la
+// logica di stampa sono estratti in useEditorDialogs / useEditorMultiSelect /
+// useEditorPrint per mantenere questo file sotto le 400 righe (file lunghi,
+// refactor/long-files-t6-desktophooks).
 
 import React from "react";
 import { api } from "../shared/api";
 import { isTauri, tauriInvoke } from "../shared/tauri";
-import type { PrintOptions } from "../components/PrintOptionsModal";
 import { usePreferences } from "../lib/preferences";
 import { useApiError } from "./useApiError";
 import { mimeFromName } from "../lib/editor-utils";
-import { renderPagesToPngBase64, printCurrentPageViaBrowser } from "../lib/printing";
 import type { PdfDocument } from "../shared/types";
+import { useEditorDialogs } from "./useEditorDialogs";
+import { useEditorMultiSelect } from "./useEditorMultiSelect";
+import { useEditorPrint } from "./useEditorPrint";
 
 export function useEditorState() {
     const { apiError } = useApiError();
     const { prefs } = usePreferences();
+
+    const {
+        metadataOpen, setMetadataOpen,
+        deleteConfirm, setDeleteConfirm,
+        removePagesOpen, setRemovePagesOpen,
+        reorderOpen, setReorderOpen,
+        splitOpen, setSplitOpen,
+        mergeOpen, setMergeOpen,
+        compressOpen, setCompressOpen,
+        importExportOpen, setImportExportOpen,
+        signOpen, setSignOpen,
+        ocrOpen, setOcrOpen,
+        printOptionsOpen, setPrintOptionsOpen,
+        printPreview, setPrintPreview,
+        annotateOpen, setAnnotateOpen,
+        shareOpen, setShareOpen,
+        lockOpen, setLockOpen,
+        replaceTextOpen, setReplaceTextOpen,
+    } = useEditorDialogs();
 
     const [docs, setDocs] = React.useState<PdfDocument[]>([]);
     const [loading, setLoading] = React.useState(true);
@@ -30,31 +55,29 @@ export function useEditorState() {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [dragOver, setDragOver] = React.useState(false);
     const [uploadError, setUploadError] = React.useState<string | null>(null);
-    const [metadataOpen, setMetadataOpen] = React.useState(false);
-    const [deleteConfirm, setDeleteConfirm] = React.useState<string | null>(null);
-    const [removePagesOpen, setRemovePagesOpen] = React.useState(false);
-    const [reorderOpen, setReorderOpen] = React.useState(false);
-    const [splitOpen, setSplitOpen] = React.useState(false);
-    const [mergeOpen, setMergeOpen] = React.useState(false);
-    const [compressOpen, setCompressOpen] = React.useState(false);
-    const [importExportOpen, setImportExportOpen] = React.useState(false);
-    const [signOpen, setSignOpen] = React.useState(false);
-    const [ocrOpen, setOcrOpen] = React.useState(false);
-    const [printOptionsOpen, setPrintOptionsOpen] = React.useState(false);
-    const [printPreview, setPrintPreview] = React.useState<{ dataUrl: string; isLandscape: boolean } | null>(null);
-    const [annotateOpen, setAnnotateOpen] = React.useState(false);
-    const [shareOpen, setShareOpen] = React.useState(false);
     const [openMenu, setOpenMenu] = React.useState<"organize" | "convert" | "annotate" | null>(null);
     const organizeRef = React.useRef<HTMLDivElement>(null);
     const convertRef = React.useRef<HTMLDivElement>(null);
     const annotateMenuRef = React.useRef<HTMLDivElement>(null);
-    const [lockOpen, setLockOpen] = React.useState(false);
-    const [replaceTextOpen, setReplaceTextOpen] = React.useState(false);
     const [renameId, setRenameId] = React.useState<string | null>(null);
     const [renameValue, setRenameValue] = React.useState("");
     const [pdfRefreshKey, setPdfRefreshKey] = React.useState(0);
-    const [multiSelect, setMultiSelect] = React.useState(false);
-    const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+
+    const {
+        multiSelect, selectedIds,
+        toggleMultiSelect, toggleSelect, toggleSelectAll,
+        handleBatchDelete, handleBatchExport,
+    } = useEditorMultiSelect({
+        docs, setDocs, selectedDoc, setSelectedDoc, setPdfUrl,
+        defaultSaveFolder: prefs.default_save_folder || null,
+    });
+
+    const {
+        handlePrint,
+        executePrint,
+    } = useEditorPrint({
+        selectedDoc, pdfUrl, printPreview, setPrintPreview, setPrintOptionsOpen,
+    });
 
     // Shared by every modal that replaces the selected doc with an updated
     // version (remove pages, reorder, merge, lock/unlock, metadata, replace
@@ -111,56 +134,6 @@ export function useEditorState() {
         }
     }
 
-    function handlePrint() {
-        if (!selectedDoc) return;
-        const srcCanvas = document.querySelector("canvas");
-        if (!srcCanvas) return;
-        setPrintPreview({
-            dataUrl: srcCanvas.toDataURL("image/png"),
-            isLandscape: srcCanvas.width > srcCanvas.height,
-        });
-        setPrintOptionsOpen(true);
-    }
-
-    async function executePrint(options: PrintOptions) {
-        setPrintOptionsOpen(false);
-        if (!printPreview || !selectedDoc) return;
-
-        // No printer chosen (browser/dev fallback, or the platform doesn't
-        // support silent printing): fall back to the standard print flow,
-        // limited to the currently visible page.
-        if (!options.printerName) {
-            await printCurrentPageViaBrowser(printPreview.dataUrl, printPreview.isLandscape, options);
-            return;
-        }
-
-        try {
-            const totalPages = selectedDoc.page_count || 1;
-            const { parsePageRangeList } = await import("../components/PrintOptionsModal");
-            const pageNumbers = parsePageRangeList(options.pageRange, totalPages);
-            if (!pdfUrl) return;
-            const { images, firstIsLandscape } = await renderPagesToPngBase64(pdfUrl, pageNumbers);
-            if (images.length === 0) return;
-
-            const pageOrientation =
-                options.orientation === "auto" ? (firstIsLandscape ? "landscape" : "portrait") : options.orientation;
-            const marginMm = options.margin === "none" ? 0 : 12;
-
-            await tauriInvoke("print_pages", {
-                request: {
-                    printerName: options.printerName,
-                    copies: options.copies,
-                    color: options.color === "color",
-                    orientation: pageOrientation,
-                    marginMm,
-                    images,
-                },
-            });
-        } catch (err) {
-            console.error("Print failed:", err);
-        }
-    }
-
     async function handleUploadFile(file: File) {
         const name = file.name.toLowerCase();
         const isPdf = name.endsWith(".pdf");
@@ -176,74 +149,6 @@ export function useEditorState() {
             console.error("Upload failed:", msg);
             setUploadError(msg);
         }
-    }
-
-    // ─── Multi-select batch ──────────────────────────────────────
-    function toggleMultiSelect() {
-        setMultiSelect((prev) => {
-            if (prev) setSelectedIds(new Set());
-            return !prev;
-        });
-    }
-
-    function toggleSelect(id: string) {
-        setSelectedIds((prev) => {
-            const next = new Set(prev);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            return next;
-        });
-    }
-
-    function toggleSelectAll() {
-        if (selectedIds.size === docs.length) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(docs.map((d) => d.id)));
-        }
-    }
-
-    function exitMultiSelect() {
-        setMultiSelect(false);
-        setSelectedIds(new Set());
-    }
-
-    async function handleBatchDelete() {
-        if (selectedIds.size === 0) return;
-        for (const id of selectedIds) {
-            try {
-                await api.deletePdf(id);
-            } catch (err) {
-                console.error("Batch delete failed for", id, err);
-            }
-        }
-        setDocs((prev) => prev.filter((d) => !selectedIds.has(d.id)));
-        if (selectedDoc && selectedIds.has(selectedDoc.id)) {
-            setSelectedDoc(null);
-            setPdfUrl(null);
-        }
-        exitMultiSelect();
-    }
-
-    async function handleBatchExport() {
-        if (selectedIds.size === 0) return;
-        for (const id of selectedIds) {
-            const doc = docs.find((d) => d.id === id);
-            if (!doc) continue;
-            try {
-                const blob = await api.downloadPdf(id);
-                const arrayBuf = await blob.arrayBuffer();
-                const data = Array.from(new Uint8Array(arrayBuf));
-                await tauriInvoke<string>("dialog_save", {
-                    defaultName: doc.original_filename,
-                    data,
-                    defaultFolder: prefs.default_save_folder || null,
-                });
-            } catch (err) {
-                console.error("Batch export failed for", id, err);
-            }
-        }
-        exitMultiSelect();
     }
 
     // Refresh CSRF token on mount (required for sidecar writes)

@@ -25,7 +25,11 @@
     "dropHere": "Rilascia qui il tuo file",
     "share": "Condividi",
     "annotate": "Annota",
-    "ocr": "OCR"
+    "ocr": "OCR",
+    "edit": "Modifica",
+    "download": "Scarica",
+    "organize": "Organizza",
+    "convert": "Converti"
   },
   "sidebar": {
     "dropHere": "Trascina un PDF qui o clicca per caricare",
@@ -73,7 +77,8 @@
     "splitting": "Divisione in corso...",
     "failed": "Divisione fallita",
     "outputName": "Nome file output",
-    "outputNameHint": "Lascia vuoto per nome automatico"
+    "outputNameHint": "Lascia vuoto per nome automatico",
+    "page": "Pagina"
   },
   "compressDialog": {
     "title": "Comprimi PDF",
@@ -206,6 +211,7 @@
     "pageLabel": "Pagina",
     "positionLabel": "Posizione (trascina il riquadro)",
     "resizeHint": "Trascina gli angoli per ridimensionare",
+    "inkColor": "Colore inchiostro",
     "sign": "Firma",
     "signing": "Firma in corso...",
     "cancel": "Annulla",
@@ -261,7 +267,10 @@
     "rateLimitExceeded": "Troppi tentativi. Riprova tra un minuto.",
     "registerFailed": "Registrazione fallita",
     "passwordMismatch": "Le password non coincidono",
-    "passwordTooShort": "La password deve essere almeno 6 caratteri",
+    "passwordTooShort": "La password deve essere almeno 8 caratteri",
+    "passwordMissingUppercase": "La password deve contenere almeno una lettera maiuscola",
+    "passwordMissingLowercase": "La password deve contenere almeno una lettera minuscola",
+    "passwordMissingNumber": "La password deve contenere almeno un numero",
     "noAccount": "Non hai un account?",
     "hasAccount": "Hai già un account?",
     "registerLink": "Registrati",
@@ -389,7 +398,18 @@
     "downloadApk": "Scarica APK",
     "notAvailable": "Non disponibile",
     "recentChanges": "Novità",
-    "noChangelog": "Nessun changelog disponibile per questa release."
+    "noChangelog": "Nessun changelog disponibile per questa release.",
+    "webTitle": "App Web",
+    "webDesc": "Usa PdfEditor direttamente nel browser. Nessuna installazione necessaria.",
+    "openWebApp": "Apri Web App",
+    "featureComparison": "Confronto funzionalità",
+    "featureColumn": "Funzionalità",
+    "platformWeb": "Web",
+    "platformDesktop": "Desktop",
+    "platformMobile": "Mobile",
+    "plannedNote": "Le funzionalità segnate con ❌ sono previste per versioni future.",
+    "iosComingSoon": "iOS: in arrivo",
+    "openSource": "PdfEditor è open source — disponibile su GitHub"
   },
   "landing": {
     "navbar": {
@@ -867,7 +887,9 @@
     "save": "Salva",
     "saving": "Salvataggio...",
     "cancel": "Annulla",
-    "failed": "Impossibile aggiungere l'annotazione"
+    "failed": "Impossibile aggiungere l'annotazione",
+    "position": "Posizione",
+    "positionHint": "Trascina per posizionare, l'angolo per ridimensionare."
   },
   "ocrModal": {
     "title": "OCR PDF",

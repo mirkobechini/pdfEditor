@@ -4,25 +4,35 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../lib/api";
 import { mapError } from "../lib/error-map";
+import PositionSelector from "./PositionSelector";
 
 interface AnnotationDialogProps {
     open: boolean;
     onClose: () => void;
     pdfId: string | null;
     currentPage: number;
-    onSuccess?: () => void;
+    /** Preview URL del PDF per il position selector (issue #929, fix #866). */
+    pdfUrl?: string | null;
+    onSuccess?: (doc: { id: string; original_filename: string }) => void;
 }
 
 const ANNOTATION_TYPES = ["highlight", "underline", "strikeout", "text", "free_text"];
 
-export default function AnnotationDialog({ open, onClose, pdfId, currentPage, onSuccess }: AnnotationDialogProps) {
+export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pdfUrl, onSuccess }: AnnotationDialogProps) {
     const t = useTranslations("annotationDialog");
+    const tc = useTranslations("common");
     const [type, setType] = React.useState("highlight");
     const [color, setColor] = React.useState("#FFFF00");
     const [content, setContent] = React.useState("");
     const [page, setPage] = React.useState(1);
     const [saving, setSaving] = React.useState(false);
     const [error, setError] = React.useState("");
+    // Box posizionabile/ridimensionabile sul selettore (issue #929, fix #866):
+    // posizione top-left e dimensione in punti PDF, niente rect hardcoded.
+    const [boxX, setBoxX] = React.useState(50);
+    const [boxY, setBoxY] = React.useState(50);
+    const [boxW, setBoxW] = React.useState(250);
+    const [boxH, setBoxH] = React.useState(100);
 
     React.useEffect(() => {
         if (open) {
@@ -37,9 +47,9 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
         setSaving(true);
         setError("");
         try {
-            // Default rect covering a reasonable area of the page
-            const rect = [50, 50, 250, 100];
-            await api.addAnnotation(pdfId, {
+            // Rect reale dal box posizionato sul selettore (issue #929, fix #866).
+            const rect = [boxX, boxY, boxX + boxW, boxY + boxH];
+            const doc = await api.addAnnotation(pdfId, {
                 page,
                 type: type as any,
                 rect,
@@ -47,10 +57,20 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
                 content: content.trim() || null,
                 opacity: 0.3,
             });
-            onSuccess?.();
+            onSuccess?.(doc);
             onClose();
         } catch (err) {
-            setError(t("failed") + ": " + mapError(err));
+            const key = mapError(err);
+            // mapError returns keys like "common.validationError" or "pdf.notFound".
+            // t() is useTranslations("annotationDialog") so we strip the namespace
+            // and translate with the right translator (same pattern as login).
+            const ns = key.split(".")[0];
+            const k = key.substring(ns.length + 1);
+            if (ns === "common") {
+                setError(t("failed") + ": " + tc(k));
+            } else {
+                setError(t("failed") + ": " + t(k));
+            }
         } finally {
             setSaving(false);
         }
@@ -66,8 +86,9 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
             >
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
 
+                <div className="flex-1 min-h-0 overflow-y-auto -mr-2 pr-2">
                 {error && (
-                    <div className="mb-4 p-3 text-sm text-red-700 bg-red-100 dark:bg-red-900/30 rounded" data-testid="annotation-error">
+                    <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded" data-testid="annotation-error">
                         {error}
                     </div>
                 )}
@@ -78,7 +99,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
                         <select
                             value={type}
                             onChange={(e) => setType(e.target.value)}
-                            className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                            className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
                             data-testid="annotation-type"
                         >
                             {ANNOTATION_TYPES.map((tp) => (
@@ -105,7 +126,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
                             min="1"
                             value={page}
                             onChange={(e) => setPage(parseInt(e.target.value, 10) || 1)}
-                            className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                            className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
                             data-testid="annotation-page"
                         />
                     </label>
@@ -117,17 +138,30 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, on
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
                                 rows={3}
-                                className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                                className="mt-1 w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
                                 data-testid="annotation-content"
                             />
                         </label>
                     )}
+
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {t("position")}
+                        <PositionSelector
+                            pdfUrl={pdfUrl ?? null}
+                            pageNumber={page}
+                            boxSize={{ width: boxW, height: boxH }}
+                            onPositionChange={(x, y) => { setBoxX(x); setBoxY(y); }}
+                            onSizeChange={(w, h) => { setBoxW(w); setBoxH(h); }}
+                        />
+                        <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{t("positionHint")}</p>
+                    </label>
+                </div>
                 </div>
 
                 <div className="mt-4 flex gap-3">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm"
+                        className="flex-1 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm text-gray-900 dark:text-gray-100"
                     >
                         {t("cancel")}
                     </button>

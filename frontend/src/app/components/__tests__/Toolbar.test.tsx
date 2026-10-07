@@ -20,11 +20,25 @@ const defaultProps = {
     onReplaceText: vi.fn(),
     onMetadata: vi.fn(),
     onProtect: vi.fn(),
+    onCompress: vi.fn(),
+    onImportExport: vi.fn(),
+    onPrint: vi.fn(),
+    onSign: vi.fn(),
+    onShare: vi.fn(),
+    onAnnotate: vi.fn(),
+    onOcr: vi.fn(),
+    onDownload: vi.fn(),
     canUndo: true,
     canRedo: false,
     onUndo: vi.fn(),
     onRedo: vi.fn(),
 };
+
+// Apre un menu a tendina cliccandone l'header, poi clicca la voce.
+function openMenuAndClick(menuText: string, itemText: string) {
+    fireEvent.click(screen.getByText(new RegExp(`^${menuText} ▾$`)));
+    fireEvent.click(screen.getByText(new RegExp(`^${itemText}$`)));
+}
 
 describe("Toolbar", () => {
     beforeEach(() => { vi.clearAllMocks(); });
@@ -59,11 +73,75 @@ describe("Toolbar", () => {
         expect(onRedo).toHaveBeenCalled();
     });
 
-    it("calls onMerge when merge button is clicked", () => {
+    it("calls onMerge when merge button is clicked (menu Organizza)", () => {
         const onMerge = vi.fn();
         render(<Toolbar {...defaultProps} onMerge={onMerge} />);
-        fireEvent.click(screen.getByText("merge"));
+        openMenuAndClick("organize", "merge");
         expect(onMerge).toHaveBeenCalled();
+    });
+
+    it("calls onSplit when split button is clicked (menu Organizza)", () => {
+        const onSplit = vi.fn();
+        render(<Toolbar {...defaultProps} onSplit={onSplit} />);
+        openMenuAndClick("organize", "split");
+        expect(onSplit).toHaveBeenCalled();
+    });
+
+    it("calls onReorder when reorder button is clicked (menu Organizza)", () => {
+        const onReorder = vi.fn();
+        render(<Toolbar {...defaultProps} onReorder={onReorder} />);
+        openMenuAndClick("organize", "reorder");
+        expect(onReorder).toHaveBeenCalled();
+    });
+
+    it("calls onRemovePages when remove button is clicked (menu Organizza)", () => {
+        const onRemovePages = vi.fn();
+        render(<Toolbar {...defaultProps} onRemovePages={onRemovePages} />);
+        openMenuAndClick("organize", "remove");
+        expect(onRemovePages).toHaveBeenCalled();
+    });
+
+    it("calls onReplaceText when replace text button is clicked (menu Converti)", () => {
+        const onReplaceText = vi.fn();
+        render(<Toolbar {...defaultProps} onReplaceText={onReplaceText} />);
+        openMenuAndClick("convert", "replaceText");
+        expect(onReplaceText).toHaveBeenCalled();
+    });
+
+    it("calls onMetadata when metadata button is clicked (menu Converti)", () => {
+        const onMetadata = vi.fn();
+        render(<Toolbar {...defaultProps} onMetadata={onMetadata} />);
+        openMenuAndClick("convert", "metadata");
+        expect(onMetadata).toHaveBeenCalled();
+    });
+
+    it("calls onProtect when protect button is clicked (diretta)", () => {
+        const onProtect = vi.fn();
+        render(<Toolbar {...defaultProps} onProtect={onProtect} />);
+        fireEvent.click(screen.getByText("protect"));
+        expect(onProtect).toHaveBeenCalled();
+    });
+
+    it("chiude il menu Organizza dopo il click su una voce (single action per ap)", () => {
+        const onReorganize = vi.fn();
+        render(<Toolbar {...defaultProps} onReorder={onReorganize} />);
+        openMenuAndClick("organize", "reorder");
+        expect(onReorganize).toHaveBeenCalled();
+        // il menu è chiuso: le voci non devono essere più presenti
+        expect(screen.queryByText(/^reorder$/)).not.toBeInTheDocument();
+    });
+
+    it("calls onDownload when download button is clicked (diretta)", () => {
+        const onDownload = vi.fn();
+        render(<Toolbar {...defaultProps} onDownload={onDownload} />);
+        fireEvent.click(screen.getByText(/^download$/));
+        expect(onDownload).toHaveBeenCalled();
+    });
+
+    it("disables download when canUndo is false (nessun documento selezionato)", () => {
+        render(<Toolbar {...defaultProps} canUndo={false} />);
+        const btn = screen.getByTestId("toolbar-download");
+        expect(btn).toBeDisabled();
     });
 
     it("calls onPageChange when prev/next buttons are clicked", () => {
@@ -136,48 +214,6 @@ describe("Toolbar", () => {
     it("shows zoom percentage", () => {
         render(<Toolbar {...defaultProps} zoom={0.5} />);
         expect(screen.getByText("50%")).toBeInTheDocument();
-    });
-
-    it("calls onSplit when split button is clicked", () => {
-        const onSplit = vi.fn();
-        render(<Toolbar {...defaultProps} onSplit={onSplit} />);
-        fireEvent.click(screen.getByText("split"));
-        expect(onSplit).toHaveBeenCalled();
-    });
-
-    it("calls onReorder when reorder button is clicked", () => {
-        const onReorder = vi.fn();
-        render(<Toolbar {...defaultProps} onReorder={onReorder} />);
-        fireEvent.click(screen.getByText("reorder"));
-        expect(onReorder).toHaveBeenCalled();
-    });
-
-    it("calls onRemovePages when remove button is clicked", () => {
-        const onRemovePages = vi.fn();
-        render(<Toolbar {...defaultProps} onRemovePages={onRemovePages} />);
-        fireEvent.click(screen.getByText("remove"));
-        expect(onRemovePages).toHaveBeenCalled();
-    });
-
-    it("calls onReplaceText when replace text button is clicked", () => {
-        const onReplaceText = vi.fn();
-        render(<Toolbar {...defaultProps} onReplaceText={onReplaceText} />);
-        fireEvent.click(screen.getByText("replaceText"));
-        expect(onReplaceText).toHaveBeenCalled();
-    });
-
-    it("calls onMetadata when metadata button is clicked", () => {
-        const onMetadata = vi.fn();
-        render(<Toolbar {...defaultProps} onMetadata={onMetadata} />);
-        fireEvent.click(screen.getByText("metadata"));
-        expect(onMetadata).toHaveBeenCalled();
-    });
-
-    it("calls onProtect when protect button is clicked", () => {
-        const onProtect = vi.fn();
-        render(<Toolbar {...defaultProps} onProtect={onProtect} />);
-        fireEvent.click(screen.getByText("protect"));
-        expect(onProtect).toHaveBeenCalled();
     });
 
     it("calls onPageChange on page input change within range", () => {

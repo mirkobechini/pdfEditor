@@ -25,7 +25,11 @@
     "dropHere": "Drop your file here",
     "share": "Share",
     "annotate": "Annotate",
-    "ocr": "OCR"
+    "ocr": "OCR",
+    "edit": "Edit",
+    "download": "Download",
+    "organize": "Organize",
+    "convert": "Convert"
   },
   "sidebar": {
     "dropHere": "Drop PDF here or click to upload",
@@ -73,7 +77,8 @@
     "splitting": "Splitting...",
     "failed": "Split failed",
     "outputName": "Output filename",
-    "outputNameHint": "Leave empty for auto-generated name"
+    "outputNameHint": "Leave empty for auto-generated name",
+    "page": "Page"
   },
   "compressDialog": {
     "title": "Compress PDF",
@@ -204,6 +209,7 @@
     "pageLabel": "Page",
     "positionLabel": "Position (drag the box)",
     "resizeHint": "Drag the corners to resize",
+    "inkColor": "Ink color",
     "sign": "Sign",
     "signing": "Signing...",
     "cancel": "Cancel",
@@ -259,7 +265,10 @@
     "rateLimitExceeded": "Too many attempts. Please try again in a minute.",
     "registerFailed": "Registration failed",
     "passwordMismatch": "Passwords do not match",
-    "passwordTooShort": "Password must be at least 6 characters",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "passwordMissingUppercase": "Password must contain at least one uppercase letter",
+    "passwordMissingLowercase": "Password must contain at least one lowercase letter",
+    "passwordMissingNumber": "Password must contain at least one number",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "registerLink": "Register",
@@ -387,7 +396,18 @@
     "downloadApk": "Download APK",
     "notAvailable": "Not available",
     "recentChanges": "Recent Changes",
-    "noChangelog": "No changelog available for this release."
+    "noChangelog": "No changelog available for this release.",
+    "webTitle": "Web App",
+    "webDesc": "Use PdfEditor directly in your browser. No installation required.",
+    "openWebApp": "Open Web App",
+    "featureComparison": "Feature Comparison",
+    "featureColumn": "Feature",
+    "platformWeb": "Web",
+    "platformDesktop": "Desktop",
+    "platformMobile": "Mobile",
+    "plannedNote": "Features marked ❌ are planned for future releases.",
+    "iosComingSoon": "iOS: coming soon",
+    "openSource": "PdfEditor is open source — available on GitHub"
   },
   "landing": {
     "navbar": {
@@ -865,7 +885,9 @@
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",
-    "failed": "Failed to add annotation"
+    "failed": "Failed to add annotation",
+    "position": "Position",
+    "positionHint": "Drag to position, drag the handle to resize."
   },
   "ocrModal": {
     "title": "OCR PDF",

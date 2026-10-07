@@ -15,6 +15,7 @@ import { api } from "../lib/api";
 
 function RegisterForm() {
   const t = useTranslations("auth");
+  const tc = useTranslations("common");
   const { register, user } = useAuth();
   const searchParams = useSearchParams();
   const isConvert = searchParams.get("convert") === "1";
@@ -36,8 +37,21 @@ function RegisterForm() {
       return;
     }
 
-    if (password.length < 6) {
+    // Stesse regole del backend (auth_service._validate_password_strength).
+    if (password.length < 8) {
       setError(t("passwordTooShort"));
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError(t("passwordMissingUppercase"));
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setError(t("passwordMissingLowercase"));
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError(t("passwordMissingNumber"));
       return;
     }
 
@@ -53,7 +67,12 @@ function RegisterForm() {
         window.location.href = "/app";
       }
     } catch (err) {
-      setError(t("registerFailed") + ": " + mapError(err));
+      // mapError returns keys like "auth.passwordTooShort" or "common.networkError".
+      // t() is useTranslations("auth") so we strip the "auth." prefix; "common.*" -> tc().
+      const key = mapError(err);
+      const ns = key.split(".")[0];
+      const k = key.substring(ns.length + 1);
+      setError(t("registerFailed") + ": " + (ns === "common" ? tc(k) : t(k)));
     } finally {
       setLoading(false);
     }

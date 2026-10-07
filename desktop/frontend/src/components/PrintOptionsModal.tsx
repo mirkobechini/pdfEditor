@@ -4,16 +4,11 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { isTauri, tauriInvoke } from "../shared/tauri";
 import { parsePageRangeList } from "../shared/print";
+import PrintPreviewPanel, { PAPER_LONG_PX, PAPER_SHORT_PX } from "./PrintPreviewPanel";
+import SegmentedToggle from "./SegmentedToggle";
 
 const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
 const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-// Fixed "paper" size for the preview, based on an A4-ish ratio (1:1.414).
-// Explicit px dimensions (rather than the CSS `aspect-ratio` property) avoid
-// the box getting squashed by the surrounding flexbox's default shrink
-// behavior, which otherwise distorted the landscape preview.
-const PAPER_SHORT_PX = 260;
-const PAPER_LONG_PX = Math.round(PAPER_SHORT_PX * 1.414);
 
 // Re-exported for callers that imported it from this module directly
 // (canonical implementation now lives in shared/src/print.ts).
@@ -224,67 +219,19 @@ export default function PrintOptionsModal({ open, onClose, onConfirm, pdfUrl, in
                 onClick={(e) => e.stopPropagation()}
                 data-testid="print-options-modal"
             >
-                <div className="flex-1 min-w-0 flex flex-col items-center">
-                    <div className="w-full flex-1 min-h-[26rem] flex items-center justify-center bg-gray-100 dark:bg-gray-900 rounded-lg p-6 relative">
-                        {previewLoading && (
-                            <span className="absolute top-3 right-3 inline-block h-4 w-4 animate-spin rounded-full border-2 border-orange-600 border-t-transparent" />
-                        )}
-                        {pdfUrl ? (
-                            <div
-                                className="bg-white shadow-lg flex items-center justify-center shrink-0 transition-[width,height] duration-200 ease-out"
-                                style={{
-                                    padding: margin === "none" ? 0 : "5%",
-                                    width: paperIsLandscape ? PAPER_LONG_PX : PAPER_SHORT_PX,
-                                    height: paperIsLandscape ? PAPER_SHORT_PX : PAPER_LONG_PX,
-                                }}
-                            >
-                                <canvas
-                                    ref={canvasRef}
-                                    data-testid="print-preview-canvas"
-                                    style={{ filter: color === "grayscale" ? "grayscale(1)" : undefined }}
-                                    className="max-h-full max-w-full object-contain transition-[filter] duration-200"
-                                />
-                            </div>
-                        ) : (
-                            <div className="text-xs text-gray-400 dark:text-gray-500">{t("previewUnavailable")}</div>
-                        )}
-                    </div>
-
-                    {pdfUrl && selectablePages.length > 1 && (
-                        <div className="flex items-center gap-3 mt-3">
-                            <button
-                                type="button"
-                                onClick={() => setPreviewIndex((i) => Math.max(0, i - 1))}
-                                disabled={previewIndex <= 0}
-                                data-testid="print-preview-prev"
-                                aria-label={t("previewPrev")}
-                                className="h-7 w-7 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700"
-                            >
-                                ‹
-                            </button>
-                            <span className="text-xs text-gray-500 dark:text-gray-400" data-testid="print-preview-page-indicator">
-                                {selectablePages.length === totalPages
-                                    ? `${previewPage} / ${totalPages}`
-                                    : `${t("previewPage")} ${previewPage} (${previewIndex + 1}/${selectablePages.length})`}
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => setPreviewIndex((i) => Math.min(selectablePages.length - 1, i + 1))}
-                                disabled={previewIndex >= selectablePages.length - 1}
-                                data-testid="print-preview-next"
-                                aria-label={t("previewNext")}
-                                className="h-7 w-7 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700"
-                            >
-                                ›
-                            </button>
-                        </div>
-                    )}
-                    {pdfUrl && selectablePages.length === 1 && totalPages > 1 && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-3" data-testid="print-preview-page-indicator">
-                            {t("previewPage")} {previewPage}
-                        </p>
-                    )}
-                </div>
+                <PrintPreviewPanel
+                    pdfUrl={pdfUrl}
+                    totalPages={totalPages}
+                    selectablePages={selectablePages}
+                    previewPage={previewPage}
+                    previewIndex={previewIndex}
+                    onPreviewIndexChange={setPreviewIndex}
+                    previewLoading={previewLoading}
+                    paperIsLandscape={paperIsLandscape}
+                    margin={margin}
+                    color={color}
+                    canvasRef={canvasRef}
+                />
 
                 <div className="flex-1 min-w-0 flex flex-col">
                     <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
@@ -339,24 +286,12 @@ export default function PrintOptionsModal({ open, onClose, onConfirm, pdfUrl, in
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     {t("color")}
                                 </label>
-                                <div className="flex gap-2">
-                                    {colorOptions.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            type="button"
-                                            onClick={() => setColor(opt.value)}
-                                            data-testid={`print-color-${opt.value}`}
-                                            aria-pressed={color === opt.value}
-                                            className={`flex-1 rounded-lg border px-2 py-2 text-xs font-medium transition-all duration-100 active:scale-95 ${
-                                                color === opt.value
-                                                    ? "border-orange-600 bg-orange-600 text-white"
-                                                    : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                            }`}
-                                        >
-                                            {opt.label}
-                                        </button>
-                                    ))}
-                                </div>
+                                <SegmentedToggle
+                                    options={colorOptions}
+                                    selected={color}
+                                    onSelect={setColor}
+                                    testidPrefix="print-color"
+                                />
                             </div>
                         </div>
                     )}
@@ -411,48 +346,24 @@ export default function PrintOptionsModal({ open, onClose, onConfirm, pdfUrl, in
                         <legend className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             {t("orientation")}
                         </legend>
-                        <div className="flex gap-2">
-                            {orientationOptions.map((opt) => (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    onClick={() => setOrientation(opt.value)}
-                                    data-testid={`print-orientation-${opt.value}`}
-                                    aria-pressed={orientation === opt.value}
-                                    className={`flex-1 rounded-lg border px-2 py-2 text-xs font-medium transition-all duration-100 active:scale-95 ${
-                                        orientation === opt.value
-                                            ? "border-orange-600 bg-orange-600 text-white"
-                                            : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                    }`}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
-                        </div>
+                        <SegmentedToggle
+                            options={orientationOptions}
+                            selected={orientation}
+                            onSelect={setOrientation}
+                            testidPrefix="print-orientation"
+                        />
                     </fieldset>
 
                     <fieldset className="mb-6">
                         <legend className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             {t("margin")}
                         </legend>
-                        <div className="flex gap-2">
-                            {marginOptions.map((opt) => (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    onClick={() => setMargin(opt.value)}
-                                    data-testid={`print-margin-${opt.value}`}
-                                    aria-pressed={margin === opt.value}
-                                    className={`flex-1 rounded-lg border px-2 py-2 text-xs font-medium transition-all duration-100 active:scale-95 ${
-                                        margin === opt.value
-                                            ? "border-orange-600 bg-orange-600 text-white"
-                                            : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                    }`}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
-                        </div>
+                        <SegmentedToggle
+                            options={marginOptions}
+                            selected={margin}
+                            onSelect={setMargin}
+                            testidPrefix="print-margin"
+                        />
                     </fieldset>
 
                     <div className="mt-auto flex gap-3">

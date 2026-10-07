@@ -3,6 +3,37 @@
 from fastapi import status
 
 
+class TestSafeTextFont:
+    """Unit tests for PdfService._safe_text_font (issue #930)."""
+
+    def _svc(self):
+        from app.services.pdf_service import PdfService
+        # Il metodo è puro (non tocca il db) → si testa con db=None.
+        return PdfService(db=None)
+
+    def test_keeps_safe_base14_fonts(self):
+        svc = self._svc()
+        for name in ("helv", "HELV", "tiro", "cour", "symb", "times", "zadb"):
+            assert svc._safe_text_font(name) == name, f"{name} deve restare invariato"
+
+    def test_maps_subset_embedded_font_to_helv(self):
+        # Font subset CID (es. da PDF reali) che PyMuPDF non può usare in
+        # insert_text → prima causava un 500 (issue #930).
+        svc = self._svc()
+        assert svc._safe_text_font("ABCDEE+Calibri") == "helv"
+        assert svc._safe_text_font("XXXXXX+Helvetica-Bold") == "helv"
+
+    def test_maps_unknown_font_to_helv(self):
+        svc = self._svc()
+        assert svc._safe_text_font("Calibri") == "helv"
+        assert svc._safe_text_font("NotARealFont") == "helv"
+
+    def test_empty_font_to_helv(self):
+        svc = self._svc()
+        assert svc._safe_text_font("") == "helv"
+        assert svc._safe_text_font(None) == "helv"
+
+
 class TestReplaceText:
     """Test suite for PDF replace-text endpoint."""
 

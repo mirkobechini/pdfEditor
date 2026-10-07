@@ -46,13 +46,13 @@ describe("AnnotationDialog", () => {
             expect(mockAddAnnotation).toHaveBeenCalledWith("p1", {
                 page: 1,
                 type: "highlight",
-                rect: [50, 50, 250, 100],
+                rect: [50, 50, 300, 150],
                 color: "#FFFF00",
                 content: null,
                 opacity: 0.3,
             });
         });
-        expect(onSuccess).toHaveBeenCalled();
+        expect(onSuccess).toHaveBeenCalledWith({ id: "p1" });
         expect(onClose).toHaveBeenCalled();
     });
 
@@ -72,7 +72,7 @@ describe("AnnotationDialog", () => {
             expect(mockAddAnnotation).toHaveBeenCalledWith("p1", {
                 page: 1,
                 type: "text",
-                rect: [50, 50, 250, 100],
+                rect: [50, 50, 300, 150],
                 color: "#FFFF00",
                 content: "Hello",
                 opacity: 0.3,

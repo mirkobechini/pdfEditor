@@ -105,6 +105,37 @@ describe("useCloudSync", () => {
     expect(result.current.syncOnStartup).toBe(false);
   });
 
+  it("does NOT auto-sync on mount when autoSyncOnMount=false (issue #935)", async () => {
+    // Scenario Settings: sync abilitato e on-startup attivo, ma il hook è
+    // montato solo per la UI → NON deve ri-partire un auto-sync all'apertura.
+    localStorage.setItem("pdfeditor_cloud_sync_enabled", "true");
+    localStorage.setItem("pdfeditor_cloud_sync_on_startup", "true");
+    mockApiListPdfs.mockResolvedValue({ items: [createMockPdf()] });
+    mockCloudListPdfs.mockResolvedValue({ items: [] });
+    mockCloudGetToken.mockReturnValue("fake-cloud-token");
+
+    renderHook(() => useCloudSync({ autoSyncOnMount: false }));
+
+    // Lascia il tempo agli effect di mount+startup di girare… se fossero attivi.
+    await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
+
+    expect(mockCloudUploadPdf).not.toHaveBeenCalled();
+  });
+
+  it("auto-syncs on mount by default when sync-on-startup is on", async () => {
+    localStorage.setItem("pdfeditor_cloud_sync_enabled", "true");
+    localStorage.setItem("pdfeditor_cloud_sync_on_startup", "true");
+    mockApiListPdfs.mockResolvedValue({ items: [createMockPdf()] });
+    mockCloudListPdfs.mockResolvedValue({ items: [] });
+    mockCloudGetToken.mockReturnValue("fake-cloud-token");
+
+    renderHook(() => useCloudSync()); // autoSyncOnMount di default = true
+
+    await act(async () => { await new Promise((r) => setTimeout(r, 300)); });
+
+    expect(mockCloudUploadPdf).toHaveBeenCalled();
+  });
+
   it("initializes with empty status, no progress, not syncing, online", () => {
     const { result } = renderHook(() => useCloudSync());
     expect(result.current.status).toEqual({});
