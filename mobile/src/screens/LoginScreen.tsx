@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useAuth } from "../shared/auth";
+import { passwordRuleError } from "../shared/password-rules";
 import { mapError } from "../shared/error-map";
 import { useTranslation } from "react-i18next";
 import GoogleLoginButton from "../components/GoogleLoginButton";
@@ -28,6 +29,12 @@ export default function LoginScreen() {
         setError("");
         try {
             if (isRegister) {
+                // Stesse regole del backend (auth_service._validate_password_strength).
+                const weakKey = passwordRuleError(password);
+                if (weakKey) {
+                    setError(t(weakKey));
+                    return;
+                }
                 await register(email, password, fullName);
             } else {
                 await login(email, password, true);
