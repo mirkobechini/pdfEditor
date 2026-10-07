@@ -4,7 +4,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { api, cloudApi, ShareLink } from "../shared/api";
 import { isTauri } from "../shared/tauri";
-import { mapError } from "../shared/error-map";
+import { useApiError } from "../hooks/useApiError";
 
 interface ShareDialogProps {
     open: boolean;
@@ -14,6 +14,7 @@ interface ShareDialogProps {
 
 export default function ShareDialog({ open, onClose, pdfId }: ShareDialogProps) {
     const t = useTranslations("shareDialog");
+    const { apiError } = useApiError();
     const [links, setLinks] = React.useState<ShareLink[]>([]);
     const [password, setPassword] = React.useState("");
     const [expiresInDays, setExpiresInDays] = React.useState("");
@@ -78,7 +79,7 @@ export default function ShareDialog({ open, onClose, pdfId }: ShareDialogProps) 
                 setLinks(res);
             }
         } catch (err) {
-            setError(t("loadFailed") + ": " + mapError(err));
+            setError(t("loadFailed") + ": " + apiError(err));
         }
     }
 
@@ -107,7 +108,7 @@ export default function ShareDialog({ open, onClose, pdfId }: ShareDialogProps) 
             setPassword("");
             setExpiresInDays("");
         } catch (err) {
-            setError(t("createFailed") + ": " + mapError(err));
+            setError(t("createFailed") + ": " + apiError(err));
         } finally {
             setCreating(false);
         }
@@ -124,7 +125,7 @@ export default function ShareDialog({ open, onClose, pdfId }: ShareDialogProps) 
             }
             setLinks((prev) => prev.filter((l) => l.token !== token));
         } catch (err) {
-            setError(t("revokeFailed") + ": " + mapError(err));
+            setError(t("revokeFailed") + ": " + apiError(err));
         }
     }
 
