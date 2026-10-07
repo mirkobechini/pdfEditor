@@ -13,7 +13,7 @@ interface AnnotationDialogProps {
     currentPage: number;
     /** Preview URL del PDF per il position selector (issue #929, fix #866). */
     pdfUrl?: string | null;
-    onSuccess?: () => void;
+    onSuccess?: (doc: { id: string; original_filename: string }) => void;
 }
 
 const ANNOTATION_TYPES = ["highlight", "underline", "strikeout", "text", "free_text"];
@@ -49,7 +49,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pd
         try {
             // Rect reale dal box posizionato sul selettore (issue #929, fix #866).
             const rect = [boxX, boxY, boxX + boxW, boxY + boxH];
-            await api.addAnnotation(pdfId, {
+            const doc = await api.addAnnotation(pdfId, {
                 page,
                 type: type as any,
                 rect,
@@ -57,7 +57,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pd
                 content: content.trim() || null,
                 opacity: 0.3,
             });
-            onSuccess?.();
+            onSuccess?.(doc);
             onClose();
         } catch (err) {
             const key = mapError(err);

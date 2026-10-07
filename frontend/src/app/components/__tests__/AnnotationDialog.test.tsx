@@ -52,7 +52,7 @@ describe("AnnotationDialog", () => {
                 opacity: 0.3,
             });
         });
-        expect(onSuccess).toHaveBeenCalled();
+        expect(onSuccess).toHaveBeenCalledWith({ id: "p1" });
         expect(onClose).toHaveBeenCalled();
     });
 
