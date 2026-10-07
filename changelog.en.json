@@ -1,6 +1,18 @@
 {
   "desktop": [
     {
+      "version": "v0.1.40",
+      "date": "2026-10-07",
+      "changes": [
+        "Annotations: position and resize the box right on the PDF preview, with the handle at the bottom right",
+        "Signature: choose the ink color (black, white, red, blue) and see the signature in the box while you move and resize it",
+        "Sign-up: clear messages about password requirements (8 characters, uppercase, lowercase, number)",
+        "Replace text: now works on PDFs with embedded fonts too",
+        "Cloud settings: opening them no longer starts a sync with errors; sync only starts with \"Sync now\"",
+        "Error messages translated in annotations, OCR and sharing"
+      ]
+    },
+    {
       "version": "v0.1.39",
       "date": "2026-09-27",
       "changes": [
@@ -36,7 +48,9 @@
         "Signature: draw the signature freehand, position it by dragging and resize with pinch-to-zoom",
         "PDF annotations: highlight, underline, comment and draw on your PDFs",
         "OCR: recognize text in scanned PDFs and make it searchable",
-        "Share via link: share a PDF with a public link, with optional password and expiration"
+        "Share via link: share a PDF with a public link, with optional password and expiration",
+        "Sign-up: clear messages about password requirements (8 characters, uppercase, lowercase, number)",
+        "After signing in, your cloud PDFs download right away, without tapping \"Sync now\""
       ]
     },
     {

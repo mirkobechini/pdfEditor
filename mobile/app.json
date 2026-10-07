@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.mirkobechini.pdfeditor",
-      "versionCode": 5,
+      "versionCode": 6,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
@@ -48,5 +48,6 @@
       },
       "googleClientId": "309361418291-v3j2ccahiqvab4o85ihr9pq6u0u050er.apps.googleusercontent.com"
     }
-  }
+  },
+  "version": "0.2.4"
 }
