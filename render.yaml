@@ -34,6 +34,12 @@ services:
     rootDir: frontend
     buildCommand: npm install && npm run build
     publishPath: out
+    # Sito statico: genera solo /share/sample. Ogni /share/<token> va servito
+    # con quella pagina; il viewer legge il token reale dal pathname (issue #991).
+    routes:
+      - type: rewrite
+        source: /share/*
+        destination: /share/sample
     envVars:
       - key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
         sync: false

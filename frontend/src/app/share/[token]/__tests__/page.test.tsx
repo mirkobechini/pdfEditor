@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
-import ShareViewer from "../ShareViewer";
+import ShareViewer, { resolveShareToken } from "../ShareViewer";
 
 // Mock next-intl
 vi.mock("next-intl", () => {
@@ -98,5 +98,25 @@ describe("ShareViewer", () => {
         fireEvent.submit(screen.getByTestId("share-password-input").closest("form")!);
 
         expect(await screen.findByTestId("share-error")).toBeInTheDocument();
+    });
+});
+describe("resolveShareToken (#991)", () => {
+    afterEach(() => {
+        window.history.pushState({}, "", "/");
+    });
+
+    it("legge il token dal pathname quando il prop e' 'sample'", () => {
+        window.history.pushState({}, "", "/share/abc123def");
+        expect(resolveShareToken("sample")).toBe("abc123def");
+    });
+
+    it("usa il prop quando non e' 'sample'", () => {
+        window.history.pushState({}, "", "/share/altro");
+        expect(resolveShareToken("testtoken")).toBe("testtoken");
+    });
+
+    it("resta 'sample' se il pathname non ha token", () => {
+        window.history.pushState({}, "", "/share/sample");
+        expect(resolveShareToken("sample")).toBe("sample");
     });
 });
