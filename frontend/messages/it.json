@@ -77,7 +77,8 @@
     "splitting": "Divisione in corso...",
     "failed": "Divisione fallita",
     "outputName": "Nome file output",
-    "outputNameHint": "Lascia vuoto per nome automatico"
+    "outputNameHint": "Lascia vuoto per nome automatico",
+    "page": "Pagina"
   },
   "compressDialog": {
     "title": "Comprimi PDF",

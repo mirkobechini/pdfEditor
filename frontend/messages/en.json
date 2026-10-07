@@ -77,7 +77,8 @@
     "splitting": "Splitting...",
     "failed": "Split failed",
     "outputName": "Output filename",
-    "outputNameHint": "Leave empty for auto-generated name"
+    "outputNameHint": "Leave empty for auto-generated name",
+    "page": "Page"
   },
   "compressDialog": {
     "title": "Compress PDF",
