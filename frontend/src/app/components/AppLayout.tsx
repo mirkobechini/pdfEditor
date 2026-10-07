@@ -107,8 +107,11 @@ export default function AppLayout({ sidebar, toolbar, viewer }: LayoutProps) {
 
         {/* Content */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          {/* Toolbar — scrollable on mobile */}
-          <div className="h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-3 shrink-0 overflow-x-auto whitespace-nowrap">
+          {/* Toolbar — scrollable only on small screens; on md+ we must NOT clip
+              the absolutely-positioned dropdowns or they stay behind the PDF
+              viewer (overflow-x-auto forces overflow-y:auto too → vertical
+              scrollbar + clipped menu). See issue #957. */}
+          <div className="h-12 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-3 shrink-0 relative z-30 overflow-x-auto whitespace-nowrap md:overflow-x-visible">
             {toolbar}
           </div>
 
