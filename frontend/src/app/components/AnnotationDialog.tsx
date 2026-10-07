@@ -48,7 +48,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pd
         setError("");
         try {
             // Rect reale dal box posizionato sul selettore (issue #929, fix #866).
-            const rect = [boxX, boxY, boxW, boxH];
+            const rect = [boxX, boxY, boxX + boxW, boxY + boxH];
             await api.addAnnotation(pdfId, {
                 page,
                 type: type as any,
