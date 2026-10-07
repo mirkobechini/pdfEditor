@@ -22,29 +22,32 @@ Creare un'applicazione PDF editor che funzioni offline come priorità (desktop),
 Il repository è un **monorepo** con un client per piattaforma e un backend condiviso (tutti i componenti importano i modelli backend senza duplicazioni):
 
 ```
-┌─────────────┐  ┌──────────────────┐  ┌───────────────────┐
-│  Web (Next) │  │ Desktop (Tauri)  │  │ Mobile (Expo/RN)  │
-│ frontend/   │  │ desktop/frontend │  │ mobile/src/       │
-│ React 19    │  │ + sidecar FastAPI│  │ pdf-lib offline   │
-└──────┬──────┘  └────────┬─────────┘  └─────────┬─────────┘
-       │                  │                      │
-       └────────────┬─────┴──────────┬───────────┘
-                    ▼                ▼
-        ┌─────────────────┐  ┌────────────────────┐
-        │ shared/ (web+desktop) │  mobile/src/shared/  │
-        │ api/auth/types/error-map │  (client RN dedicato) │
-        └─────────────────┘  └────────────────────┘
-                    │
-                    ▼
-        ┌──────────────────────────┐
-        │   Backend FastAPI        │
-        │   backend/ (PyMuPDF)     │
-        │   auth · PDF · OCR ·     │
-        │   sync · storage · undo  │
-        └──────┬─────────┬─────────┘
-               ▼         ▼
-        PostgreSQL    Storage PDF
-        (Neon, cloud) (locale o S3/R2)
+┌──────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│  Web (Next)  │  │ Desktop (Tauri)  │  │ Mobile (Expo/RN) │
+│  frontend/   │  │ desktop/frontend │  │ mobile/src/      │
+│  React 19    │  │ + sidecar FastAPI│  │ pdf-lib offline  │
+└──────┬───────┘  └────────┬─────────┘  └────────┬─────────┘
+       │                   │                     │
+       └─────────┬─────────┴──────────┬──────────┘
+                 ▼                    ▼
+   ┌──────────────────────┐  ┌────────────────────┐
+   │     shared/          │  │  mobile/src/shared/ │
+   │   (web+desktop)      │  │  (client RN)        │
+   │ api/auth/types/      │  │                     │
+   │     error-map        │  │                     │
+   └──────────┬───────────┘  └──────────┬─────────┘
+              │                         │
+              └────────────┬────────────┘
+                           ▼
+             ┌──────────────────────────┐
+             │      Backend FastAPI     │
+             │      backend/ (PyMuPDF)  │
+             │  auth · PDF · OCR · sync │
+             │  storage · undo          │
+             └───────┬─────────┬────────┘
+                     ▼         ▼
+              PostgreSQL    Storage PDF
+              (Neon, cloud) (locale o S3/R2)
 ```
 
 - **Web** (`frontend/`): Next.js 16 static export → il browser chiama il backend cloud.
