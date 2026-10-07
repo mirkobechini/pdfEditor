@@ -15,6 +15,7 @@ import { api } from "../lib/api";
 
 function RegisterForm() {
   const t = useTranslations("auth");
+  const tc = useTranslations("common");
   const { register, user } = useAuth();
   const searchParams = useSearchParams();
   const isConvert = searchParams.get("convert") === "1";
@@ -53,7 +54,12 @@ function RegisterForm() {
         window.location.href = "/app";
       }
     } catch (err) {
-      setError(t("registerFailed") + ": " + mapError(err));
+      // mapError returns keys like "auth.passwordTooShort" or "common.networkError".
+      // t() is useTranslations("auth") so we strip the "auth." prefix; "common.*" -> tc().
+      const key = mapError(err);
+      const ns = key.split(".")[0];
+      const k = key.substring(ns.length + 1);
+      setError(t("registerFailed") + ": " + (ns === "common" ? tc(k) : t(k)));
     } finally {
       setLoading(false);
     }
