@@ -29,6 +29,7 @@ interface ChangelogData {
 
 const GITHUB_API = "https://api.github.com/repos/mirkobechini/pdfEditor/releases";
 const CHANGELOG_BASE = "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev";
+const DEFAULT_CHANGELOG_URL = `${CHANGELOG_BASE}/changelog.json`;
 
 export default function DownloadPage() {
     const t = useTranslations("download");
@@ -36,7 +37,7 @@ export default function DownloadPage() {
     // Il changelog è per-lingua: changelog.json è quello di default (IT, versionato
     // nel repo) e changelog.en.json è la traduzione. Così i "Recent Changes"
     // compaiono nella lingua attiva (issue #926).
-    const CHANGELOG_URL = `${CHANGELOG_BASE}/changelog.${locale === "en" ? "en" : "json"}`;
+    const CHANGELOG_URL = `${CHANGELOG_BASE}/${locale === "en" ? "changelog.en.json" : "changelog.json"}`;
 
     const [latestDesktop, setLatestDesktop] = useState<ReleaseInfo | null>(null);
     const [latestMobile, setLatestMobile] = useState<ReleaseInfo | null>(null);
@@ -47,10 +48,14 @@ export default function DownloadPage() {
         async function fetchData() {
             try {
                 // Fetch releases for download links
-                const [releasesRes, changelogRes] = await Promise.all([
-                    fetch(GITHUB_API),
-                    fetch(CHANGELOG_URL).catch(() => null),
-                ]);
+                let changelogRes: Response | null = null;
+                const releasesPromise = fetch(GITHUB_API);
+                changelogRes = await fetch(CHANGELOG_URL).catch(() => null);
+                // Fallback al changelog IT se la traduzione non è raggiungibile
+                if (!changelogRes?.ok && CHANGELOG_URL !== DEFAULT_CHANGELOG_URL) {
+                    changelogRes = await fetch(DEFAULT_CHANGELOG_URL).catch(() => null);
+                }
+                const releasesRes = await releasesPromise;
 
                 // Parse releases
                 const releases: any[] = await releasesRes.json();
@@ -87,8 +92,9 @@ export default function DownloadPage() {
                 setLoading(false);
             }
         }
+        setLoading(true);
         fetchData();
-    }, []);
+    }, [CHANGELOG_URL]);
 
     function getDesktopAsset(suffix: string): ReleaseAsset | undefined {
         return latestDesktop?.assets.find((a) => a.name.includes(suffix));
