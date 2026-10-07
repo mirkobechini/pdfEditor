@@ -15,6 +15,9 @@ vi.mock("next-intl", () => ({
             registerTitle: "Crea il tuo account",
             passwordMismatch: "Le password non coincidono",
             passwordTooShort: "Password troppo corta",
+            passwordMissingUppercase: "Manca maiuscola",
+            passwordMissingLowercase: "Manca minuscola",
+            passwordMissingNumber: "Manca numero",
             registerFailed: "Registrazione fallita",
         };
         return map[key] || key;
@@ -73,7 +76,7 @@ describe("RegisterPage", () => {
         render(<RegisterPage />);
         fireEvent.change(screen.getByPlaceholderText("namePlaceholder"), { target: { value: "Test" } });
         fireEvent.change(screen.getByPlaceholderText("emailPlaceholder"), { target: { value: "test@test.com" } });
-        fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: "pass123" } });
+        fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: "Password123" } });
         fireEvent.change(screen.getByPlaceholderText("confirmPasswordPlaceholder"), { target: { value: "pass456" } });
         fireEvent.click(screen.getByText("registerButton"));
         await waitFor(() => {
@@ -93,16 +96,33 @@ describe("RegisterPage", () => {
         });
     });
 
+    it.each([
+        ["password123", "Manca maiuscola"],
+        ["PASSWORD123", "Manca minuscola"],
+        ["Passwordabc", "Manca numero"],
+    ])("shows specific error for weak password %s", async (pwd, message) => {
+        render(<RegisterPage />);
+        fireEvent.change(screen.getByPlaceholderText("namePlaceholder"), { target: { value: "Test" } });
+        fireEvent.change(screen.getByPlaceholderText("emailPlaceholder"), { target: { value: "test@test.com" } });
+        fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: pwd } });
+        fireEvent.change(screen.getByPlaceholderText("confirmPasswordPlaceholder"), { target: { value: pwd } });
+        fireEvent.click(screen.getByText("registerButton"));
+        await waitFor(() => {
+            expect(screen.getByText(message)).toBeInTheDocument();
+        });
+        expect(mockRegister).not.toHaveBeenCalled();
+    });
+
     it("calls register on valid submission", async () => {
         mockRegister.mockResolvedValueOnce(undefined);
         render(<RegisterPage />);
         fireEvent.change(screen.getByPlaceholderText("namePlaceholder"), { target: { value: "Test User" } });
         fireEvent.change(screen.getByPlaceholderText("emailPlaceholder"), { target: { value: "test@test.com" } });
-        fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: "pass123" } });
-        fireEvent.change(screen.getByPlaceholderText("confirmPasswordPlaceholder"), { target: { value: "pass123" } });
+        fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: "Password123" } });
+        fireEvent.change(screen.getByPlaceholderText("confirmPasswordPlaceholder"), { target: { value: "Password123" } });
         fireEvent.click(screen.getByText("registerButton"));
         await waitFor(() => {
-            expect(mockRegister).toHaveBeenCalledWith("test@test.com", "pass123", "Test User");
+            expect(mockRegister).toHaveBeenCalledWith("test@test.com", "Password123", "Test User");
         });
         expect(mockPush).toHaveBeenCalledWith("/app");
     });
@@ -112,8 +132,8 @@ describe("RegisterPage", () => {
         render(<RegisterPage />);
         fireEvent.change(screen.getByPlaceholderText("namePlaceholder"), { target: { value: "Test" } });
         fireEvent.change(screen.getByPlaceholderText("emailPlaceholder"), { target: { value: "test@test.com" } });
-        fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: "pass123" } });
-        fireEvent.change(screen.getByPlaceholderText("confirmPasswordPlaceholder"), { target: { value: "pass123" } });
+        fireEvent.change(screen.getByPlaceholderText("passwordPlaceholder"), { target: { value: "Password123" } });
+        fireEvent.change(screen.getByPlaceholderText("confirmPasswordPlaceholder"), { target: { value: "Password123" } });
         fireEvent.click(screen.getByText("registerButton"));
         await waitFor(() => {
             expect(screen.getByText("Registrazione fallita")).toBeInTheDocument();
