@@ -20,6 +20,7 @@ const ANNOTATION_TYPES = ["highlight", "underline", "strikeout", "text", "free_t
 
 export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pdfUrl, onSuccess }: AnnotationDialogProps) {
     const t = useTranslations("annotationDialog");
+    const tc = useTranslations("common");
     const [type, setType] = React.useState("highlight");
     const [color, setColor] = React.useState("#FFFF00");
     const [content, setContent] = React.useState("");
@@ -59,7 +60,17 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pd
             onSuccess?.();
             onClose();
         } catch (err) {
-            setError(t("failed") + ": " + mapError(err));
+            const key = mapError(err);
+            // mapError returns keys like "common.validationError" or "pdf.notFound".
+            // t() is useTranslations("annotationDialog") so we strip the namespace
+            // and translate with the right translator (same pattern as login).
+            const ns = key.split(".")[0];
+            const k = key.substring(ns.length + 1);
+            if (ns === "common") {
+                setError(t("failed") + ": " + tc(k));
+            } else {
+                setError(t("failed") + ": " + t(k));
+            }
         } finally {
             setSaving(false);
         }
@@ -75,6 +86,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pd
             >
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">{t("title")}</h2>
 
+                <div className="flex-1 min-h-0 overflow-y-auto -mr-2 pr-2">
                 {error && (
                     <div className="mb-4 p-3 text-sm text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30 rounded" data-testid="annotation-error">
                         {error}
@@ -144,11 +156,12 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pd
                         <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{t("positionHint")}</p>
                     </label>
                 </div>
+                </div>
 
                 <div className="mt-4 flex gap-3">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm"
+                        className="flex-1 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm text-gray-900 dark:text-gray-100"
                     >
                         {t("cancel")}
                     </button>
