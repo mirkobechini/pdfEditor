@@ -83,8 +83,8 @@ describe("RegisterPage", () => {
       target: { value: "test@example.com" },
     });
     const passwordInputs = screen.getAllByPlaceholderText("••••••••");
-    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
-    fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[0], { target: { value: "Password123" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "Password123" } });
 
     expect(screen.getByText("registerButton")).toBeEnabled();
   });
@@ -99,7 +99,7 @@ describe("RegisterPage", () => {
       target: { value: "test@example.com" },
     });
     const passwordInputs = screen.getAllByPlaceholderText("••••••••");
-    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[0], { target: { value: "Password123" } });
     fireEvent.change(passwordInputs[1], { target: { value: "different" } });
 
     fireEvent.click(screen.getByText("registerButton"));
@@ -127,6 +127,29 @@ describe("RegisterPage", () => {
     expect(mockRegister).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["password123", "passwordMissingUppercase"],
+    ["PASSWORD123", "passwordMissingLowercase"],
+    ["Passwordabc", "passwordMissingNumber"],
+  ])("shows specific error for weak password %s", (pwd, key) => {
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("Mario Rossi"), {
+      target: { value: "Test User" },
+    });
+    fireEvent.change(screen.getAllByPlaceholderText("email@example.com")[0], {
+      target: { value: "test@example.com" },
+    });
+    const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+    fireEvent.change(passwordInputs[0], { target: { value: pwd } });
+    fireEvent.change(passwordInputs[1], { target: { value: pwd } });
+
+    fireEvent.click(screen.getByText("registerButton"));
+
+    expect(screen.getByText(key)).toBeTruthy();
+    expect(mockRegister).not.toHaveBeenCalled();
+  });
+
   it("calls register on submit and redirects", async () => {
     mockRegister.mockResolvedValue(undefined);
 
@@ -139,13 +162,13 @@ describe("RegisterPage", () => {
       target: { value: "test@example.com" },
     });
     const passwordInputs = screen.getAllByPlaceholderText("••••••••");
-    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
-    fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[0], { target: { value: "Password123" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "Password123" } });
 
     fireEvent.click(screen.getByText("registerButton"));
 
     await waitFor(() => {
-      expect(mockRegister).toHaveBeenCalledWith("test@example.com", "password123", "Test User");
+      expect(mockRegister).toHaveBeenCalledWith("test@example.com", "Password123", "Test User");
     });
     expect(window.location.href).toBe("/app");
   });
@@ -162,8 +185,8 @@ describe("RegisterPage", () => {
       target: { value: "test@example.com" },
     });
     const passwordInputs = screen.getAllByPlaceholderText("••••••••");
-    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
-    fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[0], { target: { value: "Password123" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "Password123" } });
 
     fireEvent.click(screen.getByText("registerButton"));
 
@@ -186,8 +209,8 @@ describe("RegisterPage", () => {
       target: { value: "test@example.com" },
     });
     const passwordInputs = screen.getAllByPlaceholderText("••••••••");
-    fireEvent.change(passwordInputs[0], { target: { value: "password12" } });
-    fireEvent.change(passwordInputs[1], { target: { value: "password12" } });
+    fireEvent.change(passwordInputs[0], { target: { value: "Password12" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "Password12" } });
 
     fireEvent.click(screen.getByText("registerButton"));
 
@@ -230,15 +253,15 @@ describe("RegisterPage", () => {
       target: { value: "test@example.com" },
     });
     const passwordInputs = screen.getAllByPlaceholderText("••••••••");
-    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
-    fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[0], { target: { value: "Password123" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "Password123" } });
 
     fireEvent.click(screen.getByText("registerButton"));
 
     await waitFor(() => {
       expect(api.convertGuest).toHaveBeenCalledWith(
         "test@example.com",
-        "password123",
+        "Password123",
         "Test User",
       );
     });
@@ -260,8 +283,8 @@ describe("RegisterPage", () => {
       target: { value: "test@example.com" },
     });
     const passwordInputs = screen.getAllByPlaceholderText("••••••••");
-    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
-    fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[0], { target: { value: "Password123" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "Password123" } });
 
     fireEvent.click(screen.getByText("registerButton"));
 
@@ -288,8 +311,8 @@ describe("RegisterPage", () => {
       target: { value: "test@example.com" },
     });
     const passwordInputs = screen.getAllByPlaceholderText("••••••••");
-    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
-    fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[0], { target: { value: "Password123" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "Password123" } });
 
     fireEvent.click(screen.getByText("registerButton"));
 
@@ -307,8 +330,8 @@ describe("RegisterPage", () => {
       target: { value: "test@example.com" },
     });
     const passwordInputs = screen.getAllByPlaceholderText("••••••••");
-    fireEvent.change(passwordInputs[0], { target: { value: "password123" } });
-    fireEvent.change(passwordInputs[1], { target: { value: "password123" } });
+    fireEvent.change(passwordInputs[0], { target: { value: "Password123" } });
+    fireEvent.change(passwordInputs[1], { target: { value: "Password123" } });
 
     fireEvent.click(screen.getByText("registerButton"));
     expect(mockRegister).not.toHaveBeenCalled();
