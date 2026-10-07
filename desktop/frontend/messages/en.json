@@ -464,6 +464,7 @@
     "pageLabel": "Page",
     "positionLabel": "Position (drag the box)",
     "resizeHint": "Drag the corners to resize",
+    "inkColor": "Ink color",
     "sign": "Sign",
     "signing": "Signing...",
     "cancel": "Cancel",

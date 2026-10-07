@@ -38,8 +38,21 @@ export default function RegisterPage() {
             return;
         }
 
-        if (password.length < 6) {
+        // Stesse regole del backend (auth_service._validate_password_strength).
+        if (password.length < 8) {
             setError(t("passwordTooShort"));
+            return;
+        }
+        if (!/[A-Z]/.test(password)) {
+            setError(t("passwordMissingUppercase"));
+            return;
+        }
+        if (!/[a-z]/.test(password)) {
+            setError(t("passwordMissingLowercase"));
+            return;
+        }
+        if (!/[0-9]/.test(password)) {
+            setError(t("passwordMissingNumber"));
             return;
         }
 

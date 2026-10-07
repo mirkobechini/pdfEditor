@@ -65,13 +65,21 @@ if [ -n "$TESSDATA_DIR" ]; then
     BUNDLE_ARGS+=(--add-data "$TESSDATA_DIR:tessdata")
 fi
 
+# --strip solo su Linux/macOS: su Windows (bash del runner CI) eseguirebbe GNU
+# strip su python312.dll e sui .pyd corrompendoli ("Failed to load Python DLL").
+STRIP_ARGS=()
+case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*) ;;
+    *) STRIP_ARGS+=(--strip) ;;
+esac
+
 # Build with PyInstaller
 echo "Running PyInstaller..."
 $PYTHON -m PyInstaller \
     --name "fastapi-sidecar" \
     --onefile \
     --noconsole \
-    --strip \
+    "${STRIP_ARGS[@]+"${STRIP_ARGS[@]}"}" \
     --workpath "$PROJECT_ROOT/desktop/build-sidecar-tmp" \
     --specpath "$PROJECT_ROOT/desktop" \
     --distpath "$OUTPUT_DIR" \

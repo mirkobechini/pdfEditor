@@ -3,7 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
-import { mapError } from "../shared/error-map";
+import { useApiError } from "../hooks/useApiError";
 import type { OcrResult } from "../shared/types";
 
 interface OcrModalProps {
@@ -23,6 +23,7 @@ const LANGUAGES = [
 
 export default function OcrModal({ open, onClose, pdfId, onSuccess }: OcrModalProps) {
     const t = useTranslations("ocrModal");
+    const { apiError } = useApiError();
     const [language, setLanguage] = React.useState("eng");
     const [running, setRunning] = React.useState(false);
     const [error, setError] = React.useState("");
@@ -46,7 +47,7 @@ export default function OcrModal({ open, onClose, pdfId, onSuccess }: OcrModalPr
             setResult(res);
             onSuccess?.();
         } catch (err) {
-            setError(t("failed") + ": " + mapError(err));
+            setError(t("failed") + ": " + apiError(err));
         } finally {
             setRunning(false);
         }

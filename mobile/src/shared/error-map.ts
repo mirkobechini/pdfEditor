@@ -68,6 +68,12 @@ export function mapError(err: unknown): string {
   if (message.includes("Reset token has expired"))
     return "auth.resetTokenExpired";
   if (message.includes("must be at least")) return "auth.passwordTooShort";
+  if (message.includes("must contain at least one uppercase"))
+    return "auth.passwordMissingUppercase";
+  if (message.includes("must contain at least one lowercase"))
+    return "auth.passwordMissingLowercase";
+  if (message.includes("must contain at least one number"))
+    return "auth.passwordMissingNumber";
   if (message.includes("Network error") || message.includes("Failed to fetch"))
     return "common.networkError";
   return "common.unknownError";
