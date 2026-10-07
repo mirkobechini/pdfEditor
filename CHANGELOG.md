@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-10-07
+
+### 🌐 Web (su `main` dalla release #1000)
+- **/download**: "Recent changes" nella lingua del sito (#961 / PR #962).
+- **Registrazione**: errori password specifici (8 caratteri, maiuscola, minuscola, numero), allineati al backend (#964).
+- **Annotazione**: fix 400 (il rect va inviato come `[x0, y0, x1, y1]`) (#966); il viewer si aggiorna dopo il salvataggio (#970); errore tradotto, scroll e bottone Annulla leggibile in dark (#959); register i18n (#956).
+- **Sidebar**: dimensione e data di caricamento sotto il nome del PDF (#968).
+- **Firma**: colore inchiostro e anteprima viva nel box (#972).
+- **Toolbar**: dropdown sopra il viewer, niente scrollbar da `md` in su; chiave `splitDialog.page` (#960).
+- **Maniglia di ridimensionamento** del box firma/annotazione in basso a destra con i cursori: Tailwind v4 ignorava `src/shared` perché gitignored, ora `@source "../shared"` (#984 / #985, vale anche per il desktop).
+- **Link di condivisione** `/share/<token>`: rewrite in `render.yaml` e token letto dal pathname (#991 / #993). ⚠️ In produzione il rewrite non risulta applicato (404): serve la regola nel pannello Render.
+
+### 🖥️ Desktop (su `dev`/`main`; v0.1.40 NON rilasciata)
+- Errore salvataggio annotazione tradotto (#974 / #975), password registrazione allineata al backend (#976 / #977), firma con colore e anteprima viva, canvas bianco anche in dark (#978 / #979), errori OCR e Condividi tradotti (#986 / #987).
+- **Sidecar Windows senza `--strip`**: corrompeva `python312.dll` ("Failed to load Python DLL") (#982 / #983). Obbligatorio per la v0.1.40.
+
+### 📱 Mobile (su `dev`/`main`; v0.2.4-mobile NON rilasciata)
+- Password registrazione allineata al backend (#980 / #981).
+- Crash "totalPages of null" aprendo Strumenti: introdotto dal refactor del 01/10 (commit `17614962`, #885 step 4) che aveva tolto il controllo `s.splitDialog &&` (#994 / #995).
+- Tolta la barra grigia "Sincronizzazione in corso"; il banner d'errore rispetta la safe area (#996 / #997).
+- Sync subito dopo il login, non solo all'avvio (#998 / #999).
+
+### 🧭 Aperto / futuro
+- #990: eliminazione dal cloud non propagata al desktop (decisione: il web comanda il cloud; chiedere se eliminare anche in locale).
+- #992: aprire i link di condivisione direttamente nell'app (deep link).
+- #932: Deep Agent locale sul desktop (in attesa di decisione).
+- Mobile: conteggio documenti sotto "Sincronizza ora"; nuvola vuota su un file creato sul telefono (non indagata).
+
 ## 2026-10-06
 
 ### ✅ Annotazione e firma — fix #866 su web e desktop (issue #929, #933)
