@@ -16,8 +16,22 @@ interface ShareViewerProps {
     token: string;
 }
 
-export default function ShareViewer({ token }: ShareViewerProps) {
+/**
+ * Il sito e' statico (output: "export") e genera solo /share/sample: in
+ * produzione ogni /share/<token> viene servito con quella pagina, quindi il
+ * prop vale "sample". Il token reale va letto dal pathname (issue #991).
+ */
+export function resolveShareToken(propToken: string): string {
+    if (propToken !== "sample" || typeof window === "undefined") return propToken;
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    const i = parts.indexOf("share");
+    const fromUrl = i >= 0 ? parts[i + 1] : undefined;
+    return fromUrl || propToken;
+}
+
+export default function ShareViewer({ token: propToken }: ShareViewerProps) {
     const t = useTranslations("share");
+    const token = React.useMemo(() => resolveShareToken(propToken), [propToken]);
 
     const [info, setInfo] = React.useState<ShareInfo | null>(null);
     const [password, setPassword] = React.useState("");
