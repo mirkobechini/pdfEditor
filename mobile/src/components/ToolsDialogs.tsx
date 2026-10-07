@@ -23,15 +23,17 @@ export default function ToolsDialogs({ s }: { s: ToolsScreenState }) {
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.splitSelectPages")}
                         </Text>
-                        <PageGrid
-                            totalPages={s.splitDialog!.totalPages}
-                            selectedPages={s.splitDialog!.selectedPages}
-                            onTogglePage={s.toggleSplitPage}
-                            selectedColor={s.theme.colors.primary}
-                            unselectedColor={s.theme.colors.surfaceVariant}
-                            textColor="#fff"
-                            unselectedTextColor={s.theme.colors.onSurface}
-                        />
+                        {s.splitDialog && (
+                            <PageGrid
+                                totalPages={s.splitDialog.totalPages}
+                                selectedPages={s.splitDialog.selectedPages}
+                                onTogglePage={s.toggleSplitPage}
+                                selectedColor={s.theme.colors.primary}
+                                unselectedColor={s.theme.colors.surfaceVariant}
+                                textColor="#fff"
+                                unselectedTextColor={s.theme.colors.onSurface}
+                            />
+                        )}
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => s.setSplitDialog(null)}>{t("common.cancel")}</Button>
@@ -53,15 +55,17 @@ export default function ToolsDialogs({ s }: { s: ToolsScreenState }) {
                         <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
                             {t("tools.removeSelectPages")}
                         </Text>
-                        <PageGrid
-                            totalPages={s.removeDialog!.totalPages}
-                            selectedPages={s.removeDialog!.selectedPages}
-                            onTogglePage={s.toggleRemovePage}
-                            selectedColor={s.theme.colors.error}
-                            unselectedColor={s.theme.colors.surfaceVariant}
-                            textColor="#fff"
-                            unselectedTextColor={s.theme.colors.onSurface}
-                        />
+                        {s.removeDialog && (
+                            <PageGrid
+                                totalPages={s.removeDialog.totalPages}
+                                selectedPages={s.removeDialog.selectedPages}
+                                onTogglePage={s.toggleRemovePage}
+                                selectedColor={s.theme.colors.error}
+                                unselectedColor={s.theme.colors.surfaceVariant}
+                                textColor="#fff"
+                                unselectedTextColor={s.theme.colors.onSurface}
+                            />
+                        )}
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => s.setRemoveDialog(null)}>{t("common.cancel")}</Button>
