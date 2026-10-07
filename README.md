@@ -17,21 +17,22 @@
 ## ✨ Features
 
 - 🔍 PDF viewer with zoom and page navigation
+- 📄 PDF size and upload date in the document list
 - 🔀 Merge multiple PDFs
 - ✂️ Split PDF by page selection
 - 📋 Reorder pages
 - 🗑️ Remove pages from PDF
 - 📝 Edit metadata (title, author)
 - 🔐 Protect / unlock password-protected PDFs
-- ✍️ Sign PDFs (signature placement + resize)
+- ✍️ Sign PDFs (ink color choice, live preview while placing and resizing)
 - 🖍️ Annotations with custom color and opacity
 - 🔎 OCR on scanned PDFs (Tesseract, 5 languages)
 - 🖨️ Print (native web/mobile, custom dialog with live preview on desktop)
-- 🔗 Share PDFs via link (with optional password/expiry)
+- 🔗 Share PDFs via link (with optional password/expiry, opens in the browser)
 - 📸 Camera scanner → PDF conversion
 - 🌙 Dark mode
 - 🔐 Email/password & guest authentication + Google SSO
-- ☁️ Cloud sync (desktop ↔ cloud)
+- ☁️ Cloud sync (desktop and mobile ↔ cloud; mobile syncs right after login)
 - 🌐 Internationalization (IT/EN)
 
 ## ⬇️ Quick download
