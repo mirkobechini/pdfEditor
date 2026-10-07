@@ -3,7 +3,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { api } from "../shared/api";
-import { mapError } from "../shared/error-map";
+import { useApiError } from "../hooks/useApiError";
 import PositionSelector from "./PositionSelector";
 
 interface AnnotationDialogProps {
@@ -19,6 +19,7 @@ const ANNOTATION_TYPES = ["highlight", "underline", "strikeout", "text", "free_t
 
 export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pdfUrl, onSuccess }: AnnotationDialogProps) {
     const t = useTranslations("annotationDialog");
+    const { apiError } = useApiError();
     const [type, setType] = React.useState("highlight");
     const [color, setColor] = React.useState("#FFFF00");
     const [content, setContent] = React.useState("");
@@ -58,7 +59,7 @@ export default function AnnotationDialog({ open, onClose, pdfId, currentPage, pd
             onSuccess?.();
             onClose();
         } catch (err) {
-            setError(t("failed") + ": " + mapError(err));
+            setError(t("failed") + ": " + apiError(err));
         } finally {
             setSaving(false);
         }
