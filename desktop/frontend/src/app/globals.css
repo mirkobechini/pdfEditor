@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* src/shared/ e' gitignored (copia generata): Tailwind v4 lo salterebbe e le classi
+   usate solo dai componenti condivisi (es. PositionSelector) non verrebbero generate. */
+@source "../shared";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
