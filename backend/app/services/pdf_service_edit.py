@@ -172,7 +172,12 @@ class PdfServiceEditMixin:
                     if span_info:
                         fontsize = span_info["size"]
                         fontname = self._safe_text_font(span_info["font"])
-                        origin = span_info["origin"]
+                        # x = bordo sinistro della PAROLA trovata (rect.x0),
+                        # y = baseline dello span. `span_info["origin"]` è
+                        # l'inizio dell'INTERO span: usarlo rimetterebbe il
+                        # testo all'inizio dello span quando la parola è nel
+                        # mezzo (issue #1016).
+                        origin = (rect.x0, span_info["origin"][1])
                     else:
                         # Fallback: estimate from rect
                         fontsize = rect.y1 - rect.y0 - 2

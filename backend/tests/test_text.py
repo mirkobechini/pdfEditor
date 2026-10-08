@@ -110,6 +110,12 @@ class TestReplaceText:
         content = doc.tobytes()
         doc.close()
 
+        # x attesa = posizione della PAROLA "World" nel sorgente (diversa
+        # dall'inizio dello span, che è 50) — issue #1016
+        src = fitz.open(stream=content, filetype="pdf")
+        expected_x = src[0].search_for("World")[0].x0
+        src.close()
+
         from tests.conftest import upload_pdf
         doc_id = upload_pdf(client, pro_headers, content, filename="font.pdf")
 
@@ -126,9 +132,9 @@ class TestReplaceText:
         assert dl.status_code == status.HTTP_200_OK
         replaced = fitz.open(stream=dl.content, filetype="pdf")
         page = replaced[0]
-        data = page.get_text("dict")
+        there_rects = page.search_for("There")
         spans = []
-        for block in data.get("blocks", []):
+        for block in page.get_text("dict").get("blocks", []):
             if block.get("type") != 0:
                 continue
             for line in block.get("lines", []):
@@ -136,15 +142,57 @@ class TestReplaceText:
                     spans.append(span)
         replaced.close()
 
-        # The replacement "There" should exist with the same font and size
-        there_spans = [s for s in spans if "There" in s.get("text", "")]
-        assert there_spans, "Replacement text not found in output PDF"
-        span = there_spans[0]
-        assert span["size"] == 24, f"Expected size 24, got {span['size']}"
-        # Baseline origin should be near the original (50, 100)
-        origin = span["origin"]
-        assert abs(origin[0] - 50) < 5, f"Origin x {origin[0]} too far from 50"
-        assert abs(origin[1] - 100) < 5, f"Origin y {origin[1]} too far from 100"
+        # Il testo sostituito esiste ed è alla x della PAROLA, non all'inizio
+        # dello span (issue #1016). NB: get_text fonde la riga in un unico span
+        # (origin 50), quindi la posizione va verificata con search_for.
+        assert there_rects, "Replacement text not found in output PDF"
+        assert abs(there_rects[0].x0 - expected_x) < 6, (
+            f"x {there_rects[0].x0} dovrebbe stare alla x della parola {expected_x}"
+        )
+        # Il size della riga resta 24
+        assert any(
+            s["size"] == 24 and "There" in s.get("text", "") for s in spans
+        ), "Size 24 non preservato nel testo sostituito"
+
+    def test_replace_text_middle_of_long_span_keeps_word_position(self, client, pro_headers):
+        """Parola nel mezzo di uno span lungo: il testo sostituito deve stare
+        dove stava la parola, non all'inizio dello span (issue #1016)."""
+        import fitz
+
+        doc = fitz.open()
+        page = doc.new_page(width=612, height=792)
+        page.insert_text((50, 300), "Hello Beautiful World", fontname="helv", fontsize=20)
+        content = doc.tobytes()
+        doc.close()
+
+        src = fitz.open(stream=content, filetype="pdf")
+        expected = src[0].search_for("World")[0]
+        src.close()
+
+        from tests.conftest import upload_pdf
+        doc_id = upload_pdf(client, pro_headers, content, filename="longspan.pdf")
+
+        response = client.post(
+            f"/pdfs/{doc_id}/replace-text",
+            headers=pro_headers,
+            json={"search": "World", "replace": "Earth"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        new_id = response.json()["id"]
+
+        dl = client.get(f"/pdfs/{new_id}/download", headers=pro_headers)
+        assert dl.status_code == status.HTTP_200_OK
+        replaced = fitz.open(stream=dl.content, filetype="pdf")
+        earth_rects = replaced[0].search_for("Earth")
+        replaced.close()
+
+        assert earth_rects, "Replacement 'Earth' non trovato nell'output"
+        ox = earth_rects[0].x0
+        # NON all'inizio dello span (x=50), ma alla x della parola
+        assert abs(ox - expected.x0) < 6, (
+            f"x {ox} non corrisponde alla posizione della parola {expected.x0}"
+        )
+        assert ox > 100, f"x {ox} troppo vicina all'inizio dello span (bug #1016)"
 
 
 class TestExtractText:
