@@ -251,6 +251,49 @@ class TestReplaceText:
         )
         assert abs(span["size"] - 24) < 0.5, f"Size {span['size']} non preservata"
 
+    def test_replace_long_word_does_not_overflow_next_words(self, client, pro_headers):
+        """Sostituendo una parola corta con una lunga, il testo nuovo NON deve
+        straripare sulle parole successive: il fontsize viene ridotto
+        (fit-to-width) per stare nello spazio della parola trovata (#1016)."""
+        import fitz
+
+        doc = fitz.open()
+        page = doc.new_page(width=612, height=792)
+        # Parola da sostituire circondata da altre parole sulla stessa riga
+        page.insert_text((50, 300), "La parola qui continua la riga", fontname="helv", fontsize=20)
+        content = doc.tobytes()
+        doc.close()
+
+        src = fitz.open(stream=content, filetype="pdf")
+        original_rect = src[0].search_for("qui")[0]
+        src.close()
+
+        from tests.conftest import upload_pdf
+        doc_id = upload_pdf(client, pro_headers, content, filename="fit.pdf")
+
+        response = client.post(
+            f"/pdfs/{doc_id}/replace-text",
+            headers=pro_headers,
+            json={"search": "qui", "replace": "stabilmente", "occurrence": 1},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        new_id = response.json()["id"]
+
+        dl = client.get(f"/pdfs/{new_id}/download", headers=pro_headers)
+        assert dl.status_code == status.HTTP_200_OK
+        replaced = fitz.open(stream=dl.content, filetype="pdf")
+        long_rects = replaced[0].search_for("stabilmente")
+        replaced.close()
+
+        assert long_rects, "La parola lunga non è presente nell'output"
+        long_rect = long_rects[0]
+        # La parola lunga NON deve superare lo spazio della parola trovata:
+        # al massimo una piccola tolleranza (arrotondamenti) oltre il rect.
+        assert long_rect.width <= original_rect.width + 4, (
+            f"La parola lunga straripa: nuova={long_rect.width:.1f} "
+            f"spazio={original_rect.width:.1f}"
+        )
+
 
 class TestExtractText:
     """Test suite for PDF text extraction endpoint."""

@@ -4,6 +4,7 @@ reorder/remove_pages/replace_text/extract_text plus the text-replacement
 helpers `_find_text_span` and `_safe_text_font`.
 """
 from datetime import datetime, timezone
+from typing import Any
 
 from app.core.storage import save_pdf
 from app.models.pdf import PdfDocument
@@ -175,11 +176,18 @@ class PdfServiceEditMixin:
                         # (stessa resa: font e grandezza originali). Se non si
                         # può (font non estraibile, glifi mancanti) → fallback
                         # sicuro helv (garanzia anti-500 della #930).
-                        fontname = self._register_replacement_font(
+                        registered = self._register_replacement_font(
                             page, source, span_info.get("font", ""), replace
                         )
-                        if fontname is None:
+                        font_probe = None
+                        if registered is not None:
+                            fontname, font_probe = registered
+                        else:
                             fontname = self._safe_text_font(span_info["font"])
+                            try:
+                                font_probe = fitz.Font(fontname=fontname)
+                            except Exception:
+                                font_probe = None
                         # x = bordo sinistro della PAROLA trovata (rect.x0),
                         # y = baseline dello span. `span_info["origin"]` è
                         # l'inizio dell'INTERO span: usarlo rimetterebbe il
@@ -192,7 +200,28 @@ class PdfServiceEditMixin:
                         if fontsize < 6:
                             fontsize = 10
                         fontname = "helv"
+                        try:
+                            font_probe = fitz.Font(fontname="helv")
+                        except Exception:
+                            font_probe = None
                         origin = (rect.x0, rect.y0 + 1)
+
+                    # Il PDF non fa reflow: se la parola nuova è più LARGA dello
+                    # spazio della parola trovata, va sopra le parole successive.
+                    # Riduci il fontsize per farla stare dentro rect.width
+                    # (fit-to-width). Il caso opposto (parola più corta) resta
+                    # con lo spazio: è un limite del formato senza riflusso.
+                    if font_probe is not None and fontsize > 0:
+                        try:
+                            needed = font_probe.text_length(
+                                replace, fontsize=fontsize
+                            )
+                            available = max(rect.width, 1.0)
+                            if needed > available:
+                                fontsize = max(4.0, fontsize * (available / needed))
+                        except Exception:
+                            pass
+
                     page.insert_text(
                         origin,
                         replace,
@@ -272,15 +301,17 @@ class PdfServiceEditMixin:
         source,
         span_font: str,
         text: str,
-    ) -> str | None:
+    ) -> tuple[str, Any] | None:
         """Try to reuse the source PDF's embedded font for the replacement
         text so it keeps the original font and size look.
 
-        Returns the font name to pass to ``Page.insert_text``, or ``None`` to
-        fall back to the safe ``helv`` path (#930). We only reuse a font when
-        it actually has glyphs for every non-space character we need to write
-        (checked with ``Font.has_glyph``), so subset-embedded fonts that lack
-        the needed glyphs fall back safely instead of raising.
+        Returns ``(register_name, fitz.Font)`` — the page font name to pass to
+        ``Page.insert_text`` plus the PyMuPDF ``Font`` object (used to measure
+        text for fit-to-width) — or ``None`` to fall back to the safe ``helv``
+        path (#930). We only reuse a font when it actually has glyphs for
+        every non-space character we need to write (checked with
+        ``Font.has_glyph``), so subset-embedded fonts that lack the needed
+        glyphs fall back safely instead of raising.
         """
         import fitz
 
@@ -335,7 +366,7 @@ class PdfServiceEditMixin:
         register_name = f"fz{xref}"
         try:
             page.insert_font(fontname=register_name, fontbuffer=content)
-            return register_name
+            return register_name, fitz.Font(fontbuffer=content)
         except Exception:
             return None
 
