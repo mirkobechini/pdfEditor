@@ -42,12 +42,12 @@ describe("LandingNavbar", () => {
         expect(registerLink).toBeDefined();
     });
 
-    it("renders logo link to home", () => {
+    it("renders logo link to landing", () => {
         renderWithAuth(<LandingNavbar />);
 
         const logoLinks = screen.getAllByRole("link");
-        const homeLink = logoLinks.find(link => link.getAttribute("href") === "/");
+        const landingLink = logoLinks.find(link => link.getAttribute("href") === "/landing");
 
-        expect(homeLink).toBeDefined();
+        expect(landingLink).toBeDefined();
     });
 });
