@@ -50,4 +50,12 @@ describe("LandingNavbar", () => {
 
         expect(landingLink).toBeDefined();
     });
+
+    it("renders features and how-it-works anchors to the landing page", () => {
+        renderWithAuth(<LandingNavbar />);
+
+        const links = screen.getAllByRole("link");
+        expect(links.find(l => l.getAttribute("href") === "/landing#features")).toBeDefined();
+        expect(links.find(l => l.getAttribute("href") === "/landing#how-it-works")).toBeDefined();
+    });
 });
