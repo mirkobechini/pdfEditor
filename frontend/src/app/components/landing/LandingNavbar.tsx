@@ -13,8 +13,9 @@ export default function LandingNavbar() {
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
             <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-                {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 hover:opacity-75 transition-opacity">
+                {/* Logo — punta sempre alla landing, non alla root: la root /
+                    (page.tsx) redirige gli utenti autenticati su /app (issue #1010) */}
+                <Link href="/landing" className="flex items-center gap-2 hover:opacity-75 transition-opacity">
                     <MonkeyLogo />
                     <span className="text-lg font-bold text-gray-900 dark:text-gray-100">PdfEditor</span>
                 </Link>
