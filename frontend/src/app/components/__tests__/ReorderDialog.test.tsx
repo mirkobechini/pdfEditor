@@ -251,4 +251,31 @@ describe("ReorderDialog", () => {
         const reorderBtn = screen.getByText("reorder");
         expect(reorderBtn).not.toBeDisabled();
     });
+
+    it("renders page thumbnails as non-draggable (drag starts from the container)", async () => {
+        const mockPage = {
+            getViewport: () => ({ width: 100, height: 150 }),
+            render: () => ({ promise: Promise.resolve() }),
+        };
+        (api.downloadPdf as any).mockResolvedValue(new Blob(["fake"]));
+        (window as any).pdfjsLib = {
+            getDocument: () => ({
+                promise: Promise.resolve({
+                    numPages: 2,
+                    getPage: () => Promise.resolve(mockPage),
+                }),
+            }),
+        };
+        HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({ scale: vi.fn() });
+        HTMLCanvasElement.prototype.toDataURL = vi.fn().mockReturnValue("data:image/png;base64,x");
+
+        render(<ReorderDialog {...defaultProps} totalPages={2} />);
+        const imgs = await screen.findAllByRole("img");
+        // Le thumbnails NON devono essere draggable: il drag deve partire dal
+        // container che ha i handler DnD, altrimenti il browser scarica l'immagine
+        // (issue #1014).
+        imgs.forEach((img) => {
+            expect(img.getAttribute("draggable")).toBe("false");
+        });
+    });
 });
