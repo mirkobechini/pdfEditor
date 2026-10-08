@@ -20,12 +20,13 @@ export default function LandingNavbar() {
                     <span className="text-lg font-bold text-gray-900 dark:text-gray-100">PdfEditor</span>
                 </Link>
 
-                {/* Nav links — desktop only */}
+                {/* Link — ancoraggi alla landing (non alla root: / redirige i
+                    loggati su /app, issue #1012) */}
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600 dark:text-gray-400">
-                    <Link href="/#features" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
+                    <Link href="/landing#features" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                         {t("features")}
                     </Link>
-                    <Link href="/#how-it-works" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
+                    <Link href="/landing#how-it-works" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                         {t("howItWorks")}
                     </Link>
                     <Link href="/download" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
