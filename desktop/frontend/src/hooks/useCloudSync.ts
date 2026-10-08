@@ -20,7 +20,10 @@ import {
   readSyncEnabled,
   readSyncOnStartup,
   deletePdfFromSources,
+  isCloudListComplete,
+  computeCloudDeletions,
 } from "./useCloudSyncCore";
+import type { CloudDeletion } from "./useCloudSyncCore";
 import { useOnlineStatus } from "./useOnlineStatus";
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -64,6 +67,17 @@ interface UseCloudSyncReturn {
   } | null;
   clearSyncResult: () => void;
   refreshStatus: () => Promise<void>;
+  /**
+   * PDF locali con mapping il cui file non esiste più sul cloud (= eliminati
+   * dal cloud, #990): il sync NON li ricarica e chiede all'utente cosa fare.
+   */
+  pendingCloudDeletions: CloudDeletion[];
+  /** Risolve una richiesta di eliminazione-cloud: "delete" = elimina anche in
+   * locale, "keep" = tienilo solo in locale (rimuove il mapping). */
+  resolveCloudDeletion: (
+    localId: string,
+    action: "delete" | "keep",
+  ) => Promise<void>;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────
@@ -93,6 +107,9 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
     errors: string[];
   } | null>(null);
   const syncingRef = useRef(false);
+  const [pendingCloudDeletions, setPendingCloudDeletions] = useState<
+    CloudDeletion[]
+  >([]);
   const { isOnline } = useOnlineStatus();
 
   const clearSyncResult = useCallback(() => setLastSyncResult(null), []);
@@ -280,12 +297,29 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
     try {
       const localRes = await api.listPdfs();
       const localPdfs = localRes.items;
-      const cloudRes = await cloudApi.listPdfs();
+      // Richiedi il massimo per ridurre i troncamenti; la completezza è
+      // verificata col `total` della risposta (#990).
+      const cloudRes = await cloudApi.listPdfs(0, 1000);
       const cloudPdfs = cloudRes.items;
 
       const map = getSyncMap();
       const cloudIds = new Set(cloudPdfs.map((p) => p.id));
       const localIds = new Set(localPdfs.map((p) => p.id));
+      // Completezza: ci fidiamo del "manca dal cloud" solo con lista intera.
+      const cloudComplete = isCloudListComplete(cloudPdfs, cloudRes.total);
+      const cloudDeletions = computeCloudDeletions(
+        localPdfs,
+        cloudIds,
+        map,
+        cloudComplete,
+      );
+      if (cloudDeletions.length > 0) {
+        setPendingCloudDeletions((prev) => {
+          const known = new Set(prev.map((d) => d.localId));
+          const add = cloudDeletions.filter((d) => !known.has(d.localId));
+          return add.length ? [...prev, ...add] : prev;
+        });
+      }
       // Build filename→cloudId index for matching without mapping
       const cloudByName: Record<string, string> = {};
       for (const p of cloudPdfs) {
@@ -300,6 +334,13 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
         const mappedCloudId = map[pdf.id];
         const alreadyInCloud = mappedCloudId && cloudIds.has(mappedCloudId);
         if (!alreadyInCloud) {
+          // Mapping presente ma il file non è più sul cloud: è stato eliminato
+          // dal web (che comanda il cloud). NON ricaricarlo (#990); la
+          // richiesta all'utente è già stata accodata sopra (se completa).
+          if (mappedCloudId) {
+            current++;
+            continue;
+          }
           // Check if a cloud PDF with the same filename exists (pre-mapping)
           const matchedCloudId = cloudByName[pdf.original_filename];
           if (matchedCloudId) {
@@ -376,6 +417,22 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
     [],
   );
 
+  const resolveCloudDeletion = useCallback(
+    async (localId: string, action: "delete" | "keep"): Promise<void> => {
+      if (action === "delete") {
+        // Elimina anche in locale (sul cloud non c'è più: l'ha eliminato il web).
+        await deletePdf(localId, "local");
+      }
+      // In entrambi i casi il file smette di essere considerato sincronizzato:
+      // si rimuove il mapping, così il sync non lo gestisce più (#990).
+      removeSyncMap(localId);
+      setPendingCloudDeletions((prev) =>
+        prev.filter((d) => d.localId !== localId),
+      );
+    },
+    [deletePdf],
+  );
+
   return {
     uploadPdf,
     downloadPdf,
@@ -392,5 +449,7 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
     lastSyncResult,
     clearSyncResult,
     refreshStatus,
+    pendingCloudDeletions,
+    resolveCloudDeletion,
   };
 }

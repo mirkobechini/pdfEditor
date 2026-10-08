@@ -563,5 +563,11 @@
     "loadFailed": "Impossibile caricare i link",
     "createFailed": "Impossibile creare il link",
     "revokeFailed": "Impossibile revocare il link"
+  },
+  "cloudDeletion": {
+    "title": "PDF eliminato dal cloud",
+    "desc": "\"{name}\" non è più sul cloud (eliminato dal web). Vuoi eliminarlo anche da questo dispositivo?",
+    "deleteLocal": "Elimina anche in locale",
+    "keepLocal": "Tieni solo in locale"
   }
 }

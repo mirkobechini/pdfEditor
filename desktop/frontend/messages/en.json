@@ -563,5 +563,11 @@
     "loadFailed": "Failed to load links",
     "createFailed": "Failed to create link",
     "revokeFailed": "Failed to revoke link"
+  },
+  "cloudDeletion": {
+    "title": "PDF deleted from the cloud",
+    "desc": "\"{name}\" is no longer in the cloud (deleted from the web). Do you want to delete it from this device too?",
+    "deleteLocal": "Delete locally too",
+    "keepLocal": "Keep local only"
   }
 }

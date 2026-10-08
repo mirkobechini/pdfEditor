@@ -89,3 +89,53 @@ export function readSyncOnStartup(): boolean {
   if (typeof window === "undefined") return true;
   return localStorage.getItem(SYNC_STARTUP_KEY) !== "false";
 }
+
+// ─── Cloud deletion detection (#990) ──────────────────────────────
+
+export interface CloudDeletion {
+  localId: string;
+  name: string;
+  cloudId: string;
+}
+
+/**
+ * A cloud list is complete only when we received at least as many items as the
+ * server reported (`total`). If `total` is missing we treat it as incomplete:
+ * we must never propose deletions based on a partial list (data-loss risk).
+ */
+export function isCloudListComplete(
+  items: unknown[],
+  total: number | undefined,
+): boolean {
+  if (typeof total !== "number") return false;
+  return items.length >= total;
+}
+
+/**
+ * Local PDFs that have a sync mapping but whose cloud copy no longer exists —
+ * i.e. they were deleted on the cloud (the web owns the cloud, #990).
+ *
+ * Returns entries only when the cloud list was read completely: otherwise a
+ * missing id could simply be a truncated list, and we must not propose
+ * deletions (data-loss risk).
+ */
+export function computeCloudDeletions(
+  localPdfs: { id: string; original_filename: string }[],
+  cloudIds: Set<string>,
+  map: Record<string, string>,
+  cloudComplete: boolean,
+): CloudDeletion[] {
+  if (!cloudComplete) return [];
+  const out: CloudDeletion[] = [];
+  for (const pdf of localPdfs) {
+    const mappedCloudId = map[pdf.id];
+    if (mappedCloudId && !cloudIds.has(mappedCloudId)) {
+      out.push({
+        localId: pdf.id,
+        name: pdf.original_filename,
+        cloudId: mappedCloudId,
+      });
+    }
+  }
+  return out;
+}
