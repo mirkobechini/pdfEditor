@@ -90,6 +90,32 @@ export function readSyncOnStartup(): boolean {
   return localStorage.getItem(SYNC_STARTUP_KEY) !== "false";
 }
 
+// ─── Per-file sync exclusion (#990) ───────────────────────────────
+// Come il `cloud_synced_exclude` del mobile: un PDF escluso resta solo locale
+// e non viene mai caricato sul cloud.
+
+export const SYNC_EXCLUDE_KEY = "pdfeditor_sync_exclude_ids";
+
+export function getExcludedIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = JSON.parse(localStorage.getItem(SYNC_EXCLUDE_KEY) || "[]");
+    return Array.isArray(raw) ? raw.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function isExcluded(localId: string): boolean {
+  return getExcludedIds().includes(localId);
+}
+
+export function setExcluded(localId: string, exclude: boolean): void {
+  const ids = getExcludedIds().filter((id) => id !== localId);
+  if (exclude) ids.push(localId);
+  localStorage.setItem(SYNC_EXCLUDE_KEY, JSON.stringify(ids));
+}
+
 // ─── Cloud deletion detection (#990) ──────────────────────────────
 
 export interface CloudDeletion {

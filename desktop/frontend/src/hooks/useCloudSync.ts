@@ -22,6 +22,8 @@ import {
   deletePdfFromSources,
   isCloudListComplete,
   computeCloudDeletions,
+  getExcludedIds,
+  setExcluded,
 } from "./useCloudSyncCore";
 import type { CloudDeletion } from "./useCloudSyncCore";
 import { useOnlineStatus } from "./useOnlineStatus";
@@ -73,11 +75,16 @@ interface UseCloudSyncReturn {
    */
   pendingCloudDeletions: CloudDeletion[];
   /** Risolve una richiesta di eliminazione-cloud: "delete" = elimina anche in
-   * locale, "keep" = tienilo solo in locale (rimuove il mapping). */
+   * locale, "keep" = tienilo solo in locale (rimuove il mapping),
+   * "reupload" = ricaricalo sul cloud. */
   resolveCloudDeletion: (
     localId: string,
-    action: "delete" | "keep",
+    action: "delete" | "keep" | "reupload",
   ) => Promise<void>;
+  /** PDF esclusi dalla sincronizzazione (restano solo locali, #990). */
+  excludedIds: string[];
+  /** Esclude (o reinclude) un PDF dalla sincronizzazione. */
+  toggleExclude: (localId: string, exclude?: boolean) => void;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────
@@ -110,6 +117,9 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
   const [pendingCloudDeletions, setPendingCloudDeletions] = useState<
     CloudDeletion[]
   >([]);
+  const [excludedIds, setExcludedIds] = useState<string[]>(() =>
+    getExcludedIds(),
+  );
   const { isOnline } = useOnlineStatus();
 
   const clearSyncResult = useCallback(() => setLastSyncResult(null), []);
@@ -307,8 +317,12 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
       const localIds = new Set(localPdfs.map((p) => p.id));
       // Completezza: ci fidiamo del "manca dal cloud" solo con lista intera.
       const cloudComplete = isCloudListComplete(cloudPdfs, cloudRes.total);
+      // I PDF esclusi restano solo locali: non si caricano e non si valutano
+      // come "mancanti dal cloud" (#990).
+      const excludedSet = new Set(getExcludedIds());
+      const syncableLocal = localPdfs.filter((p) => !excludedSet.has(p.id));
       const cloudDeletions = computeCloudDeletions(
-        localPdfs,
+        syncableLocal,
         cloudIds,
         map,
         cloudComplete,
@@ -329,8 +343,8 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
       const total = localPdfs.length + cloudPdfs.length;
       let current = 0;
 
-      // Upload local PDFs not yet synced to cloud
-      for (const pdf of localPdfs) {
+      // Upload local PDFs not yet synced to cloud (esclusi i PDF esclusi)
+      for (const pdf of syncableLocal) {
         const mappedCloudId = map[pdf.id];
         const alreadyInCloud = mappedCloudId && cloudIds.has(mappedCloudId);
         if (!alreadyInCloud) {
@@ -418,20 +432,41 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
   );
 
   const resolveCloudDeletion = useCallback(
-    async (localId: string, action: "delete" | "keep"): Promise<void> => {
+    async (
+      localId: string,
+      action: "delete" | "keep" | "reupload",
+    ): Promise<void> => {
       if (action === "delete") {
         // Elimina anche in locale (sul cloud non c'è più: l'ha eliminato il web).
         await deletePdf(localId, "local");
+        removeSyncMap(localId);
+      } else if (action === "reupload") {
+        // Ricarica sul cloud: il vecchio mapping punta a un file sparito,
+        // quindi lo rimuoviamo e ricarichiamo (uploadPdf crea il nuovo mapping).
+        const name = pendingCloudDeletions.find(
+          (d) => d.localId === localId,
+        )?.name;
+        removeSyncMap(localId);
+        await uploadPdf(localId, name);
+      } else {
+        // keep: resta solo locale, non più considerato sincronizzato.
+        removeSyncMap(localId);
       }
-      // In entrambi i casi il file smette di essere considerato sincronizzato:
-      // si rimuove il mapping, così il sync non lo gestisce più (#990).
-      removeSyncMap(localId);
       setPendingCloudDeletions((prev) =>
         prev.filter((d) => d.localId !== localId),
       );
     },
-    [deletePdf],
+    [deletePdf, uploadPdf, pendingCloudDeletions],
   );
+
+  const toggleExclude = useCallback((localId: string, exclude?: boolean) => {
+    const next =
+      exclude === undefined
+        ? !getExcludedIds().includes(localId)
+        : exclude;
+    setExcluded(localId, next);
+    setExcludedIds(getExcludedIds());
+  }, []);
 
   return {
     uploadPdf,
@@ -451,5 +486,7 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
     refreshStatus,
     pendingCloudDeletions,
     resolveCloudDeletion,
+    excludedIds,
+    toggleExclude,
   };
 }

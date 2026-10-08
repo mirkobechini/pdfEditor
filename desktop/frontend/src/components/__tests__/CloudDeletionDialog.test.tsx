@@ -46,4 +46,10 @@ describe("CloudDeletionDialog (#990)", () => {
         fireEvent.click(screen.getByTestId("cloud-deletion-keep"));
         expect(onResolve).toHaveBeenCalledWith("l1", "keep");
     });
+
+    it("'Ricarica sul cloud' risolve con reupload", () => {
+        render(<CloudDeletionDialog deletion={deletion} onResolve={onResolve} />);
+        fireEvent.click(screen.getByTestId("cloud-deletion-reupload"));
+        expect(onResolve).toHaveBeenCalledWith("l1", "reupload");
+    });
 });
