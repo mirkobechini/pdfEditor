@@ -117,7 +117,12 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
   }
 
   // Drag & drop handlers
-  function handleDragStart(pos: number) {
+  function handleDragStart(e: React.DragEvent, pos: number) {
+    // Serve una DnD cross-browser reale: senza setData alcuni browser
+    // (e il rilascio fuori dalle zone) attivano il comportamento nativo
+    // "scarica immagine" invece del reorder (issue #1014).
+    e.dataTransfer?.setData?.("text/plain", String(pos));
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
     setDragIndex(pos);
   }
 
@@ -130,7 +135,8 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
     setDropIndex(null);
   }
 
-  function handleDrop(pos: number) {
+  function handleDrop(e: React.DragEvent, pos: number) {
+    e.preventDefault();
     if (dragIndex === null || dragIndex === pos) return;
     setOrder((prev) => {
       const next = [...prev];
@@ -181,10 +187,10 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
                       : "border-gray-200 dark:border-gray-600 hover:border-blue-400"
                     }`}
                   draggable
-                  onDragStart={() => handleDragStart(pos)}
+                  onDragStart={(e) => handleDragStart(e, pos)}
                   onDragOver={(e) => handleDragOver(e, pos)}
                   onDragLeave={handleDragLeave}
-                  onDrop={() => handleDrop(pos)}
+                  onDrop={(e) => handleDrop(e, pos)}
                   onDragEnd={handleDragEnd}
                 >
                   {thumb && (
@@ -195,6 +201,7 @@ export default function ReorderDialog({ open, onClose, selectedId, selectedName,
                       height={280}
                       className="w-full h-auto"
                       unoptimized
+                      draggable={false}
                     />
                   )}
                   <div className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
