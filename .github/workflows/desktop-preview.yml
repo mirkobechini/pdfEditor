@@ -1,0 +1,107 @@
+name: Desktop Preview Build (artifact only)
+
+# Costruisce solo l'installer Windows dallo stato corrente del branch e lo
+# carica come artifact scaricabile. NON crea release, NON tocca le versioni.
+# Usato per far provare le modifiche desktop prima del merge (es. #990).
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "preview/**"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: "backend/requirements.txt"
+
+      - name: Install frontend deps
+        run: cd frontend; npm ci
+
+      - name: Install desktop frontend deps
+        run: cd desktop/frontend; npm ci
+
+      - name: Build desktop frontend (static export)
+        run: cd desktop/frontend; npm run build
+
+      - name: Install backend deps (incl. PyInstaller)
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "desktop/src-tauri -> target"
+
+      - name: Build sidecar
+        shell: bash
+        run: |
+          cd desktop
+          bash build-sidecar.sh
+
+      - name: Smoke test sidecar
+        shell: bash
+        run: |
+          cd desktop
+          SIDECAR="src-tauri/binaries/fastapi-sidecar.exe"
+          if [ ! -f "$SIDECAR" ]; then
+            echo "sidecar non trovato: $SIDECAR"; exit 1
+          fi
+          "./$SIDECAR" >/tmp/sidecar.log 2>&1 &
+          SPID=$!
+          sleep 12
+          code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7723/health || echo "000")
+          kill $SPID 2>/dev/null || true
+          echo "health=$code"
+          cat /tmp/sidecar.log || true
+          if [ "$code" != "200" ]; then echo "Sidecar non risponde su /health"; exit 1; fi
+          echo "Sidecar OK"
+
+      - name: Rename sidecar for Tauri target triple
+        shell: bash
+        run: |
+          TRIPLE=$(rustc -vV | grep "^host:" | awk '{print $2}')
+          SIDECAR="desktop/src-tauri/binaries/fastapi-sidecar"
+          if [ -f "${SIDECAR}.exe" ]; then
+            mv "${SIDECAR}.exe" "${SIDECAR}-${TRIPLE}.exe"
+            echo "Renamed to fastapi-sidecar-${TRIPLE}.exe"
+          fi
+
+      - name: Build Tauri app
+        shell: bash
+        run: |
+          cd desktop/src-tauri
+          npm --prefix ../frontend exec tauri build -- --ci
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: pdfeditor-desktop-preview-windows
+          path: |
+            desktop/src-tauri/target/release/bundle/**/*.exe
+            desktop/src-tauri/target/release/bundle/**/*.msi
