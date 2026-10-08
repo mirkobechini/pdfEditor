@@ -221,7 +221,9 @@
     "deselectAll": "Deselect all",
     "selected": "selected",
     "deleteSelected": "Delete selected",
-    "exportSelected": "Export selected"
+    "exportSelected": "Export selected",
+    "excludeFromSync": "Exclude from sync",
+    "includeInSync": "Include in sync"
   },
   "removeModal": {
     "title": "Remove Pages",
@@ -568,6 +570,7 @@
     "title": "PDF deleted from the cloud",
     "desc": "\"{name}\" is no longer in the cloud (deleted from the web). Do you want to delete it from this device too?",
     "deleteLocal": "Delete locally too",
-    "keepLocal": "Keep local only"
+    "keepLocal": "Keep local only",
+    "reupload": "Re-upload to cloud"
   }
 }

@@ -252,8 +252,12 @@ describe("EditorPage", () => {
         });
         render(<EditorPage />);
         await waitFor(() => {
-            expect(screen.getByText("☁️")).toBeInTheDocument();
-            expect(screen.getByText("⏳")).toBeInTheDocument();
+            expect(
+                screen.getByTestId("cloud-status-p1").querySelector("svg")?.getAttribute("aria-label"),
+            ).toBe("synced");
+            expect(
+                screen.getByTestId("cloud-status-p2").querySelector("svg")?.getAttribute("aria-label"),
+            ).toBe("pending");
         });
     });
     it("renders user info in sidebar", () => {
@@ -475,7 +479,9 @@ describe("EditorPage", () => {
         });
         render(<EditorPage />);
         await waitFor(() => {
-            expect(screen.getByText("⚠️")).toBeInTheDocument();
+            expect(
+                screen.getByTestId("cloud-status-p1").querySelector("svg")?.getAttribute("aria-label"),
+            ).toBe("error");
         });
     });
     it("shows platform icon for mobile source", async () => {

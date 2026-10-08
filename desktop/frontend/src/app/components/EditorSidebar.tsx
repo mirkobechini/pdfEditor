@@ -8,6 +8,8 @@ import type { PdfDocument, User } from "../../shared/types";
 import type { PdfSyncStatus } from "../../hooks/useCloudSync";
 import { getPlatformIcon, formatFileSize, formatDate } from "../../lib/editor-utils";
 import GuestConvertBanner from "../components/GuestConvertBanner";
+import CloudStatusIcon from "../../components/CloudStatusIcon";
+import type { CloudIconState } from "../../components/CloudStatusIcon";
 
 export type SyncStatusMap = Record<string, PdfSyncStatus>;
 
@@ -18,6 +20,9 @@ export type EditorSidebarProps = {
     loading: boolean;
     selectedDoc: PdfDocument | null;
     syncStatus: SyncStatusMap;
+    syncEnabled: boolean;
+    excludedIds: string[];
+    onToggleExclude: (doc: PdfDocument) => void;
     multiSelect: boolean;
     selectedIds: Set<string>;
     renameId: string | null;
@@ -41,11 +46,22 @@ export type EditorSidebarProps = {
 export function EditorSidebar(props: EditorSidebarProps) {
     const {
         te, user, docs, loading, selectedDoc, syncStatus,
+        syncEnabled, excludedIds, onToggleExclude,
         multiSelect, selectedIds, renameId, renameValue, uploadError, fileInputRef,
         onOpenLocal, onFileInputChange, onToggleMultiSelect, onToggleSelectAll,
         onToggleSelect, onBatchDelete, onBatchExport, onSelectDoc,
         onRenameIdChange, onRenameValueChange, onRenameCommit, onDeleteRequest,
     } = props;
+
+    /** Stato nuvola del PDF (come il mobile) per l'icona in lista (#990). */
+    const cloudState = (doc: PdfDocument): CloudIconState => {
+        if (excludedIds.includes(doc.id)) return "excluded";
+        const st = syncStatus[doc.id];
+        if (st === "synced") return "synced";
+        if (st === "pending") return "pending";
+        if (st === "error") return "error";
+        return "none";
+    };
 
     return (
         <aside className="flex flex-col border-r border-white/10 bg-[#1f1914] min-h-0">
@@ -165,9 +181,15 @@ export function EditorSidebar(props: EditorSidebarProps) {
                                             )}
                                             <p className="mt-1 font-mono text-[10px] text-[#7e7267]">
                                                 {formatFileSize(doc.file_size, te)} · {formatDate(doc.created_at, te)}
-                                                {syncStatus[doc.id] === "synced" && <span className="ml-2 text-green-400">☁️</span>}
-                                                {syncStatus[doc.id] === "pending" && <span className="ml-2 text-yellow-400">⏳</span>}
-                                                {syncStatus[doc.id] === "error" && <span className="ml-2 text-red-400">⚠️</span>}
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); onToggleExclude(doc); }}
+                                                    disabled={!syncEnabled}
+                                                    className="ml-2 align-middle disabled:cursor-default"
+                                                    title={excludedIds.includes(doc.id) ? te("includeInSync") : te("excludeFromSync")}
+                                                    data-testid={`cloud-status-${doc.id}`}
+                                                >
+                                                    <CloudStatusIcon state={cloudState(doc)} />
+                                                </button>
                                             </p>
                                         </div>
                                     </div>

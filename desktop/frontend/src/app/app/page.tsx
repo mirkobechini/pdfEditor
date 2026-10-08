@@ -18,7 +18,7 @@ const API_BASE = getApiBaseUrl();
 export default function EditorPage() {
     const te = useTranslations("editor");
     const { user } = useAuth();
-    const { status: syncStatus, pendingCloudDeletions, resolveCloudDeletion } = useCloudSync();
+    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion } = useCloudSync();
     const {
         docs, setDocs,
         loading,
@@ -75,6 +75,9 @@ export default function EditorPage() {
                     loading={loading}
                     selectedDoc={selectedDoc}
                     syncStatus={syncStatus}
+                    syncEnabled={syncEnabled}
+                    excludedIds={excludedIds ?? []}
+                    onToggleExclude={(doc) => toggleExclude?.(doc.id)}
                     multiSelect={multiSelect}
                     selectedIds={selectedIds}
                     renameId={renameId}

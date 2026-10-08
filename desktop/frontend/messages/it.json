@@ -221,7 +221,9 @@
     "deselectAll": "Deseleziona tutti",
     "selected": "selezionati",
     "deleteSelected": "Elimina selezionati",
-    "exportSelected": "Esporta selezionati"
+    "exportSelected": "Esporta selezionati",
+    "excludeFromSync": "Escludi dalla sincronizzazione",
+    "includeInSync": "Includi nella sincronizzazione"
   },
   "removeModal": {
     "title": "Rimuovi Pagine",
@@ -568,6 +570,7 @@
     "title": "PDF eliminato dal cloud",
     "desc": "\"{name}\" non è più sul cloud (eliminato dal web). Vuoi eliminarlo anche da questo dispositivo?",
     "deleteLocal": "Elimina anche in locale",
-    "keepLocal": "Tieni solo in locale"
+    "keepLocal": "Tieni solo in locale",
+    "reupload": "Ricarica sul cloud"
   }
 }

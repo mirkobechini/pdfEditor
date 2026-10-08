@@ -9,6 +9,9 @@ import { describe, it, expect } from "vitest";
 import {
   isCloudListComplete,
   computeCloudDeletions,
+  getExcludedIds,
+  isExcluded,
+  setExcluded,
 } from "../useCloudSyncCore";
 
 describe("isCloudListComplete", () => {
@@ -56,5 +59,30 @@ describe("computeCloudDeletions", () => {
     const cloudIds = new Set(["c1", "c2", "c3"]);
     const map = { l1: "c1", l2: "c2", l3: "c3" };
     expect(computeCloudDeletions(local, cloudIds, map, true)).toEqual([]);
+  });
+});
+
+describe("esclusione per file (#990)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("parte vuota", () => {
+    expect(getExcludedIds()).toEqual([]);
+    expect(isExcluded("l1")).toBe(false);
+  });
+
+  it("esclude e reinclude un file", () => {
+    setExcluded("l1", true);
+    expect(isExcluded("l1")).toBe(true);
+    setExcluded("l1", false);
+    expect(isExcluded("l1")).toBe(false);
+  });
+
+  it("gestisce più file senza duplicati", () => {
+    setExcluded("l1", true);
+    setExcluded("l1", true);
+    setExcluded("l2", true);
+    expect(getExcludedIds().sort()).toEqual(["l1", "l2"]);
   });
 });
