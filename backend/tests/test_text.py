@@ -194,6 +194,63 @@ class TestReplaceText:
         )
         assert ox > 100, f"x {ox} troppo vicina all'inizio dello span (bug #1016)"
 
+    def test_replace_text_reuses_embedded_font(self, client, pro_headers):
+        """Su un PDF con font embedded, il testo sostituito deve riusare quel
+        font (non il fallback helv): stessa resa di font e grandezza (#1016)."""
+        import fitz
+        import os
+        import pytest
+
+        ttf = None
+        for p in (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        ):
+            if os.path.exists(p):
+                ttf = p
+                break
+        if ttf is None:
+            pytest.skip("nessun TTF di sistema disponibile per il test")
+
+        doc = fitz.open()
+        page = doc.new_page(width=612, height=792)
+        page.insert_font(fontname="F0", fontfile=ttf)
+        page.insert_text((50, 300), "Hello Beautiful World", fontname="F0", fontsize=24)
+        content = doc.tobytes()
+        doc.close()
+
+        from tests.conftest import upload_pdf
+        doc_id = upload_pdf(client, pro_headers, content, filename="embedded.pdf")
+
+        response = client.post(
+            f"/pdfs/{doc_id}/replace-text",
+            headers=pro_headers,
+            json={"search": "World", "replace": "Earth"},
+        )
+        assert response.status_code == status.HTTP_200_OK
+        new_id = response.json()["id"]
+
+        dl = client.get(f"/pdfs/{new_id}/download", headers=pro_headers)
+        assert dl.status_code == status.HTTP_200_OK
+        replaced = fitz.open(stream=dl.content, filetype="pdf")
+        spans = []
+        for b in replaced[0].get_text("dict").get("blocks", []):
+            if b.get("type") != 0:
+                continue
+            for l in b.get("lines", []):
+                for s in l.get("spans", []):
+                    spans.append(s)
+        replaced.close()
+
+        earth = [s for s in spans if "Earth" in s.get("text", "")]
+        assert earth, "Replacement 'Earth' non trovato nell'output"
+        span = earth[0]
+        # Non deve essere il fallback helv, e la grandezza deve essere preservata
+        assert span["font"].lower() != "helv", (
+            f"Il font embedded non è stato riusato: font={span['font']!r}"
+        )
+        assert abs(span["size"] - 24) < 0.5, f"Size {span['size']} non preservata"
+
 
 class TestExtractText:
     """Test suite for PDF text extraction endpoint."""
