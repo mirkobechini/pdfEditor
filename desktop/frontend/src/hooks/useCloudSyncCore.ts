@@ -134,6 +134,10 @@ export function isCloudListComplete(
   total: number | undefined,
 ): boolean {
   if (typeof total !== "number") return false;
+  // Lista vuota = NON affidabile per proporre eliminazioni: una lettura
+  // cloud vuota/errata non deve mai accodare la cancellazione di tutti i
+  // file locali con mapping (issue #1022 — Bug 2). Conservativo.
+  if (items.length === 0) return false;
   return items.length >= total;
 }
 
