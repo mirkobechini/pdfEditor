@@ -409,7 +409,10 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
   const deletePdf = useCallback(
     async (
       pdfId: string,
-      option: "local" | "cloud" | "both" = "both",
+      // Default sicuro: `local` — mai cancellare dal cloud implicitamente.
+      // La cancellazione sul cloud richiede sempre l'opzione esplicita
+      // ("cloud" | "both"), per evitare la trappola dati (issue #1022).
+      option: "local" | "cloud" | "both" = "local",
     ): Promise<boolean> => {
       try {
         setStatus((prev) => ({ ...prev, [pdfId]: "pending" }));
