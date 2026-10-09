@@ -23,6 +23,11 @@ describe("isCloudListComplete", () => {
     expect(isCloudListComplete([{ id: "a" }], 2)).toBe(false);
   });
 
+  it("NON è completo se la lista è vuota (lettura cloud vuota/errata non deve far cancellare tutto — #1022)", () => {
+    expect(isCloudListComplete([], 0)).toBe(false);
+    expect(isCloudListComplete([], 5)).toBe(false);
+  });
+
   it("NON è completo se manca il total (lista pericolosa)", () => {
     expect(isCloudListComplete([{ id: "a" }], undefined)).toBe(false);
   });
