@@ -89,3 +89,83 @@ export function readSyncOnStartup(): boolean {
   if (typeof window === "undefined") return true;
   return localStorage.getItem(SYNC_STARTUP_KEY) !== "false";
 }
+
+// ─── Per-file sync exclusion (#990) ───────────────────────────────
+// Come il `cloud_synced_exclude` del mobile: un PDF escluso resta solo locale
+// e non viene mai caricato sul cloud.
+
+export const SYNC_EXCLUDE_KEY = "pdfeditor_sync_exclude_ids";
+
+export function getExcludedIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = JSON.parse(localStorage.getItem(SYNC_EXCLUDE_KEY) || "[]");
+    return Array.isArray(raw) ? raw.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function isExcluded(localId: string): boolean {
+  return getExcludedIds().includes(localId);
+}
+
+export function setExcluded(localId: string, exclude: boolean): void {
+  const ids = getExcludedIds().filter((id) => id !== localId);
+  if (exclude) ids.push(localId);
+  localStorage.setItem(SYNC_EXCLUDE_KEY, JSON.stringify(ids));
+}
+
+// ─── Cloud deletion detection (#990) ──────────────────────────────
+
+export interface CloudDeletion {
+  localId: string;
+  name: string;
+  cloudId: string;
+}
+
+/**
+ * A cloud list is complete only when we received at least as many items as the
+ * server reported (`total`). If `total` is missing we treat it as incomplete:
+ * we must never propose deletions based on a partial list (data-loss risk).
+ */
+export function isCloudListComplete(
+  items: unknown[],
+  total: number | undefined,
+): boolean {
+  if (typeof total !== "number") return false;
+  // Lista vuota = NON affidabile per proporre eliminazioni: una lettura
+  // cloud vuota/errata non deve mai accodare la cancellazione di tutti i
+  // file locali con mapping (issue #1022 — Bug 2). Conservativo.
+  if (items.length === 0) return false;
+  return items.length >= total;
+}
+
+/**
+ * Local PDFs that have a sync mapping but whose cloud copy no longer exists —
+ * i.e. they were deleted on the cloud (the web owns the cloud, #990).
+ *
+ * Returns entries only when the cloud list was read completely: otherwise a
+ * missing id could simply be a truncated list, and we must not propose
+ * deletions (data-loss risk).
+ */
+export function computeCloudDeletions(
+  localPdfs: { id: string; original_filename: string }[],
+  cloudIds: Set<string>,
+  map: Record<string, string>,
+  cloudComplete: boolean,
+): CloudDeletion[] {
+  if (!cloudComplete) return [];
+  const out: CloudDeletion[] = [];
+  for (const pdf of localPdfs) {
+    const mappedCloudId = map[pdf.id];
+    if (mappedCloudId && !cloudIds.has(mappedCloudId)) {
+      out.push({
+        localId: pdf.id,
+        name: pdf.original_filename,
+        cloudId: mappedCloudId,
+      });
+    }
+  }
+  return out;
+}

@@ -20,7 +20,12 @@ import {
   readSyncEnabled,
   readSyncOnStartup,
   deletePdfFromSources,
+  isCloudListComplete,
+  computeCloudDeletions,
+  getExcludedIds,
+  setExcluded,
 } from "./useCloudSyncCore";
+import type { CloudDeletion } from "./useCloudSyncCore";
 import { useOnlineStatus } from "./useOnlineStatus";
 
 // ─── Types ────────────────────────────────────────────────────────
@@ -45,7 +50,12 @@ interface UseCloudSyncReturn {
   syncAll: () => Promise<{
     uploaded: number;
     downloaded: number;
+    /** Saltati totali (già sul cloud + protetti da password), per retro-compat. */
     skipped: number;
+    /** Già presenti sul cloud con stesso nome (match pre-mapping) — non protetti (#1025). */
+    skippedExisting: number;
+    /** Salati perché davvero protetti da password (#1025). */
+    skippedLocked: number;
     errors: string[];
   }>;
   status: Record<string, PdfSyncStatus>;
@@ -60,10 +70,28 @@ interface UseCloudSyncReturn {
     uploaded: number;
     downloaded: number;
     skipped: number;
+    skippedExisting: number;
+    skippedLocked: number;
     errors: string[];
   } | null;
   clearSyncResult: () => void;
   refreshStatus: () => Promise<void>;
+  /**
+   * PDF locali con mapping il cui file non esiste più sul cloud (= eliminati
+   * dal cloud, #990): il sync NON li ricarica e chiede all'utente cosa fare.
+   */
+  pendingCloudDeletions: CloudDeletion[];
+  /** Risolve una richiesta di eliminazione-cloud: "delete" = elimina anche in
+   * locale, "keep" = tienilo solo in locale (rimuove il mapping),
+   * "reupload" = ricaricalo sul cloud. */
+  resolveCloudDeletion: (
+    localId: string,
+    action: "delete" | "keep" | "reupload",
+  ) => Promise<void>;
+  /** PDF esclusi dalla sincronizzazione (restano solo locali, #990). */
+  excludedIds: string[];
+  /** Esclude (o reinclude) un PDF dalla sincronizzazione. */
+  toggleExclude: (localId: string, exclude?: boolean) => void;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────
@@ -90,9 +118,17 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
     uploaded: number;
     downloaded: number;
     skipped: number;
+    skippedExisting: number;
+    skippedLocked: number;
     errors: string[];
   } | null>(null);
   const syncingRef = useRef(false);
+  const [pendingCloudDeletions, setPendingCloudDeletions] = useState<
+    CloudDeletion[]
+  >([]);
+  const [excludedIds, setExcludedIds] = useState<string[]>(() =>
+    getExcludedIds(),
+  );
   const { isOnline } = useOnlineStatus();
 
   const clearSyncResult = useCallback(() => setLastSyncResult(null), []);
@@ -259,6 +295,8 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
     uploaded: number;
     downloaded: number;
     skipped: number;
+    skippedExisting: number;
+    skippedLocked: number;
     errors: string[];
   }> => {
     if (syncingRef.current || !syncEnabled)
@@ -266,26 +304,65 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
         uploaded: 0,
         downloaded: 0,
         skipped: 0,
+        skippedExisting: 0,
+        skippedLocked: 0,
         errors: ["Sync disabled or already in progress"],
       };
+    // Offline: il sync cloud non può partire. Non mostrare errori rotti —
+    // la app deve restare usabile offline (#1024).
+    if (!isOnline) {
+      setIsSyncing(false);
+      syncingRef.current = false;
+      return {
+        uploaded: 0,
+        downloaded: 0,
+        skipped: 0,
+        skippedExisting: 0,
+        skippedLocked: 0,
+        errors: [],
+      };
+    }
     syncingRef.current = true;
     setIsSyncing(true);
     const result = {
       uploaded: 0,
       downloaded: 0,
       skipped: 0,
+      skippedExisting: 0,
+      skippedLocked: 0,
       errors: [] as string[],
     };
 
     try {
       const localRes = await api.listPdfs();
       const localPdfs = localRes.items;
-      const cloudRes = await cloudApi.listPdfs();
+      // Richiedi il massimo per ridurre i troncamenti; la completezza è
+      // verificata col `total` della risposta (#990).
+      const cloudRes = await cloudApi.listPdfs(0, 1000);
       const cloudPdfs = cloudRes.items;
 
       const map = getSyncMap();
       const cloudIds = new Set(cloudPdfs.map((p) => p.id));
       const localIds = new Set(localPdfs.map((p) => p.id));
+      // Completezza: ci fidiamo del "manca dal cloud" solo con lista intera.
+      const cloudComplete = isCloudListComplete(cloudPdfs, cloudRes.total);
+      // I PDF esclusi restano solo locali: non si caricano e non si valutano
+      // come "mancanti dal cloud" (#990).
+      const excludedSet = new Set(getExcludedIds());
+      const syncableLocal = localPdfs.filter((p) => !excludedSet.has(p.id));
+      const cloudDeletions = computeCloudDeletions(
+        syncableLocal,
+        cloudIds,
+        map,
+        cloudComplete,
+      );
+      if (cloudDeletions.length > 0) {
+        setPendingCloudDeletions((prev) => {
+          const known = new Set(prev.map((d) => d.localId));
+          const add = cloudDeletions.filter((d) => !known.has(d.localId));
+          return add.length ? [...prev, ...add] : prev;
+        });
+      }
       // Build filename→cloudId index for matching without mapping
       const cloudByName: Record<string, string> = {};
       for (const p of cloudPdfs) {
@@ -295,21 +372,32 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
       const total = localPdfs.length + cloudPdfs.length;
       let current = 0;
 
-      // Upload local PDFs not yet synced to cloud
-      for (const pdf of localPdfs) {
+      // Upload local PDFs not yet synced to cloud (esclusi i PDF esclusi)
+      for (const pdf of syncableLocal) {
         const mappedCloudId = map[pdf.id];
         const alreadyInCloud = mappedCloudId && cloudIds.has(mappedCloudId);
         if (!alreadyInCloud) {
+          // Mapping presente ma il file non è più sul cloud: è stato eliminato
+          // dal web (che comanda il cloud). NON ricaricarlo (#990); la
+          // richiesta all'utente è già stata accodata sopra (se completa).
+          if (mappedCloudId) {
+            current++;
+            continue;
+          }
           // Check if a cloud PDF with the same filename exists (pre-mapping)
           const matchedCloudId = cloudByName[pdf.original_filename];
           if (matchedCloudId) {
             saveSyncMap(pdf.id, matchedCloudId);
             result.skipped++;
+            result.skippedExisting++;
           } else {
             setProgress({ current, total });
             const uploadResult = await uploadPdf(pdf.id, pdf.original_filename);
             if (uploadResult === "uploaded") result.uploaded++;
-            else if (uploadResult === "skipped") result.skipped++;
+            else if (uploadResult === "skipped") {
+              result.skipped++;
+              result.skippedLocked++;
+            }
             else result.errors.push(`Upload failed: ${pdf.original_filename}`);
           }
         }
@@ -328,6 +416,7 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
           if (matchedLocal) {
             saveSyncMap(matchedLocal.id, pdf.id);
             result.skipped++;
+            result.skippedExisting++;
           } else {
             setProgress({ current, total });
             const ok = await downloadPdf(pdf.id, pdf.original_filename);
@@ -339,7 +428,21 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
         current++;
       }
     } catch (err) {
-      result.errors.push(`Sync failed: ${err}`);
+      const msg = String(err);
+      // Token cloud scaduto/assente: messaggio pulito e ripristinabile, non JSON
+      // grezzo (#1024). L'utente deve poter riavere il sync con un nuovo login.
+      if (
+        msg.includes("INVALID_CREDENTIALS") ||
+        msg.includes("Invalid or expired token") ||
+        msg.includes("401") ||
+        msg.includes("expired")
+      ) {
+        result.errors.push(
+          "Sessione cloud scaduta: apri Impostazioni e accedi di nuovo al cloud per riprendere la sincronizzazione.",
+        );
+      } else {
+        result.errors.push(`Sync failed: ${msg}`);
+      }
     } finally {
       setIsSyncing(false);
       setProgress(null);
@@ -376,6 +479,43 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
     [],
   );
 
+  const resolveCloudDeletion = useCallback(
+    async (
+      localId: string,
+      action: "delete" | "keep" | "reupload",
+    ): Promise<void> => {
+      if (action === "delete") {
+        // Elimina anche in locale (sul cloud non c'è più: l'ha eliminato il web).
+        await deletePdf(localId, "local");
+        removeSyncMap(localId);
+      } else if (action === "reupload") {
+        // Ricarica sul cloud: il vecchio mapping punta a un file sparito,
+        // quindi lo rimuoviamo e ricarichiamo (uploadPdf crea il nuovo mapping).
+        const name = pendingCloudDeletions.find(
+          (d) => d.localId === localId,
+        )?.name;
+        removeSyncMap(localId);
+        await uploadPdf(localId, name);
+      } else {
+        // keep: resta solo locale, non più considerato sincronizzato.
+        removeSyncMap(localId);
+      }
+      setPendingCloudDeletions((prev) =>
+        prev.filter((d) => d.localId !== localId),
+      );
+    },
+    [deletePdf, uploadPdf, pendingCloudDeletions],
+  );
+
+  const toggleExclude = useCallback((localId: string, exclude?: boolean) => {
+    const next =
+      exclude === undefined
+        ? !getExcludedIds().includes(localId)
+        : exclude;
+    setExcluded(localId, next);
+    setExcludedIds(getExcludedIds());
+  }, []);
+
   return {
     uploadPdf,
     downloadPdf,
@@ -392,5 +532,9 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
     lastSyncResult,
     clearSyncResult,
     refreshStatus,
+    pendingCloudDeletions,
+    resolveCloudDeletion,
+    excludedIds,
+    toggleExclude,
   };
 }

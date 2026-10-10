@@ -8,6 +8,7 @@ import { EditorSidebar } from "../components/EditorSidebar";
 import { EditorRightPanel } from "../components/EditorRightPanel";
 import { EditorViewer } from "../components/EditorViewer";
 import { EditorModals } from "../components/EditorModals";
+import CloudDeletionDialog from "../../components/CloudDeletionDialog";
 import { EditorFooter } from "../components/EditorFooter";
 import { useCloudSync } from "../../hooks/useCloudSync";
 import { useEditorState } from "../../hooks/useEditorState";
@@ -17,7 +18,7 @@ const API_BASE = getApiBaseUrl();
 export default function EditorPage() {
     const te = useTranslations("editor");
     const { user } = useAuth();
-    const { status: syncStatus } = useCloudSync();
+    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion } = useCloudSync();
     const {
         docs, setDocs,
         loading,
@@ -74,6 +75,9 @@ export default function EditorPage() {
                     loading={loading}
                     selectedDoc={selectedDoc}
                     syncStatus={syncStatus}
+                    syncEnabled={syncEnabled}
+                    excludedIds={excludedIds ?? []}
+                    onToggleExclude={(doc) => toggleExclude?.(doc.id)}
                     multiSelect={multiSelect}
                     selectedIds={selectedIds}
                     renameId={renameId}
@@ -195,6 +199,12 @@ export default function EditorPage() {
             />
 
             <EditorFooter te={te} apiBase={API_BASE} />
+
+            {/* #990: PDF eliminati dal cloud → chiedi se eliminarli anche in locale */}
+            <CloudDeletionDialog
+                deletion={pendingCloudDeletions?.[0] ?? null}
+                onResolve={resolveCloudDeletion}
+            />
         </div>
     );
 }
