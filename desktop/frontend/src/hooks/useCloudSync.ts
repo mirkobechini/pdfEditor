@@ -50,7 +50,12 @@ interface UseCloudSyncReturn {
   syncAll: () => Promise<{
     uploaded: number;
     downloaded: number;
+    /** Saltati totali (già sul cloud + protetti da password), per retro-compat. */
     skipped: number;
+    /** Già presenti sul cloud con stesso nome (match pre-mapping) — non protetti (#1025). */
+    skippedExisting: number;
+    /** Salati perché davvero protetti da password (#1025). */
+    skippedLocked: number;
     errors: string[];
   }>;
   status: Record<string, PdfSyncStatus>;
@@ -65,6 +70,8 @@ interface UseCloudSyncReturn {
     uploaded: number;
     downloaded: number;
     skipped: number;
+    skippedExisting: number;
+    skippedLocked: number;
     errors: string[];
   } | null;
   clearSyncResult: () => void;
@@ -111,6 +118,8 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
     uploaded: number;
     downloaded: number;
     skipped: number;
+    skippedExisting: number;
+    skippedLocked: number;
     errors: string[];
   } | null>(null);
   const syncingRef = useRef(false);
@@ -286,6 +295,8 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
     uploaded: number;
     downloaded: number;
     skipped: number;
+    skippedExisting: number;
+    skippedLocked: number;
     errors: string[];
   }> => {
     if (syncingRef.current || !syncEnabled)
@@ -293,14 +304,32 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
         uploaded: 0,
         downloaded: 0,
         skipped: 0,
+        skippedExisting: 0,
+        skippedLocked: 0,
         errors: ["Sync disabled or already in progress"],
       };
+    // Offline: il sync cloud non può partire. Non mostrare errori rotti —
+    // la app deve restare usabile offline (#1024).
+    if (!isOnline) {
+      setIsSyncing(false);
+      syncingRef.current = false;
+      return {
+        uploaded: 0,
+        downloaded: 0,
+        skipped: 0,
+        skippedExisting: 0,
+        skippedLocked: 0,
+        errors: [],
+      };
+    }
     syncingRef.current = true;
     setIsSyncing(true);
     const result = {
       uploaded: 0,
       downloaded: 0,
       skipped: 0,
+      skippedExisting: 0,
+      skippedLocked: 0,
       errors: [] as string[],
     };
 
@@ -360,11 +389,15 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
           if (matchedCloudId) {
             saveSyncMap(pdf.id, matchedCloudId);
             result.skipped++;
+            result.skippedExisting++;
           } else {
             setProgress({ current, total });
             const uploadResult = await uploadPdf(pdf.id, pdf.original_filename);
             if (uploadResult === "uploaded") result.uploaded++;
-            else if (uploadResult === "skipped") result.skipped++;
+            else if (uploadResult === "skipped") {
+              result.skipped++;
+              result.skippedLocked++;
+            }
             else result.errors.push(`Upload failed: ${pdf.original_filename}`);
           }
         }
@@ -383,6 +416,7 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
           if (matchedLocal) {
             saveSyncMap(matchedLocal.id, pdf.id);
             result.skipped++;
+            result.skippedExisting++;
           } else {
             setProgress({ current, total });
             const ok = await downloadPdf(pdf.id, pdf.original_filename);
@@ -394,7 +428,21 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
         current++;
       }
     } catch (err) {
-      result.errors.push(`Sync failed: ${err}`);
+      const msg = String(err);
+      // Token cloud scaduto/assente: messaggio pulito e ripristinabile, non JSON
+      // grezzo (#1024). L'utente deve poter riavere il sync con un nuovo login.
+      if (
+        msg.includes("INVALID_CREDENTIALS") ||
+        msg.includes("Invalid or expired token") ||
+        msg.includes("401") ||
+        msg.includes("expired")
+      ) {
+        result.errors.push(
+          "Sessione cloud scaduta: apri Impostazioni e accedi di nuovo al cloud per riprendere la sincronizzazione.",
+        );
+      } else {
+        result.errors.push(`Sync failed: ${msg}`);
+      }
     } finally {
       setIsSyncing(false);
       setProgress(null);
