@@ -186,9 +186,13 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 className="cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2 text-[14px] font-semibold text-white transition hover:bg-[#ff9b37] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {s.isSyncing ? ts("syncing") : ts("syncNow")}
+                            {s.isSyncing && (
+                                <span className="ml-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" style={{ verticalAlign: "middle" }} />
+                            )}
                             </button>
                             {s.progress && (
                                 <p className="mt-2 text-[12px] text-[#9d9184]">
+                                    <span className="mr-1 inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#f7871f]/30 border-t-[#f7871f]" style={{ verticalAlign: "middle" }} />
                                     Sync in corso... ({s.progress.current}/{s.progress.total})
                                 </p>
                             )}
@@ -202,7 +206,11 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 <div className="space-y-2 text-[14px]">
                                     {s.lastSyncResult.uploaded > 0 && <p className="text-green-400">✅ {s.lastSyncResult.uploaded} PDF caricati sul cloud</p>}
                                     {s.lastSyncResult.downloaded > 0 && <p className="text-blue-400">⬇️ {s.lastSyncResult.downloaded} PDF scaricati dal cloud</p>}
-                                    {s.lastSyncResult.skipped > 0 && <p className="text-yellow-400">⏭️ {s.lastSyncResult.skipped} PDF saltati (protetti da password)</p>}
+                                    {s.lastSyncResult.skippedExisting > 0 && <p className="text-yellow-400">⏭️ {s.lastSyncResult.skippedExisting} PDF già presenti sul cloud (saltati)</p>}
+                                    {s.lastSyncResult.skippedLocked > 0 && <p className="text-yellow-400">🔒 {s.lastSyncResult.skippedLocked} PDF saltati (protetti da password)</p>}
+                                    {s.lastSyncResult.skipped > 0 && (
+                                        <p className="text-yellow-400">⏭️ {s.lastSyncResult.skipped} PDF saltati (protetti da password)</p>
+                                    )}
                                     {s.lastSyncResult.errors.length > 0 && (
                                         <div className="mt-3">
                                             <p className="text-red-400 font-semibold">⚠️ Errori ({s.lastSyncResult.errors.length}):</p>
