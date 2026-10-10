@@ -138,6 +138,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const cloudToken = localStorage.getItem(CLOUD_TOKEN_KEY);
     if (cloudToken) {
       cloudApi.setToken(cloudToken);
+      // Refresh proattivo del token cloud: all'avvio automatico il token
+      // salvato puo' essere scaduto (60 min) e senza questo il sync fallisce
+      // finche' l'utente non rifa' il login a mano (issue #1024). Il backend
+      // /auth/refresh accetta il Bearer e lo rinnova se ha < 30 giorni.
+      // Se offline, fallisce senza fare danni.
+      const refreshed = await cloudApi.refreshToken().catch(() => null);
+      if (refreshed?.access_token) {
+        localStorage.setItem(CLOUD_TOKEN_KEY, refreshed.access_token);
+      }
     }
 
     try {
