@@ -498,7 +498,22 @@ export function useCloudSync({ autoSyncOnMount = true }: UseCloudSyncOptions = {
           (d) => d.localId === localId,
         )?.name;
         removeSyncMap(localId);
-        await uploadPdf(localId, name);
+        const up = await uploadPdf(localId, name);
+        // Aggiorna il riepilogo con l'esito della ricarica invece di lasciare
+        // quello stantio dell'ultima sync (issue #1025/fix reupload).
+        setLastSyncResult({
+          uploaded: up === "uploaded" ? 1 : 0,
+          downloaded: 0,
+          skipped: 0,
+          skippedExisting: 0,
+          skippedLocked: 0,
+          errors:
+            up === "failed"
+              ? [`Ricarica fallita per ${name ?? localId}`]
+              : up === "skipped"
+                ? [`PDF protetto da password: ${name ?? localId}`]
+                : [],
+        });
       } else {
         // keep: resta solo locale, non più considerato sincronizzato.
         removeSyncMap(localId);

@@ -13,6 +13,23 @@
   nsExec::ExecToStack 'taskkill /F /IM "pdf-editor-desktop.exe" 2>nul'
   Pop $0
   Sleep 500
+
+  ; Auto-uninstall di un'installazione precedente (stessa versione sui build
+  ; preview): evita il prompt NSIS "già installato, disinstallare prima" e
+  ; permette di installare direttamente sopra. Chiude app + sidecar prima
+  ; (l'uninstaller precedente fa lo stesso nei suoi hook).
+  DetailPrint "Removing previous PdfEditor installation (if present)..."
+  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PdfEditor" "UninstallString"
+  StrCmp $0 "" fallback 0
+    DetailPrint "Uninstaller found: $0"
+    ExecWait '"$0" /S'
+    Goto done_uninst
+  fallback:
+    IfFileExists "$INSTDIR\uninstall.exe" 0 done_uninst
+      DetailPrint "Uninstaller found in install dir."
+      ExecWait '"$INSTDIR\uninstall.exe" /S'
+  done_uninst:
+  Sleep 500
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
