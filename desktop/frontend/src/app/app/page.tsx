@@ -18,7 +18,38 @@ const API_BASE = getApiBaseUrl();
 export default function EditorPage() {
     const te = useTranslations("editor");
     const { user } = useAuth();
-    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing } = useCloudSync();
+    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing, lastSyncResult } = useCloudSync();
+    // Il sync ora è velocissimo (token refresh): isSyncing passa a true/false in
+    // pochi ms e lo spinner non farebbe in tempo a rendersi. Teniamo il banner
+    // visibile un minimo (~2s) dopo l'avvio/fine del sync, mostrando l'esito.
+    const [syncFeedback, setSyncFeedback] = React.useState<
+      | { visible: boolean; result: string | null }
+      | null
+    >(null);
+    React.useEffect(() => {
+      if (isSyncing) {
+        setSyncFeedback({ visible: true, result: null });
+      } else if (syncFeedback?.visible && !syncFeedback.result) {
+        // sync appena finito: mostra per ~2s (eventualmente con esito)
+        setSyncFeedback({
+          visible: true,
+          result: lastSyncResult
+            ? lastSyncResult.uploaded > 0
+              ? `✅ ${lastSyncResult.uploaded} PDF caricati`
+              : lastSyncResult.downloaded > 0
+                ? `⬇️ ${lastSyncResult.downloaded} PDF scaricati`
+                : lastSyncResult.skippedExisting > 0 || lastSyncResult.skippedLocked > 0
+                  ? `⏭️ ${lastSyncResult.skippedExisting + lastSyncResult.skippedLocked} già presenti`
+                  : lastSyncResult.errors.length > 0
+                    ? `⚠️ ${lastSyncResult.errors.length} errori`
+                    : "✅ Tutto allineato"
+            : "✅ Sync completato",
+        });
+        const t = setTimeout(() => setSyncFeedback({ visible: false, result: null }), 2000);
+        return () => clearTimeout(t);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isSyncing, lastSyncResult]);
     const {
         docs, setDocs,
         loading,
@@ -67,10 +98,16 @@ export default function EditorPage() {
 
     return (
         <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col overflow-hidden">
-            {isSyncing && (
-                <div className="flex items-center gap-2 bg-[#3e2717]/80 px-4 py-1.5 text-[12px] text-[#f7871f]">
-                    <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#f7871f]/30 border-t-[#f7871f]" />
-                    Sincronizzazione in corso...
+            {syncFeedback?.visible && (
+                <div className={`flex items-center gap-2 px-4 py-1.5 text-[12px] ${isSyncing ? "bg-[#3e2717]/80 text-[#f7871f]" : "bg-[#1f3a2a]/80 text-green-300"}`}>
+                    {isSyncing ? (
+                        <>
+                            <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#f7871f]/30 border-t-[#f7871f]" />
+                            Sincronizzazione in corso...
+                        </>
+                    ) : (
+                        <>{syncFeedback?.result}</>
+                    )}
                 </div>
             )}
             <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0">
