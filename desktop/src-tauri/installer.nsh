@@ -2,37 +2,41 @@
 ; These macros run before/after install/uninstall to kill running processes
 ; that would otherwise block file overwrites (especially fastapi-sidecar.exe).
 ;
-; IMPORTANT: the sidecar is renamed by the build to include the target triple,
-; e.g. "fastapi-sidecar-x86_64-pc-windows-msvc.exe", so a taskkill with the
-; literal name "fastapi-sidecar.exe" NEVER matches it and the file stays locked,
-; blocking the install ("Error opening ... for writing"). We kill with a
-; WILDCARD and retry until the processes are actually gone.
-
-; Override della macro di Tauri `CheckIfAppIsRunning`: NON fattibile — NSIS
-; non permette di ridefinire una macro gia' esistente (errore "already exists").
-; Il prompt "<app> is running" resta gestito dal template di Tauri; a chiudere
-; app + sidecar ci pensa la nostra KILL_PROCESSES nei pre-hook.
+; The sidecar binary is renamed with the TARGET TRIPLE by the build
+; (e.g. "fastapi-sidecar-x86_64-pc-windows-msvc.exe") and installed as
+; "fastapi-sidecar.exe". A taskkill with only the literal base name can miss it.
+; We kill the WHOLE TREE (taskkill /F /T) of any known process name and then
+; retry, so both the app and (child/orphaned) sidecar die before file copy.
 
 !macro KILL_PROCESSES
-  ; Chiude app + sidecar in modo AFFIDABILE.
-  ; taskkill /IM NON supporta i wildcard e il sidecar viene rinominato con la
-  ; tripla di target (fastapi-sidecar-<triple>.exe), quindi un taskkill col nome
-  ; esatto non lo trova MAI e il file resta locked. PowerShell Get-Process /
-  ; Stop-Process accettano ECCO i wildcard.
   DetailPrint "Stopping PdfEditor processes before install..."
-  ; 1) si chiude l'app principale (e l'albero processi)
-  nsExec::ExecToStack 'powershell -NoProfile -Command "Get-Process PdfEditor,pdf-editor-desktop -ErrorAction SilentlyContinue | Stop-Process -Force"'
+  ; taskkill /F /T uccide il processo E tutto il suo albero figli: chiudendo
+  ; il main app muore anche il sidecar che ne dipende. Usiamo i nomi possibili.
+  nsExec::ExecToStack 'taskkill /F /T /IM "PdfEditor.exe" 2>nul'
   Pop $0
-  ; 2) si chiude il sidecar con wildcard (copre il nome con tripla)
-  nsExec::ExecToStack 'powershell -NoProfile -Command "Get-Process fastapi-sidecar* -ErrorAction SilentlyContinue | Stop-Process -Force"'
+  nsExec::ExecToStack 'taskkill /F /T /IM "pdf-editor-desktop.exe" 2>nul'
+  Pop $0
+  ; Sidecar: base name (installato) + nome con tripla di build (se gira da li').
+  nsExec::ExecToStack 'taskkill /F /T /IM "fastapi-sidecar.exe" 2>nul'
+  Pop $0
+  nsExec::ExecToStack 'taskkill /F /T /IM "fastapi-sidecar-x86_64-pc-windows-msvc.exe" 2>nul'
+  Pop $0
+  ; PS backstop: per nome con wildcard (copre qualunque variante tripla).
+  nsExec::ExecToStack 'powershell -NoProfile -Command "Stop-Process -Name fastapi-sidecar* -Force -ErrorAction SilentlyContinue"'
   Pop $0
   Sleep 1000
 
-  ; Retry loop: riprova finché i processi non risultano chiusi (~6 tentativi).
+  ; Retry loop: riprova finché non restano processi (~6 tentativi).
   StrCpy $1 0
   retry_loop:
     IntOp $1 $1 + 1
-    nsExec::ExecToStack 'powershell -NoProfile -Command "Get-Process fastapi-sidecar*,PdfEditor,pdf-editor-desktop -ErrorAction SilentlyContinue | Stop-Process -Force"'
+    nsExec::ExecToStack 'taskkill /F /T /IM "PdfEditor.exe" 2>nul'
+    Pop $0
+    nsExec::ExecToStack 'taskkill /F /T /IM "pdf-editor-desktop.exe" 2>nul'
+    Pop $0
+    nsExec::ExecToStack 'taskkill /F /T /IM "fastapi-sidecar.exe" 2>nul'
+    Pop $0
+    nsExec::ExecToStack 'powershell -NoProfile -Command "Stop-Process -Name fastapi-sidecar* -Force -ErrorAction SilentlyContinue"'
     Pop $0
     Sleep 500
   IntCmp $1 6 retry_done 0 retry_loop
