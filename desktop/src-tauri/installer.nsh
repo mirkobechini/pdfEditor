@@ -1,23 +1,51 @@
 ; NSIS Hooks for Tauri v2 installer
 ; These macros run before/after install/uninstall to kill running processes
-; that would otherwise block file overwrites (especially fastapi-sidecar.exe)
+; that would otherwise block file overwrites (especially fastapi-sidecar.exe).
+;
+; IMPORTANT: the sidecar is renamed by the build to include the target triple,
+; e.g. "fastapi-sidecar-x86_64-pc-windows-msvc.exe", so a taskkill with the
+; literal name "fastapi-sidecar.exe" NEVER matches it and the file stays locked,
+; blocking the install ("Error opening ... for writing"). We kill with a
+; WILDCARD and retry until the processes are actually gone.
+
+!macro KILL_PROCESSES
+  ; Kill the main app first (stops it from re-spawning its sidecar).
+  DetailPrint "Stopping PdfEditor processes before install..."
+  nsExec::ExecToStack 'taskkill /F /T /IM "PdfEditor.exe" 2>nul'
+  Pop $0
+  nsExec::ExecToStack 'taskkill /F /T /IM "pdf-editor-desktop.exe" 2>nul'
+  Pop $0
+  nsExec::ExecToStack 'taskkill /F /T /IM "pdf-editor-desktop*" 2>nul'
+  Pop $0
+  ; Kill the sidecar with wildcard to match the target-triple name too.
+  nsExec::ExecToStack 'taskkill /F /T /IM "fastapi-sidecar*" 2>nul'
+  Pop $0
+  Sleep 1000
+
+  ; Retry loop: keep killing until no PdfEditor-sidecar process remains.
+  ; nsExec returns "0" on success; we give up after ~10 tries (about 10s).
+  StrCpy $1 0
+  retry_loop:
+    IntOp $1 $1 + 1
+    nsExec::ExecToStack 'taskkill /F /T /IM "fastapi-sidecar*" 2>nul'
+    Pop $0
+    nsExec::ExecToStack 'taskkill /F /T /IM "pdf-editor-desktop*" 2>nul'
+    Pop $0
+    nsExec::ExecToStack 'taskkill /F /T /IM "PdfEditor.exe" 2>nul'
+    Pop $0
+    Sleep 500
+  IntCmp $1 10 retry_done 0 retry_loop
+  retry_done:
+  DetailPrint "Process cleanup done."
+!macroend
 
 !macro NSIS_HOOK_PREINSTALL
-  DetailPrint "Stopping PdfEditor processes before install..."
-  nsExec::ExecToStack 'taskkill /F /IM "PdfEditor.exe" 2>nul'
-  Pop $0
-  Sleep 500
-  nsExec::ExecToStack 'taskkill /F /IM "fastapi-sidecar.exe" 2>nul'
-  Pop $0
-  Sleep 500
-  nsExec::ExecToStack 'taskkill /F /IM "pdf-editor-desktop.exe" 2>nul'
-  Pop $0
-  Sleep 500
+  !insertmacro KILL_PROCESSES
 
   ; Auto-uninstall di un'installazione precedente (stessa versione sui build
   ; preview): evita il prompt NSIS "già installato, disinstallare prima" e
-  ; permette di installare direttamente sopra. Chiude app + sidecar prima
-  ; (l'uninstaller precedente fa lo stesso nei suoi hook).
+  ; permette di installare direttamente sopra. App e sidecar sono già stati
+  ; chiusi sopra.
   DetailPrint "Removing previous PdfEditor installation (if present)..."
   ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PdfEditor" "UninstallString"
   StrCmp $0 "" fallback 0
@@ -38,15 +66,7 @@
 
 !macro NSIS_HOOK_PREUNINSTALL
   DetailPrint "Stopping PdfEditor processes before uninstall..."
-  nsExec::ExecToStack 'taskkill /F /IM "PdfEditor.exe" 2>nul'
-  Pop $0
-  Sleep 500
-  nsExec::ExecToStack 'taskkill /F /IM "fastapi-sidecar.exe" 2>nul'
-  Pop $0
-  Sleep 500
-  nsExec::ExecToStack 'taskkill /F /IM "pdf-editor-desktop.exe" 2>nul'
-  Pop $0
-  Sleep 500
+  !insertmacro KILL_PROCESSES
 !macroend
 
 !macro NSIS_HOOK_POSTUNINSTALL
