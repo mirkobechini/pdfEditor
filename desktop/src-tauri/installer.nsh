@@ -8,6 +8,15 @@
 ; blocking the install ("Error opening ... for writing"). We kill with a
 ; WILDCARD and retry until the processes are actually gone.
 
+; Override della macro di Tauri `CheckIfAppIsRunning` (definita in utils.nsh,
+; incluso PRIMA di questo file): in NSIS l'ultima definizione vince, quindi
+; disattiviamo il prompt Tauri "<app> is running! Click OK to kill it"
+; (install + uninstall). A chiudere app + sidecar ci pensa gia' la nostra
+; KILL_PROCESSES, che gira nei relativi pre-hook. (issue #1024)
+!macro CheckIfAppIsRunning executablePath productName
+  ; no-op: la chiusura dei processi e' gestita da KILL_PROCESSES.
+!macroend
+
 !macro KILL_PROCESSES
   ; Kill the main app first (stops it from re-spawning its sidecar).
   DetailPrint "Stopping PdfEditor processes before install..."
