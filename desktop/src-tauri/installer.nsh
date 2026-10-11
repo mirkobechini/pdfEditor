@@ -14,32 +14,28 @@
 ; app + sidecar ci pensa la nostra KILL_PROCESSES nei pre-hook.
 
 !macro KILL_PROCESSES
-  ; Kill the main app first (stops it from re-spawning its sidecar).
+  ; Chiude app + sidecar in modo AFFIDABILE.
+  ; taskkill /IM NON supporta i wildcard e il sidecar viene rinominato con la
+  ; tripla di target (fastapi-sidecar-<triple>.exe), quindi un taskkill col nome
+  ; esatto non lo trova MAI e il file resta locked. PowerShell Get-Process /
+  ; Stop-Process accettano ECCO i wildcard.
   DetailPrint "Stopping PdfEditor processes before install..."
-  nsExec::ExecToStack 'taskkill /F /T /IM "PdfEditor.exe" 2>nul'
+  ; 1) si chiude l'app principale (e l'albero processi)
+  nsExec::ExecToStack 'powershell -NoProfile -Command "Get-Process PdfEditor,pdf-editor-desktop -ErrorAction SilentlyContinue | Stop-Process -Force"'
   Pop $0
-  nsExec::ExecToStack 'taskkill /F /T /IM "pdf-editor-desktop.exe" 2>nul'
-  Pop $0
-  nsExec::ExecToStack 'taskkill /F /T /IM "pdf-editor-desktop*" 2>nul'
-  Pop $0
-  ; Kill the sidecar with wildcard to match the target-triple name too.
-  nsExec::ExecToStack 'taskkill /F /T /IM "fastapi-sidecar*" 2>nul'
+  ; 2) si chiude il sidecar con wildcard (copre il nome con tripla)
+  nsExec::ExecToStack 'powershell -NoProfile -Command "Get-Process fastapi-sidecar* -ErrorAction SilentlyContinue | Stop-Process -Force"'
   Pop $0
   Sleep 1000
 
-  ; Retry loop: keep killing until no PdfEditor-sidecar process remains.
-  ; nsExec returns "0" on success; we give up after ~10 tries (about 10s).
+  ; Retry loop: riprova finché i processi non risultano chiusi (~6 tentativi).
   StrCpy $1 0
   retry_loop:
     IntOp $1 $1 + 1
-    nsExec::ExecToStack 'taskkill /F /T /IM "fastapi-sidecar*" 2>nul'
-    Pop $0
-    nsExec::ExecToStack 'taskkill /F /T /IM "pdf-editor-desktop*" 2>nul'
-    Pop $0
-    nsExec::ExecToStack 'taskkill /F /T /IM "PdfEditor.exe" 2>nul'
+    nsExec::ExecToStack 'powershell -NoProfile -Command "Get-Process fastapi-sidecar*,PdfEditor,pdf-editor-desktop -ErrorAction SilentlyContinue | Stop-Process -Force"'
     Pop $0
     Sleep 500
-  IntCmp $1 10 retry_done 0 retry_loop
+  IntCmp $1 6 retry_done 0 retry_loop
   retry_done:
   DetailPrint "Process cleanup done."
 !macroend
