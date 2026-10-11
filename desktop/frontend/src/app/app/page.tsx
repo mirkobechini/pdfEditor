@@ -18,7 +18,7 @@ const API_BASE = getApiBaseUrl();
 export default function EditorPage() {
     const te = useTranslations("editor");
     const { user } = useAuth();
-    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion } = useCloudSync();
+    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing } = useCloudSync();
     const {
         docs, setDocs,
         loading,
@@ -67,6 +67,12 @@ export default function EditorPage() {
 
     return (
         <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col overflow-hidden">
+            {isSyncing && (
+                <div className="flex items-center gap-2 bg-[#3e2717]/80 px-4 py-1.5 text-[12px] text-[#f7871f]">
+                    <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#f7871f]/30 border-t-[#f7871f]" />
+                    Sincronizzazione in corso...
+                </div>
+            )}
             <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0">
                 <EditorSidebar
                     te={te}
