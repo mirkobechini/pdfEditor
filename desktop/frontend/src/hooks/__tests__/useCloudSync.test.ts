@@ -251,7 +251,7 @@ describe("useCloudSync", () => {
 
   // ── deletePdf ──────────────────────────────────────────────
 
-  it("deletePdf deletes from both by default", async () => {
+  it("deletePdf deletes from local only by default (safe, #1022)", async () => {
     localStorage.setItem(
       "pdfeditor_sync_id_map",
       JSON.stringify({ "local-1": "cloud-1" }),
@@ -261,7 +261,8 @@ describe("useCloudSync", () => {
     const { result } = renderHook(() => useCloudSync());
     const res = await result.current.deletePdf("local-1");
     expect(res).toBe(true);
-    expect(mockCloudDeletePdf).toHaveBeenCalledWith("cloud-1");
+    // Default sicuro: NON tocca il cloud
+    expect(mockCloudDeletePdf).not.toHaveBeenCalled();
     expect(mockApiDeletePdf).toHaveBeenCalledWith("local-1");
     const map = JSON.parse(
       localStorage.getItem("pdfeditor_sync_id_map") || "{}",
