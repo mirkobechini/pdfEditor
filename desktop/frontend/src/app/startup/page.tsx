@@ -29,7 +29,7 @@ export default function StartupPage() {
         { id: "backend", label: ts("startingBackend"), status: "running" },
         { id: "database", label: ts("connectingDb"), status: "pending" },
         { id: "api", label: ts("verifyingApi"), status: "pending" },
-        { id: "sync", label: ts("syncingCloud"), status: "done" },
+        { id: "sync", label: ts("syncingCloud"), status: "pending" },
     ]);
     const [allDone, setAllDone] = React.useState(false);
     const [fatalError, setFatalError] = React.useState<string | null>(null);
@@ -188,24 +188,24 @@ export default function StartupPage() {
     }
 
     // Step 4: indicatore di sync cloud condiviso (useCloudSyncContext).
-    // - spinner durante isSyncing
-    // - ✓ quando finito senza errori
-    // - ✗ in caso di errore
-    // - se il sync non può girare (non autenticato/offline) resta "done"=saltato
-    //   senza far fallire/ bloccare il redirect (il redirect dipende solo da allDone).
+    // Stesso comportamento visivo degli altri 3 step:
+    // - pending (vuoto) finché non parte;
+    // - running (spinner) durante isSyncing;
+    // - done (verde ✓) se finito senza errori;
+    // - error (rosso ✗) se fallito.
     React.useEffect(() => {
         const syncStep = steps.find((s) => s.id === "sync");
         if (!syncStep) return;
-        let status: StepStatus;
+        let status: StepStatus = syncStep.status;
         if (cloudSync.isSyncing) {
             status = "running";
         } else if (cloudSync.lastSyncResult) {
             status =
                 cloudSync.lastSyncResult.errors.length > 0 ? "error" : "done";
         } else {
-            // Sync non avviato (token offline/assente): lo mostriamo come done
-            // (saltato) — non un errore, non blocca nulla.
-            status = "done";
+            // Sync non ancora partito: resta a pending (vuoto), mai "done"
+            // prematuro. Diventa done solo con un lastSyncResult senza errori.
+            status = "pending";
         }
         if (status === syncStep.status) return;
         setSteps((prev) =>
@@ -220,7 +220,7 @@ export default function StartupPage() {
             { id: "backend", label: ts("startingBackend"), status: "running" },
             { id: "database", label: ts("connectingDb"), status: "pending" },
             { id: "api", label: ts("verifyingApi"), status: "pending" },
-            { id: "sync", label: ts("syncingCloud"), status: "done" },
+            { id: "sync", label: ts("syncingCloud"), status: "pending" },
         ]);
     }
 
