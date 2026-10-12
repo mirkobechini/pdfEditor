@@ -39,7 +39,7 @@ vi.mock("@tauri-apps/api/webview", () => ({
 }));
 vi.mock("../../lib/preferences", () => ({ usePreferences: () => ({ prefs: { default_zoom: 100, theme: "dark", language: "it", antialiasing: true, density: "comfortable" }, updatePrefs: vi.fn() }) }));
 vi.mock("../../hooks/useCloudSync", () => ({ useCloudSync: () => ({ status: {}, syncEnabled: false, setSyncEnabled: vi.fn(), syncOnStartup: false, setSyncOnStartup: vi.fn(), isOnline: true, isSyncing: false, progress: null, syncAll: vi.fn(), lastSyncResult: null, clearSyncResult: vi.fn(), refreshStatus: vi.fn(), uploadPdf: vi.fn(), downloadPdf: vi.fn(), deletePdf: vi.fn() }) }));
-vi.mock("../../hooks/CloudSyncContext", () => ({ useCloudSyncContext: () => ({ status: {}, syncEnabled: false, setSyncEnabled: vi.fn(), syncOnStartup: false, setSyncOnStartup: vi.fn(), isOnline: true, isSyncing: false, progress: null, syncAll: vi.fn(), lastSyncResult: null, clearSyncResult: vi.fn(), refreshStatus: vi.fn(), uploadPdf: vi.fn(), downloadPdf: vi.fn(), deletePdf: vi.fn(), pendingCloudDeletions: [], resolveCloudDeletion: vi.fn(), excludedIds: [], toggleExclude: vi.fn() }) }));
+vi.mock("../../hooks/CloudSyncContext", () => ({ useCloudSyncContext: () => ({ triggerInitialSync: vi.fn(), status: {}, syncEnabled: false, setSyncEnabled: vi.fn(), syncOnStartup: false, setSyncOnStartup: vi.fn(), isOnline: true, isSyncing: false, progress: null, syncAll: vi.fn(), lastSyncResult: null, clearSyncResult: vi.fn(), refreshStatus: vi.fn(), uploadPdf: vi.fn(), downloadPdf: vi.fn(), deletePdf: vi.fn(), pendingCloudDeletions: [], resolveCloudDeletion: vi.fn(), excludedIds: [], toggleExclude: vi.fn() }) }));
 
 import EditorPage from "../app/page";
 

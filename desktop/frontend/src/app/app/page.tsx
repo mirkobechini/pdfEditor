@@ -19,7 +19,15 @@ export default function EditorPage() {
     const te = useTranslations("editor");
     const { user } = useAuth();
     // Istanza condivisa del sync cloud (unica per l'app, montata in ClientLayout).
-    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing, lastSyncResult } = useCloudSyncContext();
+    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing, lastSyncResult, triggerInitialSync } = useCloudSyncContext();
+    // Ingresso via LOGIN: qui il sync non è ancora partito (la start-up, se c'è
+    // stato, ha già gestito l'auto-login). Al mount lanciamo il sync iniziale:
+    // la guardia per-utente di triggerInitialSync fa sì che se è già partito
+    // (per lo stesso utente) sia un no-op → mai doppio loader.
+    React.useEffect(() => {
+        triggerInitialSync();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [triggerInitialSync]);
     // Indicatore di sync per la sidebar (non più banner in alto): visibile un
     // minimo (~2s) dopo l'avvio/fine del sync, mostrando l'esito.
     const [syncFeedback, setSyncFeedback] = React.useState<

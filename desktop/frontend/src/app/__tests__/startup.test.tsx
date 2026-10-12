@@ -22,6 +22,7 @@ vi.mock("../../shared/auth", () => ({
 
 vi.mock("../../hooks/CloudSyncContext", () => ({
     useCloudSyncContext: () => ({
+        triggerInitialSync: vi.fn(),
         isSyncing: false,
         lastSyncResult: null,
         status: {},

@@ -139,6 +139,16 @@ export default function StartupPage() {
         return () => { cancelled = true; };
     }, [steps.find((s) => s.id === "database")?.status]);
 
+    // Il sync (4° step) parte SOLO DOPO che i primi 3 step sono completati
+    // (allDone). La guardia per-utente di triggerInitialSync evita doppio sync
+    // (se è partito qui, l'editor al mount non lo rilancia). Se non autenticato
+    // al boot (utente che entrerà da login) è un no-op: partirà nell'editor.
+    React.useEffect(() => {
+        if (!allDone) return;
+        cloudSync.triggerInitialSync();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [allDone]);
+
     // Redirect once everything is confirmed ready. Also retries session
     // restoration here (not just the automatic one on app boot): that first
     // attempt races the sidecar starting up and can lose, silently landing

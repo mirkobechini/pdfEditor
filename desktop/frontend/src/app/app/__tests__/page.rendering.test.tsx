@@ -113,6 +113,7 @@ vi.mock("../../../hooks/useCloudSync", () => ({
 
 vi.mock("../../../hooks/CloudSyncContext", () => ({
     useCloudSyncContext: () => ({
+        triggerInitialSync: vi.fn(),
         status: mockSyncStatus,
         syncEnabled: false,
         excludedIds: [],
