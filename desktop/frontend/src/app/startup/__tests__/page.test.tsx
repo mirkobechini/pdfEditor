@@ -35,11 +35,22 @@ vi.mock("../../../shared/auth", () => ({
     useAuth: () => ({ refreshSession: mockRefreshSession }),
 }));
 
+// Mock stateless di default: ultimo sync mai avvenuto → isSyncing=false e
+// lastSyncResult=null (lo step sync resta pending finché non viene risolto
+// o saltato). Per il caso "sessione autenticata" triggerInitialSync simula il
+// completamento del sync settando lastSyncResult (→ step sync done).
+let mockLastSyncResult: { uploaded: number; downloaded: number; skipped: number; skippedExisting: number; skippedLocked: number; errors: string[] } | null = null;
+let mockIsSyncing = false;
 vi.mock("../../../hooks/CloudSyncContext", () => ({
     useCloudSyncContext: () => ({
-        triggerInitialSync: vi.fn(),
-        isSyncing: false,
-        lastSyncResult: null,
+        triggerInitialSync: vi.fn(async () => {
+            // Autenticato: il sync "completa" subito (nessun file da sync → done).
+            mockIsSyncing = true;
+            mockIsSyncing = false;
+            mockLastSyncResult = { uploaded: 0, downloaded: 0, skipped: 0, skippedExisting: 0, skippedLocked: 0, errors: [] };
+        }),
+        isSyncing: mockIsSyncing,
+        lastSyncResult: mockLastSyncResult,
         status: {},
         syncEnabled: false,
         excludedIds: [],
@@ -55,6 +66,8 @@ describe("StartupPage", () => {
         vi.useFakeTimers();
         localStorage.clear();
         mockRefreshSession.mockResolvedValue(null);
+        mockLastSyncResult = null;
+        mockIsSyncing = false;
     });
 
     afterEach(() => {

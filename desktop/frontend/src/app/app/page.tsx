@@ -19,7 +19,7 @@ export default function EditorPage() {
     const te = useTranslations("editor");
     const { user } = useAuth();
     // Istanza condivisa del sync cloud (unica per l'app, montata in ClientLayout).
-    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing, lastSyncResult, triggerInitialSync } = useCloudSyncContext();
+    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing, lastSyncResult, clearSyncResult, triggerInitialSync } = useCloudSyncContext();
     // Ingresso via LOGIN: qui il sync non è ancora partito (la start-up, se c'è
     // stato, ha già gestito l'auto-login). Al mount lanciamo il sync iniziale:
     // la guardia per-utente di triggerInitialSync fa sì che se è già partito
@@ -28,36 +28,6 @@ export default function EditorPage() {
         triggerInitialSync();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [triggerInitialSync]);
-    // Indicatore di sync per la sidebar (non più banner in alto): visibile un
-    // minimo (~2s) dopo l'avvio/fine del sync, mostrando l'esito.
-    const [syncFeedback, setSyncFeedback] = React.useState<
-      | { visible: boolean; result: string | null }
-      | null
-    >(null);
-    React.useEffect(() => {
-      if (isSyncing) {
-        setSyncFeedback({ visible: true, result: null });
-      } else if (syncFeedback?.visible && !syncFeedback.result) {
-        // sync appena finito: mostra per ~2s (eventualmente con esito)
-        setSyncFeedback({
-          visible: true,
-          result: lastSyncResult
-            ? lastSyncResult.uploaded > 0
-              ? `✅ ${lastSyncResult.uploaded} PDF caricati`
-              : lastSyncResult.downloaded > 0
-                ? `⬇️ ${lastSyncResult.downloaded} PDF scaricati`
-                : lastSyncResult.skippedExisting > 0 || lastSyncResult.skippedLocked > 0
-                  ? `⏭️ ${lastSyncResult.skippedExisting + lastSyncResult.skippedLocked} già presenti`
-                  : lastSyncResult.errors.length > 0
-                    ? `⚠️ ${lastSyncResult.errors.length} errori`
-                    : "✅ Tutto allineato"
-            : "✅ Sync completato",
-        });
-        const t = setTimeout(() => setSyncFeedback({ visible: false, result: null }), 2000);
-        return () => clearTimeout(t);
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isSyncing, lastSyncResult]);
     const {
         docs, setDocs,
         loading,
@@ -135,8 +105,6 @@ export default function EditorPage() {
                     onRenameValueChange={setRenameValue}
                     onRenameCommit={handleRenameCommit}
                     onDeleteRequest={setDeleteConfirm}
-                    syncFeedback={syncFeedback}
-                    isSyncing={isSyncing}
                 />
 
                 <EditorViewer
@@ -246,6 +214,43 @@ export default function EditorPage() {
                 deletion={pendingCloudDeletions?.[0] ?? null}
                 onResolve={resolveCloudDeletion}
             />
+
+            {/* Sync completato: dialog modale (stile Settings) al termine del
+                sync, mostrato quando c'è un lastSyncResult e non si sta più
+                sincronizzando. Chiudibile con clearSyncResult dal context. */}
+            {lastSyncResult && !isSyncing && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={clearSyncResult}>
+                    <div className="rounded-2xl border border-white/10 bg-[#221b16] p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+                        <h2 className="text-[20px] font-bold text-white mb-4">Sync completato</h2>
+                        <div className="space-y-2 text-[14px]">
+                            {lastSyncResult.uploaded > 0 && <p className="text-green-400">✅ {lastSyncResult.uploaded} PDF caricati sul cloud</p>}
+                            {lastSyncResult.downloaded > 0 && <p className="text-blue-400">⬇️ {lastSyncResult.downloaded} PDF scaricati dal cloud</p>}
+                            {lastSyncResult.skippedExisting > 0 && <p className="text-yellow-400">⏭️ {lastSyncResult.skippedExisting} PDF già presenti sul cloud (saltati)</p>}
+                            {lastSyncResult.skippedLocked > 0 && <p className="text-yellow-400">🔒 {lastSyncResult.skippedLocked} PDF saltati (protetti da password)</p>}
+                            {lastSyncResult.skipped > 0 && (
+                                <p className="text-yellow-400">⏭️ {lastSyncResult.skipped} PDF saltati (protetti da password)</p>
+                            )}
+                            {lastSyncResult.errors.length > 0 && (
+                                <div className="mt-3">
+                                    <p className="text-red-400 font-semibold">⚠️ Errori ({lastSyncResult.errors.length}):</p>
+                                    {lastSyncResult.errors.map((err, i) => (
+                                        <p key={i} className="text-red-300 text-[12px] ml-2">{err}</p>
+                                    ))}
+                                </div>
+                            )}
+                            {lastSyncResult.uploaded === 0 && lastSyncResult.downloaded === 0 && lastSyncResult.skipped === 0 && lastSyncResult.errors.length === 0 && (
+                                <p className="text-[#9d9184]">Nessun PDF da sincronizzare. Tutti già allineati.</p>
+                            )}
+                        </div>
+                        <button
+                            onClick={clearSyncResult}
+                            className="mt-4 w-full cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2 text-[14px] font-semibold text-white"
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

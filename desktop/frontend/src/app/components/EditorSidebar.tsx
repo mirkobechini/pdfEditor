@@ -23,9 +23,6 @@ export type EditorSidebarProps = {
     syncEnabled: boolean;
     excludedIds: string[];
     onToggleExclude: (doc: PdfDocument) => void;
-    /** Indicatore di sync condiviso (dal padre, non hook diretto qui). */
-    syncFeedback?: { visible: boolean; result: string | null } | null;
-    isSyncing?: boolean;
     multiSelect: boolean;
     selectedIds: Set<string>;
     renameId: string | null;
@@ -50,7 +47,6 @@ export function EditorSidebar(props: EditorSidebarProps) {
     const {
         te, user, docs, loading, selectedDoc, syncStatus,
         syncEnabled, excludedIds, onToggleExclude,
-        syncFeedback, isSyncing,
         multiSelect, selectedIds, renameId, renameValue, uploadError, fileInputRef,
         onOpenLocal, onFileInputChange, onToggleMultiSelect, onToggleSelectAll,
         onToggleSelect, onBatchDelete, onBatchExport, onSelectDoc,
@@ -82,15 +78,6 @@ export function EditorSidebar(props: EditorSidebarProps) {
             <div className="flex-1 overflow-y-auto border-y border-white/8 px-5 py-5 min-h-0">
                 <div className="mb-1 flex items-center gap-2 justify-between">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-[#918476]">{te("recentDocuments")}</p>
-                    {/* Indicatore sync compatto (dallo stato condiviso del padre, ~2s). */}
-                    {isSyncing ? (
-                        <span className="inline-flex items-center gap-1.5 text-[10px] text-[#f7871f]">
-                            <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-[#f7871f]/30 border-t-[#f7871f]" />
-                            Sincronizzazione...
-                        </span>
-                    ) : syncFeedback?.visible && syncFeedback.result ? (
-                        <span className="text-[10px] text-[#48c769]">{syncFeedback.result}</span>
-                    ) : null}
                 </div>
                 {/* Multi-select toolbar */}
                 <div className="mb-2 flex items-center gap-2">

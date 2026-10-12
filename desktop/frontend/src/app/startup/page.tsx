@@ -33,6 +33,19 @@ export default function StartupPage() {
     ]);
     const [allDone, setAllDone] = React.useState(false);
     const [fatalError, setFatalError] = React.useState<string | null>(null);
+    // Esito del retry di refreshSession fatto al boot: checked=true dopo il
+    // primo tentativo, authenticated=true se c'è una sessione valida (→ /app).
+    const [session, setSession] = React.useState<{ checked: boolean; authenticated: boolean }>({
+        checked: false,
+        authenticated: false,
+    });
+    // Quando NON si è autenticati (si va a login/wizard) non c'è nulla da
+    // sincronizzare: lo step sync viene marcato come done (saltato) così non
+    // resta pending per sempre.
+    const [syncSkipped, setSyncSkipped] = React.useState(false);
+    // Guardia per non rilanciare refreshSession/triggerInitialSync più volte
+    // quando allDone diventa true (evita doppi trigger / loop infiniti).
+    const bootHandledRef = React.useRef(false);
 
     // Step 1: wait for sidecar health check
     React.useEffect(() => {
@@ -139,29 +152,43 @@ export default function StartupPage() {
         return () => { cancelled = true; };
     }, [steps.find((s) => s.id === "database")?.status]);
 
-    // Il sync (4° step) parte SOLO DOPO che i primi 3 step sono completati
-    // (allDone). La guardia per-utente di triggerInitialSync evita doppio sync
-    // (se è partito qui, l'editor al mount non lo rilancia). Se non autenticato
-    // al boot (utente che entrerà da login) è un no-op: partirà nell'editor.
+    // Sync (4° step) + retry di refreshSession SOLO dopo i primi 3 step
+    // (allDone). L'autenticazione viene verificata qui una volta sola.
+    // - Se c'è una sessione valida → parte il sync (guardia per-utente evita
+    //   doppio sync: se è partito qui, l'editor al mount non lo rilancia).
+    // - Se NON si è autenticati → si andrà a login/wizard, non c'è nulla da
+    //   sincronizzare: lo step sync viene marcato done (saltato) subito.
     React.useEffect(() => {
-        if (!allDone) return;
-        cloudSync.triggerInitialSync();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [allDone]);
-
-    // Redirect once everything is confirmed ready. Also retries session
-    // restoration here (not just the automatic one on app boot): that first
-    // attempt races the sidecar starting up and can lose, silently landing
-    // on the login page even with a valid saved session — only redirecting
-    // to /app a few seconds later once something else re-triggers it. Now
-    // that the backend is confirmed healthy, this retry can't lose that race.
-    React.useEffect(() => {
-        if (!allDone) return;
+        if (!allDone || bootHandledRef.current) return;
+        bootHandledRef.current = true;
         let cancelled = false;
-        const redirectTimer = setTimeout(async () => {
+        (async () => {
             const restoredUser = await refreshSession();
             if (cancelled) return;
             if (restoredUser) {
+                setSession({ checked: true, authenticated: true });
+                await cloudSync.triggerInitialSync();
+            } else {
+                setSession({ checked: true, authenticated: false });
+                setSyncSkipped(true);
+            }
+        })();
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [allDone]);
+
+    // Redirect ONLY when the sync step has settled (done/error), mai mentre è
+    // ancora pending. Il retry di refreshSession è già avvenuto nell'effect
+    // precedente (backend confermato sano → non può perdere la race): qui
+    // decidiamo la destinazione in base all'esito salvato in `session`.
+    const syncStep = steps.find((s) => s.id === "sync");
+    const syncSettled = !!syncStep && (syncStep.status === "done" || syncStep.status === "error");
+    React.useEffect(() => {
+        if (!allDone || !syncSettled || !session.checked) return;
+        let cancelled = false;
+        const redirectTimer = setTimeout(() => {
+            if (cancelled) return;
+            if (session.authenticated) {
                 router.push("/app");
                 return;
             }
@@ -172,7 +199,7 @@ export default function StartupPage() {
             cancelled = true;
             clearTimeout(redirectTimer);
         };
-    }, [allDone, router, refreshSession]);
+    }, [allDone, syncSettled, session.checked, session.authenticated, router]);
 
     function getStepIcon(status: StepStatus) {
         switch (status) {
@@ -197,7 +224,10 @@ export default function StartupPage() {
         const syncStep = steps.find((s) => s.id === "sync");
         if (!syncStep) return;
         let status: StepStatus = syncStep.status;
-        if (cloudSync.isSyncing) {
+        if (syncSkipped) {
+            // Non autenticato: sync saltato → done subito, non resta pending.
+            status = "done";
+        } else if (cloudSync.isSyncing) {
             status = "running";
         } else if (cloudSync.lastSyncResult) {
             status =
@@ -211,11 +241,14 @@ export default function StartupPage() {
         setSteps((prev) =>
             prev.map((s) => (s.id === "sync" ? { ...s, status } : s)),
         );
-    }, [cloudSync.isSyncing, cloudSync.lastSyncResult, steps.find((s) => s.id === "sync")?.status]);
+    }, [cloudSync.isSyncing, cloudSync.lastSyncResult, syncSkipped, steps.find((s) => s.id === "sync")?.status]);
 
     function handleRetry() {
         setFatalError(null);
         setAllDone(false);
+        setSession({ checked: false, authenticated: false });
+        setSyncSkipped(false);
+        bootHandledRef.current = false;
         setSteps([
             { id: "backend", label: ts("startingBackend"), status: "running" },
             { id: "database", label: ts("connectingDb"), status: "pending" },
@@ -258,7 +291,7 @@ export default function StartupPage() {
                     </div>
                 )}
 
-                {allDone && (
+                {allDone && syncSettled && (
                     <p className="mt-6 text-center text-[13px] text-[#48c769]">
                         {ts("ready")}
                     </p>
