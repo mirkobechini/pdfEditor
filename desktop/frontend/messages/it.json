@@ -350,7 +350,8 @@
     "startingApp": "Avvio di PdfEditor",
     "retry": "Riprova",
     "ready": "✓ Pronto! Reindirizzamento al login...",
-    "license": "AGPL-3.0"
+    "license": "AGPL-3.0",
+    "syncingCloud": "Sincronizzazione documenti cloud..."
   },
   "guestConvert": {
     "error": "Errore durante la conversione",

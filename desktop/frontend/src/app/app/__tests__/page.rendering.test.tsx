@@ -111,6 +111,19 @@ vi.mock("../../../hooks/useCloudSync", () => ({
     }),
 }));
 
+vi.mock("../../../hooks/CloudSyncContext", () => ({
+    useCloudSyncContext: () => ({
+        status: mockSyncStatus,
+        syncEnabled: false,
+        excludedIds: [],
+        toggleExclude: vi.fn(),
+        pendingCloudDeletions: [],
+        resolveCloudDeletion: vi.fn(),
+        isSyncing: false,
+        lastSyncResult: null,
+    }),
+}));
+
 vi.mock("../../../shared/api", () => ({
     api: {
         listPdfs: (...args: any[]) => mockListPdfs(...args),

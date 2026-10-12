@@ -10,7 +10,7 @@ import { EditorViewer } from "../components/EditorViewer";
 import { EditorModals } from "../components/EditorModals";
 import CloudDeletionDialog from "../../components/CloudDeletionDialog";
 import { EditorFooter } from "../components/EditorFooter";
-import { useCloudSync } from "../../hooks/useCloudSync";
+import { useCloudSyncContext } from "../../hooks/CloudSyncContext";
 import { useEditorState } from "../../hooks/useEditorState";
 
 const API_BASE = getApiBaseUrl();
@@ -18,10 +18,10 @@ const API_BASE = getApiBaseUrl();
 export default function EditorPage() {
     const te = useTranslations("editor");
     const { user } = useAuth();
-    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing, lastSyncResult } = useCloudSync();
-    // Il sync ora è velocissimo (token refresh): isSyncing passa a true/false in
-    // pochi ms e lo spinner non farebbe in tempo a rendersi. Teniamo il banner
-    // visibile un minimo (~2s) dopo l'avvio/fine del sync, mostrando l'esito.
+    // Istanza condivisa del sync cloud (unica per l'app, montata in ClientLayout).
+    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing, lastSyncResult } = useCloudSyncContext();
+    // Indicatore di sync per la sidebar (non più banner in alto): visibile un
+    // minimo (~2s) dopo l'avvio/fine del sync, mostrando l'esito.
     const [syncFeedback, setSyncFeedback] = React.useState<
       | { visible: boolean; result: string | null }
       | null
@@ -98,18 +98,6 @@ export default function EditorPage() {
 
     return (
         <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col overflow-hidden">
-            {syncFeedback?.visible && (
-                <div className={`flex items-center gap-2 px-4 py-1.5 text-[12px] ${isSyncing ? "bg-[#3e2717]/80 text-[#f7871f]" : "bg-[#1f3a2a]/80 text-green-300"}`}>
-                    {isSyncing ? (
-                        <>
-                            <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#f7871f]/30 border-t-[#f7871f]" />
-                            Sincronizzazione in corso...
-                        </>
-                    ) : (
-                        <>{syncFeedback?.result}</>
-                    )}
-                </div>
-            )}
             <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0">
                 <EditorSidebar
                     te={te}
@@ -139,6 +127,8 @@ export default function EditorPage() {
                     onRenameValueChange={setRenameValue}
                     onRenameCommit={handleRenameCommit}
                     onDeleteRequest={setDeleteConfirm}
+                    syncFeedback={syncFeedback}
+                    isSyncing={isSyncing}
                 />
 
                 <EditorViewer

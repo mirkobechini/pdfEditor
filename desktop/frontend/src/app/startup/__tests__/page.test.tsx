@@ -35,6 +35,19 @@ vi.mock("../../../shared/auth", () => ({
     useAuth: () => ({ refreshSession: mockRefreshSession }),
 }));
 
+vi.mock("../../../hooks/CloudSyncContext", () => ({
+    useCloudSyncContext: () => ({
+        isSyncing: false,
+        lastSyncResult: null,
+        status: {},
+        syncEnabled: false,
+        excludedIds: [],
+        toggleExclude: vi.fn(),
+        pendingCloudDeletions: [],
+        resolveCloudDeletion: vi.fn(),
+    }),
+}));
+
 describe("StartupPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getApiBaseUrl } from "../../shared/tauri";
 import { useAuth } from "../../shared/auth";
+import { useCloudSyncContext } from "../../hooks/CloudSyncContext";
 
 const API_BASE = getApiBaseUrl();
 
@@ -22,10 +23,13 @@ export default function StartupPage() {
     const tc = useTranslations("common");
     const ts = useTranslations("startup");
     const { refreshSession } = useAuth();
+    // Istanza condivisa del sync cloud (unica per l'app, non un nuovo hook).
+    const cloudSync = useCloudSyncContext();
     const [steps, setSteps] = React.useState<Step[]>([
         { id: "backend", label: ts("startingBackend"), status: "running" },
         { id: "database", label: ts("connectingDb"), status: "pending" },
         { id: "api", label: ts("verifyingApi"), status: "pending" },
+        { id: "sync", label: ts("syncingCloud"), status: "done" },
     ]);
     const [allDone, setAllDone] = React.useState(false);
     const [fatalError, setFatalError] = React.useState<string | null>(null);
@@ -173,6 +177,32 @@ export default function StartupPage() {
         }
     }
 
+    // Step 4: indicatore di sync cloud condiviso (useCloudSyncContext).
+    // - spinner durante isSyncing
+    // - ✓ quando finito senza errori
+    // - ✗ in caso di errore
+    // - se il sync non può girare (non autenticato/offline) resta "done"=saltato
+    //   senza far fallire/ bloccare il redirect (il redirect dipende solo da allDone).
+    React.useEffect(() => {
+        const syncStep = steps.find((s) => s.id === "sync");
+        if (!syncStep) return;
+        let status: StepStatus;
+        if (cloudSync.isSyncing) {
+            status = "running";
+        } else if (cloudSync.lastSyncResult) {
+            status =
+                cloudSync.lastSyncResult.errors.length > 0 ? "error" : "done";
+        } else {
+            // Sync non avviato (token offline/assente): lo mostriamo come done
+            // (saltato) — non un errore, non blocca nulla.
+            status = "done";
+        }
+        if (status === syncStep.status) return;
+        setSteps((prev) =>
+            prev.map((s) => (s.id === "sync" ? { ...s, status } : s)),
+        );
+    }, [cloudSync.isSyncing, cloudSync.lastSyncResult, steps.find((s) => s.id === "sync")?.status]);
+
     function handleRetry() {
         setFatalError(null);
         setAllDone(false);
@@ -180,6 +210,7 @@ export default function StartupPage() {
             { id: "backend", label: ts("startingBackend"), status: "running" },
             { id: "database", label: ts("connectingDb"), status: "pending" },
             { id: "api", label: ts("verifyingApi"), status: "pending" },
+            { id: "sync", label: ts("syncingCloud"), status: "done" },
         ]);
     }
 
