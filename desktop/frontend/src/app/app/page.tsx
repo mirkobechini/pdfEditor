@@ -8,6 +8,7 @@ import { EditorSidebar } from "../components/EditorSidebar";
 import { EditorRightPanel } from "../components/EditorRightPanel";
 import { EditorViewer } from "../components/EditorViewer";
 import { EditorModals } from "../components/EditorModals";
+import CloudDeletionDialog from "../../components/CloudDeletionDialog";
 import { EditorFooter } from "../components/EditorFooter";
 import { useCloudSync } from "../../hooks/useCloudSync";
 import { useEditorState } from "../../hooks/useEditorState";
@@ -17,7 +18,7 @@ const API_BASE = getApiBaseUrl();
 export default function EditorPage() {
     const te = useTranslations("editor");
     const { user } = useAuth();
-    const { status: syncStatus } = useCloudSync();
+    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing } = useCloudSync();
     const {
         docs, setDocs,
         loading,
@@ -66,6 +67,12 @@ export default function EditorPage() {
 
     return (
         <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col overflow-hidden">
+            {isSyncing && (
+                <div className="flex items-center gap-2 bg-[#3e2717]/80 px-4 py-1.5 text-[12px] text-[#f7871f]">
+                    <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#f7871f]/30 border-t-[#f7871f]" />
+                    Sincronizzazione in corso...
+                </div>
+            )}
             <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0">
                 <EditorSidebar
                     te={te}
@@ -74,6 +81,9 @@ export default function EditorPage() {
                     loading={loading}
                     selectedDoc={selectedDoc}
                     syncStatus={syncStatus}
+                    syncEnabled={syncEnabled}
+                    excludedIds={excludedIds ?? []}
+                    onToggleExclude={(doc) => toggleExclude?.(doc.id)}
                     multiSelect={multiSelect}
                     selectedIds={selectedIds}
                     renameId={renameId}
@@ -195,6 +205,12 @@ export default function EditorPage() {
             />
 
             <EditorFooter te={te} apiBase={API_BASE} />
+
+            {/* #990: PDF eliminati dal cloud → chiedi se eliminarli anche in locale */}
+            <CloudDeletionDialog
+                deletion={pendingCloudDeletions?.[0] ?? null}
+                onResolve={resolveCloudDeletion}
+            />
         </div>
     );
 }

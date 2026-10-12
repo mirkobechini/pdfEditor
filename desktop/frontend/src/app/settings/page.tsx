@@ -5,6 +5,7 @@ import { useSettingsPage } from "../../hooks/useSettingsPage";
 import SettingsTabs from "./components/SettingsTabs";
 import SettingsModals from "./components/SettingsModals";
 import SettingsSidebar from "./components/SettingsSidebar";
+import CloudDeletionDialog from "../../components/CloudDeletionDialog";
 
 export default function SettingsPage() {
     const s = useSettingsPage();
@@ -20,6 +21,12 @@ export default function SettingsPage() {
             </div>
 
             <SettingsModals s={s} />
+
+            {/* Dialog eliminazioni cloud: mostrata dove gira il sync (anche da Settings) */}
+            <CloudDeletionDialog
+                deletion={s.pendingCloudDeletions?.[0] ?? null}
+                onResolve={s.resolveCloudDeletion}
+            />
         </div>
     );
 }
