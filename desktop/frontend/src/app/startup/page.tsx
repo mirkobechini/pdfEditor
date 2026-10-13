@@ -183,6 +183,29 @@ export default function StartupPage() {
     // decidiamo la destinazione in base all'esito salvato in `session`.
     const syncStep = steps.find((s) => s.id === "sync");
     const syncSettled = !!syncStep && (syncStep.status === "done" || syncStep.status === "error");
+    // FALLBACK di sicurezza: se il sync non si risolve mai (es. cloud
+    // irraggiungibile / hang), dopo 20s dall'avvio del 4° step lo forziamo a
+    // "done" così la start-up NON resta appesa per sempre (il redirect dipende
+    // da syncSettled). L'utente non rimane mai bloccato sullo schermo di avvio.
+    React.useEffect(() => {
+        if (!allDone || syncSkipped || syncSettled) return;
+        let cancelled = false;
+        const fallbackTimer = setTimeout(() => {
+            if (cancelled) return;
+            setSteps((prev) =>
+                prev.map((s) =>
+                    s.id === "sync" && (s.status === "pending" || s.status === "running")
+                        ? { ...s, status: "done" as const }
+                        : s,
+                ),
+            );
+        }, 20000);
+        return () => {
+            cancelled = true;
+            clearTimeout(fallbackTimer);
+        };
+    }, [allDone, syncSkipped, syncSettled]);
+
     React.useEffect(() => {
         if (!allDone || !syncSettled || !session.checked) return;
         let cancelled = false;
