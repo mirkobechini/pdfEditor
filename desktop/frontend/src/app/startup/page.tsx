@@ -216,10 +216,12 @@ export default function StartupPage() {
 
     // Step 4: indicatore di sync cloud condiviso (useCloudSyncContext).
     // Stesso comportamento visivo degli altri 3 step:
-    // - pending (vuoto) finché non parte;
-    // - running (spinner) durante isSyncing;
+    // - pending (vuoto) PRIMA che i 3 step siano completati;
+    // - running (spinner) appena allDone e il sync sta per partire/gira
+    //   (così non sembra mai l'app "bloccata" su un pallino grigio);
     // - done (verde ✓) se finito senza errori;
-    // - error (rosso ✗) se fallito.
+    // - error (rosso ✗) se fallito;
+    // - syncSkipped (non autenticato → login) → done subito.
     React.useEffect(() => {
         const syncStep = steps.find((s) => s.id === "sync");
         if (!syncStep) return;
@@ -227,21 +229,22 @@ export default function StartupPage() {
         if (syncSkipped) {
             // Non autenticato: sync saltato → done subito, non resta pending.
             status = "done";
-        } else if (cloudSync.isSyncing) {
-            status = "running";
         } else if (cloudSync.lastSyncResult) {
             status =
                 cloudSync.lastSyncResult.errors.length > 0 ? "error" : "done";
+        } else if (cloudSync.isSyncing || allDone) {
+            // Sync in corso o sta per partire (allDone raggiunto): spinner,
+            // identico agli altri step. Mai "pending" a macchina ferma qui.
+            status = "running";
         } else {
-            // Sync non ancora partito: resta a pending (vuoto), mai "done"
-            // prematuro. Diventa done solo con un lastSyncResult senza errori.
+            // Prima del completamento dei primi 3 step: attesa (vuoto).
             status = "pending";
         }
         if (status === syncStep.status) return;
         setSteps((prev) =>
             prev.map((s) => (s.id === "sync" ? { ...s, status } : s)),
         );
-    }, [cloudSync.isSyncing, cloudSync.lastSyncResult, syncSkipped, steps.find((s) => s.id === "sync")?.status]);
+    }, [cloudSync.isSyncing, cloudSync.lastSyncResult, syncSkipped, allDone, steps.find((s) => s.id === "sync")?.status]);
 
     function handleRetry() {
         setFatalError(null);
