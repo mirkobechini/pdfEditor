@@ -1,42 +1,41 @@
 {
   "desktop": [
     {
-      "version": "v0.1.39",
-      "date": "2026-09-27",
+      "version": "v0.1.41",
+      "date": "2026-10-14",
       "changes": [
-        "OCR: riconosci il testo nei PDF scansionati e rendilo ricercabile",
-        "Annotazioni: evidenzia, sottolinea, commenta e disegna sui tuoi PDF",
-        "Condivisione via link: condividi un PDF con un link pubblico, con password e scadenza opzionali",
-        "Multi-selezione: seleziona più PDF e applica operazioni in blocco (elimina, esporta)",
-        "Firma digitale migliorata: flusso guidato, anteprima in tempo reale, ridimensionamento, undo/redo",
-        "Nuovo dialogo di stampa: anteprima live, scelta pagine/orientamento/copie/margini",
-        "Drag & drop: trascina un PDF nell'editor per aprirlo, o un'immagine per importarla",
-        "Login con feedback di stato: vedi cosa sta facendo l'app durante l'accesso",
-        "Import immagini migliorato: supporto per GIF e BMP",
-        "Avvio più rapido grazie alla sessione salvata",
-        "Fix di sicurezza: risolto un bug che rendeva i link di condivisione non funzionanti"
+        "Sincronizzazione: i PDF eliminati dal cloud non vengono più ricaricati sul desktop; se un file non è più sul cloud, ti chiediamo se eliminarlo anche in locale (con \"Elimina in locale\"/\"Tieni solo in locale\")",
+        "Eliminazione più sicura: cancellando un PDF senza alternative, il file su cloud non viene mai toccato",
+        "Avvio più fluido: start-up a 3 passaggi, indicatore di sincronizzazione accanto a \"Cloud Sync\" e riepilogo \"Sync completato\" con il dettaglio di file caricati/scaricati/saltati",
+        "Installer migliorato e più affidabile"
       ]
     },
     {
-      "version": "v0.1.38",
-      "date": "2026-09-16",
+      "version": "v0.1.40",
+      "date": "2026-10-07",
       "changes": [
-        "Import/Export: importa file (testo, immagini) ed esporta i tuoi PDF in altri formati",
-        "Conversione DOCX → PDF: apri e converti documenti Word"
+        "Firma con colore dell'inchiostro e anteprima aggiornata in tempo reale; canvas bianco anche in tema scuro",
+        "Errori di salvataggio annotazioni tradotti e più chiari; password di registrazione allineate al backend",
+        "Errori OCR e Condivisione tradotti",
+        "Risolto il problema \"Failed to load Python DLL\" su Windows (componente interno più stabile)"
       ]
     }
   ],
   "mobile": [
     {
       "version": "v0.2.4-mobile",
-      "date": "2026-09-27",
+      "date": "2026-11-01",
       "changes": [
         "Compressione offline: comprimi i PDF anche senza connessione",
         "Stampa: scegli pagine e orientamento, con anteprima prima di stampare",
         "Firma: disegna la firma a mano libera, posizionala trascinandola e ridimensionala con lo zoom",
         "Annotazioni PDF: evidenzia, sottolinea, commenta e disegna sui tuoi PDF",
         "OCR: riconosci il testo nei PDF scansionati e rendilo ricercabile",
-        "Condivisione via link: condividi un PDF con un link pubblico, con password e scadenza opzionali"
+        "Condivisione via link: condividi un PDF con un link pubblico, con password e scadenza opzionali",
+        "Cambio schermata più fluido (menu Home ↔ Impostazioni), meno lag",
+        "Gli errori di sincronizzazione cloud ora compaiono come finestra di dialogo chiara, con azioni Riprova/Chiudi",
+        "Sincronizzazione subito dopo l'accesso, non solo all'avvio",
+        "Corretto il crash \"totalPages of null\" aprendo Strumenti"
       ]
     },
     {

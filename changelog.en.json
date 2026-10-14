@@ -1,42 +1,41 @@
 {
   "desktop": [
     {
-      "version": "v0.1.39",
-      "date": "2026-09-27",
+      "version": "v0.1.41",
+      "date": "2026-10-14",
       "changes": [
-        "OCR: recognize text in scanned PDFs and make it searchable",
-        "Annotations: highlight, underline, comment and draw on your PDFs",
-        "Share via link: share a PDF with a public link, with optional password and expiration",
-        "Multi-select: select multiple PDFs and apply bulk operations (delete, export)",
-        "Improved digital signature: guided flow, real-time preview, resizing, undo/redo",
-        "New print dialog: live preview, choose pages/orientation/copies/margins",
-        "Drag & drop: drag a PDF into the editor to open it, or an image to import it",
-        "Login with status feedback: see what the app is doing while signing in",
-        "Improved image import: support for GIF and BMP",
-        "Faster startup thanks to the saved session",
-        "Security fix: resolved a bug that broke sharing links"
+        "Sync: PDFs deleted from the cloud are no longer re-downloaded to the desktop; if a file is no longer on the cloud, we ask whether to also delete it locally (with \"Delete locally\"/\"Keep local only\")",
+        "Safer deletion: deleting a PDF without alternatives never touches the cloud copy",
+        "Smoother startup: 3-step launch, sync indicator next to \"Cloud Sync\" and a \"Sync complete\" summary with the detail of uploaded/downloaded/skipped files",
+        "Improved, more reliable installer"
       ]
     },
     {
-      "version": "v0.1.38",
-      "date": "2026-09-16",
+      "version": "v0.1.40",
+      "date": "2026-10-07",
       "changes": [
-        "Import/Export: import files (text, images) and export your PDFs to other formats",
-        "DOCX → PDF conversion: open and convert Word documents"
+        "Signature with ink color and live preview; white canvas also in dark theme",
+        "Translated, clearer annotation save errors; registration password aligned with backend",
+        "Translated OCR and Share errors",
+        "Fixed the \"Failed to load Python DLL\" issue on Windows (more stable internal component)"
       ]
     }
   ],
   "mobile": [
     {
       "version": "v0.2.4-mobile",
-      "date": "2026-09-27",
+      "date": "2026-11-01",
       "changes": [
         "Offline compression: compress PDFs even without a connection",
         "Print: choose pages and orientation, with preview before printing",
-        "Signature: draw the signature freehand, position it by dragging and resize with pinch-to-zoom",
+        "Signature: draw freehand, position by dragging and resize with pinch-to-zoom",
         "PDF annotations: highlight, underline, comment and draw on your PDFs",
         "OCR: recognize text in scanned PDFs and make it searchable",
-        "Share via link: share a PDF with a public link, with optional password and expiration"
+        "Share via link: share a PDF with a public link, with optional password and expiration",
+        "Smoother screen switching (Home ↔ Settings menu), less lag",
+        "Cloud sync errors now appear as a clear dialog with Retry/Close actions",
+        "Sync right after sign-in, not only at startup",
+        "Fixed the \"totalPages of null\" crash when opening Tools"
       ]
     },
     {
