@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-14
+
+### 🖥️ Desktop — chiusura giro #990 (su `dev`/`main`; v0.1.40 NON rilasciata)
+- **Sync cloud non ricarica i PDF eliminati dal cloud** (#990 / PR #1019): il **web comanda il cloud** — se un PDF locale ha un mapping ma il file non è più sul cloud, il desktop NON lo ricarica ma mostra il dialog **"Elimina anche in locale" / "Tieni solo in locale"** (togliendo il mapping). La proposta scatta **solo se la lista cloud è completa** (`items >= total`): se è troncata, nessuna proposta e nessun ricaricamento (conservativo).
+- **deletePdf default sicuro `local`** invece di `both` (#1022 / PR #1023): un PDF cancellato senza opzione non tocca MAI il cloud — la cancellazione cloud richiede sempre l'opzione esplicita (`cloud`/`both`).
+- **Installer + loader definitivi** (#1024 / PR #1026, preview→dev): start-up a **3 step** (backend, database, api) con redirect quasi istantaneo (~60ms) su `allDone`; indicatore sync **accanto a "Cloud Sync"** (pallino verde a riposo, spinner durante il sync, esito breve); **dialog "Sync completato"** con icone+colori e ripartizione dei "Saltati" in *Già presenti sul cloud* / *Protetti da password*; rimossa la 4° step sync che girava all'infinito e il doppio conteggio "Saltati" in Settings; **fallback 20s** (se il sync non si risolve lo forza a done); installer bulletproof (auto-uninstall precedente, chiusura sidecar con taskkill/Stop-Process, riepilogo dopo ricarica cloud); smoke test sidecar robusto (retry loop invece di sleep+curl).
+
+### 📱 Mobile (su `dev`/`main`; v0.2.4-mobile NON rilasciata)
+- **Lag al cambio tab Home↔Impostazioni** (#1027 / PR #1028): `enableFreeze()` di `react-native-screens` chiamato all'avvio + `React.memo` su `SettingsScreen` in `MainTabs` — le schermate inattive non fanno più re-render ad ogni cambio tab, il passaggio è fluido/istantaneo.
+- **Errori cloud come dialog** invece della barra rossa in cima (#1020 / PR #1021): il fallimento del sync esce ora come dialog modale centrato con icona cloud, titolo "Sincronizzazione cloud fallita", messaggio dettagliato e azioni **Riprova** / **Chiudi**.
+
 ## 2026-10-07
 
 ### 🌐 Web (su `main` dalla release #1000)
@@ -23,7 +34,6 @@
 - Sync subito dopo il login, non solo all'avvio (#998 / #999).
 
 ### 🧭 Aperto / futuro
-- #990: eliminazione dal cloud non propagata al desktop (decisione: il web comanda il cloud; chiedere se eliminare anche in locale).
 - #992: aprire i link di condivisione direttamente nell'app (deep link).
 - #932: Deep Agent locale sul desktop (in attesa di decisione).
 - Mobile: conteggio documenti sotto "Sincronizza ora"; nuvola vuota su un file creato sul telefono (non indagata).

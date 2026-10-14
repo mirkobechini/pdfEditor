@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Scopo:** Tracciare bug minori, debito tecnico e miglioramenti che non hanno rilevanza architetturale (non vanno in `ADR.md`).  
-> **Aggiornato:** 2026-10-03
+> **Aggiornato:** 2026-10-14
 
 ---
 
@@ -28,6 +28,8 @@
 | #749  | K5: auth offline — profilo utente salvato in cache per uso offline                                                                                           |
 | #757  | Google login CI: `verify_oauth2_token` chiamato anche con audience vuota                                                                                     |
 | #761  | Refactor unify: web re-exporta tauri/error-map dal shared; `api.ts` web ripristinato originale cookie-based (il re-export shared rompeva login/register e2e) |
+| #1027 | Mobile: lag al cambio tab Home↔Impostazioni — `enableFreeze()` di react-native-screens all'avvio + `React.memo` su `SettingsScreen` in `MainTabs` (PR #1028) |
+| #990  | Desktop (giro #990): sync non ricarica i PDF eliminati dal cloud (dialog Elimina/Tieni in locale, PR #1019), deletePdf default sicuro `local` invece di `both` (PR #1023), installer + loader definitivi — start-up 3 step, dialog "Sync completato", fallback 20s, smoke test sidecar (PR #1026) |
 
 ---
 
