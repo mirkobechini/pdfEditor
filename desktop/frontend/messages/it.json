@@ -227,7 +227,12 @@
         "syncInProgress": "Sincronizzazione documenti...",
         "syncUploaded": "{count} caricati",
         "syncAligned": "Tutto allineato",
-        "syncError": "Errore di sincronizzazione"
+        "syncError": "Errore di sincronizzazione",
+        "syncCompleteTitle": "Sync completato",
+        "syncCompleteDesc": "Riepilogo della sincronizzazione cloud:",
+        "syncDownloaded": "scaricati",
+        "syncSkipped": "saltati",
+        "close": "Chiudi"
     },
     "removeModal": {
         "title": "Rimuovi Pagine",

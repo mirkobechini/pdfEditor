@@ -38,6 +38,21 @@ export default function EditorPage() {
         if (lastSyncResult.errors.length > 0) return te("syncError");
         return te("syncAligned");
     }, [lastSyncResult, te]);
+
+    // Dialog "Sync completato" (ripristinato su richiesta Mirko 14/10): si apre
+    // quando il sync cloud termina con un risultato, mostrando il riepilogo
+    // (caricati/scaricati/saltati + eventuali errori). Si chiude con "Chiudi"
+    // (che azzera il risultato così non riappare finché non rifà il sync).
+    const [syncDialogOpen, setSyncDialogOpen] = React.useState(false);
+    const prevSyncingRef = React.useRef(isSyncing);
+    React.useEffect(() => {
+        const wasSyncing = prevSyncingRef.current;
+        prevSyncingRef.current = isSyncing;
+        // Transizione isSyncing true → false con un risultato disponibile.
+        if (wasSyncing && !isSyncing && lastSyncResult) {
+            setSyncDialogOpen(true);
+        }
+    }, [isSyncing, lastSyncResult]);
     const {
         docs, setDocs,
         loading,
@@ -226,6 +241,34 @@ export default function EditorPage() {
                 deletion={pendingCloudDeletions?.[0] ?? null}
                 onResolve={resolveCloudDeletion}
             />
+
+            {/* Dialog "Sync completato": riepilogo del sync appena terminato. */}
+            {syncDialogOpen && lastSyncResult && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl">
+                        <h2 className="mb-1 text-base font-bold text-white">{te("syncCompleteTitle")}</h2>
+                        <p className="mb-4 text-[12px] text-[#918476]">{te("syncCompleteDesc")}</p>
+                        <div className="mb-5 space-y-1.5 rounded-xl border border-white/8 bg-white/[0.03] p-4 text-sm">
+                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncUploaded")}:</span><span className="font-semibold text-white">{lastSyncResult.uploaded}</span></p>
+                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncDownloaded")}:</span><span className="font-semibold text-white">{lastSyncResult.downloaded}</span></p>
+                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncSkipped")}:</span><span className="font-semibold text-white">{lastSyncResult.skipped}</span></p>
+                            {lastSyncResult.errors.length > 0 && (
+                                <p className="pt-2 text-[12px] text-red-400">
+                                    {te("syncError")}: {lastSyncResult.errors.join(", ")}
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => { clearSyncResult(); setSyncDialogOpen(false); }}
+                                className="rounded-xl bg-[#f7871f] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#ce5a00]"
+                            >
+                                {te("close")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );

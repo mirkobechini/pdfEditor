@@ -227,7 +227,12 @@
         "syncInProgress": "Syncing documents...",
         "syncUploaded": "{count} uploaded",
         "syncAligned": "All aligned",
-        "syncError": "Sync error"
+        "syncError": "Sync error",
+        "syncCompleteTitle": "Sync complete",
+        "syncCompleteDesc": "Cloud sync summary:",
+        "syncDownloaded": "downloaded",
+        "syncSkipped": "skipped",
+        "close": "Close"
     },
     "removeModal": {
         "title": "Remove Pages",

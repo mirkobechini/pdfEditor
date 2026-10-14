@@ -301,5 +301,11 @@ function SyncBarIndicator({
         );
     }
 
-    return null;
+    // A riposo il pallino verde RESTA sempre: serve a far capire che il sync
+    // è attivo/allineato (richiesta Mirko 14/10). Non va mai nascosto.
+    return (
+        <div className="mb-2 flex items-center" data-testid="sync-idle">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#48c769]" />
+        </div>
+    );
 }

@@ -156,7 +156,7 @@ export default function StartupPage() {
             }
             const wizardDone = localStorage.getItem("pdfeditor_wizard_done");
             router.push(wizardDone === "true" ? "/login" : "/wizard");
-        }, 1200);
+        }, 60);
         return () => {
             cancelled = true;
             clearTimeout(redirectTimer);
