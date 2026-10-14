@@ -9,6 +9,11 @@ import SyncStatusBanner from "../components/SyncStatusBanner";
 
 const Tab = createBottomTabNavigator();
 
+// Settings/Home non passano props dai parent: una volta montati e congelati
+// non serve ri-renderizzarli quando MainTabs cambia (es. pdfCount del badge).
+// React.memo evita il re-render della schermata inattiva al cambio tab → meno lag.
+const MemoSettings = React.memo(SettingsScreen);
+
 export default function MainTabs() {
     const theme = useTheme();
     const { t } = useTranslation();
@@ -53,7 +58,7 @@ export default function MainTabs() {
                 />
                 <Tab.Screen
                     name="SettingsTab"
-                    component={SettingsScreen}
+                    component={MemoSettings}
                     options={{
                         title: t("settings.title"),
                         tabBarLabel: t("settings.title"),
