@@ -10,7 +10,7 @@ import { EditorViewer } from "../components/EditorViewer";
 import { EditorModals } from "../components/EditorModals";
 import CloudDeletionDialog from "../../components/CloudDeletionDialog";
 import { EditorFooter } from "../components/EditorFooter";
-import { useCloudSync } from "../../hooks/useCloudSync";
+import { useCloudSyncContext } from "../../hooks/CloudSyncContext";
 import { useEditorState } from "../../hooks/useEditorState";
 
 const API_BASE = getApiBaseUrl();
@@ -18,7 +18,41 @@ const API_BASE = getApiBaseUrl();
 export default function EditorPage() {
     const te = useTranslations("editor");
     const { user } = useAuth();
-    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing } = useCloudSync();
+    // Istanza condivisa del sync cloud (unica per l'app, montata in ClientLayout).
+    const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing, lastSyncResult, clearSyncResult, triggerInitialSync } = useCloudSyncContext();
+    // Ingresso via LOGIN: qui il sync non è ancora partito (la start-up, se c'è
+    // stato, ha già gestito l'auto-login). Al mount lanciamo il sync iniziale:
+    // la guardia per-utente di triggerInitialSync fa sì che se è già partito
+    // (per lo stesso utente) sia un no-op → mai doppio loader.
+    React.useEffect(() => {
+        triggerInitialSync();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [triggerInitialSync]);
+    // Feedback breve del sync (es. "N caricati"/"Tutto allineato") mostrato
+    // nella barra PDF della sidebar dopo la fine del sync. Il dialog modale
+    // è stato rimosso (decisione 14/10): l'esito vive solo qui.
+    const syncFeedback = React.useMemo(() => {
+        if (!lastSyncResult) return null;
+        const total = lastSyncResult.uploaded + lastSyncResult.downloaded;
+        if (total > 0) return te("syncUploaded", { count: String(total) });
+        if (lastSyncResult.errors.length > 0) return te("syncError");
+        return te("syncAligned");
+    }, [lastSyncResult, te]);
+
+    // Dialog "Sync completato" (ripristinato su richiesta Mirko 14/10): si apre
+    // quando il sync cloud termina con un risultato, mostrando il riepilogo
+    // (caricati/scaricati/saltati + eventuali errori). Si chiude con "Chiudi"
+    // (che azzera il risultato così non riappare finché non rifà il sync).
+    const [syncDialogOpen, setSyncDialogOpen] = React.useState(false);
+    const prevSyncingRef = React.useRef(isSyncing);
+    React.useEffect(() => {
+        const wasSyncing = prevSyncingRef.current;
+        prevSyncingRef.current = isSyncing;
+        // Transizione isSyncing true → false con un risultato disponibile.
+        if (wasSyncing && !isSyncing && lastSyncResult) {
+            setSyncDialogOpen(true);
+        }
+    }, [isSyncing, lastSyncResult]);
     const {
         docs, setDocs,
         loading,
@@ -67,12 +101,6 @@ export default function EditorPage() {
 
     return (
         <div className="h-screen bg-[#17120f] text-[#f4f1ee] flex flex-col overflow-hidden">
-            {isSyncing && (
-                <div className="flex items-center gap-2 bg-[#3e2717]/80 px-4 py-1.5 text-[12px] text-[#f7871f]">
-                    <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#f7871f]/30 border-t-[#f7871f]" />
-                    Sincronizzazione in corso...
-                </div>
-            )}
             <div className="flex-1 grid grid-cols-[296px_1fr_292px] min-h-0">
                 <EditorSidebar
                     te={te}
@@ -102,6 +130,8 @@ export default function EditorPage() {
                     onRenameValueChange={setRenameValue}
                     onRenameCommit={handleRenameCommit}
                     onDeleteRequest={setDeleteConfirm}
+                    isSyncing={isSyncing}
+                    syncFeedback={syncFeedback}
                 />
 
                 <EditorViewer
@@ -211,6 +241,73 @@ export default function EditorPage() {
                 deletion={pendingCloudDeletions?.[0] ?? null}
                 onResolve={resolveCloudDeletion}
             />
+
+            {/* Dialog "Sync completato": riepilogo del sync appena terminato. */}
+            {syncDialogOpen && lastSyncResult && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl">
+                        <h2 className="mb-1 text-base font-bold text-white">{te("syncCompleteTitle")}</h2>
+                        <p className="mb-4 text-[12px] text-[#918476]">{te("syncCompleteDesc")}</p>
+                        <div className="mb-5 space-y-1.5 rounded-xl border border-white/8 bg-white/[0.03] p-4 text-sm">
+                            <p className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-[#c4b9ad]">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#48c769" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                    {te("syncUploadedLabel")}
+                                </span>
+                                <span className="font-semibold text-[#48c769]">{lastSyncResult.uploaded}</span>
+                            </p>
+                            <p className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-[#c4b9ad]">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5ba0f3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                                    {te("syncDownloadedLabel")}
+                                </span>
+                                <span className="font-semibold text-[#5ba0f3]">{lastSyncResult.downloaded}</span>
+                            </p>
+                            <p className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-[#c4b9ad]">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e8b44c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 4 15 12 5 20 5 4" /><line x1="19" y1="5" x2="19" y2="19" /></svg>
+                                    {te("syncSkippedLabel")}
+                                </span>
+                                {/* skipped è già l'aggregato (già presenti + protetti): NON sommarlo
+                                    alle componenti o raddoppia il conteggio. */}
+                                <span className="font-semibold text-[#e8b44c]">{lastSyncResult.skipped}</span>
+                            </p>
+                            {lastSyncResult.skippedExisting > 0 && (
+                                <p className="flex items-center justify-between pl-5">
+                                    <span className="flex items-center gap-2 text-[#b7ab9f]">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c9a15a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10Z" /><circle cx="12" cy="13" r="1" /></svg>
+                                        {te("syncSkippedExistingLabel")}
+                                    </span>
+                                    <span className="font-semibold text-[#c9a15a]">{lastSyncResult.skippedExisting}</span>
+                                </p>
+                            )}
+                            {lastSyncResult.skippedLocked > 0 && (
+                                <p className="flex items-center justify-between pl-5">
+                                    <span className="flex items-center gap-2 text-[#b7ab9f]">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c9865a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                        {te("syncSkippedLockedLabel")}
+                                    </span>
+                                    <span className="font-semibold text-[#c9865a]">{lastSyncResult.skippedLocked}</span>
+                                </p>
+                            )}
+                            {lastSyncResult.errors.length > 0 && (
+                                <p className="pt-2 text-[12px] text-red-400">
+                                    {te("syncError")}: {lastSyncResult.errors.join(", ")}
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => { clearSyncResult(); setSyncDialogOpen(false); }}
+                                className="rounded-xl bg-[#f7871f] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#ce5a00]"
+                            >
+                                {te("close")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

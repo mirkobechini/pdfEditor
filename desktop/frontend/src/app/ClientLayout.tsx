@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "../shared/auth";
 import { I18nProvider } from "../lib/i18n";
 import { PreferencesProvider } from "../lib/preferences";
+import { CloudSyncProvider } from "../hooks/CloudSyncContext";
 import { startKeepWarm } from "../shared/api";
 import { openDevTools } from "../shared/tauri";
 
@@ -24,11 +25,17 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         return () => window.removeEventListener("keydown", onKeyDown);
     }, []);
 
+    // CloudSyncProvider è montato QUI (dentro AuthProvider), a livello di
+    // layout, così l'unica istanza app-level di useCloudSync (autoSyncOnMount
+    // = true, il default) è condivisa tra /startup e /app. Nessuna schermata
+    // chiama useCloudSync() direttamente: usano useCloudSyncContext().
     const content = (
         <PreferencesProvider>
             <I18nProvider>
                 <AuthProvider>
-                    {children}
+                    <CloudSyncProvider>
+                        {children}
+                    </CloudSyncProvider>
                 </AuthProvider>
             </I18nProvider>
         </PreferencesProvider>

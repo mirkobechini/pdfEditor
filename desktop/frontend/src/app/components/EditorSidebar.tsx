@@ -3,6 +3,7 @@
 // "pesante" (docs, selezione, cloud sync, open/upload) arriva via props dal padre.
 
 import Link from "next/link";
+import React from "react";
 import type { ChangeEvent, RefObject } from "react";
 import type { PdfDocument, User } from "../../shared/types";
 import type { PdfSyncStatus } from "../../hooks/useCloudSync";
@@ -41,6 +42,10 @@ export type EditorSidebarProps = {
     onRenameValueChange: (v: string) => void;
     onRenameCommit: (doc: PdfDocument, newName: string) => void;
     onDeleteRequest: (id: string) => void;
+    /** True mentre il sync cloud è in corso (spinner nella barra PDF). */
+    isSyncing?: boolean;
+    /** Feedback breve d'esito (es. "N caricati"/"Tutto allineato") mostrato per ~2s dopo la fine del sync. */
+    syncFeedback?: string | null;
 };
 
 export function EditorSidebar(props: EditorSidebarProps) {
@@ -51,6 +56,7 @@ export function EditorSidebar(props: EditorSidebarProps) {
         onOpenLocal, onFileInputChange, onToggleMultiSelect, onToggleSelectAll,
         onToggleSelect, onBatchDelete, onBatchExport, onSelectDoc,
         onRenameIdChange, onRenameValueChange, onRenameCommit, onDeleteRequest,
+        isSyncing = false, syncFeedback = null,
     } = props;
 
     /** Stato nuvola del PDF (come il mobile) per l'icona in lista (#990). */
@@ -76,7 +82,9 @@ export function EditorSidebar(props: EditorSidebarProps) {
             </div>
 
             <div className="flex-1 overflow-y-auto border-y border-white/8 px-5 py-5 min-h-0">
-                <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-[#918476]">{te("recentDocuments")}</p>
+                <div className="mb-1 flex items-center gap-2 justify-between">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#918476]">{te("recentDocuments")}</p>
+                </div>
                 {/* Multi-select toolbar */}
                 <div className="mb-2 flex items-center gap-2">
                     <button
@@ -214,7 +222,13 @@ export function EditorSidebar(props: EditorSidebarProps) {
             <div className="border-t border-white/8 p-5">
                 <div className="mb-3 flex items-center justify-between">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-[#918476]">{te("cloudSync")}</p>
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#3ec35f]" />
+                    {/* Avviso sync accanto alla scritta "Cloud Sync": spinner durante
+                        il sync, esito (~2s) dopo, pallino verde a riposo. */}
+                    <SyncBarIndicator
+                        isSyncing={isSyncing}
+                        feedback={syncFeedback}
+                        te={te}
+                    />
                 </div>
                 <div className="flex items-center gap-3">
                     <Link href="/settings" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm hover:bg-white/15 transition-colors" title={te("settings")}>
@@ -235,5 +249,63 @@ export function EditorSidebar(props: EditorSidebarProps) {
                 </div>
             </div>
         </aside>
+    );
+}
+
+// Indicatore di sync nella barra dei PDF (decisione 14/10): spinner+stato
+// durante isSyncing, poi un breve esito (~2s) quando il sync termina. Il
+// feedback arriva dal padre (page.tsx) e viene mostrato con un timer.
+function SyncBarIndicator({
+    isSyncing,
+    feedback,
+    te,
+}: {
+    isSyncing: boolean;
+    feedback: string | null;
+    te: EditorSidebarProps["te"];
+}) {
+    const [showFeedback, setShowFeedback] = React.useState(false);
+
+    // Quando il sync termina (isSyncing false) e c'è un feedback, lo mostriamo
+    // per ~2s poi lo nascondiamo. Se mentre sta girando il feedback cambia,
+    // mostriamo subito l'esito fresco.
+    React.useEffect(() => {
+        if (isSyncing) {
+            setShowFeedback(false);
+            return;
+        }
+        if (!feedback) {
+            setShowFeedback(false);
+            return;
+        }
+        setShowFeedback(true);
+        const timer = setTimeout(() => setShowFeedback(false), 2000);
+        return () => clearTimeout(timer);
+    }, [isSyncing, feedback]);
+
+    if (isSyncing) {
+        return (
+            <div className="mb-2 flex items-center gap-2 px-1" data-testid="sync-indicator">
+                <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#f7871f] border-t-transparent" />
+                <span className="text-[11px] text-[#f7871f]">{te("syncInProgress")}</span>
+            </div>
+        );
+    }
+
+    if (showFeedback && feedback) {
+        return (
+            <div className="mb-2 flex items-center gap-1.5 px-1" data-testid="sync-feedback">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#48c769]" />
+                <span className="text-[11px] text-[#48c769]">{feedback}</span>
+            </div>
+        );
+    }
+
+    // A riposo il pallino verde RESTA sempre: serve a far capire che il sync
+    // è attivo/allineato (richiesta Mirko 14/10). Non va mai nascosto.
+    return (
+        <div className="mb-2 flex items-center" data-testid="sync-idle">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#48c769]" />
+        </div>
     );
 }

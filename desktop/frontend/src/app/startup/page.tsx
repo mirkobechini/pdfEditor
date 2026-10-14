@@ -29,6 +29,9 @@ export default function StartupPage() {
     ]);
     const [allDone, setAllDone] = React.useState(false);
     const [fatalError, setFatalError] = React.useState<string | null>(null);
+    // Il redirect viene gestito UNA sola volta quando allDone diventa true
+    // (evita re-trigger multipli / loop infiniti al re-render).
+    const redirectHandledRef = React.useRef(false);
 
     // Step 1: wait for sidecar health check
     React.useEffect(() => {
@@ -135,16 +138,16 @@ export default function StartupPage() {
         return () => { cancelled = true; };
     }, [steps.find((s) => s.id === "database")?.status]);
 
-    // Redirect once everything is confirmed ready. Also retries session
-    // restoration here (not just the automatic one on app boot): that first
-    // attempt races the sidecar starting up and can lose, silently landing
-    // on the login page even with a valid saved session — only redirecting
-    // to /app a few seconds later once something else re-triggers it. Now
-    // that the backend is confirmed healthy, this retry can't lose that race.
+    // Redirect ONLY when allDone: verifica della sessione (una volta sola) e
+    // destinazione: /app se autenticato, altrimenti /login o /wizard.
+    // Il sync cloud NON blocca più la start-up: gira solo nell'editor
+    // (barra PDF) dopo il mount.
     React.useEffect(() => {
-        if (!allDone) return;
+        if (!allDone || redirectHandledRef.current) return;
+        redirectHandledRef.current = true;
         let cancelled = false;
         const redirectTimer = setTimeout(async () => {
+            if (cancelled) return;
             const restoredUser = await refreshSession();
             if (cancelled) return;
             if (restoredUser) {
@@ -153,12 +156,13 @@ export default function StartupPage() {
             }
             const wizardDone = localStorage.getItem("pdfeditor_wizard_done");
             router.push(wizardDone === "true" ? "/login" : "/wizard");
-        }, 1200);
+        }, 60);
         return () => {
             cancelled = true;
             clearTimeout(redirectTimer);
         };
-    }, [allDone, router, refreshSession]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [allDone]);
 
     function getStepIcon(status: StepStatus) {
         switch (status) {
@@ -176,6 +180,7 @@ export default function StartupPage() {
     function handleRetry() {
         setFatalError(null);
         setAllDone(false);
+        redirectHandledRef.current = false;
         setSteps([
             { id: "backend", label: ts("startingBackend"), status: "running" },
             { id: "database", label: ts("connectingDb"), status: "pending" },
