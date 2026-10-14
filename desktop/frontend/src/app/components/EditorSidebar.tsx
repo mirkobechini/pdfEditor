@@ -85,14 +85,6 @@ export function EditorSidebar(props: EditorSidebarProps) {
                 <div className="mb-1 flex items-center gap-2 justify-between">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-[#918476]">{te("recentDocuments")}</p>
                 </div>
-                {/* Sync indicator (decisione 14/10): il sync gira SOLO qui,
-                    nella barra dei PDF. Spinner+stato durante isSyncing, poi un
-                    breve esito (~2s) basato su syncFeedback dal padre. */}
-                <SyncBarIndicator
-                    isSyncing={isSyncing}
-                    feedback={syncFeedback}
-                    te={te}
-                />
                 {/* Multi-select toolbar */}
                 <div className="mb-2 flex items-center gap-2">
                     <button
@@ -230,7 +222,13 @@ export function EditorSidebar(props: EditorSidebarProps) {
             <div className="border-t border-white/8 p-5">
                 <div className="mb-3 flex items-center justify-between">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-[#918476]">{te("cloudSync")}</p>
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#3ec35f]" />
+                    {/* Avviso sync accanto alla scritta "Cloud Sync": spinner durante
+                        il sync, esito (~2s) dopo, pallino verde a riposo. */}
+                    <SyncBarIndicator
+                        isSyncing={isSyncing}
+                        feedback={syncFeedback}
+                        te={te}
+                    />
                 </div>
                 <div className="flex items-center gap-3">
                     <Link href="/settings" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-sm hover:bg-white/15 transition-colors" title={te("settings")}>
