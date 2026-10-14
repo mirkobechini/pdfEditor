@@ -2,7 +2,7 @@
   "expo": {
     "name": "PdfEditor",
     "slug": "mobile",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -12,7 +12,7 @@
     },
     "android": {
       "package": "com.mirkobechini.pdfeditor",
-      "versionCode": 5,
+      "versionCode": 7,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
