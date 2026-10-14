@@ -1,55 +1,66 @@
 /**
- * SyncStatusBanner — mostra all'utente l'errore del sync cloud quando
- * fallisce (niente barra durante la sync: il caricamento e' mostrato altrove) (A5: niente più console.log silenziosi). Piccolo, non invasivo,
- * coerente con il tema scuro. Espone l'azione "riprova" in caso di errore.
+ * SyncStatusDialog — mostra all'utente l'errore del sync cloud quando
+ * fallisce come DIALOG modale invece che come barra rossa in cima allo
+ * schermo (prima la barra si appiccicava alla zona della barra notifiche
+ * e non si leggeva). Esso espone le azioni "Riprova" e "Chiudi".
  */
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { Button, useTheme } from "react-native-paper";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StyleSheet } from "react-native";
+import {
+  Dialog,
+  Portal,
+  Button,
+  Text,
+  useTheme,
+} from "react-native-paper";
 import { useTranslation } from "react-i18next";
 import { useCloudSyncContext } from "../hooks/CloudSyncContext";
 
 export default function SyncStatusBanner() {
-    const theme = useTheme();
-    const { t } = useTranslation();
-    const insets = useSafeAreaInsets();
-    const { syncUi, syncAll, clearSyncError } = useCloudSyncContext();
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const { syncUi, syncAll, clearSyncError } = useCloudSyncContext();
 
-    if (syncUi.status === "error") {
-        return (
-            <View style={[styles.row, { backgroundColor: theme.colors.errorContainer, paddingTop: insets.top + 8 }]}>
-                <Text style={[styles.text, { color: theme.colors.onErrorContainer, flex: 1 }]}>
-                    {t("sync.error")}
-                    {syncUi.lastError ? ` — ${syncUi.lastError}` : ""}
-                </Text>
-                <Button
-                    mode="text"
-                    compact
-                    onPress={() => {
-                        clearSyncError();
-                        syncAll();
-                    }}
-                    textColor={theme.colors.onErrorContainer}
-                >
-                    {t("sync.retry")}
-                </Button>
-            </View>
-        );
-    }
+  const onRetry = () => {
+    clearSyncError();
+    syncAll();
+  };
 
-    return null;
+  return (
+    <Portal>
+      <Dialog visible={syncUi.status === "error"} onDismiss={clearSyncError}>
+        <Dialog.Icon
+          icon="cloud-alert"
+          size={40}
+          color={theme.colors.error}
+        />
+        <Dialog.Title style={styles.title}>{t("sync.error")}</Dialog.Title>
+        <Dialog.Content>
+          <Text variant="bodyMedium" style={styles.message}>
+            {syncUi.lastError || t("common.unknownError")}
+          </Text>
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={clearSyncError}>{t("common.close")}</Button>
+          <Button
+            mode="contained"
+            onPress={onRetry}
+            buttonColor={theme.colors.error}
+          >
+            {t("sync.retry")}
+          </Button>
+        </Dialog.Actions>
+      </Dialog>
+    </Portal>
+  );
 }
 
 const styles = StyleSheet.create({
-    row: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        gap: 8,
-    },
-    text: {
-        fontSize: 13,
-    },
+  title: {
+    textAlign: "center",
+    marginTop: 4,
+  },
+  message: {
+    textAlign: "center",
+  },
 });
