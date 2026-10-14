@@ -28,6 +28,16 @@ export default function EditorPage() {
         triggerInitialSync();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [triggerInitialSync]);
+    // Feedback breve del sync (es. "N caricati"/"Tutto allineato") mostrato
+    // nella barra PDF della sidebar dopo la fine del sync. Il dialog modale
+    // è stato rimosso (decisione 14/10): l'esito vive solo qui.
+    const syncFeedback = React.useMemo(() => {
+        if (!lastSyncResult) return null;
+        const total = lastSyncResult.uploaded + lastSyncResult.downloaded;
+        if (total > 0) return te("syncUploaded", { count: String(total) });
+        if (lastSyncResult.errors.length > 0) return te("syncError");
+        return te("syncAligned");
+    }, [lastSyncResult, te]);
     const {
         docs, setDocs,
         loading,
@@ -105,6 +115,8 @@ export default function EditorPage() {
                     onRenameValueChange={setRenameValue}
                     onRenameCommit={handleRenameCommit}
                     onDeleteRequest={setDeleteConfirm}
+                    isSyncing={isSyncing}
+                    syncFeedback={syncFeedback}
                 />
 
                 <EditorViewer
@@ -215,42 +227,6 @@ export default function EditorPage() {
                 onResolve={resolveCloudDeletion}
             />
 
-            {/* Sync completato: dialog modale (stile Settings) al termine del
-                sync, mostrato quando c'è un lastSyncResult e non si sta più
-                sincronizzando. Chiudibile con clearSyncResult dal context. */}
-            {lastSyncResult && !isSyncing && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={clearSyncResult}>
-                    <div className="rounded-2xl border border-white/10 bg-[#221b16] p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
-                        <h2 className="text-[20px] font-bold text-white mb-4">Sync completato</h2>
-                        <div className="space-y-2 text-[14px]">
-                            {lastSyncResult.uploaded > 0 && <p className="text-green-400">✅ {lastSyncResult.uploaded} PDF caricati sul cloud</p>}
-                            {lastSyncResult.downloaded > 0 && <p className="text-blue-400">⬇️ {lastSyncResult.downloaded} PDF scaricati dal cloud</p>}
-                            {lastSyncResult.skippedExisting > 0 && <p className="text-yellow-400">⏭️ {lastSyncResult.skippedExisting} PDF già presenti sul cloud (saltati)</p>}
-                            {lastSyncResult.skippedLocked > 0 && <p className="text-yellow-400">🔒 {lastSyncResult.skippedLocked} PDF saltati (protetti da password)</p>}
-                            {lastSyncResult.skipped > 0 && (
-                                <p className="text-yellow-400">⏭️ {lastSyncResult.skipped} PDF saltati (protetti da password)</p>
-                            )}
-                            {lastSyncResult.errors.length > 0 && (
-                                <div className="mt-3">
-                                    <p className="text-red-400 font-semibold">⚠️ Errori ({lastSyncResult.errors.length}):</p>
-                                    {lastSyncResult.errors.map((err, i) => (
-                                        <p key={i} className="text-red-300 text-[12px] ml-2">{err}</p>
-                                    ))}
-                                </div>
-                            )}
-                            {lastSyncResult.uploaded === 0 && lastSyncResult.downloaded === 0 && lastSyncResult.skipped === 0 && lastSyncResult.errors.length === 0 && (
-                                <p className="text-[#9d9184]">Nessun PDF da sincronizzare. Tutti già allineati.</p>
-                            )}
-                        </div>
-                        <button
-                            onClick={clearSyncResult}
-                            className="mt-4 w-full cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2 text-[14px] font-semibold text-white"
-                        >
-                            OK
-                        </button>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

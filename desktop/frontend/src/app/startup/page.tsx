@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getApiBaseUrl } from "../../shared/tauri";
 import { useAuth } from "../../shared/auth";
-import { useCloudSyncContext } from "../../hooks/CloudSyncContext";
 
 const API_BASE = getApiBaseUrl();
 
@@ -23,29 +22,16 @@ export default function StartupPage() {
     const tc = useTranslations("common");
     const ts = useTranslations("startup");
     const { refreshSession } = useAuth();
-    // Istanza condivisa del sync cloud (unica per l'app, non un nuovo hook).
-    const cloudSync = useCloudSyncContext();
     const [steps, setSteps] = React.useState<Step[]>([
         { id: "backend", label: ts("startingBackend"), status: "running" },
         { id: "database", label: ts("connectingDb"), status: "pending" },
         { id: "api", label: ts("verifyingApi"), status: "pending" },
-        { id: "sync", label: ts("syncingCloud"), status: "pending" },
     ]);
     const [allDone, setAllDone] = React.useState(false);
     const [fatalError, setFatalError] = React.useState<string | null>(null);
-    // Esito del retry di refreshSession fatto al boot: checked=true dopo il
-    // primo tentativo, authenticated=true se c'è una sessione valida (→ /app).
-    const [session, setSession] = React.useState<{ checked: boolean; authenticated: boolean }>({
-        checked: false,
-        authenticated: false,
-    });
-    // Quando NON si è autenticati (si va a login/wizard) non c'è nulla da
-    // sincronizzare: lo step sync viene marcato come done (saltato) così non
-    // resta pending per sempre.
-    const [syncSkipped, setSyncSkipped] = React.useState(false);
-    // Guardia per non rilanciare refreshSession/triggerInitialSync più volte
-    // quando allDone diventa true (evita doppi trigger / loop infiniti).
-    const bootHandledRef = React.useRef(false);
+    // Il redirect viene gestito UNA sola volta quando allDone diventa true
+    // (evita re-trigger multipli / loop infiniti al re-render).
+    const redirectHandledRef = React.useRef(false);
 
     // Step 1: wait for sidecar health check
     React.useEffect(() => {
@@ -152,66 +138,19 @@ export default function StartupPage() {
         return () => { cancelled = true; };
     }, [steps.find((s) => s.id === "database")?.status]);
 
-    // Sync (4° step) + retry di refreshSession SOLO dopo i primi 3 step
-    // (allDone). L'autenticazione viene verificata qui una volta sola.
-    // - Se c'è una sessione valida → parte il sync (guardia per-utente evita
-    //   doppio sync: se è partito qui, l'editor al mount non lo rilancia).
-    // - Se NON si è autenticati → si andrà a login/wizard, non c'è nulla da
-    //   sincronizzare: lo step sync viene marcato done (saltato) subito.
+    // Redirect ONLY when allDone: verifica della sessione (una volta sola) e
+    // destinazione: /app se autenticato, altrimenti /login o /wizard.
+    // Il sync cloud NON blocca più la start-up: gira solo nell'editor
+    // (barra PDF) dopo il mount.
     React.useEffect(() => {
-        if (!allDone || bootHandledRef.current) return;
-        bootHandledRef.current = true;
+        if (!allDone || redirectHandledRef.current) return;
+        redirectHandledRef.current = true;
         let cancelled = false;
-        (async () => {
+        const redirectTimer = setTimeout(async () => {
+            if (cancelled) return;
             const restoredUser = await refreshSession();
             if (cancelled) return;
             if (restoredUser) {
-                setSession({ checked: true, authenticated: true });
-                await cloudSync.triggerInitialSync();
-            } else {
-                setSession({ checked: true, authenticated: false });
-                setSyncSkipped(true);
-            }
-        })();
-        return () => { cancelled = true; };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [allDone]);
-
-    // Redirect ONLY when the sync step has settled (done/error), mai mentre è
-    // ancora pending. Il retry di refreshSession è già avvenuto nell'effect
-    // precedente (backend confermato sano → non può perdere la race): qui
-    // decidiamo la destinazione in base all'esito salvato in `session`.
-    const syncStep = steps.find((s) => s.id === "sync");
-    const syncSettled = !!syncStep && (syncStep.status === "done" || syncStep.status === "error");
-    // FALLBACK di sicurezza: se il sync non si risolve mai (es. cloud
-    // irraggiungibile / hang), dopo 20s dall'avvio del 4° step lo forziamo a
-    // "done" così la start-up NON resta appesa per sempre (il redirect dipende
-    // da syncSettled). L'utente non rimane mai bloccato sullo schermo di avvio.
-    React.useEffect(() => {
-        if (!allDone || syncSkipped || syncSettled) return;
-        let cancelled = false;
-        const fallbackTimer = setTimeout(() => {
-            if (cancelled) return;
-            setSteps((prev) =>
-                prev.map((s) =>
-                    s.id === "sync" && (s.status === "pending" || s.status === "running")
-                        ? { ...s, status: "done" as const }
-                        : s,
-                ),
-            );
-        }, 20000);
-        return () => {
-            cancelled = true;
-            clearTimeout(fallbackTimer);
-        };
-    }, [allDone, syncSkipped, syncSettled]);
-
-    React.useEffect(() => {
-        if (!allDone || !syncSettled || !session.checked) return;
-        let cancelled = false;
-        const redirectTimer = setTimeout(() => {
-            if (cancelled) return;
-            if (session.authenticated) {
                 router.push("/app");
                 return;
             }
@@ -222,7 +161,8 @@ export default function StartupPage() {
             cancelled = true;
             clearTimeout(redirectTimer);
         };
-    }, [allDone, syncSettled, session.checked, session.authenticated, router]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [allDone]);
 
     function getStepIcon(status: StepStatus) {
         switch (status) {
@@ -237,49 +177,14 @@ export default function StartupPage() {
         }
     }
 
-    // Step 4: indicatore di sync cloud condiviso (useCloudSyncContext).
-    // Stesso comportamento visivo degli altri 3 step:
-    // - pending (vuoto) PRIMA che i 3 step siano completati;
-    // - running (spinner) appena allDone e il sync sta per partire/gira
-    //   (così non sembra mai l'app "bloccata" su un pallino grigio);
-    // - done (verde ✓) se finito senza errori;
-    // - error (rosso ✗) se fallito;
-    // - syncSkipped (non autenticato → login) → done subito.
-    React.useEffect(() => {
-        const syncStep = steps.find((s) => s.id === "sync");
-        if (!syncStep) return;
-        let status: StepStatus = syncStep.status;
-        if (syncSkipped) {
-            // Non autenticato: sync saltato → done subito, non resta pending.
-            status = "done";
-        } else if (cloudSync.lastSyncResult) {
-            status =
-                cloudSync.lastSyncResult.errors.length > 0 ? "error" : "done";
-        } else if (cloudSync.isSyncing || allDone) {
-            // Sync in corso o sta per partire (allDone raggiunto): spinner,
-            // identico agli altri step. Mai "pending" a macchina ferma qui.
-            status = "running";
-        } else {
-            // Prima del completamento dei primi 3 step: attesa (vuoto).
-            status = "pending";
-        }
-        if (status === syncStep.status) return;
-        setSteps((prev) =>
-            prev.map((s) => (s.id === "sync" ? { ...s, status } : s)),
-        );
-    }, [cloudSync.isSyncing, cloudSync.lastSyncResult, syncSkipped, allDone, steps.find((s) => s.id === "sync")?.status]);
-
     function handleRetry() {
         setFatalError(null);
         setAllDone(false);
-        setSession({ checked: false, authenticated: false });
-        setSyncSkipped(false);
-        bootHandledRef.current = false;
+        redirectHandledRef.current = false;
         setSteps([
             { id: "backend", label: ts("startingBackend"), status: "running" },
             { id: "database", label: ts("connectingDb"), status: "pending" },
             { id: "api", label: ts("verifyingApi"), status: "pending" },
-            { id: "sync", label: ts("syncingCloud"), status: "pending" },
         ]);
     }
 
@@ -317,7 +222,7 @@ export default function StartupPage() {
                     </div>
                 )}
 
-                {allDone && syncSettled && (
+                {allDone && (
                     <p className="mt-6 text-center text-[13px] text-[#48c769]">
                         {ts("ready")}
                     </p>
