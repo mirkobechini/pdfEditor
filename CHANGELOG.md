@@ -2,7 +2,7 @@
 
 ## 2026-10-14
 
-### 🖥️ Desktop — chiusura giro #990 (su `dev`/`main`; v0.1.40 NON rilasciata)
+### 🖥️ Desktop — chiusura giro #990 (su `dev`; v0.1.41 NON rilasciata)
 - **Sync cloud non ricarica i PDF eliminati dal cloud** (#990 / PR #1019): il **web comanda il cloud** — se un PDF locale ha un mapping ma il file non è più sul cloud, il desktop NON lo ricarica ma mostra il dialog **"Elimina anche in locale" / "Tieni solo in locale"** (togliendo il mapping). La proposta scatta **solo se la lista cloud è completa** (`items >= total`): se è troncata, nessuna proposta e nessun ricaricamento (conservativo).
 - **deletePdf default sicuro `local`** invece di `both` (#1022 / PR #1023): un PDF cancellato senza opzione non tocca MAI il cloud — la cancellazione cloud richiede sempre l'opzione esplicita (`cloud`/`both`).
 - **Installer + loader definitivi** (#1024 / PR #1026, preview→dev): start-up a **3 step** (backend, database, api) con redirect quasi istantaneo (~60ms) su `allDone`; indicatore sync **accanto a "Cloud Sync"** (pallino verde a riposo, spinner durante il sync, esito breve); **dialog "Sync completato"** con icone+colori e ripartizione dei "Saltati" in *Già presenti sul cloud* / *Protetti da password*; rimossa la 4° step sync che girava all'infinito e il doppio conteggio "Saltati" in Settings; **fallback 20s** (se il sync non si risolve lo forza a done); installer bulletproof (auto-uninstall precedente, chiusura sidecar con taskkill/Stop-Process, riepilogo dopo ricarica cloud); smoke test sidecar robusto (retry loop invece di sleep+curl).
@@ -23,9 +23,9 @@
 - **Maniglia di ridimensionamento** del box firma/annotazione in basso a destra con i cursori: Tailwind v4 ignorava `src/shared` perché gitignored, ora `@source "../shared"` (#984 / #985, vale anche per il desktop).
 - **Link di condivisione** `/share/<token>`: rewrite in `render.yaml` e token letto dal pathname (#991 / #993). ⚠️ In produzione il rewrite non risulta applicato (404): serve la regola nel pannello Render.
 
-### 🖥️ Desktop (su `dev`/`main`; v0.1.40 NON rilasciata)
+### 🖥️ Desktop (su `dev`; v0.1.41 NON rilasciata)
 - Errore salvataggio annotazione tradotto (#974 / #975), password registrazione allineata al backend (#976 / #977), firma con colore e anteprima viva, canvas bianco anche in dark (#978 / #979), errori OCR e Condividi tradotti (#986 / #987).
-- **Sidecar Windows senza `--strip`**: corrompeva `python312.dll` ("Failed to load Python DLL") (#982 / #983). Obbligatorio per la v0.1.40.
+- **Sidecar Windows senza `--strip`**: corrompeva `python312.dll` ("Failed to load Python DLL") (#982 / #983). Obbligatorio (già incluso in v0.1.40, rilasciata il 07/10).
 
 ### 📱 Mobile (su `dev`/`main`; v0.2.4-mobile NON rilasciata)
 - Password registrazione allineata al backend (#980 / #981).
