@@ -233,6 +233,8 @@
         "syncUploadedLabel": "Uploaded",
         "syncDownloadedLabel": "Downloaded",
         "syncSkippedLabel": "Skipped",
+        "syncSkippedExistingLabel": "Already on cloud",
+        "syncSkippedLockedLabel": "Password-protected",
         "close": "Close"
     },
     "removeModal": {

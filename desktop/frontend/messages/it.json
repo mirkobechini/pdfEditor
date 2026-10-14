@@ -233,6 +233,8 @@
         "syncUploadedLabel": "Caricati",
         "syncDownloadedLabel": "Scaricati",
         "syncSkippedLabel": "Saltati",
+        "syncSkippedExistingLabel": "Già presenti sul cloud",
+        "syncSkippedLockedLabel": "Protetti da password",
         "close": "Chiudi"
     },
     "removeModal": {

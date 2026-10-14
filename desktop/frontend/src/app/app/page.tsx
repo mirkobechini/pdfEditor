@@ -272,6 +272,24 @@ export default function EditorPage() {
                                     alle componenti o raddoppia il conteggio. */}
                                 <span className="font-semibold text-[#e8b44c]">{lastSyncResult.skipped}</span>
                             </p>
+                            {lastSyncResult.skippedExisting > 0 && (
+                                <p className="flex items-center justify-between pl-5">
+                                    <span className="flex items-center gap-2 text-[#b7ab9f]">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c9a15a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10Z" /><circle cx="12" cy="13" r="1" /></svg>
+                                        {te("syncSkippedExistingLabel")}
+                                    </span>
+                                    <span className="font-semibold text-[#c9a15a]">{lastSyncResult.skippedExisting}</span>
+                                </p>
+                            )}
+                            {lastSyncResult.skippedLocked > 0 && (
+                                <p className="flex items-center justify-between pl-5">
+                                    <span className="flex items-center gap-2 text-[#b7ab9f]">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c9865a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                        {te("syncSkippedLockedLabel")}
+                                    </span>
+                                    <span className="font-semibold text-[#c9865a]">{lastSyncResult.skippedLocked}</span>
+                                </p>
+                            )}
                             {lastSyncResult.errors.length > 0 && (
                                 <p className="pt-2 text-[12px] text-red-400">
                                     {te("syncError")}: {lastSyncResult.errors.join(", ")}
