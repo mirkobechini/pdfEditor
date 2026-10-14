@@ -74,12 +74,22 @@ jobs:
           fi
           "./$SIDECAR" >/tmp/sidecar.log 2>&1 &
           SPID=$!
-          sleep 12
-          code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7723/health || echo "000")
+          # Il sidecar PyInstaller è onefile: al primo avvio su un runner "freddo"
+          # deve scompattarsi da solo e può metterci più di 12s a essere pronto.
+          # Un singolo curl dopo 12s genera falsi negativi (health=000).
+          # Retry loop: prova fino a 40s, ogni 2s, finché /health non risponde 200.
+          code="000"
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7723/health || echo "000")
+            if [ "$code" = "200" ]; then
+              break
+            fi
+            sleep 2
+          done
           kill $SPID 2>/dev/null || true
           echo "health=$code"
           cat /tmp/sidecar.log || true
-          if [ "$code" != "200" ]; then echo "Sidecar non risponde su /health"; exit 1; fi
+          if [ "$code" != "200" ]; then echo "Sidecar non risponde su /health dopo 40s"; exit 1; fi
           echo "Sidecar OK"
 
       - name: Rename sidecar for Tauri target triple
