@@ -1,3 +1,4 @@
+import { enableFreeze } from "react-native-screens";
 import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -43,6 +44,13 @@ function AppContent() {
     </PaperProvider>
   );
 }
+
+// Abilita il freezing delle schermate in background (react-native-screens).
+// Senza enableFreeze(), l'opzione freezeOnBlur: true impostata su MainTabs
+// resta inefficace: le tab inattive continuano a fare re-render al cambio
+// schermata con conseguente lag percepibile (issue #1027). Va chiamato prima
+// del mount della navigazione.
+enableFreeze(true);
 
 export default function App() {
   // Load MaterialCommunityIcons font before rendering so icons are visible
