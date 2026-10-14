@@ -208,9 +208,6 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                     {s.lastSyncResult.downloaded > 0 && <p className="text-blue-400">⬇️ {s.lastSyncResult.downloaded} PDF scaricati dal cloud</p>}
                                     {s.lastSyncResult.skippedExisting > 0 && <p className="text-yellow-400">⏭️ {s.lastSyncResult.skippedExisting} PDF già presenti sul cloud (saltati)</p>}
                                     {s.lastSyncResult.skippedLocked > 0 && <p className="text-yellow-400">🔒 {s.lastSyncResult.skippedLocked} PDF saltati (protetti da password)</p>}
-                                    {s.lastSyncResult.skipped > 0 && (
-                                        <p className="text-yellow-400">⏭️ {s.lastSyncResult.skipped} PDF saltati (protetti da password)</p>
-                                    )}
                                     {s.lastSyncResult.errors.length > 0 && (
                                         <div className="mt-3">
                                             <p className="text-red-400 font-semibold">⚠️ Errori ({s.lastSyncResult.errors.length}):</p>

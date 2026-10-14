@@ -249,9 +249,29 @@ export default function EditorPage() {
                         <h2 className="mb-1 text-base font-bold text-white">{te("syncCompleteTitle")}</h2>
                         <p className="mb-4 text-[12px] text-[#918476]">{te("syncCompleteDesc")}</p>
                         <div className="mb-5 space-y-1.5 rounded-xl border border-white/8 bg-white/[0.03] p-4 text-sm">
-                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncUploadedLabel")}</span><span className="font-semibold text-white">{lastSyncResult.uploaded}</span></p>
-                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncDownloadedLabel")}</span><span className="font-semibold text-white">{lastSyncResult.downloaded}</span></p>
-                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncSkippedLabel")}</span><span className="font-semibold text-white">{lastSyncResult.skipped}</span></p>
+                            <p className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-[#c4b9ad]">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#48c769" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                    {te("syncUploadedLabel")}
+                                </span>
+                                <span className="font-semibold text-[#48c769]">{lastSyncResult.uploaded}</span>
+                            </p>
+                            <p className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-[#c4b9ad]">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5ba0f3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                                    {te("syncDownloadedLabel")}
+                                </span>
+                                <span className="font-semibold text-[#5ba0f3]">{lastSyncResult.downloaded}</span>
+                            </p>
+                            <p className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-[#c4b9ad]">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e8b44c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 4 15 12 5 20 5 4" /><line x1="19" y1="5" x2="19" y2="19" /></svg>
+                                    {te("syncSkippedLabel")}
+                                </span>
+                                {/* skipped è già l'aggregato (già presenti + protetti): NON sommarlo
+                                    alle componenti o raddoppia il conteggio. */}
+                                <span className="font-semibold text-[#e8b44c]">{lastSyncResult.skipped}</span>
+                            </p>
                             {lastSyncResult.errors.length > 0 && (
                                 <p className="pt-2 text-[12px] text-red-400">
                                     {te("syncError")}: {lastSyncResult.errors.join(", ")}
