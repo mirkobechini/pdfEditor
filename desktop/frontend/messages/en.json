@@ -230,8 +230,9 @@
         "syncError": "Sync error",
         "syncCompleteTitle": "Sync complete",
         "syncCompleteDesc": "Cloud sync summary:",
-        "syncDownloaded": "downloaded",
-        "syncSkipped": "skipped",
+        "syncUploadedLabel": "Uploaded",
+        "syncDownloadedLabel": "Downloaded",
+        "syncSkippedLabel": "Skipped",
         "close": "Close"
     },
     "removeModal": {

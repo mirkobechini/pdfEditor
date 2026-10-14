@@ -230,8 +230,9 @@
         "syncError": "Errore di sincronizzazione",
         "syncCompleteTitle": "Sync completato",
         "syncCompleteDesc": "Riepilogo della sincronizzazione cloud:",
-        "syncDownloaded": "scaricati",
-        "syncSkipped": "saltati",
+        "syncUploadedLabel": "Caricati",
+        "syncDownloadedLabel": "Scaricati",
+        "syncSkippedLabel": "Saltati",
         "close": "Chiudi"
     },
     "removeModal": {

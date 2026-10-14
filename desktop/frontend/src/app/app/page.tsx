@@ -249,9 +249,9 @@ export default function EditorPage() {
                         <h2 className="mb-1 text-base font-bold text-white">{te("syncCompleteTitle")}</h2>
                         <p className="mb-4 text-[12px] text-[#918476]">{te("syncCompleteDesc")}</p>
                         <div className="mb-5 space-y-1.5 rounded-xl border border-white/8 bg-white/[0.03] p-4 text-sm">
-                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncUploaded")}:</span><span className="font-semibold text-white">{lastSyncResult.uploaded}</span></p>
-                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncDownloaded")}:</span><span className="font-semibold text-white">{lastSyncResult.downloaded}</span></p>
-                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncSkipped")}:</span><span className="font-semibold text-white">{lastSyncResult.skipped}</span></p>
+                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncUploadedLabel")}</span><span className="font-semibold text-white">{lastSyncResult.uploaded}</span></p>
+                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncDownloadedLabel")}</span><span className="font-semibold text-white">{lastSyncResult.downloaded}</span></p>
+                            <p className="flex justify-between"><span className="text-[#c4b9ad]">{te("syncSkippedLabel")}</span><span className="font-semibold text-white">{lastSyncResult.skipped}</span></p>
                             {lastSyncResult.errors.length > 0 && (
                                 <p className="pt-2 text-[12px] text-red-400">
                                     {te("syncError")}: {lastSyncResult.errors.join(", ")}
