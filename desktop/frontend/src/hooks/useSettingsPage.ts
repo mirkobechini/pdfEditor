@@ -197,12 +197,12 @@ export function useSettingsPage() {
             loadOllamaModels();
         } else {
             setOllamaModels([]);
-            setModelCatalog(PROVIDER_MODEL_CATALOG[prov] || []);
+            loadProviderModels(prov);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mindConfig.provider, mindLoaded]);
 
-    // Punto 8: elenco modelli Ollama locali (da /mind/ollama/models).
+    // Punto 8 (15/10): elenco modelli Ollama locali (da /mind/ollama/models).
     async function loadOllamaModels() {
         try {
             const res = await fetch(`${getApiBaseUrl()}/mind/ollama/models`);
@@ -212,6 +212,20 @@ export function useSettingsPage() {
             setOllamaModels(models);
         } catch {
             setOllamaModels([]);
+        }
+    }
+
+    // Punto (15/10): modelli REALI del provider cloud via /mind/models (con la
+    // key salvata); se fallisce o non ci sono modelli, ripiega sul catalogo noto.
+    async function loadProviderModels(provider: string) {
+        try {
+            const res = await fetch(`${getApiBaseUrl()}/mind/models?provider=${encodeURIComponent(provider)}`);
+            if (!res.ok) { setModelCatalog(PROVIDER_MODEL_CATALOG[provider] || []); return; }
+            const data = await res.json();
+            const models = Array.isArray(data.models) ? data.models.filter((m: unknown) => typeof m === "string") : [];
+            setModelCatalog(models.length > 0 ? models : (PROVIDER_MODEL_CATALOG[provider] || []));
+        } catch {
+            setModelCatalog(PROVIDER_MODEL_CATALOG[provider] || []);
         }
     }
 

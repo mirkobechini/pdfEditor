@@ -148,6 +148,65 @@ class TestReq(BaseModel):
     model: str | None = None
 
 
+@router.get(
+    "/models",
+    summary="Modelli disponibili per provider",
+    description="Interroga l'API del provider (Ollama /api/tags, OpenAI/OpenRouter /models, Anthropic /v1/models) e restituisce i modelli reali disponibili. Punto 15/10: scegliere il modello tra quelli esistenti, non digitarli.",
+)
+async def models(provider: str = "ollama", model_hint: str | None = None):
+    """Elenco modelli reali del provider (punto 15/10).
+
+    Per Ollama interroga /api/tags (modelli scaricati). Per OpenAI/OpenRouter
+    interroga /models con la key. Per Anthropic /v1/models. Se la chiamata
+    fallisce o manca la key, torna [] (la UI ripiega sul catalogo noto).
+    """
+    from app.deep_agent.config import env_for, load as config_load
+
+    cfg = config_load()
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=6) as client:
+            if provider == "ollama":
+                base = os.environ.get("PDFMIND_OLLAMA_URL", "http://localhost:11434")
+                r = await client.get(f"{base}/api/tags")
+                if r.status_code != 200:
+                    return {"models": [], "ok": False, "message": f"Ollama non raggiungibile ({r.status_code})"}
+                data = r.json()
+                names = sorted(m.get("name", "") for m in data.get("models", []) if m.get("name"))
+                return {"models": names, "ok": True}
+
+            # Provider cloud: usa la chiave salvata o env.
+            env_key = env_for(provider)
+            key = cfg.get("api_key") or os.environ.get(env_key, "")
+            if not key:
+                return {"models": [], "ok": False, "message": "Nessuna chiave API configurata per questo provider"}
+            if provider == "anthropic":
+                base = os.environ.get("PDFMIND_ANTHROPIC_BASE_URL", "https://api.anthropic.com/v1")
+                r = await client.get(f"{base}/models", headers={"x-api-key": key, "anthropic-version": "2023-06-01"})
+                if r.status_code != 200:
+                    return {"models": [], "ok": False, "message": f"Anthropic errore {r.status_code}"}
+                names = sorted(m.get("id", "") for m in r.json().get("data", []) if m.get("id"))
+                return {"models": names, "ok": True}
+            if provider == "openrouter":
+                base = os.environ.get("PDFMIND_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+                r = await client.get(f"{base}/models", headers={"Authorization": f"Bearer {key}"})
+                if r.status_code != 200:
+                    return {"models": [], "ok": False, "message": f"OpenRouter errore {r.status_code}"}
+                names = sorted(m.get("id", "") for m in r.json().get("data", []) if m.get("id"))
+                return {"models": names, "ok": True}
+            # OpenAI / HuggingFace (endpoint OpenAI-compatibile)
+            base = os.environ.get("PDFMIND_OPENAI_BASE_URL", "https://api.openai.com/v1")
+            if provider == "huggingface":
+                base = os.environ.get("PDFMIND_HF_BASE_URL", "https://api-inference.huggingface.co/v1")
+            r = await client.get(f"{base}/models", headers={"Authorization": f"Bearer {key}"})
+            if r.status_code != 200:
+                return {"models": [], "ok": False, "message": f"{provider} errore {r.status_code}"}
+            names = sorted(m.get("id", "") for m in r.json().get("data", []) if m.get("id"))
+            return {"models": names, "ok": True}
+    except Exception as e:  # noqa: BLE001
+        return {"models": [], "ok": False, "message": f"Errore: {type(e).__name__}"}
+
+
 @router.post(
     "/test",
     summary="Prova connessione al provider",
