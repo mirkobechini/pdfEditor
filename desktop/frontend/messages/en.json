@@ -48,7 +48,7 @@
     "internalError": "An unexpected error occurred",
     "ocrUnavailable": "OCR is not available on this server. Please contact the administrator.",
     "unknownError": "An unexpected error occurred",
-    "version": "v0.1.39",
+    "version": "v0.1.41",
     "license": "Open Source License"
   },
   "pdf": {
@@ -179,7 +179,11 @@
     "deepAgentApiKeyPlaceholder": "Leave empty to keep unchanged",
     "deepAgentSave": "Save configuration",
     "deepAgentWizardTitle": "AI Assistant (Deep Agent)",
-    "deepAgentWizardDesc": "Configure the AI assistant for your documents. Use a local model (Ollama) or provide YOUR key for Claude, OpenAI, OpenRouter or Hugging Face."
+    "deepAgentWizardDesc": "Configure the AI assistant for your documents. Use a local model (Ollama) or provide YOUR key for Claude, OpenAI, OpenRouter or Hugging Face.",
+    "deepAgentTesting": "Testing...",
+    "deepAgentTest": "Test connection",
+    "deepAgentTestOk": "Connection OK ✓",
+    "deepAgentTestFail": "Connection failed"
   },
   "editor": {
     "openLocalPdf": "Open Local PDF",
@@ -628,6 +632,10 @@
     "task": "Task",
     "errorAuth": "Authentication failed. Please sign in again and retry.",
     "errorValidation": "Invalid request: check your question and retry.",
-    "errorConnection": "Could not reach the assistant. The backend may not be running."
+    "errorConnection": "Could not reach the assistant. The backend may not be running.",
+    "checking": "Checking configuration...",
+    "notConfiguredTitle": "Assistant not configured",
+    "notConfiguredDesc": "Configure the Deep Agent (provider + model) in Settings first, then you can use the chat.",
+    "goToSettings": "Go to Settings"
   }
 }

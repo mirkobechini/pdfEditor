@@ -6,6 +6,7 @@ Sicurezza: in questa tranche vengono esposti SOLO i profili `user` (mai dev);
 le azioni sensibili (scrivi_output) passano da HITL se `interrupt_on` è attivo.
 """
 
+import os
 import uuid
 
 from fastapi import APIRouter, HTTPException, status
@@ -106,6 +107,69 @@ async def put_config(req: ConfigUpdate):
     cfg = req.model_dump(exclude_none=True)
     config_save(cfg)
     return config_public(config_load())
+
+
+@router.get(
+    "/ollama/models",
+    summary="Elenco modelli Ollama locali",
+    description="Riporta i modelli scaricati sull'Ollama locale (punto 8: listino, non input libero).",
+)
+async def ollama_models():
+    """Elenco modelli Ollama scaricati sulla macchina."""
+    base_url = os.environ.get("PDFMIND_OLLAMA_URL", "http://localhost:11434")
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=4) as client:
+            r = await client.get(f"{base_url}/api/tags")
+        if r.status_code != 200:
+            return {"models": [], "ok": False, "message": f"Ollama non raggiungibile ({r.status_code})"}
+        data = r.json()
+        names = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
+        return {"models": names, "ok": True}
+    except Exception as e:  # noqa: BLE001
+        return {"models": [], "ok": False, "message": f"Errore: {type(e).__name__}"}
+
+
+class TestReq(BaseModel):
+    provider: str | None = None
+    model: str | None = None
+
+
+@router.post(
+    "/test",
+    summary="Prova connessione al provider",
+    description="Verifica che il provider configurato (con la key salvata) sia raggiungibile (punto 10).",
+)
+async def test_connection(req: TestReq):
+    """Prova connessione al provider Deep Agent configurato."""
+    cfg = config_load()
+    provider = req.provider or cfg.get("provider", "ollama")
+    model = req.model or cfg.get("model", "")
+    if provider == "ollama":
+        base_url = os.environ.get("PDFMIND_OLLAMA_URL", "http://localhost:11434")
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=4) as client:
+                r = await client.get(f"{base_url}/api/tags")
+            if r.status_code != 200:
+                return {"ok": False, "message": "Ollama non raggiungibile"}
+            return {"ok": True, "message": "Ollama raggiungibile ✓"}
+        except Exception as e:  # noqa: BLE001
+            return {"ok": False, "message": f"Ollama non raggiungibile: {type(e).__name__}"}
+    # Provider cloud: verifica solo che ci sia una key configurata (non facciamo
+    # chiamate che costano; il test reale avviene al primo uso in chat).
+    env_key = {
+        "anthropic": "PDFMIND_ANTHROPIC_API_KEY",
+        "openai": "PDFMIND_OPENAI_API_KEY",
+        "openrouter": "PDFMIND_OPENROUTER_API_KEY",
+        "huggingface": "PDFMIND_HF_API_KEY",
+    }.get(provider)
+    has_key = bool(env_key and os.environ.get(env_key)) or bool(cfg.get("api_key"))
+    if not has_key:
+        return {"ok": False, "message": "Nessuna chiave API configurata per questo provider"}
+    if not model:
+        return {"ok": False, "message": "Nessun modello configurato"}
+    return {"ok": True, "message": f"Configurazione {provider} completa ({model})"}
 
 
 @router.post(

@@ -3,6 +3,8 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { getApiBaseUrl } from "../shared/tauri";
+import { api } from "../shared/api";
+import { useRouter } from "next/navigation";
 
 const API_BASE = getApiBaseUrl();
 
@@ -37,9 +39,13 @@ function isControl(text: string): boolean {
 /**
  * Chat Assistant (T4a): pallino flottante in basso a destra (stile chatbot web)
  * che apre un pannello chat collegato al motore /mind/chat (streaming SSE).
+ *
+ * Punto 6 (Mirko 15/10): se il Deep Agent non è configuraato, guida l'utente
+ * verso la configurazione invece di lasciarlo scrivere in chat.
  */
 export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
     const tc = useTranslations("chat");
+    const router = useRouter();
     const [open, setOpen] = React.useState(false);
     const [messages, setMessages] = React.useState<Message[]>([
         { role: "assistant", content: tc("welcome") },
@@ -49,6 +55,25 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
     const [tasks, setTasks] = React.useState<HudTask[]>([]);
     const taskIdRef = React.useRef(0);
     const bottomRef = React.useRef<HTMLDivElement>(null);
+
+    // Config Deep Agent: se non configurato (provvider non valido / nessuna key
+    // per un provider cloud), mostriamo l'invito alla config al posto dell'input.
+    const [configReady, setConfigReady] = React.useState<boolean | null>(null); // null = checking
+
+    React.useEffect(() => {
+        if (!open) return;
+        let cancelled = false;
+        api.getMindConfig()
+            .then((cfg) => {
+                if (cancelled) return;
+                // Config pronta se: ollama (locale, senza key) oppure un provider
+                // cloud con has_api_key true.
+                const ready = cfg.provider === "ollama" || (cfg.provider !== "" && cfg.has_api_key);
+                setConfigReady(ready);
+            })
+            .catch(() => { if (!cancelled) setConfigReady(false); });
+        return () => { cancelled = true; };
+    }, [open]);
 
     React.useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -108,7 +133,6 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                 }
                 buf = buf.slice(buf.lastIndexOf("\n\n") + 2);
             }
-            // Stream concluso senza errore: i task si considerano completati.
             if (sawDone || partial) {
                 setTasks((prev) => prev.map((t) => ({ ...t, status: "done" as const })));
             }
@@ -135,7 +159,7 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                 <button
                     onClick={() => setOpen(true)}
                     aria-label="Chat assistente AI"
-                    className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#f7871f] text-2xl shadow-[0_8px_22px_rgba(247,135,31,0.4)] transition hover:scale-105 hover:bg-[#ff9b37]"
+                    className="fixed bottom-20 right-8 z-40 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-[#f7871f] text-2xl shadow-[0_8px_22px_rgba(247,135,31,0.4)] transition hover:scale-105 hover:bg-[#ff9b37]"
                 >
                     🐵
                 </button>
@@ -143,13 +167,13 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
 
             {/* Pannello chat */}
             {open && (
-                <div className="fixed bottom-5 right-5 z-40 flex h-[520px] w-[380px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#221b16] shadow-2xl">
+                <div className="fixed bottom-20 right-8 z-40 flex h-[520px] w-[380px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#221b16] shadow-2xl">
                     <div className="flex items-center justify-between border-b border-white/10 bg-[#1f1914] px-4 py-3">
                         <div className="flex items-center gap-2">
                             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f7871f]/20 text-lg">🐵</span>
                             <p className="text-[14px] font-semibold text-white">{tc("title")}</p>
                         </div>
-                        <button onClick={() => setOpen(false)} className="cursor-pointer rounded-lg px-2 text-[#9d9184] transition hover:bg-white/5 hover:text-white">
+                        <button onClick={() => setOpen(false)} aria-label="Chiudi chat" className="cursor-pointer rounded-lg px-2 text-[#9d9184] transition hover:bg-white/5 hover:text-white">
                             ✕
                         </button>
                     </div>
@@ -199,22 +223,41 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                     </div>
 
                     <div className="border-t border-white/10 p-3">
-                        <div className="flex items-center gap-2">
-                            <input
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={(e) => { if (e.key === "Enter") send(); }}
-                                placeholder={tc("placeholder")}
-                                className="flex-1 rounded-xl border border-white/10 bg-[#1b1612] px-3 py-2 text-[13px] text-white outline-none focus:border-[#f7871f]"
-                            />
-                            <button
-                                onClick={send}
-                                disabled={sending || !input.trim()}
-                                className="cursor-pointer rounded-xl bg-[#f7871f] px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[#ff9b37] disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {tc("send")}
-                            </button>
-                        </div>
+                        {configReady === false ? (
+                            /* Punto 6: non configurato → guida alla configurazione. */
+                            <div className="rounded-xl border border-white/10 bg-[#1b1612] px-4 py-3 text-center">
+                                <p className="text-[13px] font-semibold text-white">{tc("notConfiguredTitle")}</p>
+                                <p className="mt-1 text-[12px] text-[#9d9184]">{tc("notConfiguredDesc")}</p>
+                                <button
+                                    onClick={() => {
+                                        setOpen(false);
+                                        router.push("/settings");
+                                    }}
+                                    className="mt-3 cursor-pointer rounded-xl bg-[#f7871f] px-5 py-2 text-[13px] font-semibold text-white transition hover:bg-[#ff9b37]"
+                                >
+                                    {tc("goToSettings")}
+                                </button>
+                            </div>
+                        ) : configReady === true ? (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === "Enter") send(); }}
+                                    placeholder={tc("placeholder")}
+                                    className="flex-1 rounded-xl border border-white/10 bg-[#1b1612] px-3 py-2 text-[13px] text-white outline-none focus:border-[#f7871f]"
+                                />
+                                <button
+                                    onClick={send}
+                                    disabled={sending || !input.trim()}
+                                    className="cursor-pointer rounded-xl bg-[#f7871f] px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[#ff9b37] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {tc("send")}
+                                </button>
+                            </div>
+                        ) : (
+                            <p className="text-center text-[12px] text-[#9d9184]">{tc("checking")}</p>
+                        )}
                     </div>
                 </div>
             )}

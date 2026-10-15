@@ -48,7 +48,7 @@
     "internalError": "Errore interno imprevisto",
     "ocrUnavailable": "L'OCR non è disponibile su questo server. Contatta l'amministratore.",
     "unknownError": "Errore imprevisto",
-    "version": "v0.1.39",
+    "version": "v0.1.41",
     "license": "Open Source License"
   },
   "pdf": {
@@ -179,7 +179,11 @@
     "deepAgentApiKeyPlaceholder": "Lascia vuoto per non cambiarla",
     "deepAgentSave": "Salva configurazione",
     "deepAgentWizardTitle": "Assistente AI (Deep Agent)",
-    "deepAgentWizardDesc": "Configura l'assistente AI per i tuoi documenti. Puoi usare un modello locale (Ollama) oppure fornire la TUA chiave di Claude, OpenAI, OpenRouter o Hugging Face."
+    "deepAgentWizardDesc": "Configura l'assistente AI per i tuoi documenti. Puoi usare un modello locale (Ollama) oppure fornire la TUA chiave di Claude, OpenAI, OpenRouter o Hugging Face.",
+    "deepAgentTesting": "Test in corso...",
+    "deepAgentTest": "Prova connessione",
+    "deepAgentTestOk": "Connessione riuscita ✓",
+    "deepAgentTestFail": "Connessione fallita"
   },
   "editor": {
     "openLocalPdf": "Apri PDF locale",
@@ -628,6 +632,10 @@
     "task": "Attività",
     "errorAuth": "Autenticazione non valida. Accedi di nuovo e riprova.",
     "errorValidation": "Richiesta non valida: controlla la domanda e riprova.",
-    "errorConnection": "Impossibile raggiungere l'assistente. Il backend potrebbe non essere attivo."
+    "errorConnection": "Impossibile raggiungere l'assistente. Il backend potrebbe non essere attivo.",
+    "checking": "Verifica configurazione...",
+    "notConfiguredTitle": "Assistente non configurato",
+    "notConfiguredDesc": "Configura prima il Deep Agent (provider + modello) nelle Impostazioni, poi potrai usare la chat.",
+    "goToSettings": "Vai alle Impostazioni"
   }
 }

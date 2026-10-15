@@ -6,7 +6,7 @@ import { api } from "../shared/api";
 import { useAuth } from "../shared/auth";
 import { useLocaleSetter } from "../lib/i18n";
 import { usePreferences } from "../lib/preferences";
-import { isTauri, tauriInvoke } from "../shared/tauri";
+import { isTauri, tauriInvoke, getApiBaseUrl } from "../shared/tauri";
 import { useCloudSync } from "./useCloudSync";
 import { useApiError } from "./useApiError";
 import type { MindConfig } from "../shared/api";
@@ -63,6 +63,12 @@ export function useSettingsPage() {
     const [mindLoaded, setMindLoaded] = React.useState(false);
     const [mindPendingApiKey] = React.useState<{ current?: string }>({});
     const [mindConfigError, setMindConfigError] = React.useState("");
+    // Punto 8: elenco modelli Ollama scaricati sulla macchina.
+    const [ollamaModels, setOllamaModels] = React.useState<string[]>([]);
+    // Punto 10: prova connessione al provider.
+    const [mindTesting, setMindTesting] = React.useState(false);
+    const [mindTestResult, setMindTestResult] = React.useState("");
+    const [mindTestOk, setMindTestOk] = React.useState(false);
 
     // Carica la config Deep Agent dal backend alla prima apertura (lazy, una volta).
     React.useEffect(() => {
@@ -101,9 +107,50 @@ export function useSettingsPage() {
             const updated = await api.updateMindConfig(patch);
             setMindConfig(updated);
             mindPendingApiKey.current = undefined;
+            if (updated.provider === "ollama") loadOllamaModels();
         } catch (err) {
             console.error("Failed to save Deep Agent config:", err);
             setMindConfigError(apiError(err));
+        }
+    }
+
+    // Punto 8: elenco modelli Ollama locali (da /mind/ollama/models).
+    async function loadOllamaModels() {
+        try {
+            const res = await fetch(`${getApiBaseUrl()}/mind/ollama/models`);
+            if (!res.ok) { setOllamaModels([]); return; }
+            const data = await res.json();
+            const models = Array.isArray(data.models) ? data.models.filter((m: unknown) => typeof m === "string") : [];
+            setOllamaModels(models);
+        } catch {
+            setOllamaModels([]);
+        }
+    }
+
+    // Punto 10: prova connessione al provider configurato.
+    async function testMindConnection() {
+        setMindTesting(true);
+        setMindTestResult("");
+        setMindConfigError("");
+        try {
+            const res = await fetch(`${getApiBaseUrl()}/mind/test`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ provider: mindConfig.provider, model: mindConfig.model || undefined }),
+            });
+            const data = await res.json();
+            if (res.ok && data.ok) {
+                setMindTestOk(true);
+                setMindTestResult(data.message || ts("deepAgentTestOk"));
+            } else {
+                setMindTestOk(false);
+                setMindTestResult(data.message || data.detail || ts("deepAgentTestFail"));
+            }
+        } catch {
+            setMindTestOk(false);
+            setMindTestResult(ts("deepAgentTestFail"));
+        } finally {
+            setMindTesting(false);
         }
     }
 
@@ -168,6 +215,7 @@ export function useSettingsPage() {
         bugSending, setBugSending, bugError, bugDone, openUrl, closeBugReport, submitBugReport,
         // deep agent
         mindConfig, setMindConfigField, setMindConfigApiKey, saveMindConfig, mindConfigError,
+        ollamaModels, testMindConnection, mindTesting, mindTestResult, mindTestOk,
         // docs
         docsOpen, setDocsOpen,
     };

@@ -259,22 +259,21 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 <p className="text-[16px] font-semibold text-white">{ts("deepAgentModel")}</p>
                                 <p className="text-[14px] text-[#9d9184]">{ts("deepAgentModelDesc")}</p>
                             </div>
-                            <input
-                                value={s.mindConfig.model}
-                                onChange={(e) => s.setMindConfigField("model", e.target.value)}
-                                className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
-                            />
-                        </div>
-                        <div className="flex items-center justify-between py-3 border-b border-white/10">
-                            <div>
-                                <p className="text-[16px] font-semibold text-white">{ts("deepAgentWorkspace")}</p>
-                                <p className="text-[14px] text-[#9d9184]">{ts("deepAgentWorkspaceDesc")}</p>
-                            </div>
-                            <input
-                                value={s.mindConfig.workspace}
-                                onChange={(e) => s.setMindConfigField("workspace", e.target.value)}
-                                className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
-                            />
+                            {s.mindConfig.provider === "ollama" && (s.ollamaModels?.length ?? 0) > 0 ? (
+                                <select
+                                    value={s.mindConfig.model}
+                                    onChange={(e) => s.setMindConfigField("model", e.target.value)}
+                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                >
+                                    {s.ollamaModels.map((m) => <option key={m} value={m}>{m}</option>)}
+                                </select>
+                            ) : (
+                                <input
+                                    value={s.mindConfig.model}
+                                    onChange={(e) => s.setMindConfigField("model", e.target.value)}
+                                    className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                />
+                            )}
                         </div>
                         <div className="flex items-center justify-between py-3 border-b border-white/10">
                             <div>
@@ -300,14 +299,27 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
                             />
                         </div>
-                        <div className="pt-4">
+                        <div className="pt-4 flex items-center gap-3">
                             <button
                                 onClick={() => s.saveMindConfig()}
                                 className="cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2 text-[14px] font-semibold text-white transition hover:bg-[#ff9b37]"
                             >
                                 {ts("deepAgentSave")}
                             </button>
+                            <button
+                                onClick={() => s.testMindConnection()}
+                                disabled={s.mindTesting}
+                                className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-6 py-2 text-[14px] font-semibold text-white transition hover:bg-[#342c25] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {s.mindTesting ? ts("deepAgentTesting") : ts("deepAgentTest")}
+                            </button>
                         </div>
+                        {s.mindConfigError && (
+                            <p className="mt-3 text-[12px] text-red-300">{s.mindConfigError}</p>
+                        )}
+                        {s.mindTestResult && (
+                            <p className={`mt-2 text-[12px] ${s.mindTestOk ? "text-[#48c769]" : "text-red-300"}`}>{s.mindTestResult}</p>
+                        )}
                     </div>
                 </div>
             );
