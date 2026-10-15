@@ -12,8 +12,8 @@ from app.deep_agent.tools.profile import get_tools
 
 DEF_MODEL = "ollama:qwen3.5"
 
-# Provider supportati dal resolver (T1a: + anthropic, openrouter).
-SUPPORTED_PREFIXES = ("ollama:", "anthropic:", "openai:", "openrouter:")
+# Provider supportati dal resolver.
+SUPPORTED_PREFIXES = ("ollama:", "anthropic:", "openai:", "openrouter:", "huggingface:")
 
 
 def _resolve_model(m: str):
@@ -37,6 +37,14 @@ def _resolve_model(m: str):
             model=name,
             base_url=os.environ.get("PDFMIND_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
             api_key=os.environ.get("PDFMIND_OPENROUTER_API_KEY", ""),
+        )
+    if m.startswith("huggingface:"):
+        # Hugging Face Inference è OpenAI-compatible: riusiamo ChatOpenAI col suo endpoint.
+        name = m.split(":", 1)[1]
+        return ChatOpenAI(
+            model=name,
+            base_url=os.environ.get("PDFMIND_HF_BASE_URL", "https://api-inference.huggingface.co/v1"),
+            api_key=os.environ.get("PDFMIND_HF_API_KEY", ""),
         )
     if m.startswith("openai:"):
         name = m.split(":", 1)[1]
