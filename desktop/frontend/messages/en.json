@@ -615,5 +615,16 @@
     "deleteLocal": "Delete locally too",
     "keepLocal": "Keep local only",
     "reupload": "Re-upload to cloud"
+  },
+  "chat": {
+    "title": "AI Assistant",
+    "placeholder": "Ask something about your documents...",
+    "send": "Send",
+    "close": "Close",
+    "welcome": "Hi! I'm your AI assistant. Ask me a question about your documents.",
+    "error": "Connection error with the assistant. Try again.",
+    "sending": "The assistant is responding...",
+    "thinking": "Thinking...",
+    "task": "Task"
   }
 }

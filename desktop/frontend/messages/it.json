@@ -615,5 +615,16 @@
     "deleteLocal": "Elimina anche in locale",
     "keepLocal": "Tieni solo in locale",
     "reupload": "Ricarica sul cloud"
+  },
+  "chat": {
+    "title": "Assistente AI",
+    "placeholder": "Chiedi qualcosa sui tuoi documenti...",
+    "send": "Invia",
+    "close": "Chiudi",
+    "welcome": "Ciao! Sono il tuo assistente AI. Fammi una domanda sui tuoi documenti.",
+    "error": "Errore di connessione all'assistente. Riprova.",
+    "sending": "L'assistente sta rispondendo...",
+    "thinking": "Sto pensando...",
+    "task": "Attività"
   }
 }

@@ -10,6 +10,7 @@ import { EditorViewer } from "../components/EditorViewer";
 import { EditorModals } from "../components/EditorModals";
 import CloudDeletionDialog from "../../components/CloudDeletionDialog";
 import { EditorFooter } from "../components/EditorFooter";
+import { ChatAssistant } from "../../components/ChatAssistant";
 import { useCloudSyncContext } from "../../hooks/CloudSyncContext";
 import { useEditorState } from "../../hooks/useEditorState";
 
@@ -235,6 +236,9 @@ export default function EditorPage() {
             />
 
             <EditorFooter te={te} apiBase={API_BASE} />
+
+            {/* T4a: Chat Assistant — pallino flottante in basso a destra (sotto le fast actions) */}
+            <ChatAssistant apiBase={API_BASE} />
 
             {/* #990: PDF eliminati dal cloud → chiedi se eliminarli anche in locale */}
             <CloudDeletionDialog
