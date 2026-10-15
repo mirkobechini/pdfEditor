@@ -237,13 +237,14 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                     <h1 className="text-[36px] font-bold leading-tight text-white">{ts("deepAgentTitle")}</h1>
                     <p className="mt-1 text-[14px] text-[#9d9184]">{ts("deepAgentDesc")}</p>
                     <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
+                        {/* Provider: primo già selezionato (ollama di default) */}
                         <div className="flex items-center justify-between py-3 border-b border-white/10">
                             <div>
                                 <p className="text-[16px] font-semibold text-white">{ts("deepAgentProvider")}</p>
                                 <p className="text-[14px] text-[#9d9184]">{ts("deepAgentProviderDesc")}</p>
                             </div>
                             <select
-                                value={s.mindConfig.provider}
+                                value={s.mindConfig.provider || "ollama"}
                                 onChange={(e) => s.setMindConfigField("provider", e.target.value)}
                                 className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
                             >
@@ -254,13 +255,32 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 <option value="huggingface">Hugging Face</option>
                             </select>
                         </div>
+
+                        {/* Chiave API: mostrata SOLO per i provider cloud, legata al provider scelto */}
+                        {s.mindConfig.provider !== "ollama" && (
+                            <div className="flex items-center justify-between py-3 border-b border-white/10">
+                                <div>
+                                    <p className="text-[16px] font-semibold text-white">{ts("deepAgentApiKeyFor", { provider: s.mindConfig.provider }) }</p>
+                                    <p className="text-[14px] text-[#9d9184]">{s.mindConfig.has_api_key ? ts("deepAgentApiKeySet") : ts("deepAgentApiKeyNotSet")}</p>
+                                </div>
+                                <input
+                                    type="password"
+                                    placeholder={ts("deepAgentApiKeyPlaceholder")}
+                                    onChange={(e) => { s.setMindConfigApiKey(e.target.value); }}
+                                    className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                />
+                            </div>
+                        )}
+
+                        {/* Modello: select con modelli REALI; per cloud richiede la chiave */}
                         <div className="flex items-center justify-between py-3 border-b border-white/10">
                             <div>
                                 <p className="text-[16px] font-semibold text-white">{ts("deepAgentModel")}</p>
                                 <p className="text-[14px] text-[#9d9184]">{ts("deepAgentModelDesc")}</p>
                             </div>
                             {(() => {
-                                const choices = s.mindConfig.provider === "ollama" ? s.ollamaModels : s.modelCatalog;
+                                const isOllama = s.mindConfig.provider === "ollama";
+                                const choices = isOllama ? s.ollamaModels : s.modelCatalog;
                                 if (choices && choices.length > 0) {
                                     return (
                                         <select
@@ -272,16 +292,21 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                         </select>
                                     );
                                 }
+                                if (!isOllama && !s.mindConfig.has_api_key) {
+                                    // cloud senza chiave → hint, niente modelli inventati
+                                    return <span className="text-[12px] text-[#9d9184]">{ts("deepAgentNeedKeyForModels")}</span>;
+                                }
                                 return (
                                     <input
                                         value={s.mindConfig.model}
                                         onChange={(e) => s.setMindConfigField("model", e.target.value)}
-                                        placeholder={s.mindConfig.provider === "ollama" ? ts("deepAgentModelEmpty") : ""}
+                                        placeholder={isOllama ? ts("deepAgentModelEmpty") : ts("deepAgentModel")}
                                         className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
                                     />
                                 );
                             })()}
                         </div>
+
                         <div className="flex items-center justify-between py-3 border-b border-white/10">
                             <div>
                                 <p className="text-[16px] font-semibold text-white">{ts("deepAgentRag")}</p>
@@ -294,8 +319,9 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${s.mindConfig.rag_enabled ? "right-0.5" : "left-0.5"}`} />
                             </button>
                         </div>
+
+                        {/* Provider di fallback (multi-provider, punto 7) */}
                         <div className="pt-4">
-                            {/* Punto 7: lista provider con precedenza (frecce) + fallback */}
                             <div className="flex items-center justify-between mb-2">
                                 <p className="text-[14px] font-semibold text-white">{ts("deepAgentProviders")}</p>
                                 <button
@@ -324,28 +350,6 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                             <option value="openrouter">OpenRouter</option>
                                             <option value="huggingface">Hugging Face</option>
                                         </select>
-                                        {(() => {
-                                            const rowChoices = s.getModelChoicesForProvider(p.provider);
-                                            if (rowChoices.length > 0) {
-                                                return (
-                                                    <select
-                                                        value={p.model}
-                                                        onChange={(e) => s.updateMindProvider(i, { model: e.target.value })}
-                                                        className="flex-1 cursor-pointer rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
-                                                    >
-                                                        {rowChoices.map((m) => <option key={m} value={m}>{m}</option>)}
-                                                    </select>
-                                                );
-                                            }
-                                            return (
-                                                <input
-                                                    value={p.model}
-                                                    placeholder={ts("deepAgentModel")}
-                                                    onChange={(e) => s.updateMindProvider(i, { model: e.target.value })}
-                                                    className="flex-1 rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
-                                                />
-                                            );
-                                        })()}
                                         {p.provider !== "ollama" && (
                                             <input
                                                 type="password"
@@ -355,6 +359,12 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                                 className="w-24 rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
                                             />
                                         )}
+                                        <input
+                                            value={p.model}
+                                            placeholder={ts("deepAgentModel")}
+                                            onChange={(e) => s.updateMindProvider(i, { model: e.target.value })}
+                                            className="flex-1 rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
+                                        />
                                         <button onClick={() => s.moveMindProvider(i, -1)} disabled={i === 0} className="cursor-pointer rounded-md border border-white/10 px-2 py-1 text-[11px] text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30" title={ts("deepAgentPrecedenceUp")}>↑</button>
                                         <button onClick={() => s.moveMindProvider(i, 1)} disabled={i === (s.mindConfig.providers || []).length - 1} className="cursor-pointer rounded-md border border-white/10 px-2 py-1 text-[11px] text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30" title={ts("deepAgentPrecedenceDown")}>↓</button>
                                         <button onClick={() => s.removeMindProvider(i)} className="cursor-pointer rounded-md border border-red-500/30 px-2 py-1 text-[11px] text-red-300 transition hover:bg-red-500/10" title={ts("deepAgentRemove")}>✕</button>
@@ -374,18 +384,7 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 </button>
                             </div>
                         </div>
-                        <div className="flex items-center justify-between py-3 border-b border-white/10">
-                            <div>
-                                <p className="text-[16px] font-semibold text-white">{ts("deepAgentApiKey")}</p>
-                                <p className="text-[14px] text-[#9d9184]">{s.mindConfig.has_api_key ? ts("deepAgentApiKeySet") : ts("deepAgentApiKeyNotSet")}</p>
-                            </div>
-                            <input
-                                type="password"
-                                placeholder={ts("deepAgentApiKeyPlaceholder")}
-                                onChange={(e) => s.setMindConfigApiKey(e.target.value)}
-                                className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
-                            />
-                        </div>
+
                         <div className="pt-4 flex items-center gap-3">
                             <button
                                 onClick={() => s.saveMindConfig()}

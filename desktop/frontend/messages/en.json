@@ -193,7 +193,9 @@
     "deepAgentRemove": "Remove",
     "deepAgentFallback": "Automatic fallback",
     "deepAgentFallbackDesc": "If the main provider fails, try the next one",
-    "deepAgentModelEmpty": "Pull a model in Ollama (ollama pull) and retry"
+    "deepAgentModelEmpty": "Pull a model in Ollama (ollama pull) and retry",
+    "deepAgentApiKeyFor": "{provider} API key",
+    "deepAgentNeedKeyForModels": "Enter the key to see this provider's models"
   },
   "editor": {
     "openLocalPdf": "Open Local PDF",

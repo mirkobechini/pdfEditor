@@ -14,7 +14,7 @@ import type { MindConfig, MindConfigUpdate, MindProviderEntry } from "../shared/
 const DEFAULT_MIND_CONFIG: MindConfig = {
     provider: "ollama",
     model: "",
-    workspace: "workspace",
+    workspace: "",
     rag_enabled: true,
     streaming: true,
     has_api_key: false,
@@ -67,14 +67,9 @@ export function useSettingsPage() {
     const [mindConfigError, setMindConfigError] = React.useState("");
     // Punto 8: elenco modelli Ollama scaricati sulla macchina.
     const [ollamaModels, setOllamaModels] = React.useState<string[]>([]);
-    // Punto (15/10): modello selezionabile SUBITO al cambio provider.
-    // Catalogo noto per i provider cloud (l'utente sceglie, non digita).
-    const PROVIDER_MODEL_CATALOG: Record<string, string[]> = {
-        anthropic: ["claude-3-7-sonnet-latest", "claude-3-5-haiku-latest", "claude-3-5-sonnet-latest"],
-        openai: ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini"],
-        openrouter: ["anthropic/claude-3.5-sonnet", "openai/gpt-4o", "meta-llama/llama-3.1-405b-instruct"],
-        huggingface: ["meta-llama/Llama-3.2-3B-Instruct", "microsoft/Phi-3-mini-4k-instruct"],
-    };
+    // Modelli reali del provider cloud (solo se c'è la chiave). NIENTE catalogo
+    // hardcoded: senza chiave la lista è vuota (punto 15/10, Mirko: "3 modelli che
+    // non capisco se li hai scelti casualmente").
     const [modelCatalog, setModelCatalog] = React.useState<string[]>([]);
     // Punto 10: prova connessione al provider.
     const [mindTesting, setMindTesting] = React.useState(false);
@@ -83,12 +78,11 @@ export function useSettingsPage() {
     // Punto 7: key per ogni provider della lista (editing locale, salvate al Salva).
     const [providerKeys, setProviderKeys] = React.useState<Record<number, string>>({});
 
-    // Helper (15/10): modelli disponibili per un provider generico (usato sia
-    // nel campo principale sia nelle righe della lista provider). Ollama =
-    // quelli scaricati; cloud = catalogo noto.
+    // Helper (15/10): modelli disponibili per un provider generico. Ollama =
+    // quelli scaricati; cloud = SOLO i reali caricati con la chiave (mai inventati).
     function getModelChoicesForProvider(provider: string): string[] {
         if (provider === "ollama") return ollamaModels;
-        return PROVIDER_MODEL_CATALOG[provider] || [];
+        return modelCatalog;
     }
 
     // Carica la config Deep Agent dal backend alla prima apertura (lazy, una volta).
@@ -102,8 +96,14 @@ export function useSettingsPage() {
         return () => { cancelled = true; };
     }, [mindLoaded]);
 
+    // Punto (15/10): normale il provider attivo (mai vuoto) — il primo è già selezionato.
+    const VALID_PROVIDERS = ["ollama", "anthropic", "openai", "openrouter", "huggingface"];
+    function normalizeProvider(p: string): string {
+        return VALID_PROVIDERS.includes(p) ? p : "ollama";
+    }
+
     function setMindConfigField<K extends keyof MindConfig>(key: K, value: MindConfig[K]) {
-        setMindConfig((prev) => ({ ...prev, [key]: value }));
+        setMindConfig((prev) => ({ ...prev, [key]: key === "provider" ? normalizeProvider(String(value)) : value }));
     }
 
     function setMindConfigApiKey(value: string) {
@@ -187,8 +187,9 @@ export function useSettingsPage() {
     }
 
     // Punto 8 (15/10): appena il provider cambia, carica subito i modelli
-    // disponibili (Ollama = quelli scaricati; cloud = catalogo noto) così il
-    // campo modello è una SELECT, non un input libero.
+    // disponibili (Ollama = quelli scaricati; cloud = SOLO con chiave) così il
+    // campo modello è una SELECT, non un input libero. Se non c'è chiave per un
+    // cloud, la lista resta vuota (con hint in UI).
     React.useEffect(() => {
         if (!mindLoaded) return;
         const prov = mindConfig.provider;
@@ -197,7 +198,7 @@ export function useSettingsPage() {
             loadOllamaModels();
         } else {
             setOllamaModels([]);
-            loadProviderModels(prov);
+            loadProviderModels(prov, (mindPendingApiKey as { current?: string }).current);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mindConfig.provider, mindLoaded]);
@@ -215,17 +216,20 @@ export function useSettingsPage() {
         }
     }
 
-    // Punto (15/10): modelli REALI del provider cloud via /mind/models (con la
-    // key salvata); se fallisce o non ci sono modelli, ripiega sul catalogo noto.
-    async function loadProviderModels(provider: string) {
+    // Punto (15/10): modelli REALI del provider cloud via /mind/models. Usa la
+    // chiave appena digitata (se presente) oppure quella salvata; se non c'è
+    // chiave la lista resta vuota (niente catalogo inventato).
+    async function loadProviderModels(provider: string, apiKey?: string) {
         try {
-            const res = await fetch(`${getApiBaseUrl()}/mind/models?provider=${encodeURIComponent(provider)}`);
-            if (!res.ok) { setModelCatalog(PROVIDER_MODEL_CATALOG[provider] || []); return; }
+            const params = new URLSearchParams({ provider });
+            if (apiKey && apiKey.trim()) params.set("api_key", apiKey.trim());
+            const res = await fetch(`${getApiBaseUrl()}/mind/models?${params.toString()}`);
+            if (!res.ok) { setModelCatalog([]); return; }
             const data = await res.json();
             const models = Array.isArray(data.models) ? data.models.filter((m: unknown) => typeof m === "string") : [];
-            setModelCatalog(models.length > 0 ? models : (PROVIDER_MODEL_CATALOG[provider] || []));
+            setModelCatalog(models);
         } catch {
-            setModelCatalog(PROVIDER_MODEL_CATALOG[provider] || []);
+            setModelCatalog([]);
         }
     }
 
