@@ -31,14 +31,14 @@ def test_chat_default_profile_is_user_without_llm(client, monkeypatch) -> None:
     il guardia profili lasci passare la richiesta (non 400), quindi stream che
     termina subito con [DONE].
     """
-    import app.api.v1.mind as mind_mod
+    import app.deep_agent.agents.pdfmind as pdfmind_mod
+    import app.deep_agent.server.mind as server_mind_mod
 
     async def fake_events(*args, **kwargs):
         yield '[DONE]'
 
-    monkeypatch.setattr(mind_mod, "build_agent", lambda *a, **k: object())
-    monkeypatch.setattr(mind_mod, "_events", fake_events)
-    monkeypatch.setattr(mind_mod, "uuid", __import__("uuid"))
+    monkeypatch.setattr(pdfmind_mod, "build_agent", lambda *a, **k: object())
+    monkeypatch.setattr(server_mind_mod, "_events", fake_events)
 
     r = client.post("/mind/chat", json={"goal": "ciao"})
     assert r.status_code == 200

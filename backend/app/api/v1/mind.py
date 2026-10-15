@@ -13,10 +13,10 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.deep_agent.agents.pdfmind import build_agent
-from app.deep_agent.config import load as config_load, public as config_public, save as config_save
-from app.deep_agent.server.mind import _events, _resume_events
-from app.deep_agent.tools.profile import get_tools
+# NOTA (punto 2, 15/10): i motori deep_agent (deepagents/langchain) sono PESANTI
+# e vengono importati LAZY dentro le funzioni, NON qui a livello di modulo:
+# importarli eager all'avvio di app.main rallenta lo startup del sidecar
+# (misurato: ~2.5s solo per app.main). Si caricano solo al primo uso di /mind/*.
 
 router = APIRouter(prefix="/mind", tags=["mind"], responses={401: {"description": "Non autenticato"}})
 
@@ -59,6 +59,8 @@ async def skills():
     Riporta applicazione, tool, chat (streaming, task, HITL), config e RAG.
     I tool sono le stesse funzioni che l'LLM può chiamare (vedi tools/profile).
     """
+    from app.deep_agent.tools.profile import get_tools
+
     tool_names = [getattr(t, "__name__", str(t)) for t in get_tools("user")]
     return {
         "engine": "deep_agent",
@@ -79,6 +81,8 @@ async def skills():
 )
 async def config():
     """Config Deep Agent (senza chiavi): provider, modello, workspace, RAG, streaming."""
+    from app.deep_agent.config import load as config_load, public as config_public
+
     return config_public(config_load())
 
 
@@ -111,6 +115,8 @@ class ConfigUpdate(BaseModel):
 )
 async def put_config(req: ConfigUpdate):
     """Salva la config in locale. Le chiavi non sono mai esposte nel GET."""
+    from app.deep_agent.config import load as config_load, public as config_public, save as config_save
+
     cfg = req.model_dump(exclude_none=True)
     config_save(cfg)
     return config_public(config_load())
@@ -149,6 +155,8 @@ class TestReq(BaseModel):
 )
 async def test_connection(req: TestReq):
     """Prova connessione al provider Deep Agent configurato."""
+    from app.deep_agent.config import load as config_load
+
     cfg = config_load()
     provider = req.provider or cfg.get("provider", "ollama")
     model = req.model or cfg.get("model", "")
@@ -189,6 +197,9 @@ async def chat(req: ChatReq):
 
     Il profilo è forzato a `user` in questa fase: RAG e tools dev sono fuori scope.
     """
+    from app.deep_agent.agents.pdfmind import build_agent
+    from app.deep_agent.server.mind import _events
+
     profile = (
         req.profile if req.profile in _ALLOWED_PROFILES else "user"
     )  # T0c: profilo non consentito => fallback sicuro a user (mai dev)
@@ -213,7 +224,7 @@ async def approve(req: ApproveReq):
     """Riprende uno stream interrotto da HITL con approvazione/rifiuto."""
     from fastapi.responses import JSONResponse
 
-    from app.deep_agent.server.mind import SESSIONS
+    from app.deep_agent.server.mind import _resume_events, SESSIONS
 
     if req.thread_id not in SESSIONS:
         return JSONResponse({"error": "sessione non trovata"}, status_code=404)
