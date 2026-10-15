@@ -8,7 +8,7 @@ le azioni sensibili (scrivi_output) passano da HITL se `interrupt_on` è attivo.
 
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -16,6 +16,11 @@ from app.deep_agent.agents.pdfmind import build_agent
 from app.deep_agent.server.mind import _events, _resume_events
 
 router = APIRouter(prefix="/mind", tags=["mind"])
+
+# T0c: sicurezza per costruzione — soltanto il profilo `user` è esposto via HTTP in
+# questa fase. Eventuali profili dev (git, log, API, issue) NON esistono nella tool
+# list del profilo user, quindi l'LLM non può nemmeno provare a chiamarli.
+_ALLOWED_PROFILES = {"user"}
 
 
 class ChatReq(BaseModel):
@@ -48,7 +53,14 @@ async def chat(req: ChatReq):
 
     Il profilo è forzato a `user` in questa fase: RAG e tools dev sono fuori scope.
     """
-    profile = "user"  # T0b: solo profilo user, sicurezza per costruzione
+    profile = (
+        req.profile if req.profile in _ALLOWED_PROFILES else "user"
+    )  # T0c: profilo non consentito => fallback sicuro a user (mai dev)
+    if req.profile not in _ALLOWED_PROFILES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"profilo non consentito: {req.profile!r}. Sono ammessi solo: {sorted(_ALLOWED_PROFILES)}",
+        )
     agent = build_agent(req.model, profile)
     return StreamingResponse(
         _events(agent, req.goal, uuid.uuid4().hex, req.history),
