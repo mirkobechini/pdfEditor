@@ -67,6 +67,15 @@ export function useSettingsPage() {
     const [mindConfigError, setMindConfigError] = React.useState("");
     // Punto 8: elenco modelli Ollama scaricati sulla macchina.
     const [ollamaModels, setOllamaModels] = React.useState<string[]>([]);
+    // Punto (15/10): modello selezionabile SUBITO al cambio provider.
+    // Catalogo noto per i provider cloud (l'utente sceglie, non digita).
+    const PROVIDER_MODEL_CATALOG: Record<string, string[]> = {
+        anthropic: ["claude-3-7-sonnet-latest", "claude-3-5-haiku-latest", "claude-3-5-sonnet-latest"],
+        openai: ["gpt-4o", "gpt-4o-mini", "gpt-4.1", "gpt-4.1-mini"],
+        openrouter: ["anthropic/claude-3.5-sonnet", "openai/gpt-4o", "meta-llama/llama-3.1-405b-instruct"],
+        huggingface: ["meta-llama/Llama-3.2-3B-Instruct", "microsoft/Phi-3-mini-4k-instruct"],
+    };
+    const [modelCatalog, setModelCatalog] = React.useState<string[]>([]);
     // Punto 10: prova connessione al provider.
     const [mindTesting, setMindTesting] = React.useState(false);
     const [mindTestResult, setMindTestResult] = React.useState("");
@@ -169,6 +178,22 @@ export function useSettingsPage() {
         setMindConfig((prev) => ({ ...prev, fallback_enabled: val }));
     }
 
+    // Punto 8 (15/10): appena il provider cambia, carica subito i modelli
+    // disponibili (Ollama = quelli scaricati; cloud = catalogo noto) così il
+    // campo modello è una SELECT, non un input libero.
+    React.useEffect(() => {
+        if (!mindLoaded) return;
+        const prov = mindConfig.provider;
+        if (prov === "ollama") {
+            setModelCatalog([]);
+            loadOllamaModels();
+        } else {
+            setOllamaModels([]);
+            setModelCatalog(PROVIDER_MODEL_CATALOG[prov] || []);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mindConfig.provider, mindLoaded]);
+
     // Punto 8: elenco modelli Ollama locali (da /mind/ollama/models).
     async function loadOllamaModels() {
         try {
@@ -270,7 +295,7 @@ export function useSettingsPage() {
         bugSending, setBugSending, bugError, bugDone, openUrl, closeBugReport, submitBugReport,
         // deep agent
         mindConfig, setMindConfigField, setMindConfigApiKey, saveMindConfig, mindConfigError,
-        ollamaModels, testMindConnection, mindTesting, mindTestResult, mindTestOk,
+        ollamaModels, modelCatalog, testMindConnection, mindTesting, mindTestResult, mindTestOk,
         addMindProvider, updateMindProvider, removeMindProvider, moveMindProvider,
         setMindProviderFallback, providerKeys, setProviderKeys,
         // docs

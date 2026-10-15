@@ -43,7 +43,16 @@ CSRF_EXEMPT_PATHS = {
 # protects session cookies, and there's no session to protect here.
 CSRF_EXEMPT_PATH_PREFIXES = (
     "/share/",
+    # Rotta Deep Agent locale (/mind): il sidecar gira in locale, il webview
+    # Tauri è cross-site e non porta cookie CSRF né Bearer; senza esenzione
+    # ogni POST/PUT su /mind/* (test, chat, config) fallisce con 403
+    # "CSRF validation failed" (verificato 15/10). Endpoint locali senza
+    # sessione da proteggere → esentati come /health e /share/.
+    "/mind/",
 )
+
+# Metodi HTTP considerati state-changing (soggetti a CSRF).
+CSRF_MUTATING_METHODS = ("POST", "PUT", "DELETE", "PATCH")
 
 
 def generate_csrf_token() -> str:
@@ -128,7 +137,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # State-changing methods on non-exempt paths: validate CSRF
-        if request.method in ("POST", "PUT", "DELETE", "PATCH"):
+        if request.method in CSRF_MUTATING_METHODS:
             csrf_cookie = request.cookies.get("csrf_token")
             csrf_header = request.headers.get("X-CSRF-Token", "")
 

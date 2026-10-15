@@ -259,21 +259,28 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 <p className="text-[16px] font-semibold text-white">{ts("deepAgentModel")}</p>
                                 <p className="text-[14px] text-[#9d9184]">{ts("deepAgentModelDesc")}</p>
                             </div>
-                            {s.mindConfig.provider === "ollama" && (s.ollamaModels?.length ?? 0) > 0 ? (
-                                <select
-                                    value={s.mindConfig.model}
-                                    onChange={(e) => s.setMindConfigField("model", e.target.value)}
-                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
-                                >
-                                    {s.ollamaModels.map((m) => <option key={m} value={m}>{m}</option>)}
-                                </select>
-                            ) : (
-                                <input
-                                    value={s.mindConfig.model}
-                                    onChange={(e) => s.setMindConfigField("model", e.target.value)}
-                                    className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
-                                />
-                            )}
+                            {(() => {
+                                const choices = s.mindConfig.provider === "ollama" ? s.ollamaModels : s.modelCatalog;
+                                if (choices && choices.length > 0) {
+                                    return (
+                                        <select
+                                            value={s.mindConfig.model}
+                                            onChange={(e) => s.setMindConfigField("model", e.target.value)}
+                                            className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                        >
+                                            {choices.map((m) => <option key={m} value={m}>{m}</option>)}
+                                        </select>
+                                    );
+                                }
+                                return (
+                                    <input
+                                        value={s.mindConfig.model}
+                                        onChange={(e) => s.setMindConfigField("model", e.target.value)}
+                                        placeholder={s.mindConfig.provider === "ollama" ? ts("deepAgentModelEmpty") : ""}
+                                        className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                                    />
+                                );
+                            })()}
                         </div>
                         <div className="flex items-center justify-between py-3 border-b border-white/10">
                             <div>
