@@ -2,6 +2,7 @@ import os
 
 from deepagents import create_deep_agent
 from langchain.agents.middleware import TodoListMiddleware
+from langchain_anthropic import ChatAnthropic
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langgraph.checkpoint.memory import MemorySaver
@@ -11,6 +12,8 @@ from app.deep_agent.tools.profile import get_tools
 
 DEF_MODEL = "ollama:qwen3.5"
 
+# Provider supportati dal resolver (T1a: + anthropic, openrouter).
+SUPPORTED_PREFIXES = ("ollama:", "anthropic:", "openai:", "openrouter:")
 
 
 def _resolve_model(m: str):
@@ -20,6 +23,20 @@ def _resolve_model(m: str):
             model=name,
             base_url=os.environ.get("PDFMIND_OLLAMA_URL", "http://localhost:11434"),
             reasoning=False,
+        )
+    if m.startswith("anthropic:"):
+        name = m.split(":", 1)[1]
+        return ChatAnthropic(
+            model=name,
+            api_key=os.environ.get("PDFMIND_ANTHROPIC_API_KEY", ""),
+            base_url=os.environ.get("PDFMIND_ANTHROPIC_BASE_URL") or None,
+        )
+    if m.startswith("openrouter:"):
+        name = m.split(":", 1)[1]
+        return ChatOpenAI(
+            model=name,
+            base_url=os.environ.get("PDFMIND_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+            api_key=os.environ.get("PDFMIND_OPENROUTER_API_KEY", ""),
         )
     if m.startswith("openai:"):
         name = m.split(":", 1)[1]
