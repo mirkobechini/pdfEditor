@@ -324,12 +324,28 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                             <option value="openrouter">OpenRouter</option>
                                             <option value="huggingface">Hugging Face</option>
                                         </select>
-                                        <input
-                                            value={p.model}
-                                            placeholder={ts("deepAgentModel")}
-                                            onChange={(e) => s.updateMindProvider(i, { model: e.target.value })}
-                                            className="flex-1 rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
-                                        />
+                                        {(() => {
+                                            const rowChoices = s.getModelChoicesForProvider(p.provider);
+                                            if (rowChoices.length > 0) {
+                                                return (
+                                                    <select
+                                                        value={p.model}
+                                                        onChange={(e) => s.updateMindProvider(i, { model: e.target.value })}
+                                                        className="flex-1 cursor-pointer rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
+                                                    >
+                                                        {rowChoices.map((m) => <option key={m} value={m}>{m}</option>)}
+                                                    </select>
+                                                );
+                                            }
+                                            return (
+                                                <input
+                                                    value={p.model}
+                                                    placeholder={ts("deepAgentModel")}
+                                                    onChange={(e) => s.updateMindProvider(i, { model: e.target.value })}
+                                                    className="flex-1 rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
+                                                />
+                                            );
+                                        })()}
                                         {p.provider !== "ollama" && (
                                             <input
                                                 type="password"

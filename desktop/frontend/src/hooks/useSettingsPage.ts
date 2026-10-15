@@ -83,6 +83,14 @@ export function useSettingsPage() {
     // Punto 7: key per ogni provider della lista (editing locale, salvate al Salva).
     const [providerKeys, setProviderKeys] = React.useState<Record<number, string>>({});
 
+    // Helper (15/10): modelli disponibili per un provider generico (usato sia
+    // nel campo principale sia nelle righe della lista provider). Ollama =
+    // quelli scaricati; cloud = catalogo noto.
+    function getModelChoicesForProvider(provider: string): string[] {
+        if (provider === "ollama") return ollamaModels;
+        return PROVIDER_MODEL_CATALOG[provider] || [];
+    }
+
     // Carica la config Deep Agent dal backend alla prima apertura (lazy, una volta).
     React.useEffect(() => {
         if (mindLoaded) return;
@@ -295,7 +303,7 @@ export function useSettingsPage() {
         bugSending, setBugSending, bugError, bugDone, openUrl, closeBugReport, submitBugReport,
         // deep agent
         mindConfig, setMindConfigField, setMindConfigApiKey, saveMindConfig, mindConfigError,
-        ollamaModels, modelCatalog, testMindConnection, mindTesting, mindTestResult, mindTestOk,
+        ollamaModels, modelCatalog, getModelChoicesForProvider, testMindConnection, mindTesting, mindTestResult, mindTestOk,
         addMindProvider, updateMindProvider, removeMindProvider, moveMindProvider,
         setMindProviderFallback, providerKeys, setProviderKeys,
         // docs
