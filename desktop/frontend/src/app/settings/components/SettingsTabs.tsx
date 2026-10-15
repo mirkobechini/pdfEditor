@@ -231,6 +231,86 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                     )}
                 </div>
             );
+        case "deep_agent":
+            return (
+                <div className="max-w-[900px]">
+                    <h1 className="text-[36px] font-bold leading-tight text-white">{ts("deepAgentTitle")}</h1>
+                    <p className="mt-1 text-[14px] text-[#9d9184]">{ts("deepAgentDesc")}</p>
+                    <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
+                        <div className="flex items-center justify-between py-3 border-b border-white/10">
+                            <div>
+                                <p className="text-[16px] font-semibold text-white">{ts("deepAgentProvider")}</p>
+                                <p className="text-[14px] text-[#9d9184]">{ts("deepAgentProviderDesc")}</p>
+                            </div>
+                            <select
+                                value={s.mindConfig.provider}
+                                onChange={(e) => s.setMindConfigField("provider", e.target.value)}
+                                className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                            >
+                                <option value="ollama">Ollama (locale)</option>
+                                <option value="anthropic">Claude (Anthropic)</option>
+                                <option value="openai">OpenAI</option>
+                                <option value="openrouter">OpenRouter</option>
+                                <option value="huggingface">Hugging Face</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center justify-between py-3 border-b border-white/10">
+                            <div>
+                                <p className="text-[16px] font-semibold text-white">{ts("deepAgentModel")}</p>
+                                <p className="text-[14px] text-[#9d9184]">{ts("deepAgentModelDesc")}</p>
+                            </div>
+                            <input
+                                value={s.mindConfig.model}
+                                onChange={(e) => s.setMindConfigField("model", e.target.value)}
+                                className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                            />
+                        </div>
+                        <div className="flex items-center justify-between py-3 border-b border-white/10">
+                            <div>
+                                <p className="text-[16px] font-semibold text-white">{ts("deepAgentWorkspace")}</p>
+                                <p className="text-[14px] text-[#9d9184]">{ts("deepAgentWorkspaceDesc")}</p>
+                            </div>
+                            <input
+                                value={s.mindConfig.workspace}
+                                onChange={(e) => s.setMindConfigField("workspace", e.target.value)}
+                                className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                            />
+                        </div>
+                        <div className="flex items-center justify-between py-3 border-b border-white/10">
+                            <div>
+                                <p className="text-[16px] font-semibold text-white">{ts("deepAgentRag")}</p>
+                                <p className="text-[14px] text-[#9d9184]">{ts("deepAgentRagDesc")}</p>
+                            </div>
+                            <button
+                                onClick={() => s.setMindConfigField("rag_enabled", !s.mindConfig.rag_enabled)}
+                                className={`h-6 w-11 rounded-full relative transition-colors cursor-pointer ${s.mindConfig.rag_enabled ? "bg-[#f7871f]" : "bg-white/20"}`}
+                            >
+                                <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${s.mindConfig.rag_enabled ? "right-0.5" : "left-0.5"}`} />
+                            </button>
+                        </div>
+                        <div className="flex items-center justify-between py-3 border-b border-white/10">
+                            <div>
+                                <p className="text-[16px] font-semibold text-white">{ts("deepAgentApiKey")}</p>
+                                <p className="text-[14px] text-[#9d9184]">{s.mindConfig.has_api_key ? ts("deepAgentApiKeySet") : ts("deepAgentApiKeyNotSet")}</p>
+                            </div>
+                            <input
+                                type="password"
+                                placeholder={ts("deepAgentApiKeyPlaceholder")}
+                                onChange={(e) => s.setMindConfigApiKey(e.target.value)}
+                                className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
+                            />
+                        </div>
+                        <div className="pt-4">
+                            <button
+                                onClick={() => s.saveMindConfig()}
+                                className="cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2 text-[14px] font-semibold text-white transition hover:bg-[#ff9b37]"
+                            >
+                                {ts("deepAgentSave")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
         case "editor":
             return (
                 <div className="max-w-[900px]">

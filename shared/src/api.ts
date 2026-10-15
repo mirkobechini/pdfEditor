@@ -875,6 +875,43 @@ export class ApiClient {
       { status },
     );
   }
+
+  // ─── Deep Agent (mind) ─────────────────────────────────────────────
+
+  /** Recupera la config Deep Agent (senza chiavi API). */
+  async getMindConfig(): Promise<MindConfig> {
+    return this._get<MindConfig>(`${this.baseUrl}/mind/config`);
+  }
+
+  /** Aggiorna la config Deep Agent (provider, modello, workspace, RAG...). */
+  async updateMindConfig(
+    patch: Partial<MindConfigUpdate>,
+  ): Promise<MindConfig> {
+    return this._putJson<MindConfig>(
+      `${this.baseUrl}/mind/config`,
+      patch,
+    );
+  }
+}
+
+/** Config Deep Agent esposta dal backend (senza chiavi). */
+export interface MindConfig {
+  provider: string;
+  model: string;
+  workspace: string;
+  rag_enabled: boolean;
+  streaming: boolean;
+  has_api_key: boolean;
+}
+
+/** Aggiornamento parziale della config Deep Agent. */
+export interface MindConfigUpdate {
+  provider?: string;
+  model?: string;
+  workspace?: string;
+  rag_enabled?: boolean;
+  streaming?: boolean;
+  api_key?: string;
 }
 
 /** Singleton instance for PDF operations (local sidecar) */

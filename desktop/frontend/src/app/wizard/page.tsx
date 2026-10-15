@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { isTauri, tauriInvoke } from "../../shared/tauri";
 import { usePreferences } from "../../lib/preferences";
+import { api } from "../../shared/api";
 
 /** Open a URL in the system browser (works in Tauri webview). */
 async function openExternal(url: string) {
@@ -36,6 +37,7 @@ async function pickDirectory(): Promise<string | null> {
 const steps = [
     { id: "01", title: "title" },
     { id: "02", title: "workFolder" },
+    { id: "03", title: "deepAgentWizardTitle" },
 ] as const;
 
 export default function WizardPage() {
@@ -46,6 +48,10 @@ export default function WizardPage() {
     const [workFolder, setWorkFolder] = React.useState(prefs.default_save_folder || "");
     const [indexing, setIndexing] = React.useState(false);
     const [acceptedTerms, setAcceptedTerms] = React.useState(false);
+    const [agentProvider, setAgentProvider] = React.useState("ollama");
+    const [agentModel, setAgentModel] = React.useState("");
+    const [agentRag, setAgentRag] = React.useState(true);
+    const [agentApiKey, setAgentApiKey] = React.useState("");
 
     function handleNext() {
         if (currentStep < steps.length - 1) {
@@ -57,6 +63,14 @@ export default function WizardPage() {
         if (workFolder.trim()) {
             updatePrefs({ default_save_folder: workFolder.trim() });
         }
+        // Salva la config Deep Agent (best-effort: se il backend non è pronto ignora).
+        const modelForProvider = agentModel.trim() || (agentProvider === "ollama" ? "qwen3.5" : "");
+        api.updateMindConfig({
+            provider: agentProvider,
+            model: modelForProvider || undefined,
+            rag_enabled: agentRag,
+            api_key: agentApiKey.trim() || undefined,
+        }).catch(() => undefined);
         localStorage.setItem("pdfeditor_wizard_done", "true");
         router.push("/login");
     }
@@ -141,6 +155,68 @@ export default function WizardPage() {
                                     <div className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${indexing ? "translate-x-5" : ""}`} />
                                 </div>
                             </label>
+                        </div>
+                    </>
+                );
+            case 2:
+                return (
+                    <>
+                        <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#f7871f]">{tw("step03")}</p>
+                        <h1 className="mt-3 text-[50px] font-bold leading-[1.08] tracking-[-0.02em] text-white">{tw("deepAgentWizardTitle")}</h1>
+                        <p className="mt-6 max-w-[700px] text-[14px] leading-relaxed text-[#9d9184]">
+                            {tw("deepAgentWizardDesc")}
+                        </p>
+                        <div className="mt-9 max-w-[700px] space-y-4">
+                            <div className="rounded-2xl border border-white/10 bg-[#1b1612] p-4">
+                                <p className="text-[14px] font-semibold text-white">{tw("wizardProvider")}</p>
+                                <p className="mt-1 text-[12px] text-[#9d9184]">{tw("wizardProviderDesc")}</p>
+                                <select
+                                    value={agentProvider}
+                                    onChange={(e) => setAgentProvider(e.target.value)}
+                                    className="mt-3 w-full cursor-pointer rounded-[12px] border border-white/10 bg-[#221b16] px-4 py-2.5 text-[13px] text-white outline-none focus:border-[#f7871f]"
+                                >
+                                    <option value="ollama">Ollama (locale)</option>
+                                    <option value="anthropic">Claude (Anthropic)</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="openrouter">OpenRouter</option>
+                                    <option value="huggingface">Hugging Face</option>
+                                </select>
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-[#1b1612] p-4">
+                                <p className="text-[14px] font-semibold text-white">{tw("wizardModel")}</p>
+                                <p className="mt-1 text-[12px] text-[#9d9184]">{tw("wizardModelDesc")}</p>
+                                <input
+                                    type="text"
+                                    value={agentModel}
+                                    onChange={(e) => setAgentModel(e.target.value)}
+                                    placeholder={tw("wizardModelPlaceholder")}
+                                    className="mt-3 w-full rounded-[12px] border border-white/10 bg-[#221b16] px-4 py-2.5 text-[13px] text-white outline-none focus:border-[#f7871f]"
+                                />
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-[#1b1612] p-4">
+                                <p className="text-[14px] font-semibold text-white">{tw("wizardApiKey")}</p>
+                                <input
+                                    type="password"
+                                    value={agentApiKey}
+                                    onChange={(e) => setAgentApiKey(e.target.value)}
+                                    placeholder={tw("wizardApiKeyPlaceholder")}
+                                    className="mt-3 w-full rounded-[12px] border border-white/10 bg-[#221b16] px-4 py-2.5 text-[13px] text-white outline-none focus:border-[#f7871f]"
+                                />
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-[#1b1612] p-4">
+                                <label className="flex cursor-pointer items-center justify-between">
+                                    <div>
+                                        <p className="text-[14px] font-semibold text-white">{tw("wizardRag")}</p>
+                                        <p className="text-[12px] text-[#9d9184]">{tw("wizardRagDesc")}</p>
+                                    </div>
+                                    <div
+                                        className={`relative h-6 w-11 cursor-pointer rounded-full transition ${agentRag ? "bg-[#f7871f]" : "bg-white/15"}`}
+                                        onClick={() => setAgentRag(!agentRag)}
+                                    >
+                                        <div className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${agentRag ? "translate-x-5" : ""}`} />
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </>
                 );

@@ -9,11 +9,22 @@ import { usePreferences } from "../lib/preferences";
 import { isTauri, tauriInvoke } from "../shared/tauri";
 import { useCloudSync } from "./useCloudSync";
 import { useApiError } from "./useApiError";
+import type { MindConfig } from "../shared/api";
+
+const DEFAULT_MIND_CONFIG: MindConfig = {
+    provider: "ollama",
+    model: "",
+    workspace: "workspace",
+    rag_enabled: true,
+    streaming: true,
+    has_api_key: false,
+};
 
 const sections = [
     { id: "general", label: "general" },
     { id: "appearance", label: "appearance" },
     { id: "editor", label: "editor" },
+    { id: "deep_agent", label: "deepAgent" },
     { id: "cloud", label: "cloud" },
     { id: "shortcuts", label: "shortcuts" },
     { id: "advanced", label: "advanced" },
@@ -47,6 +58,54 @@ export function useSettingsPage() {
     const [bugSending, setBugSending] = React.useState(false);
     const [bugError, setBugError] = React.useState("");
     const [bugDone, setBugDone] = React.useState(false);
+    // Deep Agent config (#932 T3b)
+    const [mindConfig, setMindConfig] = React.useState<MindConfig>(DEFAULT_MIND_CONFIG);
+    const [mindLoaded, setMindLoaded] = React.useState(false);
+    const [mindPendingApiKey] = React.useState<{ current?: string }>({});
+    const [mindConfigError, setMindConfigError] = React.useState("");
+
+    // Carica la config Deep Agent dal backend alla prima apertura (lazy, una volta).
+    React.useEffect(() => {
+        if (mindLoaded) return;
+        let cancelled = false;
+        api.getMindConfig()
+            .then((cfg) => { if (!cancelled) setMindConfig(cfg); })
+            .catch(() => { /* backend non attivo: tieni i default */ })
+            .finally(() => { if (!cancelled) setMindLoaded(true); });
+        return () => { cancelled = true; };
+    }, [mindLoaded]);
+
+    function setMindConfigField<K extends keyof MindConfig>(key: K, value: MindConfig[K]) {
+        setMindConfig((prev) => ({ ...prev, [key]: value }));
+    }
+
+    function setMindConfigApiKey(value: string) {
+        setMindPendingApiKeyRef(value);
+    }
+
+    function setMindPendingApiKeyRef(value: string) {
+        mindPendingApiKey.current = value;
+    }
+
+    async function saveMindConfig() {
+        const key = (mindPendingApiKey as { current?: string }).current ?? undefined;
+        const patch: Partial<MindConfig> & { api_key?: string } = {
+            provider: mindConfig.provider,
+            model: mindConfig.model,
+            workspace: mindConfig.workspace,
+            rag_enabled: mindConfig.rag_enabled,
+            streaming: mindConfig.streaming,
+        };
+        if (key !== undefined) patch.api_key = key;
+        try {
+            const updated = await api.updateMindConfig(patch);
+            setMindConfig(updated);
+            mindPendingApiKey.current = undefined;
+        } catch (err) {
+            console.error("Failed to save Deep Agent config:", err);
+            setMindConfigError(apiError(err));
+        }
+    }
 
     function openUrl(url: string) {
         if (isTauri()) {
@@ -107,6 +166,8 @@ export function useSettingsPage() {
         // bug report
         bugReportOpen, setBugReportOpen, bugTitle, setBugTitle, bugDesc, setBugDesc,
         bugSending, setBugSending, bugError, bugDone, openUrl, closeBugReport, submitBugReport,
+        // deep agent
+        mindConfig, setMindConfigField, setMindConfigApiKey, saveMindConfig, mindConfigError,
         // docs
         docsOpen, setDocsOpen,
     };
