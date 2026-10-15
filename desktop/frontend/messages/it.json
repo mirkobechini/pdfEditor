@@ -625,6 +625,9 @@
     "error": "Errore di connessione all'assistente. Riprova.",
     "sending": "L'assistente sta rispondendo...",
     "thinking": "Sto pensando...",
-    "task": "Attività"
+    "task": "Attività",
+    "errorAuth": "Autenticazione non valida. Accedi di nuovo e riprova.",
+    "errorValidation": "Richiesta non valida: controlla la domanda e riprova.",
+    "errorConnection": "Impossibile raggiungere l'assistente. Il backend potrebbe non essere attivo."
   }
 }

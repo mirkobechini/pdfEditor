@@ -6,7 +6,9 @@ import { getApiBaseUrl } from "../shared/tauri";
 
 const API_BASE = getApiBaseUrl();
 
-type Message = { role: "user" | "assistant"; content: string };
+type Message = { role: "user" | "assistant"; content: string; error?: boolean };
+
+type HudTask = { id: string; label: string; status: "pending" | "running" | "done" };
 
 /** Parsing dello stream SSE del motore /mind/chat. */
 function parseSseChunk(buf: string): string[] {
@@ -44,7 +46,8 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
     ]);
     const [input, setInput] = React.useState("");
     const [sending, setSending] = React.useState(false);
-    const [tasks, setTasks] = React.useState<string[]>([]);
+    const [tasks, setTasks] = React.useState<HudTask[]>([]);
+    const taskIdRef = React.useRef(0);
     const bottomRef = React.useRef<HTMLDivElement>(null);
 
     React.useEffect(() => {
@@ -61,15 +64,18 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
         setInput("");
         setSending(true);
         setTasks([]);
+        taskIdRef.current = 0;
 
         let partial = "";
+        let sawDone = false;
         try {
             const res = await fetch(`${apiBase}/mind/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ goal, profile: "user", history }),
             });
-            if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.body) throw new Error("NO_BODY");
 
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
@@ -81,9 +87,11 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                 buf += decoder.decode(value, { stream: true });
                 const events = parseSseChunk(buf);
                 for (const ev of events) {
-                    if (ev === "[DONE]") continue;
+                    if (ev === "[DONE]") { sawDone = true; continue; }
                     if (ev.startsWith("[TASK]")) {
-                        setTasks((prev) => [...prev, ev.slice(6)]);
+                        taskIdRef.current += 1;
+                        const id = String(taskIdRef.current);
+                        setTasks((prev) => [...prev, { id, label: ev.slice(6), status: "running" }]);
                         continue;
                     }
                     if (isControl(ev)) continue;
@@ -100,14 +108,23 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                 }
                 buf = buf.slice(buf.lastIndexOf("\n\n") + 2);
             }
-            if (partial) {
-                // già aggiunto in streaming; nessun altro passo necessario
+            // Stream concluso senza errore: i task si considerano completati.
+            if (sawDone || partial) {
+                setTasks((prev) => prev.map((t) => ({ ...t, status: "done" as const })));
             }
-        } catch {
-            setMessages((prev) => [...prev, { role: "assistant", content: tc("error") }]);
+        } catch (err) {
+            const msg =
+                err instanceof Error && err.message === "HTTP 401"
+                    ? tc("errorAuth")
+                    : err instanceof Error && err.message === "HTTP 422"
+                      ? tc("errorValidation")
+                      : err instanceof Error && err.message === "NO_BODY"
+                        ? tc("errorConnection")
+                        : tc("error");
+            setMessages((prev) => [...prev, { role: "assistant", content: msg, error: true }]);
         } finally {
             setSending(false);
-            setTasks([]);
+            setTimeout(() => setTasks([]), 1200);
         }
     }
 
@@ -146,7 +163,9 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                                         className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-[13px] leading-relaxed ${
                                             m.role === "user"
                                                 ? "bg-[#f7871f] text-white"
-                                                : "border border-white/10 bg-white/[0.04] text-[#f4f1ee]"
+                                                : m.error
+                                                  ? "border border-red-500/30 bg-red-500/10 text-red-300"
+                                                  : "border border-white/10 bg-white/[0.04] text-[#f4f1ee]"
                                         }`}
                                     >
                                         {m.content}
@@ -157,8 +176,15 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                         {tasks.length > 0 && (
                             <div className="mb-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
                                 <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-[#f7871f]">{tc("task")}</p>
-                                {tasks.map((t, i) => (
-                                    <p key={i} className="text-[12px] text-[#c4b9ad]">• {t}</p>
+                                {tasks.map((t) => (
+                                    <p key={t.id} className="flex items-center gap-2 py-0.5 text-[12px] text-[#c4b9ad]">
+                                        {t.status === "done" ? (
+                                            <span className="text-[#48c769]">✓</span>
+                                        ) : (
+                                            <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#f7871f]/30 border-t-[#f7871f]" style={{ verticalAlign: "middle" }} />
+                                        )}
+                                        {t.label}
+                                    </p>
                                 ))}
                             </div>
                         )}

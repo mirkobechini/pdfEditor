@@ -625,6 +625,9 @@
     "error": "Connection error with the assistant. Try again.",
     "sending": "The assistant is responding...",
     "thinking": "Thinking...",
-    "task": "Task"
+    "task": "Task",
+    "errorAuth": "Authentication failed. Please sign in again and retry.",
+    "errorValidation": "Invalid request: check your question and retry.",
+    "errorConnection": "Could not reach the assistant. The backend may not be running."
   }
 }
