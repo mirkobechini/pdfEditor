@@ -22,13 +22,12 @@ def test_mind_health_route_exposed(client) -> None:
 
 
 def test_mind_config_route_default_user(client) -> None:
-    """GET /mind/config espone la config del profilo user, RAG off in T0b."""
+    """GET /mind/config espone la config pubblica (senza chiavi) del profilo user."""
     r = client.get("/mind/config")
     assert r.status_code == 200
     body = r.json()
-    assert body["profile"] == "user"
-    assert body["rag"] is False
-    assert body["streaming"] is True
+    assert body["provider"]
+    assert "api_key" not in body
 
 
 def test_mind_route_rejects_wrong_method(client) -> None:

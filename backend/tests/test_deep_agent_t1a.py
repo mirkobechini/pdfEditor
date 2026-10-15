@@ -51,7 +51,13 @@ def test_openai_still_resolves_to_chatopenai(monkeypatch) -> None:
 
 
 def test_supported_prefixes() -> None:
-    assert set(SUPPORTED_PREFIXES) == {"ollama:", "anthropic:", "openai:", "openrouter:"}
+    assert set(SUPPORTED_PREFIXES) == {
+        "ollama:",
+        "anthropic:",
+        "openai:",
+        "openrouter:",
+        "huggingface:",
+    }
 
 
 def test_unknown_model_string_returned_as_is() -> None:
