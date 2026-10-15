@@ -17,7 +17,8 @@ try:
 except Exception:  # noqa: BLE001
     fitz = None  # type: ignore
 
-DEFAULT_WORKSPACE = os.environ.get("PDFMIND_WORKSPACE", "workspace")
+from app.deep_agent.config import resolve_workspace
+
 INDEX_DIR = ".mind_index"
 
 
@@ -35,7 +36,7 @@ class Chunk:
 
 
 def _workspace() -> Path:
-    return Path(os.environ.get("PDFMIND_WORKSPACE", DEFAULT_WORKSPACE))
+    return Path(resolve_workspace())
 
 
 def extract_text(path: Path) -> str:

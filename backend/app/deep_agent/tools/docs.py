@@ -6,11 +6,13 @@ from pathlib import Path
 
 from pypdf import PdfReader
 
+from app.deep_agent.config import resolve_workspace
+
 _DT = re.compile(r"\b\d{1,2}[/.]\d{1,2}[/.]\d{2,4}\b")
 
 
 def _resolve(p: str) -> Path:
-    root = Path(os.environ.get("PDFMIND_WORKSPACE", "workspace"))
+    root = Path(resolve_workspace())
     if p == "/workspace":
         return root
     if p.startswith("/workspace/"):

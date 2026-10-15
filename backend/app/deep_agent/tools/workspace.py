@@ -3,9 +3,11 @@
 import os
 from pathlib import Path
 
+from app.deep_agent.config import resolve_workspace
+
 
 def _root() -> Path:
-    return Path(os.environ.get("PDFMIND_WORKSPACE", "workspace"))
+    return Path(resolve_workspace())
 
 
 def _in_root(p: Path) -> bool:

@@ -167,3 +167,43 @@ def env_for(provider: str) -> dict:
 def fallback_enabled(cfg: dict | None = None) -> bool:
     c = cfg or load()
     return bool(c.get("fallback_enabled", True))
+
+
+def resolve_workspace(cfg: dict | None = None) -> str:
+    """Risolve la cartella di lavoro del Deep Agent (punto 15/10).
+
+    Priorità:
+    1. env `PDFMIND_WORKSPACE` (override esplicito)
+    2. campo `workspace` della config Deep Agent (se NON è il default "workspace")
+    3. `default_save_folder` della preferenza dell'utente (la cartella di lavoro
+       configurata in Avanzate/Impostazioni) — così il Deep Agent usa davvero
+       la cartella dell'utente, non una cartella fittizia chiamata "workspace"
+    4. fallback "workspace"
+    """
+    env = os.environ.get("PDFMIND_WORKSPACE", "").strip()
+    if env:
+        return env
+    c = cfg or load()
+    ws = str(c.get("workspace", "") or "").strip()
+    if ws and ws != "workspace":
+        return ws
+    # legge la default_save_folder dell'utente dal DB locale
+    try:
+        from app.core.database import SessionLocal
+        from app.repositories.preference_repo import PreferenceRepository
+        db = SessionLocal()
+        try:
+            prefs = PreferenceRepository(db)
+            # primo utente con una preferenza salvata (sidecar locale single-user)
+            import sqlalchemy
+            row = db.query(sqlalchemy.text("1")).first()  # noqa
+            from app.models.preference import UserPreference
+            first = db.query(UserPreference).order_by(UserPreference.user_id).first()
+            folder = (getattr(first, "default_save_folder", None) or "").strip() if first else ""
+            if folder:
+                return folder
+        finally:
+            db.close()
+    except Exception:  # noqa: BLE001
+        pass
+    return "workspace"

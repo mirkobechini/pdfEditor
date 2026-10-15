@@ -153,12 +153,14 @@ class TestReq(BaseModel):
     summary="Modelli disponibili per provider",
     description="Interroga l'API del provider (Ollama /api/tags, OpenAI/OpenRouter /models, Anthropic /v1/models) e restituisce i modelli reali disponibili. Punto 15/10: scegliere il modello tra quelli esistenti, non digitarli.",
 )
-async def models(provider: str = "ollama", model_hint: str | None = None):
+async def models(provider: str = "ollama", model_hint: str | None = None, api_key: str | None = None):
     """Elenco modelli reali del provider (punto 15/10).
 
     Per Ollama interroga /api/tags (modelli scaricati). Per OpenAI/OpenRouter
-    interroga /models con la key. Per Anthropic /v1/models. Se la chiamata
-    fallisce o manca la key, torna [] (la UI ripiega sul catalogo noto).
+    interroga /models con la key. Per Anthropic /v1/models. Se arriva `api_key`
+    nella query (chiave appena digitata nella UI, non ancora salvata) la usa;
+    altrimenti la key salvata/env. Se manca la chiave o la chiamata fallisce,
+    torna [] con un messaggio (la UI NON inventa un catalogo).
     """
     from app.deep_agent.config import env_for, load as config_load
 
@@ -175,11 +177,11 @@ async def models(provider: str = "ollama", model_hint: str | None = None):
                 names = sorted(m.get("name", "") for m in data.get("models", []) if m.get("name"))
                 return {"models": names, "ok": True}
 
-            # Provider cloud: usa la chiave salvata o env.
+            # Provider cloud: usa la chiave passata nella query, altrimenti salvata/env.
             env_key = env_for(provider)
-            key = cfg.get("api_key") or os.environ.get(env_key, "")
+            key = api_key or cfg.get("api_key") or os.environ.get(env_key, "")
             if not key:
-                return {"models": [], "ok": False, "message": "Nessuna chiave API configurata per questo provider"}
+                return {"models": [], "ok": False, "message": "Inserisci la chiave API per questo provider per vedere i modelli"}
             if provider == "anthropic":
                 base = os.environ.get("PDFMIND_ANTHROPIC_BASE_URL", "https://api.anthropic.com/v1")
                 r = await client.get(f"{base}/models", headers={"x-api-key": key, "anthropic-version": "2023-06-01"})
