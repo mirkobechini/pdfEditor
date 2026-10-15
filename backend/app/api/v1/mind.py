@@ -10,9 +10,10 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.deep_agent.agents.pdfmind import build_agent
+from app.deep_agent.config import load as config_load, public as config_public, save as config_save
 from app.deep_agent.server.mind import _events, _resume_events
 
 router = APIRouter(prefix="/mind", tags=["mind"])
@@ -43,8 +44,31 @@ async def health():
 
 @router.get("/config")
 async def config():
-    """Config minima esposta dal motore (profilo di default user)."""
-    return {"profile": "user", "rag": False, "streaming": True}
+    """Config Deep Agent (senza chiavi): provider, modello, workspace, RAG, streaming."""
+    return config_public(config_load())
+
+
+class ConfigUpdate(BaseModel):
+    """Aggiornamento della config Deep Agent (T3a).
+
+    `api_key` resta locale, mai restituita in GET. Un campo assente non viene
+    modificato; una stringa vuota elimina la chiave.
+    """
+
+    provider: str | None = Field(default=None, description="ollama|anthropic|openai|openrouter|huggingface")
+    model: str | None = None
+    workspace: str | None = None
+    rag_enabled: bool | None = None
+    streaming: bool | None = None
+    api_key: str | None = None
+
+
+@router.put("/config")
+async def put_config(req: ConfigUpdate):
+    """Salva la config in locale. Le chiavi non sono mai esposte nel GET."""
+    cfg = req.model_dump(exclude_none=True)
+    config_save(cfg)
+    return config_public(config_load())
 
 
 @router.post("/chat")
