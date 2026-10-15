@@ -179,3 +179,75 @@ def annotate_pdf(
         return f"Errore: {e}"
     finally:
         db.close()
+
+
+def ocr_pdf(pdf_id: str, language: str = "eng") -> str:
+    """Esegue l'OCR su un PDF scansionato e lo rende ricercabile.
+
+    - pdf_id: id del PDF
+    - language: codice lingua Tesseract (es. eng, ita)
+    """
+    if not pdf_id.strip():
+        return "Errore: manca pdf_id"
+    db = SessionLocal()
+    try:
+        user_id = _current_user_id()
+        pdf, chars, already_searchable = PdfService(db).ocr_pdf(pdf_id, user_id, language=language)
+        if already_searchable:
+            return f"✓ PDF già dotato di testo: {pdf.original_filename} (nessuna modifica)"
+        return f"✓ OCR completato su {pdf.original_filename} ({chars} caratteri riconosciuti)"
+    except ValueError as e:
+        return f"Errore: {e}"
+    finally:
+        db.close()
+
+
+def compress_pdf(pdf_id: str, quality: str = "medium", overwrite: bool = False) -> str:
+    """Comprime un PDF riducendo le dimensioni.
+
+    - pdf_id: id del PDF
+    - quality: low | medium | high
+    - overwrite: se True sostituisce l'originale, altrimenti crea una nuova copia
+    """
+    if quality not in ("low", "medium", "high"):
+        return "Errore: quality deve essere low | medium | high"
+    db = SessionLocal()
+    try:
+        user_id = _current_user_id()
+        doc = PdfMergeSplitService(db).compress(
+            pdf_id,
+            user_id,
+            quality=quality,
+            overwrite=overwrite,
+        )
+        return f"✓ PDF compresso: {doc.original_filename}"
+    except ValueError as e:
+        return f"Errore: {e}"
+    finally:
+        db.close()
+
+
+def convert_docx_to_pdf(filename: str, content_b64: str) -> str:
+    """Converte un documento DOCX in PDF (come nuova importazione).
+
+    - filename: nome del file (es. relazione.docx)
+    - content_b64: contenuto del DOCX codificato in base64
+    """
+    if not filename.lower().endswith(".docx"):
+        return "Errore: supportati solo file .docx"
+    if not content_b64:
+        return "Errore: manca il contenuto del file"
+    try:
+        import base64 as _b64
+        content = _b64.b64decode(content_b64)
+    except Exception:
+        return "Errore: content_b64 non è base64 valido"
+    db = SessionLocal()
+    try:
+        user_id = _current_user_id()
+        doc = PdfService(db).import_file_to_pdf(filename, content, user_id)
+        return f"✓ Convertito in PDF: {doc.original_filename}"
+    except ValueError as e:
+        return f"Errore: {e}"
+    finally:
+        db.close()
