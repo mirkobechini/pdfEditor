@@ -1,0 +1,183 @@
+import json
+import os
+import uuid
+
+from fastapi import FastAPI
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from langgraph.types import Command
+from pydantic import BaseModel
+
+from app.deep_agent.agents.pdfmind import build_agent
+
+app = FastAPI(title="PdfMind")
+
+# Sessione HITL: thread_id -> {"agent", "config"} per riprendere uno stream interrotto
+SESSIONS: dict[str, dict] = {}
+
+
+@app.get("/")
+async def index():
+    return FileResponse("web/index.html")
+
+
+@app.get("/favicon.svg")
+async def favicon():
+    return FileResponse("web/favicon.svg", media_type="image/svg+xml")
+
+
+@app.get("/config")
+async def config():
+    return {"profile": os.environ.get("PDFMIND_PROFILE", "user")}
+
+
+class ChatReq(BaseModel):
+    goal: str
+    profile: str = "user"
+    model: str | None = None
+    history: list[dict] = []
+
+
+def _text(chunk) -> str:
+    if not isinstance(chunk, dict):
+        return ""
+    model = chunk.get("model")
+    msgs = model.get("messages") if isinstance(model, dict) else None
+    if not msgs:
+        return ""
+    m = msgs[-1]
+    c = getattr(m, "content", None)
+    if isinstance(c, str):
+        return c
+    if isinstance(c, list):
+        return "".join(p.get("text", "") for p in c if isinstance(p, dict))
+    return ""
+
+
+def _tools(chunk) -> list[str]:
+    if not isinstance(chunk, dict):
+        return []
+    model = chunk.get("model")
+    msgs = model.get("messages") if isinstance(model, dict) else None
+    if not msgs:
+        return []
+    m = msgs[-1]
+    out = []
+    for tc in (getattr(m, "tool_calls", None) or []):
+        if isinstance(tc, dict):
+            name = tc.get("name")
+        else:
+            name = getattr(tc, "name", None)
+        if name:
+            out.append(name)
+    return out
+
+
+def _todos(chunk) -> list[str]:
+    if not isinstance(chunk, dict):
+        return []
+    model = chunk.get("model")
+    msgs = model.get("messages") if isinstance(model, dict) else None
+    if not msgs:
+        return []
+    m = msgs[-1]
+    out = []
+    for tc in (getattr(m, "tool_calls", None) or []):
+        name = tc.get("name") if isinstance(tc, dict) else getattr(tc, "name", None)
+        if name not in ("write_todos", "todo", "todo_list"):
+            continue
+        args = tc.get("args") if isinstance(tc, dict) else getattr(tc, "args", {}) or {}
+        for item in (args.get("todos") or args.get("items") or []):
+            if isinstance(item, dict):
+                t = item.get("task") or item.get("todo") or ""
+            else:
+                t = str(item)
+            if t:
+                out.append(str(t))
+    return out
+
+
+def _interrupt_name(chunk) -> str | None:
+    if not isinstance(chunk, dict):
+        return None
+    inter = chunk.get("__interrupt__")
+    if inter is None:
+        return None
+    first = inter[0] if isinstance(inter, (tuple, list)) else inter
+    value = getattr(first, "value", first)
+    if isinstance(value, dict):
+        reqs = value.get("action_requests") or []
+        if reqs:
+            return reqs[0].get("name", "azione")
+    return "azione"
+
+
+def _evt(v: str) -> str:
+    return f"data: {json.dumps(v)}\n\n"
+
+
+async def _events(agent, goal: str, thread_id: str, history: list[dict] | None = None):
+    cfg = {"configurable": {"thread_id": thread_id, "checkpoint_ns": "", "checkpoint_id": ""}}
+    SESSIONS[thread_id] = {"agent": agent, "config": cfg}
+    yield _evt(f"[THREAD] {thread_id}")
+    msgs = []
+    for h in history or []:
+        role = h.get("role", "user")
+        content = h.get("content", "")
+        if content and role in ("user", "assistant"):
+            msgs.append({"role": role, "content": content})
+    msgs.append({"role": "user", "content": goal})
+    async for chunk in agent.astream({"messages": msgs}, config=cfg):
+        name = _interrupt_name(chunk)
+        if name:
+            yield _evt(f"[HITL] {name}")
+            return
+        for t in _todos(chunk):
+            yield _evt(f"[TASK] {t}")
+        for t in _tools(chunk):
+            yield _evt(f"[STEP] {t}")
+        t = _text(chunk)
+        if t:
+            yield _evt(t)
+    SESSIONS.pop(thread_id, None)
+    yield _evt("[DONE]")
+
+
+async def _resume_events(thread_id: str, decision: dict):
+    sess = SESSIONS.get(thread_id)
+    if not sess:
+        yield _evt("[DONE]")
+        return
+    agent, cfg = sess["agent"], sess["config"]
+    async for chunk in agent.astream(Command(resume={"decisions": [decision]}), config=cfg):
+        name = _interrupt_name(chunk)
+        if name:
+            yield _evt(f"[HITL] {name}")
+            return
+        for t in _todos(chunk):
+            yield _evt(f"[TASK] {t}")
+        for t in _tools(chunk):
+            yield _evt(f"[STEP] {t}")
+        t = _text(chunk)
+        if t:
+            yield _evt(t)
+    SESSIONS.pop(thread_id, None)
+    yield _evt("[DONE]")
+
+
+@app.post("/chat")
+async def chat(req: ChatReq):
+    agent = build_agent(req.model, req.profile)
+    return StreamingResponse(_events(agent, req.goal, uuid.uuid4().hex, req.history), media_type="text/event-stream")
+
+
+class ApproveReq(BaseModel):
+    thread_id: str
+    approve: bool
+
+
+@app.post("/approve")
+async def approve(req: ApproveReq):
+    if req.thread_id not in SESSIONS:
+        return JSONResponse({"error": "sessione non trovata"}, status_code=404)
+    decision = {"type": "approve" if req.approve else "reject"}
+    return StreamingResponse(_resume_events(req.thread_id, decision), media_type="text/event-stream")
