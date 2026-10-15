@@ -13,12 +13,23 @@ import { EditorFooter } from "../components/EditorFooter";
 import { ChatAssistant } from "../../components/ChatAssistant";
 import { useCloudSyncContext } from "../../hooks/CloudSyncContext";
 import { useEditorState } from "../../hooks/useEditorState";
+import { tauriInvoke } from "../../shared/tauri";
 
 const API_BASE = getApiBaseUrl();
 
 export default function EditorPage() {
     const te = useTranslations("editor");
     const { user } = useAuth();
+    // Punto 11: F12 apre i devtools webview (debug) anche in release.
+    React.useEffect(() => {
+        function onKey(e: KeyboardEvent) {
+            if (e.key === "F12") {
+                tauriInvoke("open_devtools").catch(() => {});
+            }
+        }
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, []);
     // Istanza condivisa del sync cloud (unica per l'app, montata in ClientLayout).
     const { status: syncStatus, syncEnabled, excludedIds, toggleExclude, pendingCloudDeletions, resolveCloudDeletion, isSyncing, lastSyncResult, clearSyncResult, triggerInitialSync } = useCloudSyncContext();
     // Ingresso via LOGIN: qui il sync non è ancora partito (la start-up, se c'è
