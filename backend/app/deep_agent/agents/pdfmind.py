@@ -7,6 +7,7 @@ from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langgraph.checkpoint.memory import MemorySaver
 
+from app.deep_agent.config import ordered_providers, fallback_enabled
 from app.deep_agent.tools.docs import (confronta_versioni, elenca_file, estrai_date, leggi_pdf, riassumi_pdf)  # noqa: E501
 from app.deep_agent.tools.profile import get_tools
 
@@ -56,6 +57,30 @@ def _resolve_model(m: str):
     return m
 
 
+def _provider_usable(p: dict) -> bool:
+    """Un provider è usable se ha un modello e (per i cloud) una key."""
+    if not p.get("enabled", True):
+        return False
+    if not str(p.get("model", "")).strip():
+        return False
+    if p.get("provider") == "ollama":
+        return True  # locale, nessuna key richiesta
+    return bool(str(p.get("api_key", "")).strip())
+
+
+def resolve_primary_model():
+    """Ritorna il modello LLM del PRIMO provider abilitato e usable (precedenza, punto 7).
+
+    Rispetta l'ordine della lista `providers` (indice 0 = massima priorità); se
+    il primo non ha credenziali/modelo, scende al successivo (fallback strutturale).
+    """
+    for p in ordered_providers():
+        if _provider_usable(p):
+            return _resolve_model(f"{p['provider']}:{p['model']}")
+    # fallback sicuro: niente di usable → Ollama di default
+    return _resolve_model(DEF_MODEL)
+
+
 DOCS_ANALYST = {
     "name": "docs-analyst",
     "description": "Analizza documenti PDF: riassunto, date e confronto versioni in un contesto isolato",
@@ -92,8 +117,9 @@ INTERRUPT_ON = {
 
 def build_agent(model: str | None = None, profile: str = "user"):
     m = model or os.environ.get("PDFMIND_MODEL", DEF_MODEL)
+    effective_model = resolve_primary_model() if (model is None and not os.environ.get("PDFMIND_MODEL")) else _resolve_model(m)
     return create_deep_agent(
-        model=_resolve_model(m),
+        model=effective_model,
         tools=get_tools(profile),
         middleware=[TodoListMiddleware()],
         subagents=[DOCS_ANALYST],

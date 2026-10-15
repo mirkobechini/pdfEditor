@@ -183,7 +183,16 @@
     "deepAgentTesting": "Test in corso...",
     "deepAgentTest": "Prova connessione",
     "deepAgentTestOk": "Connessione riuscita ✓",
-    "deepAgentTestFail": "Connessione fallita"
+    "deepAgentTestFail": "Connessione fallita",
+    "deepAgentProviders": "Provider (in ordine di precedenza)",
+    "deepAgentAddProvider": "Aggiungi provider",
+    "deepAgentProvidersDesc": "Primo = massima priorità. Usa ↑/↓ per riordinare. Ogni provider cloud può avere la sua chiave.",
+    "deepAgentNoProviders": "Nessun provider configurato: usa il pulsante per aggiungerne uno (es. Ollama locale + un cloud).",
+    "deepAgentPrecedenceUp": "Alza priorità",
+    "deepAgentPrecedenceDown": "Abbassa priorità",
+    "deepAgentRemove": "Rimuovi",
+    "deepAgentFallback": "Fallback automatico",
+    "deepAgentFallbackDesc": "Se il provider principale non risponde, prova il successivo"
   },
   "editor": {
     "openLocalPdf": "Apri PDF locale",

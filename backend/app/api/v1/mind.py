@@ -83,24 +83,31 @@ async def config():
 
 
 class ConfigUpdate(BaseModel):
-    """Aggiornamento della config Deep Agent (T3a).
+    """Aggiornamento della config Deep Agent (T3a + punto 7 multi-provider).
 
     `api_key` resta locale, mai restituita in GET. Un campo assente non viene
     modificato; una stringa vuota elimina la chiave.
+
+    `providers` (punto 7): lista ORDINATA di provider (indice 0 = massima
+    priorità). Ogni voce: {"provider", "model", "api_key", "enabled"}. Se
+    presente, sostituisce la lista esistente.
     """
 
-    provider: str | None = Field(default=None, description="ollama|anthropic|openai|openrouter|huggingface")
+    provider: str | None = Field(default=None, description="ollama|anthropic|openai|openrouter|huggingface (selezione attiva)")
     model: str | None = None
     workspace: str | None = None
     rag_enabled: bool | None = None
     streaming: bool | None = None
     api_key: str | None = None
+    # punto 7
+    providers: list[dict] | None = None
+    fallback_enabled: bool | None = None
 
 
 @router.put(
     "/config",
     summary="Aggiorna config Deep Agent",
-    description="Salva in locale provider/modello/workspace/RAG/chiave. Le chiavi restano locali, mai restituite in GET.",
+    description="Salva in locale provider/modello/workspace/RAG/chiave + lista provider con precedenza e fallback. Le chiavi restano locali, mai restituite in GET.",
 )
 async def put_config(req: ConfigUpdate):
     """Salva la config in locale. Le chiavi non sono mai esposte nel GET."""

@@ -183,7 +183,16 @@
     "deepAgentTesting": "Testing...",
     "deepAgentTest": "Test connection",
     "deepAgentTestOk": "Connection OK ✓",
-    "deepAgentTestFail": "Connection failed"
+    "deepAgentTestFail": "Connection failed",
+    "deepAgentProviders": "Providers (in priority order)",
+    "deepAgentAddProvider": "Add provider",
+    "deepAgentProvidersDesc": "First = highest priority. Use ↑/↓ to reorder. Each cloud provider can have its own key.",
+    "deepAgentNoProviders": "No provider configured: use the button to add one (e.g. local Ollama + a cloud).",
+    "deepAgentPrecedenceUp": "Increase priority",
+    "deepAgentPrecedenceDown": "Decrease priority",
+    "deepAgentRemove": "Remove",
+    "deepAgentFallback": "Automatic fallback",
+    "deepAgentFallbackDesc": "If the main provider fails, try the next one"
   },
   "editor": {
     "openLocalPdf": "Open Local PDF",

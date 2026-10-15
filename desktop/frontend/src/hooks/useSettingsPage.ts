@@ -9,7 +9,7 @@ import { usePreferences } from "../lib/preferences";
 import { isTauri, tauriInvoke, getApiBaseUrl } from "../shared/tauri";
 import { useCloudSync } from "./useCloudSync";
 import { useApiError } from "./useApiError";
-import type { MindConfig } from "../shared/api";
+import type { MindConfig, MindConfigUpdate, MindProviderEntry } from "../shared/api";
 
 const DEFAULT_MIND_CONFIG: MindConfig = {
     provider: "ollama",
@@ -18,6 +18,8 @@ const DEFAULT_MIND_CONFIG: MindConfig = {
     rag_enabled: true,
     streaming: true,
     has_api_key: false,
+    providers: [],
+    fallback_enabled: true,
 };
 
 const sections = [
@@ -69,6 +71,8 @@ export function useSettingsPage() {
     const [mindTesting, setMindTesting] = React.useState(false);
     const [mindTestResult, setMindTestResult] = React.useState("");
     const [mindTestOk, setMindTestOk] = React.useState(false);
+    // Punto 7: key per ogni provider della lista (editing locale, salvate al Salva).
+    const [providerKeys, setProviderKeys] = React.useState<Record<number, string>>({});
 
     // Carica la config Deep Agent dal backend alla prima apertura (lazy, una volta).
     React.useEffect(() => {
@@ -95,23 +99,74 @@ export function useSettingsPage() {
 
     async function saveMindConfig() {
         const key = (mindPendingApiKey as { current?: string }).current ?? undefined;
-        const patch: Partial<MindConfig> & { api_key?: string } = {
+        const providers: MindProviderEntry[] = (mindConfig.providers || []).map((p, i) => ({
+            provider: p.provider,
+            model: p.model,
+            enabled: p.enabled,
+            // la key dell'utente per questo provider (se inserita); vuota = invariata
+            api_key: providerKeys[i] ?? "",
+        }));
+        const patch: MindConfigUpdate = {
             provider: mindConfig.provider,
             model: mindConfig.model,
             workspace: mindConfig.workspace,
             rag_enabled: mindConfig.rag_enabled,
             streaming: mindConfig.streaming,
+            providers,
+            fallback_enabled: mindConfig.fallback_enabled,
         };
         if (key !== undefined) patch.api_key = key;
         try {
             const updated = await api.updateMindConfig(patch);
             setMindConfig(updated);
             mindPendingApiKey.current = undefined;
-            if (updated.provider === "ollama") loadOllamaModels();
+            setProviderKeys({});
+            if (updated.provider === "ollama" || (updated.providers && updated.providers.some((p) => p.provider === "ollama"))) {
+                loadOllamaModels();
+            }
         } catch (err) {
             console.error("Failed to save Deep Agent config:", err);
             setMindConfigError(apiError(err));
         }
+    }
+
+    // Punto 7: lista provider — aggiungi/rimuovi/riordina/attiva + key per voce.
+    function addMindProvider() {
+        setMindConfig((prev) => ({
+            ...prev,
+            providers: [...(prev.providers || []), { provider: "ollama", model: "", enabled: true, has_api_key: false }],
+        }));
+    }
+
+    function updateMindProvider(idx: number, patch: Partial<{ provider: string; model: string; enabled: boolean }>) {
+        setMindConfig((prev) => {
+            const list = [...(prev.providers || [])];
+            if (idx < 0 || idx >= list.length) return prev;
+            list[idx] = { ...list[idx], ...patch };
+            return { ...prev, providers: list };
+        });
+    }
+
+    function removeMindProvider(idx: number) {
+        setMindConfig((prev) => {
+            const list = [...(prev.providers || [])];
+            if (idx < 0 || idx >= list.length) return prev;
+            return { ...prev, providers: list.filter((_, i) => i !== idx) };
+        });
+    }
+
+    function moveMindProvider(idx: number, dir: -1 | 1) {
+        setMindConfig((prev) => {
+            const list = [...(prev.providers || [])];
+            const to = idx + dir;
+            if (idx < 0 || to < 0 || to >= list.length) return prev;
+            [list[idx], list[to]] = [list[to], list[idx]];
+            return { ...prev, providers: list };
+        });
+    }
+
+    function setMindProviderFallback(val: boolean) {
+        setMindConfig((prev) => ({ ...prev, fallback_enabled: val }));
     }
 
     // Punto 8: elenco modelli Ollama locali (da /mind/ollama/models).
@@ -216,6 +271,8 @@ export function useSettingsPage() {
         // deep agent
         mindConfig, setMindConfigField, setMindConfigApiKey, saveMindConfig, mindConfigError,
         ollamaModels, testMindConnection, mindTesting, mindTestResult, mindTestOk,
+        addMindProvider, updateMindProvider, removeMindProvider, moveMindProvider,
+        setMindProviderFallback, providerKeys, setProviderKeys,
         // docs
         docsOpen, setDocsOpen,
     };

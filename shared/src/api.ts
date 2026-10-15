@@ -902,9 +902,19 @@ export interface MindConfig {
   rag_enabled: boolean;
   streaming: boolean;
   has_api_key: boolean;
+  // punto 7: lista provider con precedenza + fallback (senza chiavi)
+  providers: { provider: string; model: string; enabled: boolean; has_api_key: boolean }[];
+  fallback_enabled: boolean;
 }
 
 /** Aggiornamento parziale della config Deep Agent. */
+export interface MindProviderEntry {
+  provider: string;
+  model: string;
+  api_key?: string;
+  enabled?: boolean;
+}
+
 export interface MindConfigUpdate {
   provider?: string;
   model?: string;
@@ -912,6 +922,8 @@ export interface MindConfigUpdate {
   rag_enabled?: boolean;
   streaming?: boolean;
   api_key?: string;
+  providers?: MindProviderEntry[];
+  fallback_enabled?: boolean;
 }
 
 /** Singleton instance for PDF operations (local sidecar) */

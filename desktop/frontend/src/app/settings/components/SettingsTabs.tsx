@@ -287,6 +287,70 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${s.mindConfig.rag_enabled ? "right-0.5" : "left-0.5"}`} />
                             </button>
                         </div>
+                        <div className="pt-4">
+                            {/* Punto 7: lista provider con precedenza (frecce) + fallback */}
+                            <div className="flex items-center justify-between mb-2">
+                                <p className="text-[14px] font-semibold text-white">{ts("deepAgentProviders")}</p>
+                                <button
+                                    onClick={() => s.addMindProvider()}
+                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-[#342c25]"
+                                >
+                                    + {ts("deepAgentAddProvider")}
+                                </button>
+                            </div>
+                            <p className="mb-2 text-[12px] text-[#9d9184]">{ts("deepAgentProvidersDesc")}</p>
+                            {(s.mindConfig.providers || []).length === 0 && (
+                                <p className="mb-2 text-[12px] text-[#7e7267]">{ts("deepAgentNoProviders")}</p>
+                            )}
+                            {(s.mindConfig.providers || []).map((p, i) => (
+                                <div key={i} className="mb-2 rounded-xl border border-white/10 bg-[#1b1612] p-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[11px] font-semibold text-[#f7871f]">#{i + 1}</span>
+                                        <select
+                                            value={p.provider}
+                                            onChange={(e) => s.updateMindProvider(i, { provider: e.target.value })}
+                                            className="cursor-pointer rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none"
+                                        >
+                                            <option value="ollama">Ollama (locale)</option>
+                                            <option value="anthropic">Claude (Anthropic)</option>
+                                            <option value="openai">OpenAI</option>
+                                            <option value="openrouter">OpenRouter</option>
+                                            <option value="huggingface">Hugging Face</option>
+                                        </select>
+                                        <input
+                                            value={p.model}
+                                            placeholder={ts("deepAgentModel")}
+                                            onChange={(e) => s.updateMindProvider(i, { model: e.target.value })}
+                                            className="flex-1 rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
+                                        />
+                                        {p.provider !== "ollama" && (
+                                            <input
+                                                type="password"
+                                                placeholder={ts("deepAgentApiKey")}
+                                                value={s.providerKeys[i] ?? ""}
+                                                onChange={(e) => s.setProviderKeys((prev) => ({ ...prev, [i]: e.target.value }))}
+                                                className="w-24 rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
+                                            />
+                                        )}
+                                        <button onClick={() => s.moveMindProvider(i, -1)} disabled={i === 0} className="cursor-pointer rounded-md border border-white/10 px-2 py-1 text-[11px] text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30" title={ts("deepAgentPrecedenceUp")}>↑</button>
+                                        <button onClick={() => s.moveMindProvider(i, 1)} disabled={i === (s.mindConfig.providers || []).length - 1} className="cursor-pointer rounded-md border border-white/10 px-2 py-1 text-[11px] text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30" title={ts("deepAgentPrecedenceDown")}>↓</button>
+                                        <button onClick={() => s.removeMindProvider(i)} className="cursor-pointer rounded-md border border-red-500/30 px-2 py-1 text-[11px] text-red-300 transition hover:bg-red-500/10" title={ts("deepAgentRemove")}>✕</button>
+                                    </div>
+                                </div>
+                            ))}
+                            <div className="flex items-center justify-between py-2">
+                                <div>
+                                    <p className="text-[14px] font-semibold text-white">{ts("deepAgentFallback")}</p>
+                                    <p className="text-[12px] text-[#9d9184]">{ts("deepAgentFallbackDesc")}</p>
+                                </div>
+                                <button
+                                    onClick={() => s.setMindProviderFallback(!s.mindConfig.fallback_enabled)}
+                                    className={`h-6 w-11 rounded-full relative transition-colors cursor-pointer ${s.mindConfig.fallback_enabled ? "bg-[#f7871f]" : "bg-white/20"}`}
+                                >
+                                    <div className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${s.mindConfig.fallback_enabled ? "right-0.5" : "left-0.5"}`} />
+                                </button>
+                            </div>
+                        </div>
                         <div className="flex items-center justify-between py-3 border-b border-white/10">
                             <div>
                                 <p className="text-[16px] font-semibold text-white">{ts("deepAgentApiKey")}</p>
