@@ -27,7 +27,7 @@ Nel repo **pdfEditor (monorepo)**, dentro `backend/`. pdfmind resta standalone c
   ⚠️ Appreso: `desktop/frontend/src/shared/` è GENERATO da prebuild da `shared/src/` (commit df1f88a4 lo rimosse dal tracking) — le edit ad api.ts vanno fatte lì, non nella copia.
 - **T4a — Chat UI base: pallino sotto fast actions + pannello chat + streaming.** ✅ COMPLETATA 2026-10-15: creato `desktop/frontend/src/components/ChatAssistant.tsx` (pallino flottante 🐵 in basso a destra sotto le fast actions, pannello chat 380×520 con streaming SSE via `POST /mind/chat`, parsing eventi `[TASK]`/`[STEP]`/`[DONE]`, storico, stato "pensando", errori); chiavi i18n namespace `chat` (it/en: title, placeholder, send, close, welcome, error, thinking, task); integrato in `app/app/page.tsx` (`<ChatAssistant apiBase={API_BASE}/>`). Typecheck frontend pulito.
 - **T4b — HUD chat: task list visibili + stati + errori.** ✅ COMPLETATA 2026-10-15: in `ChatAssistant.tsx` — task emessi dal motore (`[TASK]`) mostrati in un pannello con **stato visivo** (spinner finché running → ✓ quando done), messaggi d'errore tipizzati per codice (401 → errorAuth, 422 → errorValidation, no body → errorConnection, default → error) con bordo/rossiccio dedicato, messaggi con flag `error`. Chiavi i18n `chat.errorAuth/errorValidation/errorConnection` aggiunte (it/en). Typecheck frontend pulito.
-- **T5a** — Tool: split + merge via agent.
+- **T5a** — Tool: split + merge via agent. ✅ COMPLETATA 2026-10-15: creato `backend/app/deep_agent/tools/pdf_ops.py` — tool `split_pdf(pdf_id, mode="every"|"range", ranges)` e `merge_pdfs(pdf_ids)` che avvolgono il servizio reale `PdfMergeSplitService` (apertura `SessionLocal`, risoluzione utente da `PDFMIND_USER_ID` o super-admin, ritorno stringa); connessi al profilo user; validazione mode="range" prima del DB. Test `tests/test_deep_agent_t5a.py` **5/5 verdi**. ⚠️ Promemoria Mirko 15/10: **dopo T6 fare BUILD LOCALE + checklist "cosa provare"** (vedi Passi futuri).
 - **T5b** — Tool: sign + annotate/highlight.
 - **T5c** — Tool: OCR + compress + convert DOCX→PDF.
 - **T6** — REST API pubblica documentata (/mind/*, OpenAPI).
@@ -37,6 +37,7 @@ Nel repo **pdfEditor (monorepo)**, dentro `backend/`. pdfmind resta standalone c
 Regola: **prima di passare alla tranche successiva si verifica che tutte le precedenti funzionino** (test + esito osservabile + merge verde).
 
 ## Passi futuri
+- **Dopo T6 → BUILD LOCALE + checklist test manuale (richiesto Mirko 15/10)**: compilare l'installer desktop e fornire una checklist "cosa provare" (config wizard/settings, e chat con Ollama locale, split/merge/sign/OCR via agent, RAG con citazioni, MCP raggiungibile).
 - Voce (ascolta/risponde).
 - Subagent paralleli; deploy online cloud provider.
 
