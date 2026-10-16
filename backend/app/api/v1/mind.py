@@ -31,6 +31,10 @@ class ChatReq(BaseModel):
     profile: str = "user"
     model: str | None = None
     history: list[dict] = []
+    # Fix 16/10: l'utente autenticato della sessione, passato dal frontend,
+    # cosi i tool (split/merge/sign/...) operano sull'utente reale loggato
+    # e non su env PDFMIND_USER_ID / admin@pdfeditor.local (che fallivano).
+    user_id: str | None = None
 
 
 class ApproveReq(BaseModel):
@@ -260,6 +264,7 @@ async def chat(req: ChatReq):
     """
     from app.deep_agent.agents.pdfmind import build_agent
     from app.deep_agent.server.mind import _events
+    from app.deep_agent.tools.pdf_ops import set_current_user_id
 
     profile = (
         req.profile if req.profile in _ALLOWED_PROFILES else "user"
@@ -269,6 +274,9 @@ async def chat(req: ChatReq):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"profilo non consentito: {req.profile!r}. Sono ammessi solo: {sorted(_ALLOWED_PROFILES)}",
         )
+    # Fix 16/10: usa l'utente autenticato della sessione per i tool (merge/split/...),
+    # così non cascano su env PDFMIND_USER_ID / admin di default (che fallivano).
+    set_current_user_id(req.user_id)
     agent = build_agent(req.model, profile)
     return StreamingResponse(
         _events(agent, req.goal, uuid.uuid4().hex, req.history),
