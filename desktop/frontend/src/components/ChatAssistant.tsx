@@ -4,9 +4,34 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { getApiBaseUrl } from "../shared/tauri";
 import { api } from "../shared/api";
+import { useAuth } from "../shared/auth";
 import { useRouter } from "next/navigation";
 
 const API_BASE = getApiBaseUrl();
+// Cronologia locale (16/10): i messaggi resistono alla chiusura/riapertura del pallino.
+const HISTORY_KEY = "pdfeditor_chat_history";
+
+function loadHistory(): Message[] {
+    try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr)
+            ? arr.filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+            : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveHistory(messages: Message[]) {
+    try {
+        const keep = messages.filter((m) => m.content && !m.error);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(keep.slice(-40)));
+    } catch {
+        /* non critico */
+    }
+}
 
 type Message = { role: "user" | "assistant"; content: string; error?: boolean };
 
@@ -46,17 +71,28 @@ function isControl(text: string): boolean {
 export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
     const tc = useTranslations("chat");
     const router = useRouter();
+    const { user } = useAuth();
     const [open, setOpen] = React.useState(false);
-    const [messages, setMessages] = React.useState<Message[]>([
-        { role: "assistant", content: tc("welcome") },
-    ]);
+    const [messages, setMessages] = React.useState<Message[]>(() => {
+        const hist = loadHistory();
+        return hist.length ? hist : [{ role: "assistant", content: tc("welcome") }];
+    });
     const [input, setInput] = React.useState("");
     const [sending, setSending] = React.useState(false);
     const [tasks, setTasks] = React.useState<HudTask[]>([]);
+    const [activeTool, setActiveTool] = React.useState<string | null>(null); // STEP corrente
     const taskIdRef = React.useRef(0);
     const bottomRef = React.useRef<HTMLDivElement>(null);
+    const inputRef = React.useRef<HTMLInputElement>(null);
 
-    // Config Deep Agent: se non configurato (provvider non valido / nessuna key
+    // Persisti la cronologia locale quando cambia (non salvare i messaggi di errore
+    // né i controlli; teniamo solo testo utile, max 40).
+    React.useEffect(() => {
+        if (!messages.some((m) => m.content)) return;
+        saveHistory(messages);
+    }, [messages]);
+
+    // Config Deep Agent: se non configurato (provider non valido / nessuna key
     // per un provider cloud), mostriamo l'invito alla config al posto dell'input.
     const [configReady, setConfigReady] = React.useState<boolean | null>(null); // null = checking
 
@@ -75,6 +111,11 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
         return () => { cancelled = true; };
     }, [open]);
 
+    // Focus sull'input appena si apre il pallino (16/10).
+    React.useEffect(() => {
+        if (open) setTimeout(() => inputRef.current?.focus(), 120);
+    }, [open]);
+
     React.useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, tasks, open]);
@@ -89,17 +130,23 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
         setInput("");
         setSending(true);
         setTasks([]);
+        setActiveTool(null);
         taskIdRef.current = 0;
 
         let partial = "";
         let sawDone = false;
         try {
+            // Fix 16/10: passa l'utente della sessione così i tool (merge/split/...)
+            // operano sull'utente reale, non su env/admin di default.
             const res = await fetch(`${apiBase}/mind/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ goal, profile: "user", history }),
+                body: JSON.stringify({ goal, profile: "user", history, user_id: user?.id }),
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) {
+                const detail = await res.text().catch(() => "");
+                throw new Error(`HTTP ${res.status}${detail ? `::${detail}` : ""}`);
+            }
             if (!res.body) throw new Error("NO_BODY");
 
             const reader = res.body.getReader();
@@ -119,8 +166,13 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                         setTasks((prev) => [...prev, { id, label: ev.slice(6), status: "running" }]);
                         continue;
                     }
+                    if (ev.startsWith("[STEP]")) {
+                        setActiveTool(ev.slice(6));
+                        continue;
+                    }
                     if (isControl(ev)) continue;
                     partial += ev;
+                    setActiveTool(null); // testo in arrivo => tool concluso
                     setMessages((prev) => {
                         const next = [...prev];
                         if (next[next.length - 1]?.role === "assistant") {
@@ -135,19 +187,22 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
             }
             if (sawDone || partial) {
                 setTasks((prev) => prev.map((t) => ({ ...t, status: "done" as const })));
+            } else if (!partial) {
+                // Stream chiuso senza output e senza [DONE]: esito esplicito.
+                setMessages((prev) => [...prev, { role: "assistant", content: tc("emptyReply"), error: true }]);
             }
         } catch (err) {
+            const raw = err instanceof Error ? err.message : "";
             const msg =
-                err instanceof Error && err.message === "HTTP 401"
-                    ? tc("errorAuth")
-                    : err instanceof Error && err.message === "HTTP 422"
-                      ? tc("errorValidation")
-                      : err instanceof Error && err.message === "NO_BODY"
-                        ? tc("errorConnection")
-                        : tc("error");
+                raw.includes("HTTP 401") ? tc("errorAuth")
+                    : raw.includes("HTTP 422") ? tc("errorValidation")
+                        : err instanceof Error && err.message === "NO_BODY" ? tc("errorConnection")
+                            : raw.includes("::") ? raw.split("::").slice(1).join("::").slice(0, 400)
+                                : tc("error");
             setMessages((prev) => [...prev, { role: "assistant", content: msg, error: true }]);
         } finally {
             setSending(false);
+            setActiveTool(null);
             setTimeout(() => setTasks([]), 1200);
         }
     }
@@ -212,7 +267,13 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                                 ))}
                             </div>
                         )}
-                        {sending && (
+                        {activeTool && (
+                            <div className="mb-3 flex items-center gap-2 rounded-xl border border-[#f7871f]/25 bg-[#f7871f]/[0.06] px-3 py-2 text-[12px] text-[#f7871f]">
+                                <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[#f7871f]/30 border-t-[#f7871f]" />
+                                <span className="font-medium">{tc("toolActivity", { tool: activeTool })}</span>
+                            </div>
+                        )}
+                        {sending && !activeTool && (
                             <div className="mb-3 flex justify-start">
                                 <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[13px] text-[#9d9184]">
                                     {tc("thinking")}
@@ -241,6 +302,7 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                         ) : configReady === true ? (
                             <div className="flex items-center gap-2">
                                 <input
+                                    ref={inputRef}
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={(e) => { if (e.key === "Enter") send(); }}
