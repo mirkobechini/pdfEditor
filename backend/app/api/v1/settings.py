@@ -16,6 +16,7 @@ class PreferenceResponse(BaseModel):
     default_zoom: int
     antialiasing: bool
     density: str
+    default_save_folder: str = ""
 
 
 class PreferenceUpdateRequest(BaseModel):
@@ -24,6 +25,7 @@ class PreferenceUpdateRequest(BaseModel):
     default_zoom: int | None = None
     antialiasing: bool | None = None
     density: str | None = None
+    default_save_folder: str | None = None
 
 
 def _get_user_id(request: Request) -> str:
@@ -57,8 +59,9 @@ def get_preferences(
             default_zoom=pref.default_zoom,
             antialiasing=bool(pref.antialiasing),
             density=pref.density,
+            default_save_folder=pref.default_save_folder or "",
         )
-    return PreferenceResponse(theme="dark", language="it", default_zoom=100, antialiasing=True, density="comfortable")
+    return PreferenceResponse(theme="dark", language="it", default_zoom=100, antialiasing=True, density="comfortable", default_save_folder="")
 
 
 @router.put("/", response_model=PreferenceResponse)
@@ -77,6 +80,7 @@ def update_preferences(
         default_zoom=req.default_zoom,
         antialiasing=req.antialiasing,
         density=req.density,
+        default_save_folder=req.default_save_folder,
     )
     return PreferenceResponse(
         theme=pref.theme,
@@ -84,4 +88,5 @@ def update_preferences(
         default_zoom=pref.default_zoom,
         antialiasing=bool(pref.antialiasing),
         density=pref.density,
+        default_save_folder=pref.default_save_folder or "",
     )

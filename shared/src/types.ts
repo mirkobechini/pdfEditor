@@ -155,6 +155,7 @@ export interface Preferences {
   default_zoom: number;
   antialiasing: boolean;
   density: string;
+  default_save_folder: string;
 }
 
 /** Partial preferences accepted by updatePreferences. */

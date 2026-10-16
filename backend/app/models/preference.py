@@ -17,6 +17,7 @@ class UserPreference(Base):
     default_zoom = Column(Integer, default=100, nullable=False)  # percentage
     antialiasing = Column(Integer, default=1, nullable=False)  # boolean as int for SQLite
     density = Column(String(20), default="comfortable", nullable=False)  # compact, comfortable, spacious
+    default_save_folder = Column(String(512), default="", nullable=False)  # cartella di lavoro (workspace Deep Agent)
 
     created_at = Column(
         DateTime,

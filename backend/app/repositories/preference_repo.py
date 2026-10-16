@@ -12,7 +12,7 @@ class PreferenceRepository:
     def get_by_user_id(self, user_id: str) -> UserPreference | None:
         return self.db.query(UserPreference).filter(UserPreference.user_id == user_id).first()
 
-    def upsert(self, user_id: str, theme: str | None = None, language: str | None = None, default_zoom: int | None = None, antialiasing: bool | None = None, density: str | None = None) -> UserPreference:
+    def upsert(self, user_id: str, theme: str | None = None, language: str | None = None, default_zoom: int | None = None, antialiasing: bool | None = None, density: str | None = None, default_save_folder: str | None = None) -> UserPreference:
         pref = self.get_by_user_id(user_id)
         if pref:
             if theme is not None:
@@ -25,6 +25,8 @@ class PreferenceRepository:
                 pref.antialiasing = 1 if antialiasing else 0
             if density is not None:
                 pref.density = density
+            if default_save_folder is not None:
+                pref.default_save_folder = default_save_folder
             self.db.flush()
             self.db.refresh(pref)
             return pref
@@ -37,6 +39,7 @@ class PreferenceRepository:
             default_zoom=default_zoom or 100,
             antialiasing=1 if antialiasing else 1,
             density=density or "comfortable",
+            default_save_folder=default_save_folder or "",
         )
         self.db.add(pref)
         self.db.flush()

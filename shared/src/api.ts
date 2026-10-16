@@ -725,6 +725,7 @@ export class ApiClient {
         default_zoom: 100,
         antialiasing: true,
         density: "comfortable",
+        default_save_folder: "",
       };
     return res.json();
   }
