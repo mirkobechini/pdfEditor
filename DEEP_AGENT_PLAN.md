@@ -54,3 +54,7 @@ Regola: **prima di passare alla tranche successiva si verifica che tutte le prec
 
 ## Aggiornamenti advance
 (da compilare man mano che completi tranche)
+
+### 🔧 Bug aggiuntivi segnalati da Mirko il 16/10 (test build 7ea09b1f) — FIX fatto
+- **Wizard non arriva allo step 3 (Deep Agent)**: il bottone mostrava "Finish" già allo step 2 (condizione `currentStep < 1` invece di `currentStep < steps.length - 1`) → lo step Deep Agent era irraggiungibile. FIX: `desktop/frontend/src/app/wizard/page.tsx` — "Continue" finché non si è sull'ultimo step; contatore progressi `total` corretto da 2 a `steps.length`. Typecheck pulito.
+- **Auto-login su /login**: comportamento atteso (ripristino sessione/remember-me), non un bug. Da confermare con Mirko se vuole disabilitarlo.
