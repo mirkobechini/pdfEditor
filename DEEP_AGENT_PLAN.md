@@ -39,9 +39,34 @@ Nel repo **pdfEditor (monorepo)**, dentro `backend/`. pdfmind resta standalone c
 Regola: **prima di passare alla tranche successiva si verifica che tutte le precedenti funzionino** (test + esito osservabile + merge verde).
 
 ## Passi futuri
-- **Dopo T6 → BUILD LOCALE + checklist test manuale (richiesto Mirko 15/10)**: compilare l'installer desktop e fornire una checklist "cosa provare" (config wizard/settings, e chat con Ollama locale, split/merge/sign/OCR via agent, RAG con citazioni, MCP raggiungibile).
+- **Dopo T6 → BUILD LOCALE + checklist test manuale (richiesto Mirko 15/10)**: ✅ BUILD DI ANTEPRIMA FATTA 16/10 (run 38908435071, installer da artifact preview/932-build). 🔴 Feedback test Mirko 16/10 — nuove tranche/evoluzioni da implementare (vedi sezione "Feedback test 16/10" sotto).
 - Voce (ascolta/risponde).
 - Subagent paralleli; deploy online cloud provider.
+
+## Feedback test Mirko 16/10 (su build anteprima #932) — da implementare
+Esito prova + richieste (esplicite e idee). Vanno come nuove micro-tranche su feature/932-deep-agent.
+
+### ✅ Confermato funzionante
+- Workspace: messaggio "workspace non configurata" ok; dopo aver configurato la cartella l'agente vede i file. (T-A/T-B a posto)
+- RAG sembra funzionare (cita i documenti).
+
+### 🔧 Bug/bache da correggere
+1. **Startup page "resta bloccata tutto verde"** (fix richiesto subito, fatto 16/10): lo step database era "finto" (timer 400ms senza verifica) e il redirect dipendeva da `refreshSession()` che poteva non risolvere → pagina verde ma mai navigava. Fix in `desktop/frontend/src/app/startup/page.tsx`: step DB non più finto (coincide con readiness backend, il backend migra il DB prima di servire /health) + timeout di sicurezza (4s) sul redirect che naviga comunque. Typecheck pulito. 🔨 Committato e milestone: verificare da Mirko con build successiva.
+2. **Chat "sto pensando..." poi nulla senza feedback** (test: non c'erano né Ollama acceso né modello configurato): quando non è configurato un provider/modello funzionante, la chat deve mostrare UN ERRORE esplicito (es. "provider/modello non configurato") invece di "sto pensando" e sparire. Vedi anche punto 7 (feedback tool).
+3. **Select modello**: oggi il campo modello è un input finché non si apre il select; deve essere SEMPRE una select (disabilitata finché non si sceglie il provider, poi popolata coi modelli reali del provider — /mind/models con chiave, già esiste). Inoltre: selezionando un provider base dovrebbe **aggiungerlo alla lista provider per le precedenze** (punto 7 /multi-provider): quando scegli il provider lo aggiungi alla lista ordinata.
+   - Verificare che il provider scelto esista in locale (es. Ollama: modello scaricato? endpoint raggiungibile?) o comunque far scegliere all'utente.
+4. **Merge fallisce con "problema con il PDFMIND_USER_ID"**: il tool merge (pdf_ops) risolve l'utente da `PDFMIND_USER_ID` o super-admin `admin@pdfeditor.local`; nel contesto desktop con utente loggato diverso fallisce. Serve usare l'utente autenticato della sessione (non env/super-admin) per risolvere l'utente nei tool app (split/merge/sign/...). 🔴 Da fixare.
+
+### ✨ Idee/evoluzioni (da valutare con Mirko, non ancora ordinate)
+5. **Workspace non configurata → l'agente può chiederla lui**: se non c'è workspace potrebbe proporre all'utente di configurarla (messaggio con azione/guida) invece di solo "workspace non configurata".
+6. **Focus sull'input al click del pallino**: appena si apre la chat, il focus va sulla riga di input.
+7. **Feedback durante "sto pensando" + attività strumenti**: se il modello è lento sembra bloccato; quando usa strumenti (es. merge) deve far capire cosa sta facendo (nome tool, stato) — HUD task/step più ricco, dossier per tool in esecuzione. Il merge ha mostrato "sto pensando..." e poi nulla: serve feedback di esito (riuscito/errore) SEMPRE.
+8. **Ridimensionamento chat col mouse**: possibilità di ingrandire il riquadro chat (drag resize).
+9. **Cronologia/carrello chat**: chiudo il pallino e riapro → vedo i messaggi vecchi? (valutare persistenza locale storia).
+10. **Sessioni tipo ChatGPT/Gemini**: sistema di sessioni conversazionali separate (da valutare con Mirko: sì/no, priorità).
+
+Decisione sui punti 5-10: da chiedere a Mirko (priorità e sì/no), poi ordinarle come tranche. Punti 2/3/4 sicuri da fare; 1 già fatto.
+
 
 ## Accept
 1. Agent parte offline (Ollama/llama.cpp) e online (almeno 1 provider cloud) con la workspace scelta.

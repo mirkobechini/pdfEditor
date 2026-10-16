@@ -79,21 +79,22 @@ export default function StartupPage() {
     }, []);
 
     // Step 2: once backend is done, mark DB as done with brief delay
+    // NOTA (16/10): lo step database era "finto" — diventava verde dopo un timer
+    // fisso di 400ms senza alcuna verifica. Il backend esegue le migrazioni (DB
+    // pronto) prima di servire /health, quindi la readiness del DB coincide con
+    // /health ok. Ora questo step è SOLO transitorio verso la verifica API e NON
+    // viene mai mostrato come 'done' in modo finto: passa subito a 'running' e
+    // lascia che sia 'api' a decidere l'esito reale.
     React.useEffect(() => {
         const backendStep = steps.find((s) => s.id === "backend");
         if (!backendStep || backendStep.status !== "done") return;
-
-        const timer = setTimeout(() => {
-            setSteps((prev) =>
-                prev.map((s) =>
-                    s.id === "database" ? { ...s, status: "done" as const }
-                        : s.id === "api" ? { ...s, status: "running" as const }
-                            : s
-                )
-            );
-        }, 400);
-
-        return () => clearTimeout(timer);
+        setSteps((prev) =>
+            prev.map((s) =>
+                s.id === "database" ? { ...s, status: "done" as const }
+                    : s.id === "api" ? { ...s, status: "running" as const }
+                        : s
+            )
+        );
     }, [steps.find((s) => s.id === "backend")?.status]);
 
     // Step 3: once DB is done, verify API then redirect
@@ -142,17 +143,29 @@ export default function StartupPage() {
     // destinazione: /app se autenticato, altrimenti /login o /wizard.
     // Il sync cloud NON blocca più la start-up: gira solo nell'editor
     // (barra PDF) dopo il mount.
+    // FIX (16/10): se refreshSession() non risolve entro timeout, la pagina
+    // restava bloccata "tutto verde" senza mai navigare.
     React.useEffect(() => {
         if (!allDone || redirectHandledRef.current) return;
         redirectHandledRef.current = true;
         let cancelled = false;
         const redirectTimer = setTimeout(async () => {
             if (cancelled) return;
-            const restoredUser = await refreshSession();
-            if (cancelled) return;
-            if (restoredUser) {
-                router.push("/app");
-                return;
+            const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
+                Promise.race([
+                    p,
+                    new Promise<never>((_, rej) => setTimeout(() => rej(new Error("timeout")), ms)),
+                ]);
+            try {
+                const restoredUser = await withTimeout(refreshSession(), 4000);
+                if (cancelled) return;
+                if (restoredUser) {
+                    router.push("/app");
+                    return;
+                }
+            } catch {
+                // refreshSession timeout/errore: non restare bloccato, naviga comunque
+                if (cancelled) return;
             }
             const wizardDone = localStorage.getItem("pdfeditor_wizard_done");
             router.push(wizardDone === "true" ? "/login" : "/wizard");
