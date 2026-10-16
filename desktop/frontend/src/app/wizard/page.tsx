@@ -242,7 +242,7 @@ export default function WizardPage() {
                             </div>
                         ))}
                     </div>
-                    <p className="mt-auto text-[14px] font-mono uppercase tracking-[0.2em] text-[#8f8377]">{tw("setupProgress", { current: currentStep + 1, total: 2 })}</p>
+                    <p className="mt-auto text-[14px] font-mono uppercase tracking-[0.2em] text-[#8f8377]">{tw("setupProgress", { current: currentStep + 1, total: steps.length })}</p>
                 </aside>
                 <main className="flex-1 bg-[#221b16] px-14 py-18">
                     {renderStepContent()}
@@ -252,7 +252,7 @@ export default function WizardPage() {
                             {currentStep > 0 && (
                                 <button onClick={handleBack} className="cursor-pointer rounded-2xl border border-white/15 bg-[#1b1612] px-8 py-3 text-[14px] font-semibold text-white transition hover:bg-[#231c17]">{tw("back")}</button>
                             )}
-                            {currentStep < 1 ? (
+                            {currentStep < steps.length - 1 ? (
                                 <button onClick={handleNext} disabled={currentStep === 0 && !acceptedTerms} className="cursor-pointer rounded-2xl bg-[#f7871f] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_8px_22px_rgba(247,135,31,0.35)] transition hover:bg-[#ff9b37] disabled:cursor-not-allowed disabled:opacity-50">{tw("continue")}</button>
                             ) : (
                                 <button onClick={handleFinish} className="cursor-pointer rounded-2xl bg-[#f7871f] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_8px_22px_rgba(247,135,31,0.35)] transition hover:bg-[#ff9b37]">{tw("finish")}</button>

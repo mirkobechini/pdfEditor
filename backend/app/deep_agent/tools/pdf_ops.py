@@ -13,20 +13,35 @@ from __future__ import annotations
 
 import base64
 import os
+from contextvars import ContextVar
 
 from app.core.database import SessionLocal
 from app.services.pdf_merge_split_service import PdfMergeSplitService
 from app.services.pdf_service import PdfService
 from app.repositories.user_repo import UserRepository
 
+# Utente corrente del Deep Agent, impostato dalla rotta /mind/chat con l'utente
+# autenticato della sessione (fix 16/10: il merge falliva perché i tool usavano
+# solo env PDFMIND_USER_ID o admin@pdfeditor.local, non l'utente reale loggato).
+_CURRENT_USER_ID: ContextVar[str | None] = ContextVar("deep_agent_current_user", default=None)
+
+
+def set_current_user_id(user_id: str | None) -> None:
+    """Imposta l'utente corrente per l'esecuzione dei tool (chiamato da /mind/chat)."""
+    _CURRENT_USER_ID.set(user_id)
+
 
 def _current_user_id() -> str:
     """Risolve l'id utente per le operazioni a valle.
 
-    Priorit: env `PDFMIND_USER_ID`; altrimenti il super-admin di default
-    (`admin@pdfeditor.local`) quando esiste. In locale il sidecar opera sempre
-    su questo utente dedicato.
+    Priorità:
+    1. utente autenticato della sessione (impostato da /mind/chat)
+    2. env `PDFMIND_USER_ID`
+    3. il super-admin di default (`admin@pdfeditor.local`) quando esiste
     """
+    session_user = _CURRENT_USER_ID.get()
+    if session_user:
+        return session_user
     env = os.environ.get("PDFMIND_USER_ID", "").strip()
     if env:
         return env
