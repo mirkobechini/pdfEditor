@@ -36,7 +36,12 @@ class Chunk:
 
 
 def _workspace() -> Path:
-    return Path(resolve_workspace())
+    return Path(resolve_workspace() or ".")
+
+
+def _workspace_missing() -> bool:
+    """True se la workspace non è configurata."""
+    return not resolve_workspace()
 
 
 def extract_text(path: Path) -> str:
@@ -83,6 +88,8 @@ def ingest_file(path: Path, chunk_size: int = 1200, overlap: int = 150) -> list[
 
 def ingest_workspace(chunk_size: int = 1200, overlap: int = 150) -> list[Chunk]:
     """Indicizza tutti i PDF/text della workspace (non ricorsivo, solo root)."""
+    if _workspace_missing():
+        return []
     ws = _workspace()
     if not ws.is_dir():
         return []

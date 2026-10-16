@@ -12,7 +12,11 @@ _DT = re.compile(r"\b\d{1,2}[/.]\d{1,2}[/.]\d{2,4}\b")
 
 
 def _resolve(p: str) -> Path:
-    root = Path(resolve_workspace())
+    ws = resolve_workspace()
+    if not ws:
+        # workspace non configurata: nessuna root reale (evita cartella fittizia/CWD)
+        return Path("/__workspace_non_configurata__")
+    root = Path(ws)
     if p == "/workspace":
         return root
     if p.startswith("/workspace/"):

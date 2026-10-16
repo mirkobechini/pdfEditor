@@ -170,15 +170,16 @@ def fallback_enabled(cfg: dict | None = None) -> bool:
 
 
 def resolve_workspace(cfg: dict | None = None) -> str:
-    """Risolve la cartella di lavoro del Deep Agent (punto 15/10).
+    """Risolve la cartella di lavoro del Deep Agent (punto 15/10 + 16/10).
 
     Priorità:
     1. env `PDFMIND_WORKSPACE` (override esplicito)
     2. campo `workspace` della config Deep Agent (se NON è il default "workspace")
     3. `default_save_folder` della preferenza dell'utente (la cartella di lavoro
-       configurata in Avanzate/Impostazioni) — così il Deep Agent usa davvero
-       la cartella dell'utente, non una cartella fittizia chiamata "workspace"
-    4. fallback "workspace"
+       configurata in Avanzate/Impostazioni)
+
+    Se nessuna fonte risolve (env/config/prefs vuoti) NON restiamo su una cartella
+    fittizia: ritorniamo stringa vuota, i tool rispondono "workspace non configurata".
     """
     env = os.environ.get("PDFMIND_WORKSPACE", "").strip()
     if env:
@@ -206,4 +207,4 @@ def resolve_workspace(cfg: dict | None = None) -> str:
             db.close()
     except Exception:  # noqa: BLE001
         pass
-    return "workspace"
+    return ""
