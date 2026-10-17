@@ -22,6 +22,9 @@ export default function StartupPage() {
     const tc = useTranslations("common");
     const ts = useTranslations("startup");
     const { refreshSession } = useAuth();
+    // Step REALI (fix 16/10): il backend esegue le migrazioni PRIMA di servire
+    // /health, quindi quando /health risponde il DB è già pronto → niente timer
+    // finto che fa diventare lo step database verde "a caso" alle 400ms.
     const [steps, setSteps] = React.useState<Step[]>([
         { id: "backend", label: ts("startingBackend"), status: "running" },
         { id: "database", label: ts("connectingDb"), status: "pending" },
@@ -45,12 +48,15 @@ export default function StartupPage() {
                     const res = await fetch(`${API_BASE}/health`, { signal: controller.signal });
                     clearTimeout(timeoutId);
                     if (res.ok) {
+                        // Backend su: le migrazioni DB sono già state fatte prima di
+                        // servire /health, quindi anche il database è pronto — lo
+                        // marcchiamo done SUBITO, in modo reale, non con un timer finto.
                         if (!cancelled) {
                             setSteps((prev) =>
                                 prev.map((s) =>
-                                    s.id === "backend" ? { ...s, status: "done" as const }
-                                        : s.id === "database" ? { ...s, status: "running" as const }
-                                            : s
+                                    s.id === "backend" || s.id === "database"
+                                        ? { ...s, status: "done" as const }
+                                        : s
                                 )
                             );
                         }
@@ -78,22 +84,13 @@ export default function StartupPage() {
         return () => { cancelled = true; };
     }, []);
 
-    // Step 2: once backend is done, mark DB as done with brief delay
-    // NOTA (16/10): lo step database era "finto" — diventava verde dopo un timer
-    // fisso di 400ms senza alcuna verifica. Il backend esegue le migrazioni (DB
-    // pronto) prima di servire /health, quindi la readiness del DB coincide con
-    // /health ok. Ora questo step è SOLO transitorio verso la verifica API e NON
-    // viene mai mostrato come 'done' in modo finto: passa subito a 'running' e
-    // lascia che sia 'api' a decidere l'esito reale.
+    // Step 2: una volta che il backend è su, passa la verifica all'API.
+    // (Il database è già segnato done insieme al backend: non è più un timer finto.)
     React.useEffect(() => {
         const backendStep = steps.find((s) => s.id === "backend");
         if (!backendStep || backendStep.status !== "done") return;
         setSteps((prev) =>
-            prev.map((s) =>
-                s.id === "database" ? { ...s, status: "done" as const }
-                    : s.id === "api" ? { ...s, status: "running" as const }
-                        : s
-            )
+            prev.map((s) => (s.id === "api" ? { ...s, status: "running" as const } : s))
         );
     }, [steps.find((s) => s.id === "backend")?.status]);
 
