@@ -411,7 +411,7 @@
     "fatalError": "Cannot reach the backend. Verify that the sidecar is running on port 7723.",
     "startingApp": "Starting PdfEditor",
     "retry": "Retry",
-    "ready": "✓ Ready! Redirecting to login...",
+    "ready": "✓ Ready! Starting up...",
     "license": "AGPL-3.0",
     "syncingCloud": "Syncing cloud documents..."
   },
@@ -652,6 +652,7 @@
     "checking": "Checking configuration...",
     "notConfiguredTitle": "Assistant not configured",
     "notConfiguredDesc": "Configure the Deep Agent (provider + model) in Settings first, then you can use the chat.",
-    "goToSettings": "Go to Settings"
+    "goToSettings": "Go to Settings",
+    "toolActivity": "Running: {tool}"
   }
 }

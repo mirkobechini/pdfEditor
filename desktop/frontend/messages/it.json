@@ -411,7 +411,7 @@
     "fatalError": "Impossibile contattare il backend. Verifica che il sidecar sia presente sulla porta 7723.",
     "startingApp": "Avvio di PdfEditor",
     "retry": "Riprova",
-    "ready": "✓ Pronto! Reindirizzamento al login...",
+    "ready": "✓ Pronto! Avvio in corso...",
     "license": "AGPL-3.0",
     "syncingCloud": "Sincronizzazione documenti cloud..."
   },
@@ -652,6 +652,7 @@
     "checking": "Verifica configurazione...",
     "notConfiguredTitle": "Assistente non configurato",
     "notConfiguredDesc": "Configura prima il Deep Agent (provider + modello) nelle Impostazioni, poi potrai usare la chat.",
-    "goToSettings": "Vai alle Impostazioni"
+    "goToSettings": "Vai alle Impostazioni",
+    "toolActivity": "Sto usando: {tool}"
   }
 }
