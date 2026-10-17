@@ -24,8 +24,12 @@ from app.core.config import _get_app_data_dir
 CONFIG_FILE = "deep_agent_config.json"
 
 DEFAULTS: dict = {
-    "provider": "ollama",          # selezione attiva: ollama | anthropic | openai | openrouter | huggingface
-    "model": "qwen3.5",
+    # Fix 16/10 (esito build 3287e4b): al primo ingresso nessun provider/modello
+    # preselezionato — il config UI mostra il placeholder "Seleziona provider" e
+    # il campo modello è un <select> disabilitato finché non si sceglie. Il
+    # resolver runtime comunque ricade su Ollama (vedi resolve_primary_model).
+    "provider": "",                # selezione attiva: ollama | anthropic | openai | openrouter | huggingface
+    "model": "",
     "workspace": "workspace",
     "rag_enabled": True,
     "streaming": True,
@@ -45,9 +49,16 @@ def _config_path() -> Path:
 
 
 def _sanitize_provider(provider: str | None) -> str:
-    if provider and provider in VALID_PROVIDERS:
-        return provider
-    return "ollama"
+    # Fix 16/10 (esito build 3287e4b): stringa vuota = nessun provider configurato
+    # (il config UI mostra il placeholder). Solo un valore invalido NON vuoto cade
+    # sul fallback sicuro "ollama". Il runtime ricade comunque su Ollama se non
+    # c'è nulla di usable (vedi resolve_primary_model).
+    if provider is None:
+        return ""
+    p = provider.strip()
+    if p in VALID_PROVIDERS:
+        return p
+    return "" if p == "" else "ollama"
 
 
 def _normalize(cfg: dict) -> dict:

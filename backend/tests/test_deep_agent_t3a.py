@@ -40,7 +40,8 @@ def test_config_load_missing_returns_defaults(monkeypatch, tmp_path) -> None:
     from app.deep_agent import config as dc
 
     monkeypatch.setattr(dc, "_get_app_data_dir", lambda: tmp_path)
-    assert dc.load()["provider"] == "ollama"
+    # Fix 16/10 (esito build 3287e4b): default provider vuoto = nessun preselezionato.
+    assert dc.load()["provider"] == ""
 
 
 def test_env_for_provider() -> None:

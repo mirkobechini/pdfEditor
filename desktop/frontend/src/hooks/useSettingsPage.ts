@@ -11,8 +11,11 @@ import { useCloudSync } from "./useCloudSync";
 import { useApiError } from "./useApiError";
 import type { MindConfig, MindConfigUpdate, MindProviderEntry } from "../shared/api";
 
+// Fix 16/10: al primo ingresso nessun provider preselezionato — il select mostra
+// il placeholder "Seleziona provider" finché l'utente non sceglie. Il provider
+// reale arriva dal backend dopo il load (e resta "" se non ancora configurato).
 const DEFAULT_MIND_CONFIG: MindConfig = {
-    provider: "ollama",
+    provider: "",
     model: "",
     workspace: "",
     rag_enabled: true,
@@ -96,9 +99,11 @@ export function useSettingsPage() {
         return () => { cancelled = true; };
     }, [mindLoaded]);
 
-    // Punto (15/10): normale il provider attivo (mai vuoto) — il primo è già selezionato.
+    // Fix 16/10: stringa vuota rimane vuota (nessun provider selezionato);
+    // un valore invalido non-vuoto torna a "ollama" come fallback sicuro.
     const VALID_PROVIDERS = ["ollama", "anthropic", "openai", "openrouter", "huggingface"];
     function normalizeProvider(p: string): string {
+        if (p === "") return "";
         return VALID_PROVIDERS.includes(p) ? p : "ollama";
     }
 

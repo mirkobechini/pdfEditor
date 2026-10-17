@@ -237,17 +237,18 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                     <h1 className="text-[36px] font-bold leading-tight text-white">{ts("deepAgentTitle")}</h1>
                     <p className="mt-1 text-[14px] text-[#9d9184]">{ts("deepAgentDesc")}</p>
                     <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
-                        {/* Provider: primo già selezionato (ollama di default) */}
+                        {/* Provider: nessuno preselezionato a caso (fix 16/10) — placeholder fino alla scelta */}
                         <div className="flex items-center justify-between py-3 border-b border-white/10">
                             <div>
                                 <p className="text-[16px] font-semibold text-white">{ts("deepAgentProvider")}</p>
                                 <p className="text-[14px] text-[#9d9184]">{ts("deepAgentProviderDesc")}</p>
                             </div>
                             <select
-                                value={s.mindConfig.provider || "ollama"}
+                                value={s.mindConfig.provider || ""}
                                 onChange={(e) => s.setMindConfigField("provider", e.target.value)}
                                 className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
                             >
+                                <option value="" disabled={!!s.mindConfig.provider}>{ts("deepAgentSelectProvider")}</option>
                                 <option value="ollama">Ollama (locale)</option>
                                 <option value="anthropic">Claude (Anthropic)</option>
                                 <option value="openai">OpenAI</option>
@@ -279,30 +280,34 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 <p className="text-[14px] text-[#9d9184]">{ts("deepAgentModelDesc")}</p>
                             </div>
                             {(() => {
+                                // Fix 16/10: il modello è SEMPRE una select; se non è ancora
+                                // selezionabile (provider non scelto / nessun modello / cloud
+                                // senza chiave) è DISABILITATA, mai un campo di testo libero.
                                 const isOllama = s.mindConfig.provider === "ollama";
                                 const choices = isOllama ? s.ollamaModels : s.modelCatalog;
-                                if (choices && choices.length > 0) {
-                                    return (
-                                        <select
-                                            value={s.mindConfig.model}
-                                            onChange={(e) => s.setMindConfigField("model", e.target.value)}
-                                            className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
-                                        >
-                                            {choices.map((m) => <option key={m} value={m}>{m}</option>)}
-                                        </select>
-                                    );
-                                }
-                                if (!isOllama && !s.mindConfig.has_api_key) {
-                                    // cloud senza chiave → hint, niente modelli inventati
-                                    return <span className="text-[12px] text-[#9d9184]">{ts("deepAgentNeedKeyForModels")}</span>;
-                                }
+                                const noProvider = !s.mindConfig.provider;
+                                const cloudNoKey = !isOllama && !s.mindConfig.has_api_key;
+                                const disabled = noProvider || cloudNoKey || !choices || choices.length === 0;
+                                const hint = noProvider
+                                    ? ts("deepAgentModelNoProvider")
+                                    : cloudNoKey
+                                        ? ts("deepAgentNeedKeyForModels")
+                                        : isOllama
+                                            ? ts("deepAgentModelEmpty")
+                                            : ts("deepAgentModel");
                                 return (
-                                    <input
-                                        value={s.mindConfig.model}
-                                        onChange={(e) => s.setMindConfigField("model", e.target.value)}
-                                        placeholder={isOllama ? ts("deepAgentModelEmpty") : ts("deepAgentModel")}
-                                        className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
-                                    />
+                                    <div className="flex flex-col items-end gap-1">
+                                        <select
+                                            value={choices && choices.includes(s.mindConfig.model) ? s.mindConfig.model : ""}
+                                            onChange={(e) => s.setMindConfigField("model", e.target.value)}
+                                            disabled={disabled}
+                                            className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            <option value="" disabled>{ts("deepAgentModelSelectPlaceholder")}</option>
+                                            {(choices || []).map((m) => <option key={m} value={m}>{m}</option>)}
+                                        </select>
+                                        {disabled && <span className="text-[11px] text-[#9d9184]">{hint}</span>}
+                                    </div>
                                 );
                             })()}
                         </div>
