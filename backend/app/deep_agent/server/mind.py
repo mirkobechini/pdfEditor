@@ -73,6 +73,15 @@ def _tools(chunk) -> list[str]:
 
 
 def _todos(chunk) -> list[str]:
+    """Ritorna gli aggiornamenti della todo list (todo del middleware TodoList).
+
+    Il TodoListMiddleware (langchain agents.middleware.todo) chiama il tool
+    `write_todos` con args {"todos": [{content, status}, ...]}; il campo testuale
+    è `content`, NON `task`/`todo` (fix 16/10: prima leggeva i campi sbagliati e
+    la task list in chat non appariva mai). Se il tool non è ancora stato
+    chiamato non c'è niente da mostrare: possiamo anche provare a derivare le
+    righe dai messaggi recenti.
+    """
     if not isinstance(chunk, dict):
         return []
     model = chunk.get("model")
@@ -80,7 +89,7 @@ def _todos(chunk) -> list[str]:
     if not msgs:
         return []
     m = msgs[-1]
-    out = []
+    out: list[str] = []
     for tc in (getattr(m, "tool_calls", None) or []):
         name = tc.get("name") if isinstance(tc, dict) else getattr(tc, "name", None)
         if name not in ("write_todos", "todo", "todo_list"):
@@ -88,7 +97,7 @@ def _todos(chunk) -> list[str]:
         args = tc.get("args") if isinstance(tc, dict) else getattr(tc, "args", {}) or {}
         for item in (args.get("todos") or args.get("items") or []):
             if isinstance(item, dict):
-                t = item.get("task") or item.get("todo") or ""
+                t = item.get("content") or item.get("task") or item.get("todo") or ""
             else:
                 t = str(item)
             if t:

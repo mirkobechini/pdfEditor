@@ -193,6 +193,7 @@
     "deepAgentRemove": "Remove",
     "deepAgentFallback": "Automatic fallback",
     "deepAgentFallbackDesc": "If the main provider fails, try the next one",
+    "deepAgentSaved": "✓ Configuration saved",
     "deepAgentModelEmpty": "Pull a model in Ollama (ollama pull) and retry",
     "deepAgentApiKeyFor": "{provider} API key",
     "deepAgentNeedKeyForModels": "Enter the key to see this provider's models",
