@@ -153,11 +153,11 @@ export default function StartupPage() {
             // al login invece che direttamente all'editor). Aspettiamo qualche
             // tentativo prima di considerare la sessione assente.
             let restoredUser = null;
-            for (let i = 0; i < 5 && !cancelled; i++) {
+            for (let i = 0; i < 3 && !cancelled; i++) {
                 restoredUser = await refreshSession();
                 if (restoredUser) break;
                 if (cancelled) return;
-                await new Promise((r) => setTimeout(r, 600));
+                await new Promise((r) => setTimeout(r, 350));
             }
             if (cancelled) return;
             if (restoredUser) {
