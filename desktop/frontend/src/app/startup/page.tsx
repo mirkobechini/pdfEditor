@@ -151,25 +151,25 @@ export default function StartupPage() {
         let cancelled = false;
         const redirectTimer = setTimeout(async () => {
             if (cancelled) return;
-            const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
-                Promise.race([
-                    p,
-                    new Promise<never>((_, rej) => setTimeout(() => rej(new Error("timeout")), ms)),
-                ]);
-            try {
-                const restoredUser = await withTimeout(refreshSession(), 4000);
+            // Retry brevi e NON bloccanti: il sidecar è appena pronto e il primo
+            // getMe() può fallire/ritardare (fix 16/10: l'utente ricordato finiva
+            // al login invece che direttamente all'editor). Aspettiamo qualche
+            // tentativo prima di considerare la sessione assente.
+            let restoredUser = null;
+            for (let i = 0; i < 5 && !cancelled; i++) {
+                restoredUser = await refreshSession();
+                if (restoredUser) break;
                 if (cancelled) return;
-                if (restoredUser) {
-                    router.push("/app");
-                    return;
-                }
-            } catch {
-                // refreshSession timeout/errore: non restare bloccato, naviga comunque
-                if (cancelled) return;
+                await new Promise((r) => setTimeout(r, 600));
+            }
+            if (cancelled) return;
+            if (restoredUser) {
+                router.replace("/app");
+                return;
             }
             const wizardDone = localStorage.getItem("pdfeditor_wizard_done");
-            router.push(wizardDone === "true" ? "/login" : "/wizard");
-        }, 60);
+            router.replace(wizardDone === "true" ? "/login" : "/wizard");
+        }, 120);
         return () => {
             cancelled = true;
             clearTimeout(redirectTimer);

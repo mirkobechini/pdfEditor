@@ -195,7 +195,10 @@
     "deepAgentFallbackDesc": "Se il provider principale non risponde, prova il successivo",
     "deepAgentModelEmpty": "Scarica un modello in Ollama (ollama pull) e riprova",
     "deepAgentApiKeyFor": "Chiave API di {provider}",
-    "deepAgentNeedKeyForModels": "Inserisci la chiave per vedere i modelli di questo provider"
+    "deepAgentNeedKeyForModels": "Inserisci la chiave per vedere i modelli di questo provider",
+    "deepAgentSelectProvider": "Seleziona provider",
+    "deepAgentModelNoProvider": "Scegli prima un provider",
+    "deepAgentModelSelectPlaceholder": "Seleziona un modello"
   },
   "editor": {
     "openLocalPdf": "Apri PDF locale",
