@@ -22,6 +22,9 @@ export default function StartupPage() {
     const tc = useTranslations("common");
     const ts = useTranslations("startup");
     const { refreshSession } = useAuth();
+    // Step REALI (fix 16/10): il backend esegue le migrazioni PRIMA di servire
+    // /health, quindi quando /health risponde il DB è già pronto → niente timer
+    // finto che fa diventare lo step database verde "a caso" alle 400ms.
     const [steps, setSteps] = React.useState<Step[]>([
         { id: "backend", label: ts("startingBackend"), status: "running" },
         { id: "database", label: ts("connectingDb"), status: "pending" },
@@ -45,12 +48,15 @@ export default function StartupPage() {
                     const res = await fetch(`${API_BASE}/health`, { signal: controller.signal });
                     clearTimeout(timeoutId);
                     if (res.ok) {
+                        // Backend su: le migrazioni DB sono già state fatte prima di
+                        // servire /health, quindi anche il database è pronto — lo
+                        // marcchiamo done SUBITO, in modo reale, non con un timer finto.
                         if (!cancelled) {
                             setSteps((prev) =>
                                 prev.map((s) =>
-                                    s.id === "backend" ? { ...s, status: "done" as const }
-                                        : s.id === "database" ? { ...s, status: "running" as const }
-                                            : s
+                                    s.id === "backend" || s.id === "database"
+                                        ? { ...s, status: "done" as const }
+                                        : s
                                 )
                             );
                         }
@@ -78,22 +84,14 @@ export default function StartupPage() {
         return () => { cancelled = true; };
     }, []);
 
-    // Step 2: once backend is done, mark DB as done with brief delay
+    // Step 2: una volta che il backend è su, passa la verifica all'API.
+    // (Il database è già segnato done insieme al backend: non è più un timer finto.)
     React.useEffect(() => {
         const backendStep = steps.find((s) => s.id === "backend");
         if (!backendStep || backendStep.status !== "done") return;
-
-        const timer = setTimeout(() => {
-            setSteps((prev) =>
-                prev.map((s) =>
-                    s.id === "database" ? { ...s, status: "done" as const }
-                        : s.id === "api" ? { ...s, status: "running" as const }
-                            : s
-                )
-            );
-        }, 400);
-
-        return () => clearTimeout(timer);
+        setSteps((prev) =>
+            prev.map((s) => (s.id === "api" ? { ...s, status: "running" as const } : s))
+        );
     }, [steps.find((s) => s.id === "backend")?.status]);
 
     // Step 3: once DB is done, verify API then redirect
