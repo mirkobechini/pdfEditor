@@ -405,6 +405,9 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 {s.mindTesting ? ts("deepAgentTesting") : ts("deepAgentTest")}
                             </button>
                         </div>
+                        {s.mindSaved && (
+                            <p className="mt-3 text-[12px] text-[#48c769]">{ts("deepAgentSaved")}</p>
+                        )}
                         {s.mindConfigError && (
                             <p className="mt-3 text-[12px] text-red-300">{s.mindConfigError}</p>
                         )}

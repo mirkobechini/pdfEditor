@@ -68,6 +68,8 @@ export function useSettingsPage() {
     const [mindLoaded, setMindLoaded] = React.useState(false);
     const [mindPendingApiKey] = React.useState<{ current?: string }>({});
     const [mindConfigError, setMindConfigError] = React.useState("");
+    // Fix 16/10 (esito build 942c33a0): conferma visiva di avvenuto salvataggio.
+    const [mindSaved, setMindSaved] = React.useState(false);
     // Punto 8: elenco modelli Ollama scaricati sulla macchina.
     const [ollamaModels, setOllamaModels] = React.useState<string[]>([]);
     // Modelli reali del provider cloud (solo se c'è la chiave). NIENTE catalogo
@@ -120,14 +122,26 @@ export function useSettingsPage() {
     }
 
     async function saveMindConfig() {
+        setMindConfigError("");
+        setMindSaved(false);
         const key = (mindPendingApiKey as { current?: string }).current ?? undefined;
-        const providers: MindProviderEntry[] = (mindConfig.providers || []).map((p, i) => ({
+        // Fix 16/10 (esito build 942c33a0): il provider attivo scelto dal select deve
+        // finire (di testa, massima precedenza) nella lista `providers` con il suo
+        // modello, così la selezione resta coerente con la configurazione salvata.
+        const activeProv = mindConfig.provider?.trim();
+        let providers: MindProviderEntry[] = (mindConfig.providers || []).map((p, i) => ({
             provider: p.provider,
             model: p.model,
             enabled: p.enabled,
             // la key dell'utente per questo provider (se inserita); vuota = invariata
             api_key: providerKeys[i] ?? "",
         }));
+        if (activeProv && !providers.some((p) => p.provider === activeProv)) {
+            providers = [
+                { provider: activeProv, model: mindConfig.model || "", enabled: true, api_key: key ?? "" },
+                ...providers,
+            ];
+        }
         const patch: MindConfigUpdate = {
             provider: mindConfig.provider,
             model: mindConfig.model,
@@ -143,12 +157,15 @@ export function useSettingsPage() {
             setMindConfig(updated);
             mindPendingApiKey.current = undefined;
             setProviderKeys({});
+            setMindSaved(true);
+            window.setTimeout(() => setMindSaved(false), 2500);
             if (updated.provider === "ollama" || (updated.providers && updated.providers.some((p) => p.provider === "ollama"))) {
                 loadOllamaModels();
             }
         } catch (err) {
             console.error("Failed to save Deep Agent config:", err);
             setMindConfigError(apiError(err));
+            setMindSaved(false);
         }
     }
 
@@ -325,7 +342,7 @@ export function useSettingsPage() {
         bugReportOpen, setBugReportOpen, bugTitle, setBugTitle, bugDesc, setBugDesc,
         bugSending, setBugSending, bugError, bugDone, openUrl, closeBugReport, submitBugReport,
         // deep agent
-        mindConfig, setMindConfigField, setMindConfigApiKey, saveMindConfig, mindConfigError,
+        mindConfig, setMindConfigField, setMindConfigApiKey, saveMindConfig, mindConfigError, mindSaved,
         ollamaModels, modelCatalog, getModelChoicesForProvider, testMindConnection, mindTesting, mindTestResult, mindTestOk,
         addMindProvider, updateMindProvider, removeMindProvider, moveMindProvider,
         setMindProviderFallback, providerKeys, setProviderKeys,

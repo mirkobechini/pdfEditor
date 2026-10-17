@@ -193,6 +193,7 @@
     "deepAgentRemove": "Rimuovi",
     "deepAgentFallback": "Fallback automatico",
     "deepAgentFallbackDesc": "Se il provider principale non risponde, prova il successivo",
+    "deepAgentSaved": "✓ Configurazione salvata",
     "deepAgentModelEmpty": "Scarica un modello in Ollama (ollama pull) e riprova",
     "deepAgentApiKeyFor": "Chiave API di {provider}",
     "deepAgentNeedKeyForModels": "Inserisci la chiave per vedere i modelli di questo provider",
