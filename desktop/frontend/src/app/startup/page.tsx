@@ -144,18 +144,28 @@ export default function StartupPage() {
         if (!allDone || redirectHandledRef.current) return;
         redirectHandledRef.current = true;
         let cancelled = false;
+        // Fix 16/10 (QA C3): senza timeout il redirect poteva restare appeso a
+        // refreshSession() e la pagina restava "tutta verde" bloccata. Ogni tentativo
+        // ha un timeout (2.5s) e il redirect NAVIGA comunque entro pochi secondi.
+        const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
+            Promise.race([
+                p,
+                new Promise<never>((_, rej) => setTimeout(() => rej(new Error("timeout")), ms)),
+            ]);
         const redirectTimer = setTimeout(async () => {
             if (cancelled) return;
             // Retry brevi e NON bloccanti: il sidecar è appena pronto e il primo
-            // getMe() può fallire/ritardare (fix 16/10: l'utente ricordato finiva
-            // al login invece che direttamente all'editor). Aspettiamo qualche
-            // tentativo prima di considerare la sessione assente.
+            // getMe() può fallire/ritardare. Ogni tentativo scade dopo 2.5s.
             let restoredUser = null;
             for (let i = 0; i < 3 && !cancelled; i++) {
-                restoredUser = await refreshSession();
+                try {
+                    restoredUser = await withTimeout(refreshSession(), 2500);
+                } catch {
+                    restoredUser = null;
+                }
                 if (restoredUser) break;
                 if (cancelled) return;
-                await new Promise((r) => setTimeout(r, 350));
+                await new Promise((r) => setTimeout(r, 300));
             }
             if (cancelled) return;
             if (restoredUser) {
