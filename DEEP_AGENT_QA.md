@@ -12,8 +12,9 @@ Stato attuale: 17/10. Partiamo dal BUG 1.
 
 | # | Tipo | Descrizione | Stato |
 |---|------|-------------|-------|
-| 1 | Bug | **Startup**: dopo gli step verdi appare "Pronto! Reindirizzamento al login..." e ci mette un po' prima di entrare nell'editor (testo sbagliato + ritardo del retry). + (C1) pallini verdi "a caso" (timer DB finto 400ms). + (C2) pallini tutti verdi e BLOCCO senza entrare nell'editor. | 🔄 C1: testo+retry ok, accesso ok. C2: pallini ok ma BLOCCATO (redirect senza timeout). C3 (run 39118565642) fix timeout per tentativo → da test |
-| 14 | Bug | **Merge in chat sparisce senza esito**: parte "sto usando merge_pdf…" poi svanisce senza messaggi né errori (esito C1). | ⏳ in coda (dopo C1) |
+| 1 | Bug | **Startup**: testo+retry+accesso diretto; dopo C4/C5 entri nell'editor senza passare dal login e con 2 step reali. | ✅ CHIUSO (esito Mirko 18/10: 'sembra ok') |
+| 15 | Bug | **Nome utente nell'editor**: dopo l'ingresso diretto (C5) all'inizio user non è popolato → la sidebar mostra il fallback "Utente" e la pagina profilo resta in loading finché la sessione non completa (il nome vero riappare dopo il giro). | 🔄 C6: EditorPage ripristina la sessione al mount se user vuoto → da build C6 |
+| 14 | Bug | **Merge in chat sparisce senza esito**: parte "sto usando merge_pdf…" poi svanisce senza messaggi né errori. | ⏳ in coda |
 | 2 | Bug | **Avanzate**: la cartella workspace non si salva tra una build e l'altra (persistenza). | ⏳ in coda |
 | 3 | Bug | Task list chat mostrava `chat.toolActivity` grezza. | ✅ RISOLTO (chiave i18n `8420fb75`) |
 | 4 | Bug | Messaggi agente **mezzi in inglese** ("I can see i seguenti PDF...") → rafforzare il prompt di sistema per risposta sempre in italiano. | ⏳ in coda |

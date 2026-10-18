@@ -19,7 +19,17 @@ const API_BASE = getApiBaseUrl();
 
 export default function EditorPage() {
     const te = useTranslations("editor");
-    const { user } = useAuth();
+    const { user, loading: authLoading, refreshSession } = useAuth();
+    // Fis 16/10 (QA C5 + regr): ora si entra nell'editor SUBITO (sessione salvata),
+    // quindi user può non essere ancora popolato -> sidebar mostrava il fallback
+    // "Utente" e la pagina profilo restava in loading. Ripristina la sessione al
+    // mount se serve: il nome reale compare subito, il profilo non si blocca.
+    React.useEffect(() => {
+        if (!user && !authLoading) {
+            refreshSession().catch(() => {});
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user, authLoading]);
     // Punto 11: F12 apre i devtools webview (debug) anche in release.
     React.useEffect(() => {
         function onKey(e: KeyboardEvent) {
