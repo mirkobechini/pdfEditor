@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { getApiBaseUrl } from "../../shared/tauri";
+import { getApiBaseUrl, isTauri } from "../../shared/tauri";
 import { useAuth } from "../../shared/auth";
 
 const API_BASE = getApiBaseUrl();
@@ -15,6 +15,26 @@ interface Step {
     label: string;
     status: StepStatus;
     message?: string;
+}
+
+// Fix 16/10 (QA C4): esiste una sessione ricordata? Controlla localStorage
+// (web remember-me) e, su desktop, il token nel Tauri store (load_jwt).
+// La startup usa questo per decidere se andare DIRETTAMENTE all'editor invece
+// che al login: il primo getMe() può fallire per timing anche quando l'utente
+// è ricordato (console: /pdfs 401 ok ma /auth/me ancora non pronto).
+async function hasStoredSession(): Promise<boolean> {
+    if (typeof window === "undefined") return false;
+    if (localStorage.getItem("pdfeditor_remember_token")) return true;
+    if (isTauri()) {
+        try {
+            const { tauriInvoke } = await import("../../shared/tauri");
+            const tok = await tauriInvoke<string>("load_jwt");
+            return !!tok;
+        } catch {
+            return false;
+        }
+    }
+    return false;
 }
 
 export default function StartupPage() {
@@ -169,6 +189,16 @@ export default function StartupPage() {
             }
             if (cancelled) return;
             if (restoredUser) {
+                router.replace("/app");
+                return;
+            }
+            // Fix 16/10 (QA C4): anche se refreshSession() non ha ancora risolto
+            // l'utente (primo getMe() può fallire per timing col sidecar appena su),
+            // se ESISTE una sessione ricordata andiamo DIRETTAMENTE all'editor.
+            // Dal login si passa SOLO se davvero non c'è nessuna sessione salvata.
+            const remembered = await hasStoredSession();
+            if (cancelled) return;
+            if (remembered) {
                 router.replace("/app");
                 return;
             }

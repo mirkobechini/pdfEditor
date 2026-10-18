@@ -12,7 +12,7 @@ Stato attuale: 17/10. Partiamo dal BUG 1.
 
 | # | Tipo | Descrizione | Stato |
 |---|------|-------------|-------|
-| 1 | Bug | **Startup**: dopo gli step verdi appare "Pronto! Reindirizzamento al login..." e ci mette un po' prima di entrare nell'editor (testo sbagliato + ritardo del retry). + (esito C1) step che diventano verdi "a caso" (era un timer DB finto 400ms). | 🔄 C1: testo+retry ok, accesso diretto ok; pallini veri aggiunti → da build C2 |
+| 1 | Bug | **Startup**: dopo gli step verdi appare "Pronto! Reindirizzamento al login..." e ci mette un po' prima di entrare nell'editor (testo sbagliato + ritardo del retry). + (C1) pallini verdi "a caso" (timer DB finto 400ms). + (C2) pallini tutti verdi e BLOCCO senza entrare nell'editor. | 🔄 C1: testo+retry ok, accesso ok. C2: pallini ok ma BLOCCATO (redirect senza timeout). C3 (run 39118565642) fix timeout per tentativo → da test |
 | 14 | Bug | **Merge in chat sparisce senza esito**: parte "sto usando merge_pdf…" poi svanisce senza messaggi né errori (esito C1). | ⏳ in coda (dopo C1) |
 | 2 | Bug | **Avanzate**: la cartella workspace non si salva tra una build e l'altra (persistenza). | ⏳ in coda |
 | 3 | Bug | Task list chat mostrava `chat.toolActivity` grezza. | ✅ RISOLTO (chiave i18n `8420fb75`) |
