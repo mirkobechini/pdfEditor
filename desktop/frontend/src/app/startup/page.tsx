@@ -46,8 +46,10 @@ export default function StartupPage() {
     // /health, quindi quando /health risponde il DB è già pronto → niente timer
     // finto che fa diventare lo step database verde "a caso" alle 400ms.
     const [steps, setSteps] = React.useState<Step[]>([
+        // QA C5: 2 step REALI (backend -> api). Lo step "database" era ridondante:
+        // le migrazioni avvengono prima di /health, quindi diventava verde insieme
+        // al backend e dava l'impressione di "verdi tutti insieme a caso".
         { id: "backend", label: ts("startingBackend"), status: "running" },
-        { id: "database", label: ts("connectingDb"), status: "pending" },
         { id: "api", label: ts("verifyingApi"), status: "pending" },
     ]);
     const [allDone, setAllDone] = React.useState(false);
@@ -69,14 +71,12 @@ export default function StartupPage() {
                     clearTimeout(timeoutId);
                     if (res.ok) {
                         // Backend su: le migrazioni DB sono già state fatte prima di
-                        // servire /health, quindi anche il database è pronto — lo
-                        // marcchiamo done SUBITO, in modo reale, non con un timer finto.
+                        // servire /health, quindi è davvero pronto. QA C5: segniamo
+                        // done solo il backend, poi l'API viene verificata davvero.
                         if (!cancelled) {
                             setSteps((prev) =>
                                 prev.map((s) =>
-                                    s.id === "backend" || s.id === "database"
-                                        ? { ...s, status: "done" as const }
-                                        : s
+                                    s.id === "backend" ? { ...s, status: "done" as const } : s
                                 )
                             );
                         }
@@ -105,7 +105,6 @@ export default function StartupPage() {
     }, []);
 
     // Step 2: una volta che il backend è su, passa la verifica all'API.
-    // (Il database è già segnato done insieme al backend: non è più un timer finto.)
     React.useEffect(() => {
         const backendStep = steps.find((s) => s.id === "backend");
         if (!backendStep || backendStep.status !== "done") return;
@@ -114,10 +113,10 @@ export default function StartupPage() {
         );
     }, [steps.find((s) => s.id === "backend")?.status]);
 
-    // Step 3: once DB is done, verify API then redirect
+    // Step 3: verifica API (readiness reale via /pdfs) poi redirect.
     React.useEffect(() => {
-        const dbStep = steps.find((s) => s.id === "database");
-        if (!dbStep || dbStep.status !== "done") return;
+        const backendStep = steps.find((s) => s.id === "backend");
+        if (!backendStep || backendStep.status !== "done") return;
 
         let cancelled = false;
 
@@ -154,7 +153,7 @@ export default function StartupPage() {
         }
         verifyApi();
         return () => { cancelled = true; };
-    }, [steps.find((s) => s.id === "database")?.status]);
+    }, [steps.find((s) => s.id === "backend")?.status]);
 
     // Redirect ONLY when allDone: verifica della sessione (una volta sola) e
     // destinazione: /app se autenticato, altrimenti /login o /wizard.
@@ -174,10 +173,20 @@ export default function StartupPage() {
             ]);
         const redirectTimer = setTimeout(async () => {
             if (cancelled) return;
-            // Retry brevi e NON bloccanti: il sidecar è appena pronto e il primo
-            // getMe() può fallire/ritardare. Ogni tentativo scade dopo 2.5s.
+            // QA C5: se esiste una sessione ricordata andiamo SUBITO all'editor,
+            // senza aspettare il retry di refreshSession() (che col sidecar appena
+            // su può tardare: era la "pausa" residua che vedevi). Dal login si passa
+            // SOLO se davvero non c'è nessuna sessione salvata.
+            const remembered = await hasStoredSession();
+            if (cancelled) return;
+            if (remembered) {
+                router.replace("/app");
+                return;
+            }
+            // Nessuna sessione salvata: prova a ripristinare (web cookie / cloud),
+            // poi vai a /app se autenticato, altrimenti login o wizard.
             let restoredUser = null;
-            for (let i = 0; i < 3 && !cancelled; i++) {
+            for (let i = 0; i < 2 && !cancelled; i++) {
                 try {
                     restoredUser = await withTimeout(refreshSession(), 2500);
                 } catch {
@@ -189,16 +198,6 @@ export default function StartupPage() {
             }
             if (cancelled) return;
             if (restoredUser) {
-                router.replace("/app");
-                return;
-            }
-            // Fix 16/10 (QA C4): anche se refreshSession() non ha ancora risolto
-            // l'utente (primo getMe() può fallire per timing col sidecar appena su),
-            // se ESISTE una sessione ricordata andiamo DIRETTAMENTE all'editor.
-            // Dal login si passa SOLO se davvero non c'è nessuna sessione salvata.
-            const remembered = await hasStoredSession();
-            if (cancelled) return;
-            if (remembered) {
                 router.replace("/app");
                 return;
             }
@@ -231,7 +230,6 @@ export default function StartupPage() {
         redirectHandledRef.current = false;
         setSteps([
             { id: "backend", label: ts("startingBackend"), status: "running" },
-            { id: "database", label: ts("connectingDb"), status: "pending" },
             { id: "api", label: ts("verifyingApi"), status: "pending" },
         ]);
     }
