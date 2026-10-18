@@ -180,6 +180,12 @@ export default function StartupPage() {
             const remembered = await hasStoredSession();
             if (cancelled) return;
             if (remembered) {
+                // QA C6 (suggerimento Mirko): se c'è un utente loggato, avviamo
+                // refreshSession() in PARALLELO (non bloccante) PRIMA di entrare
+                // nell'editor, così il nome reale è già pronto alla sidebar e la
+                // pagina profilo non resta più in loading. Non lo attendiamo per
+                // il redirect (sarebbe l'attesa che abbiamo tolto in C5).
+                refreshSession().catch(() => {});
                 router.replace("/app");
                 return;
             }
