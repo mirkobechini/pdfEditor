@@ -50,6 +50,21 @@ def _current_user_id() -> str:
         admin = UserRepository(db).get_by_email(os.environ.get("PDFMIND_SUPER_ADMIN_EMAIL", "admin@pdfeditor.local"))
         if admin:
             return admin.id
+        # fix 19/10: sidecar locale MONOUTENTE — la ContextVar dell'utente di
+        # sessione può NON arrivare nel thread dei tool. Come ultima risorsa
+        # risolviamo il PRIMO utente reale (non-guest) del DB: è l'utente loggato
+        # della sidecar desktop, a cui appartengono i PDF. Evita il fallimento
+        # "Nessun utente risolto... PDFMIND_USER_ID".
+        from sqlalchemy import select
+        from app.models.user import User as UserModel
+        u = db.execute(
+            select(UserModel)
+            .where(UserModel.is_guest.is_(False))
+            .order_by(UserModel.created_at.asc())
+            .limit(1)
+        ).scalar_one_or_none()
+        if u is not None:
+            return u.id
     finally:
         db.close()
     raise ValueError(

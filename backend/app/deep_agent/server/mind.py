@@ -35,6 +35,10 @@ class ChatReq(BaseModel):
     profile: str = "user"
     model: str | None = None
     history: list[dict] = []
+    # Fix 19/10: la SIDECAR desktop (questo server su :7723) deve sapere CHI è
+    # l'utente autenticato, altrimenti i tool PDF (merge/split/...) falliscono con
+    # "Nessun utente risolto... imposta PDFMIND_USER_ID". Il frontend lo invia.
+    user_id: str | None = None
 
 
 def _text(chunk) -> str:
@@ -220,8 +224,16 @@ async def _resume_events(thread_id: str, decision: dict):
 
 @app.post("/chat")
 async def chat(req: ChatReq):
+    # fix 19/10: l'utente autenticato della sessione DEVE arrivare ai tool PDF
+    # (merge/split/...). Senza, falliscono con "Nessun utente risolto: imposta
+    # PDFMIND_USER_ID oppure esiste admin@pdfeditor.local".
+    from app.deep_agent.tools.pdf_ops import set_current_user_id
+    set_current_user_id(req.user_id)
     agent = build_agent(req.model, req.profile)
-    return StreamingResponse(_events(agent, req.goal, uuid.uuid4().hex, req.history), media_type="text/event-stream")
+    return StreamingResponse(
+        _events(agent, req.goal, uuid.uuid4().hex, req.history),
+        media_type="text/event-stream",
+    )
 
 
 class ApproveReq(BaseModel):
