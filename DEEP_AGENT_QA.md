@@ -30,7 +30,7 @@ Stato attuale: 17/10. Partiamo dal BUG 1.
 | 12 | Feature | Workspace non configurata → l'agente propone di configurarla. | ⏳ in coda |
 | 13 | Feature | Avatar profilo Saru (dopo il deep agent). | ⏳ in coda (ultimo) |
 
-| 18 | Bug | L'agente **ri-esegue azioni vecchie dalla cronologia persistente** (es. scrivi "ciao che file vedi?" e rifà il merge di giorni fa). Distinto dal Bug 14 (che è l'esito che sparisce). Da sistemare limitando/pulendo la history inviata all'agente. | ⏳ PROSSIMO (dopo C14b) |
+| 18 | Bug | L'agente **ri-esegue azioni vecchie dalla cronologia persistente** (es. scrivi "ciao che file vedi?" e rifà il merge di giorni fa). Causa: inviava TUTTA la cronologia (fino a 40 msg) come context. Fix: invio solo gli ULTIMI 10 messaggi (slice(-10) in ChatAssistant). | 🔄 FIXATO (d8f2727c) → da build + test |
 
 | 19 | Bug | Tool **elenca_workspace** segnala 'require the cartella parameter': `elenca_workspace()` è senza parametri ma il modello lo confonde con `elenca_file(cartella)` → va chiarito lo schema/prompt o rimosso l'ambiguo. | ⏳ in coda (dopo C14c) |
 
