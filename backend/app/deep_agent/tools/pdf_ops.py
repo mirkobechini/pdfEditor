@@ -58,10 +58,49 @@ def _current_user_id() -> str:
     )
 
 
+def _resolve_pdf_id(token: str, user_id: str) -> str:
+    """Risolve il nome file (es. "scheda-1726") all'id reale del PDF per l'utente.
+
+    Bug 14 real bias (fix 19/10): i tool app (merge/split/...) ricevevano dall'LLM
+    il NOME del file che vede nella workspace, ma il servizio cerca per id backend.
+    Se il token è già un UUID lo usiamo; altrimenti lo risolviamo contro i PDF
+    dell'utente per original_filename (con o senza .pdf, case-insensitive).
+    Se è ambiguo -> errore chiaro; se non trovato -> ValueError che diventa "Errore:".
+    """
+    token = (token or "").strip().strip('"').strip("'")
+    if not token:
+        raise ValueError("nome file/id del PDF vuoto")
+    from uuid import UUID
+    try:
+        UUID(token)
+        return token
+    except (ValueError, AttributeError):
+        pass
+    db = SessionLocal()
+    try:
+        from app.repositories.pdf_repo import PdfRepository
+        docs = PdfRepository(db).get_all_by_user(user_id)
+        name = token.lower()
+        if not name.endswith(".pdf"):
+            name += ".pdf"
+        base = name[:-4]
+        exact = [d for d in docs if (d.original_filename or "").lower() == name]
+        partial = [d for d in docs if (d.original_filename or "").lower().startswith(base)] if not exact else []
+        matches = exact or partial
+        if len(matches) == 1:
+            return matches[0].id
+        if len(matches) > 1:
+            liste = ", ".join((d.original_filename or d.id) for d in matches)
+            raise ValueError(f"PDF di '{token}' ambiguo ({len(matches)} file): {liste}. Usa l'id.")
+        raise ValueError(f"PDF {token} not found")
+    finally:
+        db.close()
+
+
 def split_pdf(pdf_id: str, mode: str = "every", ranges: str | None = None) -> str:
     """Separa un PDF in più parti.
 
-    - pdf_id: id del PDF nel backend
+    - pdf_id: id del PDF nel backend oppure il NOME del file (es. "scheda-1726.pdf")
     - mode: "every" (una pagina per parte) oppure "range"
     - ranges: obbligatorio se mode="range", formato "1-3,5-7"
     """
@@ -71,11 +110,12 @@ def split_pdf(pdf_id: str, mode: str = "every", ranges: str | None = None) -> st
     try:
         service = PdfMergeSplitService(db)
         user_id = _current_user_id()
+        resolved = _resolve_pdf_id(pdf_id, user_id)
         if mode == "range":
             parsed = [r.strip() for r in ranges.split(",") if r.strip()]
-            results = service.split_by_ranges(pdf_id, user_id, parsed)
+            results = service.split_by_ranges(resolved, user_id, parsed)
         else:
-            results = service.split_every_page(pdf_id, user_id)
+            results = service.split_every_page(resolved, user_id)
         names = [r.original_filename for r in results]
         return f"✓ PDF diviso in {len(results)} parti: {', '.join(names)}"
     except ValueError as e:
@@ -96,7 +136,9 @@ def merge_pdfs(pdf_ids: str) -> str:
     try:
         service = PdfMergeSplitService(db)
         user_id = _current_user_id()
-        doc = service.merge(ids, user_id)
+        # fix 19/10: l'LLM passa i NOMI file della workspace -> risolviamo a id reali
+        resolved_ids = [_resolve_pdf_id(i, user_id) for i in ids]
+        doc = service.merge(resolved_ids, user_id)
         return f"✓ PDF uniti in: {doc.original_filename}"
     except ValueError as e:
         return f"Errore: {e}"
