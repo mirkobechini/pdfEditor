@@ -175,6 +175,11 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     msgs.append({"role": "user", "content": goal})
     saw_tool = False
     sent_tool_result = False
+    # dedup #5 (19/10): il testo doppio "✓ PDF uniti…✓ PDF uniti…" nasceva perché
+    # _text emette sia il ToolMessage (esito del tool) sia il messaggio finale
+    # dell'LLM che ripete la stessa stringa. Ricordiamo l'ultimo contenuto emesso
+    # e se un testo identico arriva di nuovo, lo saltiamo.
+    last_emitted = ""
     async for chunk in agent.astream({"messages": msgs}, config=cfg):
         name = _interrupt_name(chunk)
         if name:
@@ -187,14 +192,22 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
             yield _evt(f"[STEP] {t}")
         t = _text(chunk)
         if t:
+            if t.strip() and t.strip() == last_emitted.strip():
+                last_emitted = t.strip()
+                continue  # dedup: il modello ripete un esito già emesso
             yield _evt(t)
+            last_emitted = t.strip()
             sent_tool_result = True  # testo normale già emesso, niente fallback
         else:
             r = _tool_result(chunk)
             if r and not sent_tool_result:
                 # Il tool ha prodotto un esito ma il modello non lo ha riassunto:
                 # lo mostriamo noi (fix Bug 14 — il merge non deve più "sparire").
+                if r.strip() == last_emitted.strip():
+                    last_emitted = r.strip()
+                    continue
                 yield _evt(r)
+                last_emitted = r.strip()
                 sent_tool_result = True
     SESSIONS.pop(thread_id, None)
     yield _evt("[DONE]")

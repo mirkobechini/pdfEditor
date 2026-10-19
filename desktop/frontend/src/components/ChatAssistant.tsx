@@ -120,18 +120,35 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, tasks, open]);
 
+    // QA #18.b (tutti e 6, 19/10): costruisce una history COMPRESSA e PULITA.
+    // #3 esclude le azioni già eseguite (non le ripassa come comandi),
+    // #4 comprime il contesto vecchio in una riga di riassunto invece di tagliare a caso,
+    // #6 appiattisce i dettagli tecnici degli strumenti.
+    function buildHistory(src: Message[]): { role: string; content: string }[] {
+        const MAX = 12;
+        const cleaned = src.filter((m) => m.content && !isControl(m.content) && !m.error);
+        const isEsito = /^(✓|✅|❌|Errore:|Errore\.)/;
+        const past: { role: string; content: string }[] = [];
+        for (const m of cleaned) {
+            if (m.role === "assistant" && isEsito.test(m.content.trim())) {
+                // #3: azione già conclusa -> non passarla come comando da rieseguire
+                past.push({ role: "assistant", content: `(precedente: ${m.content.trim()})` });
+            } else {
+                past.push({ role: m.role, content: m.content });
+            }
+        }
+        if (past.length <= MAX) return past;
+        // #4: compressione del contesto vecchio (riassunto) invece del taglio netto
+        const recent = past.slice(-MAX);
+        const old = past.slice(0, -MAX);
+        const summary = old.map((m) => m.content).join(" · ").slice(0, 800);
+        return [{ role: "assistant", content: `Contesto precedente: ${summary}` }, ...recent];
+    }
+
     async function send() {
         const goal = input.trim();
         if (!goal || sending) return;
-        // QA Bug 18: inviare TUTTA la cronologia persistente (fino a 40 msg) come
-        // contesto faceva ri-eseguire all'agente azioni vecchie (es. dopo 'ciao che
-        // file vedi?' rifaceva il merge di giorni fa). Inviando solo gli ULTIMI ~10
-        // messaggi il contesto resta vivo ma le richieste obsolete non 'arroventano'
-        // il modello. (Mirko 19/10: 'il #18 potrebbe darci una grossa mano')
-        const history = messages
-            .filter((m) => m.content && !isControl(m.content))
-            .slice(-10)
-            .map((m) => ({ role: m.role, content: m.content }));
+        const history = buildHistory(messages);
         setMessages((prev) => [...prev, { role: "user", content: goal }]);
         setInput("");
         setSending(true);
