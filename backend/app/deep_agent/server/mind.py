@@ -130,24 +130,31 @@ def _tool_result(chunk) -> str:
     Dopo una chiamata tool, l'agente riceve un ToolMessage il cui `.content` è
     l'esito del tool (es. "✓ PDF uniti in: x.pdf"). Se il modello poi non produce
     un messaggio di testo riepilogativo, quel risultato è tutto ciò che abbiamo
-    per mostrare l'esito all'utente (fix 16/10: il merge "spariva" perché il
-    messaggio finale post-tool non usciva dallo streaming).
+    per mostrare l'esito all'utente.
+
+    IMPORTANTE (fix 19/10): deepagents usa DUE nodi — `model` (LLM) e `tools`
+    (esecuzione tool). Il ToolMessage con l'esito sta nel nodo **tools**, non in
+    model. Prima leggevamo solo `chunk["model"]` e quindi l'esito del merge non
+    veniva mai trovato → la chat restava al "[STEP] merge_pdf" e poi spariva.
+    Ora scandiamo TUTTE le partizioni (model, tools, ...) del chunk.
     """
     if not isinstance(chunk, dict):
         return ""
-    model = chunk.get("model")
-    msgs = model.get("messages") if isinstance(model, dict) else None
-    if not msgs:
-        return ""
-    m = msgs[-1]
-    role = getattr(m, "type", "")
-    c = getattr(m, "content", None)
-    if role != "tool":
-        return ""
-    if isinstance(c, str):
-        return c.strip()
-    if isinstance(c, list):
-        return "".join(p.get("text", "") for p in c if isinstance(p, dict) and p.get("text"))
+    for part in chunk.values():
+        msgs = part.get("messages") if isinstance(part, dict) else None
+        if not msgs:
+            continue
+        m = msgs[-1]
+        role = getattr(m, "type", "")
+        if role != "tool":
+            continue
+        c = getattr(m, "content", None)
+        if isinstance(c, str) and c.strip():
+            return c.strip()
+        if isinstance(c, list):
+            t = "".join(p.get("text", "") for p in c if isinstance(p, dict) and p.get("text"))
+            if t:
+                return t
     return ""
 
 
