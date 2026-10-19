@@ -95,27 +95,37 @@ def _resolve_pdf_id(token: str, user_id: str) -> str:
     try:
         from app.repositories.pdf_repo import PdfRepository
         docs = PdfRepository(db).get_all_by_user(user_id)
-        # Normalizzazione: l'LLM può scrivere underscore al posto del trattino
-        # (es. scheda_1726.pdf vs il reale scheda-1726.pdf) e viceversa.
-        def _norm(s: str) -> str:
+
+        # PRIORITÀ AL MATCH ESATTO: `scheda-1726` e `scheda_1726` sono file
+        # DISTINTI (Mirko 19/10), quindi NON vanno normalizzati nello stesso
+        # match. Solo se il nome esatto non esiste proviamo un fallback che
+        # normalizza underscore<->trattino (perché l'LLM scrive scheda_1726
+        # mentre il file reale è scheda-1726) — ma se il fallback genera più
+        # candidati, dichiariamo AMBIGUITÀ invece di indovinare.
+        def _no_ext(s: str) -> str:
             s = (s or "").lower().strip()
             if s.endswith(".pdf"):
                 s = s[:-4]
-            return s.replace("_", "-").replace(" ", "-")
+            return s
 
-        norm_token = _norm(token)
         name = token.lower()
         if not name.endswith(".pdf"):
             name += ".pdf"
-        base = name[:-4]
-        # match esatto o parziale, normalizzando underscore/trattino e case
-        exact = [d for d in docs if _norm(d.original_filename) == norm_token]
-        partial = (
-            [d for d in docs if _norm(d.original_filename).startswith(base.replace("_", "-"))]
-            if not exact
-            else []
-        )
-        matches = exact or partial
+
+        # 1) match esatto (case-insensitive, con/senza .pdf)
+        exact = [d for d in docs if _no_ext(d.original_filename) == _no_ext(name)]
+        # 2) fallback: normalizza underscore<->trattino SOLO se non c'è esatto
+        if not exact:
+            norm_token = _no_ext(name).replace("_", "-").replace(" ", "-")
+            fuzzy = [
+                d
+                for d in docs
+                if _no_ext(d.original_filename).replace("_", "-").replace(" ", "-")
+                == norm_token
+            ]
+            exact = fuzzy
+
+        matches = exact
         if len(matches) == 1:
             return matches[0].id
         if len(matches) > 1:
