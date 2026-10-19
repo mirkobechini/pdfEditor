@@ -13,7 +13,7 @@ Stato attuale: 17/10. Partiamo dal BUG 1.
 | # | Tipo | Descrizione | Stato |
 |---|------|-------------|-------|
 | 1 | Bug | **Startup**: testo+retry+accesso diretto; dopo C4/C5 entri nell'editor senza passare dal login e con 2 step reali. | ✅ CHIUSO (esito Mirko 18/10: 'sembra ok') |
-| 15 | Bug | **Nome utente nell'editor**: dopo l'ingresso diretto (C5) all'inizio user non è popolato → la sidebar mostra il fallback "Utente" e la pagina profilo resta in loading finché la sessione non completa (il nome vero riappare dopo il giro). | 🔄 C6: EditorPage ripristina la sessione al mount se user vuoto → da build C6 |
+| 15 | Bug | **Nome utente nell'editor**: dopo l'ingresso diretto (C5) all'inizio user non è popolato → sidebar col fallback "Utente" e profilo in loading. | ✅ CHIUSO (C6 EditorPage refresh al mount + C6b refreshSession parallelo nello startup; ok esito Mirko 18/10) |
 | 14 | Bug | **Merge in chat sparisce senza esito**: parte "sto usando merge_pdf…" poi svanisce senza messaggi né errori. | ⏳ in coda |
 | 2 | Bug | **Avanzate**: la cartella workspace non si salva tra una build e l'altra (persistenza). | ⏳ in coda |
 | 3 | Bug | Task list chat mostrava `chat.toolActivity` grezza. | ✅ RISOLTO (chiave i18n `8420fb75`) |
