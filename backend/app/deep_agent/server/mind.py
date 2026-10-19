@@ -124,6 +124,33 @@ def _evt(v: str) -> str:
     return f"data: {json.dumps(v)}\n\n"
 
 
+def _tool_result(chunk) -> str:
+    """Ritorna il contenuto testuale dell'ULTIMO ToolMessage se presente.
+
+    Dopo una chiamata tool, l'agente riceve un ToolMessage il cui `.content` è
+    l'esito del tool (es. "✓ PDF uniti in: x.pdf"). Se il modello poi non produce
+    un messaggio di testo riepilogativo, quel risultato è tutto ciò che abbiamo
+    per mostrare l'esito all'utente (fix 16/10: il merge "spariva" perché il
+    messaggio finale post-tool non usciva dallo streaming).
+    """
+    if not isinstance(chunk, dict):
+        return ""
+    model = chunk.get("model")
+    msgs = model.get("messages") if isinstance(model, dict) else None
+    if not msgs:
+        return ""
+    m = msgs[-1]
+    role = getattr(m, "type", "")
+    c = getattr(m, "content", None)
+    if role != "tool":
+        return ""
+    if isinstance(c, str):
+        return c.strip()
+    if isinstance(c, list):
+        return "".join(p.get("text", "") for p in c if isinstance(p, dict) and p.get("text"))
+    return ""
+
+
 async def _events(agent, goal: str, thread_id: str, history: list[dict] | None = None):
     cfg = {"configurable": {"thread_id": thread_id, "checkpoint_ns": "", "checkpoint_id": ""}}
     SESSIONS[thread_id] = {"agent": agent, "config": cfg}
@@ -135,6 +162,8 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
         if content and role in ("user", "assistant"):
             msgs.append({"role": role, "content": content})
     msgs.append({"role": "user", "content": goal})
+    saw_tool = False
+    sent_tool_result = False
     async for chunk in agent.astream({"messages": msgs}, config=cfg):
         name = _interrupt_name(chunk)
         if name:
@@ -143,10 +172,19 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
         for t in _todos(chunk):
             yield _evt(f"[TASK] {t}")
         for t in _tools(chunk):
+            saw_tool = True
             yield _evt(f"[STEP] {t}")
         t = _text(chunk)
         if t:
             yield _evt(t)
+            sent_tool_result = True  # testo normale già emesso, niente fallback
+        else:
+            r = _tool_result(chunk)
+            if r and not sent_tool_result:
+                # Il tool ha prodotto un esito ma il modello non lo ha riassunto:
+                # lo mostriamo noi (fix Bug 14 — il merge non deve più "sparire").
+                yield _evt(r)
+                sent_tool_result = True
     SESSIONS.pop(thread_id, None)
     yield _evt("[DONE]")
 
