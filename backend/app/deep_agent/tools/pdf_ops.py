@@ -163,10 +163,44 @@ def split_pdf(pdf_id: str, mode: str = "every", ranges: str | None = None) -> st
         db.close()
 
 
-def merge_pdfs(pdf_ids: str | list[str]) -> str:
-    """Unisce più PDF in uno.
+def _resolve_workspace_pdf_path(token: str) -> Path:
+    """Risolve un NOME file all'id reale del PDF nella WORKSPACE (fisico su disco).
 
-    - pdf_ids: stringa di id/nomi separati da virgola OPPURE lista (almeno 2)
+    fix 19/10 (test Mirko): `elenca_workspace` elenca i file FISICI della cartella
+    workspace, ma `merge_pdfs` li cercava nel BACKEND (pdf_documents) -> i file
+    della workspace non erano lì -> "PDF ... not found". Ora il tool opera sui file
+    fisici. Match esatto per primo (scheda-1726 e scheda_1726 sono DISTINTI);
+    fallback _<->- solo se l'esatto non esiste; ambiguità se più candidati.
+    """
+    from app.deep_agent.tools.workspace import _root as ws_root
+    root = ws_root()
+    if root is None:
+        raise ValueError("workspace non configurata")
+    if not root.is_dir():
+        raise ValueError("workspace non trovata")
+    t = (token or "").strip().strip('"').strip("'")
+    if not t:
+        raise ValueError("nome file PDF vuoto")
+    name = t if t.lower().endswith(".pdf") else f"{t}.pdf"
+    def _norm(s: str) -> str:
+        return (s or "").lower().strip().replace("_", "-").replace(" ", "-")
+    exact = [f for f in root.glob("*.pdf") if f.name.lower() == name.lower()]
+    if not exact:
+        fuzzy = [f for f in root.glob("*.pdf") if _norm(f.name) == _norm(name)]
+        exact = fuzzy
+    if len(exact) == 1:
+        return exact[0]
+    if len(exact) > 1:
+        liste = ", ".join(f.name for f in exact)
+        raise ValueError(f"PDF di '{token}' ambiguo ({len(exact)} file): {liste}. Usa il nome esatto.")
+    raise ValueError(f"PDF {token} not found nel workspace")
+
+
+def merge_pdfs(pdf_ids: str | list[str]) -> str:
+    """Unisce più PDF (della WORKSPACE, file fisici) in uno.
+
+    - pdf_ids: stringa di nomi/id separati da virgola OPPURE lista (almeno 2)
+    Il risultato viene salvato nella cartella output/ del workspace.
     """
     if isinstance(pdf_ids, list):
         ids = [str(i).strip() for i in pdf_ids if str(i).strip()]
@@ -174,18 +208,27 @@ def merge_pdfs(pdf_ids: str | list[str]) -> str:
         ids = [i.strip() for i in str(pdf_ids).split(",") if i.strip()]
     if len(ids) < 2:
         return "Errore: servono almeno 2 PDF da unire"
-    db = SessionLocal()
     try:
-        service = PdfMergeSplitService(db)
-        user_id = _current_user_id()
-        # fix 19/10: l'LLM passa i NOMI file della workspace -> risolviamo a id reali
-        resolved_ids = [_resolve_pdf_id(i, user_id) for i in ids]
-        doc = service.merge(resolved_ids, user_id)
-        return f"✓ PDF uniti in: {doc.original_filename}"
+        paths = [_resolve_workspace_pdf_path(i) for i in ids]
     except ValueError as e:
         return f"Errore: {e}"
-    finally:
-        db.close()
+    import fitz
+    from app.deep_agent.tools.workspace import _root as ws_root
+    root = ws_root()
+    out = fitz.open()
+    try:
+        for p in paths:
+            doc = fitz.open(p)
+            out.insert_pdf(doc)
+            doc.close()
+        merged_name = "_".join(p.stem for p in paths) + "_uniti.pdf"
+        merged_dir = root / "output"
+        merged_dir.mkdir(parents=True, exist_ok=True)
+        out.save(str(merged_dir / merged_name))
+        out.close()
+        return f"✓ PDF uniti in: {merged_name}"
+    except Exception as e:
+        return f"Errore durante l'unione: {e}"
 
 
 def sign_pdf(
