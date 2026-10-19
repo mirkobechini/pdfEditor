@@ -185,14 +185,23 @@ def _resolve_workspace_pdf_path(token: str) -> Path:
     def _norm(s: str) -> str:
         return (s or "").lower().strip().replace("_", "-").replace(" ", "-")
     exact = [f for f in root.glob("*.pdf") if f.name.lower() == name.lower()]
-    if not exact:
-        fuzzy = [f for f in root.glob("*.pdf") if _norm(f.name) == _norm(name)]
-        exact = fuzzy
     if len(exact) == 1:
         return exact[0]
     if len(exact) > 1:
         liste = ", ".join(f.name for f in exact)
         raise ValueError(f"PDF di '{token}' ambiguo ({len(exact)} file): {liste}. Usa il nome esatto.")
+    # Nessun match esatto: il fallback normalizzato (_<->-, spazi) trova file col
+    # nome DIVERSO. NON eseguiamo da soli (Mirko 19/10: scheda-1726 e scheda_1726
+    # possono essere file diversi) -> chiediamo conferma all'utente.
+    fuzzy = [f for f in root.glob("*.pdf") if _norm(f.name) == _norm(name)]
+    if len(fuzzy) == 1:
+        raise ValueError(
+            f"Non ho trovato '{t}' nel workspace; esiste '{fuzzy[0].name}'. "
+            "Se intendevi questo file, conferma e riprova col nome esatto."
+        )
+    if len(fuzzy) > 1:
+        liste = ", ".join(f.name for f in fuzzy)
+        raise ValueError(f"PDF di '{t}' ambiguo ({len(fuzzy)} file): {liste}. Usa il nome esatto.")
     raise ValueError(f"PDF {token} not found nel workspace")
 
 
