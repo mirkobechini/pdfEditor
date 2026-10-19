@@ -95,12 +95,26 @@ def _resolve_pdf_id(token: str, user_id: str) -> str:
     try:
         from app.repositories.pdf_repo import PdfRepository
         docs = PdfRepository(db).get_all_by_user(user_id)
+        # Normalizzazione: l'LLM può scrivere underscore al posto del trattino
+        # (es. scheda_1726.pdf vs il reale scheda-1726.pdf) e viceversa.
+        def _norm(s: str) -> str:
+            s = (s or "").lower().strip()
+            if s.endswith(".pdf"):
+                s = s[:-4]
+            return s.replace("_", "-").replace(" ", "-")
+
+        norm_token = _norm(token)
         name = token.lower()
         if not name.endswith(".pdf"):
             name += ".pdf"
         base = name[:-4]
-        exact = [d for d in docs if (d.original_filename or "").lower() == name]
-        partial = [d for d in docs if (d.original_filename or "").lower().startswith(base)] if not exact else []
+        # match esatto o parziale, normalizzando underscore/trattino e case
+        exact = [d for d in docs if _norm(d.original_filename) == norm_token]
+        partial = (
+            [d for d in docs if _norm(d.original_filename).startswith(base.replace("_", "-"))]
+            if not exact
+            else []
+        )
         matches = exact or partial
         if len(matches) == 1:
             return matches[0].id
@@ -139,12 +153,15 @@ def split_pdf(pdf_id: str, mode: str = "every", ranges: str | None = None) -> st
         db.close()
 
 
-def merge_pdfs(pdf_ids: str) -> str:
+def merge_pdfs(pdf_ids: str | list[str]) -> str:
     """Unisce più PDF in uno.
 
-    - pdf_ids: lista di id separati da virgola (almeno 2)
+    - pdf_ids: stringa di id/nomi separati da virgola OPPURE lista (almeno 2)
     """
-    ids = [i.strip() for i in pdf_ids.split(",") if i.strip()]
+    if isinstance(pdf_ids, list):
+        ids = [str(i).strip() for i in pdf_ids if str(i).strip()]
+    else:
+        ids = [i.strip() for i in str(pdf_ids).split(",") if i.strip()]
     if len(ids) < 2:
         return "Errore: servono almeno 2 PDF da unire"
     db = SessionLocal()
