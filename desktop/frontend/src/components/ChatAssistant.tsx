@@ -123,8 +123,14 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
     async function send() {
         const goal = input.trim();
         if (!goal || sending) return;
+        // QA Bug 18: inviare TUTTA la cronologia persistente (fino a 40 msg) come
+        // contesto faceva ri-eseguire all'agente azioni vecchie (es. dopo 'ciao che
+        // file vedi?' rifaceva il merge di giorni fa). Inviando solo gli ULTIMI ~10
+        // messaggi il contesto resta vivo ma le richieste obsolete non 'arroventano'
+        // il modello. (Mirko 19/10: 'il #18 potrebbe darci una grossa mano')
         const history = messages
             .filter((m) => m.content && !isControl(m.content))
+            .slice(-10)
             .map((m) => ({ role: m.role, content: m.content }));
         setMessages((prev) => [...prev, { role: "user", content: goal }]);
         setInput("");

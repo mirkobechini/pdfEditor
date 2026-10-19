@@ -14,7 +14,7 @@ Stato attuale: 17/10. Partiamo dal BUG 1.
 |---|------|-------------|-------|
 | 1 | Bug | **Startup**: testo+retry+accesso diretto; dopo C4/C5 entri nell'editor senza passare dal login e con 2 step reali. | ✅ CHIUSO (esito Mirko 18/10: 'sembra ok') |
 | 15 | Bug | **Nome utente nell'editor**: dopo l'ingresso diretto (C5) all'inizio user non è popolato → sidebar col fallback "Utente" e profilo in loading. | ✅ CHIUSO (C6 EditorPage refresh al mount + C6b refreshSession parallelo nello startup; ok esito Mirko 18/10) |
-| 14 | Bug | **Merge in chat sparisce senza esito**: parte "sto usando merge_pdf…" poi svanisce senza messaggi né errori. | 🔄 FIXATO (fallback _tool_result in _events) → da build + test Mirko |
+| 14 | Bug | **Merge**: (a) spariva l'esito (✓ risolto: fallback _tool_result), (b) cercava nel backend invece dei file fisici workspace (✓ risolto: C14g), (c) l'agente correggeva i nomi da solo senza chiedere conferma — ANCORA APERTO (da risolvere: prompt agente C14i insufficiente, richiede conferma esplicita). | 🔄 funzionale ✓ (C14g/C14h/C14i); conferma ancora APERTA — ripresa dopo #18 |
 | 2 | Bug | **Avanzate**: la cartella workspace non si salva tra una build e l'altra (persistenza). | ✅ CHIUSO (esito Mirko 19/10: 'funziona anche da una build all'altra') |
 | 16 | Bug/Regressione | Nome utente torna 'Utente'/profilo in caricamento (riconfermato a posteriori, indagare più avanti). | ⏳ POSTICIPATO (da investigare) |
 | 17 | Bug | Cloud sync: 'Sessione cloud scaduta' / errore sync (indagare più avanti). | ⏳ POSTICIPATO (da investigare) |
