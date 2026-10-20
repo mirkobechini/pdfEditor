@@ -84,6 +84,10 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
     const taskIdRef = React.useRef(0);
     const bottomRef = React.useRef<HTMLDivElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
+    // Punto 5 + HITL nativo: il thread_id arriva dall'evento [THREAD] e viene
+    // riusato per la ripresa /approve; `hitl` tiene la conferma in sospeso.
+    const [threadId, setThreadId] = React.useState<string | null>(null);
+    const [hitl, setHitl] = React.useState<{ tool: string; threadId: string } | null>(null);
 
     // Persisti la cronologia locale quando cambia (non salvare i messaggi di errore
     // né i controlli; teniamo solo testo utile, max 40).
@@ -145,6 +149,59 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
         return [{ role: "assistant", content: `Contesto precedente: ${summary}` }, ...recent];
     }
 
+    /** Appende testo all'ultimo messaggio assistant (creandolo se assente). */
+    function appendAssistantText(ev: string) {
+        setMessages((prev) => {
+            const next = [...prev];
+            if (next[next.length - 1]?.role === "assistant") {
+                next[next.length - 1] = { role: "assistant", content: next[next.length - 1].content + ev };
+            } else {
+                next.push({ role: "assistant", content: ev });
+            }
+            return next;
+        });
+    }
+
+    /**
+     * Consuma uno stream SSE /mind/chat o /mind/approve, gestendo i marcatori
+     * del motore ([THREAD], [TASK], [STEP], [HITL], [DONE]) e il testo.
+     * Ritorna quando lo stream termina (dopo [DONE] o dopo un [HITL]).
+     */
+    async function consumeStream(res: Response): Promise<{ done: boolean; hitlTool: string | null; sawText: boolean }> {
+        let done = false;
+        let hitlTool: string | null = null;
+        let sawText = false;
+        if (!res.body) return { done, hitlTool, sawText };
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const { done: d, value } = await reader.read();
+            if (d) break;
+            buf += decoder.decode(value, { stream: true });
+            const events = parseSseChunk(buf);
+            for (const ev of events) {
+                if (ev === "[DONE]") { done = true; continue; }
+                if (ev.startsWith("[THREAD]")) { setThreadId(ev.slice(7).trim() || null); continue; }
+                if (ev.startsWith("[TASK]")) {
+                    taskIdRef.current += 1;
+                    const id = String(taskIdRef.current);
+                    setTasks((prev) => [...prev, { id, label: ev.slice(6), status: "running" as const }]);
+                    continue;
+                }
+                if (ev.startsWith("[STEP]")) { setActiveTool(ev.slice(6)); continue; }
+                if (ev.startsWith("[HITL]")) { hitlTool = ev.slice(6).trim(); continue; }
+                if (isControl(ev)) continue;
+                sawText = true;
+                appendAssistantText(ev);
+                setActiveTool(null); // testo in arrivo => tool concluso
+            }
+            buf = buf.slice(buf.lastIndexOf("\n\n") + 2);
+        }
+        return { done, hitlTool, sawText };
+    }
+
     async function send() {
         const goal = input.trim();
         if (!goal || sending) return;
@@ -152,12 +209,10 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
         setMessages((prev) => [...prev, { role: "user", content: goal }]);
         setInput("");
         setSending(true);
+        setHitl(null);
         setTasks([]);
         setActiveTool(null);
         taskIdRef.current = 0;
-
-        let partial = "";
-        let sawDone = false;
         try {
             // Fix 16/10: passa l'utente della sessione così i tool (merge/split/...)
             // operano sull'utente reale, non su env/admin di default.
@@ -170,47 +225,16 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                 const detail = await res.text().catch(() => "");
                 throw new Error(`HTTP ${res.status}${detail ? `::${detail}` : ""}`);
             }
-            if (!res.body) throw new Error("NO_BODY");
-
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let buf = "";
-            // eslint-disable-next-line no-constant-condition
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buf += decoder.decode(value, { stream: true });
-                const events = parseSseChunk(buf);
-                for (const ev of events) {
-                    if (ev === "[DONE]") { sawDone = true; continue; }
-                    if (ev.startsWith("[TASK]")) {
-                        taskIdRef.current += 1;
-                        const id = String(taskIdRef.current);
-                        setTasks((prev) => [...prev, { id, label: ev.slice(6), status: "running" }]);
-                        continue;
-                    }
-                    if (ev.startsWith("[STEP]")) {
-                        setActiveTool(ev.slice(6));
-                        continue;
-                    }
-                    if (isControl(ev)) continue;
-                    partial += ev;
-                    setActiveTool(null); // testo in arrivo => tool concluso
-                    setMessages((prev) => {
-                        const next = [...prev];
-                        if (next[next.length - 1]?.role === "assistant") {
-                            next[next.length - 1] = { role: "assistant", content: next[next.length - 1].content + ev };
-                        } else {
-                            next.push({ role: "assistant", content: ev });
-                        }
-                        return next;
-                    });
-                }
-                buf = buf.slice(buf.lastIndexOf("\n\n") + 2);
+            const { done, hitlTool, sawText } = await consumeStream(res);
+            // HITL nativo: l'agente si è fermato e attende conferma (Procedi/Annulla).
+            // Il thread_id è stato salvato dall'evento [THREAD] e verrà riusato da /approve.
+            if (hitlTool) {
+                setHitl({ tool: hitlTool, threadId: threadId ?? "" });
+                return;
             }
-            if (sawDone || partial) {
+            if (done || sawText) {
                 setTasks((prev) => prev.map((t) => ({ ...t, status: "done" as const })));
-            } else if (!partial) {
+            } else {
                 // Stream chiuso senza output e senza [DONE]: esito esplicito.
                 setMessages((prev) => [...prev, { role: "assistant", content: tc("emptyReply"), error: true }]);
             }
@@ -222,6 +246,41 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                         : err instanceof Error && err.message === "NO_BODY" ? tc("errorConnection")
                             : raw.includes("::") ? raw.split("::").slice(1).join("::").slice(0, 400)
                                 : tc("error");
+            setMessages((prev) => [...prev, { role: "assistant", content: msg, error: true }]);
+        } finally {
+            setSending(false);
+            setActiveTool(null);
+            setTimeout(() => setTasks([]), 1200);
+        }
+    }
+
+    /** Riprende uno stream HITL interrotto: POST /mind/approve {thread_id, approve}. */
+    async function approve(decision: boolean) {
+        if (!hitl) return;
+        const cur = hitl;
+        setHitl(null);
+        setSending(true);
+        setActiveTool(null);
+        try {
+            const res = await fetch(`${apiBase}/mind/approve`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ thread_id: cur.threadId, approve: decision }),
+            });
+            if (!res.ok) {
+                const detail = await res.text().catch(() => "");
+                throw new Error(`HTTP ${res.status}${detail ? `::${detail}` : ""}`);
+            }
+            const { done, hitlTool } = await consumeStream(res);
+            if (hitlTool) {
+                // Altro passaggio da confermare (es. più tool): mostriamo di nuovo i pulsanti.
+                setHitl({ tool: hitlTool, threadId: cur.threadId });
+                return;
+            }
+            if (done) setTasks((prev) => prev.map((t) => ({ ...t, status: "done" as const })));
+        } catch (err) {
+            const raw = err instanceof Error ? err.message : "";
+            const msg = raw.includes("::") ? raw.split("::").slice(1).join("::").slice(0, 400) : tc("error");
             setMessages((prev) => [...prev, { role: "assistant", content: msg, error: true }]);
         } finally {
             setSending(false);
@@ -307,7 +366,28 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                     </div>
 
                     <div className="border-t border-white/10 p-3">
-                        {configReady === false ? (
+                        {hitl ? (
+                            /* HITL nativo: l'agente attende la conferma (Procedi/Annulla). */
+                            <div className="rounded-xl border border-[#f7871f]/30 bg-[#f7871f]/[0.06] px-3 py-3">
+                                <p className="mb-2 text-[13px] font-semibold text-white">{tc("hitlTitle", { tool: hitl.tool })}</p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => approve(true)}
+                                        disabled={sending}
+                                        className="cursor-pointer rounded-xl bg-[#48c769] px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[#5bd87c] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {tc("hitlApprove")}
+                                    </button>
+                                    <button
+                                        onClick={() => approve(false)}
+                                        disabled={sending}
+                                        className="cursor-pointer rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2 text-[13px] font-semibold text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {tc("hitlReject")}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : configReady === false ? (
                             /* Punto 6: non configurato → guida alla configurazione. */
                             <div className="rounded-xl border border-white/10 bg-[#1b1612] px-4 py-3 text-center">
                                 <p className="text-[13px] font-semibold text-white">{tc("notConfiguredTitle")}</p>

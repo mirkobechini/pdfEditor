@@ -654,6 +654,9 @@
     "notConfiguredTitle": "Assistente non configurato",
     "notConfiguredDesc": "Configura prima il Deep Agent (provider + modello) nelle Impostazioni, poi potrai usare la chat.",
     "goToSettings": "Vai alle Impostazioni",
-    "toolActivity": "Sto usando: {tool}"
+    "toolActivity": "Sto usando: {tool}",
+    "hitlTitle": "Serve la tua conferma per continuare: {tool}",
+    "hitlApprove": "Procedi",
+    "hitlReject": "Annulla"
   }
 }
