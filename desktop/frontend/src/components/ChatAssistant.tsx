@@ -185,7 +185,8 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
             for (const ev of events) {
                 if (ev === "[DONE]") { done = true; continue; }
                 if (ev.startsWith("[THREAD]")) {
-                    const t = ev.slice(7).trim();
+                    // [THREAD] è lungo 8 caratteri: slice(8) toglie il marker e resta solo l'id
+                    const t = ev.slice(8).trim();
                     seenThread = t || null;
                     setThreadId(seenThread);
                     continue;
