@@ -205,10 +205,12 @@ def _resolve_workspace_pdf_path(token: str) -> Path:
     raise ValueError(f"PDF {token} not found nel workspace")
 
 
-def merge_pdfs(pdf_ids: str | list[str]) -> str:
+def merge_pdfs(pdf_ids: str | list[str], output_name: str = "") -> str:
     """Unisce più PDF (della WORKSPACE, file fisici) in uno.
 
     - pdf_ids: stringa di nomi/id separati da virgola OPPURE lista (almeno 2)
+    - output_name: (opzionale) nome DESIDERATO per il file risultante. Se vuoto,
+      viene usato il default "<a>_<b>_uniti.pdf".
     Il risultato viene salvato nella cartella output/ del workspace.
     """
     if isinstance(pdf_ids, list):
@@ -230,13 +232,20 @@ def merge_pdfs(pdf_ids: str | list[str]) -> str:
             doc = fitz.open(p)
             out.insert_pdf(doc)
             doc.close()
-        merged_name = "_".join(p.stem for p in paths) + "_uniti.pdf"
+        # nome di output: se richiesto dall'utente usiamo quello, altrimenti default
+        if output_name and output_name.strip():
+            base = output_name.strip()
+            if not base.lower().endswith(".pdf"):
+                base += ".pdf"
+            merged_name = base
+        else:
+            merged_name = "_".join(p.stem for p in paths) + "_uniti.pdf"
         merged_dir = root / "output"
         merged_dir.mkdir(parents=True, exist_ok=True)
         target = merged_dir / merged_name
-        # Fix 3 (20/10, domanda di Mirko): se il file col nome automatico esiste
-        # già, NON sovrascrivere in silenzio — aggiungiamo un suffisso _2, _3, ...
-        # così non si perde il risultato precedente.
+        # Fix 3 (20/10, domanda di Mirko): se il file esiste già, NON sovrascrivere
+        # in silenzio — aggiungiamo un suffisso _2, _3, ... così non si perde il
+        # risultato precedente.
         final_name = merged_name
         if target.exists():
             stem = target.stem  # es. scheda-1726_temp_uniti
