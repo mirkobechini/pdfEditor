@@ -233,9 +233,21 @@ def merge_pdfs(pdf_ids: str | list[str]) -> str:
         merged_name = "_".join(p.stem for p in paths) + "_uniti.pdf"
         merged_dir = root / "output"
         merged_dir.mkdir(parents=True, exist_ok=True)
-        out.save(str(merged_dir / merged_name))
+        target = merged_dir / merged_name
+        # Fix 3 (20/10, domanda di Mirko): se il file col nome automatico esiste
+        # già, NON sovrascrivere in silenzio — aggiungiamo un suffisso _2, _3, ...
+        # così non si perde il risultato precedente.
+        final_name = merged_name
+        if target.exists():
+            stem = target.stem  # es. scheda-1726_temp_uniti
+            n = 2
+            while (merged_dir / f"{stem}_{n}.pdf").exists():
+                n += 1
+            final_name = f"{stem}_{n}.pdf"
+            target = merged_dir / final_name
+        out.save(str(target))
         out.close()
-        return f"✓ PDF uniti in: {merged_name}"
+        return f"✓ PDF uniti in: {final_name}"
     except Exception as e:
         return f"Errore durante l'unione: {e}"
 

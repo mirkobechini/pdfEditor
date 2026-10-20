@@ -194,14 +194,12 @@ def _file_confirmation_note(goal: str) -> str:
         return ""
 
     lines = [
-        "NOTA OBBLIGATORIA (dal server, non trascurabile): l'utente si riferisce "
-        "a uno o più file i cui NOMI non combaciano esattamente con i file reali del "
-        "workspace. Prima di eseguire QUALSIASI operazione (merge/split/altro) su "
-        "questi file, DEVI chiedere conferma all'utente elencando i nomi reali e "
-        "attenderne l'OK esplicito. NON correggere i nomi da solo e NON procedere."
+        "Question di conferma (server, hard block): hai scritto uno o più nomi "
+        "file che NON combaciano esattamente con i file nel workspace. Prima di "
+        "eseguire qualsiasi operazione devo confermare. Procedi?"
     ]
     for tok, real_name in fuzzy:
-        lines.append(f"- utente ha scritto '{tok}' -> file reale simile: '{real_name}'")
+        lines.append(f"- hai scritto '{tok}' -> nel workspace c'è '{real_name}'")
     return "\n".join(lines)
 
 
@@ -243,15 +241,18 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     cfg = {"configurable": {"thread_id": thread_id, "checkpoint_ns": "", "checkpoint_id": ""}}
     SESSIONS[thread_id] = {"agent": agent, "config": cfg}
     yield _evt(f"[THREAD] {thread_id}")
-    # Problema 2 (fix 20/10): verifica nel SERVER, prima dell'LLM — se il goal
-    # utente contiene un nome file che non esiste esattamente ma ne esiste uno
-    # simile (es. chiede scheda_1726 ma esiste scheda-1726.pdf), prependiamo una
-    # NOTA DI CONFERMA obbligatoria. Così anche se l'LLM (Ollama) "sistemasse" il
-    # nome da solo, deve comunque chiedere all'utente prima di eseguire.
-    confirmation_note = _file_confirmation_note(goal)
+    # Fix 2 (hard block, 20/10): se il goal contiene un nome file che non
+    # combacia esattamente coi file reali (es. chiede scheda_1726 ma esiste
+    # scheda-1726.pdf), NIENTE LLM — emettiamo subito la domanda di conferma e
+    # chiudiamo. Così l'LLM/Ollama non può "sistemare" il nome da solo né
+    # eseguire l'operazione di testa sua.
+    hard_block = _file_confirmation_note(goal)
+    if hard_block:
+        yield _evt(hard_block)
+        SESSIONS.pop(thread_id, None)
+        yield _evt("[DONE]")
+        return
     msgs = []
-    if confirmation_note:
-        msgs.append({"role": "system", "content": confirmation_note})
     for h in history or []:
         role = h.get("role", "user")
         content = h.get("content", "")
@@ -265,6 +266,19 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     # dell'LLM che ripete la stessa stringa. Ricordiamo l'ultimo contenuto emesso
     # e se un testo identico arriva di nuovo, lo saltiamo.
     last_emitted = ""
+    # Fix 4 (20/10): dedup per esiti. L'LLM a volte ripete lo STESSO esito con
+    # testo diverso (es. "✓ PDF uniti in: X.pdf" + "L'unicione è stata completata
+    # con successo: X.pdf"). Il dedup #5 saltava solo testi IDENTICI; qui teniamo
+    # traccia del "filename outlet" (X.pdf) già emesso e saltiamo un testo breve
+    # che riferimento lo stesso esito senza aggiungere contenuto nuovo.
+    emitted_outcomes: set[str] = set()
+
+    def _outcome_key(txt: str) -> str | None:
+        # estrae il nome del file di output citato nell'esito (es. "... in: X.pdf")
+        import re as _re
+        m = _re.search(r"\b([\w-]+\.pdf)\b", txt)
+        return m.group(1).lower() if m else None
+
     async for chunk in agent.astream({"messages": msgs}, config=cfg):
         name = _interrupt_name(chunk)
         if name:
@@ -276,12 +290,20 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
             saw_tool = True
             yield _evt(f"[STEP] {t}")
         t = _text(chunk)
+        key = _outcome_key(t) if t else None
         if t:
+            # dedup #5: identico già emesso
             if t.strip() and t.strip() == last_emitted.strip():
                 last_emitted = t.strip()
-                continue  # dedup: il modello ripete un esito già emesso
+                continue
+            # Fix 4: breve e sta solo ripetendo un esito già emesso (stesso file)
+            if key and key in emitted_outcomes and len(t.strip()) < 160:
+                last_emitted = t.strip()
+                continue
             yield _evt(t)
             last_emitted = t.strip()
+            if key:
+                emitted_outcomes.add(key)
             sent_tool_result = True  # testo normale già emesso, niente fallback
         else:
             r = _tool_result(chunk)
@@ -291,8 +313,14 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
                 if r.strip() == last_emitted.strip():
                     last_emitted = r.strip()
                     continue
+                rk = _outcome_key(r)
+                if rk and rk in emitted_outcomes and len(r.strip()) < 160:
+                    last_emitted = r.strip()
+                    continue
                 yield _evt(r)
                 last_emitted = r.strip()
+                if rk:
+                    emitted_outcomes.add(rk)
                 sent_tool_result = True
     SESSIONS.pop(thread_id, None)
     yield _evt("[DONE]")

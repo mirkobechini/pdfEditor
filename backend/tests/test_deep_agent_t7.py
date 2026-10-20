@@ -25,8 +25,8 @@ def ws(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def test_confirm_underscore_vs_hyphen(ws: Path) -> None:
     note = _file_confirmation_note("unisci scheda_1726 e temp")
-    assert note  # deve esserci la nota
-    assert "NOTA OBBLIGATORIA" in note
+    assert note  # deve esserci la domanda
+    assert "conferma" in note.lower()
     assert "scheda_1726" in note
 
 

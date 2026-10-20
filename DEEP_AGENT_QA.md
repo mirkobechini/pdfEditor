@@ -46,3 +46,10 @@ Dopo la build C14b (merge: _tool_result legge anche nodo tools) → **BUG 18** (
 ## Log dei cicli fatti
 
 - **C1 (17/10, 14:33)**: / BUG 1 startup — fix in lavorazione. Build → test → esito.
+
+- **C19b → C19c (20/10)**: build C19b (P1 doppione + P2 nota conferma) testata da Mirko. Emersi 4 problemi → fix batch C19c:
+  1. **`chat.emptyReply`** quando Ollama è spento: chiave i18n mancante + nessun messaggio chiaro. → Aggiunta chiave `chat.emptyReply` in `messages/{it,en}.json` con testo esplicito di connessione al modello.
+  2. **Merge "di testa sua"** (unisce senza chiedere): l'LLM/Ollama corregge il nome da solo PRIMA del tool e "finge" il risultato (nessun [STEP]). La nota nel prompt non bastava. → **HARD BLOCK lato server** in `mind.py/_events`: se il goal contiene un nome file che non combacia esattamente coi file reali, NON parte l'LLM — `_file_confirmation_note(goal)` emette la domanda "hai scritto X -> esiste Y, procedi?" e chiude. Zero auto-correzione.
+  3. **Collisione nome output merge** (domanda di Mirko: unisco 2 volte gli stessi file?): prima `out.save` sovrascriveva in silenzio. → In `pdf_ops.py/merge_pdfs`: se `stem_uniti.pdf` esiste già, aggiunge suffisso `_2`, `_3`, … senza perdere il precedente.
+  4. **Dedup esiti diversi-ma-stesso-file**: "✓ PDF uniti in: X.pdf" + "L'unicione è stata completata: X.pdf" uscivano entrambi. → In `mind.py/_events`: tracking `emitted_outcomes` (filename pdf citato); un testo breve (<160 char) che cita un esito già emesso viene saltato.
+  **Verifica**: test 19/19, TSC 0. Commit atteso → merge preview → build → test manuale di Mirko.

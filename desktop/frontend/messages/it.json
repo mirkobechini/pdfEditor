@@ -649,6 +649,7 @@
     "errorAuth": "Autenticazione non valida. Accedi di nuovo e riprova.",
     "errorValidation": "Richiesta non valida: controlla la domanda e riprova.",
     "errorConnection": "Impossibile raggiungere l'assistente. Il backend potrebbe non essere attivo.",
+    "emptyReply": "Non ho ricevuto risposta dall'agente. Verifica che il modello (es. Ollama) sia avviato e riprova.",
     "checking": "Verifica configurazione...",
     "notConfiguredTitle": "Assistente non configurato",
     "notConfiguredDesc": "Configura prima il Deep Agent (provider + modello) nelle Impostazioni, poi potrai usare la chat.",

@@ -649,6 +649,7 @@
     "errorAuth": "Authentication failed. Please sign in again and retry.",
     "errorValidation": "Invalid request: check your question and retry.",
     "errorConnection": "Could not reach the assistant. The backend may not be running.",
+    "emptyReply": "No reply from the agent. Check that the model (e.g. Ollama) is running and retry.",
     "checking": "Checking configuration...",
     "notConfiguredTitle": "Assistant not configured",
     "notConfiguredDesc": "Configure the Deep Agent (provider + model) in Settings first, then you can use the chat.",
