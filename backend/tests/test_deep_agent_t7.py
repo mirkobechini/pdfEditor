@@ -12,7 +12,7 @@
 import pytest
 
 from app.deep_agent.agents.pdfmind import _needs_filename_confirmation
-from app.deep_agent.server.mind import _interrupt_name, _text
+from app.deep_agent.server.mind import _interrupt_name, _stable_thread_id, _text
 
 
 @pytest.fixture()
@@ -86,6 +86,23 @@ def test_text_skips_tool_message() -> None:
 def test_text_keeps_ai_message() -> None:
     chunk = _v2({"model": {"messages": [_Msg("ai", "Il workspace contiene i seguenti file:")]}})
     assert _text(chunk) == "Il workspace contiene i seguenti file:"
+
+
+# ---- _stable_thread_id (Punto 5: thread_id stabile per sessione) ----
+
+def test_thread_id_stable_per_user() -> None:
+    """Stesso user_id -> stesso thread (derivazione stabile)."""
+    assert _stable_thread_id("user-1") == _stable_thread_id("user-1")
+    assert _stable_thread_id("user-1") != _stable_thread_id("user-2")
+
+
+def test_thread_id_prefers_client_thread() -> None:
+    assert _stable_thread_id("user-1", "my-thread") == "my-thread"
+
+
+def test_thread_id_anonymous_random() -> None:
+    """Senza user_id e senza thread client -> uuid casuale (mai lo stesso)."""
+    assert _stable_thread_id(None) != _stable_thread_id(None)
 
 
 # ---- _interrupt_name (HITL nativo in streaming v2) ----

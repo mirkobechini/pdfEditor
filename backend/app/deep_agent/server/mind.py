@@ -4,6 +4,7 @@ import uuid
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 from pydantic import BaseModel
 
@@ -14,6 +15,26 @@ app = FastAPI(title="PdfMind")
 # Sessione HITL: thread_id -> {"agent", "config"} per riprendere uno stream interrotto
 SESSIONS: dict[str, dict] = {}
 
+# Punto 5: checkpointer PERSISTENTE per thread (per-sessione). Oggi build_agent
+# creava un MemorySaver nuovo a ogni /chat e quindi lo stato (inclusa la sospensione
+# HITL) andava perso tra un turno e l'altro. Con un checkpointer stabile per
+# thread_id l'HITL persiste davvero tra i turni della stessa sessione.
+CHECKPOINTERS: dict[str, MemorySaver] = {}
+
+
+def _stable_thread_id(user_id: str | None, client_thread: str | None = None) -> str:
+    """Punto 5: thread_id STABILE per sessione.
+
+    Se il client passa il proprio thread (riusando l'[THREAD] ricevuto), lo si usa;
+    altrimenti lo si deriva dall'user_id della sessione (stabile tra i turni dello
+    stesso utente). Solo in assenza di user_id si ripiega su un uuid casuale.
+    """
+    if client_thread:
+        return client_thread
+    if user_id:
+        import hashlib
+        return "pdfmind_" + hashlib.sha1(("pdfmind:" + user_id).encode()).hexdigest()[:16]
+    return uuid.uuid4().hex
 
 @app.get("/")
 async def index():
@@ -39,6 +60,9 @@ class ChatReq(BaseModel):
     # l'utente autenticato, altrimenti i tool PDF (merge/split/...) falliscono con
     # "Nessun utente risolto... imposta PDFMIND_USER_ID". Il frontend lo invia.
     user_id: str | None = None
+    # Punto 5: il client può riusare il thread_id ricevuto dall'evento [THREAD]
+    # (HITL persistente); altrimenti il server lo deriva dall'user_id.
+    thread_id: str | None = None
 
 
 def _state(chunk) -> dict:
@@ -296,9 +320,13 @@ async def chat(req: ChatReq):
     # PDFMIND_USER_ID oppure esiste admin@pdfeditor.local".
     from app.deep_agent.tools.pdf_ops import set_current_user_id
     set_current_user_id(req.user_id)
-    agent = build_agent(req.model, req.profile)
+    # Punto 5: thread_id stabile per sessione (derivato da user_id o riusato dal
+    # client) + checkpointer persistente -> lo stato HITL non si perde tra i turni.
+    thread_id = _stable_thread_id(req.user_id, req.thread_id)
+    checkpointer = CHECKPOINTERS.setdefault(thread_id, MemorySaver())
+    agent = build_agent(req.model, req.profile, checkpointer=checkpointer)
     return StreamingResponse(
-        _events(agent, req.goal, uuid.uuid4().hex, req.history),
+        _events(agent, req.goal, thread_id, req.history),
         media_type="text/event-stream",
     )
 
