@@ -24,14 +24,39 @@ def _in_root(p: Path, root: Path) -> bool:
 
 
 def elenca_workspace() -> str:
-    """Elenca i file del workspace (sola lettura)."""
+    """Elenca file e cartelle del workspace (sola lettura).
+
+    Fix 20/10 (Mirko): mostra TUTTI i file (anche quelli dentro output/ e altre
+    sottocartelle) e rende esplicite le cartelle, così l'utente vede tutto il
+    contenuto e distingue subito cos'è una cartella.
+    """
     r = _root()
     if r is None:
         return "workspace non configurata"
     if not r.is_dir():
         return "workspace non trovata"
-    rows = [str(f.relative_to(r)) for f in sorted(r.rglob("*")) if f.is_file()]
-    return "\n".join(rows) if rows else "workspace vuoto"
+    files = sorted(f for f in r.rglob("*") if f.is_file())
+    if not files:
+        return "workspace vuoto"
+    # raggruppa per directory relativa
+    by_dir: dict[str, list[str]] = {}
+    for f in files:
+        rel_dir = str(f.parent.relative_to(r))
+        name = f.name
+        # se è un file direttamente nella root, lo elenchiamo nella "root"
+        if rel_dir == ".":
+            by_dir.setdefault("(radice)", []).append(name)
+        else:
+            by_dir.setdefault(rel_dir, []).append(name)
+    lines = []
+    for d in sorted(by_dir):
+        if d == "(radice)":
+            lines.append("Cartella radice:")
+        else:
+            lines.append(f"Cartella {d}/:")
+        for name in by_dir[d]:
+            lines.append(f"  - {name}")
+    return "\n".join(lines)
 
 
 def leggi_workspace(rel: str) -> str:
