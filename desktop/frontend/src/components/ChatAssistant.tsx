@@ -167,11 +167,12 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
      * del motore ([THREAD], [TASK], [STEP], [HITL], [DONE]) e il testo.
      * Ritorna quando lo stream termina (dopo [DONE] o dopo un [HITL]).
      */
-    async function consumeStream(res: Response): Promise<{ done: boolean; hitlTool: string | null; sawText: boolean }> {
+    async function consumeStream(res: Response): Promise<{ done: boolean; hitlTool: string | null; sawText: boolean; threadId: string | null }> {
         let done = false;
         let hitlTool: string | null = null;
         let sawText = false;
-        if (!res.body) return { done, hitlTool, sawText };
+        let seenThread: string | null = null;
+        if (!res.body) return { done, hitlTool, sawText, threadId: seenThread };
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buf = "";
@@ -183,7 +184,12 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
             const events = parseSseChunk(buf);
             for (const ev of events) {
                 if (ev === "[DONE]") { done = true; continue; }
-                if (ev.startsWith("[THREAD]")) { setThreadId(ev.slice(7).trim() || null); continue; }
+                if (ev.startsWith("[THREAD]")) {
+                    const t = ev.slice(7).trim();
+                    seenThread = t || null;
+                    setThreadId(seenThread);
+                    continue;
+                }
                 if (ev.startsWith("[TASK]")) {
                     taskIdRef.current += 1;
                     const id = String(taskIdRef.current);
@@ -199,7 +205,7 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
             }
             buf = buf.slice(buf.lastIndexOf("\n\n") + 2);
         }
-        return { done, hitlTool, sawText };
+        return { done, hitlTool, sawText, threadId: seenThread };
     }
 
     async function send() {
@@ -225,11 +231,11 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                 const detail = await res.text().catch(() => "");
                 throw new Error(`HTTP ${res.status}${detail ? `::${detail}` : ""}`);
             }
-            const { done, hitlTool, sawText } = await consumeStream(res);
+            const { done, hitlTool, sawText, threadId: seenThread } = await consumeStream(res);
             // HITL nativo: l'agente si è fermato e attende conferma (Procedi/Annulla).
-            // Il thread_id è stato salvato dall'evento [THREAD] e verrà riusato da /approve.
+            // Il thread_id arriva dall'evento [THREAD] (seenThread) e viene riusato da /approve.
             if (hitlTool) {
-                setHitl({ tool: hitlTool, threadId: threadId ?? "" });
+                setHitl({ tool: hitlTool, threadId: seenThread ?? threadId ?? "" });
                 return;
             }
             if (done || sawText) {
