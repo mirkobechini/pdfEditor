@@ -79,12 +79,14 @@ def _v2(data: dict, interrupts=()):
 
 
 def test_text_skips_tool_message() -> None:
-    chunk = _v2({"model": {"messages": [_Msg("tool", "output\\scheda-1726_temp_uniti.pdf\nRipassino_Boolean.pdf")]}})
+    # con stream_mode='values' v2 lo stato è appiattito (data.messages), non più
+    # annidato sotto model/tools: la forma reale è _v2({"messages": [...]})
+    chunk = _v2({"messages": [_Msg("tool", "output\\scheda-1726_temp_uniti.pdf\nRipassino_Boolean.pdf")]})
     assert _text(chunk) == ""
 
 
 def test_text_keeps_ai_message() -> None:
-    chunk = _v2({"model": {"messages": [_Msg("ai", "Il workspace contiene i seguenti file:")]}})
+    chunk = _v2({"messages": [_Msg("ai", "Il workspace contiene i seguenti file:")]})
     assert _text(chunk) == "Il workspace contiene i seguenti file:"
 
 

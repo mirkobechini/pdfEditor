@@ -70,6 +70,8 @@ def _state(chunk) -> dict:
 
     In v2 ogni chunk e' un dict {'type': 'values', 'ns': [...], 'data': <stato>,
     'interrupts': (Interrupt, ...)} (verificato con inspect su Pregel 0.7.x).
+    Lo stato `data` è APPIAITTITO: {'messages': [...], 'files': {...}} — NON ha
+    più le partizioni model/tools della vecchia forma updates.
     """
     if not isinstance(chunk, dict):
         return {}
@@ -77,23 +79,32 @@ def _state(chunk) -> dict:
     return data if isinstance(data, dict) else {}
 
 
+def _msgs(chunk) -> list:
+    """La lista messaggi piatta dello stato values v2 (data['messages'])."""
+    st = _state(chunk)
+    msgs = st.get("messages")
+    return msgs if isinstance(msgs, list) else []
+
+
 def _text(chunk) -> str:
-    """Ritorna il testo dell'ultimo messaggio, ma NON i ToolMessage.
+    """Ritorna il testo dell'ultimo messaggio, ma NON i ToolMessage né l'input umano.
 
     Fix 19/10 (Problema 1, Mirko): per i tool di LETTURA (es. elenca_workspace)
     l'esito era emesso due volte — il ToolMessage grezzo qui e poi il riassunto
     dell'LLM in un chunk successivo. Saltando i messaggi di tipo 'tool', il testo
     grezzo del tool non esce come se fosse una risposta; l'esito dei tool di AZIONE
     (merge/...) resta gestito da _tool_result.
+
+    In stream_mode='values' lo stato include anche i messaggi di INPUT (human) e
+    system; saltandoli non facciamo uscire il goal dell'utente come risposta.
     """
-    st = _state(chunk)
-    model = st.get("model")
-    msgs = model.get("messages") if isinstance(model, dict) else None
+    msgs = _msgs(chunk)
     if not msgs:
         return ""
     m = msgs[-1]
-    if getattr(m, "type", "") == "tool":
-        return ""  # niente testo grezzo dai tool
+    mtype = getattr(m, "type", "")
+    if mtype in ("tool", "human", "system"):
+        return ""  # niente tool grezzo, niente input utente, niente system
     c = getattr(m, "content", None)
     if isinstance(c, str):
         return c
@@ -103,9 +114,7 @@ def _text(chunk) -> str:
 
 
 def _tools(chunk) -> list[str]:
-    st = _state(chunk)
-    model = st.get("model")
-    msgs = model.get("messages") if isinstance(model, dict) else None
+    msgs = _msgs(chunk)
     if not msgs:
         return []
     m = msgs[-1]
@@ -129,9 +138,7 @@ def _todos(chunk) -> list[str]:
     la task list in chat non appariva mai). Se il tool non è ancora stato
     chiamato non c'è niente da mostrare.
     """
-    st = _state(chunk)
-    model = st.get("model")
-    msgs = model.get("messages") if isinstance(model, dict) else None
+    msgs = _msgs(chunk)
     if not msgs:
         return []
     m = msgs[-1]
@@ -181,26 +188,24 @@ def _tool_result(chunk) -> str:
     un messaggio di testo riepilogativo, quel risultato è tutto ciò che abbiamo
     per mostrare l'esito all'utente.
 
-    IMPORTANTE (fix 19/10): deepagents usa DUE nodi — `model` (LLM) e `tools`
-    (esecuzione tool). Il ToolMessage con l'esito sta nel nodo **tools**, non in
-    model. Ora scandiamo TUTTE le partizioni (model, tools, ...) dello stato.
+    IMPORTANTE (fix 20/10 HITL+streaming): con stream_mode='values' v2 lo stato
+    `data` è appiattito — la lista messaggi sta direttamente in data['messages'],
+    NON più annidata sotto partizioni model/tools. Leggiamo quindi quella lista e
+    prendiamo l'ultimo ToolMessage.
     """
-    st = _state(chunk)
-    for part in st.values():
-        msgs = part.get("messages") if isinstance(part, dict) else None
-        if not msgs:
-            continue
-        m = msgs[-1]
-        role = getattr(m, "type", "")
-        if role != "tool":
-            continue
-        c = getattr(m, "content", None)
-        if isinstance(c, str) and c.strip():
-            return c.strip()
-        if isinstance(c, list):
-            t = "".join(p.get("text", "") for p in c if isinstance(p, dict) and p.get("text"))
-            if t:
-                return t
+    msgs = _msgs(chunk)
+    if not msgs:
+        return ""
+    m = msgs[-1]
+    if getattr(m, "type", "") != "tool":
+        return ""
+    c = getattr(m, "content", None)
+    if isinstance(c, str) and c.strip():
+        return c.strip()
+    if isinstance(c, list):
+        t = "".join(p.get("text", "") for p in c if isinstance(p, dict) and p.get("text"))
+        if t:
+            return t
     return ""
 
 
