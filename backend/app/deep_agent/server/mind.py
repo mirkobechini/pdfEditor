@@ -176,7 +176,9 @@ def _file_confirmation_note(goal: str) -> str:
 
     real_lower = {f.lower() for f in real_files}
     real_noext = {f.lower().rsplit(".", 1)[0] for f in real_files}
-    real_norm = {norm(f) for f in real_files}
+    # mappa nome-normalizzato -> nome REALE (per mostrare il file vero, non la
+    # versione normalizzata)
+    real_by_norm: dict[str, str] = {norm(f): f for f in real_files}
     fuzzy = []
     for tok in sorted(tokens):
         t = tok.lower()
@@ -187,19 +189,20 @@ def _file_confirmation_note(goal: str) -> str:
         # else: fuzzy sul nome normalizzato (_/-/spazi -> -) per intercettare
         # nomi simili ma non identici (es. scheda_1726 vs scheda-1726.pdf).
         from difflib import get_close_matches
-        candidates = get_close_matches(norm(t), real_norm, n=1, cutoff=0.6)
+        candidates = get_close_matches(norm(t), list(real_by_norm), n=1, cutoff=0.6)
         if candidates:
-            fuzzy.append((tok, candidates[0]))
+            fuzzy.append((tok, real_by_norm[candidates[0]]))
     if not fuzzy:
         return ""
 
     lines = [
-        "Question di conferma (server, hard block): hai scritto uno o più nomi "
-        "file che NON combaciano esattamente con i file nel workspace. Prima di "
-        "eseguire qualsiasi operazione devo confermare. Procedi?"
+        "Devo chiederti una conferma prima di procedere: alcuni file che hai "
+        "indicato non corrispondono esattamente a quelli presenti nel workspace. "
+        "Vuoi che proceda con questi file del workspace?"
     ]
     for tok, real_name in fuzzy:
-        lines.append(f"- hai scritto '{tok}' -> nel workspace c'è '{real_name}'")
+        lines.append(f"- hai scritto “{tok}” → nel workspace c’è “{real_name}”")
+    lines.append("(rispondi sì per procedere o no per annullare)")
     return "\n".join(lines)
 
 
@@ -266,11 +269,13 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     # dell'LLM che ripete la stessa stringa. Ricordiamo l'ultimo contenuto emesso
     # e se un testo identico arriva di nuovo, lo saltiamo.
     last_emitted = ""
-    # Fix 4 (20/10): dedup per esiti. L'LLM a volte ripete lo STESSO esito con
-    # testo diverso (es. "✓ PDF uniti in: X.pdf" + "L'unicione è stata completata
-    # con successo: X.pdf"). Il dedup #5 saltava solo testi IDENTICI; qui teniamo
-    # traccia del "filename outlet" (X.pdf) già emesso e saltiamo un testo breve
-    # che riferimento lo stesso esito senza aggiungere contenuto nuovo.
+    # Fix 1.5 (20/10): il doppione nasce perché l'esito del tool veniva emesso
+    # SUBITO (via _tool_result) e poi l'LLM produceva un riassunto diverso.
+    # Teniamo l'esito in `pending_tool_result` e lo mostriamo SOLO se, a fine
+    # stream, l'LLM non ha prodotto alcun testo (feedback Bug 14: il merge non
+    # deve più "sparire"). Così per i tool di lettura (elenca_workspace) esce
+    # solo il riassunto dell'LLM, per il merge solo l'esito.
+    pending_tool_result = ""
     emitted_outcomes: set[str] = set()
 
     def _outcome_key(txt: str) -> str | None:
@@ -282,6 +287,8 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     async for chunk in agent.astream({"messages": msgs}, config=cfg):
         name = _interrupt_name(chunk)
         if name:
+            if pending_tool_result:
+                yield _evt(pending_tool_result)
             yield _evt(f"[HITL] {name}")
             return
         for t in _todos(chunk):
@@ -304,24 +311,19 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
             last_emitted = t.strip()
             if key:
                 emitted_outcomes.add(key)
-            sent_tool_result = True  # testo normale già emesso, niente fallback
+            # testo normale presente → niente fallback con l'esito del tool
+            pending_tool_result = ""
         else:
             r = _tool_result(chunk)
             if r and not sent_tool_result:
-                # Il tool ha prodotto un esito ma il modello non lo ha riassunto:
-                # lo mostriamo noi (fix Bug 14 — il merge non deve più "sparire").
-                if r.strip() == last_emitted.strip():
-                    last_emitted = r.strip()
-                    continue
-                rk = _outcome_key(r)
-                if rk and rk in emitted_outcomes and len(r.strip()) < 160:
-                    last_emitted = r.strip()
-                    continue
-                yield _evt(r)
-                last_emitted = r.strip()
-                if rk:
-                    emitted_outcomes.add(rk)
+                # Buffer, non emettere subito: potrebbe arrivare il riassunto LLM.
+                pending_tool_result = r.strip()
                 sent_tool_result = True
+                last_emitted = r.strip()
+    # a fine stream: se c'era un esito tool ma nessun testo è stato emesso, lo
+    # mostriamo noi (fix Bug 14 — il merge non deve più "sparire")
+    if pending_tool_result and pending_tool_result not in emitted_outcomes:
+        yield _evt(pending_tool_result)
     SESSIONS.pop(thread_id, None)
     yield _evt("[DONE]")
 
