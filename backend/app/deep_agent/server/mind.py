@@ -4,6 +4,7 @@ import uuid
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 from pydantic import BaseModel
 
@@ -14,6 +15,26 @@ app = FastAPI(title="PdfMind")
 # Sessione HITL: thread_id -> {"agent", "config"} per riprendere uno stream interrotto
 SESSIONS: dict[str, dict] = {}
 
+# Punto 5: checkpointer PERSISTENTE per thread (per-sessione). Oggi build_agent
+# creava un MemorySaver nuovo a ogni /chat e quindi lo stato (inclusa la sospensione
+# HITL) andava perso tra un turno e l'altro. Con un checkpointer stabile per
+# thread_id l'HITL persiste davvero tra i turni della stessa sessione.
+CHECKPOINTERS: dict[str, MemorySaver] = {}
+
+
+def _stable_thread_id(user_id: str | None, client_thread: str | None = None) -> str:
+    """Punto 5: thread_id STABILE per sessione.
+
+    Se il client passa il proprio thread (riusando l'[THREAD] ricevuto), lo si usa;
+    altrimenti lo si deriva dall'user_id della sessione (stabile tra i turni dello
+    stesso utente). Solo in assenza di user_id si ripiega su un uuid casuale.
+    """
+    if client_thread:
+        return client_thread
+    if user_id:
+        import hashlib
+        return "pdfmind_" + hashlib.sha1(("pdfmind:" + user_id).encode()).hexdigest()[:16]
+    return uuid.uuid4().hex
 
 @app.get("/")
 async def index():
@@ -39,26 +60,51 @@ class ChatReq(BaseModel):
     # l'utente autenticato, altrimenti i tool PDF (merge/split/...) falliscono con
     # "Nessun utente risolto... imposta PDFMIND_USER_ID". Il frontend lo invia.
     user_id: str | None = None
+    # Punto 5: il client può riusare il thread_id ricevuto dall'evento [THREAD]
+    # (HITL persistente); altrimenti il server lo deriva dall'user_id.
+    thread_id: str | None = None
+
+
+def _state(chunk) -> dict:
+    """Estrae lo stato agente da un chunk del stream Pregel v2 (stream_mode=values).
+
+    In v2 ogni chunk e' un dict {'type': 'values', 'ns': [...], 'data': <stato>,
+    'interrupts': (Interrupt, ...)} (verificato con inspect su Pregel 0.7.x).
+    Lo stato `data` è APPIAITTITO: {'messages': [...], 'files': {...}} — NON ha
+    più le partizioni model/tools della vecchia forma updates.
+    """
+    if not isinstance(chunk, dict):
+        return {}
+    data = chunk.get("data")
+    return data if isinstance(data, dict) else {}
+
+
+def _msgs(chunk) -> list:
+    """La lista messaggi piatta dello stato values v2 (data['messages'])."""
+    st = _state(chunk)
+    msgs = st.get("messages")
+    return msgs if isinstance(msgs, list) else []
 
 
 def _text(chunk) -> str:
-    """Ritorna il testo dell'ultimo messaggio, ma NON i ToolMessage.
+    """Ritorna il testo dell'ultimo messaggio, ma NON i ToolMessage né l'input umano.
 
     Fix 19/10 (Problema 1, Mirko): per i tool di LETTURA (es. elenca_workspace)
     l'esito era emesso due volte — il ToolMessage grezzo qui e poi il riassunto
     dell'LLM in un chunk successivo. Saltando i messaggi di tipo 'tool', il testo
     grezzo del tool non esce come se fosse una risposta; l'esito dei tool di AZIONE
     (merge/...) resta gestito da _tool_result.
+
+    In stream_mode='values' lo stato include anche i messaggi di INPUT (human) e
+    system; saltandoli non facciamo uscire il goal dell'utente come risposta.
     """
-    if not isinstance(chunk, dict):
-        return ""
-    model = chunk.get("model")
-    msgs = model.get("messages") if isinstance(model, dict) else None
+    msgs = _msgs(chunk)
     if not msgs:
         return ""
     m = msgs[-1]
-    if getattr(m, "type", "") == "tool":
-        return ""  # niente testo grezzo dai tool
+    mtype = getattr(m, "type", "")
+    if mtype in ("tool", "human", "system"):
+        return ""  # niente tool grezzo, niente input utente, niente system
     c = getattr(m, "content", None)
     if isinstance(c, str):
         return c
@@ -68,10 +114,7 @@ def _text(chunk) -> str:
 
 
 def _tools(chunk) -> list[str]:
-    if not isinstance(chunk, dict):
-        return []
-    model = chunk.get("model")
-    msgs = model.get("messages") if isinstance(model, dict) else None
+    msgs = _msgs(chunk)
     if not msgs:
         return []
     m = msgs[-1]
@@ -93,13 +136,9 @@ def _todos(chunk) -> list[str]:
     `write_todos` con args {"todos": [{content, status}, ...]}; il campo testuale
     è `content`, NON `task`/`todo` (fix 16/10: prima leggeva i campi sbagliati e
     la task list in chat non appariva mai). Se il tool non è ancora stato
-    chiamato non c'è niente da mostrare: possiamo anche provare a derivare le
-    righe dai messaggi recenti.
+    chiamato non c'è niente da mostrare.
     """
-    if not isinstance(chunk, dict):
-        return []
-    model = chunk.get("model")
-    msgs = model.get("messages") if isinstance(model, dict) else None
+    msgs = _msgs(chunk)
     if not msgs:
         return []
     m = msgs[-1]
@@ -120,90 +159,25 @@ def _todos(chunk) -> list[str]:
 
 
 def _interrupt_name(chunk) -> str | None:
+    """Ritorna il nome del tool in attesa di conferma (HITL nativo, v2).
+
+    In v2 gli interrupt arrivano nativamente in `chunk["interrupts"]` come oggetti
+    `Interrupt` il cui `.value` è la `HITLRequest` con `action_requests`
+    (verificato con inspect). Ogni action_requests[0] ha un campo `name`.
+    """
     if not isinstance(chunk, dict):
         return None
-    inter = chunk.get("__interrupt__")
-    if inter is None:
-        return None
-    first = inter[0] if isinstance(inter, (tuple, list)) else inter
-    value = getattr(first, "value", first)
-    if isinstance(value, dict):
-        reqs = value.get("action_requests") or []
-        if reqs:
-            return reqs[0].get("name", "azione")
-    return "azione"
+    for inter in (chunk.get("interrupts") or []):
+        value = getattr(inter, "value", inter)
+        if isinstance(value, dict):
+            reqs = value.get("action_requests") or []
+            if reqs:
+                return reqs[0].get("name", "azione")
+    return None
 
 
 def _evt(v: str) -> str:
     return f"data: {json.dumps(v)}\n\n"
-
-
-def _file_confirmation_note(goal: str) -> str:
-    """Problema 2 (fix 20/10): conferma merge nel SERVER, prima dell'LLM.
-
-    L'LLM (Ollama) tende a "sistemare" da solo i nomi file scritti dall'utente
-    (es. 'scheda_1726' -> 'scheda-1726.pdf'), quindi il tool riceve il nome giusto
-    e unisce SENZA chiedere nulla. Qui confrontiamo i token del goal coi file
-    reali del workspace: se un nome non esiste esattamente ma ne esiste uno
-    simile, prependiamo una nota che OBBLIGA l'agente a chiedere conferma.
-    """
-    if not goal:
-        return ""
-    from app.deep_agent.tools.workspace import _root
-
-    root = _root()
-    if root is None or not root.is_dir():
-        return ""
-    real_files = {f.name for f in root.rglob("*") if f.is_file()}
-    if not real_files:
-        return ""
-
-    import re as _re
-    # token tipo file: basename senza estensione o con underscore/trattino/punti
-    tokens = set()
-    for tok in _re.split(r"[\s,;:!?()']+", goal):
-        if len(tok) < 2:
-            continue
-        # vogliamo solo candidati "nome file-like" (con .est, o con _ e -)
-        if ("." in tok or "_" in tok or "-" in tok) and "" != tok:
-            tokens.add(tok.strip().lower())
-    if not tokens:
-        return ""
-
-    # normalizza: togli eventuale estensione per il confronto fuzzy
-    def norm(t: str) -> str:
-        return t.rsplit(".", 1)[0].replace("_", "-").replace(" ", "-").lower()
-
-    real_lower = {f.lower() for f in real_files}
-    real_noext = {f.lower().rsplit(".", 1)[0] for f in real_files}
-    # mappa nome-normalizzato -> nome REALE (per mostrare il file vero, non la
-    # versione normalizzata)
-    real_by_norm: dict[str, str] = {norm(f): f for f in real_files}
-    fuzzy = []
-    for tok in sorted(tokens):
-        t = tok.lower()
-        # CONFRONTO ESATTO sul nome grezzo (caso-insensitive): se il token o
-        # token+.pdf corrisponde a un file reale, niente conferma.
-        if t in real_lower or t + ".pdf" in real_lower or t in real_noext:
-            continue
-        # else: fuzzy sul nome normalizzato (_/-/spazi -> -) per intercettare
-        # nomi simili ma non identici (es. scheda_1726 vs scheda-1726.pdf).
-        from difflib import get_close_matches
-        candidates = get_close_matches(norm(t), list(real_by_norm), n=1, cutoff=0.6)
-        if candidates:
-            fuzzy.append((tok, real_by_norm[candidates[0]]))
-    if not fuzzy:
-        return ""
-
-    lines = [
-        "Devo chiederti una conferma prima di procedere: alcuni file che hai "
-        "indicato non corrispondono esattamente a quelli presenti nel workspace. "
-        "Vuoi che proceda con questi file del workspace?"
-    ]
-    for tok, real_name in fuzzy:
-        lines.append(f"- hai scritto “{tok}” → nel workspace c’è “{real_name}”")
-    lines.append("(rispondi sì per procedere o no per annullare)")
-    return "\n".join(lines)
 
 
 def _tool_result(chunk) -> str:
@@ -214,29 +188,24 @@ def _tool_result(chunk) -> str:
     un messaggio di testo riepilogativo, quel risultato è tutto ciò che abbiamo
     per mostrare l'esito all'utente.
 
-    IMPORTANTE (fix 19/10): deepagents usa DUE nodi — `model` (LLM) e `tools`
-    (esecuzione tool). Il ToolMessage con l'esito sta nel nodo **tools**, non in
-    model. Prima leggevamo solo `chunk["model"]` e quindi l'esito del merge non
-    veniva mai trovato → la chat restava al "[STEP] merge_pdf" e poi spariva.
-    Ora scandiamo TUTTE le partizioni (model, tools, ...) del chunk.
+    IMPORTANTE (fix 20/10 HITL+streaming): con stream_mode='values' v2 lo stato
+    `data` è appiattito — la lista messaggi sta direttamente in data['messages'],
+    NON più annidata sotto partizioni model/tools. Leggiamo quindi quella lista e
+    prendiamo l'ultimo ToolMessage.
     """
-    if not isinstance(chunk, dict):
+    msgs = _msgs(chunk)
+    if not msgs:
         return ""
-    for part in chunk.values():
-        msgs = part.get("messages") if isinstance(part, dict) else None
-        if not msgs:
-            continue
-        m = msgs[-1]
-        role = getattr(m, "type", "")
-        if role != "tool":
-            continue
-        c = getattr(m, "content", None)
-        if isinstance(c, str) and c.strip():
-            return c.strip()
-        if isinstance(c, list):
-            t = "".join(p.get("text", "") for p in c if isinstance(p, dict) and p.get("text"))
-            if t:
-                return t
+    m = msgs[-1]
+    if getattr(m, "type", "") != "tool":
+        return ""
+    c = getattr(m, "content", None)
+    if isinstance(c, str) and c.strip():
+        return c.strip()
+    if isinstance(c, list):
+        t = "".join(p.get("text", "") for p in c if isinstance(p, dict) and p.get("text"))
+        if t:
+            return t
     return ""
 
 
@@ -244,17 +213,11 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     cfg = {"configurable": {"thread_id": thread_id, "checkpoint_ns": "", "checkpoint_id": ""}}
     SESSIONS[thread_id] = {"agent": agent, "config": cfg}
     yield _evt(f"[THREAD] {thread_id}")
-    # Fix 2 (hard block, 20/10): se il goal contiene un nome file che non
-    # combacia esattamente coi file reali (es. chiede scheda_1726 ma esiste
-    # scheda-1726.pdf), NIENTE LLM — emettiamo subito la domanda di conferma e
-    # chiudiamo. Così l'LLM/Ollama non può "sistemare" il nome da solo né
-    # eseguire l'operazione di testa sua.
-    hard_block = _file_confirmation_note(goal)
-    if hard_block:
-        yield _evt(hard_block)
-        SESSIONS.pop(thread_id, None)
-        yield _evt("[DONE]")
-        return
+    # Punto 1 (HITL nativo): il workaround testuale _file_confirmation_note è
+    # stato RIMOSSO. La conferma dei nomi file (es. merge con nome non esatto)
+    # ora è gestita dall'HITL nativo via InterruptOnConfig + predicato `when`
+    # in agents/pdfmind.py: l'agente si FERMA davvero (interrupt) solo quando
+    # serve conferma, e si riprende con Command(resume=...) preservando lo stato.
     msgs = []
     for h in history or []:
         role = h.get("role", "user")
@@ -284,7 +247,10 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
         m = _re.search(r"\b([\w-]+\.pdf)\b", txt)
         return m.group(1).lower() if m else None
 
-    async for chunk in agent.astream({"messages": msgs}, config=cfg):
+    # Punto 2 (streaming): stream Pregel v2 (stream_mode="values", version="v2")
+    # al posto del parsing manuale dei chunk v1 (chunk["model"]/["tools"]). In v2
+    # gli interrupt arrivano nativamente in chunk["interrupts"] (verificato).
+    async for chunk in agent.astream({"messages": msgs}, config=cfg, stream_mode="values", version="v2"):
         name = _interrupt_name(chunk)
         if name:
             if pending_tool_result:
@@ -334,7 +300,9 @@ async def _resume_events(thread_id: str, decision: dict):
         yield _evt("[DONE]")
         return
     agent, cfg = sess["agent"], sess["config"]
-    async for chunk in agent.astream(Command(resume={"decisions": [decision]}), config=cfg):
+    # Ripresa HITL nativa: Command(resume={"decisions": [decision]}) riprende dal
+    # punto di interruzione preservando lo stato (non rielabora i vecchi messaggi).
+    async for chunk in agent.astream(Command(resume={"decisions": [decision]}), config=cfg, stream_mode="values", version="v2"):
         name = _interrupt_name(chunk)
         if name:
             yield _evt(f"[HITL] {name}")
@@ -357,9 +325,13 @@ async def chat(req: ChatReq):
     # PDFMIND_USER_ID oppure esiste admin@pdfeditor.local".
     from app.deep_agent.tools.pdf_ops import set_current_user_id
     set_current_user_id(req.user_id)
-    agent = build_agent(req.model, req.profile)
+    # Punto 5: thread_id stabile per sessione (derivato da user_id o riusato dal
+    # client) + checkpointer persistente -> lo stato HITL non si perde tra i turni.
+    thread_id = _stable_thread_id(req.user_id, req.thread_id)
+    checkpointer = CHECKPOINTERS.setdefault(thread_id, MemorySaver())
+    agent = build_agent(req.model, req.profile, checkpointer=checkpointer)
     return StreamingResponse(
-        _events(agent, req.goal, uuid.uuid4().hex, req.history),
+        _events(agent, req.goal, thread_id, req.history),
         media_type="text/event-stream",
     )
 
