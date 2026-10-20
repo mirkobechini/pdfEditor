@@ -42,6 +42,14 @@ class ChatReq(BaseModel):
 
 
 def _text(chunk) -> str:
+    """Ritorna il testo dell'ultimo messaggio, ma NON i ToolMessage.
+
+    Fix 19/10 (Problema 1, Mirko): per i tool di LETTURA (es. elenca_workspace)
+    l'esito era emesso due volte — il ToolMessage grezzo qui e poi il riassunto
+    dell'LLM in un chunk successivo. Saltando i messaggi di tipo 'tool', il testo
+    grezzo del tool non esce come se fosse una risposta; l'esito dei tool di AZIONE
+    (merge/...) resta gestito da _tool_result.
+    """
     if not isinstance(chunk, dict):
         return ""
     model = chunk.get("model")
@@ -49,6 +57,8 @@ def _text(chunk) -> str:
     if not msgs:
         return ""
     m = msgs[-1]
+    if getattr(m, "type", "") == "tool":
+        return ""  # niente testo grezzo dai tool
     c = getattr(m, "content", None)
     if isinstance(c, str):
         return c
@@ -128,6 +138,73 @@ def _evt(v: str) -> str:
     return f"data: {json.dumps(v)}\n\n"
 
 
+def _file_confirmation_note(goal: str) -> str:
+    """Problema 2 (fix 20/10): conferma merge nel SERVER, prima dell'LLM.
+
+    L'LLM (Ollama) tende a "sistemare" da solo i nomi file scritti dall'utente
+    (es. 'scheda_1726' -> 'scheda-1726.pdf'), quindi il tool riceve il nome giusto
+    e unisce SENZA chiedere nulla. Qui confrontiamo i token del goal coi file
+    reali del workspace: se un nome non esiste esattamente ma ne esiste uno
+    simile, prependiamo una nota che OBBLIGA l'agente a chiedere conferma.
+    """
+    if not goal:
+        return ""
+    from app.deep_agent.tools.workspace import _root
+
+    root = _root()
+    if root is None or not root.is_dir():
+        return ""
+    real_files = {f.name for f in root.rglob("*") if f.is_file()}
+    if not real_files:
+        return ""
+
+    import re as _re
+    # token tipo file: basename senza estensione o con underscore/trattino/punti
+    tokens = set()
+    for tok in _re.split(r"[\s,;:!?()']+", goal):
+        if len(tok) < 2:
+            continue
+        # vogliamo solo candidati "nome file-like" (con .est, o con _ e -)
+        if ("." in tok or "_" in tok or "-" in tok) and "" != tok:
+            tokens.add(tok.strip().lower())
+    if not tokens:
+        return ""
+
+    # normalizza: togli eventuale estensione per il confronto fuzzy
+    def norm(t: str) -> str:
+        return t.rsplit(".", 1)[0].replace("_", "-").replace(" ", "-").lower()
+
+    real_lower = {f.lower() for f in real_files}
+    real_noext = {f.lower().rsplit(".", 1)[0] for f in real_files}
+    real_norm = {norm(f) for f in real_files}
+    fuzzy = []
+    for tok in sorted(tokens):
+        t = tok.lower()
+        # CONFRONTO ESATTO sul nome grezzo (caso-insensitive): se il token o
+        # token+.pdf corrisponde a un file reale, niente conferma.
+        if t in real_lower or t + ".pdf" in real_lower or t in real_noext:
+            continue
+        # else: fuzzy sul nome normalizzato (_/-/spazi -> -) per intercettare
+        # nomi simili ma non identici (es. scheda_1726 vs scheda-1726.pdf).
+        from difflib import get_close_matches
+        candidates = get_close_matches(norm(t), real_norm, n=1, cutoff=0.6)
+        if candidates:
+            fuzzy.append((tok, candidates[0]))
+    if not fuzzy:
+        return ""
+
+    lines = [
+        "NOTA OBBLIGATORIA (dal server, non trascurabile): l'utente si riferisce "
+        "a uno o più file i cui NOMI non combaciano esattamente con i file reali del "
+        "workspace. Prima di eseguire QUALSIASI operazione (merge/split/altro) su "
+        "questi file, DEVI chiedere conferma all'utente elencando i nomi reali e "
+        "attenderne l'OK esplicito. NON correggere i nomi da solo e NON procedere."
+    ]
+    for tok, real_name in fuzzy:
+        lines.append(f"- utente ha scritto '{tok}' -> file reale simile: '{real_name}'")
+    return "\n".join(lines)
+
+
 def _tool_result(chunk) -> str:
     """Ritorna il contenuto testuale dell'ULTIMO ToolMessage se presente.
 
@@ -166,7 +243,15 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     cfg = {"configurable": {"thread_id": thread_id, "checkpoint_ns": "", "checkpoint_id": ""}}
     SESSIONS[thread_id] = {"agent": agent, "config": cfg}
     yield _evt(f"[THREAD] {thread_id}")
+    # Problema 2 (fix 20/10): verifica nel SERVER, prima dell'LLM — se il goal
+    # utente contiene un nome file che non esiste esattamente ma ne esiste uno
+    # simile (es. chiede scheda_1726 ma esiste scheda-1726.pdf), prependiamo una
+    # NOTA DI CONFERMA obbligatoria. Così anche se l'LLM (Ollama) "sistemasse" il
+    # nome da solo, deve comunque chiedere all'utente prima di eseguire.
+    confirmation_note = _file_confirmation_note(goal)
     msgs = []
+    if confirmation_note:
+        msgs.append({"role": "system", "content": confirmation_note})
     for h in history or []:
         role = h.get("role", "user")
         content = h.get("content", "")

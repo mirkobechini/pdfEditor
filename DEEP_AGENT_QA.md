@@ -39,6 +39,8 @@ Stato attuale: 17/10. Partiamo dal BUG 1.
 ### Ordine di avanzamento (deciso da Mirko 19/10, aggiornato 14:06)
 Dopo la build C14b (merge: _tool_result legge anche nodo tools) → **BUG 18** (ri-esecuzione azioni vecchie dalla cronologia) → 8+9 (stessa build) → 10 → 11 → 12 → 16 → 17 → 4 (per ultimo) → 6. #7 già fatto. #13 avatar ultimo in assoluto.
 
+### 🔚 In fondo alla tabella (richiesto Mirko 20/10): sistemare la **routine mattutina** (meteo/progetti/deployed che gira ogni mattina).
+
 ---
 
 ## Log dei cicli fatti
