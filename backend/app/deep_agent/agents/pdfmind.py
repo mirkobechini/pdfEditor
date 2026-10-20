@@ -2,9 +2,8 @@ import os
 
 from deepagents import create_deep_agent
 from langchain.agents.middleware import TodoListMiddleware
-from langchain_anthropic import ChatAnthropic
-from langchain_openai import ChatOpenAI
-from langchain_ollama import ChatOllama
+from langchain.agents.middleware.human_in_the_loop import InterruptOnConfig
+from langchain.chat_models import init_chat_model
 from langgraph.checkpoint.memory import MemorySaver
 
 from app.deep_agent.config import ordered_providers, fallback_enabled
@@ -18,39 +17,50 @@ SUPPORTED_PREFIXES = ("ollama:", "anthropic:", "openai:", "openrouter:", "huggin
 
 
 def _resolve_model(m: str):
+    """Costruisce il ChatModel con `init_chat_model` (punto 3).
+
+    Mantiene la risoluzione multi-provider (ordered_providers) e base_url/api_key
+    da env con lo stesso comportamento del vecchio resolver manuale
+    (ChatOllama/ChatOpenAI/ChatAnthropic costruiti a mano).
+    """
     if m.startswith("ollama:"):
         name = m.split(":", 1)[1]
-        return ChatOllama(
+        return init_chat_model(
             model=name,
+            model_provider="ollama",
             base_url=os.environ.get("PDFMIND_OLLAMA_URL", "http://localhost:11434"),
             reasoning=False,
         )
     if m.startswith("anthropic:"):
         name = m.split(":", 1)[1]
-        return ChatAnthropic(
+        return init_chat_model(
             model=name,
+            model_provider="anthropic",
             api_key=os.environ.get("PDFMIND_ANTHROPIC_API_KEY", ""),
             base_url=os.environ.get("PDFMIND_ANTHROPIC_BASE_URL") or None,
         )
     if m.startswith("openrouter:"):
         name = m.split(":", 1)[1]
-        return ChatOpenAI(
+        return init_chat_model(
             model=name,
+            model_provider="openai",
             base_url=os.environ.get("PDFMIND_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
             api_key=os.environ.get("PDFMIND_OPENROUTER_API_KEY", ""),
         )
     if m.startswith("huggingface:"):
-        # Hugging Face Inference è OpenAI-compatible: riusiamo ChatOpenAI col suo endpoint.
+        # Hugging Face Inference è OpenAI-compatible: usiamo il provider openai col suo endpoint.
         name = m.split(":", 1)[1]
-        return ChatOpenAI(
+        return init_chat_model(
             model=name,
+            model_provider="openai",
             base_url=os.environ.get("PDFMIND_HF_BASE_URL", "https://api-inference.huggingface.co/v1"),
             api_key=os.environ.get("PDFMIND_HF_API_KEY", ""),
         )
     if m.startswith("openai:"):
         name = m.split(":", 1)[1]
-        return ChatOpenAI(
+        return init_chat_model(
             model=name,
+            model_provider="openai",
             base_url=os.environ.get("PDFMIND_OPENAI_BASE_URL", "https://api.openai.com/v1"),
             api_key=os.environ.get("PDFMIND_OPENAI_API_KEY", ""),
         )
@@ -138,8 +148,97 @@ INTERRUPT_ON = {
     "delete": True,
 }
 
+# Punto 1 (HITL nativo): i tool che OPERANO su PDF esistenti del workspace
+# (merge, split, sign, annotate, ocr, compress) si fermano SOLO quando serve
+# davvero la conferma dell'utente, cioe' quando il nome file indicato dal modello
+# NON corrisponde esattamente a un file reale ma ne esiste uno simile. Usiamo
+# InterruptOnConfig + predicato `when` (verificato con inspect: deepagents 0.7.19)
+# al posto del workaround testuale _file_confirmation_note nel server.
+_CONFIRM_TOOLS = {"merge_pdfs", "split_pdf", "sign_pdf", "annotate_pdf", "ocr_pdf", "compress_pdf"}
 
-def build_agent(model: str | None = None, profile: str = "user"):
+
+def _pdf_tokens(name: str, args: dict) -> list[str]:
+    """Estrae i token nome-PDF referenziati dagli args di un tool che opera."""
+    if name == "merge_pdfs":
+        v = args.get("pdf_ids")
+        if isinstance(v, list):
+            return [str(x) for x in v]
+        if v:
+            return [x.strip() for x in str(v).split(",") if x.strip()]
+        return []
+    v = args.get("pdf_id")
+    return [str(v)] if v else []
+
+
+def _needs_filename_confirmation(req) -> bool:
+    """Predicato `when` per l'HITL nativo.
+
+    Riceve un `ToolCallRequest` (inspect: ha `tool_call` con name/args). Ritorna
+    True per INTERROMPERE il tool solo se un nome PDF referenziato non combacia
+    esattamente con i file reali del workspace ma ne esiste uno simile (es. l'utente
+    ha scritto 'scheda_1726' ma esiste 'scheda-1726.pdf'). Se tutti i nomi sono
+    esatti (o non c'e' un match simile) il tool gira senza fermarsi.
+
+    IMPORTANTE: il predicato gira di nuovo alla ripresa e DEVE dare la stessa
+    risposta per lo stesso tool call; il lookup del workspace e' deterministico,
+    quindi l'approvazione resta allineata ai decisioni batched.
+    """
+    call = req.tool_call if isinstance(req.tool_call, dict) else {}
+    name = call.get("name")
+    if name not in _CONFIRM_TOOLS:
+        return False
+    args = call.get("args") or {}
+    from app.deep_agent.tools.workspace import _root as ws_root
+
+    root = ws_root()
+    if root is None or not root.is_dir():
+        return False
+    pdfs = [f.name for f in root.glob("*.pdf")]
+    if not pdfs:
+        return False
+    pdf_lower = {f.lower() for f in pdfs}
+    pdf_noext = {f.lower().rsplit(".", 1)[0] for f in pdfs}
+
+    def norm(s: str) -> str:
+        return (s or "").lower().strip().replace("_", "-").replace(" ", "-")
+
+    pdf_norm = {norm(f): f for f in pdfs}
+    from difflib import get_close_matches
+
+    for tok in _pdf_tokens(name, args):
+        t = (tok or "").strip().strip('"').strip("'").lower()
+        if not t:
+            continue
+        # match ESATTO (sul nome grezzo case-insensitive, come il resolver): ok
+        if t in pdf_lower or t + ".pdf" in pdf_lower or t in pdf_noext:
+            continue
+        # fuzzy: simile ma non identico -> serve conferma
+        if get_close_matches(norm(t), list(pdf_norm), n=1, cutoff=0.6):
+            return True
+    return False
+
+
+def _confirm_config(tool: str) -> InterruptOnConfig:
+    return InterruptOnConfig(
+        allowed_decisions=["approve", "reject"],
+        description=(f"Il file indicato per '{tool}' non corrisponde esattamente a un "
+                     "PDF del workspace. Procedi solo se intendi usare quel file."),
+        when=_needs_filename_confirmation,
+    )
+
+
+# Punto 1: la mappa interrupt_on finale. I tool sensibili in scrittura restano
+# sempre-interrupt (True); i tool che operano su PDF esistenti usano il predicato.
+INTERRUPT_ON = {
+    "scrivi_output": True,
+    "write_file": True,
+    "edit_file": True,
+    "delete": True,
+    **{tool: _confirm_config(tool) for tool in _CONFIRM_TOOLS},
+}
+
+
+def build_agent(model: str | None = None, profile: str = "user", checkpointer: MemorySaver | None = None):
     m = model or os.environ.get("PDFMIND_MODEL", DEF_MODEL)
     effective_model = resolve_primary_model() if (model is None and not os.environ.get("PDFMIND_MODEL")) else _resolve_model(m)
     return create_deep_agent(
@@ -148,7 +247,7 @@ def build_agent(model: str | None = None, profile: str = "user"):
         middleware=[TodoListMiddleware()],
         subagents=[DOCS_ANALYST],
         interrupt_on=INTERRUPT_ON,
-        checkpointer=MemorySaver(),
+        checkpointer=checkpointer or MemorySaver(),
         system_prompt=SYSTEM_PROMPT,
     )
 
