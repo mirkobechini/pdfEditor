@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { isTauri, tauriInvoke } from "../../shared/tauri";
+import { isTauri, tauriInvoke, getApiBaseUrl } from "../../shared/tauri";
 import { usePreferences } from "../../lib/preferences";
 import { api } from "../../shared/api";
 
@@ -50,8 +50,38 @@ export default function WizardPage() {
     const [acceptedTerms, setAcceptedTerms] = React.useState(false);
     const [agentProvider, setAgentProvider] = React.useState("ollama");
     const [agentModel, setAgentModel] = React.useState("");
+    // Punto 15/10 (esito build precedenti): il modello NON si scrive a mano — è una
+    // select coi modelli REALI del provider (Ollama scaricati / cloud dalla API),
+    // così un tag inesistente (es. `qwen3.5` invece di `qwen3.5:9b`) non parte mai.
+    const [agentModelChoices, setAgentModelChoices] = React.useState<string[]>([]);
+    const [agentModelEmpty, setAgentModelEmpty] = React.useState(false);
     const [agentRag, setAgentRag] = React.useState(true);
     const [agentApiKey, setAgentApiKey] = React.useState("");
+
+    // Carica i modelli reali appena cambia il provider (o al mount per ollama).
+    React.useEffect(() => {
+        let cancelled = false;
+        async function load() {
+            setAgentModelChoices([]);
+            setAgentModelEmpty(false);
+            try {
+                const params = new URLSearchParams({ provider: agentProvider });
+                if (agentApiKey && agentApiKey.trim()) params.set("api_key", agentApiKey.trim());
+                const res = await fetch(`${getApiBaseUrl()}/mind/models?${params.toString()}`);
+                if (!res.ok || cancelled) { setAgentModelEmpty(true); return; }
+                const data = await res.json();
+                const models = Array.isArray(data.models) ? data.models.filter((m: unknown) => typeof m === "string") : [];
+                if (cancelled) return;
+                setAgentModelChoices(models);
+                setAgentModelEmpty(models.length === 0);
+            } catch {
+                if (!cancelled) setAgentModelEmpty(true);
+            }
+        }
+        load();
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [agentProvider]);
 
     function handleNext() {
         if (currentStep < steps.length - 1) {
@@ -64,7 +94,9 @@ export default function WizardPage() {
             updatePrefs({ default_save_folder: workFolder.trim() });
         }
         // Salva la config Deep Agent (best-effort: se il backend non è pronto ignora).
-        const modelForProvider = agentModel.trim() || (agentProvider === "ollama" ? "qwen3.5" : "");
+        // Il modello viene solo dalla select (scelto tra quelli reali); mai un tag
+        // inventato di default (prima cadeva su `qwen3.5` che su Ollama non esiste).
+        const modelForProvider = agentModel.trim();
         api.updateMindConfig({
             provider: agentProvider,
             model: modelForProvider || undefined,
@@ -185,13 +217,18 @@ export default function WizardPage() {
                             <div className="rounded-2xl border border-white/10 bg-[#1b1612] p-4">
                                 <p className="text-[14px] font-semibold text-white">{tw("wizardModel")}</p>
                                 <p className="mt-1 text-[12px] text-[#9d9184]">{tw("wizardModelDesc")}</p>
-                                <input
-                                    type="text"
-                                    value={agentModel}
+                                <select
+                                    value={agentModelChoices.includes(agentModel) ? agentModel : ""}
                                     onChange={(e) => setAgentModel(e.target.value)}
-                                    placeholder={tw("wizardModelPlaceholder")}
-                                    className="mt-3 w-full rounded-[12px] border border-white/10 bg-[#221b16] px-4 py-2.5 text-[13px] text-white outline-none focus:border-[#f7871f]"
-                                />
+                                    disabled={agentModelEmpty}
+                                    className="mt-3 w-full cursor-pointer rounded-[12px] border border-white/10 bg-[#221b16] px-4 py-2.5 text-[13px] text-white outline-none focus:border-[#f7871f] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="" disabled>{tw("wizardModelSelectPlaceholder")}</option>
+                                    {agentModelChoices.map((m) => <option key={m} value={m}>{m}</option>)}
+                                </select>
+                                {agentModelEmpty && (
+                                    <p className="mt-2 text-[12px] text-[#9d9184]">{tw("wizardModelEmpty")}</p>
+                                )}
                             </div>
                             <div className="rounded-2xl border border-white/10 bg-[#1b1612] p-4">
                                 <p className="text-[14px] font-semibold text-white">{tw("wizardApiKey")}</p>
