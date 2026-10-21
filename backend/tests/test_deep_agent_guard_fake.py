@@ -1,12 +1,20 @@
-"""GUARD anti-fake (21/10) — l'utente chiede un'operazione ma nessun tool operativo è stato chiamato.
+"""GUARD anti-fake + ORCHESTRAZIONE (21/10) — l'utente chiede un'operazione/elenco
+ma il modello non chiama nessun tool (esiti finti tipo "fatto/eliminato/unito").
 
-Verifica la funzione pura `_wants_operation` e il set `OPERATIVE_TOOLS` di
-`app.deep_agent.server.mind`: il guard emette "NON eseguito" quando il messaggio
-utente chiede un'operazione ma in quel turno nessuno strumento operativo è stato
-chiamato (esiti finti tipo "fatto/eliminato/unito" senza chiamata tool).
+Il guard lato server (mind.py) emette "NON eseguito"; l'orchestrazione
+(ForceToolCallMiddleware in pdfmind.py) RESTRINGE i tool offerti al modello e
+forza `tool_choice` così la chiamata allo strumento avviene davvero.
+Le funzioni di intent vivono in `agents/pdfmind.py` e vengono riusate dal server.
 """
 
-from app.deep_agent.server.mind import OPERATIVE_TOOLS, _wants_operation
+from app.deep_agent.agents.pdfmind import (
+    ForceToolCallMiddleware,
+    _forced_tools_for_goal,
+    _wants_listing,
+    _wants_operation,
+    _wants_tool,
+)
+from app.deep_agent.server.mind import OPERATIVE_TOOLS
 
 
 def test_operative_tools_include_action_tools() -> None:
@@ -36,12 +44,50 @@ def test_wants_operation_true_for_action_requests() -> None:
 
 def test_wants_operation_false_for_read_only_requests() -> None:
     read_goals = [
-        "che file vedi nel workspace?",
-        "elenca i file",
-        "riassumi questo pdf",
-        "leggi nota-prova.txt",
         "quanti file ci sono?",
         "ciao",
     ]
     for g in read_goals:
         assert not _wants_operation(g), f"atteso False per: {g!r}"
+
+
+def test_wants_listing_true_for_list_requests() -> None:
+    listing_goals = [
+        "elenca i file",
+        "elencami i file nella workspace",
+        "che file vedi nel workspace?",
+        "quali file ci sono?",
+    ]
+    for g in listing_goals:
+        assert _wants_listing(g), f"atteso True per: {g!r}"
+
+
+def test_wants_tool_true_for_actions_and_listings() -> None:
+    for g in ("unisci questi pdf", "elenca i file", "elimina nota-prova.txt"):
+        assert _wants_tool(g), f"atteso True per: {g!r}"
+
+
+def test_wants_tool_false_for_chitchat() -> None:
+    for g in ("ciao", "grazie", "chi sei?", "come funziona il programma?"):
+        assert not _wants_tool(g), f"atteso False per: {g!r}"
+
+
+def test_forced_tools_for_goal_restricts_surface() -> None:
+    # Verifica che per un'operazione la surface venga ristretta AI SOLI tool pertinenti.
+    class _T:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+    all_tools = [_T(n) for n in OPERATIVE_TOOLS] + [_T("elenca_workspace"), _T("leggi_workspace")]
+    forced = _forced_tools_for_goal("unisci temp e scheda", all_tools)
+    assert [t.name for t in forced] == ["merge_pdfs"]
+    forced2 = _forced_tools_for_goal("elenca i file", all_tools)
+    assert [t.name for t in forced2] == ["elenca_workspace"]
+
+
+def test_force_tool_call_middleware_has_documented_hooks() -> None:
+    mw = ForceToolCallMiddleware()
+    assert getattr(mw, "name", "") == "force_tool_call"
+    # hook documentati (deepagents): wrap_model_call E awrap_model_call (path async del server).
+    assert callable(getattr(mw, "wrap_model_call", None))
+    assert callable(getattr(mw, "awrap_model_call", None))

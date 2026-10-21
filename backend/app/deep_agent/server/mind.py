@@ -8,7 +8,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 from pydantic import BaseModel
 
-from app.deep_agent.agents.pdfmind import build_agent
+from app.deep_agent.agents.pdfmind import build_agent, _wants_listing, _wants_operation, _wants_tool  # noqa: E501
 
 app = FastAPI(title="PdfMind")
 
@@ -198,18 +198,10 @@ OPERATIVE_TOOLS = {
 
 # Verbi/espressioni che indicano una richiesta di OPERAZIONE nel messaggio
 # utente. Se il goal ne contiene almeno uno, l'intenzione è operativa.
-_OPERATION_WORDS = (
-    "unisci", "unisc", "unir", "merge", "dividi", "split", "separa", "separa",
-    "firma", "firmare", "annot", "ocr", "comprim", "compress",
-    "convert", "trasform", "scrivi", "salva", "crea", "elimina",
-    "cancell", "rimuovi", "rinomina", "rinames",
-)
-
-
-def _wants_operation(goal: str) -> bool:
-    """True se il messaggio utente chiede un'operazione (non solo lettura)."""
-    g = (goal or "").lower()
-    return any(w in g for w in _OPERATION_WORDS)
+# NOTA: le funzioni di intent (_wants_operation/_wants_listing/_wants_tool) e le
+# relative parola-chiave vivono in agents/pdfmind.py (dove le usa
+# ForceToolCallMiddleware) e vengono IMPORTATE qui, per non avere due copie
+# divergenti.
 
 
 def _tool_result(chunk) -> str:
