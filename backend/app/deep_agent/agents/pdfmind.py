@@ -1,7 +1,7 @@
 import os
 
 from deepagents import create_deep_agent
-from langchain.agents.middleware import TodoListMiddleware
+from langchain.agents.middleware import AgentMiddleware, TodoListMiddleware
 from langchain.agents.middleware.human_in_the_loop import InterruptOnConfig
 from langchain.chat_models import init_chat_model
 from langgraph.checkpoint.memory import MemorySaver
@@ -10,7 +10,120 @@ from app.deep_agent.config import ordered_providers, fallback_enabled
 from app.deep_agent.tools.docs import (confronta_versioni, elenca_file, estrai_date, leggi_pdf, riassumi_pdf)  # noqa: E501
 from app.deep_agent.tools.profile import get_tools
 
-DEF_MODEL = "ollama:qwen3.5"
+# Default sicuro: tag VALIDO di Ollama (i modelli reali installati da Mirko sono
+# `qwen3.5:9b`/`qwen3.5:9b-nothink`). Prima c'era `ollama:qwen3.5` (senza tag) che
+# su Ollama non esiste -> errore 404. Il tag non-hink è più affidabile per il tool
+# calling (il reasoner talvolta risponde a memoria senza chiamare lo strumento).
+DEF_MODEL = "ollama:qwen3.5:9b-nothink"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Orchestrazione host-side (fix 3, 21/10): niente risposta "a memoria".
+# Pattern DOCUMENTATO (context7, deepagents/langchain): il middleware
+# `wrap_model_call` può cambiare per richiesta i tool offerti al modello e il
+# `tool_choice`. Test sul modello reale (qwen3.5:9b-nothink): con superficie
+# ristretta al tool pertinente + tool_choice la chiamata è stabile 3/3, con
+# tutti i 25 tool esposti è flaky (il modello risponde a parole senza chiamare
+# nulla). Quindi: quando l'ultimo messaggio umano richiede uno strumento,
+# restringiamo la surface al tool giusto e forziamo la chiamata.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Intent → nomi dei tool pertinenti (match per parole chiave sul goal utente).
+_INTENT_TOOLS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
+    (("elenca", "elenco", "che file", "quali file", "lista", "listami", "sistemami"), ("elenca_workspace",)),
+    (("unisci", "unisc", "unire", "merge", "unir"), ("merge_pdfs",)),
+    (("dividi", "dividere", "split", "separ", "in due"), ("split_pdf",)),
+    (("firma", "firmar", "firmami"), ("sign_pdf",)),
+    (("annot", "evidenzi"), ("annotate_pdf",)),
+    (("ocr", "riconosci il testo"), ("ocr_pdf",)),
+    (("comprim", "compress"), ("compress_pdf",)),
+    (("convert", "trasform", "converti"), ("convert_docx_to_pdf",)),
+    (("scrivi", "scrivi", "salva un", "crea un"), ("scrivi_output",)),
+    (("elimina", "eliminar", "cancell", "rimuovi", "rimuover", "cancella"), ("elimina_file",)),
+)
+
+
+def _wants_operation(goal: str) -> bool:
+    """True se il messaggio utente chiede un'operazione (unisci/elimina/firma...)."""
+    g = (goal or "").lower()
+    return any(w in g for w in ("unisci", "unisc", "unire", "merge", "unir",
+                                 "dividi", "split", "separ", "firma", "annot",
+                                 "ocr", "comprim", "compress", "convert",
+                                 "scrivi", "elimina", "cancell", "rimuovi"))
+
+
+_LISTING_WORDS = ("elenca", "elenco", "che file", "quali file", "lista",
+                  "listami", "cosa c'è", "cosa c'e", "che cosa c'è", "che cosa c'e")
+
+
+def _wants_listing(goal: str) -> bool:
+    """True se il messaggio utente chiede dati dalla workspace (elenco/lettura)."""
+    g = (goal or "").lower()
+    return any(w in g for w in _LISTING_WORDS)
+
+
+def _wants_tool(goal: str) -> bool:
+    """True se la richiesta richiede un tool (operazione O elenco/lettura)."""
+    return _wants_operation(goal) or _wants_listing(goal)
+
+
+def _forced_tools_for_goal(goal: str, available: list) -> list:
+    """Ritorna i tool disponibili pertinenti all'intento del goal (ordine stabile)."""
+    g = (goal or "").lower()
+    wanted: set[str] = set()
+    for keywords, tool_names in _INTENT_TOOLS:
+        if any(k in g for k in keywords):
+            wanted.update(tool_names)
+    if _wants_listing(goal):
+        wanted.add("elenca_workspace")
+    out: list = []
+    for t in available:
+        name = getattr(t, "name", None) or (t.get("name") if isinstance(t, dict) else None)
+        if name in wanted:
+            out.append(t)
+    return out
+
+
+class ForceToolCallMiddleware(AgentMiddleware):
+    """Quando l'ultimo messaggio utente richiede uno strumento (operazione o
+    elenco), restringe i tool offerti al modello al sottoinsieme pertinente e
+    forza `tool_choice` così il modello DEVE chiamare lo strumento — mai più
+    una risposta "a memoria" tipo 'procedo/unisco' senza tool call.
+
+    Attivo SOLO quando l'ultimo messaggio è umano (nuova richiesta), MAI dopo un
+    ToolMessage (esito tool) — lì il modello deve poter riassumere liberamente.
+    """
+
+    name = "force_tool_call"
+
+    def _force(self, request):
+        msgs = getattr(request, "messages", None) or []
+        if not msgs:
+            return None
+        last = msgs[-1]
+        if getattr(last, "type", "") != "human":
+            return None  # non è una nuova richiesta utente → niente forcing
+        content = getattr(last, "content", "")
+        if isinstance(content, list):
+            content = " ".join(p.get("text", "") for p in content if isinstance(p, dict) and p.get("text"))
+        goal = str(content or "")
+        if not _wants_tool(goal):
+            return None
+        forced = _forced_tools_for_goal(goal, request.tools)
+        if not forced:
+            return None
+        # 1 solo tool → tool_choice col NOME esatto (deterministico); più tool → "any".
+        tool_choice = forced[0].name if len(forced) == 1 else "any"
+        return request.override(tools=forced, tool_choice=tool_choice)
+
+    def wrap_model_call(self, request, handler):
+        forced_req = self._force(request)
+        return handler(forced_req if forced_req is not None else request)
+
+    async def awrap_model_call(self, request, handler):
+        forced_req = self._force(request)
+        return await handler(forced_req if forced_req is not None else request)
+
+
 
 # Provider supportati dal resolver.
 SUPPORTED_PREFIXES = ("ollama:", "anthropic:", "openai:", "openrouter:", "huggingface:")
@@ -241,7 +354,7 @@ def build_agent(model: str | None = None, profile: str = "user", checkpointer: M
     return create_deep_agent(
         model=effective_model,
         tools=get_tools(profile),
-        middleware=[TodoListMiddleware()],
+        middleware=[TodoListMiddleware(), ForceToolCallMiddleware()],
         subagents=[DOCS_ANALYST],
         interrupt_on=INTERRUPT_ON,
         checkpointer=checkpointer or MemorySaver(),
