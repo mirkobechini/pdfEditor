@@ -134,6 +134,10 @@ SYSTEM_PROMPT = (
     "non fidarti del ricordo della cronologia e non inventare file. "
     "Non usare strumenti generici (read_file, glob, write_file, edit_file, delete) e non "
     "inventare percorsi assoluti. "
+    "PER ELIMINARE file usa SEMPRE lo strumento elimina_file (elimina solo dalla cartella "
+    "output/ e richiede la conferma dell'utente tramite la richiesta di approvazione). "
+    "Mai dichiarare che un file è stato eliminato (o scritto, o unito) se non hai visto "
+    "l'esito RESTITUITO dallo strumento: se non hai chiamato il tool, non inventare il risultato. "
     "PRIMA DI UNIRE (merge): se l'utente non ha detto quale nome dare al file risultante, "
     "chiediglielo esplicitamente (es. 'Con che nome vuoi il file unito?'). Se l'utente non "
     "specifica un nome, usa il default della funzione e COMUNICA chiaramente il nome finale "
@@ -239,6 +243,7 @@ INTERRUPT_ON = {
     "write_file": True,
     "edit_file": True,
     "delete": True,
+    "elimina_file": True,
     **{tool: _confirm_config(tool) for tool in _CONFIRM_TOOLS},
 }
 

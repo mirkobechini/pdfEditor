@@ -364,12 +364,23 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                                 className="w-24 rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
                                             />
                                         )}
-                                        <input
-                                            value={p.model}
-                                            placeholder={ts("deepAgentModel")}
-                                            onChange={(e) => s.updateMindProvider(i, { model: e.target.value })}
-                                            className="flex-1 rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
-                                        />
+                                        {(() => {
+                                            const choices = s.getModelChoicesForProvider(p.provider);
+                                            const noChoices = !choices || choices.length === 0;
+                                            return (
+                                                <select
+                                                    value={choices && choices.includes(p.model) ? p.model : ""}
+                                                    onChange={(e) => s.updateMindProvider(i, { model: e.target.value })}
+                                                    disabled={noChoices}
+                                                    className={`flex-1 cursor-pointer rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f] ${noChoices ? "cursor-not-allowed opacity-50" : ""}`}
+                                                >
+                                                    <option value="" disabled>{ts("deepAgentModelSelectPlaceholder")}</option>
+                                                    {(choices || []).map((mdl) => (
+                                                        <option key={mdl} value={mdl}>{mdl}</option>
+                                                    ))}
+                                                </select>
+                                            );
+                                        })()}
                                         <button onClick={() => s.moveMindProvider(i, -1)} disabled={i === 0} className="cursor-pointer rounded-md border border-white/10 px-2 py-1 text-[11px] text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30" title={ts("deepAgentPrecedenceUp")}>↑</button>
                                         <button onClick={() => s.moveMindProvider(i, 1)} disabled={i === (s.mindConfig.providers || []).length - 1} className="cursor-pointer rounded-md border border-white/10 px-2 py-1 text-[11px] text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30" title={ts("deepAgentPrecedenceDown")}>↓</button>
                                         <button onClick={() => s.removeMindProvider(i)} className="cursor-pointer rounded-md border border-red-500/30 px-2 py-1 text-[11px] text-red-300 transition hover:bg-red-500/10" title={ts("deepAgentRemove")}>✕</button>

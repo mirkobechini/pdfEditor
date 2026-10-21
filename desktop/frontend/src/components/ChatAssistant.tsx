@@ -61,6 +61,48 @@ function isControl(text: string): boolean {
     return /^\[(TASK|STEP|HITL|DONE|THREAD)\]/.test(text);
 }
 
+/** Renderizza markdown leggero (grassetto, codice inline, blocchi ```, elenchi)
+ *  in elementi React sicuri — niente HTML grezzo. */
+function renderMarkdown(text: string): React.ReactNode {
+    const parts = text.split(/```/);
+    return parts.map((part, i) => {
+        if (i % 2 === 1) {
+            // blocco di codice: togli eventuale linguaggio sulla prima riga
+            const code = part.replace(/^[A-Za-z0-9_+.-]+\n/, "");
+            return (
+                <pre key={i} className="my-1 overflow-x-auto rounded-lg bg-black/40 p-2 text-[12px] leading-relaxed">
+                    <code>{code}</code>
+                </pre>
+            );
+        }
+        return renderInlineMarkdown(part, `t${i}`);
+    });
+}
+
+function renderInlineMarkdown(text: string, baseKey: string): React.ReactNode {
+    const out: React.ReactNode[] = [];
+    const re = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+    let last = 0;
+    let k = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+        if (m.index > last) out.push(text.slice(last, m.index));
+        const tok = m[0];
+        if (tok.startsWith("**") && tok.endsWith("**")) {
+            out.push(<strong key={`${baseKey}-b${k}`}>{tok.slice(2, -2)}</strong>);
+        } else if (tok.startsWith("`")) {
+            out.push(<code key={`${baseKey}-c${k}`} className="rounded bg-black/30 px-1">{tok.slice(1, -1)}</code>);
+        } else {
+            out.push(tok);
+        }
+        last = m.index + tok.length;
+        k += 1;
+    }
+    if (last < text.length) out.push(text.slice(last));
+    return out.length ? out : text;
+}
+
+
 /**
  * Chat Assistant (T4a): pallino flottante in basso a destra (stile chatbot web)
  * che apre un pannello chat collegato al motore /mind/chat (streaming SSE).
@@ -336,7 +378,7 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                                                   : "border border-white/10 bg-white/[0.04] text-[#f4f1ee]"
                                         }`}
                                     >
-                                        {m.content}
+                                        {m.role === "assistant" && !m.error ? renderMarkdown(m.content) : m.content}
                                     </div>
                                 </div>
                             );
