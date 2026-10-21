@@ -124,10 +124,11 @@ describe("WizardPage", () => {
     expect(screen.getByText("back")).toBeInTheDocument();
   });
 
-  it("shows Fine button on step 2", () => {
+  it("shows Fine button on last step", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("continue"));
+    fireEvent.click(screen.getByText("continue")); // → step 2 (workFolder)
+    fireEvent.click(screen.getByText("continue")); // → step 3 (Deep Agent)
     expect(screen.getByText(/finish/)).toBeInTheDocument();
   });
 
@@ -161,7 +162,8 @@ describe("WizardPage", () => {
   it("stores wizard_done and redirects to /login on Finish", () => {
     render(<WizardPage />);
     fireEvent.click(screen.getByRole("checkbox"));
-    fireEvent.click(screen.getByText("continue"));
+    fireEvent.click(screen.getByText("continue")); // → step 2
+    fireEvent.click(screen.getByText("continue")); // → step 3
     fireEvent.click(screen.getByText(/finish/));
     expect(localStorage.getItem("pdfeditor_wizard_done")).toBe("true");
     expect(mockPush).toHaveBeenCalledWith("/login");
