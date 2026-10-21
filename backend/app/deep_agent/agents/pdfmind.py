@@ -10,7 +10,11 @@ from app.deep_agent.config import ordered_providers, fallback_enabled
 from app.deep_agent.tools.docs import (confronta_versioni, elenca_file, estrai_date, leggi_pdf, riassumi_pdf)  # noqa: E501
 from app.deep_agent.tools.profile import get_tools
 
-DEF_MODEL = "ollama:qwen3.5"
+# Default sicuro: tag VALIDO di Ollama (i modelli reali installati da Mirko sono
+# `qwen3.5:9b`/`qwen3.5:9b-nothink`). Prima c'era `ollama:qwen3.5` (senza tag) che
+# su Ollama non esiste -> errore 404. Il tag non-hink è più affidabile per il tool
+# calling (il reasoner talvolta risponde a memoria senza chiamare lo strumento).
+DEF_MODEL = "ollama:qwen3.5:9b-nothink"
 
 # Provider supportati dal resolver.
 SUPPORTED_PREFIXES = ("ollama:", "anthropic:", "openai:", "openrouter:", "huggingface:")
