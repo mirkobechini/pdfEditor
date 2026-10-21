@@ -55,6 +55,12 @@ Regola: **prima di passare alla tranche successiva si verifica che tutte le prec
 ## Aggiornamenti advance
 (da compilare man mano che completi tranche)
 
+### 🔧 Bug 21/10 — esiti FINTI (il modello "procede/eliminato/unito" senza chiamare i tool) — FIX fatto
+- **Diagnosi**: il modello (es. deepseek-v4-flash) non chiama i tool operativi → risponde "fatto/eliminato/unito" senza eseguire nulla. L'HITL scatta solo se il tool viene chiamato.
+- **Fix 1 — prompt tool-first** `agents/pdfmind.py`: regola d'oro "le parole non eseguono nulla", chiama SUBITO lo strumento senza domande, mai dichiarare esiti non visti.
+- **Fix 2 — guard lato server** `server/mind.py`: funzioni `_wants_operation` + set `OPERATIVE_TOOLS`; a fine stream, se il messaggio chiede un'operazione ma nessuno strumento operativo è stato chiamato → emette "⚠️ NON eseguito ...".
+- **Test**: `tests/test_deep_agent_guard_fake.py` 3/3 verdi; regressioni deep agent verdi.
+
 ### 🔧 Bug aggiuntivi segnalati da Mirko il 16/10 (test build 7ea09b1f) — FIX fatto
 - **Wizard non arriva allo step 3 (Deep Agent)**: il bottone mostrava "Finish" già allo step 2 (condizione `currentStep < 1` invece di `currentStep < steps.length - 1`) → lo step Deep Agent era irraggiungibile. FIX: `desktop/frontend/src/app/wizard/page.tsx` — "Continue" finché non si è sull'ultimo step; contatore progressi `total` corretto da 2 a `steps.length`. Typecheck pulito.
 - **Auto-login su /login**: comportamento atteso (ripristino sessione/remember-me), non un bug. Da confermare con Mirko se vuole disabilitarlo.

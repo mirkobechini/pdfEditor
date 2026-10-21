@@ -180,6 +180,38 @@ def _evt(v: str) -> str:
     return f"data: {json.dumps(v)}\n\n"
 
 
+# Strumenti che eseguono un'OPERAZIONE reale sui file (non di sola lettura).
+# Servono al guard anti-fake: se l'utente chiede un'operazione ma nessuno di
+# questi tool è stato chiamato nel turno, il modello ha solo "raccontato" di
+# averla fatta senza eseguirla -> emettiamo l'avviso "NON eseguito".
+OPERATIVE_TOOLS = {
+    "merge_pdfs",
+    "split_pdf",
+    "sign_pdf",
+    "annotate_pdf",
+    "ocr_pdf",
+    "compress_pdf",
+    "convert_docx_to_pdf",
+    "scrivi_output",
+    "elimina_file",
+}
+
+# Verbi/espressioni che indicano una richiesta di OPERAZIONE nel messaggio
+# utente. Se il goal ne contiene almeno uno, l'intenzione è operativa.
+_OPERATION_WORDS = (
+    "unisci", "unisc", "unir", "merge", "dividi", "split", "separa", "separa",
+    "firma", "firmare", "annot", "ocr", "comprim", "compress",
+    "convert", "trasform", "scrivi", "salva", "crea", "elimina",
+    "cancell", "rimuovi", "rinomina", "rinames",
+)
+
+
+def _wants_operation(goal: str) -> bool:
+    """True se il messaggio utente chiede un'operazione (non solo lettura)."""
+    g = (goal or "").lower()
+    return any(w in g for w in _OPERATION_WORDS)
+
+
 def _tool_result(chunk) -> str:
     """Ritorna il contenuto testuale dell'ULTIMO ToolMessage se presente.
 
@@ -226,6 +258,7 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
             msgs.append({"role": role, "content": content})
     msgs.append({"role": "user", "content": goal})
     saw_tool = False
+    saw_operative_tool = False
     sent_tool_result = False
     # dedup #5 (19/10): il testo doppio "✓ PDF uniti…✓ PDF uniti…" nasceva perché
     # _text emette sia il ToolMessage (esito del tool) sia il messaggio finale
@@ -261,6 +294,8 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
             yield _evt(f"[TASK] {t}")
         for t in _tools(chunk):
             saw_tool = True
+            if t in OPERATIVE_TOOLS:
+                saw_operative_tool = True
             yield _evt(f"[STEP] {t}")
         t = _text(chunk)
         key = _outcome_key(t) if t else None
@@ -290,6 +325,12 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     # mostriamo noi (fix Bug 14 — il merge non deve più "sparire")
     if pending_tool_result and pending_tool_result not in emitted_outcomes:
         yield _evt(pending_tool_result)
+    # GUARD ANTI-FAKE (21/10): l'utente ha chiesto un'OPERAZIONE ma in questo
+    # turno NON è stato chiamato nessuno strumento operativo. Il modello ha solo
+    # "raccontato" di procedere/eliminare/unire senza eseguire: lo segnaliamo
+    # esplicitamente invece di lasciare che l'esito finto passi per vero.
+    if _wants_operation(goal) and not saw_operative_tool and not pending_tool_result:
+        yield _evt("⚠️ NON eseguito: la richiesta chiedeva un'operazione ma nessuno strumento è stato chiamato. Nessun file è stato modificato.")
     SESSIONS.pop(thread_id, None)
     yield _evt("[DONE]")
 
