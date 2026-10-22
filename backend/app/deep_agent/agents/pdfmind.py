@@ -83,14 +83,38 @@ def _forced_tools_for_goal(goal: str, available: list) -> list:
     return out
 
 
+# Parole di CONFERMA positiva (il goal corrente è una risposta breve all'operazione
+# richiesta prima: "va bene", "si", "unisci anche quello"...) e NEGATIVA (no/annulla).
+# Servono al middleware: quando il modello dovrebbe PROSEGUIRE un'operazione già
+# chiesta, il forcing non deve dipendere dalle parole dell'ultimo messaggio.
+_CONFIRM_WORDS = ("si", "sì", "va bene", "ok", "okay", "procedi", "confermo",
+                   "vai", "certo", "fai pure", "unisci anche", "eliminali",
+                   "procedi pure", "dai", "vai pure", "sistemami")
+_NEGATIVE_WORDS = ("no", "annulla", "niente", "lascia", "basta", "stop", "non")
+
+
+def _is_positive_confirmation(goal: str) -> bool:
+    """True se il messaggio è una breve conferma positiva (non un'operazione nuova)."""
+    g = (goal or "").strip().lower()
+    if not g:
+        return False
+    if any(n in g for n in _NEGATIVE_WORDS):
+        return False
+    return len(g) < 60 and any(w in g for w in _CONFIRM_WORDS)
+
+
 class ForceToolCallMiddleware(AgentMiddleware):
     """Quando l'ultimo messaggio utente richiede uno strumento (operazione o
-    elenco), restringe i tool offerti al modello al sottoinsieme pertinente e
-    forza `tool_choice` così il modello DEVE chiamare lo strumento — mai più
+    elenco) — o è una CONFERMA positiva a un'operazione appena chiesta —
+    restringe i tool offerti al modello al sottoinsieme pertinente e forza
+    `tool_choice` così il modello DEVE chiamare lo strumento — mai più
     una risposta "a memoria" tipo 'procedo/unisco' senza tool call.
 
-    Attivo SOLO quando l'ultimo messaggio è umano (nuova richiesta), MAI dopo un
-    ToolMessage (esito tool) — lì il modello deve poter riassumere liberamente.
+    Attivo SOLO quando l'ultimo messaggio è umano (nuova richiesta o conferma),
+    MAI dopo un ToolMessage (esito tool) — lì il modello deve poter riassumere
+    liberamente. Per le conferme risale all'ULTIMA richiesta umana operativa
+    del thread e forza lo strumento corrispondente (fix 22/10: "va bene" dopo
+    una richiesta di eliminazione non deve far finta di eliminare).
     """
 
     name = "force_tool_call"
@@ -106,9 +130,24 @@ class ForceToolCallMiddleware(AgentMiddleware):
         if isinstance(content, list):
             content = " ".join(p.get("text", "") for p in content if isinstance(p, dict) and p.get("text"))
         goal = str(content or "")
-        if not _wants_tool(goal):
-            return None
-        forced = _forced_tools_for_goal(goal, request.tools)
+        if _wants_tool(goal):
+            forced = _forced_tools_for_goal(goal, request.tools)
+        elif _is_positive_confirmation(goal):
+            # conferma a un'operazione chiesta prima: risali all'ultima richiesta
+            # umana con intento operativo nel thread corrente
+            forced = []
+            for m in reversed(msgs[:-1]):
+                if getattr(m, "type", "") != "human":
+                    continue
+                pc = getattr(m, "content", "")
+                if isinstance(pc, list):
+                    pc = " ".join(p.get("text", "") for p in pc if isinstance(p, dict) and p.get("text"))
+                prev_goal = str(pc or "")
+                if _wants_tool(prev_goal):
+                    forced = _forced_tools_for_goal(prev_goal, request.tools)
+                    break
+        else:
+            forced = []
         if not forced:
             return None
         # 1 solo tool → tool_choice col NOME esatto (deterministico); più tool → "any".
@@ -328,16 +367,24 @@ def _needs_filename_confirmation(req) -> bool:
 
 
 def _confirm_config(tool: str) -> InterruptOnConfig:
+    # 22/10 (Mirko): conferma SEMPRE per le operazioni, anche a file esatti.
+    # Prima il predicato `when` interrompeva solo se il nome non combaciava
+    # esattamente ma esisteva un match simile; ora ogni operazione richiede il
+    # bottone Procedi/Annulla, così l'utente vede sempre cosa sta per succedere.
+    # NOTA: `when` DEVE essere un callable (non un bool): deepagents lo invoca
+    # con `when(req)`, quindi True crasherebbe con "'bool' object is not callable".
     return InterruptOnConfig(
         allowed_decisions=["approve", "reject"],
-        description=(f"Il file indicato per '{tool}' non corrisponde esattamente a un "
-                     "PDF del workspace. Procedi solo se intendi usare quel file."),
-        when=_needs_filename_confirmation,
+        description=(f"L'operazione '{tool}' sta per essere eseguita sui file "
+                     "indicati. Procedi solo se intendi confermare."),
+        when=lambda req: True,
     )
 
 
 # Punto 1: la mappa interrupt_on finale. I tool sensibili in scrittura restano
 # sempre-interrupt (True); i tool che operano su PDF esistenti usano il predicato.
+# 22/10: ora anche merge/split/sign/annotate/ocr/compress sono sempre-interrupt
+# (conferma SEMPRE, per scelta di Mirko).
 INTERRUPT_ON = {
     "scrivi_output": True,
     "write_file": True,
