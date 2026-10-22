@@ -184,16 +184,23 @@ def _resolve_workspace_pdf_path(token: str) -> Path:
     name = t if t.lower().endswith(".pdf") else f"{t}.pdf"
     def _norm(s: str) -> str:
         return (s or "").lower().strip().replace("_", "-").replace(" ", "-")
-    exact = [f for f in root.glob("*.pdf") if f.name.lower() == name.lower()]
+    # Fix 22/10 (test Mirko): il merge salva il risultato in `output/` del workspace,
+    # quindi al merge successivo il file appena creato non era trovato (il resolver
+    # cercava solo nella root). Ora i candidati includono anche la sottocartella output/.
+    all_pdfs = list(root.glob("*.pdf"))
+    out_dir = root / "output"
+    if out_dir.is_dir():
+        all_pdfs += list(out_dir.glob("*.pdf"))
+    exact = [f for f in all_pdfs if f.name.lower() == name.lower()]
     if len(exact) == 1:
         return exact[0]
     if len(exact) > 1:
-        liste = ", ".join(f.name for f in exact)
+        liste = ", ".join(str(f.relative_to(root)) for f in exact)
         raise ValueError(f"PDF di '{token}' ambiguo ({len(exact)} file): {liste}. Usa il nome esatto.")
     # Nessun match esatto: il fallback normalizzato (_<->-, spazi) trova file col
     # nome DIVERSO. NON eseguiamo da soli (Mirko 19/10: scheda-1726 e scheda_1726
     # possono essere file diversi) -> chiediamo conferma all'utente.
-    fuzzy = [f for f in root.glob("*.pdf") if _norm(f.name) == _norm(name)]
+    fuzzy = [f for f in all_pdfs if _norm(f.name) == _norm(name)]
     if len(fuzzy) == 1:
         raise ValueError(
             f"Non ho trovato '{t}' nel workspace; esiste '{fuzzy[0].name}'. "
