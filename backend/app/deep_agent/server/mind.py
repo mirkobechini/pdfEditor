@@ -256,11 +256,12 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     saw_tool = False
     saw_operative_tool = False
     sent_tool_result = False
-    # 22/10 fix #4 (Mirko): traccia l'ULTIMO esito reale del tool operativo. Quando il
-    # modello chiama un tool ma questo FALLISCE (es. elimina_file con nome sbagliato), il
-    # tool restituisce un errore che il modello spesso ignora raccontando "Ho eliminato".
-    # Se c'è un errore operativo, NON lasciamo passare la narrazione: mostriamo l'errore
-    # reale del tool invece della risposta finta.
+    # 22/10 fix #5 (Mirko, punto 2): traccia l'ULTIMO esito REALE del tool operativo
+    # (successo ✓ O errore). Il modello spesso ci aggiunge sopra una narrazione verbosa
+    # e ripetuta ("Sto procedendo... Attendi conferma... Sto procedendo...") che rende
+    # l'output brutto. Mostriamo NOI l'esito conciso del tool ("✓ eliminati N file da
+    # output/: ...") e scartiamo la chiacchiera del modello.
+    operative_result = ""
     operative_error = ""
     # 22/10 fix #3: determiniamo a monte se la richiesta richiede uno strumento
     # (operazione, elenco/lettura) o è una CONFERMA positiva a un'operazione chiesta
@@ -348,10 +349,12 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
                 pending_tool_result = r.strip()
                 sent_tool_result = True
                 last_emitted = r.strip()
-                # 22/10 fix #4: se il tool appena eseguito è OPERATIVO e ha restituito
-                # un errore (non inizia con ✓), lo ricordiamo per il guard finale.
-                if saw_operative_tool and not pending_tool_result.startswith("✓"):
-                    operative_error = pending_tool_result
+                # 22/10 fix #4/#5: se il tool appena eseguito è OPERATIVO, ricordiamo
+                # il suo esito REALE (successo ✓ o errore) per il finale conciso.
+                if saw_operative_tool:
+                    operative_result = pending_tool_result
+                    if not pending_tool_result.startswith("✓"):
+                        operative_error = pending_tool_result
     # a fine stream: se c'era un esito tool ma nessun testo è stato emesso, lo
     # mostriamo noi (fix Bug 14 — il merge non deve più "sparire")
     if pending_tool_result and pending_tool_result not in emitted_outcomes:
@@ -366,13 +369,16 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
         if not executed:
             buffered_text = []
             yield _evt("⚠️ NON eseguito: la richiesta richiedeva uno strumento ma nessuno è stato chiamato. Nessun file è stato modificato.")
-    # 22/10 fix #4: il tool operativo È stato chiamato ma ha FALLITO (esito errore).
-    # Il modello avrebbe raccontato "Ho eliminato" ignorando l'errore: NON lo lasciamo
-    # passare come vero — mostriamo l'errore REALE del tool.
-    if request_wants_op and operative_error and not pending_tool_result:
+    # 22/10 fix #4/#5: il tool operativo È stato chiamato. Mostriamo NOI l'esito CONCISO
+    # e REALE del tool (successo ✓ oppure errore) e scartiamo la narrazione ripetuta del
+    # modello — niente più "Sto procedendo... Sto procedendo...".
+    if request_wants_op and operative_result and not pending_tool_result:
         buffered_text = []
-        yield _evt(f"⚠️ Operazione non riuscita: {operative_error}")
-    # emissione del testo bufferizzato SOLO se l'operazione/lettura è stata eseguita
+        if operative_error:
+            yield _evt(f"⚠️ Operazione non riuscita: {operative_error}")
+        else:
+            yield _evt(operative_result)
+    # emissione del testo bufferizzato SOLO dove serve (letture senza esito conciso)
     for b in buffered_text:
         yield _evt(b)
     SESSIONS.pop(thread_id, None)
