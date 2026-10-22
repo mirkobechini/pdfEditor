@@ -118,7 +118,11 @@ def _forced_tools_for_goal(goal: str, available: list) -> list:
 # chiesta, il forcing non deve dipendere dalle parole dell'ultimo messaggio.
 _CONFIRM_WORDS = ("si", "sì", "va bene", "ok", "okay", "procedi", "confermo",
                    "vai", "certo", "fai pure", "unisci anche", "eliminali",
-                   "procedi pure", "dai", "vai pure", "sistemami")
+                   "procedi pure", "dai", "vai pure", "sistemami",
+                   # 22/10: tentativo/ripetizione di un'operazione fallita -> va
+                   # trattato come conferma dell'operazione precedente (così il
+                   # retry host-side forza di nuovo lo strumento).
+                   "riprova", "riprove", "ripeti", "fallo", "riprovo")
 _NEGATIVE_WORDS = ("no", "annulla", "niente", "lascia", "basta", "stop", "non")
 
 

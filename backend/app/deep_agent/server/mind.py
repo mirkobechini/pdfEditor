@@ -302,84 +302,114 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
         m = _re.search(r"\b([\w-]+\.pdf)\b", txt)
         return m.group(1).lower() if m else None
 
-    # Punto 2 (streaming): stream Pregel v2 (stream_mode="values", version="v2")
-    # al posto del parsing manuale dei chunk v1 (chunk["model"]/["tools"]). In v2
-    # gli interrupt arrivano nativamente in chunk["interrupts"] (verificato).
-    async for chunk in agent.astream({"messages": msgs}, config=cfg, stream_mode="values", version="v2"):
-        hitl = _interrupt_name(chunk)
-        if hitl:
-            if pending_tool_result:
-                yield _evt(pending_tool_result)
-            # fix 22/10: la description (coi nomi file) viaggia col nome tool
-            name, desc = hitl
+    # Punto 2 (streaming) + ORCHESTRAZIONE HOST-SIDE con RETRY (22/10):
+    # il modello locale a volte NON chiama il tool nemmeno con tool_choice forzato
+    # (vedi test Mirko: "elenca i file in output", "unisci scheda-1726 e temp" →
+    # NON eseguito). Invece di arrenderci al guard, il SERVER fa un SECONDO giro
+    # con un messaggio esplicito "DEVI chiamare lo strumento" (max 2 tentativi):
+    # l'esecuzione non dipende più dalla bontà del modello.
+    async def _pass(input_msgs: list, st: dict):
+        """Un passaggio di stream. Emette gli eventi; aggiorna st (stato del giro)."""
+        st.update(
+            saw_tool=False, saw_operative_tool=False, sent_tool_result=False,
+            pending_tool_result="", operative_result="", operative_error="",
+            interrupt=None, texts=[],
+        )
+        last_emitted_p = ""
+        emitted_p: set[str] = set()
+        async for chunk in agent.astream({"messages": input_msgs}, config=cfg, stream_mode="values", version="v2"):
+            hitl = _interrupt_name(chunk)
+            if hitl:
+                st["interrupt"] = hitl
+                return
+            for t in _todos(chunk):
+                yield _evt(f"[TASK] {t}")
+            for t in _tools(chunk):
+                st["saw_tool"] = True
+                if t in OPERATIVE_TOOLS:
+                    st["saw_operative_tool"] = True
+                yield _evt(f"[STEP] {t}")
+            t = _text(chunk)
+            key = _outcome_key(t) if t else None
+            if t:
+                if t.strip() and t.strip() == last_emitted_p.strip():
+                    last_emitted_p = t.strip()
+                    continue
+                if key and key in emitted_p and len(t.strip()) < 160:
+                    last_emitted_p = t.strip()
+                    continue
+                if request_wants_tool:
+                    st["texts"].append(t)  # buffer: decideremo a fine giro
+                else:
+                    yield _evt(t)  # chat normale: streaming live
+                last_emitted_p = t.strip()
+                if key:
+                    emitted_p.add(key)
+                st["pending_tool_result"] = ""
+            else:
+                r = _tool_result(chunk)
+                if r and not st["sent_tool_result"]:
+                    st["pending_tool_result"] = r.strip()
+                    st["sent_tool_result"] = True
+                    last_emitted_p = r.strip()
+                    if st["saw_operative_tool"]:
+                        st["operative_result"] = r.strip()
+                        if not r.strip().startswith("✓"):
+                            st["operative_error"] = r.strip()
+
+    st: dict = {}
+    async for _ev in _pass(msgs, st):
+        yield _ev
+    if st.get("interrupt"):
+        if st.get("pending_tool_result"):
+            yield _evt(st["pending_tool_result"])
+        name, desc = st["interrupt"]
+        yield _evt(f"[HITL] {name}" + (f"||{desc}" if desc else ""))
+        return
+    # RETRY (giro 2): serviva uno strumento e NON è stato chiamato → forziamo
+    # esplicitamente, con il goal citato dentro (così l'intent resta riconosciuto).
+    executed_1 = (
+        st["saw_operative_tool"] if request_wants_op else (st["saw_tool"] or st["saw_operative_tool"])
+    )
+    if request_wants_tool and not executed_1 and not st.get("pending_tool_result"):
+        force_msg = (
+            f"{goal}\n\n⚠️ NON hai chiamato nessuno strumento. Questa richiesta richiede "
+            "di usare uno STRUMENTO (tool). Devi CHIAMARE ORA lo strumento appropriato — "
+            "NON rispondere con testo. (strumenti: elenca_workspace, elenca_file, "
+            "leggi_workspace, leggi_pdf, merge_pdfs, split_pdf, sign_pdf, annotate_pdf, "
+            "ocr_pdf, compress_pdf, convert_docx_to_pdf, scrivi_output, elimina_file, "
+            "elimina_tutti_in_output)."
+        )
+        async for _ev in _pass([{"role": "user", "content": force_msg}], st):
+            yield _ev
+        if st.get("interrupt"):
+            if st.get("pending_tool_result"):
+                yield _evt(st["pending_tool_result"])
+            name, desc = st["interrupt"]
             yield _evt(f"[HITL] {name}" + (f"||{desc}" if desc else ""))
             return
-        for t in _todos(chunk):
-            yield _evt(f"[TASK] {t}")
-        for t in _tools(chunk):
-            saw_tool = True
-            if t in OPERATIVE_TOOLS:
-                saw_operative_tool = True
-            yield _evt(f"[STEP] {t}")
-        t = _text(chunk)
-        key = _outcome_key(t) if t else None
-        if t:
-            # dedup #5: identico già emesso
-            if t.strip() and t.strip() == last_emitted.strip():
-                last_emitted = t.strip()
-                continue
-            # Fix 4: breve e sta solo ripetendo un esito già emesso (stesso file)
-            if key and key in emitted_outcomes and len(t.strip()) < 160:
-                last_emitted = t.strip()
-                continue
-            if request_wants_tool:
-                # bufferizza: decideremo a fine stream se era vera o "a memoria"
-                buffered_text.append(t)
-            else:
-                yield _evt(t)
-            last_emitted = t.strip()
-            if key:
-                emitted_outcomes.add(key)
-            # testo normale presente → niente fallback con l'esito del tool
-            pending_tool_result = ""
-        else:
-            r = _tool_result(chunk)
-            if r and not sent_tool_result:
-                # Buffer, non emettere subito: potrebbe arrivare il riassunto LLM.
-                pending_tool_result = r.strip()
-                sent_tool_result = True
-                last_emitted = r.strip()
-                # 22/10 fix #4/#5: se il tool appena eseguito è OPERATIVO, ricordiamo
-                # il suo esito REALE (successo ✓ o errore) per il finale conciso.
-                if saw_operative_tool:
-                    operative_result = pending_tool_result
-                    if not pending_tool_result.startswith("✓"):
-                        operative_error = pending_tool_result
-    # a fine stream: se c'era un esito tool ma nessun testo è stato emesso, lo
+    # a fine giro: se c'era un esito tool ma nessun testo è stato emesso, lo
     # mostriamo noi (fix Bug 14 — il merge non deve più "sparire")
-    if pending_tool_result and pending_tool_result not in emitted_outcomes:
-        yield _evt(pending_tool_result)
-    # GUARD ANTI-FAKE potenziato (22/10): la richiesta richiedeva uno strumento
-    # (operazione O elenco O conferma) ma in questo turno NON è stato chiamato
-    # nessuno strumento pertinente. Il testo bufferizzato era solo una "risposta a
-    # memoria" (raccontava di aver unito/eliminato senza eseguire): NON lo mostriamo
-    # come vero, al suo posto emettiamo l'avviso esplicito.
-    if request_wants_tool and not pending_tool_result:
-        executed = saw_operative_tool if request_wants_op else (saw_tool or saw_operative_tool)
-        if not executed:
-            buffered_text = []
-            yield _evt("⚠️ NON eseguito: la richiesta richiedeva uno strumento ma nessuno è stato chiamato. Nessun file è stato modificato.")
-    # 22/10 fix #4/#5: il tool operativo È stato chiamato. Mostriamo NOI l'esito CONCISO
-    # e REALE del tool (successo ✓ oppure errore) e scartiamo la narrazione ripetuta del
-    # modello — niente più "Sto procedendo... Sto procedendo...".
-    if request_wants_op and operative_result and not pending_tool_result:
-        buffered_text = []
-        if operative_error:
-            yield _evt(f"⚠️ Operazione non riuscita: {operative_error}")
+    if st.get("pending_tool_result") and st.get("pending_tool_result") not in emitted_outcomes:
+        yield _evt(st["pending_tool_result"])
+    # GUARD ANTI-FAKE (22/10): la richiesta richiedeva uno strumento ma NON è stato
+    # chiamato nemmeno dopo il retry. NON mostriamo la risposta a memoria: avviso.
+    executed = (
+        st["saw_operative_tool"] if request_wants_op else (st["saw_tool"] or st["saw_operative_tool"])
+    )
+    if request_wants_tool and not executed and not st.get("pending_tool_result"):
+        st["texts"] = []
+        yield _evt("⚠️ NON eseguito: la richiesta richiedeva uno strumento ma nessuno è stato chiamato. Nessun file è stato modificato.")
+    # 22/10: tool operativo chiamato → mostriamo NOI l'esito CONCISO e REALE
+    # (successo ✓ oppure errore), scartando la narrazione ripetuta del modello.
+    if request_wants_op and st.get("operative_result") and not st.get("pending_tool_result"):
+        st["texts"] = []
+        if st.get("operative_error"):
+            yield _evt(f"⚠️ Operazione non riuscita: {st['operative_error']}")
         else:
-            yield _evt(operative_result)
+            yield _evt(st["operative_result"])
     # emissione del testo bufferizzato SOLO dove serve (letture senza esito conciso)
-    for b in buffered_text:
+    for b in st.get("texts", []):
         yield _evt(b)
     SESSIONS.pop(thread_id, None)
     yield _evt("[DONE]")
