@@ -466,8 +466,11 @@ INTERRUPT_ON = {
     "write_file": True,
     "edit_file": True,
     "delete": True,
-    "elimina_file": True,
-    "elimina_tutti_in_output": True,
+    # 22/10: elimina_file e il bulk usano _confirm_config (conferma SEMPRE) così il
+    # bottone mostra la description coi nomi file, non il fallback grezzo di deepagents
+    # ("Tool execution requires approval Tool: ... Args: ...").
+    "elimina_file": _confirm_config("elimina_file"),
+    "elimina_tutti_in_output": _confirm_config("elimina_tutti_in_output"),
     **{tool: _confirm_config(tool) for tool in _CONFIRM_TOOLS},
 }
 
