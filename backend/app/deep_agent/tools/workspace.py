@@ -134,3 +134,26 @@ def elimina_file(nome: str) -> str:
     target.unlink()
     return f"✓ eliminato: output/{target.name}"
 
+
+def elimina_tutti_in_output() -> str:
+    """Elimina TUTTI i file nella cartella output/ del workspace (mai i sorgenti).
+
+    Tool BULK (fix 22/10, Mirko): "elimina tutti i file nella cartella output"
+    ora è un'operazione unica con una SOLA conferma HITL, invece di far indovinare
+    al modello un nome-file per volta (prima non eliminava nulla). Elimina solo
+    dalla cartella output/ — i sorgenti nella root restano intatti.
+    """
+    r = _root()
+    if r is None:
+        return "eliminazione non consentita: workspace non configurata"
+    out = (r / "output")
+    if not out.is_dir():
+        return "nessun file da eliminare: cartella output/ non esiste"
+    files = [f for f in out.iterdir() if f.is_file()]
+    if not files:
+        return "nessun file da eliminare in output/"
+    names = sorted(f.name for f in files)
+    for f in files:
+        f.unlink()
+    return f"✓ eliminati {len(files)} file da output/: {', '.join(names)}"
+

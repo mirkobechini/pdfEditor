@@ -110,12 +110,13 @@ def test_thread_id_anonymous_random() -> None:
 # ---- _interrupt_name (HITL nativo in streaming v2) ----
 
 class _Inter:
-    value = {"action_requests": [{"name": "merge_pdfs"}]}
+    value = {"action_requests": [{"name": "merge_pdfs", "description": "Unisci i file"}]}
 
 
 def test_interrupt_name_v2() -> None:
     chunk = _v2({"messages": []}, (_Inter(),))
-    assert _interrupt_name(chunk) == "merge_pdfs"
+    # 22/10: ritorna (nome, description) per far arrivare la description coi nomi file al client
+    assert _interrupt_name(chunk) == ("merge_pdfs", "Unisci i file")
 
 
 def test_interrupt_name_empty() -> None:

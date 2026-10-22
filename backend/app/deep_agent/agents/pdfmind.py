@@ -38,7 +38,7 @@ _INTENT_TOOLS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
     (("comprim", "compress"), ("compress_pdf",)),
     (("convert", "trasform", "converti"), ("convert_docx_to_pdf",)),
     (("scrivi", "scrivi", "salva un", "crea un"), ("scrivi_output",)),
-    (("elimina", "eliminar", "cancell", "rimuovi", "rimuover", "cancella"), ("elimina_file",)),
+    (("elimina", "eliminar", "cancell", "rimuovi", "rimuover", "cancella"), ("elimina_file", "elimina_tutti_in_output")),
 )
 
 
@@ -305,8 +305,10 @@ SYSTEM_PROMPT = (
     "Non usare strumenti generici (read_file, glob, write_file, edit_file, delete) né "
     "percorsi assoluti inventati. "
     "PER ELIMINARE usa SEMPRE elimina_file (elimina solo dalla cartella output/ e richiede "
-    "conferma tramite pulsante). MAI dichiarare che un file è stato eliminato se lo strumento "
-    "non ha restituito l'esito. "
+    "conferma tramite pulsante). Se l'utente chiede di eliminare TUTTI i file della "
+    "cartella output (es. 'elimina tutti i file nella cartella output'), usa il tool "
+    "elimina_tutti_in_output (una sola conferma per tutti). MAI dichiarare che un file è "
+    "stato eliminato se lo strumento non ha restituito l'esito. "
     "La CRONOLOGIA è SOLO contesto: i messaggi passati servono a capire il filo del discorso, "
     "ma NON devi rieseguire azioni già richieste in passato. Esegui esclusivamente l'ultima "
     "richiesta dell'utente. "
@@ -425,6 +427,8 @@ def _describe_action(tool_call, state, runtime) -> str:
         return f"Dividi: {args.get('pdf_id') or 'il PDF indicato'}"
     if name == "elimina_file":
         return f"Elimina PERMANENTEMENTE: {args.get('rel') or args.get('name') or 'il file indicato'} (dalla cartella output/)"
+    if name == "elimina_tutti_in_output":
+        return "Elimina PERMANENTEMENTE TUTTI i file nella cartella output/ (i sorgenti restano intatti)"
     # tool operativi su un singolo PDF (sign/annotate/ocr/compress/convert)
     target = args.get("pdf_id") or args.get("rel") or args.get("input") or "il PDF indicato"
     labels = {
@@ -463,6 +467,7 @@ INTERRUPT_ON = {
     "edit_file": True,
     "delete": True,
     "elimina_file": True,
+    "elimina_tutti_in_output": True,
     **{tool: _confirm_config(tool) for tool in _CONFIRM_TOOLS},
 }
 
