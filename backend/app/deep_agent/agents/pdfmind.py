@@ -42,8 +42,37 @@ _INTENT_TOOLS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
 )
 
 
+def _is_capability_question(goal: str) -> bool:
+    """True se il messaggio è una DOMANDA di capacità GENERICA ("puoi eliminare dei
+    file?", "sai unire i pdf?") — non una richiesta operativa. Il guard/middleware
+    non deve forzare strumenti su una domanda: il modello risponde in modo
+    conversazionale.
+
+    Se il goal contiene un nome-file riconoscibile (trattino, underscore o .pdf)
+    è una richiesta CONCRETA (es. "puoi unire scheda_1726 e temp?") e quindi NON
+    è una domanda di capacità: va eseguita.
+    """
+    g = (goal or "").strip().lower()
+    if not g.endswith("?"):
+        return False
+    starters = ("puoi", "posso", "sai", "è possibile", "e' possibile", "si può", "si puo", "saresti", "riesci")
+    if not any(g.startswith(s) for s in starters):
+        return False
+    # nome-file concreto presente -> richiesta reale, non domanda generica
+    for ch in ("-", "_", ".pdf"):
+        if ch in g:
+            return False
+    return True
+
+
 def _wants_operation(goal: str) -> bool:
-    """True se il messaggio utente chiede un'operazione (unisci/elimina/firma...)."""
+    """True se il messaggio utente chiede un'operazione (unisci/elimina/firma...).
+
+    Le domande di capacità ("puoi eliminare dei file?") NON contano come richiesta
+    operativa: restano conversazione, niente forcing né guard.
+    """
+    if _is_capability_question(goal):
+        return False
     g = (goal or "").lower()
     return any(w in g for w in ("unisci", "unisc", "unire", "merge", "unir",
                                  "dividi", "split", "separ", "firma", "annot",
@@ -366,6 +395,49 @@ def _needs_filename_confirmation(req) -> bool:
     return False
 
 
+def _describe_action(tool_call, state, runtime) -> str:
+    """Description HITL DINAMICA con i nomi file (richiesta Mirko 22/10).
+
+    La description dell'InterruptOnConfig può essere un callable che riceve il
+    tool_call reale: generiamo una frase leggibile che dice QUALI file sono
+    coinvolti e (dove noto) quale file ne risulterà, invece del generico
+    "sta per essere eseguita sui file indicati".
+    """
+    name = (tool_call or {}).get("name", "")
+    args = (tool_call or {}).get("args") or {}
+
+    def _ids():
+        v = args.get("pdf_ids")
+        if isinstance(v, list):
+            return [str(x) for x in v]
+        if v:
+            return [x.strip() for x in str(v).split(",") if x.strip()]
+        return []
+
+    if name == "merge_pdfs":
+        ids = _ids()
+        out = (args.get("output_name") or "").strip()
+        if not out and ids:
+            out = "_".join(i.lower().replace(".pdf", "") for i in ids) + "_uniti.pdf"
+        src = ", ".join(ids) if ids else "i PDF indicati"
+        return f"Unisci {src} nel nuovo file: {out}" if out else f"Unisci {src}"
+    if name == "split_pdf":
+        return f"Dividi: {args.get('pdf_id') or 'il PDF indicato'}"
+    if name == "elimina_file":
+        return f"Elimina PERMANENTEMENTE: {args.get('rel') or args.get('name') or 'il file indicato'} (dalla cartella output/)"
+    # tool operativi su un singolo PDF (sign/annotate/ocr/compress/convert)
+    target = args.get("pdf_id") or args.get("rel") or args.get("input") or "il PDF indicato"
+    labels = {
+        "sign_pdf": "Firma il PDF",
+        "annotate_pdf": "Annota il PDF",
+        "ocr_pdf": "Esegui OCR sul PDF",
+        "compress_pdf": "Comprimi il PDF",
+        "convert_docx_to_pdf": "Converti in PDF",
+        "scrivi_output": "Scrivi il file",
+    }
+    return f"{labels.get(name, 'Esegui')}: {target}"
+
+
 def _confirm_config(tool: str) -> InterruptOnConfig:
     # 22/10 (Mirko): conferma SEMPRE per le operazioni, anche a file esatti.
     # Prima il predicato `when` interrompeva solo se il nome non combaciava
@@ -373,10 +445,10 @@ def _confirm_config(tool: str) -> InterruptOnConfig:
     # bottone Procedi/Annulla, così l'utente vede sempre cosa sta per succedere.
     # NOTA: `when` DEVE essere un callable (non un bool): deepagents lo invoca
     # con `when(req)`, quindi True crasherebbe con "'bool' object is not callable".
+    # 22/10: description DINAMICA (callable) coi nomi file coinvolti e il risultato.
     return InterruptOnConfig(
         allowed_decisions=["approve", "reject"],
-        description=(f"L'operazione '{tool}' sta per essere eseguita sui file "
-                     "indicati. Procedi solo se intendi confermare."),
+        description=_describe_action,
         when=lambda req: True,
     )
 

@@ -9,7 +9,9 @@ Le funzioni di intent vivono in `agents/pdfmind.py` e vengono riusate dal server
 
 from app.deep_agent.agents.pdfmind import (
     ForceToolCallMiddleware,
+    _describe_action,
     _forced_tools_for_goal,
+    _is_capability_question,
     _is_positive_confirmation,
     _wants_listing,
     _wants_operation,
@@ -97,6 +99,24 @@ def test_is_positive_confirmation() -> None:
     assert not _is_positive_confirmation("annulla")
     assert not _is_positive_confirmation("unisci temp e scheda")
     assert not _is_positive_confirmation("")
+
+
+def test_is_capability_question() -> None:
+    assert _is_capability_question("puoi eliminare dei file?")
+    assert _is_capability_question("sai unire i pdf?")
+    assert not _is_capability_question("elimina pippo.pdf")
+    assert not _is_capability_question("unisci temp e scheda-1726")
+    # la domanda di capacità NON deve contare come operazione
+    assert not _wants_operation("puoi eliminare dei file?")
+    assert not _wants_tool("puoi eliminare dei file?")
+
+
+def test_describe_action_mentions_files() -> None:
+    d = _describe_action({"name": "merge_pdfs", "args": {"pdf_ids": ["temp", "scheda-1726"]}}, None, None)
+    assert "temp" in d and "scheda-1726" in d
+    assert "uniti" in d  # nome del file risultante
+    d2 = _describe_action({"name": "elimina_file", "args": {"rel": "pippo.pdf"}}, None, None)
+    assert "pippo.pdf" in d2
 
 
 def test_force_tool_call_middleware_has_documented_hooks() -> None:
