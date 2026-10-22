@@ -158,12 +158,13 @@ def _todos(chunk) -> list[str]:
     return out
 
 
-def _interrupt_name(chunk) -> str | None:
-    """Ritorna il nome del tool in attesa di conferma (HITL nativo, v2).
+def _interrupt_name(chunk) -> tuple[str, str] | None:
+    """Ritorna (nome_tool, description) del tool in attesa di conferma (HITL, v2).
 
     In v2 gli interrupt arrivano nativamente in `chunk["interrupts"]` come oggetti
     `Interrupt` il cui `.value` è la `HITLRequest` con `action_requests`
-    (verificato con inspect). Ogni action_requests[0] ha un campo `name`.
+    (verificato con inspect). Ogni action_requests[0] ha `name` e `description`
+    (fix 22/10: la description dinamica coi nomi file arriva FINO al client).
     """
     if not isinstance(chunk, dict):
         return None
@@ -172,7 +173,9 @@ def _interrupt_name(chunk) -> str | None:
         if isinstance(value, dict):
             reqs = value.get("action_requests") or []
             if reqs:
-                return reqs[0].get("name", "azione")
+                name = reqs[0].get("name", "azione")
+                desc = reqs[0].get("description", "") or ""
+                return (name, desc)
     return None
 
 
@@ -194,6 +197,7 @@ OPERATIVE_TOOLS = {
     "convert_docx_to_pdf",
     "scrivi_output",
     "elimina_file",
+    "elimina_tutti_in_output",
 }
 
 # Verbi/espressioni che indicano una richiesta di OPERAZIONE nel messaggio
@@ -295,11 +299,13 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     # al posto del parsing manuale dei chunk v1 (chunk["model"]/["tools"]). In v2
     # gli interrupt arrivano nativamente in chunk["interrupts"] (verificato).
     async for chunk in agent.astream({"messages": msgs}, config=cfg, stream_mode="values", version="v2"):
-        name = _interrupt_name(chunk)
-        if name:
+        hitl = _interrupt_name(chunk)
+        if hitl:
             if pending_tool_result:
                 yield _evt(pending_tool_result)
-            yield _evt(f"[HITL] {name}")
+            # fix 22/10: la description (coi nomi file) viaggia col nome tool
+            name, desc = hitl
+            yield _evt(f"[HITL] {name}" + (f"||{desc}" if desc else ""))
             return
         for t in _todos(chunk):
             yield _evt(f"[TASK] {t}")
@@ -366,9 +372,10 @@ async def _resume_events(thread_id: str, decision: dict):
     # Ripresa HITL nativa: Command(resume={"decisions": [decision]}) riprende dal
     # punto di interruzione preservando lo stato (non rielabora i vecchi messaggi).
     async for chunk in agent.astream(Command(resume={"decisions": [decision]}), config=cfg, stream_mode="values", version="v2"):
-        name = _interrupt_name(chunk)
-        if name:
-            yield _evt(f"[HITL] {name}")
+        hitl = _interrupt_name(chunk)
+        if hitl:
+            name, desc = hitl
+            yield _evt(f"[HITL] {name}" + (f"||{desc}" if desc else ""))
             return
         for t in _todos(chunk):
             yield _evt(f"[TASK] {t}")

@@ -129,7 +129,7 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
     // Punto 5 + HITL nativo: il thread_id arriva dall'evento [THREAD] e viene
     // riusato per la ripresa /approve; `hitl` tiene la conferma in sospeso.
     const [threadId, setThreadId] = React.useState<string | null>(null);
-    const [hitl, setHitl] = React.useState<{ tool: string; threadId: string } | null>(null);
+    const [hitl, setHitl] = React.useState<{ tool: string; desc: string; threadId: string } | null>(null);
 
     // Persisti la cronologia locale quando cambia (non salvare i messaggi di errore
     // né i controlli; teniamo solo testo utile, max 40).
@@ -209,12 +209,13 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
      * del motore ([THREAD], [TASK], [STEP], [HITL], [DONE]) e il testo.
      * Ritorna quando lo stream termina (dopo [DONE] o dopo un [HITL]).
      */
-    async function consumeStream(res: Response): Promise<{ done: boolean; hitlTool: string | null; sawText: boolean; threadId: string | null }> {
+    async function consumeStream(res: Response): Promise<{ done: boolean; hitlTool: string | null; hitlDesc: string | null; sawText: boolean; threadId: string | null }> {
         let done = false;
         let hitlTool: string | null = null;
+        let hitlDesc: string | null = null;
         let sawText = false;
         let seenThread: string | null = null;
-        if (!res.body) return { done, hitlTool, sawText, threadId: seenThread };
+        if (!res.body) return { done, hitlTool, hitlDesc, sawText, threadId: seenThread };
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buf = "";
@@ -240,7 +241,14 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                     continue;
                 }
                 if (ev.startsWith("[STEP]")) { setActiveTool(ev.slice(6)); continue; }
-                if (ev.startsWith("[HITL]")) { hitlTool = ev.slice(6).trim(); continue; }
+                if (ev.startsWith("[HITL]")) {
+                    // fix 22/10: "tool||description" — la description dinamica (nomi file)
+                    const payload = ev.slice(6).trim();
+                    const sep = payload.indexOf("||");
+                    hitlTool = sep >= 0 ? payload.slice(0, sep).trim() : payload;
+                    hitlDesc = sep >= 0 ? payload.slice(sep + 2).trim() : "";
+                    continue;
+                }
                 if (isControl(ev)) continue;
                 sawText = true;
                 appendAssistantText(ev);
@@ -248,7 +256,7 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
             }
             buf = buf.slice(buf.lastIndexOf("\n\n") + 2);
         }
-        return { done, hitlTool, sawText, threadId: seenThread };
+        return { done, hitlTool, hitlDesc, sawText, threadId: seenThread };
     }
 
     async function send() {
@@ -274,11 +282,11 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                 const detail = await res.text().catch(() => "");
                 throw new Error(`HTTP ${res.status}${detail ? `::${detail}` : ""}`);
             }
-            const { done, hitlTool, sawText, threadId: seenThread } = await consumeStream(res);
+            const { done, hitlTool, hitlDesc, sawText, threadId: seenThread } = await consumeStream(res);
             // HITL nativo: l'agente si è fermato e attende conferma (Procedi/Annulla).
             // Il thread_id arriva dall'evento [THREAD] (seenThread) e viene riusato da /approve.
             if (hitlTool) {
-                setHitl({ tool: hitlTool, threadId: seenThread ?? threadId ?? "" });
+                setHitl({ tool: hitlTool, desc: hitlDesc ?? "", threadId: seenThread ?? threadId ?? "" });
                 return;
             }
             if (done || sawText) {
@@ -320,10 +328,10 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                 const detail = await res.text().catch(() => "");
                 throw new Error(`HTTP ${res.status}${detail ? `::${detail}` : ""}`);
             }
-            const { done, hitlTool } = await consumeStream(res);
+            const { done, hitlTool, hitlDesc } = await consumeStream(res);
             if (hitlTool) {
                 // Altro passaggio da confermare (es. più tool): mostriamo di nuovo i pulsanti.
-                setHitl({ tool: hitlTool, threadId: cur.threadId });
+                setHitl({ tool: hitlTool, desc: hitlDesc ?? "", threadId: cur.threadId });
                 return;
             }
             if (done) setTasks((prev) => prev.map((t) => ({ ...t, status: "done" as const })));
@@ -419,6 +427,7 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                             /* HITL nativo: l'agente attende la conferma (Procedi/Annulla). */
                             <div className="rounded-xl border border-[#f7871f]/30 bg-[#f7871f]/[0.06] px-3 py-3">
                                 <p className="mb-2 text-[13px] font-semibold text-white">{tc("hitlTitle", { tool: hitl.tool })}</p>
+                                {hitl.desc && <p className="mb-2 text-[12px] text-[#f4d9b8]">{hitl.desc}</p>}
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => approve(true)}
