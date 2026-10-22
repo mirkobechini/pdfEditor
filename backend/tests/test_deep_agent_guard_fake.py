@@ -10,6 +10,7 @@ Le funzioni di intent vivono in `agents/pdfmind.py` e vengono riusate dal server
 from app.deep_agent.agents.pdfmind import (
     ForceToolCallMiddleware,
     _forced_tools_for_goal,
+    _is_positive_confirmation,
     _wants_listing,
     _wants_operation,
     _wants_tool,
@@ -83,6 +84,19 @@ def test_forced_tools_for_goal_restricts_surface() -> None:
     assert [t.name for t in forced] == ["merge_pdfs"]
     forced2 = _forced_tools_for_goal("elenca i file", all_tools)
     assert [t.name for t in forced2] == ["elenca_workspace"]
+
+
+def test_is_positive_confirmation() -> None:
+    assert _is_positive_confirmation("va bene")
+    assert _is_positive_confirmation("sì")
+    assert _is_positive_confirmation("si")
+    assert _is_positive_confirmation("ok")
+    assert _is_positive_confirmation("procedi")
+    assert _is_positive_confirmation("unisci anche quello")
+    assert not _is_positive_confirmation("no")
+    assert not _is_positive_confirmation("annulla")
+    assert not _is_positive_confirmation("unisci temp e scheda")
+    assert not _is_positive_confirmation("")
 
 
 def test_force_tool_call_middleware_has_documented_hooks() -> None:

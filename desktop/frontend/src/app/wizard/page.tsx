@@ -96,10 +96,14 @@ export default function WizardPage() {
         // Salva la config Deep Agent (best-effort: se il backend non è pronto ignora).
         // Il modello viene solo dalla select (scelto tra quelli reali); mai un tag
         // inventato di default (prima cadeva su `qwen3.5` che su Ollama non esiste).
+        // FIX 22/10: il workspace va passato anche alla config Deep Agent, non solo
+        // alle prefs — altrimenti al primo avvio il backend lo vede "non configurato"
+        // (resolve_workspace legge il campo workspace della config).
         const modelForProvider = agentModel.trim();
         api.updateMindConfig({
             provider: agentProvider,
             model: modelForProvider || undefined,
+            workspace: workFolder.trim() || undefined,
             rag_enabled: agentRag,
             api_key: agentApiKey.trim() || undefined,
         }).catch(() => undefined);

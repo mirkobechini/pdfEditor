@@ -8,7 +8,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 from pydantic import BaseModel
 
-from app.deep_agent.agents.pdfmind import build_agent, _wants_listing, _wants_operation, _wants_tool  # noqa: E501
+from app.deep_agent.agents.pdfmind import build_agent, _wants_listing, _wants_operation, _wants_tool, _is_positive_confirmation  # noqa: E501
 
 app = FastAPI(title="PdfMind")
 
@@ -252,6 +252,25 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     saw_tool = False
     saw_operative_tool = False
     sent_tool_result = False
+    # 22/10 fix #3: determiniamo a monte se la richiesta richiede uno strumento
+    # (operazione, elenco/lettura) o è una CONFERMA positiva a un'operazione chiesta
+    # prima. In quel caso il testo del modello viene bufferizzato e mostrato SOLO
+    # se uno strumento è stato davvero chiamato (niente "risposta a memoria" che
+    # racconta di aver eliminato/unito senza eseguire). Per le conversazioni
+    # normali ("ciao") lo streaming resta live come sempre.
+    request_wants_op = _wants_operation(goal)
+    request_wants_tool = request_wants_op or _wants_listing(goal)
+    if not request_wants_tool and _is_positive_confirmation(goal):
+        # conferma a un'operazione chiesta prima: risali all'ultimo messaggio umano
+        for h in reversed(history or []):
+            if h.get("role") != "user":
+                continue
+            hc = str(h.get("content", "") or "")
+            if _wants_operation(hc) or _wants_listing(hc):
+                request_wants_tool = True
+                request_wants_op = _wants_operation(hc)
+                break
+    buffered_text: list[str] = []
     # dedup #5 (19/10): il testo doppio "✓ PDF uniti…✓ PDF uniti…" nasceva perché
     # _text emette sia il ToolMessage (esito del tool) sia il messaggio finale
     # dell'LLM che ripete la stessa stringa. Ricordiamo l'ultimo contenuto emesso
@@ -300,7 +319,11 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
             if key and key in emitted_outcomes and len(t.strip()) < 160:
                 last_emitted = t.strip()
                 continue
-            yield _evt(t)
+            if request_wants_tool:
+                # bufferizza: decideremo a fine stream se era vera o "a memoria"
+                buffered_text.append(t)
+            else:
+                yield _evt(t)
             last_emitted = t.strip()
             if key:
                 emitted_outcomes.add(key)
@@ -317,12 +340,19 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     # mostriamo noi (fix Bug 14 — il merge non deve più "sparire")
     if pending_tool_result and pending_tool_result not in emitted_outcomes:
         yield _evt(pending_tool_result)
-    # GUARD ANTI-FAKE (21/10): l'utente ha chiesto un'OPERAZIONE ma in questo
-    # turno NON è stato chiamato nessuno strumento operativo. Il modello ha solo
-    # "raccontato" di procedere/eliminare/unire senza eseguire: lo segnaliamo
-    # esplicitamente invece di lasciare che l'esito finto passi per vero.
-    if _wants_operation(goal) and not saw_operative_tool and not pending_tool_result:
-        yield _evt("⚠️ NON eseguito: la richiesta chiedeva un'operazione ma nessuno strumento è stato chiamato. Nessun file è stato modificato.")
+    # GUARD ANTI-FAKE potenziato (22/10): la richiesta richiedeva uno strumento
+    # (operazione O elenco O conferma) ma in questo turno NON è stato chiamato
+    # nessuno strumento pertinente. Il testo bufferizzato era solo una "risposta a
+    # memoria" (raccontava di aver unito/eliminato senza eseguire): NON lo mostriamo
+    # come vero, al suo posto emettiamo l'avviso esplicito.
+    if request_wants_tool and not pending_tool_result:
+        executed = saw_operative_tool if request_wants_op else (saw_tool or saw_operative_tool)
+        if not executed:
+            buffered_text = []
+            yield _evt("⚠️ NON eseguito: la richiesta richiedeva uno strumento ma nessuno è stato chiamato. Nessun file è stato modificato.")
+    # emissione del testo bufferizzato SOLO se l'operazione/lettura è stata eseguita
+    for b in buffered_text:
+        yield _evt(b)
     SESSIONS.pop(thread_id, None)
     yield _evt("[DONE]")
 
