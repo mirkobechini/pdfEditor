@@ -41,7 +41,8 @@ Regola: **prima di passare alla tranche successiva si verifica che tutte le prec
 ## Passi futuri
 - **Dopo T6 → BUILD LOCALE + checklist test manuale (richiesto Mirko 15/10)**: compilare l'installer desktop e fornire una checklist "cosa provare" (config wizard/settings, e chat con Ollama locale, split/merge/sign/OCR via agent, RAG con citazioni, MCP raggiungibile).
 - Voce (ascolta/risponde).
-- Subagent paralleli; deploy online cloud provider.
+- Subagent paralleli.
+- **B2B / cloud (chiarito da Mirko 23/10)**: (a) il deep agent deve poter usare anche i **file sincronizzati col cloud** (cloud sync) oltre alla workspace locale; (b) **in futuro web app del deep agent** — su web niente Ollama, quindi soltanto provider cloud (requisito offline-first vale per l'edizione desktop). (⚠️ dipende dal cloud sync funzionante — da indagare, vedi memory/2026-10-23).
 
 ## Accept
 1. Agent parte offline (Ollama/llama.cpp) e online (almeno 1 provider cloud) con la workspace scelta.

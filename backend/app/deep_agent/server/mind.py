@@ -313,7 +313,7 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
         st.update(
             saw_tool=False, saw_operative_tool=False, sent_tool_result=False,
             pending_tool_result="", operative_result="", operative_error="",
-            interrupt=None, texts=[],
+            listing_result="", interrupt=None, texts=[],
         )
         last_emitted_p = ""
         emitted_p: set[str] = set()
@@ -356,6 +356,12 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
                         st["operative_result"] = r.strip()
                         if not r.strip().startswith("✓"):
                             st["operative_error"] = r.strip()
+                    elif st["saw_tool"] and not st["saw_operative_tool"]:
+                        # 23/10 (bug 1, Mirko): tool di LETTURA/ELENCO → salviamo esito
+                        # REALE separato. pending_tool_result si azzera quando il modello
+                        # produce testo; listing_result persiste così la narrativa bugiarda
+                        # (es. "a.pdf b.pdf" quando il tool dice "workspace vuoto") non passa.
+                        st["listing_result"] = r.strip()
 
     st: dict = {}
     async for _ev in _pass(msgs, st):
@@ -400,6 +406,13 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     if request_wants_tool and not executed and not st.get("pending_tool_result"):
         st["texts"] = []
         yield _evt("⚠️ NON eseguito: la richiesta richiedeva uno strumento ma nessuno è stato chiamato. Nessun file è stato modificato.")
+    # 23/10 (bug 1, Mirko): richiesta di LETTURA/ELENCO → mostriamo l'esito REALE del
+    # tool (es. elenca_workspace → "workspace vuoto") e scartiamo la narrativa del modello
+    # che aveva ignorato l'esito (es. elencava "a.pdf b.pdf" a memoria).
+    if (request_wants_tool and not request_wants_op
+            and st.get("listing_result") and not st.get("pending_tool_result")):
+        st["texts"] = []
+        yield _evt(st["listing_result"])
     # 22/10: tool operativo chiamato → mostriamo NOI l'esito CONCISO e REALE
     # (successo ✓ oppure errore), scartando la narrazione ripetuta del modello.
     if request_wants_op and st.get("operative_result") and not st.get("pending_tool_result"):
