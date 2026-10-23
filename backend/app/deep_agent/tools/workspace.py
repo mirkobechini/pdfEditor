@@ -47,6 +47,10 @@ def elenca_workspace(cartella: str = "") -> str:
             return f"cartella '{cartella}' non trovata nel workspace"
     files = sorted(f for f in base.rglob("*") if f.is_file())
     if not files:
+        # Fix 23/10 (test Mirko): se è stata filtrata una cartella specifica, il
+        # "vuoto" riguarda QUELLA cartella, non l'intero workspace.
+        if cartella and cartella.strip():
+            return f"cartella {cartella.strip().strip('/')}/ vuota"
         return "workspace vuoto"
     # raggruppa per directory relativa
     by_dir: dict[str, list[str]] = {}
