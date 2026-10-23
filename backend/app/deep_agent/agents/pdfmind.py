@@ -430,7 +430,10 @@ def _describe_action(tool_call, state, runtime) -> str:
     if name == "split_pdf":
         return f"Dividi: {args.get('pdf_id') or 'il PDF indicato'}"
     if name == "elimina_file":
-        return f"Elimina PERMANENTEMENTE: {args.get('rel') or args.get('name') or 'il file indicato'} (dalla cartella output/)"
+        # il tool usa il parametro 'nome' (non 'rel'/'name'): leggiamo quello,
+        # così l'HITL mostra il NOME REALE del file (fix 23/10, Mirko)
+        fname = args.get("nome") or args.get("rel") or args.get("name") or "il file indicato"
+        return f"Elimina PERMANENTEMENTE: {fname} (dalla cartella output/)"
     if name == "elimina_tutti_in_output":
         return "Elimina PERMANENTEMENTE TUTTI i file nella cartella output/ (i sorgenti restano intatti)"
     # tool operativi su un singolo PDF (sign/annotate/ocr/compress/convert)

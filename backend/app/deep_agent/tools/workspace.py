@@ -23,19 +23,29 @@ def _in_root(p: Path, root: Path) -> bool:
         return False
 
 
-def elenca_workspace() -> str:
+def elenca_workspace(cartella: str = "") -> str:
     """Elenca file e cartelle del workspace (sola lettura).
 
     Fix 20/10 (Mirko): mostra TUTTI i file (anche quelli dentro output/ e altre
     sottocartelle) e rende esplicite le cartelle, così l'utente vede tutto il
     contenuto e distingue subito cos'è una cartella.
+
+    Fix 23/10 (Mirko): se l'utente chiede una cartella SPECIFICA (es. "elenca
+    i file in/su output"), passare QUESTO parametro (es. cartella="output")
+    per elencare SOLO quella sottocartella invece di tutto il workspace.
     """
     r = _root()
     if r is None:
         return "workspace non configurata"
     if not r.is_dir():
         return "workspace non trovata"
-    files = sorted(f for f in r.rglob("*") if f.is_file())
+    # se è richiesta una sottocartella specifica, limitiamo la ricerca lì
+    base = r
+    if cartella and cartella.strip():
+        base = r / cartella.strip().strip("/")
+        if not base.is_dir():
+            return f"cartella '{cartella}' non trovata nel workspace"
+    files = sorted(f for f in base.rglob("*") if f.is_file())
     if not files:
         return "workspace vuoto"
     # raggruppa per directory relativa
