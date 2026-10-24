@@ -3,6 +3,12 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import React from "react";
 import EditorPage from "../page";
 
+// #932: EditorPage renderizza ChatAssistant, che usa useRouter da
+// next/navigation — senza il mock la render esplode con
+// "invariant expected app router to be mounted".
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
 // ─── Mocks ────────────────────────────────────────────────────────
 
 const mockListPdfs = vi.fn();

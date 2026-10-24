@@ -160,6 +160,10 @@ vi.mock("../../../hooks/useCloudSync", () => ({
 vi.mock("../../../shared/api", () => ({
     api: {
         createBugReport: (...args: any[]) => mockCreateBugReport(...args),
+        // #932: la SettingsPage carica la config Deep Agent al mount — senza
+        // questo mock tutti i test settings crasherebbero.
+        getMindConfig: vi.fn().mockResolvedValue({ provider: "", model: "", workspace: "", rag_enabled: true, streaming: true, has_api_key: false, providers: [], fallback_enabled: true }),
+        updateMindConfig: vi.fn().mockImplementation((patch: any) => Promise.resolve({ provider: "", model: "", workspace: "", rag_enabled: true, streaming: true, has_api_key: false, providers: [], fallback_enabled: true, ...patch })),
     },
 }));
 

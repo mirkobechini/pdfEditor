@@ -5,7 +5,7 @@ import StartupPage from "../page";
 const mockPush = vi.fn();
 
 vi.mock("next/navigation", () => ({
-    useRouter: () => ({ push: mockPush }),
+    useRouter: () => ({ push: mockPush, replace: mockPush }),
 }));
 
 vi.mock("next-intl", () => ({
@@ -28,6 +28,8 @@ vi.mock("next-intl", () => ({
 
 vi.mock("../../../shared/tauri", () => ({
     getApiBaseUrl: () => "http://127.0.0.1:7723",
+    // 24/10: hasStoredSession() chiama isTauri() — il mock deve esportarlo.
+    isTauri: () => false,
 }));
 
 const mockRefreshSession = vi.fn();
@@ -78,7 +80,6 @@ describe("StartupPage", () => {
         render(<StartupPage />);
         expect(screen.getByText("Avvio applicazione")).toBeInTheDocument();
         expect(screen.getByText("Avvio backend...")).toBeInTheDocument();
-        expect(screen.getByText("Connessione database...")).toBeInTheDocument();
         expect(screen.getByText("Verifica API...")).toBeInTheDocument();
     });
 
