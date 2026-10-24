@@ -28,6 +28,17 @@ function getLicenseRows(tsu: (k: string) => string): readonly AboutRow[] {
     ];
 }
 
+// Redesign 24/10 (issue #1035): nomi leggibili per i provider supportati.
+// La riga della lista mostra il provider come ETICHETTA (non più un select
+// duplicato): il provider si sceglie/configura solo nel blocco principale.
+const PROVIDER_NAMES: Record<string, string> = {
+    ollama: "Ollama (locale)",
+    anthropic: "Claude (Anthropic)",
+    openai: "OpenAI",
+    openrouter: "OpenRouter",
+    huggingface: "Hugging Face",
+};
+
 function AboutSection({ title, rows, onAction }: { title: string; rows: readonly AboutRow[]; onAction?: (id: string) => void }) {
     return (
         <section className="mt-6">
@@ -237,8 +248,12 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                     <h1 className="text-[36px] font-bold leading-tight text-white">{ts("deepAgentTitle")}</h1>
                     <p className="mt-1 text-[14px] text-[#9d9184]">{ts("deepAgentDesc")}</p>
                     <div className="mt-8 rounded-2xl border border-white/10 bg-[#221b16] p-6">
+                        {/* ═══ BLOCO PRINCIPALE — unico punto per SELEZIONARE / CONFIGURARE /
+                            AGGIUNGERE il provider attivo (redesign 24/10, issue #1035).
+                            Al salvataggio finisce già in testa alla lista `providers`. ═══ */}
+                        <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#9d9184]">{ts("deepAgentProvider")}</p>
                         {/* Provider: nessuno preselezionato a caso (fix 16/10) — placeholder fino alla scelta */}
-                        <div className="flex items-center justify-between py-3 border-b border-white/10">
+                        <div className="flex items-center justify-between py-3 gap-4">
                             <div>
                                 <p className="text-[16px] font-semibold text-white">{ts("deepAgentProvider")}</p>
                                 <p className="text-[14px] text-[#9d9184]">{ts("deepAgentProviderDesc")}</p>
@@ -257,20 +272,61 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                             </select>
                         </div>
 
-                        {/* Chiave API: mostrata SOLO per i provider cloud, legata al provider scelto */}
-                        {s.mindConfig.provider !== "ollama" && (
-                            <div className="flex items-center justify-between py-3 border-b border-white/10">
-                                <div>
-                                    <p className="text-[16px] font-semibold text-white">{ts("deepAgentApiKeyFor", { provider: s.mindConfig.provider }) }</p>
-                                    <p className="text-[14px] text-[#9d9184]">{s.mindConfig.has_api_key ? ts("deepAgentApiKeySet") : ts("deepAgentApiKeyNotSet")}</p>
+                        {/* Chiave API: mostrata solo con un provider scelto. Per i cloud
+                            mostra la forma MASCHERATA (api_key_masked) se presente; il campo
+                            resta per SOSTITUIRE la key (vuoto = invariata). Pulsantino per
+                            CANCELLARE la key (invia api_key: ""). */}
+                        {s.mindConfig.provider !== "" && (
+                            s.mindConfig.provider === "ollama" ? (
+                                <div className="flex items-center justify-between py-3 border-b border-white/10">
+                                    <div>
+                                        <p className="text-[16px] font-semibold text-white">{ts("deepAgentApiKeyFor", { provider: PROVIDER_NAMES.ollama }) }</p>
+                                        <p className="text-[14px] text-[#9d9184]">{ts("deepAgentKeyNotNeeded")}</p>
+                                    </div>
+                                    <span className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-[#9d9184]">—</span>
                                 </div>
-                                <input
-                                    type="password"
-                                    placeholder={ts("deepAgentApiKeyPlaceholder")}
-                                    onChange={(e) => { s.setMindConfigApiKey(e.target.value); }}
-                                    className="rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none"
-                                />
-                            </div>
+                            ) : (
+                                <div className="py-3 border-b border-white/10">
+                                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                                        <div>
+                                            <p className="text-[16px] font-semibold text-white">{ts("deepAgentApiKeyFor", { provider: PROVIDER_NAMES[s.mindConfig.provider] ?? s.mindConfig.provider }) }</p>
+                                            <p className="text-[14px] text-[#9d9184]">
+                                                {s.mindActiveKeyRemove
+                                                    ? ts("deepAgentKeyWillRemove")
+                                                    : s.mindConfig.has_api_key
+                                                        ? ts("deepAgentKeyCurrent", { masked: s.mindConfig.api_key_masked })
+                                                        : ts("deepAgentApiKeyNotSet")}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1.5">
+                                            <input
+                                                type="password"
+                                                placeholder={s.mindConfig.has_api_key ? ts("deepAgentKeyReplacePlaceholder") : ts("deepAgentApiKeyPlaceholder")}
+                                                value={s.mindApiKeyDraft}
+                                                onChange={(e) => { s.setMindConfigApiKey(e.target.value); }}
+                                                className="w-64 rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] text-white outline-none focus:border-[#f7871f]"
+                                            />
+                                            {s.mindConfig.has_api_key && (
+                                                s.mindActiveKeyRemove ? (
+                                                    <button
+                                                        onClick={() => s.setMindActiveKeyRemove(false)}
+                                                        className="cursor-pointer rounded-lg border border-white/10 bg-[#2a231d] px-2 py-1 text-[11px] font-semibold text-white transition hover:bg-[#342c25]"
+                                                    >
+                                                        ↩ {ts("deepAgentKeyRemoveUndo")}
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => s.setMindActiveKeyRemove(true)}
+                                                        className="cursor-pointer rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500/20"
+                                                    >
+                                                        🗑 {ts("deepAgentKeyRemove")}
+                                                    </button>
+                                                )
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )
                         )}
 
                         {/* Modello: select con modelli REALI; per cloud richiede la chiave */}
@@ -331,45 +387,65 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                             </button>
                         </div>
 
-                        {/* Provider di fallback (multi-provider, punto 7) */}
-                        <div className="pt-4">
-                            <div className="flex items-center justify-between mb-2">
+                        <div className="pt-4 flex items-center gap-3">
+                            <button
+                                onClick={() => s.saveMindConfig()}
+                                className="cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2 text-[14px] font-semibold text-white transition hover:bg-[#ff9b37]"
+                            >
+                                {ts("deepAgentSave")}
+                            </button>
+                            {s.mindSaved && (
+                                <span className="text-[12px] text-[#48c769]">{ts("deepAgentSaved")}</span>
+                            )}
+                            {s.mindConfigError && (
+                                <span className="text-[12px] text-red-300">{s.mindConfigError}</span>
+                            )}
+                        </div>
+
+                        {/* ═══ LISTA `providers` — precedenza (↑↓), abilitazione, modello,
+                            chiave (mascherata / sostituzione / rimozione), test connessione
+                            per riga, rimozione. NIENTE più “+ Aggiungi provider”: il blocco
+                            principale sopra aggiunge (redesign 24/10). ═══ */}
+                        <div className="pt-6 mt-2 border-t border-white/10">
+                            <div className="mb-1">
                                 <p className="text-[14px] font-semibold text-white">{ts("deepAgentProviders")}</p>
-                                <button
-                                    onClick={() => s.addMindProvider()}
-                                    className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-[#342c25]"
-                                >
-                                    + {ts("deepAgentAddProvider")}
-                                </button>
+                                <p className="mt-1 text-[12px] text-[#9d9184]">{ts("deepAgentProvidersDesc")}</p>
                             </div>
-                            <p className="mb-2 text-[12px] text-[#9d9184]">{ts("deepAgentProvidersDesc")}</p>
                             {(s.mindConfig.providers || []).length === 0 && (
-                                <p className="mb-2 text-[12px] text-[#7e7267]">{ts("deepAgentNoProviders")}</p>
+                                <p className="mb-2 mt-2 text-[12px] text-[#7e7267]">{ts("deepAgentNoProviders")}</p>
                             )}
                             {(s.mindConfig.providers || []).map((p, i) => (
-                                <div key={i} className="mb-2 rounded-xl border border-white/10 bg-[#1b1612] p-3">
-                                    <div className="flex items-center gap-2">
+                                <div key={i} className={`mb-2 rounded-xl border border-white/10 p-3 ${p.enabled ? "bg-[#1b1612]" : "bg-[#1b1612]/60 opacity-70"}`}>
+                                    <div className="flex flex-wrap items-center gap-2">
                                         <span className="text-[11px] font-semibold text-[#f7871f]">#{i + 1}</span>
-                                        <select
-                                            value={p.provider}
-                                            onChange={(e) => s.updateMindProvider(i, { provider: e.target.value })}
-                                            className="cursor-pointer rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none"
+                                        <span className="text-[13px] font-semibold text-white">{PROVIDER_NAMES[p.provider] ?? p.provider}</span>
+                                        {/* Abilitazione per riga */}
+                                        <button
+                                            onClick={() => s.updateMindProvider(i, { enabled: !p.enabled })}
+                                            title={ts("deepAgentEnable")}
+                                            className={`h-5 w-9 rounded-full relative transition-colors cursor-pointer ${p.enabled ? "bg-[#f7871f]" : "bg-white/20"}`}
                                         >
-                                            <option value="ollama">Ollama (locale)</option>
-                                            <option value="anthropic">Claude (Anthropic)</option>
-                                            <option value="openai">OpenAI</option>
-                                            <option value="openrouter">OpenRouter</option>
-                                            <option value="huggingface">Hugging Face</option>
-                                        </select>
-                                        {p.provider !== "ollama" && (
-                                            <input
-                                                type="password"
-                                                placeholder={ts("deepAgentApiKey")}
-                                                value={s.providerKeys[i] ?? ""}
-                                                onChange={(e) => s.setProviderKeys((prev) => ({ ...prev, [i]: e.target.value }))}
-                                                className="w-24 rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
-                                            />
-                                        )}
+                                            <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${p.enabled ? "right-0.5" : "left-0.5"}`} />
+                                        </button>
+                                        <div className="ml-auto flex items-center gap-2">
+                                            {/* Test connessione PER RIGA (redesign 24/10) — usa
+                                                provider+modello di questa riga */}
+                                            <button
+                                                onClick={() => s.testMindProviderConnection(i)}
+                                                disabled={!!s.mindRowTesting[i]}
+                                                className="cursor-pointer rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[11px] font-semibold text-white transition hover:bg-[#342c25] disabled:cursor-not-allowed disabled:opacity-50"
+                                                title={ts("deepAgentTest")}
+                                            >
+                                                {s.mindRowTesting[i] ? ts("deepAgentTesting") : ts("deepAgentRowTest")}
+                                            </button>
+                                            <button onClick={() => s.moveMindProvider(i, -1)} disabled={i === 0} className="cursor-pointer rounded-md border border-white/10 px-2 py-1 text-[11px] text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30" title={ts("deepAgentPrecedenceUp")}>↑</button>
+                                            <button onClick={() => s.moveMindProvider(i, 1)} disabled={i === (s.mindConfig.providers || []).length - 1} className="cursor-pointer rounded-md border border-white/10 px-2 py-1 text-[11px] text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30" title={ts("deepAgentPrecedenceDown")}>↓</button>
+                                            <button onClick={() => s.removeMindProvider(i)} className="cursor-pointer rounded-md border border-red-500/30 px-2 py-1 text-[11px] text-red-300 transition hover:bg-red-500/10" title={ts("deepAgentRemove")}>✕</button>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                        <span className="text-[11px] text-[#9d9184]">{ts("deepAgentModel")}</span>
                                         {(() => {
                                             const choices = s.getModelChoicesForProvider(p.provider);
                                             const noChoices = !choices || choices.length === 0;
@@ -378,7 +454,7 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                                     value={choices && choices.includes(p.model) ? p.model : ""}
                                                     onChange={(e) => s.updateMindProvider(i, { model: e.target.value })}
                                                     disabled={noChoices}
-                                                    className={`flex-1 cursor-pointer rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f] ${noChoices ? "cursor-not-allowed opacity-50" : ""}`}
+                                                    className={`flex-1 min-w-[120px] cursor-pointer rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f] ${noChoices ? "cursor-not-allowed opacity-50" : ""}`}
                                                 >
                                                     <option value="" disabled>{ts("deepAgentModelSelectPlaceholder")}</option>
                                                     {(choices || []).map((mdl) => (
@@ -387,10 +463,54 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                                 </select>
                                             );
                                         })()}
-                                        <button onClick={() => s.moveMindProvider(i, -1)} disabled={i === 0} className="cursor-pointer rounded-md border border-white/10 px-2 py-1 text-[11px] text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30" title={ts("deepAgentPrecedenceUp")}>↑</button>
-                                        <button onClick={() => s.moveMindProvider(i, 1)} disabled={i === (s.mindConfig.providers || []).length - 1} className="cursor-pointer rounded-md border border-white/10 px-2 py-1 text-[11px] text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-30" title={ts("deepAgentPrecedenceDown")}>↓</button>
-                                        <button onClick={() => s.removeMindProvider(i)} className="cursor-pointer rounded-md border border-red-500/30 px-2 py-1 text-[11px] text-red-300 transition hover:bg-red-500/10" title={ts("deepAgentRemove")}>✕</button>
                                     </div>
+
+                                    {/* Stato chiave per riga: forma mascherata se presente;
+                                        input solo per SOSTITUIRE/AGGIUNGERE la key; pulsantino
+                                        per CANCELLARLA (api_key: "" al salvataggio). */}
+                                    {p.provider !== "ollama" && (
+                                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                                            <span className="text-[11px] text-[#9d9184]">{ts("deepAgentApiKey")}</span>
+                                            {p.has_api_key && (
+                                                <span className="rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 font-mono text-[11px] text-[#9d9184]" title={ts("deepAgentApiKeySet")}>
+                                                    {p.api_key_masked || ts("deepAgentApiKeySet")}
+                                                </span>
+                                            )}
+                                            <input
+                                                type="password"
+                                                placeholder={p.has_api_key ? ts("deepAgentKeyReplacePlaceholder") : ts("deepAgentKeyAddPlaceholder")}
+                                                value={s.providerKeys[i] ?? ""}
+                                                onChange={(e) => s.setProviderDraftKey(i, e.target.value)}
+                                                className="w-48 rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[12px] text-white outline-none focus:border-[#f7871f]"
+                                            />
+                                            {p.has_api_key && (
+                                                s.providerKeyDeletions[i] ? (
+                                                    <button
+                                                        onClick={() => s.setProviderKeyDeletion(i, false)}
+                                                        className="cursor-pointer rounded-lg border border-white/10 bg-[#221b16] px-2 py-1 text-[11px] font-semibold text-white transition hover:bg-[#342c25]"
+                                                        title={ts("deepAgentKeyRemoveUndo")}
+                                                    >
+                                                        ↩ {ts("deepAgentKeyRemoveUndo")}
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => s.setProviderKeyDeletion(i, true)}
+                                                        className="cursor-pointer rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500/20"
+                                                        title={ts("deepAgentKeyRemove")}
+                                                    >
+                                                        🗑 {ts("deepAgentKeyRemove")}
+                                                    </button>
+                                                )
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Feedback del test per riga (ok/errore con messaggio) */}
+                                    {s.mindRowTestResult[i] && (
+                                        <p className={`mt-2 text-[11px] ${s.mindRowTestResult[i].ok ? "text-[#48c769]" : "text-red-300"}`}>
+                                            {s.mindRowTestResult[i].ok ? "✓ " : "✗ "}{s.mindRowTestResult[i].message}
+                                        </p>
+                                    )}
                                 </div>
                             ))}
                             <div className="flex items-center justify-between py-2">
@@ -406,31 +526,6 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 </button>
                             </div>
                         </div>
-
-                        <div className="pt-4 flex items-center gap-3">
-                            <button
-                                onClick={() => s.saveMindConfig()}
-                                className="cursor-pointer rounded-xl bg-[#f7871f] px-6 py-2 text-[14px] font-semibold text-white transition hover:bg-[#ff9b37]"
-                            >
-                                {ts("deepAgentSave")}
-                            </button>
-                            <button
-                                onClick={() => s.testMindConnection()}
-                                disabled={s.mindTesting}
-                                className="cursor-pointer rounded-xl border border-white/10 bg-[#2a231d] px-6 py-2 text-[14px] font-semibold text-white transition hover:bg-[#342c25] disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {s.mindTesting ? ts("deepAgentTesting") : ts("deepAgentTest")}
-                            </button>
-                        </div>
-                        {s.mindSaved && (
-                            <p className="mt-3 text-[12px] text-[#48c769]">{ts("deepAgentSaved")}</p>
-                        )}
-                        {s.mindConfigError && (
-                            <p className="mt-3 text-[12px] text-red-300">{s.mindConfigError}</p>
-                        )}
-                        {s.mindTestResult && (
-                            <p className={`mt-2 text-[12px] ${s.mindTestOk ? "text-[#48c769]" : "text-red-300"}`}>{s.mindTestResult}</p>
-                        )}
                     </div>
                 </div>
             );

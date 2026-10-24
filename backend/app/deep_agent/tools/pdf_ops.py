@@ -1,167 +1,142 @@
-"""Tool agente — operazioni PDF reali del backend (T5a).
+"""Tool agente — operazioni PDF reali del Deep Agent (T5a).
 
-Espone all'LLM le funzionalità dell'app (split, merge) come tool avvolgendo
-il servizio PdfMergeSplitService già esistente. La sessione DB è aperta da
-SessionLocal (sidecar locale); l'utente è risolto dalla config/env per poter
-operare sui PDF del backend (in locale il sidecar usa un utente dedicato).
+Espone all'LLM le funzionalità dell'app (split, sign, annotate, ocr, compress,
+convert, merge) come tool che operano sui FILE FISICI della WORKSPACE, NON sui
+documenti del database backend.
 
-NOTA: sono funzioni "di integrazione" — aprono la sessione, chiamano il
-servizio e restituiscono una stringa sintetica per l'agente, mai un oggetto.
+ADR (fix #1034, riprodotto da Mirko 24/10): il deep agent desktop lavora sui
+file della workspace (il DB è per la futura versione web). `merge_pdfs` è stato
+il primo tool convertito (pattern di riferimento): risolve i file con
+`_resolve_workspace_pdf_path` e salva i risultati in `output/` del workspace.
+Tutti gli altri tool seguono ora lo stesso pattern — niente SessionLocal, niente
+PdfService/PdfMergeSplitService. I messaggi di esito sono sintetici per l'agente
+('✓ ...'), i ValueError diventano 'Errore: ...'.
+
+Nota: `set_current_user_id` resta chiamato dalla rotta /mind/chat (per
+compatibilità), ma i tool non aprono più la sessione DB.
 """
 
 from __future__ import annotations
 
 import base64
-import os
+import io
 from contextvars import ContextVar
-
-from app.core.database import SessionLocal
-from app.services.pdf_merge_split_service import PdfMergeSplitService
-from app.services.pdf_service import PdfService
-from app.repositories.user_repo import UserRepository
+from pathlib import Path
 
 # Utente corrente del Deep Agent, impostato dalla rotta /mind/chat con l'utente
-# autenticato della sessione (fix 16/10: il merge falliva perché i tool usavano
-# solo env PDFMIND_USER_ID o admin@pdfeditor.local, non l'utente reale loggato).
+# autenticato della sessione. Mantenuto per compatibilità della rotta: i tool
+# workspace non lo usano più (operano sui file fisici).
 _CURRENT_USER_ID: ContextVar[str | None] = ContextVar("deep_agent_current_user", default=None)
 
 
 def set_current_user_id(user_id: str | None) -> None:
-    """Imposta l'utente corrente per l'esecuzione dei tool (chiamato da /mind/chat)."""
+    """Imposta l'utente corrente per l'esecuzione dei tool (chiamato da /mind/chat).
+
+    Conservato per compatibilità della rotta; i tool workspace non ne hanno
+    più bisogno (lavorano sui file fisici, non sul DB).
+    """
     _CURRENT_USER_ID.set(user_id)
 
 
-def _current_user_id() -> str:
-    """Risolve l'id utente per le operazioni a valle.
+# ---------------------------------------------------------------------------
+# Helpers workspace (import lazy per far funzionare il monkeypatch di _root nei test)
+# ---------------------------------------------------------------------------
 
-    Priorità:
-    1. utente autenticato della sessione (impostato da /mind/chat)
-    2. env `PDFMIND_USER_ID`
-    3. il super-admin di default (`admin@pdfeditor.local`) quando esiste
+def _resolve_root() -> Path:
+    """Ritorna la root della workspace fisica (sul disco)."""
+    from app.deep_agent.tools.workspace import _root
+    root = _root()
+    if root is None:
+        raise ValueError("workspace non configurata")
+    if not root.is_dir():
+        raise ValueError("workspace non trovata")
+    return root
+
+
+def _output_dir(root: Path) -> Path:
+    """Ritorna la cartella output/ del workspace, creandola se serve."""
+    out = root / "output"
+    out.mkdir(parents=True, exist_ok=True)
+    return out
+
+
+def _unique_pdf_path(directory: Path, name: str) -> Path:
+    """Ritorna un path in `directory` che NON esista ancora.
+
+    Se `name` esiste già aggiungiamo un suffisso _2, _3, ... così non si
+    sovrascrive mai in silenzio un risultato precedente (pattern di merge_pdfs).
     """
-    session_user = _CURRENT_USER_ID.get()
-    if session_user:
-        return session_user
-    env = os.environ.get("PDFMIND_USER_ID", "").strip()
-    if env:
-        return env
-    db = SessionLocal()
-    try:
-        admin = UserRepository(db).get_by_email(os.environ.get("PDFMIND_SUPER_ADMIN_EMAIL", "admin@pdfeditor.local"))
-        if admin:
-            return admin.id
-        # fix 19/10: sidecar locale MONOUTENTE — la ContextVar dell'utente di
-        # sessione può NON arrivare nel thread dei tool. Come ultima risorsa
-        # risolviamo il PRIMO utente reale (non-guest) del DB: è l'utente loggato
-        # della sidecar desktop, a cui appartengono i PDF. Evita il fallimento
-        # "Nessun utente risolto... PDFMIND_USER_ID".
-        from sqlalchemy import select
-        from app.models.user import User as UserModel
-        u = db.execute(
-            select(UserModel)
-            .where(UserModel.is_guest.is_(False))
-            .order_by(UserModel.created_at.asc())
-            .limit(1)
-        ).scalar_one_or_none()
-        if u is not None:
-            return u.id
-    finally:
-        db.close()
-    raise ValueError(
-        "Nessun utente risolto per le operazioni PDF dell'agente: "
-        "imposta PDFMIND_USER_ID oppure esiste admin@pdfeditor.local"
-    )
+    if not name.lower().endswith(".pdf"):
+        name += ".pdf"
+    target = directory / name
+    if not target.exists():
+        return target
+    stem = Path(name).stem
+    n = 2
+    while (directory / f"{stem}_{n}.pdf").exists():
+        n += 1
+    return directory / f"{stem}_{n}.pdf"
 
 
-def _resolve_pdf_id(token: str, user_id: str) -> str:
-    """Risolve il nome file (es. "scheda-1726") all'id reale del PDF per l'utente.
-
-    Bug 14 real bias (fix 19/10): i tool app (merge/split/...) ricevevano dall'LLM
-    il NOME del file che vede nella workspace, ma il servizio cerca per id backend.
-    Se il token è già un UUID lo usiamo; altrimenti lo risolviamo contro i PDF
-    dell'utente per original_filename (con o senza .pdf, case-insensitive).
-    Se è ambiguo -> errore chiaro; se non trovato -> ValueError che diventa "Errore:".
-    """
-    token = (token or "").strip().strip('"').strip("'")
-    if not token:
-        raise ValueError("nome file/id del PDF vuoto")
-    from uuid import UUID
-    try:
-        UUID(token)
-        return token
-    except (ValueError, AttributeError):
-        pass
-    db = SessionLocal()
-    try:
-        from app.repositories.pdf_repo import PdfRepository
-        docs = PdfRepository(db).get_all_by_user(user_id)
-
-        # PRIORITÀ AL MATCH ESATTO: `scheda-1726` e `scheda_1726` sono file
-        # DISTINTI (Mirko 19/10), quindi NON vanno normalizzati nello stesso
-        # match. Solo se il nome esatto non esiste proviamo un fallback che
-        # normalizza underscore<->trattino (perché l'LLM scrive scheda_1726
-        # mentre il file reale è scheda-1726) — ma se il fallback genera più
-        # candidati, dichiariamo AMBIGUITÀ invece di indovinare.
-        def _no_ext(s: str) -> str:
-            s = (s or "").lower().strip()
-            if s.endswith(".pdf"):
-                s = s[:-4]
-            return s
-
-        name = token.lower()
-        if not name.endswith(".pdf"):
-            name += ".pdf"
-
-        # 1) match esatto (case-insensitive, con/senza .pdf)
-        exact = [d for d in docs if _no_ext(d.original_filename) == _no_ext(name)]
-        # 2) fallback: normalizza underscore<->trattino SOLO se non c'è esatto
-        if not exact:
-            norm_token = _no_ext(name).replace("_", "-").replace(" ", "-")
-            fuzzy = [
-                d
-                for d in docs
-                if _no_ext(d.original_filename).replace("_", "-").replace(" ", "-")
-                == norm_token
-            ]
-            exact = fuzzy
-
-        matches = exact
-        if len(matches) == 1:
-            return matches[0].id
-        if len(matches) > 1:
-            liste = ", ".join((d.original_filename or d.id) for d in matches)
-            raise ValueError(f"PDF di '{token}' ambiguo ({len(matches)} file): {liste}. Usa l'id.")
-        raise ValueError(f"PDF {token} not found")
-    finally:
-        db.close()
-
+# ---------------------------------------------------------------------------
+# Split
+# ---------------------------------------------------------------------------
 
 def split_pdf(pdf_id: str, mode: str = "every", ranges: str | None = None) -> str:
-    """Separa un PDF in più parti.
+    """Separa un PDF della WORKSPACE in più parti.
 
-    - pdf_id: id del PDF nel backend oppure il NOME del file (es. "scheda-1726.pdf")
+    - pdf_id: nome del file PDF nella workspace (es. "scheda-1726.pdf")
     - mode: "every" (una pagina per parte) oppure "range"
     - ranges: obbligatorio se mode="range", formato "1-3,5-7"
+    Le parti vengono salvate in output/ del workspace.
     """
     if mode == "range" and not ranges:
         return "Errore: mode='range' richiede ranges (es. '1-3,5-7')"
-    db = SessionLocal()
+    import fitz
     try:
-        service = PdfMergeSplitService(db)
-        user_id = _current_user_id()
-        resolved = _resolve_pdf_id(pdf_id, user_id)
-        if mode == "range":
-            parsed = [r.strip() for r in ranges.split(",") if r.strip()]
-            results = service.split_by_ranges(resolved, user_id, parsed)
-        else:
-            results = service.split_every_page(resolved, user_id)
-        names = [r.original_filename for r in results]
-        return f"✓ PDF diviso in {len(results)} parti: {', '.join(names)}"
+        path = _resolve_workspace_pdf_path(pdf_id)
+        root = _resolve_root()
+        out_dir = _output_dir(root)
+        doc = fitz.open(path)
+        results: list[str] = []
+        try:
+            if mode == "range":
+                parsed = [r.strip() for r in ranges.split(",") if r.strip()]
+                for r in parsed:
+                    parts = r.split("-")
+                    if len(parts) != 2:
+                        raise ValueError(f"Range non valido: {r}. Usa 'inizio-fine'")
+                    start, end = int(parts[0]), int(parts[1])
+                    if start < 1 or end > doc.page_count or start > end:
+                        raise ValueError(
+                            f"Range {r} non valido: il PDF ha {doc.page_count} pagine"
+                        )
+                    out = fitz.open()
+                    out.insert_pdf(doc, from_page=start - 1, to_page=end - 1)
+                    target = _unique_pdf_path(out_dir, f"{path.stem}_pages_{r}.pdf")
+                    out.save(str(target))
+                    out.close()
+                    results.append(target.name)
+            else:
+                for page_num in range(doc.page_count):
+                    out = fitz.open()
+                    out.insert_pdf(doc, from_page=page_num, to_page=page_num)
+                    target = _unique_pdf_path(out_dir, f"{path.stem}_page_{page_num + 1}.pdf")
+                    out.save(str(target))
+                    out.close()
+                    results.append(target.name)
+        finally:
+            doc.close()
+        return f"✓ PDF diviso in {len(results)} parti: {', '.join(results)}"
     except ValueError as e:
         return f"Errore: {e}"
-    finally:
-        db.close()
+    except Exception as e:
+        return f"Errore durante lo split: {e}"
 
+
+# ---------------------------------------------------------------------------
+# Resolver workspace (condiviso con merge_pdfs — NON toccare)
+# ---------------------------------------------------------------------------
 
 def _resolve_workspace_pdf_path(token: str) -> Path:
     """Risolve un NOME file all'id reale del PDF nella WORKSPACE (fisico su disco).
@@ -268,6 +243,10 @@ def merge_pdfs(pdf_ids: str | list[str], output_name: str = "") -> str:
         return f"Errore durante l'unione: {e}"
 
 
+# ---------------------------------------------------------------------------
+# Sign
+# ---------------------------------------------------------------------------
+
 def sign_pdf(
     pdf_id: str,
     signature_image_b64: str,
@@ -277,12 +256,13 @@ def sign_pdf(
     width: float = 200.0,
     height: float = 80.0,
 ) -> str:
-    """Applica una firma (immagine) a un PDF del backend.
+    """Applica una firma (immagine) a un PDF della WORKSPACE.
 
-    - pdf_id: id del PDF
+    - pdf_id: nome del file PDF nella workspace
     - signature_image_b64: immagine PNG/JPEG codificata in base64
     - page_number: pagina (1-based) da firmare
     - x, y, width, height: posizione e dimensione della firma in punti PDF
+    Il risultato viene salvato in output/ come <base>_firmato.pdf.
     """
     if not signature_image_b64:
         return "Errore: manca l'immagine della firma (signature_image_b64)"
@@ -296,24 +276,51 @@ def sign_pdf(
         return "Errore: la firma non è base64 valida"
     if not sig:
         return "Errore: la firma è vuota"
-    db = SessionLocal()
+    import fitz
     try:
-        user_id = _current_user_id()
-        doc = PdfService(db).sign_pdf(
-            pdf_id,
-            user_id,
-            sig,
-            page_number,
-            x,
-            y,
-            width,
-            height,
-        )
-        return f"✓ PDF firmato: {doc.original_filename}"
+        path = _resolve_workspace_pdf_path(pdf_id)
+        root = _resolve_root()
+        out_dir = _output_dir(root)
+        doc = fitz.open(path)
+        try:
+            if page_number > doc.page_count:
+                raise ValueError(f"Pagina {page_number} fuori range (1-{doc.page_count})")
+            page = doc[page_number - 1]
+            try:
+                page.insert_image(
+                    fitz.Rect(x, y, x + width, y + height),
+                    stream=sig,
+                )
+            except Exception as e:
+                raise ValueError(f"Immagine firma non valida: {e}")
+            target = _unique_pdf_path(out_dir, f"{path.stem}_firmato.pdf")
+            doc.save(str(target))
+        finally:
+            doc.close()
+        return f"✓ PDF firmato: {target.name}"
     except ValueError as e:
         return f"Errore: {e}"
-    finally:
-        db.close()
+    except Exception as e:
+        return f"Errore durante la firma: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Annotate
+# ---------------------------------------------------------------------------
+
+def _parse_points(points: str) -> list:
+    """Parsa punti "x,y x,y x,y ..." in una lista di fitz.Point."""
+    import fitz
+    pts = []
+    for token in points.split():
+        try:
+            px, py = (float(p.strip()) for p in token.split(","))
+        except Exception:
+            raise ValueError("points deve essere 'x,y x,y x,y ...' numerico")
+        pts.append(fitz.Point(px, py))
+    if len(pts) < 2:
+        raise ValueError("points richiede almeno 2 punti")
+    return pts
 
 
 def annotate_pdf(
@@ -323,15 +330,19 @@ def annotate_pdf(
     page_number: int = 1,
     color: str = "#FFFF00",
     content: str | None = None,
+    points: str | None = None,
 ) -> str:
-    """Aggiunge un'annotazione (highlight/underline/...) a un PDF.
+    """Aggiunge un'annotazione (highlight/underline/...) a un PDF della WORKSPACE.
 
-    - pdf_id: id del PDF
+    - pdf_id: nome del file PDF nella workspace
     - annotation_type: highlight | underline | strikeout | text | free_text | draw
     - rect: "x0,y0,x1,y1" (coordinate in punti PDF, origine alto-sinistra)
     - page_number: pagina (1-based)
     - color: colore esadecimale (default #FFFF00)
     - content: testo (richiesto per text/free_text)
+    - points: (solo draw, opzionale) "x,y x,y x,y ..." — se assente usa gli angoli
+      del rect come polilinea
+    Il risultato viene salvato in output/ come <base>_annotato.pdf.
     """
     if annotation_type not in ("highlight", "underline", "strikeout", "text", "free_text", "draw"):
         return "Errore: tipo annotazione non valido (highlight|underline|strikeout|text|free_text|draw)"
@@ -341,73 +352,248 @@ def annotate_pdf(
         return "Errore: rect deve essere 'x0,y0,x1,y1' numerico"
     if len(parts) != 4:
         return "Errore: rect deve avere esattamente 4 valori [x0, y0, x1, y1]"
-    db = SessionLocal()
+    import fitz
     try:
-        user_id = _current_user_id()
-        doc = PdfService(db).add_annotation(
-            pdf_id,
-            user_id,
-            page_number,
-            annotation_type,
-            tuple(parts),
-            color=color,
-            content=content,
-        )
-        return f"✓ Annotazione {annotation_type} aggiunta a: {doc.original_filename}"
+        path = _resolve_workspace_pdf_path(pdf_id)
+        root = _resolve_root()
+        out_dir = _output_dir(root)
+        doc = fitz.open(path)
+        try:
+            if page_number < 1 or page_number > doc.page_count:
+                raise ValueError(f"Pagina {page_number} fuori range (1-{doc.page_count})")
+            page = doc[page_number - 1]
+            rect_obj = fitz.Rect(*parts)
+
+            if annotation_type == "highlight":
+                annot = page.add_highlight_annot(rect_obj)
+            elif annotation_type == "underline":
+                annot = page.add_underline_annot(rect_obj)
+            elif annotation_type == "strikeout":
+                annot = page.add_strikeout_annot(rect_obj)
+            elif annotation_type in ("text", "free_text"):
+                annot = page.add_freetext_annot(rect_obj, content or "", fontsize=11)
+            elif annotation_type == "draw":
+                if points:
+                    pts = _parse_points(points)
+                else:
+                    pts = [rect_obj.tl, rect_obj.tr, rect_obj.br, rect_obj.bl]
+                annot = page.add_polyline_annot(pts)
+            else:
+                raise ValueError("tipo annotazione non valido")
+
+            # Colore hex → rgb 0-1 (best-effort, come il servizio originale)
+            try:
+                ch = color.lstrip("#")
+                r = int(ch[0:2], 16) / 255
+                g = int(ch[2:4], 16) / 255
+                b = int(ch[4:6], 16) / 255
+                annot.set_colors(stroke=(r, g, b))
+            except Exception:
+                pass
+            # rigenera l'appearance stream (fix come nel servizio: senza update()
+            # l'annotazione conserva l'aspetto di default)
+            annot.update()
+
+            target = _unique_pdf_path(out_dir, f"{path.stem}_annotato.pdf")
+            doc.save(str(target))
+        finally:
+            doc.close()
+        return f"✓ Annotazione {annotation_type} aggiunta a: {target.name}"
     except ValueError as e:
         return f"Errore: {e}"
-    finally:
-        db.close()
+    except Exception as e:
+        return f"Errore durante l'annotazione: {e}"
 
+
+# ---------------------------------------------------------------------------
+# OCR
+# ---------------------------------------------------------------------------
 
 def ocr_pdf(pdf_id: str, language: str = "eng") -> str:
-    """Esegue l'OCR su un PDF scansionato e lo rende ricercabile.
+    """Esegue l'OCR su un PDF scansionato della WORKSPACE e lo rende ricercabile.
 
-    - pdf_id: id del PDF
+    - pdf_id: nome del file PDF nella workspace
     - language: codice lingua Tesseract (es. eng, ita)
+    Se il PDF ha già un text layer risponde 'già dotato di testo'. Altrimenti
+    rende ogni pagina e inserisce il testo come layer invisibile. Richiede il
+    binario tesseract (app.core.tesseract.configure_tesseract); il risultato
+    viene salvato in output/ come <base>_ocr.pdf.
     """
     if not pdf_id.strip():
         return "Errore: manca pdf_id"
-    db = SessionLocal()
+    import fitz
+    from app.core.tesseract import configure_tesseract
     try:
-        user_id = _current_user_id()
-        pdf, chars, already_searchable = PdfService(db).ocr_pdf(pdf_id, user_id, language=language)
-        if already_searchable:
-            return f"✓ PDF già dotato di testo: {pdf.original_filename} (nessuna modifica)"
-        return f"✓ OCR completato su {pdf.original_filename} ({chars} caratteri riconosciuti)"
+        path = _resolve_workspace_pdf_path(pdf_id)
+        root = _resolve_root()
+        out_dir = _output_dir(root)
+        doc = fitz.open(path)
+        try:
+            has_text = any(doc[i].get_text().strip() for i in range(doc.page_count))
+            if has_text:
+                return f"✓ PDF già dotato di testo: {path.name} (nessuna modifica)"
+
+            if not configure_tesseract():
+                return (
+                    "Errore: OCR non disponibile: il binario tesseract non è installato "
+                    "su questo sistema. Installalo o contatta l'amministratore."
+                )
+
+            import pytesseract
+            from PIL import Image
+
+            character_count = 0
+            for page_num in range(doc.page_count):
+                page = doc[page_num]
+                pix = page.get_pixmap(dpi=200)
+                img = Image.open(io.BytesIO(pix.tobytes("png")))
+                text = pytesseract.image_to_string(img, lang=language, config="--psm 3")
+                stripped = text.strip()
+                if stripped:
+                    character_count += len(stripped)
+                    page.insert_textbox(
+                        fitz.Rect(0, 0, page.rect.width, page.rect.height),
+                        text,
+                        fontsize=1,
+                        color=(1, 1, 1),
+                        render_mode=3,  # testo invisibile
+                        overlay=True,
+                    )
+
+            target = _unique_pdf_path(out_dir, f"{path.stem}_ocr.pdf")
+            doc.save(str(target))
+            return f"✓ OCR completato su {target.name} ({character_count} caratteri riconosciuti)"
+        finally:
+            doc.close()
     except ValueError as e:
         return f"Errore: {e}"
-    finally:
-        db.close()
+    except Exception as e:
+        return f"Errore durante l'OCR: {e}"
 
+
+# ---------------------------------------------------------------------------
+# Compress
+# ---------------------------------------------------------------------------
 
 def compress_pdf(pdf_id: str, quality: str = "medium", overwrite: bool = False) -> str:
-    """Comprime un PDF riducendo le dimensioni.
+    """Comprime un PDF della WORKSPACE riducendo le dimensioni.
 
-    - pdf_id: id del PDF
+    - pdf_id: nome del file PDF nella workspace
     - quality: low | medium | high
-    - overwrite: se True sostituisce l'originale, altrimenti crea una nuova copia
+    - overwrite: se True sostituisce l'originale, altrimenti crea una copia
+      compressed_<base>.pdf in output/.
     """
     if quality not in ("low", "medium", "high"):
         return "Errore: quality deve essere low | medium | high"
-    db = SessionLocal()
+    import fitz
+
+    # Parametri identici a pdf_merge_split_service.compress
+    params = {
+        "low": {"garbage": 3, "deflate": True, "clean": True},
+        "medium": {
+            "garbage": 4,
+            "deflate": True,
+            "clean": True,
+            "deflate_images": True,
+            "deflate_fonts": True,
+        },
+        "high": {
+            "garbage": 4,
+            "deflate": True,
+            "clean": True,
+            "deflate_images": True,
+            "deflate_fonts": True,
+            "compression_effort": 9,
+        },
+    }
+    compress_params = params.get(quality, params["medium"])
     try:
-        user_id = _current_user_id()
-        doc = PdfMergeSplitService(db).compress(
-            pdf_id,
-            user_id,
-            quality=quality,
-            overwrite=overwrite,
-        )
-        return f"✓ PDF compresso: {doc.original_filename}"
+        path = _resolve_workspace_pdf_path(pdf_id)
+        source = fitz.open(path)
+        try:
+            out_bytes = source.tobytes(**compress_params)
+        finally:
+            source.close()
+        if overwrite:
+            path.write_bytes(out_bytes)
+            return f"✓ PDF compresso (sovrascritto): {path.name}"
+        root = _resolve_root()
+        out_dir = _output_dir(root)
+        target = _unique_pdf_path(out_dir, f"compressed_{path.name}")
+        target.write_bytes(out_bytes)
+        return f"✓ PDF compresso: {target.name}"
     except ValueError as e:
         return f"Errore: {e}"
-    finally:
-        db.close()
+    except Exception as e:
+        return f"Errore durante la compressione: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Convert DOCX → PDF (salva in ROOT della workspace, non nel DB)
+# ---------------------------------------------------------------------------
+
+def _docx_to_pdf_bytes(content: bytes) -> bytes:
+    """Converte contenuto DOCX in bytes PDF (stessa logica di
+    PdfService._convert_docx_to_pdf, senza toccare il DB)."""
+    from docx import Document
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.pdfgen import canvas
+
+    try:
+        doc = Document(io.BytesIO(content))
+    except Exception as e:
+        raise ValueError(f"File DOCX non valido: {e}")
+
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    margin = 20 * mm
+    y = height - margin
+    line_height = 14
+
+    def new_page_if_needed():
+        nonlocal y
+        if y < margin:
+            c.showPage()
+            y = height - margin
+
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if not text:
+            y -= line_height
+            continue
+        font_size = 11
+        try:
+            if para.style and para.style.font and para.style.font.size:
+                font_size = para.style.font.size.pt
+        except Exception:
+            pass
+        c.setFont("Helvetica", font_size)
+        max_chars = int((width - 2 * margin) / (font_size * 0.5))
+        words = text.split()
+        line = ""
+        for word in words:
+            candidate = f"{line} {word}".strip()
+            if len(candidate) > max_chars:
+                new_page_if_needed()
+                c.drawString(margin, y, line)
+                y -= line_height
+                line = word
+            else:
+                line = candidate
+        if line:
+            new_page_if_needed()
+            c.drawString(margin, y, line)
+            y -= line_height
+
+    c.showPage()
+    c.save()
+    return buffer.getvalue()
 
 
 def convert_docx_to_pdf(filename: str, content_b64: str) -> str:
-    """Converte un documento DOCX in PDF (come nuova importazione).
+    """Converte un documento DOCX in PDF e lo salva nella ROOT della workspace.
 
     - filename: nome del file (es. relazione.docx)
     - content_b64: contenuto del DOCX codificato in base64
@@ -417,16 +603,17 @@ def convert_docx_to_pdf(filename: str, content_b64: str) -> str:
     if not content_b64:
         return "Errore: manca il contenuto del file"
     try:
-        import base64 as _b64
-        content = _b64.b64decode(content_b64)
+        content = base64.b64decode(content_b64)
     except Exception:
         return "Errore: content_b64 non è base64 valido"
-    db = SessionLocal()
     try:
-        user_id = _current_user_id()
-        doc = PdfService(db).import_file_to_pdf(filename, content, user_id)
-        return f"✓ Convertito in PDF: {doc.original_filename}"
+        root = _resolve_root()
+        pdf_bytes = _docx_to_pdf_bytes(content)
+        stem = filename.rsplit(".", 1)[0]
+        target = _unique_pdf_path(root, f"{stem}.pdf")
+        target.write_bytes(pdf_bytes)
+        return f"✓ Convertito in PDF: {target.name}"
     except ValueError as e:
         return f"Errore: {e}"
-    finally:
-        db.close()
+    except Exception as e:
+        return f"Errore durante la conversione: {e}"

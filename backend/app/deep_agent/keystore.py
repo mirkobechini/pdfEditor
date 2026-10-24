@@ -176,3 +176,18 @@ def delete_key(provider: str | None) -> None:
 def has_key(provider: str | None) -> bool:
     """True se esiste una chiave per il provider (in una qualunque fonte)."""
     return bool(get_key(provider))
+
+
+def mask_key(api_key: str | None) -> str:
+    """Forma MASCHERATA della chiave per la UI — mai la chiave intera.
+
+    Mostra solo i primi e gli ultimi caratteri (richiesta Mirko 24/10, come
+    nelle altre app): es. "sk-…abcd". Le chiavi molto corte vengono mostrate
+    comunque solo per 2+2 caratteri. Stringa vuota se non c'è chiave.
+    """
+    k = (api_key or "").strip()
+    if not k:
+        return ""
+    if len(k) <= 8:
+        return f"{k[:2]}…{k[-2:]}"
+    return f"{k[:4]}…{k[-4:]}"

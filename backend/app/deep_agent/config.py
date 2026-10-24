@@ -193,17 +193,25 @@ def public(cfg: dict | None = None) -> dict:
     # rimuovi le key dalla lista providers, aggiungi has_api_key per voce (dal keystore)
     provs = []
     for p in c.get("providers", []):
+        prov = p.get("provider")
         provs.append(
             {
-                "provider": p.get("provider"),
+                "provider": prov,
                 "model": p.get("model", ""),
                 "enabled": p.get("enabled", True),
-                "has_api_key": p.get("provider") == "ollama" or keystore.has_key(p.get("provider")),
+                "has_api_key": prov == "ollama" or keystore.has_key(prov),
+                # 24/10 (Mirko): forma mascherata per la UI, mai la chiave intera
+                "api_key_masked": "" if prov == "ollama" else keystore.mask_key(keystore.get_key(prov)),
             }
         )
     c["providers"] = provs
     # chiave della selezione attiva: non esposta, ma indicatore dal keystore
     c["has_api_key"] = c.get("provider") == "ollama" or keystore.has_key(c.get("provider"))
+    c["api_key_masked"] = (
+        ""
+        if c.get("provider") == "ollama"
+        else keystore.mask_key(keystore.get_key(c.get("provider")))
+    )
     # aggiungi i provider validi noti (per il config UI)
     return c
 
