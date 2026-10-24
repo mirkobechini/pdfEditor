@@ -895,6 +895,17 @@ export class ApiClient {
   }
 }
 
+/** Voce della lista provider esposta dal backend (senza chiavi, solo forma mascherata). */
+export interface MindProviderInfo {
+  provider: string;
+  model: string;
+  enabled: boolean;
+  has_api_key: boolean;
+  // 24/10: forma mascherata della chiave (es. "sk-a…zXy9"), mai la chiave intera.
+  // "" se il provider non ha chiave (es. ollama).
+  api_key_masked: string;
+}
+
 /** Config Deep Agent esposta dal backend (senza chiavi). */
 export interface MindConfig {
   provider: string;
@@ -903,8 +914,10 @@ export interface MindConfig {
   rag_enabled: boolean;
   streaming: boolean;
   has_api_key: boolean;
+  // 24/10: forma mascherata della chiave del provider attivo ("" se assente/ollama).
+  api_key_masked: string;
   // punto 7: lista provider con precedenza + fallback (senza chiavi)
-  providers: { provider: string; model: string; enabled: boolean; has_api_key: boolean }[];
+  providers: MindProviderInfo[];
   fallback_enabled: boolean;
 }
 
