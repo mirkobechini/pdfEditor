@@ -286,7 +286,13 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
                                 const isOllama = s.mindConfig.provider === "ollama";
                                 const choices = isOllama ? s.ollamaModels : s.modelCatalog;
                                 const noProvider = !s.mindConfig.provider;
-                                const cloudNoKey = !isOllama && !s.mindConfig.has_api_key;
+                                // Fix 24/10 (piano doc keyring): la select si abilita appena la
+                                // chiave è PRESENTE — anche solo appena digitata (non ancora
+                                // salvata). Prima dipendeva solo da has_api_key (salvata), quindi
+                                // digitare la key non sbloccava nulla finché non si salvava.
+                                const pendingKey = (s.mindApiKeyDraft || "").trim();
+                                const hasKeyAvailable = s.mindConfig.has_api_key || pendingKey !== "";
+                                const cloudNoKey = !isOllama && !hasKeyAvailable;
                                 const disabled = noProvider || cloudNoKey || !choices || choices.length === 0;
                                 const hint = noProvider
                                     ? ts("deepAgentModelNoProvider")

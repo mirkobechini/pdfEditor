@@ -66,7 +66,11 @@ export function useSettingsPage() {
     // Deep Agent config (#932 T3b)
     const [mindConfig, setMindConfig] = React.useState<MindConfig>(DEFAULT_MIND_CONFIG);
     const [mindLoaded, setMindLoaded] = React.useState(false);
-    const [mindPendingApiKey] = React.useState<{ current?: string }>({});
+    // Fix 24/10 (piano doc keyring): un SOLO canale per la key del provider attivo.
+    // State (non ref!) così la UI reagisce subito alla digitazione: la select
+    // modello si abilita appena la key è presente (anche non ancora salvata) e
+    // al salvataggio la key non viene più azzerata da un doppio canale.
+    const [mindApiKeyDraft, setMindApiKeyDraft] = React.useState("");
     const [mindConfigError, setMindConfigError] = React.useState("");
     // Fix 16/10 (esito build 942c33a0): conferma visiva di avvenuto salvataggio.
     const [mindSaved, setMindSaved] = React.useState(false);
@@ -114,31 +118,48 @@ export function useSettingsPage() {
     }
 
     function setMindConfigApiKey(value: string) {
-        setMindPendingApiKeyRef(value);
-    }
-
-    function setMindPendingApiKeyRef(value: string) {
-        mindPendingApiKey.current = value;
+        setMindApiKeyDraft(value);
+        // Un solo canale: la key digitata per il provider attivo finisce anche nel
+        // draft della riga corrispondente in `providers` (se esiste), così il
+        // salvataggio non la perde e non azzera le altre (fix 24/10).
+        const activeProv = mindConfig.provider;
+        if (activeProv) {
+            const idx = (mindConfig.providers || []).findIndex((p) => p.provider === activeProv);
+            if (idx >= 0) setProviderKeys((prev) => ({ ...prev, [idx]: value }));
+        }
     }
 
     async function saveMindConfig() {
         setMindConfigError("");
         setMindSaved(false);
-        const key = (mindPendingApiKey as { current?: string }).current ?? undefined;
+        const key = mindApiKeyDraft;
         // Fix 16/10 (esito build 942c33a0): il provider attivo scelto dal select deve
         // finire (di testa, massima precedenza) nella lista `providers` con il suo
         // modello, così la selezione resta coerente con la configurazione salvata.
         const activeProv = mindConfig.provider?.trim();
-        let providers: MindProviderEntry[] = (mindConfig.providers || []).map((p, i) => ({
-            provider: p.provider,
-            model: p.model,
-            enabled: p.enabled,
-            // la key dell'utente per questo provider (se inserita); vuota = invariata
-            api_key: providerKeys[i] ?? "",
-        }));
+        let providers: MindProviderEntry[] = (mindConfig.providers || []).map((p, i) => {
+            const entry: MindProviderEntry = {
+                provider: p.provider,
+                model: p.model,
+                enabled: p.enabled,
+            };
+            // Fix 24/10 (doppio canale key): la key del provider attivo viene dal
+            // canale principale; per le altre righe dal draft di riga. Il campo
+            // `api_key` viene inviato SOLO se l'utente ha digitato qualcosa non
+            // vuoto — MAI "" per non cancellare una chiave già salvata per sbaglio.
+            const isActive = activeProv && p.provider === activeProv;
+            const rowKey = isActive ? key : providerKeys[i];
+            if (rowKey !== undefined && rowKey !== "") entry.api_key = rowKey;
+            return entry;
+        });
         if (activeProv && !providers.some((p) => p.provider === activeProv)) {
             providers = [
-                { provider: activeProv, model: mindConfig.model || "", enabled: true, api_key: key ?? "" },
+                {
+                    provider: activeProv,
+                    model: mindConfig.model || "",
+                    enabled: true,
+                    ...(key && key.trim() ? { api_key: key } : {}),
+                },
                 ...providers,
             ];
         }
@@ -151,11 +172,11 @@ export function useSettingsPage() {
             providers,
             fallback_enabled: mindConfig.fallback_enabled,
         };
-        if (key !== undefined) patch.api_key = key;
+        if (key && key.trim()) patch.api_key = key;
         try {
             const updated = await api.updateMindConfig(patch);
             setMindConfig(updated);
-            mindPendingApiKey.current = undefined;
+            setMindApiKeyDraft("");
             setProviderKeys({});
             setMindSaved(true);
             window.setTimeout(() => setMindSaved(false), 2500);
@@ -212,6 +233,9 @@ export function useSettingsPage() {
     // disponibili (Ollama = quelli scaricati; cloud = SOLO con chiave) così il
     // campo modello è una SELECT, non un input libero. Se non c'è chiave per un
     // cloud, la lista resta vuota (con hint in UI).
+    // Fix 24/10: dipende ANCHE dalla key appena digitata (draft) — appena scrivi
+    // la chiave (anche non salvata) i modelli si caricano e la select si abilita.
+    // Debounce 400ms: non sparare una GET al provider a ogni keystroke.
     React.useEffect(() => {
         if (!mindLoaded) return;
         const prov = mindConfig.provider;
@@ -220,10 +244,15 @@ export function useSettingsPage() {
             loadOllamaModels();
         } else {
             setOllamaModels([]);
-            loadProviderModels(prov, (mindPendingApiKey as { current?: string }).current);
+            const draft = mindApiKeyDraft.trim();
+            const t = window.setTimeout(
+                () => loadProviderModels(prov, draft ? draft : undefined),
+                400,
+            );
+            return () => window.clearTimeout(t);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mindConfig.provider, mindLoaded]);
+    }, [mindConfig.provider, mindLoaded, mindApiKeyDraft]);
 
     // Punto 8 (15/10): elenco modelli Ollama locali (da /mind/ollama/models).
     async function loadOllamaModels() {
@@ -342,7 +371,7 @@ export function useSettingsPage() {
         bugReportOpen, setBugReportOpen, bugTitle, setBugTitle, bugDesc, setBugDesc,
         bugSending, setBugSending, bugError, bugDone, openUrl, closeBugReport, submitBugReport,
         // deep agent
-        mindConfig, setMindConfigField, setMindConfigApiKey, saveMindConfig, mindConfigError, mindSaved,
+        mindConfig, setMindConfigField, setMindConfigApiKey, mindApiKeyDraft, saveMindConfig, mindConfigError, mindSaved,
         ollamaModels, modelCatalog, getModelChoicesForProvider, testMindConnection, mindTesting, mindTestResult, mindTestOk,
         addMindProvider, updateMindProvider, removeMindProvider, moveMindProvider,
         setMindProviderFallback, providerKeys, setProviderKeys,

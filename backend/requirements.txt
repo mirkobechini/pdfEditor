@@ -35,5 +35,9 @@ deepagents==0.7.19
 langchain-ollama==1.1.0
 langchain-openai==1.6.6
 pypdf==6.19.0
+# 24/10: API key Deep Agent nel secure store del SO (Windows Credential Locker /
+# macOS Keychain / SecretService). Su SO senza keyring (es. WSL headless/CI) il
+# keystore degrada su un file .env locale nella app data dir (pattern LangChain).
+keyring>=25.5,<26
 # RAG vector store locale (Chroma, offline-first)
 chromadb>=1.5.0

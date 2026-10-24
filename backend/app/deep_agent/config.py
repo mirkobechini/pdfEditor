@@ -1,9 +1,14 @@
 """Deep Agent — config persistita in locale (T3a + punto 7 multi-provider).
 
-Le chiavi dell'utente e la config (provider, modello, workspace, RAG on/off)
-vengono salvate in un file JSON LOCALE nella cartella dati dell'app. Mai sul
-cloud. Il file non è mai esposto via API in chiaro: il GET restituisce la
-config senza ritornare le chiavi scritte.
+La config (provider, modello, workspace, RAG on/off) viene salvata in un file
+JSON LOCALE nella cartella dati dell'app. Mai sul cloud.
+
+Le API key NON stanno piu' in questo JSON (decisione 24/10, doc Deep Agents /
+LangGraph / Tauri): vivono nel secure store del SO via `keystore` (keyring /
+file .env locale). Il file JSON non è mai esposto via API in chiaro e non
+contiene MAI il valore delle chiavi: il GET restituisce la config con solo
+`has_api_key` (flag calcolato leggendo il keystore). Le config vecchie che
+contenevano ancora le chiavi vengono MIGRATE al keystore al primo load.
 
 Punto 7 (Mirko 15/10): si possono configurare PIÙ provider insieme (es. uno
 offline + uno online), ognuno con la sua key, con una PRECEDENZA (ordine
@@ -20,6 +25,7 @@ import os
 from pathlib import Path
 
 from app.core.config import _get_app_data_dir
+from app.deep_agent import keystore
 
 CONFIG_FILE = "deep_agent_config.json"
 
@@ -69,6 +75,9 @@ def _normalize(cfg: dict) -> dict:
     merged["rag_enabled"] = bool(merged.get("rag_enabled", True))
     merged["streaming"] = bool(merged.get("streaming", True))
     merged["fallback_enabled"] = bool(merged.get("fallback_enabled", True))
+    # API key: MAI nel JSON (24/10) — viene normalizzata e scritta SOLO nel
+    # keystore da save(); il dict in memoria non la trasporta più.
+    merged.pop("api_key", None)
     # providers: garantisci forma corretta e validi i provider
     providers = merged.get("providers")
     if not isinstance(providers, list):
@@ -82,7 +91,6 @@ def _normalize(cfg: dict) -> dict:
             {
                 "provider": prov,
                 "model": str(p.get("model", "") or ""),
-                "api_key": str(p.get("api_key", "") or ""),
                 "enabled": bool(p.get("enabled", True)),
             }
         )
@@ -90,30 +98,88 @@ def _normalize(cfg: dict) -> dict:
     return merged
 
 
+def _migrate_legacy_keys(data: dict) -> dict:
+    """Sposta chiavi ancora presenti in un JSON legacy al keystore e le rimuove.
+
+    Le config salvate prima del 24/10 contenevano `api_key` in chiaro (top-level
+    e/o per ogni voce di `providers`). Al primo load le spostiamo nel secure
+    store e riscriviamo il file senza chiavi: da quel momento il JSON e' pulito.
+    Ritorna il dict senza chiavi (migrate o assenti).
+    """
+    if not isinstance(data, dict):
+        return data
+    mutated = False
+    top = data.get("api_key")
+    provider = _sanitize_provider(data.get("provider"))
+    if top and provider:
+        keystore.set_key(provider, str(top))
+        mutated = True
+    provs = data.get("providers")
+    if isinstance(provs, list):
+        for p in provs:
+            if isinstance(p, dict) and p.get("api_key") and p.get("provider"):
+                keystore.set_key(_sanitize_provider(p["provider"]), str(p["api_key"]))
+                mutated = True
+    if mutated:
+        clean = {k: v for k, v in data.items() if k != "api_key"}
+        if isinstance(clean.get("providers"), list):
+            clean["providers"] = [
+                {k: v for k, v in p.items() if k != "api_key"}
+                if isinstance(p, dict)
+                else p
+                for p in clean["providers"]
+            ]
+        try:
+            p = _config_path()
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(json.dumps(clean, ensure_ascii=False, indent=2), encoding="utf-8")
+        except OSError:
+            pass
+        return clean
+    return data
+
+
 def load() -> dict:
-    """Carica la config locale; se mancante usa i default e NON la crea il file."""
+    """Carica la config locale; se mancante usa i default e NON crea il file.
+
+    Se il file contiene ancora chiavi legacy (config pre-24/10) le migra al
+    keystore e riscrive il file ripulito.
+    """
     p = _config_path()
     if not p.exists():
         return _normalize(DEFAULTS)
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
-        return _normalize(data or {})
+        return _normalize(_migrate_legacy_keys(data or {}))
     except (OSError, ValueError):
         return _normalize(DEFAULTS)
 
 
 def save(cfg: dict) -> None:
-    """Persiste la config (parziale) sul file locale, preservando i default."""
+    """Persiste la config (parziale) sul file locale, preservando i default.
+
+    Le chiavi (top-level `api_key` e `providers[].api_key`) NON finiscono nel
+    JSON: vengono scritte nel keystore (secure store del SO / .env locale).
+    Nel JSON resta solo `has_api_key` calcolato al volo (mai il valore).
+    Una stringa vuota in `api_key` cancella la chiave dal keystore.
+    """
     current = load()
     for k in DEFAULTS:
         if k in cfg:
             current[k] = cfg[k]
-    # chiave attiva presente? salvala
+    # chiave attiva presente? va nel keystore, mai nel JSON
     if "api_key" in cfg:
-        current["api_key"] = cfg.get("api_key") or current.get("api_key", "")
-    # se è arrivata una lista providers, normalizzala
+        active_provider = _sanitize_provider(cfg.get("provider") or current.get("provider"))
+        keystore.set_key(active_provider, str(cfg.get("api_key") or ""))
+    # se è arrivata una lista providers, normalizzala e strada le chiavi al keystore
     if "providers" in cfg:
         current["providers"] = _normalize({"providers": cfg["providers"]})["providers"]
+        for entry in cfg.get("providers") or []:
+            if not isinstance(entry, dict):
+                continue
+            prov = _sanitize_provider(entry.get("provider"))
+            if "api_key" in entry:
+                keystore.set_key(prov, str(entry.get("api_key") or ""))
     current = _normalize(current)
     p = _config_path()
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -121,10 +187,10 @@ def save(cfg: dict) -> None:
 
 
 def public(cfg: dict | None = None) -> dict:
-    """Rappresentazione per il client: MAI le chiavi."""
+    """Rappresentazione per il client: MAI le chiavi, solo flag dal keystore."""
     c = dict(cfg or load())
     c.pop("api_key", None)
-    # rimuovi le key dalla lista providers, aggiungi has_api_key per voce
+    # rimuovi le key dalla lista providers, aggiungi has_api_key per voce (dal keystore)
     provs = []
     for p in c.get("providers", []):
         provs.append(
@@ -132,12 +198,12 @@ def public(cfg: dict | None = None) -> dict:
                 "provider": p.get("provider"),
                 "model": p.get("model", ""),
                 "enabled": p.get("enabled", True),
-                "has_api_key": bool(p.get("api_key")) or p.get("provider") == "ollama",
+                "has_api_key": p.get("provider") == "ollama" or keystore.has_key(p.get("provider")),
             }
         )
     c["providers"] = provs
-    # chiave della selezione attiva: non esposta, ma indicatore
-    c["has_api_key"] = bool((cfg or load()).get("api_key")) or c.get("provider") == "ollama"
+    # chiave della selezione attiva: non esposta, ma indicatore dal keystore
+    c["has_api_key"] = c.get("provider") == "ollama" or keystore.has_key(c.get("provider"))
     # aggiungi i provider validi noti (per il config UI)
     return c
 
@@ -145,20 +211,29 @@ def public(cfg: dict | None = None) -> dict:
 def ordered_providers(cfg: dict | None = None) -> list[dict]:
     """Ritorna la lista di provider in ordine di priorità (punto 7).
 
-    Se `providers` è vuoto, usa la selezione attiva (provider+model+api_key
-    top-level) come singola voce — cosi la config vecchia continua a funzionare.
+    Se `providers` è vuoto, usa la selezione attiva (provider+model top-level)
+    come singola voce — cosi la config vecchia continua a funzionare.
+
+    Le chiavi NON vengono lette dal JSON: per ogni voce viene letta dal keystore
+    (secure store / .env), cosi il resolver runtime ha la key vera e `_provider_usable`
+    decide correttamente.
     """
     c = cfg or load()
     if c.get("providers"):
         return [
-            {"provider": p["provider"], "model": p["model"], "api_key": p["api_key"], "enabled": p["enabled"]}
+            {
+                "provider": p["provider"],
+                "model": p["model"],
+                "api_key": keystore.get_key(p["provider"]),
+                "enabled": p["enabled"],
+            }
             for p in c["providers"]
         ]
     return [
         {
             "provider": c.get("provider", "ollama"),
             "model": c.get("model", ""),
-            "api_key": c.get("api_key", ""),
+            "api_key": keystore.get_key(c.get("provider")),
             "enabled": True,
         }
     ]
