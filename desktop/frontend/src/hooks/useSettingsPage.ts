@@ -21,6 +21,7 @@ const DEFAULT_MIND_CONFIG: MindConfig = {
     rag_enabled: true,
     streaming: true,
     has_api_key: false,
+    api_key_masked: "",
     providers: [],
     fallback_enabled: true,
 };
@@ -86,6 +87,17 @@ export function useSettingsPage() {
     const [mindTestOk, setMindTestOk] = React.useState(false);
     // Punto 7: key per ogni provider della lista (editing locale, salvate al Salva).
     const [providerKeys, setProviderKeys] = React.useState<Record<number, string>>({});
+    // Redesign 24/10 (issue #1035): flag espliciti di CANCELLAZIONE chiave.
+    // Il backend cancella la chiave solo se riceve `api_key: ""` — i campi
+    // lasciati vuoti NON vengono inviati (così la key esistente resta).
+    // True = al prossimo Salva la chiave del provider attivo verrà cancellata.
+    const [mindActiveKeyRemove, setMindActiveKeyRemove] = React.useState(false);
+    // True per l'indice i = al prossimo Salva la chiave della riga i verrà cancellata.
+    const [providerKeyDeletions, setProviderKeyDeletions] = React.useState<Record<number, boolean>>({});
+    // Redesign 24/10: prova connessione PER RIGA (POST /mind/test con provider+modello
+    // di QUELLA riga), con feedback per riga (ok/errore + messaggio).
+    const [mindRowTesting, setMindRowTesting] = React.useState<Record<number, boolean>>({});
+    const [mindRowTestResult, setMindRowTestResult] = React.useState<Record<number, { ok: boolean; message: string }>>({});
 
     // Helper (15/10): modelli disponibili per un provider generico. Ollama =
     // quelli scaricati; cloud = SOLO i reali caricati con la chiave (mai inventati).
@@ -119,6 +131,9 @@ export function useSettingsPage() {
 
     function setMindConfigApiKey(value: string) {
         setMindApiKeyDraft(value);
+        // Redesign 24/10: digitare una nuova chiave annulla l'eventuale richiesta
+        // di cancellazione (la nuova key prevale su tutto).
+        if (value !== "") setMindActiveKeyRemove(false);
         // Un solo canale: la key digitata per il provider attivo finisce anche nel
         // draft della riga corrispondente in `providers` (se esiste), così il
         // salvataggio non la perde e non azzera le altre (fix 24/10).
@@ -133,6 +148,10 @@ export function useSettingsPage() {
         setMindConfigError("");
         setMindSaved(false);
         const key = mindApiKeyDraft;
+        // Redesign 24/10: se il flag di cancellazione è attivo, la key del provider
+        // attivo va CANCELLATA (api_key: "" nel payload — il backend la elimina
+        // dal keystore). Vale solo se NON è stata digitata una nuova key.
+        const removeActiveKey = mindActiveKeyRemove && !key;
         // Fix 16/10 (esito build 942c33a0): il provider attivo scelto dal select deve
         // finire (di testa, massima precedenza) nella lista `providers` con il suo
         // modello, così la selezione resta coerente con la configurazione salvata.
@@ -147,9 +166,16 @@ export function useSettingsPage() {
             // canale principale; per le altre righe dal draft di riga. Il campo
             // `api_key` viene inviato SOLO se l'utente ha digitato qualcosa non
             // vuoto — MAI "" per non cancellare una chiave già salvata per sbaglio.
+            // Eccezione esplicita: se per questa riga è stato chiesto di RIMUOVERE
+            // la chiave (pulsantino “rimuovi chiave”), si invia api_key: "" — il
+            // backend supporta la cancellazione con stringa vuota.
             const isActive = activeProv && p.provider === activeProv;
             const rowKey = isActive ? key : providerKeys[i];
-            if (rowKey !== undefined && rowKey !== "") entry.api_key = rowKey;
+            if (rowKey !== undefined && rowKey !== "") {
+                entry.api_key = rowKey;
+            } else if (isActive ? removeActiveKey : providerKeyDeletions[i]) {
+                entry.api_key = "";
+            }
             return entry;
         });
         if (activeProv && !providers.some((p) => p.provider === activeProv)) {
@@ -173,11 +199,16 @@ export function useSettingsPage() {
             fallback_enabled: mindConfig.fallback_enabled,
         };
         if (key && key.trim()) patch.api_key = key;
+        // Cancellazione esplicita della key del provider attivo (24/10): si invia
+        // la stringa vuota, il backend elimina la chiave dal keystore.
+        else if (removeActiveKey) patch.api_key = "";
         try {
             const updated = await api.updateMindConfig(patch);
             setMindConfig(updated);
             setMindApiKeyDraft("");
             setProviderKeys({});
+            setMindActiveKeyRemove(false);
+            setProviderKeyDeletions({});
             setMindSaved(true);
             window.setTimeout(() => setMindSaved(false), 2500);
             if (updated.provider === "ollama" || (updated.providers && updated.providers.some((p) => p.provider === "ollama"))) {
@@ -191,10 +222,12 @@ export function useSettingsPage() {
     }
 
     // Punto 7: lista provider — aggiungi/rimuovi/riordina/attiva + key per voce.
+    // (Il bottone "+ Aggiungi" non è più usato dalla UI dal redesign 24/10: il
+    // blocco principale aggiunge. La funzione resta per compatibilità.)
     function addMindProvider() {
         setMindConfig((prev) => ({
             ...prev,
-            providers: [...(prev.providers || []), { provider: "ollama", model: "", enabled: true, has_api_key: false }],
+            providers: [...(prev.providers || []), { provider: "ollama", model: "", enabled: true, has_api_key: false, api_key_masked: "" }],
         }));
     }
 
@@ -213,6 +246,27 @@ export function useSettingsPage() {
             if (idx < 0 || idx >= list.length) return prev;
             return { ...prev, providers: list.filter((_, i) => i !== idx) };
         });
+        // Pull-list senza indici orfani nei draft (chiavi/delezioni/test).
+        setProviderKeys((prev) => {
+            const n: Record<number, string> = {};
+            Object.entries(prev).forEach(([k, v]) => { const i = Number(k); if (i < idx) n[i] = v; else if (i > idx) n[i - 1] = v; });
+            return n;
+        });
+        setProviderKeyDeletions((prev) => {
+            const n: Record<number, boolean> = {};
+            Object.entries(prev).forEach(([k, v]) => { const i = Number(k); if (i < idx) n[i] = v; else if (i > idx) n[i - 1] = v; });
+            return n;
+        });
+        setMindRowTesting((prev) => {
+            const n: Record<number, boolean> = {};
+            Object.entries(prev).forEach(([k, v]) => { const i = Number(k); if (i < idx) n[i] = v; else if (i > idx) n[i - 1] = v; });
+            return n;
+        });
+        setMindRowTestResult((prev) => {
+            const n: Record<number, { ok: boolean; message: string }> = {};
+            Object.entries(prev).forEach(([k, v]) => { const i = Number(k); if (i < idx) n[i] = v; else if (i > idx) n[i - 1] = v; });
+            return n;
+        });
     }
 
     function moveMindProvider(idx: number, dir: -1 | 1) {
@@ -223,6 +277,57 @@ export function useSettingsPage() {
             [list[idx], list[to]] = [list[to], list[idx]];
             return { ...prev, providers: list };
         });
+        // Gli indici dei draft locali (chiavi, delezioni, esiti test) seguono lo
+        // spostamento: il valore che era su idx va su to e viceversa.
+        const to = idx + dir;
+        const swap = <T,>(setter: React.Dispatch<React.SetStateAction<Record<number, T>>>) => {
+            setter((prev) => {
+                const hasA = idx in prev;
+                const hasB = to in prev;
+                if (!hasA && !hasB) return prev;
+                const n = { ...prev };
+                const a = prev[idx];
+                const b = prev[to];
+                if (hasA) n[to] = a; else delete n[to];
+                if (hasB) n[idx] = b; else delete n[idx];
+                return n;
+            });
+        };
+        swap(setProviderKeys);
+        swap(setProviderKeyDeletions);
+        swap(setMindRowTesting);
+        swap(setMindRowTestResult);
+    }
+
+    // Redesign 24/10: draft della chiave di una riga. Digitare una nuova key
+    // annulla l'eventuale richiesta di cancellazione per quella riga.
+    function setProviderDraftKey(idx: number, value: string) {
+        setProviderKeys((prev) => ({ ...prev, [idx]: value }));
+        if (value !== "") {
+            setProviderKeyDeletions((prev) => {
+                if (!prev[idx]) return prev;
+                const n = { ...prev };
+                delete n[idx];
+                return n;
+            });
+        }
+    }
+
+    // Redesign 24/10: chiedi di CANCELLARE la chiave di una riga al prossimo
+    // salvataggio (api_key: "" nel payload). `remove` false = annulla.
+    function setProviderKeyDeletion(idx: number, remove: boolean) {
+        if (remove) {
+            // svuota il draft digitato: la cancellazione prevale sulla key scritta
+            setProviderKeys((prev) => (idx in prev ? { ...prev, [idx]: "" } : prev));
+            setProviderKeyDeletions((prev) => ({ ...prev, [idx]: true }));
+        } else {
+            setProviderKeyDeletions((prev) => {
+                if (!prev[idx]) return prev;
+                const n = { ...prev };
+                delete n[idx];
+                return n;
+            });
+        }
     }
 
     function setMindProviderFallback(val: boolean) {
@@ -311,6 +416,40 @@ export function useSettingsPage() {
         }
     }
 
+    // Redesign 24/10 (issue #1035): prova connessione PER RIGA della lista
+    // `providers` — usa provider+modello di QUELLA riga (POST /mind/test),
+    // non quelli della selezione attiva. Feedback per riga (ok/errore + messaggio).
+    async function testMindProviderConnection(idx: number) {
+        const row = (mindConfig.providers || [])[idx];
+        if (!row) return;
+        setMindRowTesting((prev) => ({ ...prev, [idx]: true }));
+        setMindRowTestResult((prev) => {
+            if (!(idx in prev)) return prev;
+            const n = { ...prev };
+            delete n[idx];
+            return n;
+        });
+        setMindConfigError("");
+        try {
+            const res = await fetch(`${getApiBaseUrl()}/mind/test`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ provider: row.provider, model: row.model || undefined }),
+            });
+            const data = await res.json();
+            setMindRowTestResult((prev) => ({
+                ...prev,
+                [idx]: res.ok && data.ok
+                    ? { ok: true, message: data.message || ts("deepAgentTestOk") }
+                    : { ok: false, message: data.message || data.detail || ts("deepAgentTestFail") },
+            }));
+        } catch {
+            setMindRowTestResult((prev) => ({ ...prev, [idx]: { ok: false, message: ts("deepAgentTestFail") } }));
+        } finally {
+            setMindRowTesting((prev) => ({ ...prev, [idx]: false }));
+        }
+    }
+
     function openUrl(url: string) {
         if (isTauri()) {
             tauriInvoke("plugin:opener|open_url", { url });
@@ -375,6 +514,10 @@ export function useSettingsPage() {
         ollamaModels, modelCatalog, getModelChoicesForProvider, testMindConnection, mindTesting, mindTestResult, mindTestOk,
         addMindProvider, updateMindProvider, removeMindProvider, moveMindProvider,
         setMindProviderFallback, providerKeys, setProviderKeys,
+        // redesign 24/10: cancellazione chiave esplicita + test connessione per riga
+        mindActiveKeyRemove, setMindActiveKeyRemove,
+        providerKeyDeletions, setProviderDraftKey, setProviderKeyDeletion,
+        testMindProviderConnection, mindRowTesting, mindRowTestResult,
         // docs
         docsOpen, setDocsOpen,
     };
