@@ -111,6 +111,8 @@ describe("ApiClient edge cases", () => {
       default_zoom: 100,
       antialiasing: true,
       density: "comfortable",
+      // 24/10: il backend restituisce anche default_save_folder (usata dal deep agent)
+      default_save_folder: "",
     });
   });
 

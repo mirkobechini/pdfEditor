@@ -17,6 +17,10 @@ vi.mock("../../shared/api", () => ({
   api: {
     getPreferences: vi.fn().mockResolvedValue({ theme: "dark", language: "it", default_zoom: 100, antialiasing: true, density: "comfortable" }),
     setPreferences: vi.fn().mockResolvedValue(undefined),
+    // #932: la SettingsPage carica la config Deep Agent al mount — senza questo
+    // mock tutti i test settings crasherebbero con "getMindConfig is not a function".
+    getMindConfig: vi.fn().mockResolvedValue({ provider: "", model: "", workspace: "", rag_enabled: true, streaming: true, has_api_key: false, providers: [], fallback_enabled: true }),
+    updateMindConfig: vi.fn().mockImplementation((patch: any) => Promise.resolve({ provider: "", model: "", workspace: "", rag_enabled: true, streaming: true, has_api_key: false, providers: [], fallback_enabled: true, ...patch })),
   },
 }));
 

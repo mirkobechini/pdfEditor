@@ -64,7 +64,9 @@ describe("StartupPage", () => {
 
     it("renders database step", () => {
         render(<StartupPage />);
-        expect(screen.getByText("connectingDb")).toBeInTheDocument();
+        // QA C5 (16/10): lo step "database" è stato rimosso — le migrazioni
+        // avvengono prima di /health, quindi il backend verde implica il DB pronto.
+        expect(screen.getByText("verifyingApi")).toBeInTheDocument();
     });
 
     it("renders API step", () => {
