@@ -181,9 +181,12 @@ async def models(provider: str = "ollama", model_hint: str | None = None, api_ke
                 names = sorted(m.get("name", "") for m in data.get("models", []) if m.get("name"))
                 return {"models": names, "ok": True}
 
-            # Provider cloud: usa la chiave passata nella query, altrimenti salvata/env.
+            # Provider cloud: usa la chiave passata nella query (appena digitata,
+            # non ancora salvata), altrimenti quella del keystore / env.
+            from app.deep_agent import keystore
+
             env_key = env_for(provider)
-            key = api_key or cfg.get("api_key") or os.environ.get(env_key, "")
+            key = api_key or keystore.get_key(provider) or os.environ.get(env_key, "")
             if not key:
                 return {"models": [], "ok": False, "message": "Inserisci la chiave API per questo provider per vedere i modelli"}
             if provider == "anthropic":
@@ -238,13 +241,15 @@ async def test_connection(req: TestReq):
             return {"ok": False, "message": f"Ollama non raggiungibile: {type(e).__name__}"}
     # Provider cloud: verifica solo che ci sia una key configurata (non facciamo
     # chiamate che costano; il test reale avviene al primo uso in chat).
+    from app.deep_agent import keystore
+
     env_key = {
         "anthropic": "PDFMIND_ANTHROPIC_API_KEY",
         "openai": "PDFMIND_OPENAI_API_KEY",
         "openrouter": "PDFMIND_OPENROUTER_API_KEY",
         "huggingface": "PDFMIND_HF_API_KEY",
     }.get(provider)
-    has_key = bool(env_key and os.environ.get(env_key)) or bool(cfg.get("api_key"))
+    has_key = bool(env_key and os.environ.get(env_key)) or bool(keystore.get_key(provider))
     if not has_key:
         return {"ok": False, "message": "Nessuna chiave API configurata per questo provider"}
     if not model:

@@ -100,6 +100,8 @@ Write-Host "Running PyInstaller..." -ForegroundColor Yellow
     --hidden-import "docx" `
     --hidden-import "reportlab" `
     --hidden-import "app.main" `
+    --hidden-import "keyring" `
+    --collect-all "keyring" `
     --hidden-import "app.core.config" `
     --hidden-import "app.core.database" `
     --hidden-import "app.core.csrf" `

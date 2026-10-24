@@ -207,7 +207,13 @@ def _resolve_model(m: str):
     Mantiene la risoluzione multi-provider (ordered_providers) e base_url/api_key
     da env con lo stesso comportamento del vecchio resolver manuale
     (ChatOllama/ChatOpenAI/ChatAnthropic costruiti a mano).
+
+    24/10: la key per i provider cloud non viene piu' letta SOLO da env var —
+    prima passa dal keystore (secure store SO / .env locale); le env var restano
+    come fallback per retro-compat (doc LangChain).
     """
+    from app.deep_agent import keystore
+
     if m.startswith("ollama:"):
         name = m.split(":", 1)[1]
         return init_chat_model(
@@ -221,7 +227,7 @@ def _resolve_model(m: str):
         return init_chat_model(
             model=name,
             model_provider="anthropic",
-            api_key=os.environ.get("PDFMIND_ANTHROPIC_API_KEY", ""),
+            api_key=keystore.get_key("anthropic") or os.environ.get("PDFMIND_ANTHROPIC_API_KEY", ""),
             base_url=os.environ.get("PDFMIND_ANTHROPIC_BASE_URL") or None,
         )
     if m.startswith("openrouter:"):
@@ -230,7 +236,7 @@ def _resolve_model(m: str):
             model=name,
             model_provider="openai",
             base_url=os.environ.get("PDFMIND_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
-            api_key=os.environ.get("PDFMIND_OPENROUTER_API_KEY", ""),
+            api_key=keystore.get_key("openrouter") or os.environ.get("PDFMIND_OPENROUTER_API_KEY", ""),
         )
     if m.startswith("huggingface:"):
         # Hugging Face Inference è OpenAI-compatible: usiamo il provider openai col suo endpoint.
@@ -239,7 +245,7 @@ def _resolve_model(m: str):
             model=name,
             model_provider="openai",
             base_url=os.environ.get("PDFMIND_HF_BASE_URL", "https://api-inference.huggingface.co/v1"),
-            api_key=os.environ.get("PDFMIND_HF_API_KEY", ""),
+            api_key=keystore.get_key("huggingface") or os.environ.get("PDFMIND_HF_API_KEY", ""),
         )
     if m.startswith("openai:"):
         name = m.split(":", 1)[1]
@@ -247,7 +253,7 @@ def _resolve_model(m: str):
             model=name,
             model_provider="openai",
             base_url=os.environ.get("PDFMIND_OPENAI_BASE_URL", "https://api.openai.com/v1"),
-            api_key=os.environ.get("PDFMIND_OPENAI_API_KEY", ""),
+            api_key=keystore.get_key("openai") or os.environ.get("PDFMIND_OPENAI_API_KEY", ""),
         )
     return m
 

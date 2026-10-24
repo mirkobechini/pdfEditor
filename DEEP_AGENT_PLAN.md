@@ -44,6 +44,17 @@ Regola: **prima di passare alla tranche successiva si verifica che tutte le prec
 - Subagent paralleli.
 - **B2B / cloud (chiarito da Mirko 23/10)**: (a) il deep agent deve poter usare anche i **file sincronizzati col cloud** (cloud sync) oltre alla workspace locale; (b) **in futuro web app del deep agent** — su web niente Ollama, quindi soltanto provider cloud (requisito offline-first vale per l'edizione desktop). (⚠️ dipende dal cloud sync funzionante — da indagare, vedi memory/2026-10-23).
 
+## Test DIFENSIVI deterministici (aggiunti 23/10 — Mirko: "prima dei test E2E, ci accorgiamo quando rompiamo qualcosa?")
+
+File: `tests/test_deep_agent_defensive.py` — **network-free e deterministici** (fake agent, NIENTE Ollama/rete), come raccomanda la doc ufficiale deepagents (Testing Guide: "unit test network-free and deterministic", fake chat models; i test col provider reale vanno in `tests/integration_tests/` separati). Coprono i bug emersi dai test manuali:
+1. elenca cartella vuota != workspace vuoto (root piena + output vuota -> "cartella output/ vuota")
+2. elenca filtra SOLO la cartella richiesta (mai la root)
+3. HITL description col NOME reale del file (elimina: non "il file indicato")
+4. orchestrazione RETRY: 1° giro senza tool -> 2° giro forzato
+5. elenca mostra l'esito REALE del tool, non la narrativa a memoria del modello
+6. conferme positive riconosciute (si/va bene/ok/riprova/fallo...) + domande di capacità non trattate come operazioni
+Verificati: 8/8 verdi, suite completa 117/117 verdi.
+
 ## Accept
 1. Agent parte offline (Ollama/llama.cpp) e online (almeno 1 provider cloud) con la workspace scelta.
 2. Config in wizard + settings, con le key dell'utente salvate in locale.
