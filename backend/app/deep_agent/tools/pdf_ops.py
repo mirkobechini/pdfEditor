@@ -88,7 +88,7 @@ def split_pdf(pdf_id: str, mode: str = "every", ranges: str | None = None) -> st
     - pdf_id: nome del file PDF nella workspace (es. "scheda-1726.pdf")
     - mode: "every" (una pagina per parte) oppure "range"
     - ranges: obbligatorio se mode="range", formato "1-3,5-7"
-    Le parti vengono salvate in output/ del workspace.
+    Le parti vengono salvate in output/<nome>-split/ (cartella dedicata, fix 06/11).
     """
     if mode == "range" and not ranges:
         return "Errore: mode='range' richiede ranges (es. '1-3,5-7')"
@@ -99,6 +99,10 @@ def split_pdf(pdf_id: str, mode: str = "every", ranges: str | None = None) -> st
         out_dir = _output_dir(root)
         doc = fitz.open(path)
         results: list[str] = []
+        # fix 06/11 (Mirko): i file divisi vanno in una cartella DEDICATA
+        # output/<nome>-split/, non sparsi in output/.
+        split_dir = out_dir / f"{path.stem}-split"
+        split_dir.mkdir(parents=True, exist_ok=True)
         try:
             if mode == "range":
                 parsed = [r.strip() for r in ranges.split(",") if r.strip()]
@@ -113,7 +117,7 @@ def split_pdf(pdf_id: str, mode: str = "every", ranges: str | None = None) -> st
                         )
                     out = fitz.open()
                     out.insert_pdf(doc, from_page=start - 1, to_page=end - 1)
-                    target = _unique_pdf_path(out_dir, f"{path.stem}_pages_{r}.pdf")
+                    target = _unique_pdf_path(split_dir, f"{path.stem}_pages_{r}.pdf")
                     out.save(str(target))
                     out.close()
                     results.append(target.name)
@@ -121,13 +125,14 @@ def split_pdf(pdf_id: str, mode: str = "every", ranges: str | None = None) -> st
                 for page_num in range(doc.page_count):
                     out = fitz.open()
                     out.insert_pdf(doc, from_page=page_num, to_page=page_num)
-                    target = _unique_pdf_path(out_dir, f"{path.stem}_page_{page_num + 1}.pdf")
+                    target = _unique_pdf_path(split_dir, f"{path.stem}_page_{page_num + 1}.pdf")
                     out.save(str(target))
                     out.close()
                     results.append(target.name)
         finally:
             doc.close()
-        return f"✓ PDF diviso in {len(results)} parti: {', '.join(results)}"
+        rel = split_dir.relative_to(root)
+        return f"✓ PDF diviso in {len(results)} parti in {rel}/: {', '.join(results)}"
     except ValueError as e:
         return f"Errore: {e}"
     except Exception as e:
@@ -249,7 +254,8 @@ def merge_pdfs(pdf_ids: str | list[str], output_name: str = "") -> str:
 
 def sign_pdf(
     pdf_id: str,
-    signature_image_b64: str,
+    signature_image_b64: str | None = None,
+    signature_file: str | None = None,
     page_number: int = 1,
     x: float = 0.0,
     y: float = 0.0,
@@ -260,20 +266,53 @@ def sign_pdf(
 
     - pdf_id: nome del file PDF nella workspace
     - signature_image_b64: immagine PNG/JPEG codificata in base64
+    - signature_file: (alternativa) nome di un file immagine già presente nella
+      WORKSPACE (es. "firma.png") — viene letto dal workspace e usato come firma.
+      Fix 06/11 (Mirko): prima l'immagine firma doveva viaggiare in base64, ma il
+      modello non poteva leggere un PNG dal workspace e falliva con "elencato ma
+      non accessibile". Ora il tool risolve il file direttamente.
     - page_number: pagina (1-based) da firmare
     - x, y, width, height: posizione e dimensione della firma in punti PDF
     Il risultato viene salvato in output/ come <base>_firmato.pdf.
     """
-    if not signature_image_b64:
-        return "Errore: manca l'immagine della firma (signature_image_b64)"
+    if not signature_image_b64 and not signature_file:
+        return "Errore: manca l'immagine della firma (fornisci signature_image_b64 o signature_file)"
     if page_number < 1:
         return "Errore: page_number deve essere >= 1"
     if width <= 0 or height <= 0:
         return "Errore: width e height devono essere positivi"
-    try:
-        sig = base64.b64decode(signature_image_b64)
-    except Exception:
-        return "Errore: la firma non è base64 valida"
+    sig: bytes | None = None
+    if signature_image_b64:
+        try:
+            sig = base64.b64decode(signature_image_b64)
+        except Exception:
+            return "Errore: la firma non è base64 valida"
+    elif signature_file:
+        # Leggi l'immagine dalla workspace (root, output/ o sottocartelle)
+        from app.deep_agent.tools.workspace import _root as ws_root
+        root = ws_root()
+        if root is None or not root.is_dir():
+            return "Errore: workspace non configurata"
+        name = (signature_file or "").strip().strip('"').strip("'")
+        if not name:
+            return "Errore: signature_file vuoto"
+        cand: Path | None = None
+        for p in [root / name, root / "output" / name]:
+            if p.exists() and p.is_file():
+                cand = p
+                break
+        if cand is None:
+            # ricerca per nome (match esatto, case-insensitive) nelle sottocartelle
+            for p in root.rglob("*"):
+                if p.is_file() and p.name.lower() == name.lower():
+                    cand = p
+                    break
+        if cand is None:
+            return f"Errore: immagine firma '{name}' non trovata nel workspace"
+        try:
+            sig = cand.read_bytes()
+        except Exception as e:
+            return f"Errore: impossibile leggere {cand.name}: {e}"
     if not sig:
         return "Errore: la firma è vuota"
     import fitz
@@ -326,32 +365,45 @@ def _parse_points(points: str) -> list:
 def annotate_pdf(
     pdf_id: str,
     annotation_type: str,
-    rect: str,
+    rect: str | None = None,
     page_number: int = 1,
     color: str = "#FFFF00",
     content: str | None = None,
     points: str | None = None,
+    search_text: str | None = None,
 ) -> str:
     """Aggiunge un'annotazione (highlight/underline/...) a un PDF della WORKSPACE.
 
     - pdf_id: nome del file PDF nella workspace
     - annotation_type: highlight | underline | strikeout | text | free_text | draw
-    - rect: "x0,y0,x1,y1" (coordinate in punti PDF, origine alto-sinistra)
-    - page_number: pagina (1-based)
+    - rect: "x0,y0,x1,y1" (coordinate in punti PDF, origine alto-sinistra).
+      Obbligatorio tranne quando si usa search_text (highlight automatico).
+    - page_number: pagina (1-based; con search_text: lascia vuoto/0 per TUTTO il PDF)
     - color: colore esadecimale (default #FFFF00)
     - content: testo (richiesto per text/free_text)
     - points: (solo draw, opzionale) "x,y x,y x,y ..." — se assente usa gli angoli
       del rect come polilinea
+    - search_text: (fix 06/11, Mirko) se fornito, cerca la parola/frase nel PDF
+      e la evidenzia automaticamente OVUNQUE compaia (niente coordinate manuali).
+      Funziona solo con annotation_type='highlight'.
     Il risultato viene salvato in output/ come <base>_annotato.pdf.
     """
     if annotation_type not in ("highlight", "underline", "strikeout", "text", "free_text", "draw"):
         return "Errore: tipo annotazione non valido (highlight|underline|strikeout|text|free_text|draw)"
-    try:
-        parts = [float(p.strip()) for p in rect.split(",")]
-    except Exception:
-        return "Errore: rect deve essere 'x0,y0,x1,y1' numerico"
-    if len(parts) != 4:
-        return "Errore: rect deve avere esattamente 4 valori [x0, y0, x1, y1]"
+    if search_text and annotation_type != "highlight":
+        return "Errore: search_text è supportato solo con annotation_type='highlight'"
+    # Validazione early di rect (quando non si usa search_text): anche se il file
+    # non esiste, un rect malformato va segnalato come tale (test t5b).
+    parts: list[float] | None = None
+    if not search_text:
+        if not rect:
+            return "Errore: manca rect ('x0,y0,x1,y1') per questa annotazione"
+        try:
+            parts = [float(p.strip()) for p in rect.split(",")]
+        except Exception:
+            return "Errore: rect deve essere 'x0,y0,x1,y1' numerico"
+        if len(parts) != 4:
+            return "Errore: rect deve avere esattamente 4 valori [x0, y0, x1, y1]"
     import fitz
     try:
         path = _resolve_workspace_pdf_path(pdf_id)
@@ -359,6 +411,28 @@ def annotate_pdf(
         out_dir = _output_dir(root)
         doc = fitz.open(path)
         try:
+            # Evidenziazione automatica per parola/frase (richiesta Mirko 24/10)
+            if search_text:
+                pages = [doc[i] for i in range(doc.page_count) if page_number <= 0 or i == page_number - 1]
+                added = 0
+                for pg in pages:
+                    for r in pg.search_for(search_text):
+                        annot = pg.add_highlight_annot(r)
+                        try:
+                            ch = color.lstrip("#")
+                            annot.set_colors(stroke=(int(ch[0:2], 16) / 255, int(ch[2:4], 16) / 255, int(ch[4:6], 16) / 255))
+                        except Exception:
+                            pass
+                        annot.update()
+                        added += 1
+                if added == 0:
+                    return f"Errore: '{search_text}' non trovato nel PDF ({path.name})"
+                target = _unique_pdf_path(out_dir, f"{path.stem}_annotato.pdf")
+                doc.save(str(target))
+                return f"✓ Evidenziate {added} occorrenze di '{search_text}': {target.name}"
+
+            if parts is None or len(parts) != 4:
+                raise ValueError("manca un rect valido per questa annotazione")
             if page_number < 1 or page_number > doc.page_count:
                 raise ValueError(f"Pagina {page_number} fuori range (1-{doc.page_count})")
             page = doc[page_number - 1]
