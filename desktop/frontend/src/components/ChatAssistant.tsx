@@ -141,6 +141,9 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
     // Config Deep Agent: se non configurato (provider non valido / nessuna key
     // per un provider cloud), mostriamo l'invito alla config al posto dell'input.
     const [configReady, setConfigReady] = React.useState<boolean | null>(null); // null = checking
+    // Fix 06/11 (Mirko): il messaggio "nessuna risposta" deve cambiare in base al
+    // provider configurato (non dare per scontato Ollama quando si usa il cloud).
+    const [activeProvider, setActiveProvider] = React.useState<string>("");
 
     React.useEffect(() => {
         if (!open) return;
@@ -148,6 +151,7 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
         api.getMindConfig()
             .then((cfg) => {
                 if (cancelled) return;
+                setActiveProvider(cfg.provider || "");
                 // Config pronta se: ollama (locale, senza key) oppure un provider
                 // cloud con has_api_key true.
                 const ready = cfg.provider === "ollama" || (cfg.provider !== "" && cfg.has_api_key);
@@ -293,7 +297,15 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                 setTasks((prev) => prev.map((t) => ({ ...t, status: "done" as const })));
             } else {
                 // Stream chiuso senza output e senza [DONE]: esito esplicito.
-                setMessages((prev) => [...prev, { role: "assistant", content: tc("emptyReply"), error: true }]);
+                // Fix 06/11 (Mirko): messaggio adattivo in base al provider configurato
+                // (se il provider è cloud, non ha senso dire "verifica che Ollama sia avviato").
+                const emptyMsg =
+                    activeProvider === "ollama"
+                        ? tc("emptyReplyOllama")
+                        : activeProvider
+                            ? tc("emptyReplyCloud")
+                            : tc("emptyReply");
+                setMessages((prev) => [...prev, { role: "assistant", content: emptyMsg, error: true }]);
             }
         } catch (err) {
             const raw = err instanceof Error ? err.message : "";

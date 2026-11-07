@@ -70,12 +70,14 @@ def test_split_every_page_resolves_and_writes_output(ws_root):
     from app.deep_agent.tools import pdf_ops
     out = pdf_ops.split_pdf("doc.pdf", mode="every")
     assert out.startswith("✓")
-    parts = sorted(p.name for p in _out(ws_root).iterdir())
+    split_dir = _out(ws_root, "doc-split")
+    assert "doc-split" in out  # fix 06/11: cartella dedicata
+    parts = sorted(p.name for p in split_dir.iterdir())
     assert parts == ["doc_page_1.pdf", "doc_page_2.pdf", "doc_page_3.pdf"]
-    assert _out(ws_root, "doc_page_1.pdf").exists()
+    assert split_dir.joinpath("doc_page_1.pdf").exists()
     # round-trip: ogni parte è un PDF valido con 1 pagina
     import fitz
-    for p in _out(ws_root).glob("doc_page_*.pdf"):
+    for p in split_dir.glob("doc_page_*.pdf"):
         d = fitz.open(p)
         assert d.page_count == 1
         d.close()
@@ -87,7 +89,7 @@ def test_split_range_resolves_and_writes_output(ws_root):
     from app.deep_agent.tools import pdf_ops
     out = pdf_ops.split_pdf("doc.pdf", mode="range", ranges="1-2,4-5")
     assert out.startswith("✓")
-    names = [p.name for p in _out(ws_root).iterdir()]
+    names = [p.name for p in _out(ws_root, "doc-split").iterdir()]
     assert "doc_pages_1-2.pdf" in names
     assert "doc_pages_4-5.pdf" in names
 
@@ -103,7 +105,7 @@ def test_split_suffix_on_existing_target(ws_root):
     pdf_ops.split_pdf("doc.pdf", mode="every")
     out = pdf_ops.split_pdf("doc.pdf", mode="every")
     assert out.startswith("✓")
-    names = sorted(p.name for p in _out(ws_root).iterdir())
+    names = sorted(p.name for p in _out(ws_root, "doc-split").iterdir())
     assert "doc_page_1.pdf" in names
     assert "doc_page_1_2.pdf" in names
 
@@ -313,3 +315,57 @@ def test_convert_docx_invalid_content_returns_errore(ws_root):
     # contenuto base64 valido ma NON un docx
     out = pdf_ops.convert_docx_to_pdf("x.docx", base64.b64encode(b"not a docx").decode())
     assert out.startswith("Errore:")
+
+# ---------------------------------------------------------------------------
+# fix 06/11 (Mirko, build 24/10): firma da FILE del workspace + evidenzia automatica
+# ---------------------------------------------------------------------------
+
+def test_sign_pdf_da_file_workspace(ws_root):
+    """signature_file: l'immagine firma viene letta dal workspace (es. firma.png)."""
+    _make_pdf(ws_root / "doc.pdf", pages=1)
+    (ws_root / "firma.png").write_bytes(base64.b64decode(_make_png_b64()))
+    from app.deep_agent.tools import pdf_ops
+    out = pdf_ops.sign_pdf("doc.pdf", signature_file="firma.png", page_number=1)
+    assert out.startswith("✓"), out
+    assert _out(ws_root, "doc_firmato.pdf").exists()
+
+
+def test_sign_pdf_da_file_manca_errore(ws_root):
+    """signature_file inesistente → Errore chiaro (prima: 'elencato ma non accessibile')."""
+    _make_pdf(ws_root / "doc.pdf", pages=1)
+    from app.deep_agent.tools import pdf_ops
+    out = pdf_ops.sign_pdf("doc.pdf", signature_file="firma_mancante.png", page_number=1)
+    assert out.startswith("Errore:"), out
+    assert "non trovata" in out
+
+
+def test_annotate_search_text_evidenzia_tutte_le_occorrenze(ws_root):
+    """search_text: trova e evidenzia TUTTE le occorrenze senza coordinate manuali."""
+    _make_pdf(ws_root / "doc.pdf", pages=3, text="Mezzani appare qui e anche Mezzani dopo")
+    from app.deep_agent.tools import pdf_ops
+    out = pdf_ops.annotate_pdf("doc.pdf", "highlight", search_text="Mezzani")
+    assert out.startswith("✓"), out
+    assert "2 occorrenze" in out
+    target = _out(ws_root, "doc_annotato.pdf")
+    assert target.exists()
+    import fitz
+    d = fitz.open(target)
+    # ci devono essere le annotazioni highlight
+    total = sum(len(list(p.annots() or [])) for p in d)
+    assert total >= 2, f"attese >=2 annotazioni, trovate {total}"
+    d.close()
+
+
+def test_annotate_search_text_non_trovato(ws_root):
+    _make_pdf(ws_root / "doc.pdf", pages=1, text="Testo qualunque")
+    from app.deep_agent.tools import pdf_ops
+    out = pdf_ops.annotate_pdf("doc.pdf", "highlight", search_text="inesistenteXYZ")
+    assert out.startswith("Errore:"), out
+    assert "non trovato" in out
+
+
+def test_annotate_search_text_solo_con_highlight(ws_root):
+    _make_pdf(ws_root / "doc.pdf", pages=1, text="x")
+    from app.deep_agent.tools import pdf_ops
+    out = pdf_ops.annotate_pdf("doc.pdf", "underline", search_text="x")
+    assert out.startswith("Errore:"), out
