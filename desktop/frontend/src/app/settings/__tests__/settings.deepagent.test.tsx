@@ -239,6 +239,46 @@ describe("SettingsPage Deep Agent redesign", () => {
         expect(patch.providers[0]).toEqual({ provider: "anthropic", model: "", enabled: true, api_key: "sk-test-123" });
     });
 
+    it("REPLACES the key from the ROW field of an already-configured ACTIVE provider (fix 08/11)", async () => {
+        // Bug segnalato da Mirko: con un provider cloud già configurato (chiave
+        // vecchia/scaduta), digitare la nuova chiave nel campo della RIGA della
+        // lista veniva IGNORATO (il salvataggio usava solo il canale principale,
+        // vuoto) → la UI continuava a mostrare la chiave vecchia e la chat non
+        // rispondeva con quella nuova.
+        mockGetMindConfig.mockResolvedValue(mindConfigOverrides({
+            provider: "openrouter",
+            model: "deepseek/deepseek-chat",
+            has_api_key: true,
+            api_key_masked: "sk-V…CHIA",
+            providers: [
+                { provider: "openrouter", model: "deepseek/deepseek-chat", enabled: true, has_api_key: true, api_key_masked: "sk-V…CHIA" },
+            ],
+        }));
+        openDeepAgentTab();
+
+        // Aspetta il render della config caricata
+        expect(await screen.findByText("Active key: sk-V…CHIA")).toBeInTheDocument();
+
+        // Digita la NUOVA chiave nel campo della RIGA del provider attivo.
+        // Attenzione: il blocco principale ha un input con classe `w-64`, le RIGHE
+        // della lista hanno `w-48` — selezioniamo quello della riga per riprodurre
+        // il flusso reale di Mirko (cambio chiave dal campo della lista).
+        const rowInput = document.querySelector('input.w-48') as HTMLInputElement;
+        expect(rowInput).toBeTruthy();
+        fireEvent.change(rowInput, { target: { value: "sk-NUOVA-5678" } });
+
+        // Salva
+        fireEvent.click(screen.getByText("Save config"));
+        await waitFor(() => {
+            expect(mockUpdateMindConfig).toHaveBeenCalled();
+        });
+        const patch = mockUpdateMindConfig.mock.calls[0][0];
+        // La riga attiva deve portare la NUOVA chiave (prima: mancava → backend teneva la vecchia)
+        const activeRow = patch.providers.find((p: any) => p.provider === "openrouter");
+        expect(activeRow).toBeTruthy();
+        expect(activeRow.api_key).toBe("sk-NUOVA-5678");
+    });
+
     it("explicit 'Remove key' sends api_key: \"\" for the active provider (deletion)", async () => {
         mockFetch.mockImplementation(defaultFetchHandler);
         mockGetMindConfig.mockResolvedValue(mindConfigOverrides({

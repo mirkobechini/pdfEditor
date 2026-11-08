@@ -170,7 +170,14 @@ export function useSettingsPage() {
             // la chiave (pulsantino “rimuovi chiave”), si invia api_key: "" — il
             // backend supporta la cancellazione con stringa vuota.
             const isActive = activeProv && p.provider === activeProv;
-            const rowKey = isActive ? key : providerKeys[i];
+            // Fix 08/11 (Mirko): per il provider ATTIVO già in lista univamo
+            // i due canali — la key del canale principale ha priorità, ma se il
+            // campo principale è vuoto vale quella digitata nella RIGA. Prima
+            // la riga attiva usava solo `key` (spesso vuota), quindi la nuova
+            // chiave digitata nel campo della riga veniva IGNORATA e il backend
+            // continuava con la vecchia (sintomo: UI mostra vecchia, chat non
+            // risponde con la chiave nuova).
+            const rowKey = isActive ? (key || providerKeys[i]) : providerKeys[i];
             if (rowKey !== undefined && rowKey !== "") {
                 entry.api_key = rowKey;
             } else if (isActive ? removeActiveKey : providerKeyDeletions[i]) {
