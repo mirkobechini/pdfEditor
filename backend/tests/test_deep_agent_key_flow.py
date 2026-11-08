@@ -258,11 +258,15 @@ def test_api_test_cloud_con_key_nel_keystore(client, tmp_path, monkeypatch) -> N
     r = client.post("/mind/test", json={"provider": "anthropic", "model": "claude-3-7-sonnet-latest"})
     assert r.status_code == 200
     assert r.json()["ok"] is False
-    # con key nel keystore -> ok:true (config completa)
+    # con key nel keystore: la chiamata reale al provider fallisce senza rete
+    # (ok:false con messaggio chiaro, NON crash). Fix 08/11 (Mirko): una chiave
+    # NON valida/scaduta non deve MAI dare ok:true solo perché "esiste".
     keystore.set_key("anthropic", "ak-test")
     r2 = client.post("/mind/test", json={"provider": "anthropic", "model": "claude-3-7-sonnet-latest"})
     assert r2.status_code == 200
-    assert r2.json()["ok"] is True
+    body = r2.json()
+    assert body["ok"] is False
+    assert "non raggiungibile" in body["message"] or "non valida" in body["message"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────

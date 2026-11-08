@@ -667,6 +667,8 @@
     "toolActivity": "Running: {tool}",
     "hitlTitle": "Your confirmation is needed to continue: {tool}",
     "hitlApprove": "Proceed",
-    "hitlReject": "Cancel"
+    "hitlReject": "Cancel",
+    "emptyReplyOllama": "No reply from the agent. Make sure Ollama is running (ollama serve) and retry.",
+    "emptyReplyCloud": "No reply from the agent. Check that the cloud provider is reachable and the API key is valid, then retry."
   }
 }

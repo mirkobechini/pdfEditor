@@ -6,6 +6,7 @@ Sicurezza: in questa tranche vengono esposti SOLO i profili `user` (mai dev);
 le azioni sensibili (scrivi_output) passano da HITL se `interrupt_on` è attivo.
 """
 
+import asyncio
 import os
 import uuid
 
@@ -239,8 +240,10 @@ async def test_connection(req: TestReq):
             return {"ok": True, "message": "Ollama raggiungibile ✓"}
         except Exception as e:  # noqa: BLE001
             return {"ok": False, "message": f"Ollama non raggiungibile: {type(e).__name__}"}
-    # Provider cloud: verifica solo che ci sia una key configurata (non facciamo
-    # chiamate che costano; il test reale avviene al primo uso in chat).
+    # Provider cloud: verifica la chiave DAVVERO con una chiamata leggera al
+    # provider (fix 08/11, Mirko: una chiave scaduta dava "ok" perché si
+    # controllava solo l'esistenza). Per Anthropic usiamo i modelli, per gli
+    # OpenAI-compatibili (openai/openrouter/hf) la lista dei modelli.
     from app.deep_agent import keystore
 
     env_key = {
@@ -249,12 +252,53 @@ async def test_connection(req: TestReq):
         "openrouter": "PDFMIND_OPENROUTER_API_KEY",
         "huggingface": "PDFMIND_HF_API_KEY",
     }.get(provider)
-    has_key = bool(env_key and os.environ.get(env_key)) or bool(keystore.get_key(provider))
-    if not has_key:
+    key = keystore.get_key(provider) or (os.environ.get(env_key, "") if env_key else "")
+    if not key:
         return {"ok": False, "message": "Nessuna chiave API configurata per questo provider"}
     if not model:
         return {"ok": False, "message": "Nessun modello configurato"}
-    return {"ok": True, "message": f"Configurazione {provider} completa ({model})"}
+    import httpx
+    try:
+        if provider == "anthropic":
+            url = os.environ.get("PDFMIND_ANTHROPIC_BASE_URL") or "https://api.anthropic.com"
+            headers = {"x-api-key": key, "anthropic-version": "2023-06-01"}
+            r = await asyncio.wait_for(
+                httpx.AsyncClient(timeout=6).get(f"{url}/v1/models", headers=headers),
+                timeout=6,
+            )
+        elif provider == "openrouter":
+            # /models è PUBBLICO su OpenRouter (non valida la chiave): usiamo
+            # /auth/key che richiede davvero l'Authorization.
+            r = await asyncio.wait_for(
+                httpx.AsyncClient(timeout=6).get(
+                    "https://openrouter.ai/api/v1/auth/key",
+                    headers={"Authorization": f"Bearer {key}"},
+                ),
+                timeout=6,
+            )
+        elif provider == "huggingface":
+            r = await asyncio.wait_for(
+                httpx.AsyncClient(timeout=6).get(
+                    "https://api-inference.huggingface.co/v1/models",
+                    headers={"Authorization": f"Bearer {key}"},
+                ),
+                timeout=6,
+            )
+        else:  # openai
+            url = os.environ.get("PDFMIND_OPENAI_BASE_URL") or "https://api.openai.com/v1"
+            r = await asyncio.wait_for(
+                httpx.AsyncClient(timeout=6).get(f"{url}/models", headers={"Authorization": f"Bearer {key}"}),
+                timeout=6,
+            )
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "message": f"Provider non raggiungibile: {type(e).__name__}"}
+    if r.status_code != 200:
+        return {
+            "ok": False,
+            "message": f"Chiave {provider} non valida o scaduta (HTTP {r.status_code}). "
+            f"Controlla la chiave nelle impostazioni.",
+        }
+    return {"ok": True, "message": f"Connessione {provider} ok — chiave valida ({model})"}
 
 
 @router.post(
