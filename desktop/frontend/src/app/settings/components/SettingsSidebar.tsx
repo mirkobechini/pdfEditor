@@ -11,7 +11,7 @@ import { SECTION_LIST } from "../../../hooks/useSettingsPage";
  */
 export default function SettingsSidebar({ s }: { s: SettingsPageState }) {
     return (
-        <aside className="w-[250px] shrink-0 border-r border-white/10 bg-[#1f1914] px-5 py-6">
+        <aside className="flex w-[250px] shrink-0 flex-col overflow-y-auto border-r border-white/10 bg-[#1f1914] px-5 py-6">
             <Link href="/app" className="flex items-center gap-2 rounded-[14px] border border-white/10 bg-[#2a231d] px-4 py-2.5 text-[13px] font-semibold text-white hover:bg-[#2f2822] transition cursor-pointer mb-6">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M15 18l-6-6 6-6" />

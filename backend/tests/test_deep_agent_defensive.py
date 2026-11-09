@@ -98,6 +98,30 @@ def test_provider_401_chiave_non_valida():
     assert "401" in text or "chiave" in text
 
 
+def test_provider_401_dice_quale_modello():
+    """09/11 (Mirko): un 401 deve dire QUALE provider/modello ha fallito.
+
+    Senza il label, il messaggio era indistinguibile quando il test di
+    connessione provava una riga e la chat ne usava un'altra (sintomo reale:
+    "il test da ok ma la chat dice chiave non valida").
+    """
+    agent = RaisingAgent(ValueError("Error code: 401 - invalid api key"))
+    out = _collect(agent, "ciao")
+    text = _text_of(out)
+    assert "Provider:" in text, f"manca il provider nel messaggio: {text}"
+
+
+def test_modello_emesso_come_evento_model():
+    """09/11 (Mirko punto 2): la chat deve sapere/mostrare il modello in uso."""
+    agent = FakeAgent([[]])
+    out = _collect(agent, "ciao")
+    model_events = [e for e in out if "[MODEL]" in e]
+    assert model_events, "nessun evento [MODEL] emesso"
+    # il payload è provider:modello
+    payload = model_events[0].split("[MODEL]", 1)[1].strip().strip('"').strip()
+    assert ":" in payload or payload == "", f"label inatteso: {payload!r}"
+
+
 # ---------------------------------------------------------------------------
 # 1) Elenca: cartella vuota != workspace vuoto (fix 23/10)
 # ---------------------------------------------------------------------------

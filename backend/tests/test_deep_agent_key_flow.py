@@ -314,3 +314,29 @@ def test_resolve_model_usa_la_key_del_keystore(monkeypatch, tmp_path) -> None:
     keystore.set_key("openai", "sk-dal-keystore")
     _resolve_model("openai:gpt-4o")
     assert captured["api_key"] == "sk-dal-keystore"
+
+
+def test_resolve_primary_label_salta_provider_senza_key(monkeypatch, tmp_path) -> None:
+    """09/11 (Mirko): la chat deve usare il PRIMO provider usable (con key).
+
+    Il bug: il test di connessione provava una riga e la chat ne usava un'altra,
+    quindi "test ok" ma chat in 401. Il label è ciò che l'agente usa DAVVERO:
+    deve saltare il provider senza chiave e fermarsi sul primo con chiave.
+    """
+    from app.deep_agent import config as dc
+    from app.deep_agent import keystore
+    from app.deep_agent.agents.pdfmind import resolve_primary_label
+
+    monkeypatch.setattr(dc, "_config_path", lambda: tmp_path / "deep_agent_config.json")
+    monkeypatch.setattr(keystore, "_keys_path", lambda: tmp_path / "deep_agent_keys.env")
+
+    dc.save(
+        {
+            "providers": [
+                {"provider": "openai", "model": "gpt-4o", "enabled": True},          # nessuna key
+                {"provider": "openrouter", "model": "google/gemini-flash", "enabled": True},
+            ]
+        }
+    )
+    keystore.set_key("openrouter", "sk-or-valida")
+    assert resolve_primary_label() == "openrouter:google/gemini-flash"

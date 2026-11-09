@@ -282,6 +282,23 @@ def resolve_primary_model():
     return _resolve_model(DEF_MODEL)
 
 
+def resolve_primary_label() -> str:
+    """Il modello che l'agente userà DAVVERO, come label "provider:modello".
+
+    Serve a due cose (09/11, Mirko):
+    - mostrare in chat il modello corrente;
+    - dire nei messaggi d'errore QUALE provider ha fallito (il 401 era
+      indistinguibile quando il test di connessione provava un'altra riga).
+    """
+    try:
+        for p in ordered_providers():
+            if _provider_usable(p):
+                return f"{p['provider']}:{p['model']}"
+    except Exception:  # noqa: BLE001
+        pass
+    return DEF_MODEL
+
+
 DOCS_ANALYST = {
     "name": "docs-analyst",
     "description": "Analizza documenti PDF: riassunto, date e confronto versioni in un contesto isolato",
