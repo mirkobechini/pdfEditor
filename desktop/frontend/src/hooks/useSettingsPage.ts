@@ -97,7 +97,9 @@ export function useSettingsPage() {
     // Redesign 24/10: prova connessione PER RIGA (POST /mind/test con provider+modello
     // di QUELLA riga), con feedback per riga (ok/errore + messaggio).
     const [mindRowTesting, setMindRowTesting] = React.useState<Record<number, boolean>>({});
-    const [mindRowTestResult, setMindRowTestResult] = React.useState<Record<number, { ok: boolean; message: string }>>({});
+    const [mindRowTestResult, setMindRowTestResult] = React.useState<
+        Record<number, { ok: boolean; message: string; details?: string }>
+    >({});
 
     // Helper (15/10): modelli disponibili per un provider generico. Ollama =
     // quelli scaricati; cloud = SOLO i reali caricati con la chiave (mai inventati).
@@ -447,11 +449,15 @@ export function useSettingsPage() {
             setMindRowTestResult((prev) => ({
                 ...prev,
                 [idx]: res.ok && data.ok
-                    ? { ok: true, message: data.message || ts("deepAgentTestOk") }
-                    : { ok: false, message: data.message || data.detail || ts("deepAgentTestFail") },
+                    ? { ok: true, message: data.message || ts("deepAgentTestOk"), details: data.details || "" }
+                    : {
+                          ok: false,
+                          message: data.message || data.detail || ts("deepAgentTestFail"),
+                          details: data.details || "",
+                      },
             }));
         } catch {
-            setMindRowTestResult((prev) => ({ ...prev, [idx]: { ok: false, message: ts("deepAgentTestFail") } }));
+            setMindRowTestResult((prev) => ({ ...prev, [idx]: { ok: false, message: ts("deepAgentTestFail"), details: "" } }));
         } finally {
             setMindRowTesting((prev) => ({ ...prev, [idx]: false }));
         }
