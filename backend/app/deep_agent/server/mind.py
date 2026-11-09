@@ -179,7 +179,7 @@ def _interrupt_name(chunk) -> tuple[str, str] | None:
     return None
 
 
-def _friendly_provider_error(e: Exception, label: str = "") -> str:
+def _friendly_provider_error(e: Exception, label: str = "", diag: str = "") -> str:
     """Normalizza l'eccezione di un provider cloud in un messaggio chiaro (08/11).
 
     `label` (provider:modello realmente usato) viene SEMPRE aggiunto in coda: senza
@@ -206,6 +206,8 @@ def _friendly_provider_error(e: Exception, label: str = "") -> str:
         msg = f"\u26a0\ufe0f Errore dal provider ({name}): {text[:300]}"
     if label:
         msg += f"\n\nProvider: {label}"
+    if diag:
+        msg += f"\n{diag}"
     return msg
 
 
@@ -276,7 +278,7 @@ class _AiMsg:
         self.tool_calls = None
 
 
-async def _iter_astream(agent, agent_input, cfg, label: str = ""):
+async def _iter_astream(agent, agent_input, cfg, label: str = "", diag: str = ""):
     """Avvolge agent.astream e NORMALIZZA le eccezioni del provider (fix 08/11).
 
     Prima un timeout/HTTP 401/429 del provider faceva morire lo stream in silenzio
@@ -290,7 +292,7 @@ async def _iter_astream(agent, agent_input, cfg, label: str = ""):
         yield {
             "type": "values",
             "ns": [],
-            "data": {"messages": [_AiMsg(_friendly_provider_error(e, label))]},
+            "data": {"messages": [_AiMsg(_friendly_provider_error(e, label, diag))]},
             "interrupts": (),
         }
 
@@ -301,13 +303,16 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
     # (provider:modello) viene emesso come evento [MODEL] e riusato nei messaggi
     # d'errore, così un 401 dice anche QUALE provider/modello lo ha prodotto.
     model_label = ""
+    model_diag = ""
     try:
-        from app.deep_agent.agents.pdfmind import resolve_primary_label
+        from app.deep_agent.agents.pdfmind import provider_diag, resolve_primary_label
 
         model_label = resolve_primary_label()
+        model_diag = provider_diag()
     except Exception:  # noqa: BLE001 — non deve mai bloccare lo stream
         model_label = ""
-    SESSIONS[thread_id] = {"agent": agent, "config": cfg, "model": model_label}
+        model_diag = ""
+    SESSIONS[thread_id] = {"agent": agent, "config": cfg, "model": model_label, "diag": model_diag}
     yield _evt(f"[THREAD] {thread_id}")
     if model_label:
         yield _evt(f"[MODEL] {model_label}")
@@ -387,7 +392,7 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
         )
         last_emitted_p = ""
         emitted_p: set[str] = set()
-        async for chunk in _iter_astream(agent, {"messages": input_msgs}, cfg, model_label):
+        async for chunk in _iter_astream(agent, {"messages": input_msgs}, cfg, model_label, model_diag):
             hitl = _interrupt_name(chunk)
             if hitl:
                 st["interrupt"] = hitl
@@ -505,9 +510,10 @@ async def _resume_events(thread_id: str, decision: dict):
         return
     agent, cfg = sess["agent"], sess["config"]
     model_label = sess.get("model", "")
+    model_diag = sess.get("diag", "")
     # Ripresa HITL nativa: Command(resume={"decisions": [decision]}) riprende dal
     # punto di interruzione preservando lo stato (non rielabora i vecchi messaggi).
-    async for chunk in _iter_astream(agent, Command(resume={"decisions": [decision]}), cfg, model_label):
+    async for chunk in _iter_astream(agent, Command(resume={"decisions": [decision]}), cfg, model_label, model_diag):
         hitl = _interrupt_name(chunk)
         if hitl:
             name, desc = hitl

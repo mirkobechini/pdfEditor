@@ -312,7 +312,41 @@ async def test_connection(req: TestReq):
             "message": f"Chiave {provider} non valida o scaduta (HTTP {r.status_code}). "
             f"Controlla la chiave nelle impostazioni.",
         }
-    return {"ok": True, "message": f"Connessione {provider} ok — chiave valida ({model})"}
+    # 09/11 (Mirko): la chiave "valida" non basta — il test deve provare lo STESSO
+    # tipo di chiamata che fa la chat (chat/completions col modello configurato).
+    # Così un 401/404 che la chat riceverebbe non può più sfuggire al test.
+    if provider in ("openrouter", "openai", "huggingface"):
+        base = {
+            "openrouter": os.environ.get("PDFMIND_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+            "openai": os.environ.get("PDFMIND_OPENAI_BASE_URL", "https://api.openai.com/v1"),
+            "huggingface": os.environ.get("PDFMIND_HF_BASE_URL", "https://api-inference.huggingface.co/v1"),
+        }[provider]
+        try:
+            rc = await asyncio.wait_for(
+                httpx.AsyncClient(timeout=20).post(
+                    f"{base}/chat/completions",
+                    headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                    json={"model": model, "messages": [{"role": "user", "content": "ping"}], "max_tokens": 1},
+                ),
+                timeout=20,
+            )
+        except Exception as e:  # noqa: BLE001
+            return {"ok": False, "message": f"Provider non raggiungibile sulla chat: {type(e).__name__}"}
+        if rc.status_code != 200:
+            detail = ""
+            try:
+                detail = (rc.json().get("error") or {}).get("message") or ""
+            except Exception:  # noqa: BLE001
+                detail = rc.text[:180]
+            from app.deep_agent.server.mind import _friendly_provider_error
+
+            return {
+                "ok": False,
+                "message": _friendly_provider_error(
+                    Exception(f"HTTP {rc.status_code} {detail}"), f"{provider}:{model}"
+                ),
+            }
+    return {"ok": True, "message": f"Connessione {provider} ok — chiave valida e modello raggiungibile ({model})"}
 
 
 @router.post(

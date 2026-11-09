@@ -299,6 +299,55 @@ def resolve_primary_label() -> str:
     return DEF_MODEL
 
 
+def provider_diag() -> str:
+    """Diagnostica SICURA (mai la chiave in chiaro) del provider che l'agente usa.
+
+    Serve a chiudere il caso "test di connessione ok ma chat in 401" (09/11):
+    dice da dove arriva la chiave (keystore/env/nessuna), la sua lunghezza e il
+    base_url realmente usato. Se `PDFMIND_MODEL` è impostata, lo segnala: quella
+    env var SCavalca la config e spiegherebbe un modello diverso da quello scelto.
+    """
+    from app.deep_agent import keystore
+
+    try:
+        target = None
+        for p in ordered_providers():
+            if _provider_usable(p):
+                target = p
+                break
+        if target is None:
+            return "nessun provider usable (controlla modello e chiave)"
+        prov = target["provider"]
+        if prov == "ollama":
+            return f"{prov}: locale, nessuna chiave (url {os.environ.get('PDFMIND_OLLAMA_URL', 'http://localhost:11434')})"
+        env_name = {
+            "anthropic": "PDFMIND_ANTHROPIC_API_KEY",
+            "openai": "PDFMIND_OPENAI_API_KEY",
+            "openrouter": "PDFMIND_OPENROUTER_API_KEY",
+            "huggingface": "PDFMIND_HF_API_KEY",
+        }.get(prov, "")
+        k_store = keystore.get_key(prov) or ""
+        k_env = os.environ.get(env_name, "") if env_name else ""
+        key = k_store or k_env
+        src = "keystore" if k_store else ("env " + env_name if k_env else "NESSUNA")
+        if key:
+            info = f"chiave {key[:4]}…({len(key)} char) da {src}"
+        else:
+            info = f"chiave ASSENTE (da {src})"
+        base = {
+            "openrouter": os.environ.get("PDFMIND_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+            "openai": os.environ.get("PDFMIND_OPENAI_BASE_URL", "https://api.openai.com/v1"),
+            "anthropic": os.environ.get("PDFMIND_ANTHROPIC_BASE_URL", "https://api.anthropic.com"),
+            "huggingface": os.environ.get("PDFMIND_HF_BASE_URL", "https://api-inference.huggingface.co/v1"),
+        }.get(prov, "?")
+        out = f"{prov}: {info}, base_url={base}"
+        if os.environ.get("PDFMIND_MODEL"):
+            out += f", ⚠️ PDFMIND_MODEL={os.environ['PDFMIND_MODEL']} (scavalca la config)"
+        return out
+    except Exception as e:  # noqa: BLE001
+        return f"diagnostica non disponibile ({type(e).__name__})"
+
+
 DOCS_ANALYST = {
     "name": "docs-analyst",
     "description": "Analizza documenti PDF: riassunto, date e confronto versioni in un contesto isolato",
