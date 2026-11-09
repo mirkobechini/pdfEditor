@@ -507,9 +507,32 @@ export default function SettingsTabs({ s }: { s: SettingsPageState }) {
 
                                     {/* Feedback del test per riga (ok/errore con messaggio) */}
                                     {s.mindRowTestResult[i] && (
-                                        <p className={`mt-2 text-[11px] ${s.mindRowTestResult[i].ok ? "text-[#48c769]" : "text-red-300"}`}>
-                                            {s.mindRowTestResult[i].ok ? "✓ " : "✗ "}{s.mindRowTestResult[i].message}
-                                        </p>
+                                        <div
+                                            className={`mt-2 rounded-[12px] border px-3 py-2 ${
+                                                s.mindRowTestResult[i].ok
+                                                    ? "border-[#48c769]/25 bg-[#48c769]/[0.06]"
+                                                    : "border-red-500/25 bg-red-500/[0.06]"
+                                            }`}
+                                        >
+                                            <p
+                                                className={`flex items-start gap-2 text-[12px] font-medium ${
+                                                    s.mindRowTestResult[i].ok ? "text-[#48c769]" : "text-red-300"
+                                                }`}
+                                            >
+                                                <span>{s.mindRowTestResult[i].ok ? "✓" : "✗"}</span>
+                                                <span className="whitespace-pre-line break-words">{s.mindRowTestResult[i].message}</span>
+                                            </p>
+                                            {s.mindRowTestResult[i].details && (
+                                                <details className="mt-1">
+                                                    <summary className="cursor-pointer text-[10px] uppercase tracking-wider text-[#9d9184] hover:text-white">
+                                                        dettagli tecnici
+                                                    </summary>
+                                                    <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-[8px] bg-black/30 p-2 text-[10px] leading-relaxed text-[#9d9184]">
+                                                        {s.mindRowTestResult[i].details}
+                                                    </pre>
+                                                </details>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             ))}

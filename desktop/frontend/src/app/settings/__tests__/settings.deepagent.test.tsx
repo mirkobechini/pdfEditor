@@ -340,7 +340,8 @@ describe("SettingsPage Deep Agent redesign", () => {
         expect(body.provider).toBe("openai");
         expect(body.model).toBe("gpt-4o");
 
-        // Feedback per riga (ok con messaggio)
-        expect(await screen.findByText("✓ OK from test")).toBeInTheDocument();
+        // Feedback per riga: ora è una CARD (icona + messaggio + dettagli a scomparsa)
+        expect(await screen.findByText("OK from test")).toBeInTheDocument();
+        expect(screen.getByText("✓")).toBeInTheDocument();
     });
 });

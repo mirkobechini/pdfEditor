@@ -315,9 +315,8 @@ async def test_connection(req: TestReq):
             diag = ""
         return {
             "ok": False,
-            "message": f"Chiave {provider} non valida o scaduta (HTTP {r.status_code}). "
-            f"Controlla la chiave nelle impostazioni."
-            + (f"\n\n{diag}" if diag else ""),
+            "message": f"Chiave {provider} non valida o scaduta (HTTP {r.status_code})",
+            "details": (f"Controlla la chiave nelle impostazioni." + (f"\n{diag}" if diag else "")),
         }
     # Cosa vede il provider per QUESTA chiave (label/id utente): se /auth/key ok
     # ma la chat risponde "User not found", qui si vede quale utente/key ha in mano.
@@ -327,7 +326,7 @@ async def test_connection(req: TestReq):
         if isinstance(data, dict):
             d = data.get("data") if isinstance(data.get("data"), dict) else data
             bits = []
-            for k in ("label", "name", "id", "limit", "usage", "is_free_tier", "is_provisioning_key"):
+            for k in ("limit", "usage", "is_free_tier", "is_provisioning_key"):
                 if isinstance(d, dict) and k in d:
                     bits.append(f"{k}={d[k]}")
             if bits:
@@ -378,20 +377,18 @@ async def test_connection(req: TestReq):
                 body = ""
             return {
                 "ok": False,
-                "message": "La chiave è accettata da /auth/key, ma la chiamata di chat "
-                "è stata RIFIUTATA — quindi il problema non è (solo) la chiave.\n\n"
+                "message": "La chiave è accettata, ma la chiamata di chat è stata RIFIUTATA:\n"
                 + _friendly_provider_error(
                     Exception(f"HTTP {rc.status_code} {detail}"), f"{provider}:{model}"
-                )
-                + (f"\n{auth_info}" if auth_info else "")
-                + f"\n\nURL: {base}/chat/completions"
-                + f"\nRisposta: {body}"
-                + (f"\n{diag}" if diag else ""),
+                ),
+                "details": (f"URL: {base}/chat/completions\nRisposta: {body}"
+                            + (f"\n{auth_info}" if auth_info else "")
+                            + (f"\n{diag}" if diag else "")),
             }
     return {
         "ok": True,
-        "message": f"Connessione {provider} ok — chiave valida e modello raggiungibile ({model})"
-        + (f"\n{auth_info}" if auth_info else ""),
+        "message": f"Connessione {provider} ok — chiave valida e modello raggiungibile",
+        "details": f"modello: {model}" + (f"\n{auth_info}" if auth_info else ""),
     }
 
 
