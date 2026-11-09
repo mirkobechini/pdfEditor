@@ -307,10 +307,17 @@ async def test_connection(req: TestReq):
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "message": f"Provider non raggiungibile: {type(e).__name__}"}
     if r.status_code != 200:
+        from app.deep_agent.agents.pdfmind import provider_diag
+
+        try:
+            diag = provider_diag()
+        except Exception:  # noqa: BLE001
+            diag = ""
         return {
             "ok": False,
             "message": f"Chiave {provider} non valida o scaduta (HTTP {r.status_code}). "
-            f"Controlla la chiave nelle impostazioni.",
+            f"Controlla la chiave nelle impostazioni."
+            + (f"\n\n{diag}" if diag else ""),
         }
     # 09/11 (Mirko): la chiave "valida" non basta — il test deve provare lo STESSO
     # tipo di chiamata che fa la chat (chat/completions col modello configurato).
@@ -338,13 +345,31 @@ async def test_connection(req: TestReq):
                 detail = (rc.json().get("error") or {}).get("message") or ""
             except Exception:  # noqa: BLE001
                 detail = rc.text[:180]
+            from app.deep_agent.agents.pdfmind import provider_diag
             from app.deep_agent.server.mind import _friendly_provider_error
 
+            # 09/11: qui `key` è la chiave di QUESTA richiesta — un 401 con auth
+            # OK significa che la chiamata reale è rifiutata: servono url e corpo
+            # grezzo per capire (proxy sbagliato, modello, header...).
+            try:
+                diag = provider_diag()
+            except Exception:  # noqa: BLE001
+                diag = ""
+            body = ""
+            try:
+                body = rc.text[:220]
+            except Exception:  # noqa: BLE001
+                body = ""
             return {
                 "ok": False,
-                "message": _friendly_provider_error(
+                "message": "La chiave è accettata da /auth/key, ma la chiamata di chat "
+                "è stata RIFIUTATA — quindi il problema non è (solo) la chiave.\n\n"
+                + _friendly_provider_error(
                     Exception(f"HTTP {rc.status_code} {detail}"), f"{provider}:{model}"
-                ),
+                )
+                + f"\n\nURL: {base}/chat/completions"
+                + f"\nRisposta: {body}"
+                + (f"\n{diag}" if diag else ""),
             }
     return {"ok": True, "message": f"Connessione {provider} ok — chiave valida e modello raggiungibile ({model})"}
 
