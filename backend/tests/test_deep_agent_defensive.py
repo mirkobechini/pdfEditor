@@ -30,6 +30,23 @@ def _v2(messages: list, interrupts: tuple = ()):
     return {"type": "values", "ns": [], "data": {"messages": messages}, "interrupts": interrupts}
 
 
+class RaisingAgent:
+    """Fake agente il cui astream LANCIA — simula un errore del provider cloud.
+
+    Nota: `astream` è un async generator (fa `yield`): per lanciare "alla prima
+    iterazione" solleviamo PRIMA del primo yield, restando un async generator
+    valido (con `raise` secco sarebbe una coroutine, non iterabile via async for).
+    """
+
+    def __init__(self, exc: Exception):
+        self._exc = exc
+
+    async def astream(self, *args, **kwargs):
+        if True:
+            raise self._exc
+        yield  # pragma: no cover — mai raggiunto, serve a rendere il metodo un async generator
+
+
 class FakeAgent:
     """Fake agente con `astream` che emette sequenze controllate di chunk."""
 
@@ -59,6 +76,26 @@ def _collect(agent, goal: str, thread_id: str = "t-def") -> list[str]:
 
 def _text_of(out: list[str]) -> str:
     return "\n".join(out)
+
+
+# ---------------------------------------------------------------------------
+# 0) Errori provider normalizzati (fix 08/11, Mirko punto 4): la chat non deve
+#    morire muta se la chiamata al provider lancia (timeout/HTTP/...).
+# ---------------------------------------------------------------------------
+def test_provider_error_emesso_non_stream_muto():
+    agent = RaisingAgent(TimeoutError("read timed out"))
+    out = _collect(agent, "ciao")
+    assert out, "lo stream NON deve essere vuoto"
+    text = _text_of(out)
+    assert "Errore" in text or "Timeout" in text
+    assert "Timeout del provider" in text
+
+
+def test_provider_401_chiave_non_valida():
+    agent = RaisingAgent(ValueError("Error code: 401 - Authentication Error"))
+    out = _collect(agent, "ciao")
+    text = _text_of(out)
+    assert "401" in text or "chiave" in text
 
 
 # ---------------------------------------------------------------------------
