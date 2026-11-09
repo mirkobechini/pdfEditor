@@ -70,7 +70,7 @@ function renderMarkdown(text: string): React.ReactNode {
             // blocco di codice: togli eventuale linguaggio sulla prima riga
             const code = part.replace(/^[A-Za-z0-9_+.-]+\n/, "");
             return (
-                <pre key={i} className="my-1 overflow-x-auto rounded-lg bg-black/40 p-2 text-[12px] leading-relaxed">
+                <pre key={i} className="my-1 max-w-full overflow-x-auto whitespace-pre-wrap break-words rounded-lg bg-black/40 p-2 text-[12px] leading-relaxed">
                     <code>{code}</code>
                 </pre>
             );
@@ -388,7 +388,7 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
 
             {/* Pannello chat */}
             {open && (
-                <div className="fixed bottom-20 right-8 z-40 flex h-[520px] w-[380px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#221b16] shadow-2xl">
+                <div className="fixed bottom-20 right-4 z-40 flex h-[560px] w-[440px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#221b16] shadow-2xl">
                     <div className="flex items-center justify-between border-b border-white/10 bg-[#1f1914] px-4 py-3">
                         <div className="flex items-center gap-2">
                             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f7871f]/20 text-lg">🐵</span>
@@ -409,13 +409,13 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-4 py-4">
+                    <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#4a3d33]">
                         {messages.map((m, i) => {
                             if (isControl(m.content)) return null;
                             return (
-                                <div key={i} className={`mb-3 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                                <div key={i} className={`mb-3 flex min-w-0 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                                     <div
-                                        className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-[13px] leading-relaxed ${
+                                        className={`min-w-0 max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-[13px] leading-relaxed ${
                                             m.role === "user"
                                                 ? "bg-[#f7871f] text-white"
                                                 : m.error

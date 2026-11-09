@@ -12,30 +12,71 @@ _DT = re.compile(r"\b\d{1,2}[/.]\d{1,2}[/.]\d{2,4}\b")
 
 
 def _resolve(p: str) -> Path:
+    """Risolve un percorso SEMPRE dentro la workspace (fix 09/11).
+
+    Prima un percorso assoluto esterno (es. `D:/Mirko/Desktop/x.pdf`) veniva
+    usato se esisteva, altrimenti concatenato alla root producendo un path senza
+    senso e un FileNotFoundError che l'utente vedeva come "errore del provider".
+    Ora: si usa solo il nome file e si cerca nella workspace.
+    """
     ws = resolve_workspace()
     if not ws:
         # workspace non configurata: nessuna root reale (evita cartella fittizia/CWD)
         return Path("/__workspace_non_configurata__")
     root = Path(ws)
+    if not p:
+        return root
     if p == "/workspace":
         return root
     if p.startswith("/workspace/"):
         p = p[len("/workspace/"):]
     cand = Path(p)
     if cand.is_absolute():
-        if cand.exists():
-            return cand
-        return root / Path(p.lstrip("/"))
+        # fuori dalla workspace: si prova solo col nome del file
+        return root / cand.name
     return root / cand
 
 
+def _available_files(root: Path, limit: int = 12) -> str:
+    """Elenco breve dei file disponibili, per un messaggio d'errore utile."""
+    try:
+        names = sorted(f.name for f in root.iterdir() if f.is_file())
+    except OSError:
+        return ""
+    if not names:
+        return ""
+    more = "" if len(names) <= limit else f" (+{len(names) - limit} altri)"
+    return ", ".join(names[:limit]) + more
+
+
 def _read(path: str) -> str:
+    """Legge un PDF o un file di testo dalla workspace.
+
+    Non solleva eccezioni: se il file non c'è risponde con un messaggio utile
+    (nome cercato + file disponibili), cosi' l'agente puo' correggersi invece di
+    far esplodere lo stream con un traceback (fix 09/11, Mirko).
+    """
     p = _resolve(path)
+    if not p.exists() or not p.is_file():
+        root = resolve_workspace()
+        avail = _available_files(Path(root)) if root else ""
+        _name = str(path).replace("\\", "/").rstrip("/").split("/")[-1]
+        msg = f"file non trovato nella workspace: {_name}"
+        if avail:
+            msg += f". File disponibili: {avail}"
+        else:
+            msg += ". La workspace non contiene file: carica o crea il file prima."
+        if Path(path).is_absolute():
+            msg += " (i percorsi assoluti fuori dalla workspace non sono accessibili)"
+        return msg
     try:
         r = PdfReader(p)
         return "\n".join((pg.extract_text() or "") for pg in r.pages)
     except Exception:
-        return p.read_text(encoding="utf-8", errors="replace")
+        try:
+            return p.read_text(encoding="utf-8", errors="replace")
+        except OSError as e:
+            return f"file non leggibile ({type(e).__name__}): {p.name}"
 
 
 def _lines_set(path: str) -> set[str]:
