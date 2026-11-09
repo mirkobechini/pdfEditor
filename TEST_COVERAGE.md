@@ -199,3 +199,9 @@ npx vitest run
 cd desktop/src-tauri
 cargo test
 ```
+
+
+## Deep Agent — aggiornamento copertura test (09/11/2026)
+- `backend/tests/test_deep_agent_defensive.py`: 16 test (errori provider normalizzati, evento [MODEL], path sandbox, HITL leggibili, prompt compressione, elenco cartelle).
+- `backend/tests/test_deep_agent_key_flow.py`: 19 test (keystore prioritario su env, chiave mai nel config, `clean_key`, diagnostica che non espone la chiave).
+- Suite backend deep agent: 661+ passati / 1 skip. Frontend desktop: 1045 passati (61 file). Typecheck pulito.

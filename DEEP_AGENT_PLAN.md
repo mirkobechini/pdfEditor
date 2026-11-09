@@ -86,3 +86,14 @@ Mirko ha rifatto il test da utente nuovo e ha trovato 4 problemi veri, tutti fix
 ### 🔧 Bug aggiuntivi segnalati da Mirko il 16/10 (test build 7ea09b1f) — FIX fatto
 - **Wizard non arriva allo step 3 (Deep Agent)**: il bottone mostrava "Finish" già allo step 2 (condizione `currentStep < 1` invece di `currentStep < steps.length - 1`) → lo step Deep Agent era irraggiungibile. FIX: `desktop/frontend/src/app/wizard/page.tsx` — "Continue" finché non si è sull'ultimo step; contatore progressi `total` corretto da 2 a `steps.length`. Typecheck pulito.
 - **Auto-login su /login**: comportamento atteso (ripristino sessione/remember-me), non un bug. Da confermare con Mirko se vuole disabilitarlo.
+
+
+
+### 🔧 Giro 07–09/11 — gestione chiavi + errori provider + funzionalità (build test manuale Mirko)
+- **Chiavi nel secure store (24/10→07/11)**: `keystore.py` — keyring del SO (Windows Credential Locker / macOS Keychain / SecretService) con fallback `.env` locale (permessi 0600). Il config JSON non contiene MAI la chiave (solo `has_api_key` calcolato al volo); migrazione automatica delle config vecchie. Commits `5794e89b`, `17235288`, `b0d92691`.
+- **Chat muta col cloud / "non cambia la chiave" (08/11, c5a1cbae)**: nuovo `_iter_astream` avvolge `agent.astream` e NORMALIZZA le eccezioni (timeout/401/403/404/429/rete) in messaggi italiani — lo stream non muore più in silenzio. Fix chiave dalla riga del provider (`b0d92691`).
+- **401 "User not found" (09/11)**: `test_connection` replica la chiamata REALE (chat/completions) oltre a `/auth/key`; messaggi d'errore con `provider:modello` + sorgente chiave mascherata + URL + corpo grezzo; `keystore.clean_key()` normalizza le chiavi incollate sporche; il `label` di `/auth/key` non viene mai mostrato.
+- **Modello in chat**: evento SSE `[MODEL]` + badge nell'header (letto anche dal config al primo open).
+- **UI**: scroll corrett testo impostazioni + scrollbar custom, card leggibile per il risultato del test connessione, chat senza sborrda (pannello 440px adattivo, break-words).
+- **Tool**: sandbox dei percorsi alla workspace (`leggi_pdf`...), HITL leggibili (`scrivi_output`, `compress`), livello compressione richiesto se non indicato, prompt "se manca il tool non eseguire azione diversa". Split in cartella `x-split` confermato da Mirko.
+- **Test**: `test_deep_agent_defensive.py` 16/16, `test_deep_agent_key_flow.py` 19/19, suite backend 661+ passati / 1 skip, frontend 1045 passati (61 file), typecheck pulito.

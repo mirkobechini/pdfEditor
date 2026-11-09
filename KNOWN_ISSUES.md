@@ -33,7 +33,27 @@
 
 ---
 
-## 🔴 Bug aperti
+
+## ✅ Risolte il 09/11 (giro test funzionali Deep Agent)
+
+| Issue | Fix |
+| ----- | ---- |
+| DA-1 | 401 "User not found" in chat con test verde: era una chiave VECCHIA nel keystore, non quella appena creata. Fix: `test_connection` replica la CHIAMATA REALE (`chat/completions`, max_tokens=1) oltre a `/auth/key` — non può più dire OK se la chat fallisce |
+| DA-2 | Errori provider ora leggibili e diagnosticabili: `provider:modello` + da dove arriva la chiave (keystore/env/assente, mascherata) + URL + corpo grezzo. Il `label` di `/auth/key` NON viene mostrato (era un frammento di chiave) |
+| DA-3 | Modello in uso visibile in chat: evento SSE `[MODEL] provider:modello` + badge nell'header |
+| DA-4 | Impostazioni: prima scrollava tutta la pagina con la sidebar → `h-screen`+`overflow-hidden`, `main` scrolla da solo, sidebar con scroll proprio; scrollbar custom |
+| DA-5 | Chiave incollata sporca (spazi/newline/virgolette/prefisso `Bearer `): `keystore.clean_key()` in lettura e scrittura |
+| DA-6 | `leggi_pdf`/`riassumi`/`estrai`/`confronta` con un percorso ASSOLUTO fuori workspace: prima FileNotFoundError mostrato come "errore del provider"; ora la ricerca è sandbox alla workspace e risponde "file non trovato..." coi file disponibili |
+| DA-7 | HITL `scrivi_output` illeggibile ("Tool execution requires approval Args:{...}") → "Scrivi il file output/note.txt con il testo 'ciao'" |
+| DA-8 | `compress`: ora chiede il livello (leggera/media/forte) e l'HITL lo mostra; prima comprimeva in silenzio con default |
+| DA-9 | Conversione errata (ha firmato un PDF al posto di convertire un JPG): regola prompt "se manca lo strumento giusto NON eseguire un'azione diversa" |
+| DA-10 | Chat con scrollbar orizzontale / testo che sborda → pannello 440px adattivo, `break-words`, niente overflow-x, blocchi di codice scrollabili internamente |
+
+### Deep Agent — bug aperti / futuri
+
+- **OCR su file del workspace** risponde "PDF not found": il backend cerca il PDF in una cartella diversa dalla workspace. Da allineare tutte le ops ai file nel workspace (non al backend). (APERTO)
+- **Convertitore immagine→PDF** (`convert_image_to_pdf`): non esiste come tool; richiesto da Mirko solo come miglioramento FUTURO (09/11). Richiede Pillow/img2pdf.
+- **Split in cartella `x-split`**: ✅ VERIFICATO OK da Mirko (09/11) — la cartella viene creata come da requisito (chiuso).
 
 ### Render "Auto-Deploy: After CI Checks Pass" non funziona con GitHub Actions — frontend e backend erano fermi a build vecchie ✅
 
