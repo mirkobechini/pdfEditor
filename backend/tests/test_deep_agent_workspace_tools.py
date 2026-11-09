@@ -369,3 +369,24 @@ def test_annotate_search_text_solo_con_highlight(ws_root):
     from app.deep_agent.tools import pdf_ops
     out = pdf_ops.annotate_pdf("doc.pdf", "underline", search_text="x")
     assert out.startswith("Errore:"), out
+
+
+def test_resolver_not_found_elenca_i_pdf_disponibili(ws_root):
+    """09/11 (Mirko): un PDF inesistente deve dire quali PDF ci sono, non solo 'not found'."""
+    from app.deep_agent.tools import pdf_ops
+    _make_pdf(ws_root / "report.pdf", pages=1, text="x")
+    _make_pdf(ws_root / "nota.pdf", pages=1, text="y")
+    out = pdf_ops.ocr_pdf("ghost.pdf")
+    assert "Errore:" in out
+    assert "not found" in out
+    assert "report.pdf" in out and "nota.pdf" in out
+
+
+def test_ocr_resolve_dalla_workspace_non_dal_backend(ws_root):
+    """09/11: l'OCR opera sul FILE FISICO della workspace (non su pdf_documents)."""
+    from app.deep_agent.tools import pdf_ops
+    _make_pdf(ws_root / "doc.pdf", pages=1, text="Ciao")
+    # un file fisico che NON esiste nel backend ma esiste nel workspace deve essere
+    # riconosciuto come 'già dotato di testo' (prova che risolve dal filesystem)
+    out = pdf_ops.ocr_pdf("doc.pdf")
+    assert "già dotato di testo" in out
