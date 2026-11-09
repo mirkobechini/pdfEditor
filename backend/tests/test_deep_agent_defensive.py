@@ -218,3 +218,41 @@ def test_domande_di_capacita_non_sono_operazioni():
     # ma una richiesta concreta con nome-file resta operazione
     assert _wants_operation("elimina pippo.pdf")
     assert _wants_operation("unisci temp e scheda-1726")
+
+# ---------------------------------------------------------------------------
+# 09/11 (Mirko, test build): path assoluti fuori workspace e HITL leggibile
+# ---------------------------------------------------------------------------
+def test_leggi_pdf_path_assoluto_esterno_non_esplode(tmp_path, monkeypatch):
+    """Un percorso assoluto (es. D:\\...\\x.pdf) non deve sollevare FileNotFoundError.
+
+    Prima finiva nello stream come "Errore dal provider (FileNotFoundError)".
+    Ora: messaggio utile con i file disponibili, così l'agente si corregge.
+    """
+    monkeypatch.setenv("PDFMIND_WORKSPACE", str(tmp_path))
+    (tmp_path / "vero.pdf").write_text("%PDF-1.4\n", encoding="utf-8")
+    from app.deep_agent.tools.docs import leggi_pdf
+
+    out = leggi_pdf(r"D:\Mirko\Desktop\non_esiste.pdf")
+    assert "file non trovato" in out
+    assert "vero.pdf" in out  # elenca cosa c'è davvero
+
+
+def test_hitl_scrivi_output_dice_cosa_scrive():
+    from app.deep_agent.agents.pdfmind import _describe_action
+
+    desc = _describe_action({"name": "scrivi_output", "args": {"nome": "note.txt", "contenuto": "ciao"}}, {}, None)
+    assert "note.txt" in desc and "ciao" in desc
+    assert "Tool execution requires approval" not in desc
+
+
+def test_hitl_compress_mostra_il_livello():
+    from app.deep_agent.agents.pdfmind import _describe_action
+
+    assert "forte" in _describe_action({"name": "compress_pdf", "args": {"pdf_id": "x.pdf", "quality": "high"}}, {}, None)
+    assert "media" in _describe_action({"name": "compress_pdf", "args": {"pdf_id": "x.pdf"}}, {}, None)
+
+
+def test_prompt_chiede_il_livello_di_compressione():
+    from app.deep_agent.agents.pdfmind import SYSTEM_PROMPT
+
+    assert "COMPRESSIONE" in SYSTEM_PROMPT

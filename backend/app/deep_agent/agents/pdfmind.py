@@ -366,6 +366,8 @@ SYSTEM_PROMPT = (
     "se non vedi l'esito restituito dallo strumento. Non scrivere mai frasi come 'procedo', "
     "'eseguo il merge', 'confermi?', 'vuoi che...?' al posto della chiamata allo strumento: "
     "se serve una conferma, sarà il SISTEMA a mostrarla con un pulsante (Procedi/Annulla). "
+    "COMPRESSIONE: se chiedono di comprimere SENZA indicare il livello, chiedi in una riga sola "
+    "'leggera / media / forte?' e NON chiamare compress_pdf finché non scelgono. "
     "Quando l'utente chiede un'operazione (unisci, separi, firma, annota, OCR, comprimi, "
     "converti, SCRIVI, ELIMINA), chiama SUBITO lo strumento corrispondente senza fare "
     "domande preliminari e senza descrivere i passi: merge_pdfs, split_pdf, sign_pdf, "
@@ -508,8 +510,21 @@ def _describe_action(tool_call, state, runtime) -> str:
         return f"Elimina PERMANENTEMENTE: {fname} (dalla cartella output/)"
     if name == "elimina_tutti_in_output":
         return "Elimina PERMANENTEMENTE TUTTI i file nella cartella output/ (i sorgenti restano intatti)"
+    if name == "scrivi_output":
+        # 09/11 (Mirko): prima l'HITL mostrava "Tool execution requires approval
+        # Tool: scrivi_output Args: {...}" — illeggibile. Diciamo cosa si scrive.
+        fname = args.get("nome") or args.get("name") or "il file indicato"
+        body = str(args.get("contenuto") or args.get("content") or "")
+        prev = body[:80].replace("\n", " ")
+        extra = "…" if len(body) > 80 else ""
+        return f"Scrivi il file output/{fname} con il testo: \"{prev}{extra}\""
     # tool operativi su un singolo PDF (sign/annotate/ocr/compress/convert)
     target = args.get("pdf_id") or args.get("rel") or args.get("input") or "il PDF indicato"
+    if name == "compress_pdf":
+        # 09/11 (Mirko): dire SEMPRE a quale livello si comprime (prima taceva)
+        q = str(args.get("quality") or "medium")
+        q_it = {"low": "leggera", "medium": "media", "high": "forte"}.get(q, q)
+        return f"Comprimi il PDF ({target}) con compressione {q_it}"
     labels = {
         "sign_pdf": "Firma il PDF",
         "annotate_pdf": "Annota il PDF",
