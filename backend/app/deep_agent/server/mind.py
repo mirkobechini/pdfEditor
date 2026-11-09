@@ -179,6 +179,26 @@ def _interrupt_name(chunk) -> tuple[str, str] | None:
     return None
 
 
+def _friendly_provider_error(e: Exception) -> str:
+    """Normalizza l'eccezione di un provider cloud in un messaggio chiaro (08/11)."""
+    name = type(e).__name__
+    text = str(e)
+    low = text.lower()
+    if "429" in text or "rate limit" in low:
+        return "⚠️ Errore dal provider: limite di richieste raggiunto (HTTP 429). Riprova tra qualche secondo."
+    if "401" in text or "unauthorized" in low or "invalid api key" in low or "authentication" in low:
+        return "⚠️ Errore dal provider: chiave API non valida (HTTP 401). Ricontrolla la chiave nelle impostazioni."
+    if "403" in text or "forbidden" in low:
+        return "⚠️ Errore dal provider: accesso negato (HTTP 403) — la chiave potrebbe non avere accesso a questo modello."
+    if "404" in text or ("not found" in low and "model" in low):
+        return "⚠️ Errore dal provider: modello non trovato (HTTP 404). Verifica che il nome del modello sia corretto."
+    if "timeout" in low or "timed out" in low:
+        return "⚠️ Timeout del provider: il servizio cloud non ha risposto a tempo. Controlla la connessione e riprova."
+    if "connection" in low or "network" in low or "refused" in low:
+        return "⚠️ Provider non raggiungibile: errore di rete. Controlla la connessione e riprova."
+    return f"⚠️ Errore dal provider ({name}): {text[:300]}"
+
+
 def _evt(v: str) -> str:
     return f"data: {json.dumps(v)}\n\n"
 
@@ -235,6 +255,34 @@ def _tool_result(chunk) -> str:
         if t:
             return t
     return ""
+
+
+class _AiMsg:
+    """Messaggio minimale con attributi (come i msg di langchain) per il chunk d'errore."""
+
+    def __init__(self, content: str):
+        self.type = "ai"
+        self.content = content
+        self.tool_calls = None
+
+
+async def _iter_astream(agent, input_msgs, cfg):
+    """Avvolge agent.astream e NORMALIZZA le eccezioni del provider (fix 08/11).
+
+    Prima un timeout/HTTP 401/429 del provider faceva morire lo stream in silenzio
+    e la UI mostrava "nessuna risposta" senza motivo. Ora il chunk di errore viene
+    emesso come testo chiaro.
+    """
+    try:
+        async for chunk in agent.astream({"messages": input_msgs}, config=cfg, stream_mode="values", version="v2"):
+            yield chunk
+    except Exception as e:  # noqa: BLE001
+        yield {
+            "type": "values",
+            "ns": [],
+            "data": {"messages": [_AiMsg(_friendly_provider_error(e))]},
+            "interrupts": (),
+        }
 
 
 async def _events(agent, goal: str, thread_id: str, history: list[dict] | None = None):
@@ -317,7 +365,7 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
         )
         last_emitted_p = ""
         emitted_p: set[str] = set()
-        async for chunk in agent.astream({"messages": input_msgs}, config=cfg, stream_mode="values", version="v2"):
+        async for chunk in _iter_astream(agent, input_msgs, cfg):
             hitl = _interrupt_name(chunk)
             if hitl:
                 st["interrupt"] = hitl
