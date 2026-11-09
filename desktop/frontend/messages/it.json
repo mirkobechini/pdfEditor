@@ -669,6 +669,7 @@
     "hitlApprove": "Procedi",
     "hitlReject": "Annulla",
     "emptyReplyOllama": "Non ho ricevuto risposta dall'agente. Verifica che Ollama sia avviato (ollama serve) e riprova.",
-    "emptyReplyCloud": "Non ho ricevuto risposta dall'agente. Verifica che il provider cloud sia raggiungibile e che la chiave API sia valida, poi riprova."
+    "emptyReplyCloud": "Non ho ricevuto risposta dall'agente. Verifica che il provider cloud sia raggiungibile e che la chiave API sia valida, poi riprova.",
+    "modelLabel": "Modello"
   }
 }

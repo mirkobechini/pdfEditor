@@ -38,7 +38,7 @@ type Message = { role: "user" | "assistant"; content: string; error?: boolean };
 type HudTask = { id: string; label: string; status: "pending" | "running" | "done" };
 
 /** Parsing dello stream SSE del motore /mind/chat. */
-function parseSseChunk(buf: string): string[] {
+export function parseSseChunk(buf: string): string[] {
     const lines = buf.split("\n");
     const out: string[] = [];
     for (const line of lines) {
@@ -56,9 +56,9 @@ function parseSseChunk(buf: string): string[] {
     return out;
 }
 
-/** Isola i marcatori del motore ([TASK], [STEP], [HITL], [DONE], [THREAD]). */
-function isControl(text: string): boolean {
-    return /^\[(TASK|STEP|HITL|DONE|THREAD)\]/.test(text);
+/** Isola i marcatori del motore ([TASK], [STEP], [HITL], [DONE], [THREAD], [MODEL]). */
+export function isControl(text: string): boolean {
+    return /^\[(TASK|STEP|HITL|DONE|THREAD|MODEL)\]/.test(text);
 }
 
 /** Renderizza markdown leggero (grassetto, codice inline, blocchi ```, elenchi)
@@ -144,6 +144,8 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
     // Fix 06/11 (Mirko): il messaggio "nessuna risposta" deve cambiare in base al
     // provider configurato (non dare per scontato Ollama quando si usa il cloud).
     const [activeProvider, setActiveProvider] = React.useState<string>("");
+    // 09/11 (Mirko): modello correntemente in uso, emesso dal server come [MODEL] provider:modello
+    const [modelLabel, setModelLabel] = React.useState<string>("");
 
     React.useEffect(() => {
         if (!open) return;
@@ -156,6 +158,18 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                 // cloud con has_api_key true.
                 const ready = cfg.provider === "ollama" || (cfg.provider !== "" && cfg.has_api_key);
                 setConfigReady(ready);
+                // 09/11: mostriamo subito il modello risolto (primo provider usable
+                // in ordine di priorità) — stesso criterio del server.
+                const provs = Array.isArray(cfg.providers) ? cfg.providers : [];
+                const first = provs.find((pp: { provider?: string; model?: string; enabled?: boolean; has_api_key?: boolean }) =>
+                    pp.enabled !== false && !!pp.model && (pp.provider === "ollama" || pp.has_api_key),
+                );
+                const label = first
+                    ? `${first.provider}:${first.model}`
+                    : cfg.provider && cfg.model
+                      ? `${cfg.provider}:${cfg.model}`
+                      : "";
+                if (label) setModelLabel(label);
             })
             .catch(() => { if (!cancelled) setConfigReady(false); });
         return () => { cancelled = true; };
@@ -245,6 +259,7 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                     continue;
                 }
                 if (ev.startsWith("[STEP]")) { setActiveTool(ev.slice(6)); continue; }
+                if (ev.startsWith("[MODEL]")) { setModelLabel(ev.slice(7).trim()); continue; }
                 if (ev.startsWith("[HITL]")) {
                     // fix 22/10: "tool||description" — la description dinamica (nomi file)
                     const payload = ev.slice(6).trim();
@@ -377,7 +392,17 @@ export function ChatAssistant({ apiBase = API_BASE }: { apiBase?: string }) {
                     <div className="flex items-center justify-between border-b border-white/10 bg-[#1f1914] px-4 py-3">
                         <div className="flex items-center gap-2">
                             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f7871f]/20 text-lg">🐵</span>
-                            <p className="text-[14px] font-semibold text-white">{tc("title")}</p>
+                            <div className="min-w-0">
+                                <p className="text-[14px] font-semibold text-white">{tc("title")}</p>
+                                {modelLabel && (
+                                    <p
+                                        title={`${tc("modelLabel")}: ${modelLabel}`}
+                                        className="max-w-[220px] truncate text-[10px] font-medium text-[#9d9184]"
+                                    >
+                                        {tc("modelLabel")}: <span className="text-[#f7871f]">{modelLabel}</span>
+                                    </p>
+                                )}
+                            </div>
                         </div>
                         <button onClick={() => setOpen(false)} aria-label="Chiudi chat" className="cursor-pointer rounded-lg px-2 text-[#9d9184] transition hover:bg-white/5 hover:text-white">
                             ✕

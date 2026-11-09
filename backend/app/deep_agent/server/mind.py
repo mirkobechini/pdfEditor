@@ -179,24 +179,34 @@ def _interrupt_name(chunk) -> tuple[str, str] | None:
     return None
 
 
-def _friendly_provider_error(e: Exception) -> str:
-    """Normalizza l'eccezione di un provider cloud in un messaggio chiaro (08/11)."""
+def _friendly_provider_error(e: Exception, label: str = "") -> str:
+    """Normalizza l'eccezione di un provider cloud in un messaggio chiaro (08/11).
+
+    `label` (provider:modello realmente usato) viene SEMPRE aggiunto in coda: senza
+    di esso un 401 era indistinguibile tra provider diversi (bug del 09/11: la
+    chat diceva "chiave non valida" mentre il test di connessione diceva ok,
+    perché il test provava la RIGA attiva e la chat un altro provider).
+    """
     name = type(e).__name__
     text = str(e)
     low = text.lower()
     if "429" in text or "rate limit" in low:
-        return "⚠️ Errore dal provider: limite di richieste raggiunto (HTTP 429). Riprova tra qualche secondo."
-    if "401" in text or "unauthorized" in low or "invalid api key" in low or "authentication" in low:
-        return "⚠️ Errore dal provider: chiave API non valida (HTTP 401). Ricontrolla la chiave nelle impostazioni."
-    if "403" in text or "forbidden" in low:
-        return "⚠️ Errore dal provider: accesso negato (HTTP 403) — la chiave potrebbe non avere accesso a questo modello."
-    if "404" in text or ("not found" in low and "model" in low):
-        return "⚠️ Errore dal provider: modello non trovato (HTTP 404). Verifica che il nome del modello sia corretto."
-    if "timeout" in low or "timed out" in low:
-        return "⚠️ Timeout del provider: il servizio cloud non ha risposto a tempo. Controlla la connessione e riprova."
-    if "connection" in low or "network" in low or "refused" in low:
-        return "⚠️ Provider non raggiungibile: errore di rete. Controlla la connessione e riprova."
-    return f"⚠️ Errore dal provider ({name}): {text[:300]}"
+        msg = "\u26a0\ufe0f Errore dal provider: limite di richieste raggiunto (HTTP 429). Riprova tra qualche secondo."
+    elif "401" in text or "unauthorized" in low or "invalid api key" in low or "authentication" in low:
+        msg = "\u26a0\ufe0f Errore dal provider: chiave API non valida (HTTP 401). Ricontrolla la chiave nelle impostazioni."
+    elif "403" in text or "forbidden" in low:
+        msg = "\u26a0\ufe0f Errore dal provider: accesso negato (HTTP 403) \u2014 la chiave potrebbe non avere accesso a questo modello."
+    elif "404" in text or ("not found" in low and "model" in low):
+        msg = "\u26a0\ufe0f Errore dal provider: modello non trovato (HTTP 404). Verifica che il nome del modello sia corretto."
+    elif "timeout" in low or "timed out" in low:
+        msg = "\u26a0\ufe0f Timeout del provider: il servizio cloud non ha risposto a tempo. Controlla la connessione e riprova."
+    elif "connection" in low or "network" in low or "refused" in low:
+        msg = "\u26a0\ufe0f Provider non raggiungibile: errore di rete. Controlla la connessione e riprova."
+    else:
+        msg = f"\u26a0\ufe0f Errore dal provider ({name}): {text[:300]}"
+    if label:
+        msg += f"\n\nProvider: {label}"
+    return msg
 
 
 def _evt(v: str) -> str:
@@ -266,7 +276,7 @@ class _AiMsg:
         self.tool_calls = None
 
 
-async def _iter_astream(agent, input_msgs, cfg):
+async def _iter_astream(agent, agent_input, cfg, label: str = ""):
     """Avvolge agent.astream e NORMALIZZA le eccezioni del provider (fix 08/11).
 
     Prima un timeout/HTTP 401/429 del provider faceva morire lo stream in silenzio
@@ -274,21 +284,33 @@ async def _iter_astream(agent, input_msgs, cfg):
     emesso come testo chiaro.
     """
     try:
-        async for chunk in agent.astream({"messages": input_msgs}, config=cfg, stream_mode="values", version="v2"):
+        async for chunk in agent.astream(agent_input, config=cfg, stream_mode="values", version="v2"):
             yield chunk
     except Exception as e:  # noqa: BLE001
         yield {
             "type": "values",
             "ns": [],
-            "data": {"messages": [_AiMsg(_friendly_provider_error(e))]},
+            "data": {"messages": [_AiMsg(_friendly_provider_error(e, label))]},
             "interrupts": (),
         }
 
 
 async def _events(agent, goal: str, thread_id: str, history: list[dict] | None = None):
     cfg = {"configurable": {"thread_id": thread_id, "checkpoint_ns": "", "checkpoint_id": ""}}
-    SESSIONS[thread_id] = {"agent": agent, "config": cfg}
+    # 09/11 (Mirko, punto 2): la chat deve MOSTRARE il modello in uso. Il label
+    # (provider:modello) viene emesso come evento [MODEL] e riusato nei messaggi
+    # d'errore, così un 401 dice anche QUALE provider/modello lo ha prodotto.
+    model_label = ""
+    try:
+        from app.deep_agent.agents.pdfmind import resolve_primary_label
+
+        model_label = resolve_primary_label()
+    except Exception:  # noqa: BLE001 — non deve mai bloccare lo stream
+        model_label = ""
+    SESSIONS[thread_id] = {"agent": agent, "config": cfg, "model": model_label}
     yield _evt(f"[THREAD] {thread_id}")
+    if model_label:
+        yield _evt(f"[MODEL] {model_label}")
     # Punto 1 (HITL nativo): il workaround testuale _file_confirmation_note è
     # stato RIMOSSO. La conferma dei nomi file (es. merge con nome non esatto)
     # ora è gestita dall'HITL nativo via InterruptOnConfig + predicato `when`
@@ -365,7 +387,7 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
         )
         last_emitted_p = ""
         emitted_p: set[str] = set()
-        async for chunk in _iter_astream(agent, input_msgs, cfg):
+        async for chunk in _iter_astream(agent, {"messages": input_msgs}, cfg, model_label):
             hitl = _interrupt_name(chunk)
             if hitl:
                 st["interrupt"] = hitl
@@ -482,9 +504,10 @@ async def _resume_events(thread_id: str, decision: dict):
         yield _evt("[DONE]")
         return
     agent, cfg = sess["agent"], sess["config"]
+    model_label = sess.get("model", "")
     # Ripresa HITL nativa: Command(resume={"decisions": [decision]}) riprende dal
     # punto di interruzione preservando lo stato (non rielabora i vecchi messaggi).
-    async for chunk in agent.astream(Command(resume={"decisions": [decision]}), config=cfg, stream_mode="values", version="v2"):
+    async for chunk in _iter_astream(agent, Command(resume={"decisions": [decision]}), cfg, model_label):
         hitl = _interrupt_name(chunk)
         if hitl:
             name, desc = hitl

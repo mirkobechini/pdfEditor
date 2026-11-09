@@ -184,6 +184,21 @@ describe("SettingsPage", () => {
         mockTauriInvoke = vi.fn();
     });
 
+    it("09/11: solo il contenuto scrolla — la sidebar resta fissa", () => {
+        const { container } = render(<SettingsPage />);
+        // il contenitore radice è vincolato al viewport e non scrolla
+        const root = container.firstElementChild as HTMLElement;
+        expect(root.className).toContain("h-screen");
+        expect(root.className).toContain("overflow-hidden");
+        // il contenuto scrolla dentro main (min-h-0 indispensabile in flex)
+        const main = container.querySelector("main") as HTMLElement;
+        expect(main.className).toContain("overflow-y-auto");
+        expect(main.className).toContain("min-h-0");
+        // la sidebar ha un PROPRIO scroll (indipendente), non segue la pagina
+        const aside = container.querySelector("aside") as HTMLElement;
+        expect(aside.className).toContain("overflow-y-auto");
+    });
+
     it("advanced tab shows workplace folder", () => {
         render(<SettingsPage />);
         fireEvent.click(screen.getByText("Avanzate"));

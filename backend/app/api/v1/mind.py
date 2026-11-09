@@ -227,8 +227,22 @@ async def test_connection(req: TestReq):
     from app.deep_agent.config import load as config_load
 
     cfg = config_load()
-    provider = req.provider or cfg.get("provider", "ollama")
-    model = req.model or cfg.get("model", "")
+    # 09/11 (Mirko): senza provider esplicito il test deve provare lo STESSO
+    # provider/modello che la chat userà davvero (primo usable di `providers`).
+    # Prima usava il top-level `provider`, che poteva essere un'altra riga: il
+    # test diceva "ok" e la chat andava in 401 su un provider diverso.
+    resolved_provider, resolved_model = "", ""
+    try:
+        from app.deep_agent.agents.pdfmind import ordered_providers, _provider_usable
+
+        for p in ordered_providers(cfg):
+            if _provider_usable(p):
+                resolved_provider, resolved_model = p["provider"], p["model"]
+                break
+    except Exception:  # noqa: BLE001
+        pass
+    provider = req.provider or resolved_provider or cfg.get("provider", "ollama")
+    model = req.model or resolved_model or cfg.get("model", "")
     if provider == "ollama":
         base_url = os.environ.get("PDFMIND_OLLAMA_URL", "http://localhost:11434")
         try:
