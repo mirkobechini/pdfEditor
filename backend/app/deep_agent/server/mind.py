@@ -192,6 +192,15 @@ def _friendly_provider_error(e: Exception, label: str = "", diag: str = "") -> s
     low = text.lower()
     if "429" in text or "rate limit" in low:
         msg = "\u26a0\ufe0f Errore dal provider: limite di richieste raggiunto (HTTP 429). Riprova tra qualche secondo."
+    elif "user not found" in low:
+        # OpenRouter risponde cosi' quando la chiave NON appartiene a un utente
+        # valido (chiave di provisioning/gestione, key cancellata, o account
+        # inesistente). Passa /auth/key ma non le chat/completions (09/11).
+        msg = ("\u26a0\ufe0f OpenRouter non riconosce l'utente di questa chiave "
+               "(\"User not found\"). Non \u00e8 un problema di rete: la chiave non "
+               "\u00e8 una API key normale per le chat. Creane una nuova da "
+               "openrouter.ai/settings/keys (sezione API Keys, NON provisioning) "
+               "e incollala qui.")
     elif "401" in text or "unauthorized" in low or "invalid api key" in low or "authentication" in low:
         msg = "\u26a0\ufe0f Errore dal provider: chiave API non valida (HTTP 401). Ricontrolla la chiave nelle impostazioni."
     elif "403" in text or "forbidden" in low:

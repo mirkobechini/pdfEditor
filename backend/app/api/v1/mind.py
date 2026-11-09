@@ -319,6 +319,22 @@ async def test_connection(req: TestReq):
             f"Controlla la chiave nelle impostazioni."
             + (f"\n\n{diag}" if diag else ""),
         }
+    # Cosa vede il provider per QUESTA chiave (label/id utente): se /auth/key ok
+    # ma la chat risponde "User not found", qui si vede quale utente/key ha in mano.
+    auth_info = ""
+    try:
+        data = r.json()
+        if isinstance(data, dict):
+            d = data.get("data") if isinstance(data.get("data"), dict) else data
+            bits = []
+            for k in ("label", "name", "id", "limit", "usage", "is_free_tier", "is_provisioning_key"):
+                if isinstance(d, dict) and k in d:
+                    bits.append(f"{k}={d[k]}")
+            if bits:
+                auth_info = "auth/key: " + ", ".join(bits)
+    except Exception:  # noqa: BLE001
+        auth_info = ""
+
     # 09/11 (Mirko): la chiave "valida" non basta — il test deve provare lo STESSO
     # tipo di chiamata che fa la chat (chat/completions col modello configurato).
     # Così un 401/404 che la chat riceverebbe non può più sfuggire al test.
@@ -367,11 +383,16 @@ async def test_connection(req: TestReq):
                 + _friendly_provider_error(
                     Exception(f"HTTP {rc.status_code} {detail}"), f"{provider}:{model}"
                 )
+                + (f"\n{auth_info}" if auth_info else "")
                 + f"\n\nURL: {base}/chat/completions"
                 + f"\nRisposta: {body}"
                 + (f"\n{diag}" if diag else ""),
             }
-    return {"ok": True, "message": f"Connessione {provider} ok — chiave valida e modello raggiungibile ({model})"}
+    return {
+        "ok": True,
+        "message": f"Connessione {provider} ok — chiave valida e modello raggiungibile ({model})"
+        + (f"\n{auth_info}" if auth_info else ""),
+    }
 
 
 @router.post(
