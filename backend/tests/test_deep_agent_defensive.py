@@ -256,3 +256,19 @@ def test_prompt_chiede_il_livello_di_compressione():
     from app.deep_agent.agents.pdfmind import SYSTEM_PROMPT
 
     assert "COMPRESSIONE" in SYSTEM_PROMPT
+
+
+def test_hitl_scrivi_output_usa_la_conferma_leggibile():
+    """09/11 (Mirko): scrivi_output NON deve mostrare più il fallback grezzo
+    "Tool execution requires approval Tool: ... Args:{...}": deve usare la stessa
+    conferma leggibile degli altri tool (description dinamica)."""
+    import app.deep_agent.agents.pdfmind as M
+
+    cfg = M.INTERRUPT_ON["scrivi_output"]
+    # è uno schema InterruptOnConfig (dict) con description callable
+    assert isinstance(cfg, dict)
+    assert "description" in cfg, f"manca description: {cfg}"
+    assert callable(cfg["description"])
+    desc = cfg["description"]({"name": "scrivi_output", "args": {"nome": "pippo.txt", "contenuto": "hi"}}, None, None)
+    assert "pippo.txt" in desc and "hi" in desc
+    assert "Args" not in desc and "approval" not in desc.lower()

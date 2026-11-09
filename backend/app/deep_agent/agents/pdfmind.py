@@ -558,8 +558,12 @@ def _confirm_config(tool: str) -> InterruptOnConfig:
 # sempre-interrupt (True); i tool che operano su PDF esistenti usano il predicato.
 # 22/10: ora anche merge/split/sign/annotate/ocr/compress sono sempre-interrupt
 # (conferma SEMPRE, per scelta di Mirko).
+# 09/11 (Mirko): scrivi_output deve usare _confirm_config (description leggibile)
+# come gli altri tool, NON True: con True deepagents mostra il fallback grezzo
+# "Tool execution requires approval Tool: ... Args:{...}" invece della frase
+# "Scrivi il file output/X con il testo ...".
 INTERRUPT_ON = {
-    "scrivi_output": True,
+    "scrivi_output": _confirm_config("scrivi_output"),
     "write_file": True,
     "edit_file": True,
     "delete": True,
