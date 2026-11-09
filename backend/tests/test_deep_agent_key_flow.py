@@ -340,3 +340,28 @@ def test_resolve_primary_label_salta_provider_senza_key(monkeypatch, tmp_path) -
     )
     keystore.set_key("openrouter", "sk-or-valida")
     assert resolve_primary_label() == "openrouter:google/gemini-flash"
+
+
+def test_provider_diag_non_espone_la_chiave(monkeypatch, tmp_path) -> None:
+    """09/11: la diagnostica mostrata in chat non deve MAI rivelare la chiave.
+
+    Serve a capire un 401 (quale chiave, da dove, che lunghezza) senza
+    trasformare un messaggio d'errore in una fuga di credenziali.
+    """
+    from app.deep_agent import config as dc
+    from app.deep_agent import keystore
+    from app.deep_agent.agents.pdfmind import provider_diag
+
+    monkeypatch.setattr(dc, "_config_path", lambda: tmp_path / "deep_agent_config.json")
+    monkeypatch.setattr(keystore, "_keys_path", lambda: tmp_path / "deep_agent_keys.env")
+
+    dc.save({"providers": [{"provider": "openrouter", "model": "deepseek/deepseek-v4-flash-0731", "enabled": True}]})
+    secret = "sk-or-v1-SEGRETISSIMO1234567890abcdef"
+    keystore.set_key("openrouter", secret)
+
+    diag = provider_diag()
+    assert "openrouter" in diag
+    assert "keystore" in diag
+    assert str(len(secret)) in diag          # la lunghezza aiuta a capire se è troncata
+    assert secret not in diag                # ma il valore assoluto NON esce mai
+    assert secret[:12] not in diag

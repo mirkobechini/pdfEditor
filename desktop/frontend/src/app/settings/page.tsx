@@ -19,7 +19,9 @@ export default function SettingsPage() {
             <div className="mx-auto flex h-[calc(100vh-6px)] w-full max-w-[1330px] overflow-hidden rounded-[22px] border border-white/10 bg-[#201a15]">
                 <SettingsSidebar s={s} />
 
-                <main className="min-h-0 flex-1 overflow-y-auto bg-[#221b16] px-9 py-8">
+                <main
+                    className="min-h-0 flex-1 overflow-y-auto bg-[#221b16] px-9 py-8 pr-6 [scrollbar-color:#5a4a3c_#221b16] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#1c1611] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#4a3d33] hover:[&::-webkit-scrollbar-thumb]:bg-[#f7871f]/60"
+                >
                     <SettingsTabs s={s} />
                 </main>
             </div>
