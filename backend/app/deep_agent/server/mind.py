@@ -208,6 +208,12 @@ def _friendly_provider_error(e: Exception, label: str = "", diag: str = "") -> s
         msg += f"\n\nProvider: {label}"
     if diag:
         msg += f"\n{diag}"
+    # dettaglio grezzo (mascherato): senza di esso un 401 resta indiagnosticabile
+    import re as _re
+
+    raw = _re.sub(r"(sk-[A-Za-z0-9_\-]{4})[A-Za-z0-9_\-]+", r"\1***", text).strip()
+    if raw:
+        msg += f"\nDettaglio: {raw[:220]}"
     return msg
 
 

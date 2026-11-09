@@ -365,3 +365,16 @@ def test_provider_diag_non_espone_la_chiave(monkeypatch, tmp_path) -> None:
     assert str(len(secret)) in diag          # la lunghezza aiuta a capire se è troncata
     assert secret not in diag                # ma il valore assoluto NON esce mai
     assert secret[:12] not in diag
+
+
+def test_clean_key_normalizza_incolla_sporco() -> None:
+    """09/11: una chiave incollata con spazi/prefisso Bearer dava 401 "inspiegabile"."""
+    from app.deep_agent.keystore import clean_key
+
+    assert clean_key("  sk-or-v1-abc123  ") == "sk-or-v1-abc123"
+    assert clean_key("Bearer sk-or-v1-abc123") == "sk-or-v1-abc123"
+    assert clean_key('"sk-or-v1-abc123"') == "sk-or-v1-abc123"
+    assert clean_key("sk-or-v1-ab\r\nc123") == "sk-or-v1-abc123"
+    assert clean_key("") == ""
+    # non deve toccare chiavi legittime senza spazi
+    assert clean_key("sk-ant-api03-xyz") == "sk-ant-api03-xyz"

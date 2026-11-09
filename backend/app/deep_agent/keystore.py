@@ -98,6 +98,23 @@ def _keyring_available() -> bool:
         return False
 
 
+def clean_key(raw: str) -> str:
+    """Normalizza una chiave incollata dall'utente (09/11).
+
+    Copiaincolla produce spesso: spazi/newline ai bordi, virgolette, o il
+    prefisso "Bearer " già incluso. Tutti casi che producono un 401 "inspiegabile"
+    pur avendo una chiave valida.
+    """
+    k = (raw or "").strip()
+    if len(k) >= 2 and k[0] == k[-1] and k[0] in "\"'":
+        k = k[1:-1].strip()
+    if k.lower().startswith("bearer "):
+        k = k[7:].strip()
+    # newline/tab interni (incolla da PDF/terminale)
+    k = "".join(ch for ch in k if not ch.isspace())
+    return k
+
+
 def set_key(provider: str, api_key: str) -> None:
     """Salva la chiave per il provider nel secure store (o .env locale).
 
@@ -106,7 +123,7 @@ def set_key(provider: str, api_key: str) -> None:
     provider = (provider or "").strip()
     if not provider:
         return
-    api_key = api_key or ""
+    api_key = clean_key(api_key)
     if not api_key:
         delete_key(provider)
         return
@@ -139,15 +156,15 @@ def get_key(provider: str | None) -> str:
 
             v = keyring.get_password(SERVICE, provider)
             if v:
-                return v
+                return clean_key(v)
         except Exception:  # noqa: BLE001
             pass
     env_name = _ENV_NAMES.get(provider)
     v = _load_env_file().get(env_name or provider, "")
     if v:
-        return v
+        return clean_key(v)
     if env_name:
-        return os.environ.get(env_name, "")
+        return clean_key(os.environ.get(env_name, ""))
     return ""
 
 
