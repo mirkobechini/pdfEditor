@@ -54,6 +54,9 @@
 - **Sintomo:** con 3 file locali sincronizzati con il cloud, il report di sync continua a dare **0** su caricati, scaricati e saltati.
 - **Stato:** APERTO — non investigato. Da riprodurre e capire se il report conta le operazioni effettive o si azzera erroneamente.
 
+### Deep Agent — feature request (Mirko 09/11)
+- **Aprire in app i file del deep agent**: i file che il deep agent manipola/vede nella workspace (es. il risultato OCR in `output/`) dovrebbero potersi aprire direttamente nell'editor PdfEditor, senza doverli ricaricare ogni volta. Da progettare: selezione file dell'agent → apertura nel viewer (probabilmente via un elenco dei file della workspace con "Apri" che chiama l'apertura del PDF esistente in app).
+
 ### Deep Agent — bug aperti / futuri
 
 - **OCR su file del workspace** risponde "PDF not found": il backend cerca il PDF in una cartella diversa dalla workspace. Da allineare tutte le ops ai file nel workspace (non al backend). (APERTO)

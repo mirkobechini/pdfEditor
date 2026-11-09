@@ -206,11 +206,22 @@ def test_ocr_pdf_mocked_flow(ws_root, monkeypatch):
     assert out.startswith("✓ OCR completato")
     target = _out(ws_root, "doc_ocr.pdf")
     assert target.exists()
-    # round-trip: PDF valido con testo inserito
+    # round-trip: PDF valido con testo inserito e con fontsize REALE (>=9pt) così
+    # il testo invisibile è cercabile/selezionabile nel viewer (fix 09/11).
     import fitz
     d = fitz.open(target)
     assert d.page_count == 2
     assert "TEST 123 RICONOSCIUTO" in " ".join(d[i].get_text() for i in range(d.page_count))
+    # verifica che il layer usi una dimensione selezionabile, non 1pt
+    spans = []
+    for pno in range(d.page_count):
+        for b in d[pno].get_text("dict")["blocks"]:
+            for l in b.get("lines", []):
+                for sp in l.get("spans", []):
+                    spans.append(sp)
+    assert spans, "nessun testo inserito"
+    sizes = {round(sp["size"], 1) for sp in spans}
+    assert all(sz >= 8.0 for sz in sizes), f"fontsize troppo piccolo: {sizes}"
     d.close()
 
 

@@ -529,14 +529,32 @@ def ocr_pdf(pdf_id: str, language: str = "eng") -> str:
                 stripped = text.strip()
                 if stripped:
                     character_count += len(stripped)
-                    page.insert_textbox(
-                        fitz.Rect(0, 0, page.rect.width, page.rect.height),
-                        text,
-                        fontsize=1,
-                        color=(1, 1, 1),
-                        render_mode=3,  # testo invisibile
-                        overlay=True,
-                    )
+                    # Fix 09/11 (Mirko): prima si inseriva tutto il testo con
+                    # fontsize=1 -> il layer NON risultava selezionabile/trovabile
+                    # con Ctrl+F nel viewer. Ora inseriamo ogni riga a dimensione
+                    # reale ma INVISIBILE (render_mode=3), cosi' il testo resta
+                    # cercabile/selezionabile senza coprire l'immagine.
+                    ifrac = page.rect.height / 70.0
+                    fontsize = max(9.0, min(14.0, ifrac))
+                    line_h = fontsize * 1.35
+                    y = line_h
+                    for line in text.splitlines():
+                        line = line.strip()
+                        if not line:
+                            y += line_h
+                            continue
+                        if y > page.rect.height - line_h:
+                            break  # fuori pagina: il resto non entra
+                        page.insert_text(
+                            fitz.Point(0, y),
+                            line,
+                            fontsize=fontsize,
+                            fontname="helv",
+                            color=(1, 1, 1),
+                            render_mode=3,
+                            overlay=True,
+                        )
+                        y += line_h
 
             target = _unique_pdf_path(out_dir, f"{path.stem}_ocr.pdf")
             doc.save(str(target))
