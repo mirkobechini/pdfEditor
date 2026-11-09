@@ -32,7 +32,8 @@ def _resolve(p: str) -> Path:
         p = p[len("/workspace/"):]
     cand = Path(p)
     if cand.is_absolute():
-        # fuori dalla workspace: si prova solo col nome del file
+        if cand.exists():
+            return cand
         return root / cand.name
     return root / cand
 
@@ -57,6 +58,17 @@ def _read(path: str) -> str:
     far esplodere lo stream con un traceback (fix 09/11, Mirko).
     """
     p = _resolve(path)
+    # 09/11: i tool di LETTURA restano sandbox alla workspace — un percorso
+    # assoluto fuori (anche se esiste) non va letto.
+    ws_root = resolve_workspace()
+    if ws_root:
+        try:
+            inside = p.resolve().is_relative_to(Path(ws_root).resolve())
+        except Exception:  # noqa: BLE001
+            inside = False
+        if not inside:
+            return (f"file fuori dalla workspace non accessibile: {Path(path).name}"
+                    ". I tool di lettura operano solo sui file nella workspace.")
     if not p.exists() or not p.is_file():
         root = resolve_workspace()
         avail = _available_files(Path(root)) if root else ""
