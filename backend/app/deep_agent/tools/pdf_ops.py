@@ -189,7 +189,11 @@ def _resolve_workspace_pdf_path(token: str) -> Path:
     if len(fuzzy) > 1:
         liste = ", ".join(f.name for f in fuzzy)
         raise ValueError(f"PDF di '{t}' ambiguo ({len(fuzzy)} file): {liste}. Usa il nome esatto.")
-    raise ValueError(f"PDF {token} not found nel workspace")
+    # 09/11 (Mirko): l'errore "not found" deve aiutare: elenco i PDF disponibili
+    # cosi' l'utente/il modello si corregge subito (stesso stile di leggi_pdf).
+    avail = ", ".join(sorted({f.name for f in all_pdfs}))[:200]
+    extra = f". PDF disponibili: {avail}" if avail else ""
+    raise ValueError(f"PDF {token} not found nel workspace{extra}")
 
 
 def merge_pdfs(pdf_ids: str | list[str], output_name: str = "") -> str:
