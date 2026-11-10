@@ -560,12 +560,22 @@ def ocr_pdf(pdf_id: str, language: str = "eng") -> str:
                         )
                         y += line_h
 
-            # save to same file richiede incremental; salvo su temp e rimpiazzo
-            # atomicamente (opzione A, 10/11)
+            # save to same file richiede incremental; salvo su temp UNIVOCO e
+            # rimpiazzo atomicamente (opzione A, 10/11). Un nome temp fisso
+            # lasciava file .tmp bloccati da un tentativo fallito (WinError 5 su
+            # Windows, Mirko 10/11): con nome univoco + cleanup in finally si evita.
             import os as _os
-            _tmp = path.with_name(path.name + ".tmp")
-            doc.save(str(_tmp))
-            _os.replace(str(_tmp), str(path))
+            import uuid as _uuid
+            _tmp = path.with_name(f".{path.name}.{_uuid.uuid4().hex[:8]}.tmp")
+            try:
+                doc.save(str(_tmp))
+                _os.replace(str(_tmp), str(path))
+            finally:
+                try:
+                    if _tmp.exists():
+                        _tmp.unlink()
+                except OSError:
+                    pass
             return (
                 f"✓ OCR completato su {path.name} (in-place, {character_count} "
                 f"caratteri riconosciuti): ora il file è ricercabile/selezionabile."
