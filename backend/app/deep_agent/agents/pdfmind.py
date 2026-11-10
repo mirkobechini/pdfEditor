@@ -531,7 +531,7 @@ def _describe_action(tool_call, state, runtime) -> str:
     labels = {
         "sign_pdf": "Firma il PDF",
         "annotate_pdf": "Annota il PDF",
-        "ocr_pdf": "Esegui OCR sul PDF",
+        "ocr_pdf": "Esegui OCR sul PDF (in-place: il file diventa ricercabile)",
         "compress_pdf": "Comprimi il PDF",
         "convert_docx_to_pdf": "Converti in PDF",
         "scrivi_output": "Scrivi il file",
