@@ -54,6 +54,14 @@
 - **Sintomo:** con 3 file locali sincronizzati con il cloud, il report di sync continua a dare **0** su caricati, scaricati e saltati.
 - **Stato:** APERTO — non investigato. Da riprodurre e capire se il report conta le operazioni effettive o si azzera erroneamente.
 
+### Viewer PDF desktop — testo non selezionabile/cercabile (causa reale "OCR sembra non funzionare") — APERTO 10/11
+
+- **Sintomo:** dopo l'OCR, né Ctrl+F né la selezione col mouse trovano il testo (sia via deep agent sia via il pulsante OCR in-app).
+- **Causa reale:** NON è l'OCR. `PdfViewer.tsx` renderizza la pagina SOLO su `<canvas>` e non monta il **text layer** di pdf.js → in app NESSUN PDF (nemmeno uno già testuale) è selezionabile/cercabile: il testo disegnato su canvas non è nel DOM, quindi il Ctrl+F del browser non lo trova.
+- **Verifica:** pdf.js 3.11.174 (versione usata) estrae correttamente il testo OCR invisibile da `getTextContent` (testato localmente: `PAROLA_RICERCABILE_INVISIBILE` presente). Quindi il file OCR è buono; manca il supporto selezione/ricerca nel viewer.
+- **Fix necessario (feature):** aggiungere il text layer di pdf.js in `PdfViewer` (overlay sopra il canvas, con stile `color:transparent` + `user-select`) così la selezione/ricerca funziona per qualunque PDF. Segue task dedicato.
+- **Workaround per verificare subito l'OCR:** aprire `output/*_ocr.pdf` in un viewer esterno (Adobe/Chrome/Okular) → il testo è selezionabile.
+
 ### Deep Agent — feature request (Mirko 09/11)
 - **Aprire in app i file del deep agent**: i file che il deep agent manipola/vede nella workspace (es. il risultato OCR in `output/`) dovrebbero potersi aprire direttamente nell'editor PdfEditor, senza doverli ricaricare ogni volta. Da progettare: selezione file dell'agent → apertura nel viewer (probabilmente via un elenco dei file della workspace con "Apri" che chiama l'apertura del PDF esistente in app).
 
