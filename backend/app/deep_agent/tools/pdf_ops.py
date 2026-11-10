@@ -524,12 +524,25 @@ def ocr_pdf(pdf_id: str, language: str = "eng") -> str:
             import pytesseract
             from PIL import Image
 
+            # 10/11 (Mirko): se la lingua richiesta non è installata (es. manca
+            # ita.traineddata nel sidecar) NON fallire in loop: usa 'eng' e avvisa.
+            _lang = language
+            try:
+                _avail = set(pytesseract.get_languages(config=""))
+            except Exception:  # noqa: BLE001
+                _avail = set()
+            if _avail and _lang not in _avail:
+                _lang = "eng" if "eng" in _avail else min(_avail)
+                _lang_note = f" (lingua '{language}' non installata, uso '{_lang}')"
+            else:
+                _lang_note = ""
+
             character_count = 0
             for page_num in range(doc.page_count):
                 page = doc[page_num]
                 pix = page.get_pixmap(dpi=200)
                 img = Image.open(io.BytesIO(pix.tobytes("png")))
-                text = pytesseract.image_to_string(img, lang=language, config="--psm 3")
+                text = pytesseract.image_to_string(img, lang=_lang, config="--psm 3")
                 stripped = text.strip()
                 if stripped:
                     character_count += len(stripped)
@@ -560,15 +573,16 @@ def ocr_pdf(pdf_id: str, language: str = "eng") -> str:
                         )
                         y += line_h
 
-            # save to same file richiede incremental; salvo su temp UNIVOCO e
-            # rimpiazzo atomicamente (opzione A, 10/11). Un nome temp fisso
-            # lasciava file .tmp bloccati da un tentativo fallito (WinError 5 su
-            # Windows, Mirko 10/11): con nome univoco + cleanup in finally si evita.
+            # Salvo su temp UNIVOCO, CHIUDO il doc (rilascia l'handle sul file
+            # sorgente) e poi rimpiazzo atomicamente. CAUSA DEL WinError 5 (Mirko
+            # 10/11): su Windows non si può os.replace su un file ancora aperto da
+            # fitz.open(); chiudendo prima, la sostituzione riesce.
             import os as _os
             import uuid as _uuid
             _tmp = path.with_name(f".{path.name}.{_uuid.uuid4().hex[:8]}.tmp")
+            doc.save(str(_tmp))
+            doc.close()  # fondamentale: rilascia Diploma.pdf prima del replace
             try:
-                doc.save(str(_tmp))
                 _os.replace(str(_tmp), str(path))
             finally:
                 try:
@@ -577,11 +591,15 @@ def ocr_pdf(pdf_id: str, language: str = "eng") -> str:
                 except OSError:
                     pass
             return (
-                f"✓ OCR completato su {path.name} (in-place, {character_count} "
-                f"caratteri riconosciuti): ora il file è ricercabile/selezionabile."
+                f"✓ OCR completato su {path.name} (in-place{_lang_note}, "
+                f"{character_count} caratteri riconosciuti): ora il file è "
+                f"ricercabile/selezionabile."
             )
         finally:
-            doc.close()
+            try:
+                doc.close()
+            except Exception:  # noqa: BLE001 — già chiuso se il save è andato a buon fine
+                pass
     except ValueError as e:
         return f"Errore: {e}"
     except Exception as e:
