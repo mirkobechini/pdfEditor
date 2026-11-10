@@ -237,15 +237,27 @@ class PdfServiceMutateMixin:
                 stripped = text.strip()
                 if stripped:
                     character_count += len(stripped)
-                    # Insert recognized text as invisible text layer
-                    page.insert_textbox(
-                        fitz.Rect(0, 0, page.rect.width, page.rect.height),
-                        text,
-                        fontsize=1,
-                        color=(1, 1, 1),
-                        render_mode=3,  # invisible text
-                        overlay=True,
-                    )
+                    # Inserisci il testo OCR per RIGA a dimensione reale ma INVISIBILE
+                    # (render_mode=3): resta cercabile/selezionabile nei viewer esterni.
+                    # Prima: un unico insert_textbox fontsize=1 -> in pdf.js risulta
+                    # non selezionabile/non trovato (fix 10/11, allineato al deep agent).
+                    ifrac = page.rect.height / 70.0
+                    fontsize = max(9.0, min(14.0, ifrac))
+                    line_h = fontsize * 1.35
+                    y = line_h
+                    for line in text.splitlines():
+                        line = line.strip()
+                        if not line:
+                            y += line_h
+                            continue
+                        if y > page.rect.height - line_h:
+                            break
+                        page.insert_text(
+                            fitz.Point(0, y), line,
+                            fontsize=fontsize, fontname="helv",
+                            color=(1, 1, 1), render_mode=3, overlay=True,
+                        )
+                        y += line_h
 
             return character_count, False
 
