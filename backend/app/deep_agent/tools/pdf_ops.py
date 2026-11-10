@@ -494,8 +494,12 @@ def ocr_pdf(pdf_id: str, language: str = "eng") -> str:
     - language: codice lingua Tesseract (es. eng, ita)
     Se il PDF ha già un text layer risponde 'già dotato di testo'. Altrimenti
     rende ogni pagina e inserisce il testo come layer invisibile. Richiede il
-    binario tesseract (app.core.tesseract.configure_tesseract); il risultato
-    viene salvato in output/ come <base>_ocr.pdf.
+    binario tesseract (app.core.tesseract.configure_tesseract).
+
+    Fix 10/11 (Mirko, opzione A): il risultato viene salvato IN-PLACE sullo
+    stesso file (come il pulsante OCR dell'app): niente piu' `output/<base>_ocr.pdf`
+    e niente "doppio file". Il file mantiene il nome e diventa semplicemente
+    ricercabile (a vista resta identico, cambia solo il layer nascosto).
     """
     if not pdf_id.strip():
         return "Errore: manca pdf_id"
@@ -556,9 +560,16 @@ def ocr_pdf(pdf_id: str, language: str = "eng") -> str:
                         )
                         y += line_h
 
-            target = _unique_pdf_path(out_dir, f"{path.stem}_ocr.pdf")
-            doc.save(str(target))
-            return f"✓ OCR completato su {target.name} ({character_count} caratteri riconosciuti)"
+            # save to same file richiede incremental; salvo su temp e rimpiazzo
+            # atomicamente (opzione A, 10/11)
+            import os as _os
+            _tmp = path.with_name(path.name + ".tmp")
+            doc.save(str(_tmp))
+            _os.replace(str(_tmp), str(path))
+            return (
+                f"✓ OCR completato su {path.name} (in-place, {character_count} "
+                f"caratteri riconosciuti): ora il file è ricercabile/selezionabile."
+            )
         finally:
             doc.close()
     except ValueError as e:

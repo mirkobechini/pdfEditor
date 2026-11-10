@@ -194,7 +194,7 @@ def test_ocr_pdf_already_has_text(ws_root, monkeypatch):
 
 
 def test_ocr_pdf_mocked_flow(ws_root, monkeypatch):
-    """PDF senza testo + tesseract mockato → testo riconosciuto, output creato."""
+    """PDF senza testo + tesseract mockato → OCR IN-PLACE (stesso file), no copia."""
     _make_pdf(ws_root / "doc.pdf", pages=2)  # pagine "scansionate" senza testo
     monkeypatch.setattr("app.core.tesseract.configure_tesseract", lambda: True)
     monkeypatch.setattr(
@@ -204,8 +204,11 @@ def test_ocr_pdf_mocked_flow(ws_root, monkeypatch):
     from app.deep_agent.tools import pdf_ops
     out = pdf_ops.ocr_pdf("doc.pdf", language="eng")
     assert out.startswith("✓ OCR completato")
-    target = _out(ws_root, "doc_ocr.pdf")
+    # opzione A (10/11): il risultato è IN-PLACE sullo stesso file, nessun duplicato
+    assert "in-place" in out
+    target = ws_root / "doc.pdf"
     assert target.exists()
+    assert not _out(ws_root, "doc_ocr.pdf").exists()
     # round-trip: PDF valido con testo inserito e con fontsize REALE (>=9pt) così
     # il testo invisibile è cercabile/selezionabile nel viewer (fix 09/11).
     import fitz
