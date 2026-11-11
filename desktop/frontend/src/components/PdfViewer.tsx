@@ -41,9 +41,7 @@ export default function PdfViewer({
     // senza, gli span vengono aggiunti al DOM ma non posizionati/selezionabili).
     const TEXT_LAYER_CSS = `
         .pdfmin-text-layer{position:absolute;text-align:initial;left:0;top:0;right:0;bottom:0;overflow:auto;line-height:1;transform-origin:0 0;user-select:text;}
-        /* DEBUG 11/11: color leggermente visibile per confermare che il text layer
-           c'è. Dopo la conferma, torna a color:transparent. */
-        .pdfmin-text-layer span{position:absolute;white-space:pre;transform-origin:0 0;color:rgba(30,30,30,.25);cursor:text;}
+        .pdfmin-text-layer span{position:absolute;white-space:pre;transform-origin:0 0;color:transparent;cursor:text;}
         .pdfmin-text-layer span::selection{background:rgba(247,135,31,.7);}
         .pdfmin-text-layer ::selection{background:rgba(247,135,31,.7);}
     `;

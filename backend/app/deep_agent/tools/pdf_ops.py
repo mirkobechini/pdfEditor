@@ -538,40 +538,51 @@ def ocr_pdf(pdf_id: str, language: str = "ita") -> str:
                 _lang_note = ""
 
             character_count = 0
+            # 11/11 (Mirko): il layer deve stare EB TR/re� SOPRA il testo stampato
+            # nell'immagine, NON ammucchiato in cima alla pagina. Usiamo
+            # image_to_data: tesseract restituisce anche le coordinate (bbox)
+            # di ogni parola; inseriamo ogni parola alla sua posizione reale,
+            # INVISIBILE (render_mode=3), cosi' selezione/ricerca risultano
+            # allineate al testo visibile.
+            import io as _io
+            from PIL import Image as _PIL
+            dpi = 200.0
+            px_to_pt = 72.0 / dpi
             for page_num in range(doc.page_count):
                 page = doc[page_num]
-                pix = page.get_pixmap(dpi=200)
-                img = Image.open(io.BytesIO(pix.tobytes("png")))
-                text = pytesseract.image_to_string(img, lang=_lang, config="--psm 3")
-                stripped = text.strip()
-                if stripped:
-                    character_count += len(stripped)
-                    # Fix 09/11 (Mirko): prima si inseriva tutto il testo con
-                    # fontsize=1 -> il layer NON risultava selezionabile/trovabile
-                    # con Ctrl+F nel viewer. Ora inseriamo ogni riga a dimensione
-                    # reale ma INVISIBILE (render_mode=3), cosi' il testo resta
-                    # cercabile/selezionabile senza coprire l'immagine.
-                    ifrac = page.rect.height / 70.0
-                    fontsize = max(9.0, min(14.0, ifrac))
-                    line_h = fontsize * 1.35
-                    y = line_h
-                    for line in text.splitlines():
-                        line = line.strip()
-                        if not line:
-                            y += line_h
-                            continue
-                        if y > page.rect.height - line_h:
-                            break  # fuori pagina: il resto non entra
-                        page.insert_text(
-                            fitz.Point(0, y),
-                            line,
-                            fontsize=fontsize,
-                            fontname="helv",
-                            color=(1, 1, 1),
-                            render_mode=3,
-                            overlay=True,
-                        )
-                        y += line_h
+                pix = page.get_pixmap(dpi=int(dpi))
+                img = _PIL.open(_io.BytesIO(pix.tobytes("png")))
+                data = pytesseract.image_to_data(
+                    img, lang=_lang, config="--psm 3",
+                    output_type=pytesseract.Output.DICT,
+                )
+                n = len(data.get("text", []))
+                confs = data.get("conf", [0] * n)
+                for i in range(n):
+                    word = (data["text"][i] or "").strip()
+                    if not word:
+                        continue
+                    try:
+                        c = int(confs[i])
+                    except (TypeError, ValueError):
+                        c = 0
+                    if c <= 0:
+                        continue
+                    x = int(data["left"][i]); y = int(data["top"][i])
+                    w = int(data["width"][i]); h = int(data["height"][i])
+                    if w <= 0 or h <= 0:
+                        continue
+                    # baseline ~ parte inferiore del box; dimensione = altezza del box
+                    page.insert_text(
+                        fitz.Point(x * px_to_pt, (y + h) * px_to_pt),
+                        word,
+                        fontsize=max(4.0, h * px_to_pt),
+                        fontname="helv",
+                        color=(1, 1, 1),
+                        render_mode=3,
+                        overlay=True,
+                    )
+                    character_count += len(word)
 
             # Salvo su temp UNIVOCO, CHIUDO il doc (rilascia l'handle sul file
             # sorgente) e poi rimpiazzo atomicamente. CAUSA DEL WinError 5 (Mirko

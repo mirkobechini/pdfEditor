@@ -240,33 +240,38 @@ class PdfServiceMutateMixin:
                         _lang = "eng" if "eng" in _avail else min(_avail)
                 except Exception:  # noqa: BLE001
                     pass
-                text = pytesseract.image_to_string(
-                    img, lang=_lang, config="--psm 3"
+                # 11/11 (Mirko): allineato al deep agent — inseriamo ogni PAROLA alla
+                # sua posizione reale (image_to_data -> bbox), così il layer invisibile
+                # coincide col testo stampato e selezione/ricerca sono allineate.
+                data = pytesseract.image_to_data(
+                    img, lang=_lang, config="--psm 3",
+                    output_type=pytesseract.Output.DICT,
                 )
-                stripped = text.strip()
-                if stripped:
-                    character_count += len(stripped)
-                    # Inserisci il testo OCR per RIGA a dimensione reale ma INVISIBILE
-                    # (render_mode=3): resta cercabile/selezionabile nei viewer esterni.
-                    # Prima: un unico insert_textbox fontsize=1 -> in pdf.js risulta
-                    # non selezionabile/non trovato (fix 10/11, allineato al deep agent).
-                    ifrac = page.rect.height / 70.0
-                    fontsize = max(9.0, min(14.0, ifrac))
-                    line_h = fontsize * 1.35
-                    y = line_h
-                    for line in text.splitlines():
-                        line = line.strip()
-                        if not line:
-                            y += line_h
-                            continue
-                        if y > page.rect.height - line_h:
-                            break
-                        page.insert_text(
-                            fitz.Point(0, y), line,
-                            fontsize=fontsize, fontname="helv",
-                            color=(1, 1, 1), render_mode=3, overlay=True,
-                        )
-                        y += line_h
+                _px_to_pt = 72.0 / 200.0
+                n = len(data.get("text", []))
+                confs = data.get("conf", [0] * n)
+                for i in range(n):
+                    word = (data["text"][i] or "").strip()
+                    if not word:
+                        continue
+                    try:
+                        _c = int(confs[i])
+                    except (TypeError, ValueError):
+                        _c = 0
+                    if _c <= 0:
+                        continue
+                    _x = int(data["left"][i]); _y = int(data["top"][i])
+                    _w = int(data["width"][i]); _h = int(data["height"][i])
+                    if _w <= 0 or _h <= 0:
+                        continue
+                    page.insert_text(
+                        fitz.Point(_x * _px_to_pt, (_y + _h) * _px_to_pt),
+                        word,
+                        fontsize=max(4.0, _h * _px_to_pt),
+                        fontname="helv",
+                        color=(1, 1, 1), render_mode=3, overlay=True,
+                    )
+                    character_count += len(word)
 
             return character_count, False
 
