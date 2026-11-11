@@ -404,3 +404,13 @@ def test_ocr_resolve_dalla_workspace_non_dal_backend(ws_root):
     # riconosciuto come 'già dotato di testo' (prova che risolve dal filesystem)
     out = pdf_ops.ocr_pdf("doc.pdf")
     assert "già dotato di testo" in out
+
+
+def test_ocr_default_lingua_italiana():
+    """11/11 (Mirko): l'OCR di default usa l'italiano ('ita'), non 'eng'."""
+    import inspect
+    from app.deep_agent.tools import pdf_ops
+    from app.services import pdf_service_mutate as mut
+
+    assert inspect.signature(pdf_ops.ocr_pdf).parameters["language"].default == "ita"
+    assert inspect.signature(mut.PdfServiceMutateMixin.ocr_pdf).parameters["language"].default == "ita"

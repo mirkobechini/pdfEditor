@@ -181,7 +181,7 @@ class PdfServiceMutateMixin:
         self,
         pdf_id: str,
         user_id: str,
-        language: str = "eng",
+        language: str = "ita",
     ) -> tuple[PdfDocument, int, bool]:
         """Run OCR on a scanned PDF and return a searchable PDF.
 
@@ -231,8 +231,17 @@ class PdfServiceMutateMixin:
                 img = Image.open(io.BytesIO(img_bytes))
 
                 # Run OCR on the page image
+                # 11/11 (Mirko): se la lingua richiesta (default ita) non è installata
+                # usa 'eng' invece di fallire.
+                _lang = language
+                try:
+                    _avail = set(pytesseract.get_languages(config=""))
+                    if _avail and _lang not in _avail:
+                        _lang = "eng" if "eng" in _avail else min(_avail)
+                except Exception:  # noqa: BLE001
+                    pass
                 text = pytesseract.image_to_string(
-                    img, lang=language, config="--psm 3"
+                    img, lang=_lang, config="--psm 3"
                 )
                 stripped = text.strip()
                 if stripped:
