@@ -537,94 +537,55 @@ def ocr_pdf(pdf_id: str, language: str = "ita") -> str:
             else:
                 _lang_note = ""
 
-            # 11/11 (Mirko): OCRmyPDF = motore OCR standard (gestisce skew/layout,
-            # testo PERFETTAMENTE sovrapposto). Prova prima questo; se il motore
-            # non e' disponibile (ghostscript/qpdf non bundled) fallisce pulito
-            # al metodo manuale sottostante.
-            import os as _os2
-            import uuid as _uuid2
-            _out2 = path.with_name(f".{path.name}.{_uuid2.uuid4().hex[:8]}.ocrout.pdf")
-            _ok = False
-            try:
-                import ocrmypdf
-
-                _code = ocrmypdf.main(
-                    [
-                        str(path), str(_out2), "-l", f"{_lang}+eng",
-                        "--optimize", "0", "--output-type", "pdf", "--skip-text",
-                    ]
-                )
-                _ok = isinstance(_code, int) and _out2.exists() and _out2.stat().st_size > 0
-            except Exception:  # noqa: BLE001 — motore non disponibile: fallback
-                _ok = False
-            if _ok:
-                doc.close()
-                _os2.replace(str(_out2), str(path))
-                try:
-                    if _out2.exists():
-                        _out2.unlink()
-                except OSError:
-                    pass
-                return (
-                    f"✓ OCR completato su {path.name} (in-place, OCRmyPDF [{_lang}+eng]): "
-                    f"il file è ora ricercabile/selezionabile."
-                )
-            try:
-                if _out2.exists():
-                    _out2.unlink()
-            except OSError:
-                pass
-
             character_count = 0
-            # 11/11 (Mirko): il layer deve stare EB TR/re� SOPRA il testo stampato
-            # nell'immagine, NON ammucchiato in cima alla pagina. Usiamo
-            # image_to_data: tesseract restituisce anche le coordinate (bbox)
-            # di ogni parola; inseriamo ogni parola alla sua posizione reale,
-            # INVISIBILE (render_mode=3), cosi' selezione/ricerca risultano
-            # allineate al testo visibile.
+            # 11/11 (Mirko): overlay PER-CARATTERE con i box esatti di tesseract
+            # (image_to_boxes): ogni glifo posizionato nel suo riquadro reale ->
+            # dimensione e posizione combaciano col testo stampato, senza dipendere
+            # dalla metrica del font usato per scrivere il layer invisibile.
             import io as _io
             from PIL import Image as _PIL
             dpi = 300.0
             px_to_pt = 72.0 / dpi
             for page_num in range(doc.page_count):
                 page = doc[page_num]
-                # 11/11 (Mirko): USARE matrix, NON dpi: get_pixmap(dpi) applica la
-                # rotazione della pagina mentre insert_text usa coordinate NON
-                # ruotate -> su scan con rotation 90/270 il testo finiva spostato.
-                # Con la matrix le coordinate immagine (tesseract) e PDF combaciano.
                 pix = page.get_pixmap(matrix=fitz.Matrix(dpi / 72.0, dpi / 72.0))
                 img = _PIL.open(_io.BytesIO(pix.tobytes("png")))
-                data = pytesseract.image_to_data(
-                    img, lang=_lang, config="--psm 3",
-                    output_type=pytesseract.Output.DICT,
-                )
-                n = len(data.get("text", []))
-                confs = data.get("conf", [0] * n)
-                for i in range(n):
-                    word = (data["text"][i] or "").strip()
-                    if not word:
+                img_h = pix.height
+                try:
+                    boxes_txt = pytesseract.image_to_boxes(img, lang=_lang, config="--psm 3")
+                except Exception:  # noqa: BLE001
+                    continue
+                for line in boxes_txt.splitlines():
+                    parts = line.split()
+                    if len(parts) < 6:
+                        continue
+                    ch = parts[0]
+                    if ch in (" ", "|"):
                         continue
                     try:
-                        c = int(confs[i])
+                        x1, y1, x2, y2 = (int(parts[i]) for i in (1, 2, 3, 4))
+                        conf = int(parts[5])
                     except (TypeError, ValueError):
-                        c = 0
-                    if c < 15:
-                        continue  # conf basso = falso positivo, lo scarto
-                    x = int(data["left"][i]); y = int(data["top"][i])
-                    w = int(data["width"][i]); h = int(data["height"][i])
+                        continue
+                    if conf < 15:
+                        continue
+                    w = x2 - x1
+                    h = y2 - y1
                     if w <= 0 or h <= 0:
                         continue
-                    # dimensione = altezza del box; baseline dentro il box (non sul bordo)
+                    # image_to_boxes: y dal BASSO dell'immagine; il PDF usa y dall'alto
+                    pdf_x = x1 * px_to_pt
+                    pdf_baseline = (img_h - y1) * px_to_pt
                     page.insert_text(
-                        fitz.Point(x * px_to_pt, (y + 0.85 * h) * px_to_pt),
-                        word,
-                        fontsize=max(4.0, h * px_to_pt),
+                        fitz.Point(pdf_x, pdf_baseline),
+                        ch,
+                        fontsize=max(3.0, h * px_to_pt),
                         fontname="helv",
                         color=(1, 1, 1),
                         render_mode=3,
                         overlay=True,
                     )
-                    character_count += len(word)
+                    character_count += 1
 
             # Salvo su temp UNIVOCO, CHIUDO il doc (rilascia l'handle sul file
             # sorgente) e poi rimpiazzo atomicamente. CAUSA DEL WinError 5 (Mirko
