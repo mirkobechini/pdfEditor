@@ -487,7 +487,7 @@ def annotate_pdf(
 # OCR
 # ---------------------------------------------------------------------------
 
-def ocr_pdf(pdf_id: str, language: str = "eng") -> str:
+def ocr_pdf(pdf_id: str, language: str = "ita") -> str:
     """Esegue l'OCR su un PDF scansionato della WORKSPACE e lo rende ricercabile.
 
     - pdf_id: nome del file PDF nella workspace
