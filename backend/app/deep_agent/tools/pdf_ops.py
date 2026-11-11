@@ -537,6 +537,44 @@ def ocr_pdf(pdf_id: str, language: str = "ita") -> str:
             else:
                 _lang_note = ""
 
+            # 11/11 (Mirko): OCRmyPDF = motore OCR standard (gestisce skew/layout,
+            # testo PERFETTAMENTE sovrapposto). Prova prima questo; se il motore
+            # non e' disponibile (ghostscript/qpdf non bundled) fallisce pulito
+            # al metodo manuale sottostante.
+            import os as _os2
+            import uuid as _uuid2
+            _out2 = path.with_name(f".{path.name}.{_uuid2.uuid4().hex[:8]}.ocrout.pdf")
+            _ok = False
+            try:
+                import ocrmypdf
+
+                _code = ocrmypdf.main(
+                    [
+                        str(path), str(_out2), "-l", f"{_lang}+eng",
+                        "--optimize", "0", "--output-type", "pdf", "--skip-text",
+                    ]
+                )
+                _ok = isinstance(_code, int) and _out2.exists() and _out2.stat().st_size > 0
+            except Exception:  # noqa: BLE001 — motore non disponibile: fallback
+                _ok = False
+            if _ok:
+                doc.close()
+                _os2.replace(str(_out2), str(path))
+                try:
+                    if _out2.exists():
+                        _out2.unlink()
+                except OSError:
+                    pass
+                return (
+                    f"✓ OCR completato su {path.name} (in-place, OCRmyPDF [{_lang}+eng]): "
+                    f"il file è ora ricercabile/selezionabile."
+                )
+            try:
+                if _out2.exists():
+                    _out2.unlink()
+            except OSError:
+                pass
+
             character_count = 0
             # 11/11 (Mirko): il layer deve stare EB TR/re� SOPRA il testo stampato
             # nell'immagine, NON ammucchiato in cima alla pagina. Usiamo
