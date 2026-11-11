@@ -37,11 +37,15 @@ export default function PdfViewer({
     // 10/11 (Mirko): il viewer deve rendere selezionabile il testo. pdf.js
     // renderTextLayer genera span assoluti; con color:transparent restano
     // invisibili ma selezionabili/ricercabili (la selezione ha l'highlight).
+    // 11/11 (Mirko): CSS UFFICIALE di pdf.js per il text layer (obbligatorio:
+    // senza, gli span vengono aggiunti al DOM ma non posizionati/selezionabili).
     const TEXT_LAYER_CSS = `
-        .pdfmin-text-layer{position:absolute;left:0;top:0;overflow:hidden;line-height:1;pointer-events:auto;}
-        .pdfmin-text-layer span{position:absolute;white-space:pre;transform-origin:0 0;color:transparent;cursor:text;}
-        .pdfmin-text-layer ::selection{background:rgba(247,135,31,.35);}
-        .pdfmin-text-layer span::selection{background:rgba(247,135,31,.35);}
+        .pdfmin-text-layer{position:absolute;text-align:initial;left:0;top:0;right:0;bottom:0;overflow:auto;line-height:1;transform-origin:0 0;user-select:text;}
+        /* DEBUG 11/11: color leggermente visibile per confermare che il text layer
+           c'è. Dopo la conferma, torna a color:transparent. */
+        .pdfmin-text-layer span{position:absolute;white-space:pre;transform-origin:0 0;color:rgba(30,30,30,.25);cursor:text;}
+        .pdfmin-text-layer span::selection{background:rgba(247,135,31,.7);}
+        .pdfmin-text-layer ::selection{background:rgba(247,135,31,.7);}
     `;
 
     // Load PDF.js on mount
@@ -141,13 +145,27 @@ export default function PdfViewer({
                         tl.style.width = `${viewport.width}px`;
                         tl.style.height = `${viewport.height}px`;
                         tl.innerHTML = "";
-                        const textContent = await page.getTextContent();
-                        (window as any).pdfjsLib.renderTextLayer({
-                            textContent,
-                            container: tl,
-                            viewport,
-                            textDivs: [] as HTMLElement[],
-                        });
+                        const pdfjs = (window as any).pdfjsLib;
+                        // API ufficiale 3.x: classe TextLayer con stream + render
+                        let textLayer: any = null;
+                        if (typeof pdfjs.TextLayer === "function") {
+                            textLayer = new pdfjs.TextLayer({
+                                textContentSource: page.streamTextContent({ includeMarkedContent: true }),
+                                container: tl,
+                                viewport,
+                            });
+                            if (typeof textLayer.render === "function") {
+                                await textLayer.render();
+                            } else if (typeof textLayer.setupTextLayout === "function") {
+                                const tc = await page.getTextContent();
+                                textLayer.setTextContent(tc);
+                                textLayer.render();
+                            }
+                        } else {
+                            // fallback vintage (renderTextLayer util)
+                            const textContent = await page.getTextContent();
+                            pdfjs.renderTextLayer({ textContent, container: tl, viewport, textDivs: [] as HTMLElement[] });
+                        }
                     }
                 } catch (tlErr) {
                     // il text layer è un miglioramento: se fallisce, la pagina resta visibile
