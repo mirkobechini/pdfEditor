@@ -66,27 +66,15 @@ if ($TesseractBin) {
     }
 }
 
-# 11/11 (Mirko): l'OCR deve supportare l'italiano. Il build, finora, bundlava SOLO
-# le lingue dell'installazione tesseract della macchina di build (spesso solo eng).
-# Se manca, scarichiamo ita.traineddata nella tessdata locale cosi' entra nel sidecar.
-if ($TessdataDir) {
-    $ItaPack = Join-Path $TessdataDir "ita.traineddata"
-    if (-not (Test-Path $ItaPack)) {
-        Write-Host "Downloading ita.traineddata (OCR italiano)..." -ForegroundColor Cyan
-        try {
-            Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata_fast/raw/main/ita.traineddata" -OutFile $ItaPack -UseBasicParsing -ErrorAction Stop
-            Write-Host "ita.traineddata scaricato (tessdata_fast)" -ForegroundColor Green
-        } catch {
-            try {
-                Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/ita.traineddata" -OutFile $ItaPack -UseBasicParsing -ErrorAction Stop
-                Write-Host "ita.traineddata scaricato (tessdata)" -ForegroundColor Green
-            } catch {
-                Write-Host "WARNING: impossibile scaricare ita.traineddata; OCR italiano non disponibile in questa build" -ForegroundColor Yellow
-            }
-        }
-    } else {
-        Write-Host "ita.traineddata già presente in tessdata" -ForegroundColor Green
-    }
+# 11/11 (Mirko): ita.traineddata incluso DAL REPO (garantito, indipendente da
+# rete/installazione tesseract del runner). Finiva nel bundle come tessdata/ita.
+$RepoIta = Join-Path $PSScriptRoot "..\backend\resources\tessdata\ita.traineddata"
+if (Test-Path $RepoIta) {
+    $BundleArgs += "--add-data"
+    $BundleArgs += "$RepoIta;tessdata"
+    Write-Host "ita.traineddata incluso dal repo (garantito)" -ForegroundColor Green
+} else {
+    Write-Host "WARNING: backend/resources/tessdata/ita.traineddata non trovato; OCR italiano non disponibile" -ForegroundColor Yellow
 }
 
 # Build the PyInstaller args for bundling tesseract

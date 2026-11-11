@@ -222,7 +222,7 @@ class PdfServiceMutateMixin:
                 page = doc[page_num]
                 # Render CON MATRIX (non ruotato): le coordinate immagine combaciano
                 # con quelle di insert_text anche su pagine con rotation (11/11).
-                pix = page.get_pixmap(matrix=fitz.Matrix(200.0 / 72.0, 200.0 / 72.0))
+                pix = page.get_pixmap(matrix=fitz.Matrix(300.0 / 72.0, 300.0 / 72.0))
                 img_bytes = pix.tobytes("png")
 
                 # pytesseract needs a PIL Image (or a file path), not raw bytes.
@@ -248,7 +248,7 @@ class PdfServiceMutateMixin:
                     img, lang=_lang, config="--psm 3",
                     output_type=pytesseract.Output.DICT,
                 )
-                _px_to_pt = 72.0 / 200.0
+                _px_to_pt = 72.0 / 300.0
                 n = len(data.get("text", []))
                 confs = data.get("conf", [0] * n)
                 for i in range(n):
@@ -259,7 +259,7 @@ class PdfServiceMutateMixin:
                         _c = int(confs[i])
                     except (TypeError, ValueError):
                         _c = 0
-                    if _c <= 0:
+                    if _c < 15:
                         continue
                     _x = int(data["left"][i]); _y = int(data["top"][i])
                     _w = int(data["width"][i]); _h = int(data["height"][i])

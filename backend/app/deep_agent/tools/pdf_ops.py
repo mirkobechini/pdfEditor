@@ -546,7 +546,7 @@ def ocr_pdf(pdf_id: str, language: str = "ita") -> str:
             # allineate al testo visibile.
             import io as _io
             from PIL import Image as _PIL
-            dpi = 200.0
+            dpi = 300.0
             px_to_pt = 72.0 / dpi
             for page_num in range(doc.page_count):
                 page = doc[page_num]
@@ -570,8 +570,8 @@ def ocr_pdf(pdf_id: str, language: str = "ita") -> str:
                         c = int(confs[i])
                     except (TypeError, ValueError):
                         c = 0
-                    if c <= 0:
-                        continue
+                    if c < 15:
+                        continue  # conf basso = falso positivo, lo scarto
                     x = int(data["left"][i]); y = int(data["top"][i])
                     w = int(data["width"][i]); h = int(data["height"][i])
                     if w <= 0 or h <= 0:
