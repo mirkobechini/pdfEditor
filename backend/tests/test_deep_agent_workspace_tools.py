@@ -198,18 +198,15 @@ def test_ocr_pdf_mocked_flow(ws_root, monkeypatch):
     _make_pdf(ws_root / "doc.pdf", pages=2)  # pagine "scansionate" senza testo
     monkeypatch.setattr("app.core.tesseract.configure_tesseract", lambda: True)
 
-    def fake_image_to_data(img, lang="eng", config=None, output_type=None):
-        # tesseract restituisce parole + bbox (11/11: OCR allineato)
-        return {
-            "text": ["TEST", "123", "RICONOSCIUTO"],
-            "conf": [95, 95, 95],
-            "left": [10, 60, 120],
-            "top": [10, 10, 30],
-            "width": [40, 50, 90],
-            "height": [60, 60, 60],
-        }
+    def fake_image_to_boxes(img, lang=None, config=None):
+        # tesseract per-char boxes (y DAL BASSO dell'immagine): allineamento esatto
+        lines = []
+        for i, c in enumerate("TEST123"):
+            x = int(10 + i * 18)
+            lines.append(f"{c} {x} 200 {x + 16} 260 95")
+        return "\n".join(lines)
 
-    monkeypatch.setattr("pytesseract.image_to_data", fake_image_to_data)
+    monkeypatch.setattr("pytesseract.image_to_boxes", fake_image_to_boxes)
     from app.deep_agent.tools import pdf_ops
     out = pdf_ops.ocr_pdf("doc.pdf", language="eng")
     assert out.startswith("✓ OCR completato")
@@ -224,7 +221,7 @@ def test_ocr_pdf_mocked_flow(ws_root, monkeypatch):
     d = fitz.open(target)
     assert d.page_count == 2
     joined = " ".join(d[i].get_text() for i in range(d.page_count))
-    for tok in ("TEST", "123", "RICONOSCIUTO"):
+    for tok in ("TEST", "123"):
         assert tok in joined
     # verifica che il layer usi una dimensione selezionabile, non 1pt
     spans = []
