@@ -220,8 +220,9 @@ class PdfServiceMutateMixin:
             character_count = 0
             for page_num in range(doc.page_count):
                 page = doc[page_num]
-                # Render page to image at 200 DPI for OCR
-                pix = page.get_pixmap(dpi=200)
+                # Render CON MATRIX (non ruotato): le coordinate immagine combaciano
+                # con quelle di insert_text anche su pagine con rotation (11/11).
+                pix = page.get_pixmap(matrix=fitz.Matrix(200.0 / 72.0, 200.0 / 72.0))
                 img_bytes = pix.tobytes("png")
 
                 # pytesseract needs a PIL Image (or a file path), not raw bytes.
