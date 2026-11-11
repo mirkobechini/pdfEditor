@@ -550,7 +550,11 @@ def ocr_pdf(pdf_id: str, language: str = "ita") -> str:
             px_to_pt = 72.0 / dpi
             for page_num in range(doc.page_count):
                 page = doc[page_num]
-                pix = page.get_pixmap(dpi=int(dpi))
+                # 11/11 (Mirko): USARE matrix, NON dpi: get_pixmap(dpi) applica la
+                # rotazione della pagina mentre insert_text usa coordinate NON
+                # ruotate -> su scan con rotation 90/270 il testo finiva spostato.
+                # Con la matrix le coordinate immagine (tesseract) e PDF combaciano.
+                pix = page.get_pixmap(matrix=fitz.Matrix(dpi / 72.0, dpi / 72.0))
                 img = _PIL.open(_io.BytesIO(pix.tobytes("png")))
                 data = pytesseract.image_to_data(
                     img, lang=_lang, config="--psm 3",
@@ -572,9 +576,9 @@ def ocr_pdf(pdf_id: str, language: str = "ita") -> str:
                     w = int(data["width"][i]); h = int(data["height"][i])
                     if w <= 0 or h <= 0:
                         continue
-                    # baseline ~ parte inferiore del box; dimensione = altezza del box
+                    # dimensione = altezza del box; baseline dentro il box (non sul bordo)
                     page.insert_text(
-                        fitz.Point(x * px_to_pt, (y + h) * px_to_pt),
+                        fitz.Point(x * px_to_pt, (y + 0.85 * h) * px_to_pt),
                         word,
                         fontsize=max(4.0, h * px_to_pt),
                         fontname="helv",
