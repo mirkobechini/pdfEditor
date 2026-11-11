@@ -61,6 +61,7 @@ jobs:
       - name: Install OCR tools (ghostscript + qpdf) per OCRmyPDF
         shell: pwsh
         run: |
+          choco install tesseract -y --no-progress
           choco install ghostscript -y --no-progress
           choco install qpdf -y --no-progress
           gswin64c.exe --version
