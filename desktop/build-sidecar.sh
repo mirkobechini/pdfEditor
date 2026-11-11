@@ -64,6 +64,43 @@ fi
 if [ -n "$TESSDATA_DIR" ]; then
     BUNDLE_ARGS+=(--add-data "$TESSDATA_DIR:tessdata")
 fi
+# 11/11 (Mirko): ita.traineddata dal REPO (garantito, non dipende dal runner)
+REPO_ITA="$PROJECT_ROOT/backend/resources/tessdata/ita.traineddata"
+if [ -f "$REPO_ITA" ]; then
+    BUNDLE_ARGS+=(--add-data "$REPO_ITA:tessdata")
+    echo "ita.traineddata incluso dal repo"
+else
+    echo "WARNING: ita.traineddata non trovato nel repo"
+fi
+
+# ─── OCRmyPDF: ghostscript + qpdf (best-effort, NON fatale) ──────────────────
+# Il workflow CI li installa (choco) prima del build; qui li bundliamo in bin/.
+GS_EXE=""
+for f in "$PROGRAMFILES/gs"/*/bin/gswin64c.exe "/c/Program Files/gs"/*/bin/gswin64c.exe "/Program Files/gs"/*/bin/gswin64c.exe; do
+    if [ -f "$f" ]; then GS_EXE="$f"; break; fi
+done
+if [ -n "$GS_EXE" ]; then
+    echo "Bundling Ghostscript: $GS_EXE"
+    GS_DIR="$(dirname "$GS_EXE")"
+    GS_ROOT="$(dirname "$GS_DIR")"
+    BUNDLE_ARGS+=(--add-binary "$GS_EXE:bin")
+    [ -f "$GS_DIR/gsdll64.dll" ] && BUNDLE_ARGS+=(--add-binary "$GS_DIR/gsdll64.dll:bin")
+    [ -d "$GS_ROOT/Resource" ] && BUNDLE_ARGS+=(--add-binary "$GS_ROOT/Resource:bin/Resource")
+    [ -d "$GS_ROOT/fonts" ] && BUNDLE_ARGS+=(--add-binary "$GS_ROOT/fonts:bin/fonts")
+else
+    echo "WARNING: Ghostscript non trovato; OCRmyPDF non disponibile (fallback manuale)"
+fi
+QPDF_BIN="$(command -v qpdf.exe 2>/dev/null || command -v qpdf 2>/dev/null || true)"
+if [ -n "$QPDF_BIN" ]; then
+    echo "Bundling qpdf: $QPDF_BIN"
+    QPDF_DIR="$(dirname "$QPDF_BIN")"
+    BUNDLE_ARGS+=(--add-binary "$QPDF_BIN:bin")
+    for dll in "$QPDF_DIR"/*.dll; do
+        [ -f "$dll" ] && BUNDLE_ARGS+=(--add-binary "$dll:bin")
+    done
+else
+    echo "WARNING: qpdf non trovato; OCRmyPDF non disponibile (fallback manuale)"
+fi
 
 # --strip solo su Linux/macOS: su Windows (bash del runner CI) eseguirebbe GNU
 # strip su python312.dll e sui .pyd corrompendoli ("Failed to load Python DLL").
@@ -99,6 +136,8 @@ $PYTHON -m PyInstaller \
     --hidden-import "app.main" \
     --hidden-import "keyring" \
     --collect-all "keyring" \
+    --hidden-import "ocrmypdf" \
+    --collect-all "ocrmypdf" \
     --hidden-import "app.core.config" \
     --hidden-import "app.core.database" \
     --hidden-import "app.core.csrf" \
