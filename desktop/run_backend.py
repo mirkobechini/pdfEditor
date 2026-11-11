@@ -60,7 +60,35 @@ def _configure_bundled_tesseract():
         print(f"[sidecar] Bundled tessdata: {tessdata}")
 
 
+def _configure_bundled_ocr_tools():
+    """11/11 (Mirko): OCRmyPDF nel sidecar.
+
+    Ghostscript + qpdf vengono bundlati dal build-sidecar sotto `bin/` (vedi
+    build-sidecar.ps1). Li mettiamo in PATH e impostiamo GS_PROG/QPDF cosi'
+    OCRmyPDF li trova senza che l'utente installi nulla. Se mancano (bundle
+    best-effort fallito), il tool OCR ricade sul metodo manuale.
+    """
+    base_path = _get_base_path()
+    bin_dir = os.path.join(base_path, "bin")
+    if os.path.isdir(bin_dir):
+        os.environ["PATH"] = bin_dir + os.pathsep + os.environ.get("PATH", "")
+        print(f"[sidecar] OCR tools bin: {bin_dir}")
+    gs = os.path.join(bin_dir, "gswin64c.exe")
+    if os.path.isfile(gs):
+        os.environ["GS_PROG"] = gs
+        print(f"[sidecar] Ghostscript: {gs}")
+    qpdf = os.path.join(bin_dir, "qpdf.exe")
+    if os.path.isfile(qpdf):
+        os.environ["QPDF"] = qpdf
+        print(f"[sidecar] qpdf: {qpdf}")
+    # tesseract su PATH: OCRmyPDF lo cerca anche via 'tesseract' (non solo env)
+    tess_bin = os.path.join(base_path, "tesseract")
+    if os.path.isdir(tess_bin):
+        os.environ["PATH"] = tess_bin + os.pathsep + os.environ.get("PATH", "")
+
+
 _configure_bundled_tesseract()
+_configure_bundled_ocr_tools()
 
 import uvicorn  # noqa: E402
 

@@ -58,6 +58,14 @@ jobs:
         with:
           workspaces: "desktop/src-tauri -> target"
 
+      - name: Install OCR tools (ghostscript + qpdf) per OCRmyPDF
+        shell: pwsh
+        run: |
+          choco install ghostscript -y --no-progress
+          choco install qpdf -y --no-progress
+          gswin64c.exe --version
+          qpdf.exe --version
+
       - name: Build sidecar
         shell: bash
         run: |

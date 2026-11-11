@@ -88,6 +88,47 @@ if ($TessdataDir) {
     $BundleArgs += "$TessdataDir;tessdata"
 }
 
+# 11/11 (Mirko): OCRmyPDF -- bundla ghostscript + qpdf (best-effort, NON fatale).
+# Se sul runner mancano, il build continua e l'OCR usa il fallback manuale.
+$OcrBin = Join-Path $ProjectRoot "desktop\build-sidecar-ocrbin"
+New-Item -ItemType Directory -Force -Path (Join-Path $OcrBin "bin") | Out-Null
+$GsExe = $null
+$gsCmd = Get-Command gswin64c.exe -ErrorAction SilentlyContinue
+if ($gsCmd) { $GsExe = $gsCmd.Source }
+if (-not $GsExe) {
+    $found = Get-ChildItem "C:\Program Files\gs" -Recurse -Filter "gswin64c.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($found) { $GsExe = $found.FullName }
+}
+if ($GsExe) {
+    Write-Host "Bundling Ghostscript: $GsExe" -ForegroundColor Cyan
+    $gsDir = Split-Path $GsExe
+    $gsRoot = Split-Path $gsDir -Parent
+    Copy-Item $GsExe (Join-Path $OcrBin "bin") -Force
+    Get-ChildItem $gsDir -Filter "*.dll" -ErrorAction SilentlyContinue | Copy-Item -Destination (Join-Path $OcrBin "bin") -Force
+    $BundleArgs += "--add-binary"; $BundleArgs += (Join-Path $OcrBin "bin\gswin64c.exe;bin")
+    $dll = Join-Path $OcrBin "bin\gsdll64.dll"
+    if (Test-Path $dll) { $BundleArgs += "--add-binary"; $BundleArgs += "$dll;bin" }
+    if (Test-Path (Join-Path $gsRoot "Resource")) {
+        $BundleArgs += "--add-binary"; $BundleArgs += (Join-Path $gsRoot "Resource;bin/Resource")
+    }
+    if (Test-Path (Join-Path $gsRoot "fonts")) {
+        $BundleArgs += "--add-binary"; $BundleArgs += (Join-Path $gsRoot "fonts;bin/fonts")
+    }
+} else {
+    Write-Host "WARNING: Ghostscript non trovato; OCRmyPDF non disponibile (fallback manuale)" -ForegroundColor Yellow
+}
+$qpdfCmd = Get-Command qpdf.exe -ErrorAction SilentlyContinue
+if ($qpdfCmd) {
+    $qpdfExe = $qpdfCmd.Source
+    Write-Host "Bundling qpdf: $qpdfExe" -ForegroundColor Cyan
+    Copy-Item $qpdfExe (Join-Path $OcrBin "bin") -Force
+    $qpdfDir = Split-Path $qpdfExe
+    Get-ChildItem $qpdfDir -Filter "*.dll" -ErrorAction SilentlyContinue | Copy-Item -Destination (Join-Path $OcrBin "bin") -Force
+    $BundleArgs += "--add-binary"; $BundleArgs += (Join-Path $OcrBin "bin\qpdf.exe;bin")
+} else {
+    Write-Host "WARNING: qpdf non trovato; OCRmyPDF non disponibile (fallback manuale)" -ForegroundColor Yellow
+}
+
 # Build with PyInstaller
 Write-Host "Running PyInstaller..." -ForegroundColor Yellow
 & $Python -m PyInstaller `
@@ -113,6 +154,8 @@ Write-Host "Running PyInstaller..." -ForegroundColor Yellow
     --hidden-import "app.main" `
     --hidden-import "keyring" `
     --collect-all "keyring" `
+    --hidden-import "ocrmypdf" `
+    --collect-all "ocrmypdf" `
     --hidden-import "app.core.config" `
     --hidden-import "app.core.database" `
     --hidden-import "app.core.csrf" `
