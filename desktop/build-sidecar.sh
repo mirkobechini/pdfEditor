@@ -99,13 +99,13 @@ else
     echo "WARNING: Ghostscript non trovato; OCRmyPDF non disponibile (fallback manuale)"
 fi
 QPDF_BIN=""
-for f in "/c/Program Files/qpdf"/*/bin/qpdf.exe "/c/Program Files/qpdf"/bin/qpdf.exe "/c/ProgramData/chocolatey/lib/qpdf"/*/bin/qpdf.exe; do
-    if [ -f "$f" ]; then QPDF_BIN="$f"; break; fi
+# cerca il VERO qpdf.exe (mai lo shim di chocolatey che e' inutile a runtime)
+for root in "/c/Program Files/qpdf" "/c/ProgramData/chocolatey/lib/qpdf" ; do
+    while IFS= read -r f; do
+        if [ -f "$f" ] && [[ "$f" != *"shim"* ]]; then QPDF_BIN="$f"; break; fi
+    done < <(find "$root" -name "qpdf.exe" 2>/dev/null | head -5)
+    [ -n "$QPDF_BIN" ] && break
 done
-if [ -z "$QPDF_BIN" ]; then
-    QPDF_CAND="$(command -v qpdf.exe 2>/dev/null || true)"
-    if [ -n "$QPDF_CAND" ] && [ -f "$QPDF_CAND" ]; then QPDF_BIN="$QPDF_CAND"; fi
-fi
 if [ -n "$QPDF_BIN" ] && [ -f "$QPDF_BIN" ]; then
     echo "Bundling qpdf: $QPDF_BIN"
     QPDF_DIR="$(dirname "$QPDF_BIN")"
