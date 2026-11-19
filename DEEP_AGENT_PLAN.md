@@ -106,7 +106,7 @@ Mirko ha rifatto il test da utente nuovo e ha trovato 4 problemi veri, tutti fix
 
 ### OCR — ESITO 19/11 (chiuso, Mirko)
 - Integrato OCRmyPDF (strada A) nel deep agent: validato in locale sul file reale (allineamento esatto sul testo stampato, `ita+eng`), fallback al metodo manuale se il motore non c'e'.
-- Bottone in-app: resta sul metodo manuale (refactor del servizio da fare con piu' cautela; non bloccante per la chiusura).
+- In-app (rotta condivisa desktop/web/mobile): allineato all'OCR MIGLIORE via PR #1040 — overlay PER-CARATTERE con image_to_boxes (default ita, fallback eng); tests/test_ocr.py adeguati al percorso nuovo (7/7).
 - Limite noto: calligrafie/testo decorativo (es. diplomi) non vengono riconosciuti da nessun OCR base.
 - **Miglioria futura registrata:** OCR a IA esterno (Google/Azure/Amazon) per calligrafia/firme, o preprocessing avanzato. NON nel sidecar.
 ### Licenze (19/11)
