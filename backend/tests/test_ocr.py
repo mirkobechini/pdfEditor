@@ -27,6 +27,15 @@ def _make_text_pdf() -> bytes:
     return data
 
 
+def _boxes_for(word: str) -> str:
+    """Simula l'output di pytesseract.image_to_boxes per una parola (chars)."""
+    lines = []
+    for i, c in enumerate(word):
+        x = 20 + i * 30
+        lines.append(f"{c} {x} 200 {x+28} 260 95")
+    return "\n".join(lines)
+
+
 class TestOcr:
     """Test suite for POST /pdfs/{pdf_id}/ocr."""
 
@@ -43,7 +52,7 @@ class TestOcr:
 
     def test_ocr_scanned_pdf(self, client, pro_headers):
         pdf_id = self._upload(client, pro_headers, _make_scanned_pdf())
-        with patch("pytesseract.image_to_string", return_value="Recognized text"), patch(
+        with patch("pytesseract.image_to_boxes", return_value=_boxes_for("Recognized text")), patch(
             "app.core.tesseract.configure_tesseract", return_value="/fake/tesseract"
         ):
             resp = client.post(
@@ -53,12 +62,13 @@ class TestOcr:
             )
         assert resp.status_code == status.HTTP_200_OK
         assert resp.json()["pdf"]["id"] == pdf_id
-        assert resp.json()["character_count"] == len("Recognized text")
+        # per-carattere: character_count = numero di char (spazi scarto)
+        assert resp.json()["character_count"] == len("Recognizedtext")
         assert resp.json()["already_searchable"] is False
 
     def test_ocr_pdf_with_text_returns_unchanged(self, client, pro_headers):
         pdf_id = self._upload(client, pro_headers, _make_text_pdf())
-        with patch("pytesseract.image_to_string") as mock_ocr:
+        with patch("pytesseract.image_to_boxes") as mock_ocr:
             resp = client.post(
                 f"/pdfs/{pdf_id}/ocr",
                 json={},
@@ -92,7 +102,7 @@ class TestOcr:
 
     def test_ocr_produces_searchable_pdf(self, client, pro_headers):
         pdf_id = self._upload(client, pro_headers, _make_scanned_pdf())
-        with patch("pytesseract.image_to_string", return_value="Hello OCR world"), patch(
+        with patch("pytesseract.image_to_boxes", return_value=_boxes_for("HelloOCRworld")), patch(
             "app.core.tesseract.configure_tesseract", return_value="/fake/tesseract"
         ):
             resp = client.post(
@@ -107,7 +117,7 @@ class TestOcr:
         assert dl.status_code == status.HTTP_200_OK
         doc = fitz.open(stream=dl.content, filetype="pdf")
         text = doc[0].get_text()
-        assert "Hello OCR world" in text
+        assert "".join(text.split()) == "HelloOCRworld"
         doc.close()
 
     def test_ocr_returns_503_when_tesseract_binary_missing(self, client, pro_headers):
@@ -130,7 +140,7 @@ class TestOcr:
         from PIL import Image
 
         pdf_id = self._upload(client, pro_headers, _make_scanned_pdf())
-        with patch("pytesseract.image_to_string", return_value="text") as mock_ocr, patch(
+        with patch("pytesseract.image_to_boxes", return_value=_boxes_for("text")) as mock_ocr, patch(
             "app.core.tesseract.configure_tesseract", return_value="/fake/tesseract"
         ):
             resp = client.post(
