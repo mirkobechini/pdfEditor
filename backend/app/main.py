@@ -19,6 +19,7 @@ from app.api.v1.compress import router as compress_router
 from app.api.v1.convert import router as convert_router
 from app.api.v1.metadata import router as metadata_router
 from app.api.v1.merge_split import router as merge_split_router
+from app.api.v1.mind import router as mind_router
 from app.api.v1.ocr import router as ocr_router
 from app.api.v1.reorder import router as reorder_router
 from app.api.v1.settings import router as settings_router
@@ -300,3 +301,4 @@ app.include_router(share_router)
 app.include_router(undo_redo_router)
 app.include_router(sync_router)
 app.include_router(settings_router)
+app.include_router(mind_router)

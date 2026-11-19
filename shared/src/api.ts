@@ -725,6 +725,7 @@ export class ApiClient {
         default_zoom: 100,
         antialiasing: true,
         density: "comfortable",
+        default_save_folder: "",
       };
     return res.json();
   }
@@ -875,6 +876,68 @@ export class ApiClient {
       { status },
     );
   }
+
+  // ─── Deep Agent (mind) ─────────────────────────────────────────────
+
+  /** Recupera la config Deep Agent (senza chiavi API). */
+  async getMindConfig(): Promise<MindConfig> {
+    return this._get<MindConfig>(`${this.baseUrl}/mind/config`);
+  }
+
+  /** Aggiorna la config Deep Agent (provider, modello, workspace, RAG...). */
+  async updateMindConfig(
+    patch: Partial<MindConfigUpdate>,
+  ): Promise<MindConfig> {
+    return this._putJson<MindConfig>(
+      `${this.baseUrl}/mind/config`,
+      patch,
+    );
+  }
+}
+
+/** Voce della lista provider esposta dal backend (senza chiavi, solo forma mascherata). */
+export interface MindProviderInfo {
+  provider: string;
+  model: string;
+  enabled: boolean;
+  has_api_key: boolean;
+  // 24/10: forma mascherata della chiave (es. "sk-a…zXy9"), mai la chiave intera.
+  // "" se il provider non ha chiave (es. ollama).
+  api_key_masked: string;
+}
+
+/** Config Deep Agent esposta dal backend (senza chiavi). */
+export interface MindConfig {
+  provider: string;
+  model: string;
+  workspace: string;
+  rag_enabled: boolean;
+  streaming: boolean;
+  has_api_key: boolean;
+  // 24/10: forma mascherata della chiave del provider attivo ("" se assente/ollama).
+  api_key_masked: string;
+  // punto 7: lista provider con precedenza + fallback (senza chiavi)
+  providers: MindProviderInfo[];
+  fallback_enabled: boolean;
+}
+
+/** Aggiornamento parziale della config Deep Agent. */
+export interface MindProviderEntry {
+  provider: string;
+  model: string;
+  api_key?: string;
+  enabled?: boolean;
+}
+
+export interface MindConfigUpdate {
+  provider?: string;
+  model?: string;
+  workspace?: string;
+  rag_enabled?: boolean;
+  streaming?: boolean;
+  api_key?: string;
+  providers?: MindProviderEntry[];
+  fallback_enabled?: boolean;
 }
 
 /** Singleton instance for PDF operations (local sidecar) */

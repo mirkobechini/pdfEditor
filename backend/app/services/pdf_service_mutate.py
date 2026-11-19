@@ -181,7 +181,7 @@ class PdfServiceMutateMixin:
         self,
         pdf_id: str,
         user_id: str,
-        language: str = "eng",
+        language: str = "ita",
     ) -> tuple[PdfDocument, int, bool]:
         """Run OCR on a scanned PDF and return a searchable PDF.
 
@@ -217,35 +217,54 @@ class PdfServiceMutateMixin:
                     "on this system. Install it or contact the administrator."
                 )
 
+            # 19/11 (Mirko, fix/ocr-migliore-ovunque): l'OCR in-app (condiviso da
+            # desktop/web/mobile via /pdfs/{id}/ocr) usa l'overlay PER-CARATTERE con le
+            # coordinate reali di tesseract (image_to_boxes) -> testo allineato, non il
+            # vecchio single-layer image_to_string/fontsize=1. Default lingua italia.
+            _lang = language
+            try:
+                _avail = set(pytesseract.get_languages(config=""))
+                if _avail and _lang not in _avail:
+                    _lang = "eng" if "eng" in _avail else min(_avail)
+            except Exception:  # noqa: BLE001
+                pass
+
+            import io as _io
+            from PIL import Image as _PIL
+
             character_count = 0
+            _px_to_pt = 72.0 / 300.0
             for page_num in range(doc.page_count):
                 page = doc[page_num]
-                # Render page to image at 200 DPI for OCR
-                pix = page.get_pixmap(dpi=200)
-                img_bytes = pix.tobytes("png")
-
-                # pytesseract needs a PIL Image (or a file path), not raw bytes.
-                from PIL import Image
-                import io
-
-                img = Image.open(io.BytesIO(img_bytes))
-
-                # Run OCR on the page image
-                text = pytesseract.image_to_string(
-                    img, lang=language, config="--psm 3"
-                )
-                stripped = text.strip()
-                if stripped:
-                    character_count += len(stripped)
-                    # Insert recognized text as invisible text layer
-                    page.insert_textbox(
-                        fitz.Rect(0, 0, page.rect.width, page.rect.height),
-                        text,
-                        fontsize=1,
-                        color=(1, 1, 1),
-                        render_mode=3,  # invisible text
-                        overlay=True,
+                pix = page.get_pixmap(matrix=fitz.Matrix(300.0 / 72.0, 300.0 / 72.0))
+                img = _PIL.open(_io.BytesIO(pix.tobytes("png")))
+                img_h = pix.height
+                try:
+                    boxes_txt = pytesseract.image_to_boxes(img, lang=_lang, config="--psm 3")
+                except Exception:  # noqa: BLE001
+                    continue
+                for box_line in boxes_txt.splitlines():
+                    parts = box_line.split()
+                    if len(parts) < 5:
+                        continue
+                    ch = parts[0]
+                    if ch in (" ", "|"):
+                        continue
+                    try:
+                        x1, y1, x2, y2 = (int(parts[i]) for i in (1, 2, 3, 4))
+                    except (TypeError, ValueError):
+                        continue
+                    if x2 - x1 <= 0 or y2 - y1 <= 0:
+                        continue
+                    # tesseract dà y dal BASSO dell'immagine; il PDF usa y dall'alto
+                    page.insert_text(
+                        fitz.Point(x1 * _px_to_pt, (img_h - y1) * _px_to_pt),
+                        ch,
+                        fontsize=max(3.0, (y2 - y1) * _px_to_pt),
+                        fontname="helv",
+                        color=(1, 1, 1), render_mode=3, overlay=True,
                     )
+                    character_count += 1
 
             return character_count, False
 

@@ -5,7 +5,7 @@ import StartupPage from "../page";
 const mockPush = vi.fn();
 
 vi.mock("next/navigation", () => ({
-    useRouter: () => ({ push: mockPush }),
+    useRouter: () => ({ push: mockPush, replace: mockPush }),
 }));
 
 vi.mock("next-intl", () => ({
@@ -28,11 +28,38 @@ vi.mock("next-intl", () => ({
 
 vi.mock("../../../shared/tauri", () => ({
     getApiBaseUrl: () => "http://127.0.0.1:7723",
+    // 24/10: hasStoredSession() chiama isTauri() — il mock deve esportarlo.
+    isTauri: () => false,
 }));
 
 const mockRefreshSession = vi.fn();
 vi.mock("../../../shared/auth", () => ({
     useAuth: () => ({ refreshSession: mockRefreshSession }),
+}));
+
+// Mock stateless di default: ultimo sync mai avvenuto → isSyncing=false e
+// lastSyncResult=null (lo step sync resta pending finché non viene risolto
+// o saltato). Per il caso "sessione autenticata" triggerInitialSync simula il
+// completamento del sync settando lastSyncResult (→ step sync done).
+let mockLastSyncResult: { uploaded: number; downloaded: number; skipped: number; skippedExisting: number; skippedLocked: number; errors: string[] } | null = null;
+let mockIsSyncing = false;
+vi.mock("../../../hooks/CloudSyncContext", () => ({
+    useCloudSyncContext: () => ({
+        triggerInitialSync: vi.fn(async () => {
+            // Autenticato: il sync "completa" subito (nessun file da sync → done).
+            mockIsSyncing = true;
+            mockIsSyncing = false;
+            mockLastSyncResult = { uploaded: 0, downloaded: 0, skipped: 0, skippedExisting: 0, skippedLocked: 0, errors: [] };
+        }),
+        isSyncing: mockIsSyncing,
+        lastSyncResult: mockLastSyncResult,
+        status: {},
+        syncEnabled: false,
+        excludedIds: [],
+        toggleExclude: vi.fn(),
+        pendingCloudDeletions: [],
+        resolveCloudDeletion: vi.fn(),
+    }),
 }));
 
 describe("StartupPage", () => {
@@ -41,6 +68,8 @@ describe("StartupPage", () => {
         vi.useFakeTimers();
         localStorage.clear();
         mockRefreshSession.mockResolvedValue(null);
+        mockLastSyncResult = null;
+        mockIsSyncing = false;
     });
 
     afterEach(() => {
@@ -51,7 +80,6 @@ describe("StartupPage", () => {
         render(<StartupPage />);
         expect(screen.getByText("Avvio applicazione")).toBeInTheDocument();
         expect(screen.getByText("Avvio backend...")).toBeInTheDocument();
-        expect(screen.getByText("Connessione database...")).toBeInTheDocument();
         expect(screen.getByText("Verifica API...")).toBeInTheDocument();
     });
 

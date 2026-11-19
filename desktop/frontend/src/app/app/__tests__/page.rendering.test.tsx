@@ -3,6 +3,12 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import React from "react";
 import EditorPage from "../page";
 
+// #932: EditorPage renderizza ChatAssistant, che usa useRouter da
+// next/navigation — senza il mock la render esplode con
+// "invariant expected app router to be mounted".
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
 // ─── Mocks ────────────────────────────────────────────────────────
 
 const mockListPdfs = vi.fn();
@@ -108,6 +114,20 @@ vi.mock("../../../lib/preferences", () => ({
 vi.mock("../../../hooks/useCloudSync", () => ({
     useCloudSync: () => ({
         status: mockSyncStatus,
+    }),
+}));
+
+vi.mock("../../../hooks/CloudSyncContext", () => ({
+    useCloudSyncContext: () => ({
+        triggerInitialSync: vi.fn(),
+        status: mockSyncStatus,
+        syncEnabled: false,
+        excludedIds: [],
+        toggleExclude: vi.fn(),
+        pendingCloudDeletions: [],
+        resolveCloudDeletion: vi.fn(),
+        isSyncing: false,
+        lastSyncResult: null,
     }),
 }));
 
@@ -252,8 +272,12 @@ describe("EditorPage", () => {
         });
         render(<EditorPage />);
         await waitFor(() => {
-            expect(screen.getByText("☁️")).toBeInTheDocument();
-            expect(screen.getByText("⏳")).toBeInTheDocument();
+            expect(
+                screen.getByTestId("cloud-status-p1").querySelector("svg")?.getAttribute("aria-label"),
+            ).toBe("synced");
+            expect(
+                screen.getByTestId("cloud-status-p2").querySelector("svg")?.getAttribute("aria-label"),
+            ).toBe("pending");
         });
     });
     it("renders user info in sidebar", () => {
@@ -475,7 +499,9 @@ describe("EditorPage", () => {
         });
         render(<EditorPage />);
         await waitFor(() => {
-            expect(screen.getByText("⚠️")).toBeInTheDocument();
+            expect(
+                screen.getByTestId("cloud-status-p1").querySelector("svg")?.getAttribute("aria-label"),
+            ).toBe("error");
         });
     });
     it("shows platform icon for mobile source", async () => {

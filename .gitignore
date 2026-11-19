@@ -66,3 +66,6 @@ frontend/src/shared/
 # Specs files (feature plans, archived, future)
 .specs/
 !desktop/frontend/src/shared/__tests__/
+
+# Deep Agent: file chiavi locale del keystore (mai committato)
+deep_agent_keys.env

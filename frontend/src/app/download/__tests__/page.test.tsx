@@ -29,7 +29,7 @@ globalThis.fetch = mockFetch as any;
 
 const GITHUB_API = "https://api.github.com/repos/mirkobechini/pdfEditor/releases";
 const CHANGELOG_URL =
-    "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev/changelog.en.json";
+    "https://raw.githubusercontent.com/mirkobechini/pdfEditor/main/changelog.en.json";
 
 function mockRelease(tag: string, assets: { name: string; browser_download_url: string }[]) {
     return { tag_name: tag, name: tag, assets };
@@ -181,7 +181,7 @@ describe("DownloadPage", () => {
             expect(screen.getByText("Test coverage")).toBeInTheDocument();
         });
         expect(mockFetch).toHaveBeenCalledWith(
-            "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev/changelog.json",
+            "https://raw.githubusercontent.com/mirkobechini/pdfEditor/main/changelog.json",
         );
     });
 });

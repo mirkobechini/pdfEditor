@@ -20,6 +20,20 @@ vi.mock("../../shared/auth", () => ({
     useAuth: () => ({ refreshSession: vi.fn().mockResolvedValue(null) }),
 }));
 
+vi.mock("../../hooks/CloudSyncContext", () => ({
+    useCloudSyncContext: () => ({
+        triggerInitialSync: vi.fn(),
+        isSyncing: false,
+        lastSyncResult: null,
+        status: {},
+        syncEnabled: false,
+        excludedIds: [],
+        toggleExclude: vi.fn(),
+        pendingCloudDeletions: [],
+        resolveCloudDeletion: vi.fn(),
+    }),
+}));
+
 describe("StartupPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -50,7 +64,9 @@ describe("StartupPage", () => {
 
     it("renders database step", () => {
         render(<StartupPage />);
-        expect(screen.getByText("connectingDb")).toBeInTheDocument();
+        // QA C5 (16/10): lo step "database" è stato rimosso — le migrazioni
+        // avvengono prima di /health, quindi il backend verde implica il DB pronto.
+        expect(screen.getByText("verifyingApi")).toBeInTheDocument();
     });
 
     it("renders API step", () => {

@@ -42,12 +42,20 @@ describe("LandingNavbar", () => {
         expect(registerLink).toBeDefined();
     });
 
-    it("renders logo link to home", () => {
+    it("renders logo link to landing", () => {
         renderWithAuth(<LandingNavbar />);
 
         const logoLinks = screen.getAllByRole("link");
-        const homeLink = logoLinks.find(link => link.getAttribute("href") === "/");
+        const landingLink = logoLinks.find(link => link.getAttribute("href") === "/landing");
 
-        expect(homeLink).toBeDefined();
+        expect(landingLink).toBeDefined();
+    });
+
+    it("renders features and how-it-works anchors to the landing page", () => {
+        renderWithAuth(<LandingNavbar />);
+
+        const links = screen.getAllByRole("link");
+        expect(links.find(l => l.getAttribute("href") === "/landing#features")).toBeDefined();
+        expect(links.find(l => l.getAttribute("href") === "/landing#how-it-works")).toBeDefined();
     });
 });

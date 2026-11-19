@@ -37,6 +37,8 @@ jobs:
           cache: "pip"
       - name: Install dependencies
         run: pip install -r requirements.txt
+      - name: Install tesseract (OCR deps per test_ocr)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-ita
       - name: Run tests with coverage
         run: PYTHONPATH=. pytest tests/ --cov=app --cov-report=term --cov-report=xml -q
       - name: Upload coverage

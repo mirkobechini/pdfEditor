@@ -4,6 +4,7 @@ reorder/remove_pages/replace_text/extract_text plus the text-replacement
 helpers `_find_text_span` and `_safe_text_font`.
 """
 from datetime import datetime, timezone
+from typing import Any
 
 from app.core.storage import save_pdf
 from app.models.pdf import PdfDocument
@@ -171,15 +172,56 @@ class PdfServiceEditMixin:
                     # Insert replacement text
                     if span_info:
                         fontsize = span_info["size"]
-                        fontname = self._safe_text_font(span_info["font"])
-                        origin = span_info["origin"]
+                        # Provare a riusare il font embedded del PDF sorgente
+                        # (stessa resa: font e grandezza originali). Se non si
+                        # può (font non estraibile, glifi mancanti) → fallback
+                        # sicuro helv (garanzia anti-500 della #930).
+                        registered = self._register_replacement_font(
+                            page, source, span_info.get("font", ""), replace
+                        )
+                        font_probe = None
+                        if registered is not None:
+                            fontname, font_probe = registered
+                        else:
+                            fontname = self._safe_text_font(span_info["font"])
+                            try:
+                                font_probe = fitz.Font(fontname=fontname)
+                            except Exception:
+                                font_probe = None
+                        # x = bordo sinistro della PAROLA trovata (rect.x0),
+                        # y = baseline dello span. `span_info["origin"]` è
+                        # l'inizio dell'INTERO span: usarlo rimetterebbe il
+                        # testo all'inizio dello span quando la parola è nel
+                        # mezzo (issue #1016).
+                        origin = (rect.x0, span_info["origin"][1])
                     else:
                         # Fallback: estimate from rect
                         fontsize = rect.y1 - rect.y0 - 2
                         if fontsize < 6:
                             fontsize = 10
                         fontname = "helv"
+                        try:
+                            font_probe = fitz.Font(fontname="helv")
+                        except Exception:
+                            font_probe = None
                         origin = (rect.x0, rect.y0 + 1)
+
+                    # Il PDF non fa reflow: se la parola nuova è più LARGA dello
+                    # spazio della parola trovata, va sopra le parole successive.
+                    # Riduci il fontsize per farla stare dentro rect.width
+                    # (fit-to-width). Il caso opposto (parola più corta) resta
+                    # con lo spazio: è un limite del formato senza riflusso.
+                    if font_probe is not None and fontsize > 0:
+                        try:
+                            needed = font_probe.text_length(
+                                replace, fontsize=fontsize
+                            )
+                            available = max(rect.width, 1.0)
+                            if needed > available:
+                                fontsize = max(4.0, fontsize * (available / needed))
+                        except Exception:
+                            pass
+
                     page.insert_text(
                         origin,
                         replace,
@@ -252,6 +294,81 @@ class PdfServiceEditMixin:
             "size": best_span.get("size", 10),
             "origin": best_span.get("origin", (rect.x0, rect.y0 + 1)),
         }
+
+    def _register_replacement_font(
+        self,
+        page,
+        source,
+        span_font: str,
+        text: str,
+    ) -> tuple[str, Any] | None:
+        """Try to reuse the source PDF's embedded font for the replacement
+        text so it keeps the original font and size look.
+
+        Returns ``(register_name, fitz.Font)`` — the page font name to pass to
+        ``Page.insert_text`` plus the PyMuPDF ``Font`` object (used to measure
+        text for fit-to-width) — or ``None`` to fall back to the safe ``helv``
+        path (#930). We only reuse a font when it actually has glyphs for
+        every non-space character we need to write (checked with
+        ``Font.has_glyph``), so subset-embedded fonts that lack the needed
+        glyphs fall back safely instead of raising.
+        """
+        import fitz
+
+        chars = [c for c in text if not c.isspace()]
+        if not chars:
+            return None
+
+        def norm(name: str) -> str:
+            # Normalize a font name for matching: strip subset prefix
+            # (ABCDEE+), case and non-letters.
+            if not name:
+                return ""
+            return "".join(
+                ch for ch in name.split("+")[-1].lower() if ch.isalpha()
+            )
+
+        span_norm = norm(span_font)
+        try:
+            fonts = page.get_fonts()
+        except Exception:
+            return None
+
+        best = None  # (score, xref, content)
+        for xref, _ext, _type, basefont, name, _encoding in fonts:
+            try:
+                extracted = source.extract_font(xref)
+            except Exception:
+                continue
+            if not extracted or not extracted[3]:
+                continue
+            content = extracted[3]
+            try:
+                font = fitz.Font(fontbuffer=content)
+            except Exception:
+                continue
+            if not all(font.has_glyph(ord(c)) for c in chars):
+                continue
+            # Prefer the font name that best matches the span's font.
+            base_norm = norm(basefont or "")
+            name_norm = norm(name or "")
+            score = 0
+            if span_norm and (span_norm in base_norm or base_norm in span_norm):
+                score += 2
+            if span_norm and (span_norm in name_norm or name_norm in span_norm):
+                score += 1
+            if best is None or score > best[0]:
+                best = (score, xref, content)
+
+        if best is None:
+            return None
+        _, xref, content = best
+        register_name = f"fz{xref}"
+        try:
+            page.insert_font(fontname=register_name, fontbuffer=content)
+            return register_name, fitz.Font(fontbuffer=content)
+        except Exception:
+            return None
 
     def _safe_text_font(self, fontname: str) -> str:
         """Return a font name safe for ``Page.insert_text``.

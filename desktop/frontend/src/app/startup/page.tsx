@@ -3,7 +3,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { getApiBaseUrl } from "../../shared/tauri";
+import { getApiBaseUrl, isTauri } from "../../shared/tauri";
 import { useAuth } from "../../shared/auth";
 
 const API_BASE = getApiBaseUrl();
@@ -17,18 +17,46 @@ interface Step {
     message?: string;
 }
 
+// Fix 16/10 (QA C4): esiste una sessione ricordata? Controlla localStorage
+// (web remember-me) e, su desktop, il token nel Tauri store (load_jwt).
+// La startup usa questo per decidere se andare DIRETTAMENTE all'editor invece
+// che al login: il primo getMe() può fallire per timing anche quando l'utente
+// è ricordato (console: /pdfs 401 ok ma /auth/me ancora non pronto).
+async function hasStoredSession(): Promise<boolean> {
+    if (typeof window === "undefined") return false;
+    if (localStorage.getItem("pdfeditor_remember_token")) return true;
+    if (isTauri()) {
+        try {
+            const { tauriInvoke } = await import("../../shared/tauri");
+            const tok = await tauriInvoke<string>("load_jwt");
+            return !!tok;
+        } catch {
+            return false;
+        }
+    }
+    return false;
+}
+
 export default function StartupPage() {
     const router = useRouter();
     const tc = useTranslations("common");
     const ts = useTranslations("startup");
     const { refreshSession } = useAuth();
+    // Step REALI (fix 16/10): il backend esegue le migrazioni PRIMA di servire
+    // /health, quindi quando /health risponde il DB è già pronto → niente timer
+    // finto che fa diventare lo step database verde "a caso" alle 400ms.
     const [steps, setSteps] = React.useState<Step[]>([
+        // QA C5: 2 step REALI (backend -> api). Lo step "database" era ridondante:
+        // le migrazioni avvengono prima di /health, quindi diventava verde insieme
+        // al backend e dava l'impressione di "verdi tutti insieme a caso".
         { id: "backend", label: ts("startingBackend"), status: "running" },
-        { id: "database", label: ts("connectingDb"), status: "pending" },
         { id: "api", label: ts("verifyingApi"), status: "pending" },
     ]);
     const [allDone, setAllDone] = React.useState(false);
     const [fatalError, setFatalError] = React.useState<string | null>(null);
+    // Il redirect viene gestito UNA sola volta quando allDone diventa true
+    // (evita re-trigger multipli / loop infiniti al re-render).
+    const redirectHandledRef = React.useRef(false);
 
     // Step 1: wait for sidecar health check
     React.useEffect(() => {
@@ -42,12 +70,13 @@ export default function StartupPage() {
                     const res = await fetch(`${API_BASE}/health`, { signal: controller.signal });
                     clearTimeout(timeoutId);
                     if (res.ok) {
+                        // Backend su: le migrazioni DB sono già state fatte prima di
+                        // servire /health, quindi è davvero pronto. QA C5: segniamo
+                        // done solo il backend, poi l'API viene verificata davvero.
                         if (!cancelled) {
                             setSteps((prev) =>
                                 prev.map((s) =>
-                                    s.id === "backend" ? { ...s, status: "done" as const }
-                                        : s.id === "database" ? { ...s, status: "running" as const }
-                                            : s
+                                    s.id === "backend" ? { ...s, status: "done" as const } : s
                                 )
                             );
                         }
@@ -75,28 +104,19 @@ export default function StartupPage() {
         return () => { cancelled = true; };
     }, []);
 
-    // Step 2: once backend is done, mark DB as done with brief delay
+    // Step 2: una volta che il backend è su, passa la verifica all'API.
     React.useEffect(() => {
         const backendStep = steps.find((s) => s.id === "backend");
         if (!backendStep || backendStep.status !== "done") return;
-
-        const timer = setTimeout(() => {
-            setSteps((prev) =>
-                prev.map((s) =>
-                    s.id === "database" ? { ...s, status: "done" as const }
-                        : s.id === "api" ? { ...s, status: "running" as const }
-                            : s
-                )
-            );
-        }, 400);
-
-        return () => clearTimeout(timer);
+        setSteps((prev) =>
+            prev.map((s) => (s.id === "api" ? { ...s, status: "running" as const } : s))
+        );
     }, [steps.find((s) => s.id === "backend")?.status]);
 
-    // Step 3: once DB is done, verify API then redirect
+    // Step 3: verifica API (readiness reale via /pdfs) poi redirect.
     React.useEffect(() => {
-        const dbStep = steps.find((s) => s.id === "database");
-        if (!dbStep || dbStep.status !== "done") return;
+        const backendStep = steps.find((s) => s.id === "backend");
+        if (!backendStep || backendStep.status !== "done") return;
 
         let cancelled = false;
 
@@ -133,32 +153,69 @@ export default function StartupPage() {
         }
         verifyApi();
         return () => { cancelled = true; };
-    }, [steps.find((s) => s.id === "database")?.status]);
+    }, [steps.find((s) => s.id === "backend")?.status]);
 
-    // Redirect once everything is confirmed ready. Also retries session
-    // restoration here (not just the automatic one on app boot): that first
-    // attempt races the sidecar starting up and can lose, silently landing
-    // on the login page even with a valid saved session — only redirecting
-    // to /app a few seconds later once something else re-triggers it. Now
-    // that the backend is confirmed healthy, this retry can't lose that race.
+    // Redirect ONLY when allDone: verifica della sessione (una volta sola) e
+    // destinazione: /app se autenticato, altrimenti /login o /wizard.
+    // Il sync cloud NON blocca più la start-up: gira solo nell'editor
+    // (barra PDF) dopo il mount.
     React.useEffect(() => {
-        if (!allDone) return;
+        if (!allDone || redirectHandledRef.current) return;
+        redirectHandledRef.current = true;
         let cancelled = false;
+        // Fix 16/10 (QA C3): senza timeout il redirect poteva restare appeso a
+        // refreshSession() e la pagina restava "tutta verde" bloccata. Ogni tentativo
+        // ha un timeout (2.5s) e il redirect NAVIGA comunque entro pochi secondi.
+        const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T> =>
+            Promise.race([
+                p,
+                new Promise<never>((_, rej) => setTimeout(() => rej(new Error("timeout")), ms)),
+            ]);
         const redirectTimer = setTimeout(async () => {
-            const restoredUser = await refreshSession();
+            if (cancelled) return;
+            // QA C5: se esiste una sessione ricordata andiamo SUBITO all'editor,
+            // senza aspettare il retry di refreshSession() (che col sidecar appena
+            // su può tardare: era la "pausa" residua che vedevi). Dal login si passa
+            // SOLO se davvero non c'è nessuna sessione salvata.
+            const remembered = await hasStoredSession();
+            if (cancelled) return;
+            if (remembered) {
+                // QA C6 (suggerimento Mirko): se c'è un utente loggato, avviamo
+                // refreshSession() in PARALLELO (non bloccante) PRIMA di entrare
+                // nell'editor, così il nome reale è già pronto alla sidebar e la
+                // pagina profilo non resta più in loading. Non lo attendiamo per
+                // il redirect (sarebbe l'attesa che abbiamo tolto in C5).
+                refreshSession().catch(() => {});
+                router.replace("/app");
+                return;
+            }
+            // Nessuna sessione salvata: prova a ripristinare (web cookie / cloud),
+            // poi vai a /app se autenticato, altrimenti login o wizard.
+            let restoredUser = null;
+            for (let i = 0; i < 2 && !cancelled; i++) {
+                try {
+                    restoredUser = await withTimeout(refreshSession(), 2500);
+                } catch {
+                    restoredUser = null;
+                }
+                if (restoredUser) break;
+                if (cancelled) return;
+                await new Promise((r) => setTimeout(r, 300));
+            }
             if (cancelled) return;
             if (restoredUser) {
-                router.push("/app");
+                router.replace("/app");
                 return;
             }
             const wizardDone = localStorage.getItem("pdfeditor_wizard_done");
-            router.push(wizardDone === "true" ? "/login" : "/wizard");
-        }, 1200);
+            router.replace(wizardDone === "true" ? "/login" : "/wizard");
+        }, 120);
         return () => {
             cancelled = true;
             clearTimeout(redirectTimer);
         };
-    }, [allDone, router, refreshSession]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [allDone]);
 
     function getStepIcon(status: StepStatus) {
         switch (status) {
@@ -176,9 +233,9 @@ export default function StartupPage() {
     function handleRetry() {
         setFatalError(null);
         setAllDone(false);
+        redirectHandledRef.current = false;
         setSteps([
             { id: "backend", label: ts("startingBackend"), status: "running" },
-            { id: "database", label: ts("connectingDb"), status: "pending" },
             { id: "api", label: ts("verifyingApi"), status: "pending" },
         ]);
     }

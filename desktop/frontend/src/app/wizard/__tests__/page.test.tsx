@@ -43,6 +43,8 @@ vi.mock("next-intl", () => ({
 vi.mock("../../../shared/tauri", () => ({
     isTauri: () => false,
     tauriInvoke: vi.fn(),
+    getApiBaseUrl: () => "http://127.0.0.1:7723",
+    getCloudApiBaseUrl: () => "https://pdfeditor-api.mirkobechini.com",
 }));
 
 vi.mock("../../../lib/preferences", () => ({
@@ -134,11 +136,12 @@ describe("WizardPage", () => {
         expect(screen.getByText("Benvenuto in PdfEditor")).toBeInTheDocument();
     });
 
-    it("shows finish button on step 2", () => {
+    it("shows finish button on last step", () => {
         render(<WizardPage />);
         const checkbox = screen.getByRole("checkbox");
         fireEvent.click(checkbox);
-        fireEvent.click(screen.getByText("Continua"));
+        fireEvent.click(screen.getByText("Continua")); // → step 2
+        fireEvent.click(screen.getByText("Continua")); // → step 3
         expect(screen.getByText("Fine")).toBeInTheDocument();
     });
 
@@ -146,7 +149,8 @@ describe("WizardPage", () => {
         render(<WizardPage />);
         const checkbox = screen.getByRole("checkbox");
         fireEvent.click(checkbox);
-        fireEvent.click(screen.getByText("Continua"));
+        fireEvent.click(screen.getByText("Continua")); // → step 2
+        fireEvent.click(screen.getByText("Continua")); // → step 3
         fireEvent.click(screen.getByText("Fine"));
         // Finish must mark wizard as done and go to /login (not /app)
         expect(localStorage.getItem("pdfeditor_wizard_done")).toBe("true");
@@ -157,9 +161,10 @@ describe("WizardPage", () => {
         render(<WizardPage />);
         const checkbox = screen.getByRole("checkbox");
         fireEvent.click(checkbox);
-        fireEvent.click(screen.getByText("Continua"));
+        fireEvent.click(screen.getByText("Continua")); // → step 2
         const folderInput = screen.getByPlaceholderText("Seleziona cartella");
         fireEvent.change(folderInput, { target: { value: "/home/docs" } });
+        fireEvent.click(screen.getByText("Continua")); // → step 3
         fireEvent.click(screen.getByText("Fine"));
         expect(mockUpdatePrefs).toHaveBeenCalledWith({ default_save_folder: "/home/docs" });
     });

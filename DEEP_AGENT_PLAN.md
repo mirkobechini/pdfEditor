@@ -1,0 +1,113 @@
+## Problema/Obiettivo (Mirko 05/10 — piano esteso 15/10)
+Integrare un **Deep Agent** eseguibile dentro l'app desktop PdfEditor, con **RAG**, **chat UI**, **MCP server / REST API**, **multi-provider** e **tools sulle funzionalità dell'app**. Motore riusato da **pdfmind** (che doveva essere il deep agent di questo progetto).
+
+## Requisiti chiave
+- **Offline**: funziona SENZA connessione usando un agente locale (**Ollama** o **llama.cpp** o altro runtime LLM locale).
+- **Online**: con le **key dell'utente** su Claude / OpenAI / OpenRouter / Hugging Face (le inserisce Mirko nel wizard/settings, salvate in locale, mai sul cloud).
+- **Config**: sia nello **step del wizard** (setup iniziale) sia nelle **Impostazioni/Settings** (modificabile): provider, modello, key, workspace, RAG on/off, tutto il Deep Agent.
+- **RAG**: retrieval tra i documenti con memoria; sorgente primaria = **workspace**, + indicizzazione anche dei **PDF aperti singolarmente**. Vector store = **Chroma** (locale, persistito).
+- **Chat UI**: pallino flottante **sotto** l'area fast actions (stile chatbot web), pannello chat, streaming, task list visibili. Grafica da rifinire.
+- **Tools esposti all'agente**: split, merge, sign, annotate/highlight, OCR, compress, convert DOCX→PDF, export, share, print, rename, delete — chiamano le API reali dell'app.
+- **REST API pubblica (prima) + MCP server (dopo)** consumabile da altri sistemi; "skills" documentate.
+- **Passo futuro**: interazione **vocale** (dopo che sarà perfettamente funzionante).
+
+## Dove vive
+Nel repo **pdfEditor (monorepo)**, dentro `backend/`. pdfmind resta standalone come riferimento: il codice si porta/riusa dentro pdfEditor.
+
+## Micro-tranche (tutte su UNICO branch feature/932-deep-agent, UNICA PR a fine feature — decisione Mirko 15/10: non PR per tranche, ma verifica incrementale)
+- **T0a — Copiare motore pdfmind in `backend/` (agents/, tools/, server/mind.py); import funzionanti, inattivo.** ✅ COMPLETATA 2026-10-15: motore in `backend/app/deep_agent/` (agents/pdfmind.py + tools/docs,workspace,profile,dev + server/mind.py non montato), import adattati a `app.deep_agent.*`, deps aggiunte a `backend/requirements.txt` (deepagents, langchain-ollama, langchain-openai, pypdf), test `tests/test_deep_agent_t0a.py` **9/9 verdi** (import, build agent senza LLM, profilo user senza tool dev, profilo dev con tool dev, path guard scrivi_output, docs tool su testo). `main.py` non monta rotte mind (motore inattivo).
+- **T0b — Rotta `/mind` separata nel backend pdfEditor (router dedicato, non in UI).** ✅ COMPLETATA 2026-10-15: creato `backend/app/api/v1/mind.py` (router `/mind` con `/health`, `/config`, `/chat` SSE, `/approve`), montato in `main.py` (`from app.api.v1.mind import router as mind_router` + `app.include_router(mind_router)`). Profilo forzato a `user` in questa fase. Verificato via TestClient: `/mind/health` 200, `/mind/config` 200, metodi errati 405, chat senza `goal` 422. Test `tests/test_deep_agent_t0b.py` **4/4 verdi**.
+- **T0c — Sicurezza profili: solo `user`, nessun tool dev esposto.** ✅ COMPLETATA 2026-10-15: `/mind/chat` rifiuta (400) qualsiasi profilo ≠ `user` (`_ALLOWED_PROFILES = {"user"}`), con fallback mai-dev; tool dev (git, log, API, issue) assenti per costruzione dalla tool list user. Test `tests/test_deep_agent_t0c.py` **4/4 verdi** (dev→400, sconosciuto→400, default user senza chiamate LLM, tool list user senza tool dev).
+- **T1a — Estendere `_resolve_model` per Claude + OpenRouter.** ✅ COMPLETATA 2026-10-15: aggiunti prefissi `anthropic:` (ChatAnthropic, env `PDFMIND_ANTHROPIC_API_KEY`/`_BASE_URL`) e `openrouter:` (ChatOpenAI su `https://openrouter.ai/api/v1`, env `PDFMIND_OPENROUTER_API_KEY`), mantenendo `ollama:`/`openai:`; esposto `SUPPORTED_PREFIXES`. Test `tests/test_deep_agent_t1a.py` **7/7 verdi** (resolver per provider, key configurata, fallback stringa non nota).
+- **T1b — Aggiungere OpenAI + Hugging Face al resolver; test con key utente.** ✅ COMPLETATA 2026-10-15: aggiunto prefisso `huggingface:` (HF Inference OpenAI-compatible → ChatOpenAI su `https://api-inference.huggingface.co/v1`, env `PDFMIND_HF_API_KEY`/`_BASE_URL`); OpenAI già coperto da `openai:`. Provider supportati completi: ollama, anthropic, openai, openrouter, huggingface. Test `tests/test_deep_agent_t1b.py` **4/4 verdi** (HF→ChatOpenAI, base_url default, openai con key, tutti i prefissi).
+- **T2a — Ingest + chunking PDF della workspace (senza vector store).** ✅ COMPLETATA 2026-10-15: creato `backend/app/deep_agent/rag/indexer.py` — estrazione testo (PyMuPDF/pypdf o txt/md), chunking per dimensione con overlap, `ingest_workspace` (sola root), `save_index`→`.mind_index/chunks.json`, `load_index`. Mai tocca i file originali. Test `tests/test_deep_agent_t2a.py` **8/8 verdi** (chunking short/long/empty, extract txt, ingest file source/index, ingest+save+load preserva originali, dir mancante, index mancante).
+- **T2b — Chroma: embeddings + vector store persistito + retrieval con citazioni.** ✅ COMPLETATA 2026-10-15: creato `backend/app/deep_agent/rag/store.py` — `index_chunks` (upsert per id `source#index`, metadati source/page/index), `search(k)` con ritorno di source+page+score come citazioni, `count`, persist su `.mind_chroma/` (locale, offline-first; embedding Chroma default all-MiniLM-L6-v2). Deps: + `chromadb`. Test `tests/test_deep_agent_t2b.py` **4/4 verdi** (index+count, search con citazioni, query ritrova il doc giusto, metadati).
+- **T3a — Config backend: provider/modello/key/workspace/RAG (API + persistenza locale).** ✅ COMPLETATA 2026-10-15: creato `backend/app/deep_agent/config.py` (store JSON locale in app data dir, chiavi mai sul cloud, `public()` senza chiavi, `env_for()` mappa provider→env), endpoint `GET/PUT /mind/config` nel router. Test `tests/test_deep_agent_t3a.py` **6/6 verdi** (public mai chiavi, save preserva default, load default, env_for, GET/PUT via HTTP).
+- **T3b — UI config: step nel wizard + sezione Impostazioni.** ✅ COMPLETATA 2026-10-15 (frontend desktop): in `useSettingsPage` aggiunta sezione `deep_agent` + stato `mindConfig` (lazy load via `getMindConfig`) e handler (`setMindConfigField`, `setMindConfigApiKey`, `saveMindConfig`, `mindConfigError`); in `SettingsTabs` nuovo tab Deep Agent (provider, modello, workspace, RAG toggle, chiave API, salva); in `shared/src/api.ts` (fonte di verità, NON la copia generata `desktop/frontend/src/shared/`) aggiunti `getMindConfig`/`updateMindConfig` + tipi `MindConfig`/`MindConfigUpdate`; wizard con passo 03 Deep Agent (provider/modello/RAG/chiave) che in `handleFinish` salva la config via `api.updateMindConfig`; chiavi i18n `deepAgent*`/`wizard*` in `messages/it.json`+`en.json`. Typecheck frontend pulito. Le chiavi utente restano locali, mai esposte.
+  ⚠️ Appreso: `desktop/frontend/src/shared/` è GENERATO da prebuild da `shared/src/` (commit df1f88a4 lo rimosse dal tracking) — le edit ad api.ts vanno fatte lì, non nella copia.
+- **T4a — Chat UI base: pallino sotto fast actions + pannello chat + streaming.** ✅ COMPLETATA 2026-10-15: creato `desktop/frontend/src/components/ChatAssistant.tsx` (pallino flottante 🐵 in basso a destra sotto le fast actions, pannello chat 380×520 con streaming SSE via `POST /mind/chat`, parsing eventi `[TASK]`/`[STEP]`/`[DONE]`, storico, stato "pensando", errori); chiavi i18n namespace `chat` (it/en: title, placeholder, send, close, welcome, error, thinking, task); integrato in `app/app/page.tsx` (`<ChatAssistant apiBase={API_BASE}/>`). Typecheck frontend pulito.
+- **T4b — HUD chat: task list visibili + stati + errori.** ✅ COMPLETATA 2026-10-15: in `ChatAssistant.tsx` — task emessi dal motore (`[TASK]`) mostrati in un pannello con **stato visivo** (spinner finché running → ✓ quando done), messaggi d'errore tipizzati per codice (401 → errorAuth, 422 → errorValidation, no body → errorConnection, default → error) con bordo/rossiccio dedicato, messaggi con flag `error`. Chiavi i18n `chat.errorAuth/errorValidation/errorConnection` aggiunte (it/en). Typecheck frontend pulito.
+- **T5a** — Tool: split + merge via agent. ✅ COMPLETATA 2026-10-15: creato `backend/app/deep_agent/tools/pdf_ops.py` — tool `split_pdf(pdf_id, mode="every"|"range", ranges)` e `merge_pdfs(pdf_ids)` che avvolgono il servizio reale `PdfMergeSplitService` (apertura `SessionLocal`, risoluzione utente da `PDFMIND_USER_ID` o super-admin, ritorno stringa); connessi al profilo user; validazione mode="range" prima del DB. Test `tests/test_deep_agent_t5a.py` **5/5 verdi**. ⚠️ Promemoria Mirko 15/10: **dopo T6 fare BUILD LOCALE + checklist "cosa provare"** (vedi Passi futuri).
+- **T5b** — Tool: sign + annotate/highlight. ✅ COMPLETATA 2026-10-15: aggiunti a `tools/pdf_ops.py` — `sign_pdf(pdf_id, signature_image_b64, page_number, x, y, width, height)` e `annotate_pdf(pdf_id, annotation_type, rect, page_number, color, content)` che avvolgono `PdfService` (che compone il mixin di mutate — la classe giusta è `PdfService`, NON `PdfServiceMutate` che non esiste come entry point); validazioni in testa (base64, pagina, dimensioni, tipo, rect); connessi al profilo user. Test `tests/test_deep_agent_t5b.py` **7/7 verdi**.
+- **T5c** — Tool: OCR + compress + convert DOCX→PDF. ✅ COMPLETATA 2026-10-15: aggiunti a `tools/pdf_ops.py` — `ocr_pdf(pdf_id, language)` (avvolge `PdfService.ocr_pdf`, gestisce already_searchable), `compress_pdf(pdf_id, quality, overwrite)` (`PdfMergeSplitService.compress`), `convert_docx_to_pdf(filename, content_b64)` (`PdfService.import_file_to_pdf`); validazioni in testa; connessi al profilo user (insieme a split/merge/sign/annotate = famiglia tool app completa). Test `tests/test_deep_agent_t5c.py` **7/7 verdi**.
+- **T6** — REST API pubblica documentata (/mind/*, OpenAPI). ✅ COMPLETATA 2026-10-15: `mind.py` — ogni rotta con `summary`/`description` OpenAPI (health, config GET/PUT, chat, approve); aggiunta **`GET /mind/skills`** che elenca i tool dell'agente (per consumatori esterni) e le capabilities (chat streaming/task/HITL, config, RAG); router con `responses` 401. Test `tests/test_deep_agent_t6.py` **3/3 verdi** (skills elenca strumenti, schema con tutte le rotte + summary, schema valido).
+- **T7** — MCP server.
+- **T8** — Rifinitura grafica chat.
+- **T9a (16/10) — FIX workspace fantasma: colonna `default_save_folder` nel modello + repo + API + test.** ✅ COMPLETATA 2026-10-16: il mistero dei "file che non so da dove vengano" era il fallback: `UserPreference` NON aveva la colonna `default_save_folder` (quindi il valore selezionato nelle Impostazioni veniva scartato) e `resolve_workspace` cascava su una **cartella letterale `"workspace"`** relativa al CWD del backend. Aggiunta colonna `default_save_folder` (String(512), default "") al modello, gestione in `PreferenceRepository.upsert` (nuovo + update), esposta in `GET/PUT /settings` (PreferenceResponse/PreferenceUpdateRequest), aggiunta a `Preferences` in `shared/src/types.ts` + fallback in `shared/src/api.ts`. Test `tests/test_deep_agent_workspace_fix_oct16.py` **5/9** (repo persist + update, GET/PUT settings). Regressioni verdi (t0a/t2a/t2b/fix_oct15/migration).
+- **T9b (16/10) — FIX workspace fantasma: elimina fallback fittizio + tool rispondono "workspace non configurata".** ✅ COMPLETATA 2026-10-16: `resolve_workspace()` ritorna **stringa vuota** (non più `"workspace"`) se env/config/prefs non risolvono; `tools/workspace.py` (elenca/leggi/scrivi_output) rispondono "workspace non configurata" quando root è None; `tools/docs.py` _resolve e `rag/indexer.py` gestiscono root vuota (niente CWD). Test **4/9** aggiuntivi (resolve vuoto, env override, pref usata, tool unconfigured/configured). Regressioni verdi. Typecheck TS pulito, shared-sync OK.
+
+Regola: **prima di passare alla tranche successiva si verifica che tutte le precedenti funzionino** (test + esito osservabile + merge verde).
+
+## Passi futuri
+- **Dopo T6 → BUILD LOCALE + checklist test manuale (richiesto Mirko 15/10)**: compilare l'installer desktop e fornire una checklist "cosa provare" (config wizard/settings, e chat con Ollama locale, split/merge/sign/OCR via agent, RAG con citazioni, MCP raggiungibile).
+- Voce (ascolta/risponde).
+- Subagent paralleli.
+- **B2B / cloud (chiarito da Mirko 23/10)**: (a) il deep agent deve poter usare anche i **file sincronizzati col cloud** (cloud sync) oltre alla workspace locale; (b) **in futuro web app del deep agent** — su web niente Ollama, quindi soltanto provider cloud (requisito offline-first vale per l'edizione desktop). (⚠️ dipende dal cloud sync funzionante — da indagare, vedi memory/2026-10-23).
+
+## Test DIFENSIVI deterministici (aggiunti 23/10 — Mirko: "prima dei test E2E, ci accorgiamo quando rompiamo qualcosa?")
+
+File: `tests/test_deep_agent_defensive.py` — **network-free e deterministici** (fake agent, NIENTE Ollama/rete), come raccomanda la doc ufficiale deepagents (Testing Guide: "unit test network-free and deterministic", fake chat models; i test col provider reale vanno in `tests/integration_tests/` separati). Coprono i bug emersi dai test manuali:
+1. elenca cartella vuota != workspace vuoto (root piena + output vuota -> "cartella output/ vuota")
+2. elenca filtra SOLO la cartella richiesta (mai la root)
+3. HITL description col NOME reale del file (elimina: non "il file indicato")
+4. orchestrazione RETRY: 1° giro senza tool -> 2° giro forzato
+5. elenca mostra l'esito REALE del tool, non la narrativa a memoria del modello
+6. conferme positive riconosciute (si/va bene/ok/riprova/fallo...) + domande di capacità non trattate come operazioni
+Verificati: 8/8 verdi, suite completa 117/117 verdi.
+
+## Accept
+1. Agent parte offline (Ollama/llama.cpp) e online (almeno 1 provider cloud) con la workspace scelta.
+2. Config in wizard + settings, con le key dell'utente salvate in locale.
+3. RAG risponde citando i documenti (workspace + PDF aperti).
+4. Chat UI con pallino flottante, streaming e task list.
+5. Tools (split/sign/annotate/OCR/...) eseguibili via agent sulle API dell'app.
+6. MCP server raggiungibile da un client esterno.
+7. Nessun break delle feature esistenti; test verdi.
+
+## Aggiornamenti advance
+(da compilare man mano che completi tranche)
+
+### 🔧 Bug 21/10 — esiti FINTI (il modello "procede/eliminato/unito" senza chiamare i tool) — FIX fatto
+- **Diagnosi**: il modello (es. deepseek-v4-flash) non chiama i tool operativi → risponde "fatto/eliminato/unito" senza eseguire nulla. L'HITL scatta solo se il tool viene chiamato.
+- **Fix 1 — prompt tool-first** `agents/pdfmind.py`: regola d'oro "le parole non eseguono nulla", chiama SUBITO lo strumento senza domande, mai dichiarare esiti non visti.
+- **Fix 2 — guard lato server** `server/mind.py`: funzioni `_wants_operation` + set `OPERATIVE_TOOLS`; a fine stream, se il messaggio chiede un'operazione ma nessuno strumento operativo è stato chiamato → emette "⚠️ NON eseguito ...".
+- **Fix 3 — orchestrazione host-side** `agents/pdfmind.py` (21/10): il guard segnalava ma non risolveva. Seguendo la doc ufficiale (context7 deepagents: `wrap_model_call`/`request.override`) implementato `ForceToolCallMiddleware`: quando l'ultimo messaggio utente richiede uno strumento (operazione O elenco/lettura), RESTRINGE i tool offerti al modello al sottoinsieme pertinente e forza `tool_choice` (nome esatto se 1 tool, altrimenti `any`) → il modello DEVE chiamare lo strumento (mai più risposta "a memoria"). Verificato sul modello reale Ollama (qwen3.5:9b-nothink): superficie ristretta = chiamata stabile; con 25 tool era flaky. Funzioni di intent unificate in `pdfmind.py` e importate dal server.
+- **Test**: `tests/test_deep_agent_guard_fake.py` 8/8 verdi (guard + listing + forced tools + hook middleware); suite deep agent completa **95/95 verdi**.
+
+### 🔧 Giro di fix 22/10 — dal test nuovo utente di Mirko (build 0e1bdda1)
+
+Mirko ha rifatto il test da utente nuovo e ha trovato 4 problemi veri, tutti fixati:
+1. **Workspace "non configurata" al primo avvio**: il wizard salvava la cartella SOLO in `default_save_folder` (prefs) e non nella config Deep Agent → `resolve_workspace` la vedeva vuota. FIX: `wizard/page.tsx` `handleFinish` ora passa `workspace: workFolder` a `updateMindConfig`.
+2. **Nessun bottone Procedi/Annulla su merge a nomi esatti**: il predicato `when` HITL interrompeva solo se il nome era simile ma non esatto. Scelta di Mirko (22/10): **conferma SEMPRE col bottone, anche a file esatti**. FIX: `_confirm_config` ora usa `when=lambda req: True` (attenzione: `when=True` crasha — deepagents invoca `when(req)`, serve un callable) per merge/split/sign/annotate/ocr/compress.
+3. **Risposte a memoria nei turni di conferma/multi-turno** ("si unisci anche quello", "va bene" → il modello raccontava di aver unito/eliminato senza chiamare tool): doppio fix — (a) `ForceToolCallMiddleware` esteso: riconosce le conferme positive (`_is_positive_confirmation`: si/sì/va bene/ok/procedi/unisci anche...) e risale all'ULTIMA richiesta operativa del thread per forzare lo strumento giusto; (b) **guard lato server potenziato** in `mind.py._events`: il testo viene BUFFERIZZATO e mostrato SOLO se uno strumento pertinente è stato chiamato, altrimenti esce solo "⚠️ NON eseguito ..." (niente testo finto che passa per vero). Verificato sul modello reale: "va bene" dopo un'operazione → guard scatta senza testo inventato.
+4. **Sidebar non aggiornata dopo il download iniziale** (minore, UI): da sistemare in un giro separato.
+- **Test**: guard test 9/9 (aggiunto `_is_positive_confirmation`); suite deep agent completa **96/96 verdi**.
+
+### 🔧 Bug aggiuntivi segnalati da Mirko il 16/10 (test build 7ea09b1f) — FIX fatto
+- **Wizard non arriva allo step 3 (Deep Agent)**: il bottone mostrava "Finish" già allo step 2 (condizione `currentStep < 1` invece di `currentStep < steps.length - 1`) → lo step Deep Agent era irraggiungibile. FIX: `desktop/frontend/src/app/wizard/page.tsx` — "Continue" finché non si è sull'ultimo step; contatore progressi `total` corretto da 2 a `steps.length`. Typecheck pulito.
+- **Auto-login su /login**: comportamento atteso (ripristino sessione/remember-me), non un bug. Da confermare con Mirko se vuole disabilitarlo.
+
+
+
+### 🔧 Giro 07–09/11 — gestione chiavi + errori provider + funzionalità (build test manuale Mirko)
+- **Chiavi nel secure store (24/10→07/11)**: `keystore.py` — keyring del SO (Windows Credential Locker / macOS Keychain / SecretService) con fallback `.env` locale (permessi 0600). Il config JSON non contiene MAI la chiave (solo `has_api_key` calcolato al volo); migrazione automatica delle config vecchie. Commits `5794e89b`, `17235288`, `b0d92691`.
+- **Chat muta col cloud / "non cambia la chiave" (08/11, c5a1cbae)**: nuovo `_iter_astream` avvolge `agent.astream` e NORMALIZZA le eccezioni (timeout/401/403/404/429/rete) in messaggi italiani — lo stream non muore più in silenzio. Fix chiave dalla riga del provider (`b0d92691`).
+- **401 "User not found" (09/11)**: `test_connection` replica la chiamata REALE (chat/completions) oltre a `/auth/key`; messaggi d'errore con `provider:modello` + sorgente chiave mascherata + URL + corpo grezzo; `keystore.clean_key()` normalizza le chiavi incollate sporche; il `label` di `/auth/key` non viene mai mostrato.
+- **Modello in chat**: evento SSE `[MODEL]` + badge nell'header (letto anche dal config al primo open).
+- **UI**: scroll corrett testo impostazioni + scrollbar custom, card leggibile per il risultato del test connessione, chat senza sborrda (pannello 440px adattivo, break-words).
+- **Tool**: sandbox dei percorsi alla workspace (`leggi_pdf`...), HITL leggibili (`scrivi_output`, `compress`), livello compressione richiesto se non indicato, prompt "se manca il tool non eseguire azione diversa". Split in cartella `x-split` confermato da Mirko.
+- **Test**: `test_deep_agent_defensive.py` 16/16, `test_deep_agent_key_flow.py` 19/19, suite backend 661+ passati / 1 skip, frontend 1045 passati (61 file), typecheck pulito.
+
+## OCR — decisione 19/11 (Mirko): motore professionale OCRmyPDF
+- Il metodo a coordinate (image_to_boxes) è allineato e validato su documento pulito, ma su scan reali tesseract crudo riconosce poco → si passa a **OCRmyPDF** (strada A): gestisce deskew, layout, e produce il layer cercabile come le altre app.
+- Licenze documentate in `THIRD_PARTY_NOTICES.md` (Ghostscript AGPL-3.0 — nota inclusa; tesseract/qpdf Apache-2.0; ocrmypdf/pikepdf MPL-2.0; img2pdf LGPL-3.0).
+- Bundling nel sidecar: da completare isolando le DLL di tesseract (conflitto PyInstaller degli 11/11).
+- Il secondo layer resta l'approccio corretto (immagine + testo invisibile): spiegato a Mirko il 19/11.
+
+### OCR — ESITO 19/11 (chiuso, Mirko)
+- Integrato OCRmyPDF (strada A) nel deep agent: validato in locale sul file reale (allineamento esatto sul testo stampato, `ita+eng`), fallback al metodo manuale se il motore non c'e'.
+- In-app (rotta condivisa desktop/web/mobile): allineato all'OCR MIGLIORE via PR #1040 — overlay PER-CARATTERE con image_to_boxes (default ita, fallback eng); tests/test_ocr.py adeguati al percorso nuovo (7/7).
+- Limite noto: calligrafie/testo decorativo (es. diplomi) non vengono riconosciuti da nessun OCR base.
+- **Miglioria futura registrata:** OCR a IA esterno (Google/Azure/Amazon) per calligrafia/firme, o preprocessing avanzato. NON nel sidecar.
+### Licenze (19/11)
+- `THIRD_PARTY_NOTICES.md` (componenti OCR) + `LICENSING.md` (decisione: Opzione 1 Apache-2.0; Opzione 2 fallback vendita chiusa = licenze commerciali Artifex per PyMuPDF/Ghostscript).
