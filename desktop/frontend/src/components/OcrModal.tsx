@@ -46,6 +46,9 @@ export default function OcrModal({ open, onClose, pdfId, onSuccess }: OcrModalPr
             const res = await api.ocrPdf(pdfId, language);
             setResult(res);
             onSuccess?.();
+            // 19/11 (Mirko): a successo il dialog si chiude da solo, non serve
+            // premere Annulla o cliccare fuori.
+            window.setTimeout(() => onClose(), 1300);
         } catch (err) {
             setError(t("failed") + ": " + apiError(err));
         } finally {

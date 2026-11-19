@@ -259,8 +259,8 @@ class PdfServiceMutateMixin:
                         _c = int(confs[i])
                     except (TypeError, ValueError):
                         _c = 0
-                    if _c < 15:
-                        continue
+                    if _c < 0:
+                        continue  # image_to_data: conf <0 = non disponibile; acchia appare tutti
                     _x = int(data["left"][i]); _y = int(data["top"][i])
                     _w = int(data["width"][i]); _h = int(data["height"][i])
                     if _w <= 0 or _h <= 0:
