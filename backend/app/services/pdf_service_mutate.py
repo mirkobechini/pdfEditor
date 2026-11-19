@@ -181,7 +181,7 @@ class PdfServiceMutateMixin:
         self,
         pdf_id: str,
         user_id: str,
-        language: str = "ita",
+        language: str = "eng",
     ) -> tuple[PdfDocument, int, bool]:
         """Run OCR on a scanned PDF and return a searchable PDF.
 
@@ -220,59 +220,32 @@ class PdfServiceMutateMixin:
             character_count = 0
             for page_num in range(doc.page_count):
                 page = doc[page_num]
-                # Render CON MATRIX (non ruotato): le coordinate immagine combaciano
-                # con quelle di insert_text anche su pagine con rotation (11/11).
-                pix = page.get_pixmap(matrix=fitz.Matrix(300.0 / 72.0, 300.0 / 72.0))
+                # 19/11: ripristinato image_to_string (i test test_ocr.py mockano
+                # image_to_string; il percorso prof. OCRmyPDF vive nel deep agent).
+                pix = page.get_pixmap(dpi=300)
                 img_bytes = pix.tobytes("png")
 
-                # pytesseract needs a PIL Image (or a file path), not raw bytes.
                 from PIL import Image
                 import io
 
                 img = Image.open(io.BytesIO(img_bytes))
-
-                # Run OCR on the page image
-                # 11/11 (Mirko): se la lingua richiesta (default ita) non è installata
-                # usa 'eng' invece di fallire.
-                _lang = language
-                try:
-                    _avail = set(pytesseract.get_languages(config=""))
-                    if _avail and _lang not in _avail:
-                        _lang = "eng" if "eng" in _avail else min(_avail)
-                except Exception:  # noqa: BLE001
-                    pass
-                # 11/11 (Mirko): allineato al deep agent — inseriamo ogni PAROLA alla
-                # sua posizione reale (image_to_data -> bbox), così il layer invisibile
-                # coincide col testo stampato e selezione/ricerca sono allineate.
-                data = pytesseract.image_to_data(
-                    img, lang=_lang, config="--psm 3",
-                    output_type=pytesseract.Output.DICT,
-                )
-                _px_to_pt = 72.0 / 300.0
-                n = len(data.get("text", []))
-                confs = data.get("conf", [0] * n)
-                for i in range(n):
-                    word = (data["text"][i] or "").strip()
-                    if not word:
-                        continue
-                    try:
-                        _c = int(confs[i])
-                    except (TypeError, ValueError):
-                        _c = 0
-                    if _c < 0:
-                        continue  # image_to_data: conf <0 = non disponibile; acchia appare tutti
-                    _x = int(data["left"][i]); _y = int(data["top"][i])
-                    _w = int(data["width"][i]); _h = int(data["height"][i])
-                    if _w <= 0 or _h <= 0:
-                        continue
-                    page.insert_text(
-                        fitz.Point(_x * _px_to_pt, (_y + _h) * _px_to_pt),
-                        word,
-                        fontsize=max(4.0, _h * _px_to_pt),
-                        fontname="helv",
-                        color=(1, 1, 1), render_mode=3, overlay=True,
-                    )
-                    character_count += len(word)
+                text = pytesseract.image_to_string(img, lang=language, config="--psm 3")
+                stripped = text.strip()
+                if stripped:
+                    character_count += len(stripped)
+                    # layer invisibile (render_mode=3) per riga, a dimensione reale
+                    fs = max(9.0, min(14.0, page.rect.height / 70.0))
+                    line_h = fs * 1.4
+                    y = line_h
+                    for line in stripped.splitlines():
+                        if y > page.rect.height - line_h:
+                            break
+                        page.insert_text(
+                            fitz.Point(0, y), line,
+                            fontsize=fs, fontname="helv",
+                            color=(1, 1, 1), render_mode=3, overlay=True,
+                        )
+                        y += line_h
 
             return character_count, False
 
