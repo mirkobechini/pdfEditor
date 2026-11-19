@@ -425,7 +425,7 @@ def test_ocr_default_lingua_italiana():
     from app.services import pdf_service_mutate as mut
 
     assert inspect.signature(pdf_ops.ocr_pdf).parameters["language"].default == "ita"
-    assert inspect.signature(mut.PdfServiceMutateMixin.ocr_pdf).parameters["language"].default == "eng"
+    assert inspect.signature(mut.PdfServiceMutateMixin.ocr_pdf).parameters["language"].default == "ita"
 
 
 def test_ocr_pdf_usa_ocrmypdf_se_disponibile(ws_root, monkeypatch):
