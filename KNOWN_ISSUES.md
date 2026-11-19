@@ -33,7 +33,46 @@
 
 ---
 
-## 🔴 Bug aperti
+
+## ✅ Risolte il 09/11 (giro test funzionali Deep Agent)
+
+| Issue | Fix |
+| ----- | ---- |
+| DA-1 | 401 "User not found" in chat con test verde: era una chiave VECCHIA nel keystore, non quella appena creata. Fix: `test_connection` replica la CHIAMATA REALE (`chat/completions`, max_tokens=1) oltre a `/auth/key` — non può più dire OK se la chat fallisce |
+| DA-2 | Errori provider ora leggibili e diagnosticabili: `provider:modello` + da dove arriva la chiave (keystore/env/assente, mascherata) + URL + corpo grezzo. Il `label` di `/auth/key` NON viene mostrato (era un frammento di chiave) |
+| DA-3 | Modello in uso visibile in chat: evento SSE `[MODEL] provider:modello` + badge nell'header |
+| DA-4 | Impostazioni: prima scrollava tutta la pagina con la sidebar → `h-screen`+`overflow-hidden`, `main` scrolla da solo, sidebar con scroll proprio; scrollbar custom |
+| DA-5 | Chiave incollata sporca (spazi/newline/virgolette/prefisso `Bearer `): `keystore.clean_key()` in lettura e scrittura |
+| DA-6 | `leggi_pdf`/`riassumi`/`estrai`/`confronta` con un percorso ASSOLUTO fuori workspace: prima FileNotFoundError mostrato come "errore del provider"; ora la ricerca è sandbox alla workspace e risponde "file non trovato..." coi file disponibili |
+| DA-7 | HITL `scrivi_output` illeggibile ("Tool execution requires approval Args:{...}") → "Scrivi il file output/note.txt con il testo 'ciao'" |
+| DA-8 | `compress`: ora chiede il livello (leggera/media/forte) e l'HITL lo mostra; prima comprimeva in silenzio con default |
+| DA-9 | Conversione errata (ha firmato un PDF al posto di convertire un JPG): regola prompt "se manca lo strumento giusto NON eseguire un'azione diversa" |
+| DA-10 | Chat con scrollbar orizzontale / testo che sborda → pannello 440px adattivo, `break-words`, niente overflow-x, blocchi di codice scrollabili internamente |
+
+### Cloud sync — report scorretto (segnalato da Mirko 09/11)
+
+- **Sintomo:** con 3 file locali sincronizzati con il cloud, il report di sync continua a dare **0** su caricati, scaricati e saltati.
+- **Stato:** APERTO — non investigato. Da riprodurre e capire se il report conta le operazioni effettive o si azzera erroneamente.
+
+### Viewer PDF desktop — testo non selezionabile/cercabile (causa reale "OCR sembra non funzionare") — APERTO 10/11
+
+- **Sintomo:** dopo l'OCR, né Ctrl+F né la selezione col mouse trovano il testo (sia via deep agent sia via il pulsante OCR in-app).
+- **Causa reale:** NON è l'OCR. `PdfViewer.tsx` renderizza la pagina SOLO su `<canvas>` e non monta il **text layer** di pdf.js → in app NESSUN PDF (nemmeno uno già testuale) è selezionabile/cercabile: il testo disegnato su canvas non è nel DOM, quindi il Ctrl+F del browser non lo trova.
+- **Verifica:** pdf.js 3.11.174 (versione usata) estrae correttamente il testo OCR invisibile da `getTextContent` (testato localmente: `PAROLA_RICERCABILE_INVISIBILE` presente). Quindi il file OCR è buono; manca il supporto selezione/ricerca nel viewer.
+- **Fix necessario (feature):** aggiungere il text layer di pdf.js in `PdfViewer` — FATTO (testo selezionabile/Ctrl+F per qualunque PDF).
+- **Qualità OCR su scan reali (19/11, Mirko) — CHIUSO come da decisione Mirko.** OCRmyPDF integrato (strada A) e validato in locale sul file reale: riconoscimento e allineamento corretti per il testo stampato (es. intestazione "REPUBBLICA ITALIANA / MINISTERO..."). Limite noto: su calligrafie/testo decorativo dentro cornici (es. diplomi) il motore non legge (è lo stesso limite di Adobe/Tesseract base).
+- **⬆️ Miglioria futura possibile (registrata 19/11):** per leggere anche calligrafie/firme/dati in documenti decorativi servirebbe un **OCR a IA** (Google Vision / Azure Form Recognizer / Amazon Textract) come servizio esterno a pagamento, oppure un preprocessing avanzato (deskew+enhance) — NON nel sidecar. Da valutare se necessario.
+- **Licenze OCR**: documentate in `THIRD_PARTY_NOTICES.md` (Ghostscript AGPL-3.0 con nota, tesseract/qpdf Apache-2.0, ocrmypdf/pikepdf MPL-2.0, img2pdf LGPL-3.0).
+- **Workaround per verificare subito l'OCR:** aprire `output/*_ocr.pdf` in un viewer esterno (Adobe/Chrome/Okular) → il testo è selezionabile.
+
+### Deep Agent — feature request (Mirko 09/11)
+- **Aprire in app i file del deep agent**: i file che il deep agent manipola/vede nella workspace (es. il risultato OCR in `output/`) dovrebbero potersi aprire direttamente nell'editor PdfEditor, senza doverli ricaricare ogni volta. Da progettare: selezione file dell'agent → apertura nel viewer (probabilmente via un elenco dei file della workspace con "Apri" che chiama l'apertura del PDF esistente in app).
+
+### Deep Agent — bug aperti / futuri
+
+- **OCR su file del workspace** risponde "PDF not found": il backend cerca il PDF in una cartella diversa dalla workspace. Da allineare tutte le ops ai file nel workspace (non al backend). (APERTO)
+- **Convertitore immagine→PDF** (`convert_image_to_pdf`): non esiste come tool; richiesto da Mirko solo come miglioramento FUTURO (09/11). Richiede Pillow/img2pdf.
+- **Split in cartella `x-split`**: ✅ VERIFICATO OK da Mirko (09/11) — la cartella viene creata come da requisito (chiuso).
 
 ### Render "Auto-Deploy: After CI Checks Pass" non funziona con GitHub Actions — frontend e backend erano fermi a build vecchie ✅
 

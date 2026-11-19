@@ -1,0 +1,576 @@
+import json
+import os
+import uuid
+
+from fastapi import FastAPI
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.types import Command
+from pydantic import BaseModel
+
+from app.deep_agent.agents.pdfmind import build_agent, _wants_listing, _wants_operation, _wants_tool, _is_positive_confirmation  # noqa: E501
+
+app = FastAPI(title="PdfMind")
+
+# Sessione HITL: thread_id -> {"agent", "config"} per riprendere uno stream interrotto
+SESSIONS: dict[str, dict] = {}
+
+# Punto 5: checkpointer PERSISTENTE per thread (per-sessione). Oggi build_agent
+# creava un MemorySaver nuovo a ogni /chat e quindi lo stato (inclusa la sospensione
+# HITL) andava perso tra un turno e l'altro. Con un checkpointer stabile per
+# thread_id l'HITL persiste davvero tra i turni della stessa sessione.
+CHECKPOINTERS: dict[str, MemorySaver] = {}
+
+
+def _stable_thread_id(user_id: str | None, client_thread: str | None = None) -> str:
+    """Punto 5: thread_id STABILE per sessione.
+
+    Se il client passa il proprio thread (riusando l'[THREAD] ricevuto), lo si usa;
+    altrimenti lo si deriva dall'user_id della sessione (stabile tra i turni dello
+    stesso utente). Solo in assenza di user_id si ripiega su un uuid casuale.
+    """
+    if client_thread:
+        return client_thread
+    if user_id:
+        import hashlib
+        return "pdfmind_" + hashlib.sha1(("pdfmind:" + user_id).encode()).hexdigest()[:16]
+    return uuid.uuid4().hex
+
+@app.get("/")
+async def index():
+    return FileResponse("web/index.html")
+
+
+@app.get("/favicon.svg")
+async def favicon():
+    return FileResponse("web/favicon.svg", media_type="image/svg+xml")
+
+
+@app.get("/config")
+async def config():
+    return {"profile": os.environ.get("PDFMIND_PROFILE", "user")}
+
+
+class ChatReq(BaseModel):
+    goal: str
+    profile: str = "user"
+    model: str | None = None
+    history: list[dict] = []
+    # Fix 19/10: la SIDECAR desktop (questo server su :7723) deve sapere CHI è
+    # l'utente autenticato, altrimenti i tool PDF (merge/split/...) falliscono con
+    # "Nessun utente risolto... imposta PDFMIND_USER_ID". Il frontend lo invia.
+    user_id: str | None = None
+    # Punto 5: il client può riusare il thread_id ricevuto dall'evento [THREAD]
+    # (HITL persistente); altrimenti il server lo deriva dall'user_id.
+    thread_id: str | None = None
+
+
+def _state(chunk) -> dict:
+    """Estrae lo stato agente da un chunk del stream Pregel v2 (stream_mode=values).
+
+    In v2 ogni chunk e' un dict {'type': 'values', 'ns': [...], 'data': <stato>,
+    'interrupts': (Interrupt, ...)} (verificato con inspect su Pregel 0.7.x).
+    Lo stato `data` è APPIAITTITO: {'messages': [...], 'files': {...}} — NON ha
+    più le partizioni model/tools della vecchia forma updates.
+    """
+    if not isinstance(chunk, dict):
+        return {}
+    data = chunk.get("data")
+    return data if isinstance(data, dict) else {}
+
+
+def _msgs(chunk) -> list:
+    """La lista messaggi piatta dello stato values v2 (data['messages'])."""
+    st = _state(chunk)
+    msgs = st.get("messages")
+    return msgs if isinstance(msgs, list) else []
+
+
+def _text(chunk) -> str:
+    """Ritorna il testo dell'ultimo messaggio, ma NON i ToolMessage né l'input umano.
+
+    Fix 19/10 (Problema 1, Mirko): per i tool di LETTURA (es. elenca_workspace)
+    l'esito era emesso due volte — il ToolMessage grezzo qui e poi il riassunto
+    dell'LLM in un chunk successivo. Saltando i messaggi di tipo 'tool', il testo
+    grezzo del tool non esce come se fosse una risposta; l'esito dei tool di AZIONE
+    (merge/...) resta gestito da _tool_result.
+
+    In stream_mode='values' lo stato include anche i messaggi di INPUT (human) e
+    system; saltandoli non facciamo uscire il goal dell'utente come risposta.
+    """
+    msgs = _msgs(chunk)
+    if not msgs:
+        return ""
+    m = msgs[-1]
+    mtype = getattr(m, "type", "")
+    if mtype in ("tool", "human", "system"):
+        return ""  # niente tool grezzo, niente input utente, niente system
+    c = getattr(m, "content", None)
+    if isinstance(c, str):
+        return c
+    if isinstance(c, list):
+        return "".join(p.get("text", "") for p in c if isinstance(p, dict))
+    return ""
+
+
+def _tools(chunk) -> list[str]:
+    msgs = _msgs(chunk)
+    if not msgs:
+        return []
+    m = msgs[-1]
+    out = []
+    for tc in (getattr(m, "tool_calls", None) or []):
+        if isinstance(tc, dict):
+            name = tc.get("name")
+        else:
+            name = getattr(tc, "name", None)
+        if name:
+            out.append(name)
+    return out
+
+
+def _todos(chunk) -> list[str]:
+    """Ritorna gli aggiornamenti della todo list (todo del middleware TodoList).
+
+    Il TodoListMiddleware (langchain agents.middleware.todo) chiama il tool
+    `write_todos` con args {"todos": [{content, status}, ...]}; il campo testuale
+    è `content`, NON `task`/`todo` (fix 16/10: prima leggeva i campi sbagliati e
+    la task list in chat non appariva mai). Se il tool non è ancora stato
+    chiamato non c'è niente da mostrare.
+    """
+    msgs = _msgs(chunk)
+    if not msgs:
+        return []
+    m = msgs[-1]
+    out: list[str] = []
+    for tc in (getattr(m, "tool_calls", None) or []):
+        name = tc.get("name") if isinstance(tc, dict) else getattr(tc, "name", None)
+        if name not in ("write_todos", "todo", "todo_list"):
+            continue
+        args = tc.get("args") if isinstance(tc, dict) else getattr(tc, "args", {}) or {}
+        for item in (args.get("todos") or args.get("items") or []):
+            if isinstance(item, dict):
+                t = item.get("content") or item.get("task") or item.get("todo") or ""
+            else:
+                t = str(item)
+            if t:
+                out.append(str(t))
+    return out
+
+
+def _interrupt_name(chunk) -> tuple[str, str] | None:
+    """Ritorna (nome_tool, description) del tool in attesa di conferma (HITL, v2).
+
+    In v2 gli interrupt arrivano nativamente in `chunk["interrupts"]` come oggetti
+    `Interrupt` il cui `.value` è la `HITLRequest` con `action_requests`
+    (verificato con inspect). Ogni action_requests[0] ha `name` e `description`
+    (fix 22/10: la description dinamica coi nomi file arriva FINO al client).
+    """
+    if not isinstance(chunk, dict):
+        return None
+    for inter in (chunk.get("interrupts") or []):
+        value = getattr(inter, "value", inter)
+        if isinstance(value, dict):
+            reqs = value.get("action_requests") or []
+            if reqs:
+                name = reqs[0].get("name", "azione")
+                desc = reqs[0].get("description", "") or ""
+                return (name, desc)
+    return None
+
+
+def _friendly_provider_error(e: Exception, label: str = "", diag: str = "") -> str:
+    """Normalizza l'eccezione di un provider cloud in un messaggio chiaro (08/11).
+
+    `label` (provider:modello realmente usato) viene SEMPRE aggiunto in coda: senza
+    di esso un 401 era indistinguibile tra provider diversi (bug del 09/11: la
+    chat diceva "chiave non valida" mentre il test di connessione diceva ok,
+    perché il test provava la RIGA attiva e la chat un altro provider).
+    """
+    name = type(e).__name__
+    text = str(e)
+    low = text.lower()
+    if "429" in text or "rate limit" in low:
+        msg = "\u26a0\ufe0f Errore dal provider: limite di richieste raggiunto (HTTP 429). Riprova tra qualche secondo."
+    elif "user not found" in low:
+        # OpenRouter risponde cosi' quando la chiave NON appartiene a un utente
+        # valido (chiave di provisioning/gestione, key cancellata, o account
+        # inesistente). Passa /auth/key ma non le chat/completions (09/11).
+        msg = ("\u26a0\ufe0f OpenRouter non riconosce l'utente di questa chiave "
+               "(\"User not found\"). Non \u00e8 un problema di rete: la chiave non "
+               "\u00e8 una API key normale per le chat. Creane una nuova da "
+               "openrouter.ai/settings/keys (sezione API Keys, NON provisioning) "
+               "e incollala qui.")
+    elif "401" in text or "unauthorized" in low or "invalid api key" in low or "authentication" in low:
+        msg = "\u26a0\ufe0f Errore dal provider: chiave API non valida (HTTP 401). Ricontrolla la chiave nelle impostazioni."
+    elif "403" in text or "forbidden" in low:
+        msg = "\u26a0\ufe0f Errore dal provider: accesso negato (HTTP 403) \u2014 la chiave potrebbe non avere accesso a questo modello."
+    elif "404" in text or ("not found" in low and "model" in low):
+        msg = "\u26a0\ufe0f Errore dal provider: modello non trovato (HTTP 404). Verifica che il nome del modello sia corretto."
+    elif "timeout" in low or "timed out" in low:
+        msg = "\u26a0\ufe0f Timeout del provider: il servizio cloud non ha risposto a tempo. Controlla la connessione e riprova."
+    elif "connection" in low or "network" in low or "refused" in low:
+        msg = "\u26a0\ufe0f Provider non raggiungibile: errore di rete. Controlla la connessione e riprova."
+    else:
+        msg = f"\u26a0\ufe0f Errore dal provider ({name}): {text[:300]}"
+    if label:
+        msg += f"\n\nProvider: {label}"
+    if diag:
+        msg += f"\n{diag}"
+    # dettaglio grezzo (mascherato): senza di esso un 401 resta indiagnosticabile
+    import re as _re
+
+    raw = _re.sub(r"(sk-[A-Za-z0-9_\-]{4})[A-Za-z0-9_\-]+", r"\1***", text).strip()
+    if raw:
+        msg += f"\nDettaglio: {raw[:220]}"
+    return msg
+
+
+def _evt(v: str) -> str:
+    return f"data: {json.dumps(v)}\n\n"
+
+
+# Strumenti che eseguono un'OPERAZIONE reale sui file (non di sola lettura).
+# Servono al guard anti-fake: se l'utente chiede un'operazione ma nessuno di
+# questi tool è stato chiamato nel turno, il modello ha solo "raccontato" di
+# averla fatta senza eseguirla -> emettiamo l'avviso "NON eseguito".
+OPERATIVE_TOOLS = {
+    "merge_pdfs",
+    "split_pdf",
+    "sign_pdf",
+    "annotate_pdf",
+    "ocr_pdf",
+    "compress_pdf",
+    "convert_docx_to_pdf",
+    "scrivi_output",
+    "elimina_file",
+    "elimina_tutti_in_output",
+}
+
+# Verbi/espressioni che indicano una richiesta di OPERAZIONE nel messaggio
+# utente. Se il goal ne contiene almeno uno, l'intenzione è operativa.
+# NOTA: le funzioni di intent (_wants_operation/_wants_listing/_wants_tool) e le
+# relative parola-chiave vivono in agents/pdfmind.py (dove le usa
+# ForceToolCallMiddleware) e vengono IMPORTATE qui, per non avere due copie
+# divergenti.
+
+
+def _tool_result(chunk) -> str:
+    """Ritorna il contenuto testuale dell'ULTIMO ToolMessage se presente.
+
+    Dopo una chiamata tool, l'agente riceve un ToolMessage il cui `.content` è
+    l'esito del tool (es. "✓ PDF uniti in: x.pdf"). Se il modello poi non produce
+    un messaggio di testo riepilogativo, quel risultato è tutto ciò che abbiamo
+    per mostrare l'esito all'utente.
+
+    IMPORTANTE (fix 20/10 HITL+streaming): con stream_mode='values' v2 lo stato
+    `data` è appiattito — la lista messaggi sta direttamente in data['messages'],
+    NON più annidata sotto partizioni model/tools. Leggiamo quindi quella lista e
+    prendiamo l'ultimo ToolMessage.
+    """
+    msgs = _msgs(chunk)
+    if not msgs:
+        return ""
+    m = msgs[-1]
+    if getattr(m, "type", "") != "tool":
+        return ""
+    c = getattr(m, "content", None)
+    if isinstance(c, str) and c.strip():
+        return c.strip()
+    if isinstance(c, list):
+        t = "".join(p.get("text", "") for p in c if isinstance(p, dict) and p.get("text"))
+        if t:
+            return t
+    return ""
+
+
+class _AiMsg:
+    """Messaggio minimale con attributi (come i msg di langchain) per il chunk d'errore."""
+
+    def __init__(self, content: str):
+        self.type = "ai"
+        self.content = content
+        self.tool_calls = None
+
+
+async def _iter_astream(agent, agent_input, cfg, label: str = "", diag: str = ""):
+    """Avvolge agent.astream e NORMALIZZA le eccezioni del provider (fix 08/11).
+
+    Prima un timeout/HTTP 401/429 del provider faceva morire lo stream in silenzio
+    e la UI mostrava "nessuna risposta" senza motivo. Ora il chunk di errore viene
+    emesso come testo chiaro.
+    """
+    try:
+        async for chunk in agent.astream(agent_input, config=cfg, stream_mode="values", version="v2"):
+            yield chunk
+    except Exception as e:  # noqa: BLE001
+        yield {
+            "type": "values",
+            "ns": [],
+            "data": {"messages": [_AiMsg(_friendly_provider_error(e, label, diag))]},
+            "interrupts": (),
+        }
+
+
+async def _events(agent, goal: str, thread_id: str, history: list[dict] | None = None):
+    cfg = {"configurable": {"thread_id": thread_id, "checkpoint_ns": "", "checkpoint_id": ""}}
+    # 09/11 (Mirko, punto 2): la chat deve MOSTRARE il modello in uso. Il label
+    # (provider:modello) viene emesso come evento [MODEL] e riusato nei messaggi
+    # d'errore, così un 401 dice anche QUALE provider/modello lo ha prodotto.
+    model_label = ""
+    model_diag = ""
+    try:
+        from app.deep_agent.agents.pdfmind import provider_diag, resolve_primary_label
+
+        model_label = resolve_primary_label()
+        model_diag = provider_diag()
+    except Exception:  # noqa: BLE001 — non deve mai bloccare lo stream
+        model_label = ""
+        model_diag = ""
+    SESSIONS[thread_id] = {"agent": agent, "config": cfg, "model": model_label, "diag": model_diag}
+    yield _evt(f"[THREAD] {thread_id}")
+    if model_label:
+        yield _evt(f"[MODEL] {model_label}")
+    # Punto 1 (HITL nativo): il workaround testuale _file_confirmation_note è
+    # stato RIMOSSO. La conferma dei nomi file (es. merge con nome non esatto)
+    # ora è gestita dall'HITL nativo via InterruptOnConfig + predicato `when`
+    # in agents/pdfmind.py: l'agente si FERMA davvero (interrupt) solo quando
+    # serve conferma, e si riprende con Command(resume=...) preservando lo stato.
+    msgs = []
+    for h in history or []:
+        role = h.get("role", "user")
+        content = h.get("content", "")
+        if content and role in ("user", "assistant"):
+            msgs.append({"role": role, "content": content})
+    msgs.append({"role": "user", "content": goal})
+    saw_tool = False
+    saw_operative_tool = False
+    sent_tool_result = False
+    # 22/10 fix #5 (Mirko, punto 2): traccia l'ULTIMO esito REALE del tool operativo
+    # (successo ✓ O errore). Il modello spesso ci aggiunge sopra una narrazione verbosa
+    # e ripetuta ("Sto procedendo... Attendi conferma... Sto procedendo...") che rende
+    # l'output brutto. Mostriamo NOI l'esito conciso del tool ("✓ eliminati N file da
+    # output/: ...") e scartiamo la chiacchiera del modello.
+    operative_result = ""
+    operative_error = ""
+    # 22/10 fix #3: determiniamo a monte se la richiesta richiede uno strumento
+    # (operazione, elenco/lettura) o è una CONFERMA positiva a un'operazione chiesta
+    # prima. In quel caso il testo del modello viene bufferizzato e mostrato SOLO
+    # se uno strumento è stato davvero chiamato (niente "risposta a memoria" che
+    # racconta di aver eliminato/unito senza eseguire). Per le conversazioni
+    # normali ("ciao") lo streaming resta live come sempre.
+    request_wants_op = _wants_operation(goal)
+    request_wants_tool = request_wants_op or _wants_listing(goal)
+    if not request_wants_tool and _is_positive_confirmation(goal):
+        # conferma a un'operazione chiesta prima: risali all'ultimo messaggio umano
+        for h in reversed(history or []):
+            if h.get("role") != "user":
+                continue
+            hc = str(h.get("content", "") or "")
+            if _wants_operation(hc) or _wants_listing(hc):
+                request_wants_tool = True
+                request_wants_op = _wants_operation(hc)
+                break
+    buffered_text: list[str] = []
+    # dedup #5 (19/10): il testo doppio "✓ PDF uniti…✓ PDF uniti…" nasceva perché
+    # _text emette sia il ToolMessage (esito del tool) sia il messaggio finale
+    # dell'LLM che ripete la stessa stringa. Ricordiamo l'ultimo contenuto emesso
+    # e se un testo identico arriva di nuovo, lo saltiamo.
+    last_emitted = ""
+    # Fix 1.5 (20/10): il doppione nasce perché l'esito del tool veniva emesso
+    # SUBITO (via _tool_result) e poi l'LLM produceva un riassunto diverso.
+    # Teniamo l'esito in `pending_tool_result` e lo mostriamo SOLO se, a fine
+    # stream, l'LLM non ha prodotto alcun testo (feedback Bug 14: il merge non
+    # deve più "sparire"). Così per i tool di lettura (elenca_workspace) esce
+    # solo il riassunto dell'LLM, per il merge solo l'esito.
+    pending_tool_result = ""
+    emitted_outcomes: set[str] = set()
+
+    def _outcome_key(txt: str) -> str | None:
+        # estrae il nome del file di output citato nell'esito (es. "... in: X.pdf")
+        import re as _re
+        m = _re.search(r"\b([\w-]+\.pdf)\b", txt)
+        return m.group(1).lower() if m else None
+
+    # Punto 2 (streaming) + ORCHESTRAZIONE HOST-SIDE con RETRY (22/10):
+    # il modello locale a volte NON chiama il tool nemmeno con tool_choice forzato
+    # (vedi test Mirko: "elenca i file in output", "unisci scheda-1726 e temp" →
+    # NON eseguito). Invece di arrenderci al guard, il SERVER fa un SECONDO giro
+    # con un messaggio esplicito "DEVI chiamare lo strumento" (max 2 tentativi):
+    # l'esecuzione non dipende più dalla bontà del modello.
+    async def _pass(input_msgs: list, st: dict):
+        """Un passaggio di stream. Emette gli eventi; aggiorna st (stato del giro)."""
+        st.update(
+            saw_tool=False, saw_operative_tool=False, sent_tool_result=False,
+            pending_tool_result="", operative_result="", operative_error="",
+            listing_result="", interrupt=None, texts=[],
+        )
+        last_emitted_p = ""
+        emitted_p: set[str] = set()
+        async for chunk in _iter_astream(agent, {"messages": input_msgs}, cfg, model_label, model_diag):
+            hitl = _interrupt_name(chunk)
+            if hitl:
+                st["interrupt"] = hitl
+                return
+            for t in _todos(chunk):
+                yield _evt(f"[TASK] {t}")
+            for t in _tools(chunk):
+                st["saw_tool"] = True
+                if t in OPERATIVE_TOOLS:
+                    st["saw_operative_tool"] = True
+                yield _evt(f"[STEP] {t}")
+            t = _text(chunk)
+            key = _outcome_key(t) if t else None
+            if t:
+                if t.strip() and t.strip() == last_emitted_p.strip():
+                    last_emitted_p = t.strip()
+                    continue
+                if key and key in emitted_p and len(t.strip()) < 160:
+                    last_emitted_p = t.strip()
+                    continue
+                if request_wants_tool:
+                    st["texts"].append(t)  # buffer: decideremo a fine giro
+                else:
+                    yield _evt(t)  # chat normale: streaming live
+                last_emitted_p = t.strip()
+                if key:
+                    emitted_p.add(key)
+                st["pending_tool_result"] = ""
+            else:
+                r = _tool_result(chunk)
+                if r and not st["sent_tool_result"]:
+                    st["pending_tool_result"] = r.strip()
+                    st["sent_tool_result"] = True
+                    last_emitted_p = r.strip()
+                    if st["saw_operative_tool"]:
+                        st["operative_result"] = r.strip()
+                        if not r.strip().startswith("✓"):
+                            st["operative_error"] = r.strip()
+                    elif st["saw_tool"] and not st["saw_operative_tool"]:
+                        # 23/10 (bug 1, Mirko): tool di LETTURA/ELENCO → salviamo esito
+                        # REALE separato. pending_tool_result si azzera quando il modello
+                        # produce testo; listing_result persiste così la narrativa bugiarda
+                        # (es. "a.pdf b.pdf" quando il tool dice "workspace vuoto") non passa.
+                        st["listing_result"] = r.strip()
+
+    st: dict = {}
+    async for _ev in _pass(msgs, st):
+        yield _ev
+    if st.get("interrupt"):
+        if st.get("pending_tool_result"):
+            yield _evt(st["pending_tool_result"])
+        name, desc = st["interrupt"]
+        yield _evt(f"[HITL] {name}" + (f"||{desc}" if desc else ""))
+        return
+    # RETRY (giro 2): serviva uno strumento e NON è stato chiamato → forziamo
+    # esplicitamente, con il goal citato dentro (così l'intent resta riconosciuto).
+    executed_1 = (
+        st["saw_operative_tool"] if request_wants_op else (st["saw_tool"] or st["saw_operative_tool"])
+    )
+    if request_wants_tool and not executed_1 and not st.get("pending_tool_result"):
+        force_msg = (
+            f"{goal}\n\n⚠️ NON hai chiamato nessuno strumento. Questa richiesta richiede "
+            "di usare uno STRUMENTO (tool). Devi CHIAMARE ORA lo strumento appropriato — "
+            "NON rispondere con testo. (strumenti: elenca_workspace, elenca_file, "
+            "leggi_workspace, leggi_pdf, merge_pdfs, split_pdf, sign_pdf, annotate_pdf, "
+            "ocr_pdf, compress_pdf, convert_docx_to_pdf, scrivi_output, elimina_file, "
+            "elimina_tutti_in_output)."
+        )
+        async for _ev in _pass([{"role": "user", "content": force_msg}], st):
+            yield _ev
+        if st.get("interrupt"):
+            if st.get("pending_tool_result"):
+                yield _evt(st["pending_tool_result"])
+            name, desc = st["interrupt"]
+            yield _evt(f"[HITL] {name}" + (f"||{desc}" if desc else ""))
+            return
+    # a fine giro: se c'era un esito tool ma nessun testo è stato emesso, lo
+    # mostriamo noi (fix Bug 14 — il merge non deve più "sparire")
+    if st.get("pending_tool_result") and st.get("pending_tool_result") not in emitted_outcomes:
+        yield _evt(st["pending_tool_result"])
+    # GUARD ANTI-FAKE (22/10): la richiesta richiedeva uno strumento ma NON è stato
+    # chiamato nemmeno dopo il retry. NON mostriamo la risposta a memoria: avviso.
+    executed = (
+        st["saw_operative_tool"] if request_wants_op else (st["saw_tool"] or st["saw_operative_tool"])
+    )
+    if request_wants_tool and not executed and not st.get("pending_tool_result"):
+        st["texts"] = []
+        yield _evt("⚠️ NON eseguito: la richiesta richiedeva uno strumento ma nessuno è stato chiamato. Nessun file è stato modificato.")
+    # 23/10 (bug 1, Mirko): richiesta di LETTURA/ELENCO → mostriamo l'esito REALE del
+    # tool (es. elenca_workspace → "workspace vuoto") e scartiamo la narrativa del modello
+    # che aveva ignorato l'esito (es. elencava "a.pdf b.pdf" a memoria).
+    if (request_wants_tool and not request_wants_op
+            and st.get("listing_result") and not st.get("pending_tool_result")):
+        st["texts"] = []
+        yield _evt(st["listing_result"])
+    # 22/10: tool operativo chiamato → mostriamo NOI l'esito CONCISO e REALE
+    # (successo ✓ oppure errore), scartando la narrazione ripetuta del modello.
+    if request_wants_op and st.get("operative_result") and not st.get("pending_tool_result"):
+        st["texts"] = []
+        if st.get("operative_error"):
+            yield _evt(f"⚠️ Operazione non riuscita: {st['operative_error']}")
+        else:
+            yield _evt(st["operative_result"])
+    # emissione del testo bufferizzato SOLO dove serve (letture senza esito conciso)
+    for b in st.get("texts", []):
+        yield _evt(b)
+    SESSIONS.pop(thread_id, None)
+    yield _evt("[DONE]")
+
+
+async def _resume_events(thread_id: str, decision: dict):
+    sess = SESSIONS.get(thread_id)
+    if not sess:
+        yield _evt("[DONE]")
+        return
+    agent, cfg = sess["agent"], sess["config"]
+    model_label = sess.get("model", "")
+    model_diag = sess.get("diag", "")
+    # Ripresa HITL nativa: Command(resume={"decisions": [decision]}) riprende dal
+    # punto di interruzione preservando lo stato (non rielabora i vecchi messaggi).
+    async for chunk in _iter_astream(agent, Command(resume={"decisions": [decision]}), cfg, model_label, model_diag):
+        hitl = _interrupt_name(chunk)
+        if hitl:
+            name, desc = hitl
+            yield _evt(f"[HITL] {name}" + (f"||{desc}" if desc else ""))
+            return
+        for t in _todos(chunk):
+            yield _evt(f"[TASK] {t}")
+        for t in _tools(chunk):
+            yield _evt(f"[STEP] {t}")
+        t = _text(chunk)
+        if t:
+            yield _evt(t)
+    SESSIONS.pop(thread_id, None)
+    yield _evt("[DONE]")
+
+
+@app.post("/chat")
+async def chat(req: ChatReq):
+    # fix 19/10: l'utente autenticato della sessione DEVE arrivare ai tool PDF
+    # (merge/split/...). Senza, falliscono con "Nessun utente risolto: imposta
+    # PDFMIND_USER_ID oppure esiste admin@pdfeditor.local".
+    from app.deep_agent.tools.pdf_ops import set_current_user_id
+    set_current_user_id(req.user_id)
+    # Punto 5: thread_id stabile per sessione (derivato da user_id o riusato dal
+    # client) + checkpointer persistente -> lo stato HITL non si perde tra i turni.
+    thread_id = _stable_thread_id(req.user_id, req.thread_id)
+    checkpointer = CHECKPOINTERS.setdefault(thread_id, MemorySaver())
+    agent = build_agent(req.model, req.profile, checkpointer=checkpointer)
+    return StreamingResponse(
+        _events(agent, req.goal, thread_id, req.history),
+        media_type="text/event-stream",
+    )
+
+
+class ApproveReq(BaseModel):
+    thread_id: str
+    approve: bool
+
+
+@app.post("/approve")
+async def approve(req: ApproveReq):
+    if req.thread_id not in SESSIONS:
+        return JSONResponse({"error": "sessione non trovata"}, status_code=404)
+    decision = {"type": "approve" if req.approve else "reject"}
+    return StreamingResponse(_resume_events(req.thread_id, decision), media_type="text/event-stream")

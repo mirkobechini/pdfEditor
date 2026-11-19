@@ -7,11 +7,13 @@ on:
     paths:
       - "desktop/**"
       - "shared/**"
+      - "backend/**"
   pull_request:
     branches: [dev, main]
     paths:
       - "desktop/**"
       - "shared/**"
+      - "backend/**"
 
 permissions:
   contents: read
@@ -46,3 +48,29 @@ jobs:
         with:
           files: desktop/frontend/coverage/lcov.info
           flags: desktop
+
+  # Deep agent #932 — E2E con provider REALE (Ollama). Il deep agent è il
+  # sidecar del desktop, quindi vive qui. Test in tests/integration_tests/
+  # marcati @pytest.mark.integration; se Ollama non è raggiungibile SKIPPANO
+  # (autoskip nel file), quindi non rompono mai la CI.
+  deep-agent-e2e:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install backend deps
+        run: pip install -r requirements.txt
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+      - name: Pull tiny model (solo per il flusso, non la qualità)
+        run: ollama pull qwen3:0.6b
+      - name: Run deep-agent E2E (integration)
+        env:
+          PDFMIND_OLLAMA_URL: http://127.0.0.1:11434
+          PDFMIND_WORKSPACE: /tmp/pdfmind-e2e
+        run: PYTHONPATH=. pytest tests/integration_tests -m integration -q

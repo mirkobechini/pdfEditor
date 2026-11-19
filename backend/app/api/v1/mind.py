@@ -1,0 +1,444 @@
+"""Rotta Deep Agent `/mind` — T0b.
+
+Rotta separata/dedicata per il motore portato in T0a. NON ancora esposta alla UI:
+serve solo per testare il motore via curl/HTTP in isolamento.
+Sicurezza: in questa tranche vengono esposti SOLO i profili `user` (mai dev);
+le azioni sensibili (scrivi_output) passano da HITL se `interrupt_on` è attivo.
+"""
+
+import asyncio
+import os
+import uuid
+
+from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
+
+# NOTA (punto 2, 15/10): i motori deep_agent (deepagents/langchain) sono PESANTI
+# e vengono importati LAZY dentro le funzioni, NON qui a livello di modulo:
+# importarli eager all'avvio di app.main rallenta lo startup del sidecar
+# (misurato: ~2.5s solo per app.main). Si caricano solo al primo uso di /mind/*.
+
+router = APIRouter(prefix="/mind", tags=["mind"], responses={401: {"description": "Non autenticato"}})
+
+# T0c: sicurezza per costruzione — soltanto il profilo `user` è esposto via HTTP in
+# questa fase. Eventuali profili dev (git, log, API, issue) NON esistono nella tool
+# list del profilo user, quindi l'LLM non può nemmeno provare a chiamarli.
+_ALLOWED_PROFILES = {"user"}
+
+
+class ChatReq(BaseModel):
+    goal: str
+    profile: str = "user"
+    model: str | None = None
+    history: list[dict] = []
+    # Fix 16/10: l'utente autenticato della sessione, passato dal frontend,
+    # cosi i tool (split/merge/sign/...) operano sull'utente reale loggato
+    # e non su env PDFMIND_USER_ID / admin@pdfeditor.local (che fallivano).
+    user_id: str | None = None
+
+
+class ApproveReq(BaseModel):
+    thread_id: str
+    approve: bool
+
+
+@router.get(
+    "/health",
+    summary="Healthcheck motore Deep Agent",
+    description="Non richiede LLM né modelli. Ritorna stato, motore e profilo di default.",
+)
+async def health():
+    """Healthcheck del motore Deep Agent — non richiede LLM né modelli."""
+    return {"status": "ok", "engine": "deep_agent", "profile": "user"}
+
+
+@router.get(
+    "/skills",
+    summary="Skills (tool) esposte dall'agente",
+    description="Elenca le capacità (tools) dell'agente per il profilo user. Utile a consumatori esterni per scoprire cosa può fare il Deep Agent.",
+)
+async def skills():
+    """Elenca le skills/tool dell'agente (profilo user).
+
+    Riporta applicazione, tool, chat (streaming, task, HITL), config e RAG.
+    I tool sono le stesse funzioni che l'LLM può chiamare (vedi tools/profile).
+    """
+    from app.deep_agent.tools.profile import get_tools
+
+    tool_names = [getattr(t, "__name__", str(t)) for t in get_tools("user")]
+    return {
+        "engine": "deep_agent",
+        "profile": "user",
+        "tools": tool_names,
+        "capabilities": {
+            "chat": {"streaming": True, "tasks": True, "hitl": True},
+            "config": {"provider": True, "model": True, "rag": True, "api_key_local": True},
+            "rag": True,
+        },
+    }
+
+
+@router.get(
+    "/config",
+    summary="Config Deep Agent (senza chiavi)",
+    description="Provider, modello, workspace, RAG e streaming. Le chiavi non sono mai esposte.",
+)
+async def config():
+    """Config Deep Agent (senza chiavi): provider, modello, workspace, RAG, streaming."""
+    from app.deep_agent.config import load as config_load, public as config_public
+
+    return config_public(config_load())
+
+
+class ConfigUpdate(BaseModel):
+    """Aggiornamento della config Deep Agent (T3a + punto 7 multi-provider).
+
+    `api_key` resta locale, mai restituita in GET. Un campo assente non viene
+    modificato; una stringa vuota elimina la chiave.
+
+    `providers` (punto 7): lista ORDINATA di provider (indice 0 = massima
+    priorità). Ogni voce: {"provider", "model", "api_key", "enabled"}. Se
+    presente, sostituisce la lista esistente.
+    """
+
+    provider: str | None = Field(default=None, description="ollama|anthropic|openai|openrouter|huggingface (selezione attiva)")
+    model: str | None = None
+    workspace: str | None = None
+    rag_enabled: bool | None = None
+    streaming: bool | None = None
+    api_key: str | None = None
+    # punto 7
+    providers: list[dict] | None = None
+    fallback_enabled: bool | None = None
+
+
+@router.put(
+    "/config",
+    summary="Aggiorna config Deep Agent",
+    description="Salva in locale provider/modello/workspace/RAG/chiave + lista provider con precedenza e fallback. Le chiavi restano locali, mai restituite in GET.",
+)
+async def put_config(req: ConfigUpdate):
+    """Salva la config in locale. Le chiavi non sono mai esposte nel GET."""
+    from app.deep_agent.config import load as config_load, public as config_public, save as config_save
+
+    cfg = req.model_dump(exclude_none=True)
+    config_save(cfg)
+    return config_public(config_load())
+
+
+@router.get(
+    "/ollama/models",
+    summary="Elenco modelli Ollama locali",
+    description="Riporta i modelli scaricati sull'Ollama locale (punto 8: listino, non input libero).",
+)
+async def ollama_models():
+    """Elenco modelli Ollama scaricati sulla macchina."""
+    base_url = os.environ.get("PDFMIND_OLLAMA_URL", "http://localhost:11434")
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=4) as client:
+            r = await client.get(f"{base_url}/api/tags")
+        if r.status_code != 200:
+            return {"models": [], "ok": False, "message": f"Ollama non raggiungibile ({r.status_code})"}
+        data = r.json()
+        names = [m.get("name", "") for m in data.get("models", []) if m.get("name")]
+        return {"models": names, "ok": True}
+    except Exception as e:  # noqa: BLE001
+        return {"models": [], "ok": False, "message": f"Errore: {type(e).__name__}"}
+
+
+class TestReq(BaseModel):
+    provider: str | None = None
+    model: str | None = None
+
+
+@router.get(
+    "/models",
+    summary="Modelli disponibili per provider",
+    description="Interroga l'API del provider (Ollama /api/tags, OpenAI/OpenRouter /models, Anthropic /v1/models) e restituisce i modelli reali disponibili. Punto 15/10: scegliere il modello tra quelli esistenti, non digitarli.",
+)
+async def models(provider: str = "ollama", model_hint: str | None = None, api_key: str | None = None):
+    """Elenco modelli reali del provider (punto 15/10).
+
+    Per Ollama interroga /api/tags (modelli scaricati). Per OpenAI/OpenRouter
+    interroga /models con la key. Per Anthropic /v1/models. Se arriva `api_key`
+    nella query (chiave appena digitata nella UI, non ancora salvata) la usa;
+    altrimenti la key salvata/env. Se manca la chiave o la chiamata fallisce,
+    torna [] con un messaggio (la UI NON inventa un catalogo).
+    """
+    from app.deep_agent.config import env_for, load as config_load
+
+    cfg = config_load()
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=6) as client:
+            if provider == "ollama":
+                base = os.environ.get("PDFMIND_OLLAMA_URL", "http://localhost:11434")
+                r = await client.get(f"{base}/api/tags")
+                if r.status_code != 200:
+                    return {"models": [], "ok": False, "message": f"Ollama non raggiungibile ({r.status_code})"}
+                data = r.json()
+                names = sorted(m.get("name", "") for m in data.get("models", []) if m.get("name"))
+                return {"models": names, "ok": True}
+
+            # Provider cloud: usa la chiave passata nella query (appena digitata,
+            # non ancora salvata), altrimenti quella del keystore / env.
+            from app.deep_agent import keystore
+
+            env_key = env_for(provider)
+            key = api_key or keystore.get_key(provider) or os.environ.get(env_key, "")
+            if not key:
+                return {"models": [], "ok": False, "message": "Inserisci la chiave API per questo provider per vedere i modelli"}
+            if provider == "anthropic":
+                base = os.environ.get("PDFMIND_ANTHROPIC_BASE_URL", "https://api.anthropic.com/v1")
+                r = await client.get(f"{base}/models", headers={"x-api-key": key, "anthropic-version": "2023-06-01"})
+                if r.status_code != 200:
+                    return {"models": [], "ok": False, "message": f"Anthropic errore {r.status_code}"}
+                names = sorted(m.get("id", "") for m in r.json().get("data", []) if m.get("id"))
+                return {"models": names, "ok": True}
+            if provider == "openrouter":
+                base = os.environ.get("PDFMIND_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+                r = await client.get(f"{base}/models", headers={"Authorization": f"Bearer {key}"})
+                if r.status_code != 200:
+                    return {"models": [], "ok": False, "message": f"OpenRouter errore {r.status_code}"}
+                names = sorted(m.get("id", "") for m in r.json().get("data", []) if m.get("id"))
+                return {"models": names, "ok": True}
+            # OpenAI / HuggingFace (endpoint OpenAI-compatibile)
+            base = os.environ.get("PDFMIND_OPENAI_BASE_URL", "https://api.openai.com/v1")
+            if provider == "huggingface":
+                base = os.environ.get("PDFMIND_HF_BASE_URL", "https://api-inference.huggingface.co/v1")
+            r = await client.get(f"{base}/models", headers={"Authorization": f"Bearer {key}"})
+            if r.status_code != 200:
+                return {"models": [], "ok": False, "message": f"{provider} errore {r.status_code}"}
+            names = sorted(m.get("id", "") for m in r.json().get("data", []) if m.get("id"))
+            return {"models": names, "ok": True}
+    except Exception as e:  # noqa: BLE001
+        return {"models": [], "ok": False, "message": f"Errore: {type(e).__name__}"}
+
+
+@router.post(
+    "/test",
+    summary="Prova connessione al provider",
+    description="Verifica che il provider configurato (con la key salvata) sia raggiungibile (punto 10).",
+)
+async def test_connection(req: TestReq):
+    """Prova connessione al provider Deep Agent configurato."""
+    from app.deep_agent.config import load as config_load
+
+    cfg = config_load()
+    # 09/11 (Mirko): senza provider esplicito il test deve provare lo STESSO
+    # provider/modello che la chat userà davvero (primo usable di `providers`).
+    # Prima usava il top-level `provider`, che poteva essere un'altra riga: il
+    # test diceva "ok" e la chat andava in 401 su un provider diverso.
+    resolved_provider, resolved_model = "", ""
+    try:
+        from app.deep_agent.agents.pdfmind import ordered_providers, _provider_usable
+
+        for p in ordered_providers(cfg):
+            if _provider_usable(p):
+                resolved_provider, resolved_model = p["provider"], p["model"]
+                break
+    except Exception:  # noqa: BLE001
+        pass
+    provider = req.provider or resolved_provider or cfg.get("provider", "ollama")
+    model = req.model or resolved_model or cfg.get("model", "")
+    if provider == "ollama":
+        base_url = os.environ.get("PDFMIND_OLLAMA_URL", "http://localhost:11434")
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=4) as client:
+                r = await client.get(f"{base_url}/api/tags")
+            if r.status_code != 200:
+                return {"ok": False, "message": "Ollama non raggiungibile"}
+            return {"ok": True, "message": "Ollama raggiungibile ✓"}
+        except Exception as e:  # noqa: BLE001
+            return {"ok": False, "message": f"Ollama non raggiungibile: {type(e).__name__}"}
+    # Provider cloud: verifica la chiave DAVVERO con una chiamata leggera al
+    # provider (fix 08/11, Mirko: una chiave scaduta dava "ok" perché si
+    # controllava solo l'esistenza). Per Anthropic usiamo i modelli, per gli
+    # OpenAI-compatibili (openai/openrouter/hf) la lista dei modelli.
+    from app.deep_agent import keystore
+
+    env_key = {
+        "anthropic": "PDFMIND_ANTHROPIC_API_KEY",
+        "openai": "PDFMIND_OPENAI_API_KEY",
+        "openrouter": "PDFMIND_OPENROUTER_API_KEY",
+        "huggingface": "PDFMIND_HF_API_KEY",
+    }.get(provider)
+    key = keystore.get_key(provider) or (os.environ.get(env_key, "") if env_key else "")
+    if not key:
+        return {"ok": False, "message": "Nessuna chiave API configurata per questo provider"}
+    if not model:
+        return {"ok": False, "message": "Nessun modello configurato"}
+    import httpx
+    try:
+        if provider == "anthropic":
+            url = os.environ.get("PDFMIND_ANTHROPIC_BASE_URL") or "https://api.anthropic.com"
+            headers = {"x-api-key": key, "anthropic-version": "2023-06-01"}
+            r = await asyncio.wait_for(
+                httpx.AsyncClient(timeout=6).get(f"{url}/v1/models", headers=headers),
+                timeout=6,
+            )
+        elif provider == "openrouter":
+            # /models è PUBBLICO su OpenRouter (non valida la chiave): usiamo
+            # /auth/key che richiede davvero l'Authorization.
+            r = await asyncio.wait_for(
+                httpx.AsyncClient(timeout=6).get(
+                    "https://openrouter.ai/api/v1/auth/key",
+                    headers={"Authorization": f"Bearer {key}"},
+                ),
+                timeout=6,
+            )
+        elif provider == "huggingface":
+            r = await asyncio.wait_for(
+                httpx.AsyncClient(timeout=6).get(
+                    "https://api-inference.huggingface.co/v1/models",
+                    headers={"Authorization": f"Bearer {key}"},
+                ),
+                timeout=6,
+            )
+        else:  # openai
+            url = os.environ.get("PDFMIND_OPENAI_BASE_URL") or "https://api.openai.com/v1"
+            r = await asyncio.wait_for(
+                httpx.AsyncClient(timeout=6).get(f"{url}/models", headers={"Authorization": f"Bearer {key}"}),
+                timeout=6,
+            )
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "message": f"Provider non raggiungibile: {type(e).__name__}"}
+    if r.status_code != 200:
+        from app.deep_agent.agents.pdfmind import provider_diag
+
+        try:
+            diag = provider_diag()
+        except Exception:  # noqa: BLE001
+            diag = ""
+        return {
+            "ok": False,
+            "message": f"Chiave {provider} non valida o scaduta (HTTP {r.status_code})",
+            "details": (f"Controlla la chiave nelle impostazioni." + (f"\n{diag}" if diag else "")),
+        }
+    # Cosa vede il provider per QUESTA chiave (label/id utente): se /auth/key ok
+    # ma la chat risponde "User not found", qui si vede quale utente/key ha in mano.
+    auth_info = ""
+    try:
+        data = r.json()
+        if isinstance(data, dict):
+            d = data.get("data") if isinstance(data.get("data"), dict) else data
+            bits = []
+            for k in ("limit", "usage", "is_free_tier", "is_provisioning_key"):
+                if isinstance(d, dict) and k in d:
+                    bits.append(f"{k}={d[k]}")
+            if bits:
+                auth_info = "auth/key: " + ", ".join(bits)
+    except Exception:  # noqa: BLE001
+        auth_info = ""
+
+    # 09/11 (Mirko): la chiave "valida" non basta — il test deve provare lo STESSO
+    # tipo di chiamata che fa la chat (chat/completions col modello configurato).
+    # Così un 401/404 che la chat riceverebbe non può più sfuggire al test.
+    if provider in ("openrouter", "openai", "huggingface"):
+        base = {
+            "openrouter": os.environ.get("PDFMIND_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+            "openai": os.environ.get("PDFMIND_OPENAI_BASE_URL", "https://api.openai.com/v1"),
+            "huggingface": os.environ.get("PDFMIND_HF_BASE_URL", "https://api-inference.huggingface.co/v1"),
+        }[provider]
+        try:
+            rc = await asyncio.wait_for(
+                httpx.AsyncClient(timeout=20).post(
+                    f"{base}/chat/completions",
+                    headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                    json={"model": model, "messages": [{"role": "user", "content": "ping"}], "max_tokens": 1},
+                ),
+                timeout=20,
+            )
+        except Exception as e:  # noqa: BLE001
+            return {"ok": False, "message": f"Provider non raggiungibile sulla chat: {type(e).__name__}"}
+        if rc.status_code != 200:
+            detail = ""
+            try:
+                detail = (rc.json().get("error") or {}).get("message") or ""
+            except Exception:  # noqa: BLE001
+                detail = rc.text[:180]
+            from app.deep_agent.agents.pdfmind import provider_diag
+            from app.deep_agent.server.mind import _friendly_provider_error
+
+            # 09/11: qui `key` è la chiave di QUESTA richiesta — un 401 con auth
+            # OK significa che la chiamata reale è rifiutata: servono url e corpo
+            # grezzo per capire (proxy sbagliato, modello, header...).
+            try:
+                diag = provider_diag()
+            except Exception:  # noqa: BLE001
+                diag = ""
+            body = ""
+            try:
+                body = rc.text[:220]
+            except Exception:  # noqa: BLE001
+                body = ""
+            return {
+                "ok": False,
+                "message": "La chiave è accettata, ma la chiamata di chat è stata RIFIUTATA:\n"
+                + _friendly_provider_error(
+                    Exception(f"HTTP {rc.status_code} {detail}"), f"{provider}:{model}"
+                ),
+                "details": (f"URL: {base}/chat/completions\nRisposta: {body}"
+                            + (f"\n{auth_info}" if auth_info else "")
+                            + (f"\n{diag}" if diag else "")),
+            }
+    return {
+        "ok": True,
+        "message": f"Connessione {provider} ok — chiave valida e modello raggiungibile",
+        "details": f"modello: {model}" + (f"\n{auth_info}" if auth_info else ""),
+    }
+
+
+@router.post(
+    "/chat",
+    summary="Conversazione con il Deep Agent (streaming SSE)",
+    description="Avvia una conversazione in streaming (text/event-stream). Eventi: [THREAD], [TASK], [STEP], testo, [HITL], [DONE]. Solo profilo user (mai dev).",
+)
+async def chat(req: ChatReq):
+    """Avvia una conversazione col Deep Agent in streaming (SSE).
+
+    Il profilo è forzato a `user` in questa fase: RAG e tools dev sono fuori scope.
+    """
+    from app.deep_agent.agents.pdfmind import build_agent
+    from app.deep_agent.server.mind import _events
+    from app.deep_agent.tools.pdf_ops import set_current_user_id
+
+    profile = (
+        req.profile if req.profile in _ALLOWED_PROFILES else "user"
+    )  # T0c: profilo non consentito => fallback sicuro a user (mai dev)
+    if req.profile not in _ALLOWED_PROFILES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"profilo non consentito: {req.profile!r}. Sono ammessi solo: {sorted(_ALLOWED_PROFILES)}",
+        )
+    # Fix 16/10: usa l'utente autenticato della sessione per i tool (merge/split/...),
+    # così non cascano su env PDFMIND_USER_ID / admin di default (che fallivano).
+    set_current_user_id(req.user_id)
+    agent = build_agent(req.model, profile)
+    return StreamingResponse(
+        _events(agent, req.goal, uuid.uuid4().hex, req.history),
+        media_type="text/event-stream",
+    )
+
+
+@router.post(
+    "/approve",
+    summary="Riprende stream HITL (approva/rifiuta)",
+    description="Conferma o rifiuta un'azione in attesa di approvazione (HITL) e riprende lo stream.",
+)
+async def approve(req: ApproveReq):
+    """Riprende uno stream interrotto da HITL con approvazione/rifiuto."""
+    from fastapi.responses import JSONResponse
+
+    from app.deep_agent.server.mind import _resume_events, SESSIONS
+
+    if req.thread_id not in SESSIONS:
+        return JSONResponse({"error": "sessione non trovata"}, status_code=404)
+    decision = {"type": "approve" if req.approve else "reject"}
+    return StreamingResponse(
+        _resume_events(req.thread_id, decision),
+        media_type="text/event-stream",
+    )

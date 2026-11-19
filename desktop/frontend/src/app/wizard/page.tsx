@@ -3,8 +3,9 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { isTauri, tauriInvoke } from "../../shared/tauri";
+import { isTauri, tauriInvoke, getApiBaseUrl } from "../../shared/tauri";
 import { usePreferences } from "../../lib/preferences";
+import { api } from "../../shared/api";
 
 /** Open a URL in the system browser (works in Tauri webview). */
 async function openExternal(url: string) {
@@ -36,6 +37,7 @@ async function pickDirectory(): Promise<string | null> {
 const steps = [
     { id: "01", title: "title" },
     { id: "02", title: "workFolder" },
+    { id: "03", title: "deepAgentWizardTitle" },
 ] as const;
 
 export default function WizardPage() {
@@ -46,6 +48,40 @@ export default function WizardPage() {
     const [workFolder, setWorkFolder] = React.useState(prefs.default_save_folder || "");
     const [indexing, setIndexing] = React.useState(false);
     const [acceptedTerms, setAcceptedTerms] = React.useState(false);
+    const [agentProvider, setAgentProvider] = React.useState("ollama");
+    const [agentModel, setAgentModel] = React.useState("");
+    // Punto 15/10 (esito build precedenti): il modello NON si scrive a mano — è una
+    // select coi modelli REALI del provider (Ollama scaricati / cloud dalla API),
+    // così un tag inesistente (es. `qwen3.5` invece di `qwen3.5:9b`) non parte mai.
+    const [agentModelChoices, setAgentModelChoices] = React.useState<string[]>([]);
+    const [agentModelEmpty, setAgentModelEmpty] = React.useState(false);
+    const [agentRag, setAgentRag] = React.useState(true);
+    const [agentApiKey, setAgentApiKey] = React.useState("");
+
+    // Carica i modelli reali appena cambia il provider (o al mount per ollama).
+    React.useEffect(() => {
+        let cancelled = false;
+        async function load() {
+            setAgentModelChoices([]);
+            setAgentModelEmpty(false);
+            try {
+                const params = new URLSearchParams({ provider: agentProvider });
+                if (agentApiKey && agentApiKey.trim()) params.set("api_key", agentApiKey.trim());
+                const res = await fetch(`${getApiBaseUrl()}/mind/models?${params.toString()}`);
+                if (!res.ok || cancelled) { setAgentModelEmpty(true); return; }
+                const data = await res.json();
+                const models = Array.isArray(data.models) ? data.models.filter((m: unknown) => typeof m === "string") : [];
+                if (cancelled) return;
+                setAgentModelChoices(models);
+                setAgentModelEmpty(models.length === 0);
+            } catch {
+                if (!cancelled) setAgentModelEmpty(true);
+            }
+        }
+        load();
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [agentProvider]);
 
     function handleNext() {
         if (currentStep < steps.length - 1) {
@@ -57,6 +93,20 @@ export default function WizardPage() {
         if (workFolder.trim()) {
             updatePrefs({ default_save_folder: workFolder.trim() });
         }
+        // Salva la config Deep Agent (best-effort: se il backend non è pronto ignora).
+        // Il modello viene solo dalla select (scelto tra quelli reali); mai un tag
+        // inventato di default (prima cadeva su `qwen3.5` che su Ollama non esiste).
+        // FIX 22/10: il workspace va passato anche alla config Deep Agent, non solo
+        // alle prefs — altrimenti al primo avvio il backend lo vede "non configurato"
+        // (resolve_workspace legge il campo workspace della config).
+        const modelForProvider = agentModel.trim();
+        api.updateMindConfig({
+            provider: agentProvider,
+            model: modelForProvider || undefined,
+            workspace: workFolder.trim() || undefined,
+            rag_enabled: agentRag,
+            api_key: agentApiKey.trim() || undefined,
+        }).catch(() => undefined);
         localStorage.setItem("pdfeditor_wizard_done", "true");
         router.push("/login");
     }
@@ -144,6 +194,73 @@ export default function WizardPage() {
                         </div>
                     </>
                 );
+            case 2:
+                return (
+                    <>
+                        <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#f7871f]">{tw("step03")}</p>
+                        <h1 className="mt-3 text-[50px] font-bold leading-[1.08] tracking-[-0.02em] text-white">{tw("deepAgentWizardTitle")}</h1>
+                        <p className="mt-6 max-w-[700px] text-[14px] leading-relaxed text-[#9d9184]">
+                            {tw("deepAgentWizardDesc")}
+                        </p>
+                        <div className="mt-9 max-w-[700px] space-y-4">
+                            <div className="rounded-2xl border border-white/10 bg-[#1b1612] p-4">
+                                <p className="text-[14px] font-semibold text-white">{tw("wizardProvider")}</p>
+                                <p className="mt-1 text-[12px] text-[#9d9184]">{tw("wizardProviderDesc")}</p>
+                                <select
+                                    value={agentProvider}
+                                    onChange={(e) => setAgentProvider(e.target.value)}
+                                    className="mt-3 w-full cursor-pointer rounded-[12px] border border-white/10 bg-[#221b16] px-4 py-2.5 text-[13px] text-white outline-none focus:border-[#f7871f]"
+                                >
+                                    <option value="ollama">Ollama (locale)</option>
+                                    <option value="anthropic">Claude (Anthropic)</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="openrouter">OpenRouter</option>
+                                    <option value="huggingface">Hugging Face</option>
+                                </select>
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-[#1b1612] p-4">
+                                <p className="text-[14px] font-semibold text-white">{tw("wizardModel")}</p>
+                                <p className="mt-1 text-[12px] text-[#9d9184]">{tw("wizardModelDesc")}</p>
+                                <select
+                                    value={agentModelChoices.includes(agentModel) ? agentModel : ""}
+                                    onChange={(e) => setAgentModel(e.target.value)}
+                                    disabled={agentModelEmpty}
+                                    className="mt-3 w-full cursor-pointer rounded-[12px] border border-white/10 bg-[#221b16] px-4 py-2.5 text-[13px] text-white outline-none focus:border-[#f7871f] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="" disabled>{tw("wizardModelSelectPlaceholder")}</option>
+                                    {agentModelChoices.map((m) => <option key={m} value={m}>{m}</option>)}
+                                </select>
+                                {agentModelEmpty && (
+                                    <p className="mt-2 text-[12px] text-[#9d9184]">{tw("wizardModelEmpty")}</p>
+                                )}
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-[#1b1612] p-4">
+                                <p className="text-[14px] font-semibold text-white">{tw("wizardApiKey")}</p>
+                                <input
+                                    type="password"
+                                    value={agentApiKey}
+                                    onChange={(e) => setAgentApiKey(e.target.value)}
+                                    placeholder={tw("wizardApiKeyPlaceholder")}
+                                    className="mt-3 w-full rounded-[12px] border border-white/10 bg-[#221b16] px-4 py-2.5 text-[13px] text-white outline-none focus:border-[#f7871f]"
+                                />
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-[#1b1612] p-4">
+                                <label className="flex cursor-pointer items-center justify-between">
+                                    <div>
+                                        <p className="text-[14px] font-semibold text-white">{tw("wizardRag")}</p>
+                                        <p className="text-[12px] text-[#9d9184]">{tw("wizardRagDesc")}</p>
+                                    </div>
+                                    <div
+                                        className={`relative h-6 w-11 cursor-pointer rounded-full transition ${agentRag ? "bg-[#f7871f]" : "bg-white/15"}`}
+                                        onClick={() => setAgentRag(!agentRag)}
+                                    >
+                                        <div className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${agentRag ? "translate-x-5" : ""}`} />
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </>
+                );
         }
     }
 
@@ -166,7 +283,7 @@ export default function WizardPage() {
                             </div>
                         ))}
                     </div>
-                    <p className="mt-auto text-[14px] font-mono uppercase tracking-[0.2em] text-[#8f8377]">{tw("setupProgress", { current: currentStep + 1, total: 2 })}</p>
+                    <p className="mt-auto text-[14px] font-mono uppercase tracking-[0.2em] text-[#8f8377]">{tw("setupProgress", { current: currentStep + 1, total: steps.length })}</p>
                 </aside>
                 <main className="flex-1 bg-[#221b16] px-14 py-18">
                     {renderStepContent()}
@@ -176,7 +293,7 @@ export default function WizardPage() {
                             {currentStep > 0 && (
                                 <button onClick={handleBack} className="cursor-pointer rounded-2xl border border-white/15 bg-[#1b1612] px-8 py-3 text-[14px] font-semibold text-white transition hover:bg-[#231c17]">{tw("back")}</button>
                             )}
-                            {currentStep < 1 ? (
+                            {currentStep < steps.length - 1 ? (
                                 <button onClick={handleNext} disabled={currentStep === 0 && !acceptedTerms} className="cursor-pointer rounded-2xl bg-[#f7871f] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_8px_22px_rgba(247,135,31,0.35)] transition hover:bg-[#ff9b37] disabled:cursor-not-allowed disabled:opacity-50">{tw("continue")}</button>
                             ) : (
                                 <button onClick={handleFinish} className="cursor-pointer rounded-2xl bg-[#f7871f] px-8 py-3 text-[14px] font-semibold text-white shadow-[0_8px_22px_rgba(247,135,31,0.35)] transition hover:bg-[#ff9b37]">{tw("finish")}</button>

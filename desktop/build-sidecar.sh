@@ -36,7 +36,7 @@ $PYTHON -m pip install pyinstaller --quiet
 # The OCR feature needs the tesseract binary. We bundle it inside the sidecar
 # so the end user does NOT need to install anything.
 TESSERACT_BIN=""
-for cand in "${TESSERACT_CMD:-}" "/usr/bin/tesseract" "/usr/local/bin/tesseract" "/opt/homebrew/bin/tesseract"; do
+for cand in "${TESSERACT_CMD:-}" "/usr/bin/tesseract" "/usr/local/bin/tesseract" "/opt/homebrew/bin/tesseract" "/c/Program Files/Tesseract-OCR/tesseract.exe" "/c/Program Files/UB-Mannheim/Tesseract-OCR/tesseract.exe" "C:/Program Files/Tesseract-OCR/tesseract.exe"; do
     if [ -n "$cand" ] && [ -f "$cand" ]; then
         TESSERACT_BIN="$cand"
         break
@@ -58,20 +58,65 @@ fi
 
 # Build the PyInstaller args for bundling tesseract
 BUNDLE_ARGS=()
+# Normalizza un path in forma Windows per PyInstaller (i path MINGW \c\... lo rompono)
+winpath() {
+    if command -v cygpath >/dev/null 2>&1; then
+        cygpath -w "$1" 2>/dev/null || echo "$1"
+    else
+        echo "$1"
+    fi
+}
 if [ -n "$TESSERACT_BIN" ]; then
-    BUNDLE_ARGS+=(--add-binary "$TESSERACT_BIN:tesseract")
+    TESS_DIR="$(dirname "$TESSERACT_BIN")"
+    BUNDLE_ARGS+=(--add-binary "$(winpath "$TESSERACT_BIN"):tesseract")
+    # 19/11: le DLL di tesseract (libtesseract, runtimes MinGW) vanno ACCANTO
+    # all'exe in tesseract/ per evitare il conflitto di DLL a root in PyInstaller
+    for dll in "$TESS_DIR"/*.dll; do
+        [ -f "$dll" ] && BUNDLE_ARGS+=(--add-binary "$(winpath "$dll"):tesseract")
+    done
 fi
 if [ -n "$TESSDATA_DIR" ]; then
-    BUNDLE_ARGS+=(--add-data "$TESSDATA_DIR:tessdata")
+    BUNDLE_ARGS+=(--add-data "$(winpath "$TESSDATA_DIR"):tessdata")
+fi
+# 11/11 (Mirko): ita.traineddata dal REPO (garantito, non dipende dal runner)
+REPO_ITA="$PROJECT_ROOT/backend/resources/tessdata/ita.traineddata"
+if [ -f "$REPO_ITA" ]; then
+    BUNDLE_ARGS+=(--add-data "$(winpath "$REPO_ITA"):tessdata")
+    echo "ita.traineddata incluso dal repo"
+else
+    echo "WARNING: ita.traineddata non trovato nel repo"
 fi
 
-# --strip solo su Linux/macOS: su Windows (bash del runner CI) eseguirebbe GNU
-# strip su python312.dll e sui .pyd corrompendoli ("Failed to load Python DLL").
-STRIP_ARGS=()
-case "$(uname -s)" in
-    MINGW*|MSYS*|CYGWIN*) ;;
-    *) STRIP_ARGS+=(--strip) ;;
-esac
+# 19/11 (Mirko, OCRmyPDF): ghostscript + qpdf bundled best-effort in bin/
+GS_EXE=""
+for f in "$PROGRAMFILES/gs"/*/bin/gswin64c.exe "/c/Program Files/gs"/*/bin/gswin64c.exe; do
+    if [ -f "$f" ]; then GS_EXE="$f"; break; fi
+done
+if [ -n "$GS_EXE" ]; then
+    echo "Bundling Ghostscript: $GS_EXE" >&2
+    GS_DIR="$(dirname "$GS_EXE")"
+    GS_ROOT="$(dirname "$GS_DIR")"
+    BUNDLE_ARGS+=(--add-binary "$(winpath "$GS_EXE"):bin")
+    [ -f "$GS_DIR/gsdll64.dll" ] && BUNDLE_ARGS+=(--add-binary "$(winpath "$GS_DIR/gsdll64.dll"):bin")
+    [ -d "$GS_ROOT/Resource" ] && BUNDLE_ARGS+=(--add-binary "$(winpath "$GS_ROOT/Resource"):bin/Resource")
+    [ -d "$GS_ROOT/fonts" ] && BUNDLE_ARGS+=(--add-binary "$(winpath "$GS_ROOT/fonts"):bin/fonts")
+else
+    echo "WARNING: Ghostscript non trovato; OCRmyPDF non disponibile (fallback manuale)" >&2
+fi
+QPDF_BIN=""
+for f in "/c/Program Files/qpdf"/*/bin/qpdf.exe "/c/ProgramData/chocolatey/lib/qpdf"/*/bin/qpdf.exe; do
+    if [ -f "$f" ]; then QPDF_BIN="$f"; break; fi
+done
+if [ -n "$QPDF_BIN" ] && [ -f "$QPDF_BIN" ]; then
+    echo "Bundling qpdf: $QPDF_BIN" >&2
+    QPDF_DIR="$(dirname "$QPDF_BIN")"
+    BUNDLE_ARGS+=(--add-binary "$(winpath "$QPDF_BIN"):bin")
+    for dll in "$QPDF_DIR"/*.dll; do
+        [ -f "$dll" ] && BUNDLE_ARGS+=(--add-binary "$(winpath "$dll"):bin")
+    done
+else
+    echo "WARNING: qpdf reale non trovato; OCRmyPDF non disponibile (fallback manuale)" >&2
+fi
 
 # Build with PyInstaller
 echo "Running PyInstaller..."
@@ -97,6 +142,10 @@ $PYTHON -m PyInstaller \
     --hidden-import "docx" \
     --hidden-import "reportlab" \
     --hidden-import "app.main" \
+    --hidden-import "keyring" \
+    --collect-all "keyring" \
+    --hidden-import "ocrmypdf" \
+    --collect-all "ocrmypdf" \
     --hidden-import "app.core.config" \
     --hidden-import "app.core.database" \
     --hidden-import "app.core.csrf" \
