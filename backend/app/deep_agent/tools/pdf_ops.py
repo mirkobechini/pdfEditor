@@ -564,11 +564,11 @@ def ocr_pdf(pdf_id: str, language: str = "ita") -> str:
                         continue
                     try:
                         x1, y1, x2, y2 = (int(parts[i]) for i in (1, 2, 3, 4))
-                        conf = int(parts[5])
                     except (TypeError, ValueError):
                         continue
-                    if conf < 15:
-                        continue
+                    # NOTA (19/11): image_to_boxes restituisce spesso conf=-1 o basso
+                    # anche per caratteri validi; filtrare per confidenza qui faceva
+                    # perdere quasi tutto il testo. Accettiamo tutti i char visibili.
                     w = x2 - x1
                     h = y2 - y1
                     if w <= 0 or h <= 0:
