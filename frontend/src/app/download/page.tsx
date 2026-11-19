@@ -28,7 +28,7 @@ interface ChangelogData {
 }
 
 const GITHUB_API = "https://api.github.com/repos/mirkobechini/pdfEditor/releases";
-const CHANGELOG_BASE = "https://raw.githubusercontent.com/mirkobechini/pdfEditor/dev";
+const CHANGELOG_BASE = "https://raw.githubusercontent.com/mirkobechini/pdfEditor/main";
 const DEFAULT_CHANGELOG_URL = `${CHANGELOG_BASE}/changelog.json`;
 
 export default function DownloadPage() {
