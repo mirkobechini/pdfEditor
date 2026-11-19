@@ -97,3 +97,9 @@ Mirko ha rifatto il test da utente nuovo e ha trovato 4 problemi veri, tutti fix
 - **UI**: scroll corrett testo impostazioni + scrollbar custom, card leggibile per il risultato del test connessione, chat senza sborrda (pannello 440px adattivo, break-words).
 - **Tool**: sandbox dei percorsi alla workspace (`leggi_pdf`...), HITL leggibili (`scrivi_output`, `compress`), livello compressione richiesto se non indicato, prompt "se manca il tool non eseguire azione diversa". Split in cartella `x-split` confermato da Mirko.
 - **Test**: `test_deep_agent_defensive.py` 16/16, `test_deep_agent_key_flow.py` 19/19, suite backend 661+ passati / 1 skip, frontend 1045 passati (61 file), typecheck pulito.
+
+## OCR — decisione 19/11 (Mirko): motore professionale OCRmyPDF
+- Il metodo a coordinate (image_to_boxes) è allineato e validato su documento pulito, ma su scan reali tesseract crudo riconosce poco → si passa a **OCRmyPDF** (strada A): gestisce deskew, layout, e produce il layer cercabile come le altre app.
+- Licenze documentate in `THIRD_PARTY_NOTICES.md` (Ghostscript AGPL-3.0 — nota inclusa; tesseract/qpdf Apache-2.0; ocrmypdf/pikepdf MPL-2.0; img2pdf LGPL-3.0).
+- Bundling nel sidecar: da completare isolando le DLL di tesseract (conflitto PyInstaller degli 11/11).
+- Il secondo layer resta l'approccio corretto (immagine + testo invisibile): spiegato a Mirko il 19/11.

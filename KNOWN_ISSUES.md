@@ -59,7 +59,8 @@
 - **Sintomo:** dopo l'OCR, né Ctrl+F né la selezione col mouse trovano il testo (sia via deep agent sia via il pulsante OCR in-app).
 - **Causa reale:** NON è l'OCR. `PdfViewer.tsx` renderizza la pagina SOLO su `<canvas>` e non monta il **text layer** di pdf.js → in app NESSUN PDF (nemmeno uno già testuale) è selezionabile/cercabile: il testo disegnato su canvas non è nel DOM, quindi il Ctrl+F del browser non lo trova.
 - **Verifica:** pdf.js 3.11.174 (versione usata) estrae correttamente il testo OCR invisibile da `getTextContent` (testato localmente: `PAROLA_RICERCABILE_INVISIBILE` presente). Quindi il file OCR è buono; manca il supporto selezione/ricerca nel viewer.
-- **Fix necessario (feature):** aggiungere il text layer di pdf.js in `PdfViewer` (overlay sopra il canvas, con stile `color:transparent` + `user-select`) così la selezione/ricerca funziona per qualunque PDF. Segue task dedicato.
+- **Fix necessario (feature):** aggiungere il text layer di pdf.js in `PdfViewer` — FATTO (testo selezionabile/Ctrl+F per qualunque PDF).
+- **Qualità OCR su scan reali (19/11, Mirko):** tesseract crudo riconosce poco su scan reali (font/skew). Decisione Mirko: **strada A = OCRmyPDF professionale** nel sidecar. Concurrenti: (1) conflitto DLL minGW in PyInstaller (risolvibile isolando le DLL di tesseract in cartella dedicata), (2) licenze da documentare — fatte in THIRD_PARTY_NOTICES.md (Ghostscript AGPL-3.0, tesseract/qpdf Apache-2.0, ocrmypdf/pikepdf MPL-2.0, img2pdf LGPL-3.0). Stato: in corso.
 - **Workaround per verificare subito l'OCR:** aprire `output/*_ocr.pdf` in un viewer esterno (Adobe/Chrome/Okular) → il testo è selezionabile.
 
 ### Deep Agent — feature request (Mirko 09/11)
