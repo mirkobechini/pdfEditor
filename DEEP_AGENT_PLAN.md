@@ -103,3 +103,11 @@ Mirko ha rifatto il test da utente nuovo e ha trovato 4 problemi veri, tutti fix
 - Licenze documentate in `THIRD_PARTY_NOTICES.md` (Ghostscript AGPL-3.0 — nota inclusa; tesseract/qpdf Apache-2.0; ocrmypdf/pikepdf MPL-2.0; img2pdf LGPL-3.0).
 - Bundling nel sidecar: da completare isolando le DLL di tesseract (conflitto PyInstaller degli 11/11).
 - Il secondo layer resta l'approccio corretto (immagine + testo invisibile): spiegato a Mirko il 19/11.
+
+### OCR — ESITO 19/11 (chiuso, Mirko)
+- Integrato OCRmyPDF (strada A) nel deep agent: validato in locale sul file reale (allineamento esatto sul testo stampato, `ita+eng`), fallback al metodo manuale se il motore non c'e'.
+- Bottone in-app: resta sul metodo manuale (refactor del servizio da fare con piu' cautela; non bloccante per la chiusura).
+- Limite noto: calligrafie/testo decorativo (es. diplomi) non vengono riconosciuti da nessun OCR base.
+- **Miglioria futura registrata:** OCR a IA esterno (Google/Azure/Amazon) per calligrafia/firme, o preprocessing avanzato. NON nel sidecar.
+### Licenze (19/11)
+- `THIRD_PARTY_NOTICES.md` (componenti OCR) + `LICENSING.md` (decisione: Opzione 1 Apache-2.0; Opzione 2 fallback vendita chiusa = licenze commerciali Artifex per PyMuPDF/Ghostscript).
