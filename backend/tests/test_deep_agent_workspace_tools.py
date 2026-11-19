@@ -207,6 +207,9 @@ def test_ocr_pdf_mocked_flow(ws_root, monkeypatch):
         return "\n".join(lines)
 
     monkeypatch.setattr("pytesseract.image_to_boxes", fake_image_to_boxes)
+    # forza il FALLBACK manuale: OCRmyPDF non disponibile (test deterministico)
+    import sys
+    monkeypatch.setitem(sys.modules, "ocrmypdf", None)
     from app.deep_agent.tools import pdf_ops
     out = pdf_ops.ocr_pdf("doc.pdf", language="eng")
     assert out.startswith("✓ OCR completato")
@@ -422,3 +425,26 @@ def test_ocr_default_lingua_italiana():
 
     assert inspect.signature(pdf_ops.ocr_pdf).parameters["language"].default == "ita"
     assert inspect.signature(mut.PdfServiceMutateMixin.ocr_pdf).parameters["language"].default == "ita"
+
+
+def test_ocr_pdf_usa_ocrmypdf_se_disponibile(ws_root, monkeypatch):
+    """19/11 (Mirko, strada A): con OCRmyPDF presente, il tool deve usarlo."""
+    import types, sys
+    _make_pdf(ws_root / "doc.pdf", pages=1)
+    monkeypatch.setattr("app.core.tesseract.configure_tesseract", lambda: True)
+
+    fake = types.ModuleType("ocrmypdf")
+    calls = {}
+
+    def fake_ocr(inp, outp, language=None, optimize=None, output_type=None, jobs=None):
+        calls["lang"] = language
+        import shutil
+        shutil.copyfile(str(inp), str(outp))
+
+    fake.ocr = fake_ocr
+    monkeypatch.setitem(sys.modules, "ocrmypdf", fake)
+
+    from app.deep_agent.tools import pdf_ops
+    out = pdf_ops.ocr_pdf("doc.pdf", language="ita")
+    assert "OCRmyPDF" in out
+    assert calls.get("lang") == "ita+eng"
