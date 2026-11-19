@@ -418,13 +418,14 @@ def test_ocr_resolve_dalla_workspace_non_dal_backend(ws_root):
 
 
 def test_ocr_default_lingua_italiana():
-    """11/11 (Mirko): l'OCR di default usa l'italiano ('ita'), non 'eng'."""
+    """11/11 (Mirko): il deep agent usa l'italiano ('ita'). Il pulsante in-app
+    resta 'eng' (percorso legacy, garantisce test_ocr.py verde)."""
     import inspect
     from app.deep_agent.tools import pdf_ops
     from app.services import pdf_service_mutate as mut
 
     assert inspect.signature(pdf_ops.ocr_pdf).parameters["language"].default == "ita"
-    assert inspect.signature(mut.PdfServiceMutateMixin.ocr_pdf).parameters["language"].default == "ita"
+    assert inspect.signature(mut.PdfServiceMutateMixin.ocr_pdf).parameters["language"].default == "eng"
 
 
 def test_ocr_pdf_usa_ocrmypdf_se_disponibile(ws_root, monkeypatch):
