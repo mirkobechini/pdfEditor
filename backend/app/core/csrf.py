@@ -75,7 +75,12 @@ def set_csrf_cookie(response: Response, token: str | None = None, request: Reque
     if token is None:
         token = generate_csrf_token()
 
-    # Localhost: SameSite=None without Secure (Chrome/Edge allow on localhost)
+    # Localhost: SameSite=None + Secure (Chrome/Edge allow Secure cookies over
+    # plain http on localhost/127.0.0.1 — they're "potentially trustworthy"
+    # origins per spec). Secure=False here used to work, but current Chromium
+    # enforces "SameSite=None requires Secure" even on localhost and silently
+    # drops the cookie otherwise (verified 2026-11-25: browser never stored
+    # it, breaking the double-submit check for every cross-port local request).
     # This lets cross-site POSTs from Tauri webview send the cookie.
     is_localhost = request is not None and (
         request.url.hostname in ("127.0.0.1", "localhost", "::1")
@@ -87,7 +92,7 @@ def set_csrf_cookie(response: Response, token: str | None = None, request: Reque
             value=token,
             httponly=False,
             samesite="none",
-            secure=False,
+            secure=True,
             max_age=3600,
             path="/",
         )
@@ -170,13 +175,15 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                     token = auth_header[len("Bearer "):]
                     if decode_access_token(token) is not None:
                         return await call_next(request)
-                # No valid Bearer — require CSRF header (fallback to double-submit).
-                if not csrf_header:
-                    from fastapi.responses import JSONResponse
-                    return JSONResponse(
-                        status_code=403,
-                        content={"detail": "CSRF validation failed"},
-                    )
-                # Header present, no cookie — accept (user is authenticated via JWT)
+                # No valid Bearer and no csrf_token cookie to validate the header
+                # against: nothing here proves the request isn't forged (a
+                # cross-site attacker can send any X-CSRF-Token value of its
+                # own choosing when there's no cookie to match it against).
+                # Deny regardless of whether a header is present.
+                from fastapi.responses import JSONResponse
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "CSRF validation failed"},
+                )
 
         return await call_next(request)
