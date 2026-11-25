@@ -75,7 +75,12 @@ def set_csrf_cookie(response: Response, token: str | None = None, request: Reque
     if token is None:
         token = generate_csrf_token()
 
-    # Localhost: SameSite=None without Secure (Chrome/Edge allow on localhost)
+    # Localhost: SameSite=None + Secure (Chrome/Edge allow Secure cookies over
+    # plain http on localhost/127.0.0.1 — they're "potentially trustworthy"
+    # origins per spec). Secure=False here used to work, but current Chromium
+    # enforces "SameSite=None requires Secure" even on localhost and silently
+    # drops the cookie otherwise (verified 2026-11-25: browser never stored
+    # it, breaking the double-submit check for every cross-port local request).
     # This lets cross-site POSTs from Tauri webview send the cookie.
     is_localhost = request is not None and (
         request.url.hostname in ("127.0.0.1", "localhost", "::1")
@@ -87,7 +92,7 @@ def set_csrf_cookie(response: Response, token: str | None = None, request: Reque
             value=token,
             httponly=False,
             samesite="none",
-            secure=False,
+            secure=True,
             max_age=3600,
             path="/",
         )
