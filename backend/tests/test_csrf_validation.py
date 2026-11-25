@@ -257,3 +257,18 @@ class TestCSRFRegression:
             files={"file": ("test.pdf", b"%PDF-1.4 fake content", "application/pdf")},
         )
         assert upload_resp.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_no_cookie_forged_csrf_header_no_bearer_fails(self, client, monkeypatch):
+        """No csrf_token cookie, no valid Bearer, but an attacker-supplied
+        X-CSRF-Token header: must be rejected. With no cookie to compare it
+        against, any header value would otherwise be accepted — this is the
+        forged-request case the double-submit pattern exists to stop.
+        """
+        monkeypatch.setattr("app.core.config.settings.DISABLE_CSRF", False)
+        client.cookies.clear()
+        upload_resp = client.post(
+            "/pdfs/upload",
+            headers={"X-CSRF-Token": "attacker-chosen-value"},
+            files={"file": ("test.pdf", b"%PDF-1.4 fake content", "application/pdf")},
+        )
+        assert upload_resp.status_code == status.HTTP_403_FORBIDDEN
