@@ -170,13 +170,15 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                     token = auth_header[len("Bearer "):]
                     if decode_access_token(token) is not None:
                         return await call_next(request)
-                # No valid Bearer — require CSRF header (fallback to double-submit).
-                if not csrf_header:
-                    from fastapi.responses import JSONResponse
-                    return JSONResponse(
-                        status_code=403,
-                        content={"detail": "CSRF validation failed"},
-                    )
-                # Header present, no cookie — accept (user is authenticated via JWT)
+                # No valid Bearer and no csrf_token cookie to validate the header
+                # against: nothing here proves the request isn't forged (a
+                # cross-site attacker can send any X-CSRF-Token value of its
+                # own choosing when there's no cookie to match it against).
+                # Deny regardless of whether a header is present.
+                from fastapi.responses import JSONResponse
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "CSRF validation failed"},
+                )
 
         return await call_next(request)
