@@ -88,7 +88,7 @@ TEST_FULL_NAMES: tuple[str, ...] = (
 
 class Settings(BaseSettings):
     APP_NAME: str = "PdfEditor API"
-    VERSION: str = "0.1.0"
+    VERSION: str = "0.1.41"
     DEBUG: bool = False
 
     # Runtime environment — "development" (default: e2e, desktop locale) o

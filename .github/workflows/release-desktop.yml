@@ -127,6 +127,12 @@ jobs:
           content = re.sub(r'^version = \".*\"', 'version = \"$VERSION\"', content, flags=re.MULTILINE)
           with open('backend/pyproject.toml', 'w') as f:
               f.write(content)
+          # app/core/config.py VERSION (esposta via /docs, OpenAPI/Swagger)
+          with open('backend/app/core/config.py') as f:
+              content = f.read()
+          content = re.sub(r'VERSION: str = \".*\"', 'VERSION: str = \"$VERSION\"', content)
+          with open('backend/app/core/config.py', 'w') as f:
+              f.write(content)
           "
           echo "Version bumped to $VERSION in all config files"
 
