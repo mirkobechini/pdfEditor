@@ -354,8 +354,26 @@ def google_login(
 
 
 # In-memory store for desktop Google OAuth token.
-# Key: state param (random string). Value: {"token": str, "used": bool}
+# Key: state param (random string). Value: {"token": str, "used": bool, "created_at": datetime}.
+# Assumes a single backend process (Render free plan, no --workers): the
+# state written here must be read back by whichever process later handles
+# Google's redirect to /google/desktop-callback. A horizontally-scaled
+# deployment would need a shared store (e.g. Redis) instead.
 _desktop_oauth_store: dict[str, dict] = {}
+_DESKTOP_OAUTH_STATE_TTL = timedelta(minutes=10)
+
+
+def _purge_expired_oauth_states() -> None:
+    """Drop abandoned login attempts (state issued but the OAuth flow was
+    never completed) so this in-memory store doesn't grow unbounded over the
+    process lifetime."""
+    now = datetime.now(timezone.utc)
+    expired = [
+        s for s, v in _desktop_oauth_store.items()
+        if now - v["created_at"] > _DESKTOP_OAUTH_STATE_TTL
+    ]
+    for s in expired:
+        _desktop_oauth_store.pop(s, None)
 
 
 @router.get("/google/desktop-login")
@@ -371,7 +389,12 @@ def google_desktop_login(request: Request):
     redirect_uri = f"{base}/auth/google/desktop-callback"
 
     # Store state for later verification
-    _desktop_oauth_store[state] = {"used": False, "token": None}
+    _purge_expired_oauth_states()
+    _desktop_oauth_store[state] = {
+        "used": False,
+        "token": None,
+        "created_at": datetime.now(timezone.utc),
+    }
 
     params = {
         "client_id": settings.GOOGLE_CLIENT_ID,
@@ -409,9 +432,9 @@ async def google_desktop_callback(
             url="http://127.0.0.1:7723/auth/desktop-token-receive?error=missing_params"
         )
 
-    # Verify state
+    # Verify state (reject if unknown or past its TTL, even if not purged yet)
     stored = _desktop_oauth_store.pop(state, None)
-    if not stored:
+    if not stored or datetime.now(timezone.utc) - stored["created_at"] > _DESKTOP_OAUTH_STATE_TTL:
         return RedirectResponse(
             url="http://127.0.0.1:7723/auth/desktop-token-receive?error=invalid_state"
         )
