@@ -95,3 +95,27 @@ def test_resolve_model_openai_and_ollama(monkeypatch) -> None:
     monkeypatch.setenv("PDFMIND_HF_API_KEY", "hf-test")
     assert isinstance(_resolve_model("ollama:qwen3.5"), ChatOllama)
     assert isinstance(_resolve_model("openai:gpt-4o"), ChatOpenAI)
+
+
+def test_resolve_model_openrouter_uses_openai_compatible_endpoint(monkeypatch) -> None:
+    """openrouter e' OpenAI-compatible: model_provider="openai" col suo base_url."""
+    monkeypatch.setenv("PDFMIND_OPENROUTER_API_KEY", "or-test")
+    model = _resolve_model("openrouter:google/gemini-flash")
+    assert isinstance(model, ChatOpenAI)
+    assert model.model_name == "google/gemini-flash"
+    assert model.openai_api_base == "https://openrouter.ai/api/v1"
+
+
+def test_resolve_model_huggingface_uses_openai_compatible_endpoint(monkeypatch) -> None:
+    """Hugging Face Inference e' OpenAI-compatible: stesso trattamento di openrouter."""
+    monkeypatch.setenv("PDFMIND_HF_API_KEY", "hf-test")
+    model = _resolve_model("huggingface:meta-llama/Llama-3")
+    assert isinstance(model, ChatOpenAI)
+    assert model.model_name == "meta-llama/Llama-3"
+    assert model.openai_api_base == "https://api-inference.huggingface.co/v1"
+
+
+def test_resolve_model_unknown_prefix_or_no_colon_returns_unchanged() -> None:
+    """Stringa senza prefisso noto (o senza ':') passa invariata (fallback)."""
+    assert _resolve_model("bogus-no-colon") == "bogus-no-colon"
+    assert _resolve_model("unknownprovider:foo") == "unknownprovider:foo"
