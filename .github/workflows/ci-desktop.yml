@@ -49,6 +49,29 @@ jobs:
           files: desktop/frontend/coverage/lcov.info
           flags: desktop
 
+  # Compila il crate Rust/Tauri ad ogni PR (issue-1059). Prima di questo job
+  # la build del binario desktop avveniva solo manualmente (desktop-preview.yml)
+  # o in release: un Cargo.lock/Cargo.toml rotto poteva finire su dev senza che
+  # nessun job se ne accorgesse (vedi PR #1051, dove il bump di `zip`/`tauri`
+  # ha richiesto una build manuale per essere verificato). `cargo check` basta
+  # a intercettare errori di compilazione — non serve il frontend buildato
+  # né il sidecar (verificato: tauri_build::build() non li richiede).
+  desktop-rust-check:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop/src-tauri
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "desktop/src-tauri -> target"
+      - name: cargo check
+        run: cargo check --locked
+      - name: cargo test
+        run: cargo test --locked
+
   # Deep agent #932 — E2E con provider REALE (Ollama). Il deep agent è il
   # sidecar del desktop, quindi vive qui. Test in tests/integration_tests/
   # marcati @pytest.mark.integration; se Ollama non è raggiungibile SKIPPANO
