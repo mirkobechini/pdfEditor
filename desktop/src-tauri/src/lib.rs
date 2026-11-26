@@ -482,20 +482,7 @@ pub fn run() {
                         }
                         "quit" => {
                             log::info!("Exiting app — killing sidecar and exiting process");
-                            // Kill sidecar child handle
-                            if let Some(state) = app.try_state::<SidecarState>() {
-                                if let Some(mut child) = state.child.lock().unwrap().take() {
-                                    let _ = child.kill();
-                                }
-                            }
-                            std::thread::sleep(std::time::Duration::from_millis(300));
-                            // Force-kill any remaining fastapi-sidecar processes
-                            #[cfg(target_os = "windows")]
-                            {
-                                let _ = std::process::Command::new("taskkill")
-                                    .args(["/F", "/IM", "fastapi-sidecar*"])
-                                    .status();
-                            }
+                            stop_sidecar(app);
                             // Exit the entire process immediately — kills all children
                             std::process::exit(0);
                         }
@@ -528,14 +515,12 @@ pub fn run() {
                     api.prevent_close();
                 }
                 tauri::WindowEvent::Destroyed => {
-                    // Cleanup: kill sidecar by name (child handle might already be gone)
-                    log::info!("Window destroyed — killing sidecar by name");
-                    #[cfg(target_os = "windows")]
-                    {
-                        let _ = std::process::Command::new("taskkill")
-                            .args(["/F", "/IM", "fastapi-sidecar*"])
-                            .status();
-                    }
+                    // Graceful shutdown (app_exit command, then kill) via the
+                    // tracked child handle, falling back to kill-by-name —
+                    // cross-platform, unlike the Windows-only taskkill this
+                    // used to duplicate inline (and never ran on macOS/Linux).
+                    log::info!("Window destroyed — stopping sidecar");
+                    stop_sidecar(window.app_handle());
                 }
                 _ => {}
             }
