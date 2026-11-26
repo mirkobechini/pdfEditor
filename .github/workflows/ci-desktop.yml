@@ -8,12 +8,14 @@ on:
       - "desktop/**"
       - "shared/**"
       - "backend/**"
+      - ".github/workflows/ci-desktop.yml"
   pull_request:
     branches: [dev, main]
     paths:
       - "desktop/**"
       - "shared/**"
       - "backend/**"
+      - ".github/workflows/ci-desktop.yml"
 
 permissions:
   contents: read
@@ -48,6 +50,35 @@ jobs:
         with:
           files: desktop/frontend/coverage/lcov.info
           flags: desktop
+
+  # Compila il crate Rust/Tauri ad ogni PR (issue-1059). Prima di questo job
+  # la build del binario desktop avveniva solo manualmente (desktop-preview.yml)
+  # o in release: un Cargo.lock/Cargo.toml rotto poteva finire su dev senza che
+  # nessun job se ne accorgesse (vedi PR #1051, dove il bump di `zip`/`tauri`
+  # ha richiesto una build manuale per essere verificato). `cargo check` basta
+  # a intercettare errori di compilazione — non serve il frontend buildato,
+  # ma tauri_build::build() valida che il binario externalBin esista: un file
+  # vuoto allo stesso path soddisfa quel controllo senza compilare il sidecar.
+  desktop-rust-check:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop/src-tauri
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "desktop/src-tauri -> target"
+      - name: Placeholder sidecar binary (tauri_build richiede che esista)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path binaries | Out-Null
+          New-Item -ItemType File -Force -Path binaries/fastapi-sidecar-x86_64-pc-windows-msvc.exe | Out-Null
+      - name: cargo check
+        run: cargo check --locked
+      - name: cargo test
+        run: cargo test --locked
 
   # Deep agent #932 — E2E con provider REALE (Ollama). Il deep agent è il
   # sidecar del desktop, quindi vive qui. Test in tests/integration_tests/
