@@ -201,6 +201,55 @@ class ForceToolCallMiddleware(AgentMiddleware):
 SUPPORTED_PREFIXES = ("ollama:", "anthropic:", "openai:", "openrouter:", "huggingface:")
 
 
+# Un provider per prefisso di modello ("ollama:qwen3.5" -> prefisso "ollama").
+# Collassa i rami quasi identici del vecchio _resolve_model in una tabella
+# dichiarativa (issue-1065/B9): aggiungere un provider è una voce qui, non un
+# nuovo blocco if/elif. Hugging Face Inference è OpenAI-compatible, quindi usa
+# model_provider="openai" col suo endpoint — stesso comportamento di prima.
+_PROVIDER_CONFIG: dict[str, dict] = {
+    "ollama": {
+        "model_provider": "ollama",
+        "base_url_env": "PDFMIND_OLLAMA_URL",
+        "base_url_default": "http://localhost:11434",
+        "keystore_name": None,
+        "api_key_env": None,
+        "extra_kwargs": {"reasoning": False},
+    },
+    "anthropic": {
+        "model_provider": "anthropic",
+        "base_url_env": "PDFMIND_ANTHROPIC_BASE_URL",
+        "base_url_default": None,
+        "keystore_name": "anthropic",
+        "api_key_env": "PDFMIND_ANTHROPIC_API_KEY",
+        "extra_kwargs": {},
+    },
+    "openrouter": {
+        "model_provider": "openai",
+        "base_url_env": "PDFMIND_OPENROUTER_BASE_URL",
+        "base_url_default": "https://openrouter.ai/api/v1",
+        "keystore_name": "openrouter",
+        "api_key_env": "PDFMIND_OPENROUTER_API_KEY",
+        "extra_kwargs": {},
+    },
+    "huggingface": {
+        "model_provider": "openai",
+        "base_url_env": "PDFMIND_HF_BASE_URL",
+        "base_url_default": "https://api-inference.huggingface.co/v1",
+        "keystore_name": "huggingface",
+        "api_key_env": "PDFMIND_HF_API_KEY",
+        "extra_kwargs": {},
+    },
+    "openai": {
+        "model_provider": "openai",
+        "base_url_env": "PDFMIND_OPENAI_BASE_URL",
+        "base_url_default": "https://api.openai.com/v1",
+        "keystore_name": "openai",
+        "api_key_env": "PDFMIND_OPENAI_API_KEY",
+        "extra_kwargs": {},
+    },
+}
+
+
 def _resolve_model(m: str):
     """Costruisce il ChatModel con `init_chat_model` (punto 3).
 
@@ -214,48 +263,21 @@ def _resolve_model(m: str):
     """
     from app.deep_agent import keystore
 
-    if m.startswith("ollama:"):
-        name = m.split(":", 1)[1]
-        return init_chat_model(
-            model=name,
-            model_provider="ollama",
-            base_url=os.environ.get("PDFMIND_OLLAMA_URL", "http://localhost:11434"),
-            reasoning=False,
-        )
-    if m.startswith("anthropic:"):
-        name = m.split(":", 1)[1]
-        return init_chat_model(
-            model=name,
-            model_provider="anthropic",
-            api_key=keystore.get_key("anthropic") or os.environ.get("PDFMIND_ANTHROPIC_API_KEY", ""),
-            base_url=os.environ.get("PDFMIND_ANTHROPIC_BASE_URL") or None,
-        )
-    if m.startswith("openrouter:"):
-        name = m.split(":", 1)[1]
-        return init_chat_model(
-            model=name,
-            model_provider="openai",
-            base_url=os.environ.get("PDFMIND_OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
-            api_key=keystore.get_key("openrouter") or os.environ.get("PDFMIND_OPENROUTER_API_KEY", ""),
-        )
-    if m.startswith("huggingface:"):
-        # Hugging Face Inference è OpenAI-compatible: usiamo il provider openai col suo endpoint.
-        name = m.split(":", 1)[1]
-        return init_chat_model(
-            model=name,
-            model_provider="openai",
-            base_url=os.environ.get("PDFMIND_HF_BASE_URL", "https://api-inference.huggingface.co/v1"),
-            api_key=keystore.get_key("huggingface") or os.environ.get("PDFMIND_HF_API_KEY", ""),
-        )
-    if m.startswith("openai:"):
-        name = m.split(":", 1)[1]
-        return init_chat_model(
-            model=name,
-            model_provider="openai",
-            base_url=os.environ.get("PDFMIND_OPENAI_BASE_URL", "https://api.openai.com/v1"),
-            api_key=keystore.get_key("openai") or os.environ.get("PDFMIND_OPENAI_API_KEY", ""),
-        )
-    return m
+    if ":" not in m:
+        return m
+    prefix, name = m.split(":", 1)
+    cfg = _PROVIDER_CONFIG.get(prefix)
+    if cfg is None:
+        return m
+
+    kwargs: dict = {"model": name, "model_provider": cfg["model_provider"], **cfg["extra_kwargs"]}
+    if cfg["base_url_default"] is not None:
+        kwargs["base_url"] = os.environ.get(cfg["base_url_env"], cfg["base_url_default"])
+    else:
+        kwargs["base_url"] = os.environ.get(cfg["base_url_env"]) or None
+    if cfg["keystore_name"] is not None:
+        kwargs["api_key"] = keystore.get_key(cfg["keystore_name"]) or os.environ.get(cfg["api_key_env"], "")
+    return init_chat_model(**kwargs)
 
 
 def _provider_usable(p: dict) -> bool:
