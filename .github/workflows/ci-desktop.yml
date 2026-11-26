@@ -8,12 +8,14 @@ on:
       - "desktop/**"
       - "shared/**"
       - "backend/**"
+      - ".github/workflows/ci-desktop.yml"
   pull_request:
     branches: [dev, main]
     paths:
       - "desktop/**"
       - "shared/**"
       - "backend/**"
+      - ".github/workflows/ci-desktop.yml"
 
 permissions:
   contents: read
