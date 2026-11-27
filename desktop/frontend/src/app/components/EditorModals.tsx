@@ -11,6 +11,7 @@ import CompressModal from "../../components/CompressModal";
 import ImportExportModal from "../../components/ImportExportModal";
 import SignModal from "../../components/SignModal";
 import OcrModal from "../../components/OcrModal";
+import ExtractTextModal from "../../components/ExtractTextModal";
 import PrintOptionsModal, { type PrintOptions } from "../../components/PrintOptionsModal";
 import AnnotationDialog from "../../components/AnnotationDialog";
 import ShareDialog from "../../components/ShareDialog";
@@ -34,6 +35,7 @@ export type EditorModalsProps = {
     importExportOpen: boolean;
     signOpen: boolean;
     ocrOpen: boolean;
+    extractTextOpen: boolean;
     printOptionsOpen: boolean;
     annotateOpen: boolean;
     shareOpen: boolean;
@@ -50,6 +52,7 @@ export type EditorModalsProps = {
     onCloseImportExport: () => void;
     onCloseSign: () => void;
     onCloseOcr: () => void;
+    onCloseExtractText: () => void;
     onClosePrintOptions: () => void;
     onCloseAnnotate: () => void;
     onCloseShare: () => void;
@@ -71,10 +74,10 @@ export function EditorModals(props: EditorModalsProps) {
     const {
         te, selectedDoc, pdfUrl, currentPage,
         removePagesOpen, reorderOpen, splitOpen, mergeOpen, compressOpen,
-        importExportOpen, signOpen, ocrOpen, printOptionsOpen, annotateOpen,
+        importExportOpen, signOpen, ocrOpen, extractTextOpen, printOptionsOpen, annotateOpen,
         shareOpen, lockOpen, replaceTextOpen, metadataOpen, deleteConfirm,
         onCloseRemovePages, onCloseReorder, onCloseSplit, onCloseMerge, onCloseCompress,
-        onCloseImportExport, onCloseSign, onCloseOcr, onClosePrintOptions, onCloseAnnotate,
+        onCloseImportExport, onCloseSign, onCloseOcr, onCloseExtractText, onClosePrintOptions, onCloseAnnotate,
         onCloseShare, onCloseLock, onCloseReplaceText, onCloseMetadata,
         onCancelDelete, onConfirmDelete,
         onDocUpdated, onSplitSaved, onNewDocSaved, onSignSaved,
@@ -156,6 +159,12 @@ export function EditorModals(props: EditorModalsProps) {
                 pdfId={selectedDoc?.id ?? null}
                 onClose={onCloseOcr}
                 onSuccess={onRefresh}
+            />
+
+            <ExtractTextModal
+                open={extractTextOpen}
+                pdfId={selectedDoc?.id ?? null}
+                onClose={onCloseExtractText}
             />
 
             <PrintOptionsModal

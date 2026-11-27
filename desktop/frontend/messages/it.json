@@ -228,6 +228,7 @@
     "metadata": "Metadati",
     "replaceText": "Sostituisci testo",
     "importExport": "Importa/Esporta",
+    "extractText": "Estrai testo",
     "print": "Stampa",
     "printSent": "Invio alla stampante...",
     "sign": "Firma",
@@ -604,6 +605,19 @@
     "successAlreadySearchable": "Questo PDF contiene già del testo selezionabile — non serve OCR.",
     "successNoText": "OCR completato, ma non è stato riconosciuto nessun testo in questo documento.",
     "processing": "Riconoscimento testo in corso... potrebbe richiedere qualche istante"
+  },
+  "extractTextModal": {
+    "title": "Estrai testo",
+    "description": "Estrai il testo selezionabile di questo PDF",
+    "page": "Pagina (vuoto = tutte)",
+    "pagePlaceholder": "Tutte le pagine",
+    "run": "Estrai",
+    "running": "Estrazione...",
+    "cancel": "Chiudi",
+    "copy": "Copia",
+    "copied": "Copiato!",
+    "failed": "Estrazione fallita",
+    "empty": "Nessun testo selezionabile trovato in questo documento (se è una scansione, prova prima OCR)."
   },
   "annotationDialog": {
     "title": "Aggiungi annotazione",

@@ -95,6 +95,7 @@ export default function EditorPage() {
         importExportOpen, setImportExportOpen,
         signOpen, setSignOpen,
         ocrOpen, setOcrOpen,
+        extractTextOpen, setExtractTextOpen,
         printOptionsOpen, setPrintOptionsOpen,
         annotateOpen, setAnnotateOpen,
         shareOpen, setShareOpen,
@@ -180,6 +181,7 @@ export default function EditorPage() {
                     onRemovePages={() => { setRemovePagesOpen(true); setOpenMenu(null); }}
                     onCompress={() => { setCompressOpen(true); setOpenMenu(null); }}
                     onImportExport={() => { setImportExportOpen(true); setOpenMenu(null); }}
+                    onExtractText={() => { setExtractTextOpen(true); setOpenMenu(null); }}
                     onReplaceText={() => { setReplaceTextOpen(true); setOpenMenu(null); }}
                     onMetadata={() => { setMetadataOpen(true); setOpenMenu(null); }}
                     onSign={() => { setSignOpen(true); setOpenMenu(null); }}
@@ -213,6 +215,7 @@ export default function EditorPage() {
                 importExportOpen={importExportOpen}
                 signOpen={signOpen}
                 ocrOpen={ocrOpen}
+                extractTextOpen={extractTextOpen}
                 printOptionsOpen={printOptionsOpen}
                 annotateOpen={annotateOpen}
                 shareOpen={shareOpen}
@@ -228,6 +231,7 @@ export default function EditorPage() {
                 onCloseImportExport={() => setImportExportOpen(false)}
                 onCloseSign={() => setSignOpen(false)}
                 onCloseOcr={() => setOcrOpen(false)}
+                onCloseExtractText={() => setExtractTextOpen(false)}
                 onClosePrintOptions={() => setPrintOptionsOpen(false)}
                 onCloseAnnotate={() => setAnnotateOpen(false)}
                 onCloseShare={() => setShareOpen(false)}
