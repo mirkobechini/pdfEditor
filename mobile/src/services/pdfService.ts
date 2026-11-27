@@ -23,6 +23,7 @@ export {
   compressPdf,
   compressPdfOffline,
   ocrPdf,
+  extractText,
   addAnnotation,
   exportPdf,
   importFile,

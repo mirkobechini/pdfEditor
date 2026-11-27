@@ -118,6 +118,25 @@ export async function ocrPdf(pdfId: string, language = "eng"): Promise<OcrOutcom
 }
 
 /**
+ * Extract the selectable text of a PDF via the cloud backend (same endpoint
+ * desktop/web use — pdf-lib has no text extraction). Unlike compress/OCR
+ * this doesn't transform the PDF, so there's no result to download/save:
+ * just upload and return the extracted text.
+ */
+export async function extractText(pdfId: string, page?: number): Promise<{ text: string; pages: number } | null> {
+  try {
+    const pdf = await getLocalPdfById(pdfId);
+    if (!pdf) return null;
+
+    const uploaded = await api.uploadPdf(pdf.uri, pdf.original_filename, "application/pdf");
+    return await api.extractText(uploaded.id, page);
+  } catch (e) {
+    console.error("Extract text error:", e);
+    return null;
+  }
+}
+
+/**
  * Add an annotation to a PDF via the cloud backend (the annotation is burned
  * into the PDF, not a local-only overlay, so this has to go through the
  * same endpoint desktop/web use). Flow mirrors compressPdf/ocrPdf: upload →
