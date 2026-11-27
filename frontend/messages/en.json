@@ -20,6 +20,7 @@
     "protect": "Protect",
     "compress": "Compress",
     "importExport": "Import/Export",
+    "extractText": "Extract text",
     "print": "Print",
     "sign": "Sign",
     "dropHere": "Drop your file here",
@@ -901,6 +902,19 @@
     "successAlreadySearchable": "This PDF already has selectable text — OCR wasn't needed.",
     "successNoText": "OCR completed, but no text was recognized in this document.",
     "processing": "Recognizing text... this may take a moment"
+  },
+  "extractTextModal": {
+    "title": "Extract text",
+    "description": "Extract the selectable text of this PDF",
+    "page": "Page (empty = all)",
+    "pagePlaceholder": "All pages",
+    "run": "Extract",
+    "running": "Extracting...",
+    "cancel": "Close",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "failed": "Extraction failed",
+    "empty": "No selectable text found in this document (if it's a scan, try OCR first)."
   },
   "printOptionsModal": {
     "title": "Print options",

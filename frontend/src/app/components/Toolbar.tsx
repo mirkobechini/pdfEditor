@@ -18,6 +18,7 @@ interface ToolbarProps {
   onProtect: () => void;
   onCompress: () => void;
   onImportExport: () => void;
+  onExtractText: () => void;
   onPrint: () => void;
   onDownload: () => void;
   onSign: () => void;
@@ -52,6 +53,7 @@ export default function Toolbar({
   onProtect,
   onCompress,
   onImportExport,
+  onExtractText,
   onPrint,
   onDownload,
   onSign,
@@ -123,6 +125,7 @@ export default function Toolbar({
     { key: "importExport", onClick: onImportExport },
     { key: "replaceText", onClick: onReplaceText },
     { key: "metadata", onClick: onMetadata },
+    { key: "extractText", onClick: onExtractText },
   ];
   // Gruppo "Annota": sign, share, annotate, ocr
   const annotateItems = [

@@ -24,6 +24,7 @@ import type {
   AdminUser,
   ShareLink,
   OcrResult,
+  TextExtraction,
 } from "./api-types";
 
 export type {
@@ -34,6 +35,7 @@ export type {
   AdminUser,
   ShareLink,
   OcrResult,
+  TextExtraction,
 };
 
 /** Compat alias: il client web è ora creato via factory (#912). */

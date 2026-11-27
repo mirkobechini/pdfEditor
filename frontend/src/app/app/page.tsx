@@ -49,6 +49,7 @@ export default function EditorPage() {
     const [shareOpen, setShareOpen] = React.useState(false);
     const [annotateOpen, setAnnotateOpen] = React.useState(false);
     const [ocrOpen, setOcrOpen] = React.useState(false);
+    const [extractTextOpen, setExtractTextOpen] = React.useState(false);
     const [dragOver, setDragOver] = React.useState(false);
     const [importExportOpen, setImportExportOpen] = React.useState(false);
     const [printOptionsOpen, setPrintOptionsOpen] = React.useState(false);
@@ -295,6 +296,7 @@ export default function EditorPage() {
                         onShare={() => setShareOpen(true)}
                         onAnnotate={() => setAnnotateOpen(true)}
                         onOcr={() => setOcrOpen(true)}
+                        onExtractText={() => setExtractTextOpen(true)}
                         canUndo={!!selectedId}
                         canRedo={false}
                         onUndo={handleUndo}
@@ -335,6 +337,7 @@ export default function EditorPage() {
                 shareOpen={shareOpen}
                 annotateOpen={annotateOpen}
                 ocrOpen={ocrOpen}
+                extractTextOpen={extractTextOpen}
                 importExportOpen={importExportOpen}
                 printOptionsOpen={printOptionsOpen}
                 deleteModalOpen={deleteModalOpen}
@@ -351,6 +354,7 @@ export default function EditorPage() {
                 onCloseShare={() => setShareOpen(false)}
                 onCloseAnnotate={() => setAnnotateOpen(false)}
                 onCloseOcr={() => setOcrOpen(false)}
+                onCloseExtractText={() => setExtractTextOpen(false)}
                 onCloseImportExport={() => setImportExportOpen(false)}
                 onClosePrintOptions={() => setPrintOptionsOpen(false)}
                 onCloseDeleteModal={() => setDeleteModalOpen(false)}

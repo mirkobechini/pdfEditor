@@ -14,6 +14,7 @@ import SignDialog from "./SignDialog";
 import ShareDialog from "./ShareDialog";
 import AnnotationDialog from "./AnnotationDialog";
 import OcrModal from "./OcrModal";
+import ExtractTextModal from "./ExtractTextModal";
 import ImportExportDialog from "./ImportExportDialog";
 import DeleteModal from "./DeleteModal";
 import { api, PdfDocument } from "../lib/api";
@@ -37,6 +38,7 @@ export interface EditorDialogsProps {
   shareOpen: boolean;
   annotateOpen: boolean;
   ocrOpen: boolean;
+  extractTextOpen: boolean;
   importExportOpen: boolean;
   printOptionsOpen: boolean;
   deleteModalOpen: boolean;
@@ -54,6 +56,7 @@ export interface EditorDialogsProps {
   onCloseShare: () => void;
   onCloseAnnotate: () => void;
   onCloseOcr: () => void;
+  onCloseExtractText: () => void;
   onCloseImportExport: () => void;
   onClosePrintOptions: () => void;
   onCloseDeleteModal: () => void;
@@ -74,11 +77,11 @@ export default function EditorDialogs(p: EditorDialogsProps) {
     selectedId, selectedName, fileUrl, currentPage, totalPages,
     mergeOpen, splitOpen, compressOpen, reorderOpen, removeOpen,
     metadataOpen, replaceTextOpen, protectOpen, signOpen, shareOpen,
-    annotateOpen, ocrOpen, importExportOpen, printOptionsOpen,
+    annotateOpen, ocrOpen, extractTextOpen, importExportOpen, printOptionsOpen,
     deleteModalOpen, fileToDelete,
     onCloseMerge, onCloseSplit, onCloseCompress, onCloseReorder,
     onCloseRemove, onCloseMetadata, onCloseReplaceText, onCloseProtect,
-    onCloseSign, onCloseShare, onCloseAnnotate, onCloseOcr,
+    onCloseSign, onCloseShare, onCloseAnnotate, onCloseOcr, onCloseExtractText,
     onCloseImportExport, onClosePrintOptions, onCloseDeleteModal,
     onConfirmDelete, setSelectedId, setSelectedName, setFileUrl,
     setRequiresPassword, setSidebarRefreshKey, loadDocIntoViewer, executePrint,
@@ -204,6 +207,11 @@ export default function EditorDialogs(p: EditorDialogsProps) {
         onClose={onCloseOcr}
         pdfId={selectedId}
         onSuccess={() => setSidebarRefreshKey((prev) => prev + 1)}
+      />
+      <ExtractTextModal
+        open={extractTextOpen}
+        onClose={onCloseExtractText}
+        pdfId={selectedId}
       />
       <ImportExportDialog
         open={importExportOpen}
