@@ -803,5 +803,67 @@ def convert_docx_to_pdf(filename: str, content_b64: str) -> str:
         return f"✓ Convertito in PDF: {target.name}"
     except ValueError as e:
         return f"Errore: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Convert immagine → PDF (salva in ROOT della workspace, non nel DB)
+# ---------------------------------------------------------------------------
+
+_IMAGE_EXTENSIONS = ("png", "jpg", "jpeg", "gif", "bmp")
+
+
+def _image_to_pdf_bytes(content: bytes) -> bytes:
+    """Converte bytes di un'immagine in bytes PDF (stessa logica di
+    PdfService.import_file_to_pdf per png/jpg/jpeg/gif/bmp, senza toccare il DB)."""
+    import fitz
+    from PIL import Image
+
+    try:
+        img = Image.open(io.BytesIO(content))
+        img.load()
+    except Exception as e:
+        raise ValueError(f"Immagine non valida o non supportata: {e}")
+
+    png_buf = io.BytesIO()
+    # Preserva il canale alpha se presente (es. PNG/GIF trasparenti).
+    if img.mode in ("RGBA", "LA", "P"):
+        img = img.convert("RGBA")
+    else:
+        img = img.convert("RGB")
+    img.save(png_buf, format="PNG")
+
+    doc = fitz.open(stream=png_buf.getvalue(), filetype="png")
+    # convert_to_pdf() è richiesto per i documenti immagine; tobytes()/save()
+    # funziona solo su documenti PDF e altrimenti lancia AssertionError.
+    pdf_bytes = doc.convert_to_pdf()
+    doc.close()
+    return pdf_bytes
+
+
+def convert_image_to_pdf(filename: str, content_b64: str) -> str:
+    """Converte un'immagine (png/jpg/jpeg/gif/bmp) in PDF e la salva nella
+    ROOT della workspace.
+
+    - filename: nome del file (es. foto.jpg)
+    - content_b64: contenuto dell'immagine codificato in base64
+    """
+    ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+    if ext not in _IMAGE_EXTENSIONS:
+        return f"Errore: supportati solo {', '.join(_IMAGE_EXTENSIONS)}"
+    if not content_b64:
+        return "Errore: manca il contenuto del file"
+    try:
+        content = base64.b64decode(content_b64)
+    except Exception:
+        return "Errore: content_b64 non è base64 valido"
+    try:
+        root = _resolve_root()
+        pdf_bytes = _image_to_pdf_bytes(content)
+        stem = filename.rsplit(".", 1)[0]
+        target = _unique_pdf_path(root, f"{stem}.pdf")
+        target.write_bytes(pdf_bytes)
+        return f"✓ Convertito in PDF: {target.name}"
+    except ValueError as e:
+        return f"Errore: {e}"
     except Exception as e:
         return f"Errore durante la conversione: {e}"
