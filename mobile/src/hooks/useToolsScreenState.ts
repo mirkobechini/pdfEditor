@@ -85,6 +85,8 @@ export interface ToolsScreenStateCtx {
     setAnnotationDialog: (v: { pdfId: string; pdfName: string; pdfUri: string; totalPages: number } | null) => void;
     ocrDialog: { pdfId: string; pdfName: string } | null;
     setOcrDialog: (v: { pdfId: string; pdfName: string } | null) => void;
+    extractTextDialog: { pdfId: string; pdfName: string } | null;
+    setExtractTextDialog: (v: { pdfId: string; pdfName: string } | null) => void;
     shareDialog: { pdfId: string; pdfName: string } | null;
     setShareDialog: (v: { pdfId: string; pdfName: string } | null) => void;
 }
@@ -155,6 +157,8 @@ export function useToolsScreenState(): ToolsScreenStateCtx {
     const [annotationDialog, setAnnotationDialog] = useState<{ pdfId: string; pdfName: string; pdfUri: string; totalPages: number } | null>(null);
     // OCR dialog state
     const [ocrDialog, setOcrDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
+    // Extract text dialog state
+    const [extractTextDialog, setExtractTextDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
     // Share dialog state
     const [shareDialog, setShareDialog] = useState<{ pdfId: string; pdfName: string } | null>(null);
     const [passwordInput, setPasswordInput] = useState("");
@@ -231,6 +235,8 @@ export function useToolsScreenState(): ToolsScreenStateCtx {
         setAnnotationDialog,
         ocrDialog,
         setOcrDialog,
+        extractTextDialog,
+        setExtractTextDialog,
         shareDialog,
         setShareDialog,
     };

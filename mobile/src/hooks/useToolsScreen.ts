@@ -75,6 +75,8 @@ export function useToolsScreen() {
         setAnnotationDialog: st.setAnnotationDialog,
         ocrDialog: st.ocrDialog,
         setOcrDialog: st.setOcrDialog,
+        extractTextDialog: st.extractTextDialog,
+        setExtractTextDialog: st.setExtractTextDialog,
         shareDialog: st.shareDialog,
         setShareDialog: st.setShareDialog,
         nameDialog: st.nameDialog,

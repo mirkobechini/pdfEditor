@@ -25,6 +25,7 @@ export interface ToolsScreenDialogsCtx {
     openSignDialog: (pdfId: string) => void;
     openAnnotationDialog: (pdfId: string) => void;
     openOcrDialog: (pdfId: string) => void;
+    openExtractTextDialog: (pdfId: string) => void;
     openShareDialog: (pdfId: string) => void;
 }
 
@@ -170,6 +171,12 @@ export function useToolsScreenDialogs(st: ToolsScreenStateCtx): ToolsScreenDialo
         st.setOcrDialog({ pdfId, pdfName: pdf.original_filename });
     }
 
+    function openExtractTextDialog(pdfId: string) {
+        const pdf = st.pdfs.find((p) => p.id === pdfId);
+        if (!pdf) return;
+        st.setExtractTextDialog({ pdfId, pdfName: pdf.original_filename });
+    }
+
     function openShareDialog(pdfId: string) {
         const pdf = st.pdfs.find((p) => p.id === pdfId);
         if (!pdf) return;
@@ -193,6 +200,7 @@ export function useToolsScreenDialogs(st: ToolsScreenStateCtx): ToolsScreenDialo
         openSignDialog,
         openAnnotationDialog,
         openOcrDialog,
+        openExtractTextDialog,
         openShareDialog,
     };
 }

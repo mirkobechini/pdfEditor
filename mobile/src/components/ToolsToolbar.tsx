@@ -113,6 +113,15 @@ export default function ToolsToolbar({ s }: { s: ToolsScreenState }) {
                     {t("tools.ocr")}
                 </Button>
                 <Button
+                    mode={s.operation === "extractText" ? "contained" : "outlined"}
+                    compact
+                    buttonColor={s.operation === "extractText" ? theme.colors.primary : undefined}
+                    textColor={s.operation === "extractText" ? "#fff" : theme.colors.primary}
+                    onPress={() => { s.setOperation("extractText"); s.setSelectedIds([]); }}
+                >
+                    {t("tools.extractText")}
+                </Button>
+                <Button
                     mode={s.operation === "share" ? "contained" : "outlined"}
                     compact
                     buttonColor={s.operation === "share" ? theme.colors.primary : undefined}

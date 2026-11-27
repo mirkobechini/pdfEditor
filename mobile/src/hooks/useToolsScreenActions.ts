@@ -306,12 +306,14 @@ export function useToolsScreenActions(
         openSplitDialog: dlg.openSplitDialog, openRemoveDialog: dlg.openRemoveDialog, openMetadataDialog: dlg.openMetadataDialog,
         openReorderDialog: dlg.openReorderDialog, openPasswordDialog: dlg.openPasswordDialog, openCompressDialog: dlg.openCompressDialog,
         openSignDialog: dlg.openSignDialog, openAnnotationDialog: dlg.openAnnotationDialog, openOcrDialog: dlg.openOcrDialog,
+        openExtractTextDialog: dlg.openExtractTextDialog,
         openShareDialog: dlg.openShareDialog, openImportExportDialog: dlg.openImportExportDialog,
     });
     actionHandlersRef.current = {
         openSplitDialog: dlg.openSplitDialog, openRemoveDialog: dlg.openRemoveDialog, openMetadataDialog: dlg.openMetadataDialog,
         openReorderDialog: dlg.openReorderDialog, openPasswordDialog: dlg.openPasswordDialog, openCompressDialog: dlg.openCompressDialog,
         openSignDialog: dlg.openSignDialog, openAnnotationDialog: dlg.openAnnotationDialog, openOcrDialog: dlg.openOcrDialog,
+        openExtractTextDialog: dlg.openExtractTextDialog,
         openShareDialog: dlg.openShareDialog, openImportExportDialog: dlg.openImportExportDialog,
     };
 
@@ -328,6 +330,7 @@ export function useToolsScreenActions(
         else if (st.operation === "sign") h.openSignDialog(item.id);
         else if (st.operation === "annotate") h.openAnnotationDialog(item.id);
         else if (st.operation === "ocr") h.openOcrDialog(item.id);
+        else if (st.operation === "extractText") h.openExtractTextDialog(item.id);
         else if (st.operation === "share") h.openShareDialog(item.id);
         else if (st.operation === "export") h.openImportExportDialog(item.id, "export");
         // eslint-disable-next-line react-hooks/exhaustive-deps
