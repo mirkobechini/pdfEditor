@@ -1,6 +1,6 @@
 # Feature Comparison: Web vs Desktop vs Mobile
 
-> **Ultimo aggiornamento:** 2026-10-07
+> **Ultimo aggiornamento:** 2026-11-27
 > Questo file traccia le differenze funzionali tra le tre piattaforme di PdfEditor.
 
 ---
@@ -52,7 +52,7 @@
 | Annotazioni PDF                     | ✅  | ✅      | ✅     | Web e Desktop: evidenzia/sottolinea/barrato/commento/testo. Mobile: implementata e testata via UI; sbloccata in produzione dopo il redeploy backend del 2026-09-28 (vedi KNOWN_ISSUES). Backend: PyMuPDF embedded (pro/enterprise)                                                                                      |
 | OCR PDF scansionati                 | ✅  | ✅      | ✅     | Web e Desktop: riconosce testo con Tesseract (pytesseract), mostra caratteri riconosciuti. Mobile: stesso stato di Annotazioni — sbloccata dal redeploy backend del 2026-09-28. Backend: searchable PDF (pro/enterprise)                                                                                        |
 | **Testo**                           |     |         |        |                                                                                                                                                                                        |
-| Extract text                        | ✅  | ✅      | ❌     | Solo backend (PyMuPDF)                                                                                                                                                                 |
+| Extract text                        | ✅  | ✅      | ✅     | UI "Estrai testo" nel menu Converti (web/desktop) / tab dedicata (mobile), backend PyMuPDF. Prima del 2026-11-27 la capacità API esisteva ma non aveva MAI avuto una UI su nessuna piattaforma (issue #1069). |
 | **Auth**                            |     |         |        |                                                                                                                                                                                        |
 | Email/password                      | ✅  | ✅      | ✅     |                                                                                                                                                                                        |
 | Guest mode                          | ✅  | ✅      | ✅     |                                                                                                                                                                                        |
@@ -112,7 +112,7 @@
 - **Undo/Redo:** Non supportato (pdf-lib non ha history)
 - **Download PDF:** ✅ tramite SAF (Storage Access Framework)
 - **Solo mobile:** Scanner, Share, Badge, Multi-select, Splash, Pull-to-refresh, Search, Swipe, Snackbar, Bottom tabs, Onboarding wizard, Sync badges
-- **Manca rispetto a web/desktop:** Extract text, Undo/Redo
+- **Manca rispetto a web/desktop:** Undo/Redo (Extract text aggiunto il 2026-11-27, issue #1069)
 - **Sbloccate dal redeploy backend del 2026-09-28:** Annotazioni, OCR, Share via link (codice completo e testato via UI; consigliata una riconferma rapida su device reale ora che il backend è aggiornato, dato che non sono state ritestate end-to-end dopo il deploy)
 
 ---
