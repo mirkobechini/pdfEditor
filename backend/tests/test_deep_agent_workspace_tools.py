@@ -342,6 +342,62 @@ def test_convert_docx_invalid_content_returns_errore(ws_root):
     assert out.startswith("Errore:")
 
 # ---------------------------------------------------------------------------
+# convert_image_to_pdf (issue-1067/B13)
+# ---------------------------------------------------------------------------
+
+def _make_image_b64(fmt: str = "PNG", size: tuple = (40, 30), mode: str = "RGB") -> str:
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new(mode, size, color="red").save(buf, format=fmt)
+    return base64.b64encode(buf.getvalue()).decode()
+
+
+def test_convert_image_to_pdf_writes_to_workspace_root(ws_root):
+    from app.deep_agent.tools import pdf_ops
+    out = pdf_ops.convert_image_to_pdf("foto.png", _make_image_b64())
+    assert out.startswith("✓")
+    target = ws_root / "foto.pdf"
+    assert target.exists()  # ROOT della workspace, non output/
+    import fitz
+    d = fitz.open(target)
+    assert d.page_count == 1
+    d.close()
+
+
+def test_convert_image_to_pdf_jpg_and_transparent_png(ws_root):
+    """jpg (RGB) e png trasparente (RGBA) seguono entrambi lo stesso percorso."""
+    from app.deep_agent.tools import pdf_ops
+    out_jpg = pdf_ops.convert_image_to_pdf("photo.jpg", _make_image_b64(fmt="JPEG"))
+    assert out_jpg.startswith("✓")
+    assert (ws_root / "photo.pdf").exists()
+
+    out_png = pdf_ops.convert_image_to_pdf("logo.png", _make_image_b64(mode="RGBA"))
+    assert out_png.startswith("✓")
+    assert (ws_root / "logo.pdf").exists()
+
+
+def test_convert_image_suffix_on_existing(ws_root):
+    from app.deep_agent.tools import pdf_ops
+    pdf_ops.convert_image_to_pdf("img.png", _make_image_b64())
+    out = pdf_ops.convert_image_to_pdf("img.png", _make_image_b64())
+    assert out.startswith("✓")
+    assert (ws_root / "img.pdf").exists()
+    assert (ws_root / "img_2.pdf").exists()
+
+
+def test_convert_image_nonexistent_workspace(tmp_path, monkeypatch):
+    import app.deep_agent.tools.workspace as ws
+    monkeypatch.setattr(ws, "_root", lambda: None)
+    from app.deep_agent.tools import pdf_ops
+    assert "Errore" in pdf_ops.convert_image_to_pdf("x.png", _make_image_b64())
+
+
+def test_convert_image_invalid_content_returns_errore(ws_root):
+    from app.deep_agent.tools import pdf_ops
+    out = pdf_ops.convert_image_to_pdf("x.png", base64.b64encode(b"not an image").decode())
+    assert out.startswith("Errore:")
+
+# ---------------------------------------------------------------------------
 # fix 06/11 (Mirko, build 24/10): firma da FILE del workspace + evidenzia automatica
 # ---------------------------------------------------------------------------
 

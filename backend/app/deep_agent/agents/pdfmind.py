@@ -36,7 +36,7 @@ _INTENT_TOOLS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
     (("annot", "evidenzi"), ("annotate_pdf",)),
     (("ocr", "riconosci il testo"), ("ocr_pdf",)),
     (("comprim", "compress"), ("compress_pdf",)),
-    (("convert", "trasform", "converti"), ("convert_docx_to_pdf",)),
+    (("convert", "trasform", "converti"), ("convert_docx_to_pdf", "convert_image_to_pdf")),
     (("scrivi", "scrivi", "salva un", "crea un"), ("scrivi_output",)),
     (("elimina", "eliminar", "cancell", "rimuovi", "rimuover", "cancella"), ("elimina_file", "elimina_tutti_in_output")),
 )
@@ -390,13 +390,15 @@ SYSTEM_PROMPT = (
     "se serve una conferma, sarà il SISTEMA a mostrarla con un pulsante (Procedi/Annulla). "
     "COMPRESSIONE: se chiedono di comprimere SENZA indicare il livello, chiedi in una riga sola "
     "CONTROLLO: se non esiste uno strumento per quello che chiede l'utente (es. convertire un "
-    "JPG in PDF), NON eseguire un'azione diversa: spiega che manca la capacita' e proponi il "
-    "piu' vicino (es. 'non so convertire immagini, ma posso firmare/annotare/OCR un PDF'. "
+    "file Excel in PDF), NON eseguire un'azione diversa: spiega che manca la capacita' e proponi "
+    "il piu' vicino (es. 'non so convertire foglio di calcolo, ma posso convertire DOCX o "
+    "immagini in PDF'). "
     "'leggera / media / forte?' e NON chiamare compress_pdf finché non scelgono. "
     "Quando l'utente chiede un'operazione (unisci, separi, firma, annota, OCR, comprimi, "
     "converti, SCRIVI, ELIMINA), chiama SUBITO lo strumento corrispondente senza fare "
     "domande preliminari e senza descrivere i passi: merge_pdfs, split_pdf, sign_pdf, "
-    "annotate_pdf, ocr_pdf, compress_pdf, convert_docx_to_pdf, scrivi_output, elimina_file. "
+    "annotate_pdf, ocr_pdf, compress_pdf, convert_docx_to_pdf, convert_image_to_pdf, "
+    "scrivi_output, elimina_file. "
     "Per le operazioni passa NEI PARAMETRI dello strumento i nomi dei file ESATTAMENTE come "
     "scritti dall'utente, senza normalizzarli (es. se l'utente scrive 'unisci scheda_1726 e "
     "temp', passi pdf_ids=['scheda_1726','temp'], NON 'scheda-1726.pdf'). Sarà il sistema a "
@@ -556,6 +558,7 @@ def _describe_action(tool_call, state, runtime) -> str:
         "ocr_pdf": "Esegui OCR sul PDF (in-place: il file diventa ricercabile)",
         "compress_pdf": "Comprimi il PDF",
         "convert_docx_to_pdf": "Converti in PDF",
+        "convert_image_to_pdf": "Converti in PDF",
         "scrivi_output": "Scrivi il file",
     }
     return f"{labels.get(name, 'Esegui')}: {target}"

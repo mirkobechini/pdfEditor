@@ -242,6 +242,7 @@ OPERATIVE_TOOLS = {
     "ocr_pdf",
     "compress_pdf",
     "convert_docx_to_pdf",
+    "convert_image_to_pdf",
     "scrivi_output",
     "elimina_file",
     "elimina_tutti_in_output",
@@ -473,8 +474,8 @@ async def _events(agent, goal: str, thread_id: str, history: list[dict] | None =
             "di usare uno STRUMENTO (tool). Devi CHIAMARE ORA lo strumento appropriato — "
             "NON rispondere con testo. (strumenti: elenca_workspace, elenca_file, "
             "leggi_workspace, leggi_pdf, merge_pdfs, split_pdf, sign_pdf, annotate_pdf, "
-            "ocr_pdf, compress_pdf, convert_docx_to_pdf, scrivi_output, elimina_file, "
-            "elimina_tutti_in_output)."
+            "ocr_pdf, compress_pdf, convert_docx_to_pdf, convert_image_to_pdf, scrivi_output, "
+            "elimina_file, elimina_tutti_in_output)."
         )
         async for _ev in _pass([{"role": "user", "content": force_msg}], st):
             yield _ev

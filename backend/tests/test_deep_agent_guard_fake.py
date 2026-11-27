@@ -23,7 +23,7 @@ from app.deep_agent.server.mind import OPERATIVE_TOOLS
 def test_operative_tools_include_action_tools() -> None:
     # Tutti i tool che ESEGUONO un'operazione reale sui file devono essere nel set.
     for t in ("merge_pdfs", "split_pdf", "sign_pdf", "annotate_pdf",
-              "ocr_pdf", "compress_pdf", "convert_docx_to_pdf",
+              "ocr_pdf", "compress_pdf", "convert_docx_to_pdf", "convert_image_to_pdf",
               "scrivi_output", "elimina_file"):
         assert t in OPERATIVE_TOOLS, f"{t} manca da OPERATIVE_TOOLS"
 
