@@ -14,6 +14,7 @@ import type {
   BugReport,
   OcrResult,
   ShareLink,
+  TextExtraction,
 } from "./types";
 
 export type {
@@ -26,6 +27,7 @@ export type {
   BugReport,
   OcrResult,
   ShareLink,
+  TextExtraction,
 };
 
 // Cloud backend URL — override di test per e2e (issue #919, scelta opzione 1, doc 03/10).
@@ -550,6 +552,15 @@ export class ApiClient {
       method: "POST",
       headers: { ...this.getHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ language }),
+    });
+    if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
+    return res.json();
+  }
+
+  async extractText(id: string, page?: number): Promise<TextExtraction> {
+    const params = page !== undefined ? `?page=${page}` : "";
+    const res = await this._fetch(`${this.baseUrl}/pdfs/${id}/text${params}`, {
+      headers: this.getHeaders(),
     });
     if (!res.ok) throw new Error(await ApiClient.extractErrorResponse(res));
     return res.json();

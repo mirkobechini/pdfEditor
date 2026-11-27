@@ -27,6 +27,7 @@ export type EditorToolbarProps = {
     onRemovePages: () => void;
     onCompress: () => void;
     onImportExport: () => void;
+    onExtractText: () => void;
     onReplaceText: () => void;
     onMetadata: () => void;
     onSign: () => void;
@@ -41,7 +42,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
         organizeRef, convertRef, annotateMenuRef,
         onDownload, onPrint, onPageChange, onZoomChange, onToggleMenu,
         onMerge, onSplit, onReorder, onRemovePages,
-        onCompress, onImportExport, onReplaceText, onMetadata,
+        onCompress, onImportExport, onExtractText, onReplaceText, onMetadata,
         onSign, onOcr, onAnnotate, onShare,
     } = props;
 
@@ -113,6 +114,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
                             <button onClick={onImportExport} className={menuItem}>{te("importExport")}</button>
                             <button onClick={onReplaceText} disabled={!selected} className={menuItem}>{te("replaceText")}</button>
                             <button onClick={onMetadata} disabled={!selected} className={menuItem}>{te("metadata")}</button>
+                            <button onClick={onExtractText} disabled={!selected} data-testid="toolbar-extract-text" className={menuItem}>{te("extractText")}</button>
                         </div>
                     )}
                 </div>

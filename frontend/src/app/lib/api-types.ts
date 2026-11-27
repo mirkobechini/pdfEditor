@@ -12,6 +12,7 @@ export type {
   UserResponse,
   AuthResponse,
   OcrResult,
+  TextExtraction,
 } from "../../shared/types";
 
 /** A shareable link for a PDF document. */

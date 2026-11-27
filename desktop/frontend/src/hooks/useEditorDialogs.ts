@@ -28,6 +28,8 @@ export interface EditorDialogs {
   setSignOpen: React.Dispatch<React.SetStateAction<boolean>>;
   ocrOpen: boolean;
   setOcrOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  extractTextOpen: boolean;
+  setExtractTextOpen: React.Dispatch<React.SetStateAction<boolean>>;
   printOptionsOpen: boolean;
   setPrintOptionsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   printPreview: { dataUrl: string; isLandscape: boolean } | null;
@@ -55,6 +57,7 @@ export function useEditorDialogs(): EditorDialogs {
   const [importExportOpen, setImportExportOpen] = React.useState(false);
   const [signOpen, setSignOpen] = React.useState(false);
   const [ocrOpen, setOcrOpen] = React.useState(false);
+  const [extractTextOpen, setExtractTextOpen] = React.useState(false);
   const [printOptionsOpen, setPrintOptionsOpen] = React.useState(false);
   const [printPreview, setPrintPreview] = React.useState<{
     dataUrl: string;
@@ -86,6 +89,8 @@ export function useEditorDialogs(): EditorDialogs {
     setSignOpen,
     ocrOpen,
     setOcrOpen,
+    extractTextOpen,
+    setExtractTextOpen,
     printOptionsOpen,
     setPrintOptionsOpen,
     printPreview,

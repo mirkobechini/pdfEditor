@@ -7,6 +7,7 @@ import { useToolsScreen } from "../hooks/useToolsScreen";
 import SignFlowDialog from "../components/SignFlowDialog";
 import AnnotationFlowDialog from "../components/AnnotationFlowDialog";
 import OcrFlowDialog from "../components/OcrFlowDialog";
+import ExtractTextFlowDialog from "../components/ExtractTextFlowDialog";
 import ShareFlowDialog from "../components/ShareFlowDialog";
 import ToolsToolbar from "../components/ToolsToolbar";
 import ToolsListContent from "../components/ToolsListContent";
@@ -82,6 +83,17 @@ export default function ToolsScreen() {
                     onDismiss={() => s.setOcrDialog(null)}
                     onDone={s.handleOcrDone}
                     onFailed={s.handleOcrFailed}
+                />
+            )}
+
+            {/* Extract text — cloud-only, disabled offline */}
+            {s.extractTextDialog && (
+                <ExtractTextFlowDialog
+                    visible={s.extractTextDialog !== null}
+                    pdfId={s.extractTextDialog.pdfId}
+                    pdfName={s.extractTextDialog.pdfName}
+                    isOnline={s.isOnline}
+                    onDismiss={() => s.setExtractTextDialog(null)}
                 />
             )}
 

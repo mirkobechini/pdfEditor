@@ -31,6 +31,7 @@ export type EditorViewerProps = {
     onRemovePages: () => void;
     onCompress: () => void;
     onImportExport: () => void;
+    onExtractText: () => void;
     onReplaceText: () => void;
     onMetadata: () => void;
     onSign: () => void;
@@ -46,7 +47,7 @@ export function EditorViewer(props: EditorViewerProps) {
         openMenu, organizeRef, convertRef, annotateMenuRef,
         onDownload, onPrint, onPageChange, onTotalPagesChange, onZoomChange, onToggleMenu,
         onMerge, onSplit, onReorder, onRemovePages,
-        onCompress, onImportExport, onReplaceText, onMetadata,
+        onCompress, onImportExport, onExtractText, onReplaceText, onMetadata,
         onSign, onOcr, onAnnotate, onShare, onUnlock,
     } = props;
 
@@ -73,6 +74,7 @@ export function EditorViewer(props: EditorViewerProps) {
                 onRemovePages={onRemovePages}
                 onCompress={onCompress}
                 onImportExport={onImportExport}
+                onExtractText={onExtractText}
                 onReplaceText={onReplaceText}
                 onMetadata={onMetadata}
                 onSign={onSign}

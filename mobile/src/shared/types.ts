@@ -46,6 +46,12 @@ export interface OcrResult {
   already_searchable: boolean;
 }
 
+/** Result of extractText(): number of pages and the extracted text. */
+export interface TextExtraction {
+  text: string;
+  pages: number;
+}
+
 export interface ShareLink {
   id: string;
   pdf_id: string;
