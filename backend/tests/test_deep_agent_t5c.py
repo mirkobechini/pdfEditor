@@ -10,6 +10,7 @@ def test_ocr_compress_convert_wired_in_user_profile() -> None:
     assert "ocr_pdf" in names
     assert "compress_pdf" in names
     assert "convert_docx_to_pdf" in names
+    assert "convert_image_to_pdf" in names
 
 
 def test_ocr_requires_id() -> None:
@@ -37,7 +38,23 @@ def test_convert_rejects_bad_b64() -> None:
     assert "base64" in out.lower() or "valido" in out.lower()
 
 
+def test_convert_image_rejects_unsupported_extension() -> None:
+    out = pdf_ops.convert_image_to_pdf("note.pdf", "aGVsbG8=")
+    assert "supportati" in out.lower() or "errore" in out.lower()
+
+
+def test_convert_image_requires_content() -> None:
+    out = pdf_ops.convert_image_to_pdf("foto.png", "")
+    assert "contenuto" in out.lower() or "base64" in out.lower()
+
+
+def test_convert_image_rejects_bad_b64() -> None:
+    out = pdf_ops.convert_image_to_pdf("foto.png", "!!!not-b64!!!")
+    assert "base64" in out.lower() or "valido" in out.lower()
+
+
 def test_tools_return_strings() -> None:
     assert isinstance(pdf_ops.ocr_pdf("x"), str)
     assert isinstance(pdf_ops.compress_pdf("x"), str)
     assert isinstance(pdf_ops.convert_docx_to_pdf("a.docx", "aGk="), str)
+    assert isinstance(pdf_ops.convert_image_to_pdf("a.png", "aGk="), str)
