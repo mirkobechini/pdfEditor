@@ -128,7 +128,13 @@ export default function SettingsScreen() {
                                         setSyncErrorDetail(result.errors);
                                         setSyncErrorDialog(true);
                                     } else if (result.conflicts.length === 0) {
-                                        const msg = t("cloud.syncResult", { uploaded: result.uploaded, downloaded: result.downloaded, conflicts: result.conflicts.length });
+                                        // Issue-1072: senza nulla da caricare/scaricare i contatori sono
+                                        // tutti a zero (matematicamente corretto, niente da fare), ma
+                                        // "Upload: 0, Download: 0" sembra un sync rotto a chi legge solo
+                                        // gli zeri. Messaggio esplicito quando è tutto già sincronizzato.
+                                        const msg = result.uploaded === 0 && result.downloaded === 0
+                                            ? t("cloud.syncResultAligned")
+                                            : t("cloud.syncResult", { uploaded: result.uploaded, downloaded: result.downloaded, conflicts: result.conflicts.length });
                                         setSyncResult(msg);
                                         setSyncResultVisible(true);
                                     }
