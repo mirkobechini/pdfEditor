@@ -278,6 +278,7 @@
     "syncError": "Errore di sincronizzazione",
     "syncCompleteTitle": "Sync completato",
     "syncCompleteDesc": "Riepilogo della sincronizzazione cloud:",
+    "syncAllAlignedDesc": "Tutto già sincronizzato: nessun file da caricare o scaricare.",
     "syncUploadedLabel": "Caricati",
     "syncDownloadedLabel": "Scaricati",
     "syncSkippedLabel": "Saltati",

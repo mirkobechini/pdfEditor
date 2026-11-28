@@ -278,6 +278,7 @@
     "syncError": "Sync error",
     "syncCompleteTitle": "Sync complete",
     "syncCompleteDesc": "Cloud sync summary:",
+    "syncAllAlignedDesc": "Already in sync: no files to upload or download.",
     "syncUploadedLabel": "Uploaded",
     "syncDownloadedLabel": "Downloaded",
     "syncSkippedLabel": "Skipped",

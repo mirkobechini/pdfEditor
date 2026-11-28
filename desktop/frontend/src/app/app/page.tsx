@@ -276,6 +276,14 @@ export default function EditorPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
                     <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#201a15] p-6 shadow-2xl">
                         <h2 className="mb-1 text-base font-bold text-white">{te("syncCompleteTitle")}</h2>
+                        {/* Issue-1072: senza file nuovi da caricare/scaricare, i contatori sono
+                            TUTTI a zero (caricati/scaricati/saltati) — matematicamente corretto
+                            (niente da fare), ma indistinguibile da un sync rotto per chi guarda
+                            solo gli zeri. Mostra un messaggio esplicito invece dei contatori vuoti. */}
+                        {lastSyncResult.uploaded === 0 && lastSyncResult.downloaded === 0 && lastSyncResult.skipped === 0 && lastSyncResult.errors.length === 0 ? (
+                            <p className="mb-4 text-[12px] text-[#918476]">{te("syncAllAlignedDesc")}</p>
+                        ) : (
+                        <>
                         <p className="mb-4 text-[12px] text-[#918476]">{te("syncCompleteDesc")}</p>
                         <div className="mb-5 space-y-1.5 rounded-xl border border-white/8 bg-white/[0.03] p-4 text-sm">
                             <p className="flex items-center justify-between">
@@ -325,6 +333,8 @@ export default function EditorPage() {
                                 </p>
                             )}
                         </div>
+                        </>
+                        )}
                         <div className="flex justify-end">
                             <button
                                 onClick={() => { clearSyncResult(); setSyncDialogOpen(false); }}
