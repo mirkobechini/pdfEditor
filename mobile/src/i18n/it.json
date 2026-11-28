@@ -317,6 +317,7 @@
     "manageLocalDesc": "Importa i PDF solo su dispositivo nel tuo account cloud",
     "importResult": "Importati {{count}} PDF sul cloud",
     "syncResult": "Upload: {{uploaded}}, Download: {{downloaded}}, Conflitti: {{conflicts}}",
+    "syncResultAligned": "Tutto già sincronizzato: nessun file da caricare o scaricare.",
     "syncErrors": "Errori sync",
     "syncErrorTokenExpired": "La tua sessione è scaduta. Accedi di nuovo per sincronizzare.",
     "syncErrorFileNotFound": "{{name}}: file non trovato su disco",

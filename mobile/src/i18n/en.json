@@ -317,6 +317,7 @@
     "manageLocalDesc": "Import device-only PDFs to your cloud account",
     "importResult": "Imported {{count}} PDF(s) to cloud",
     "syncResult": "Upload: {{uploaded}}, Download: {{downloaded}}, Conflicts: {{conflicts}}",
+    "syncResultAligned": "Already in sync: no files to upload or download.",
     "syncErrors": "Sync errors",
     "syncErrorTokenExpired": "Your session has expired. Please log in again to sync.",
     "syncErrorFileNotFound": "{{name}}: file not found on disk",
